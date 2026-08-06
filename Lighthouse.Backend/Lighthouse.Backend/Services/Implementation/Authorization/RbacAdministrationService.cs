@@ -1047,7 +1047,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return int.TryParse(claimValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out apiKeyId);
         }
 
-        // ADR-132 D59: principals rebuilt from a stored credential or subject carry no live group
+        // ADR-137 D59: principals rebuilt from a stored credential or subject carry no live group
         // claims, so the stored snapshot is their only route to an RbacGroupMapping. An ordinary OIDC
         // cookie principal has no auth_method claim and never reaches the fallback.
         private static bool CannotCarryLiveGroupClaims(ClaimsPrincipal principal)

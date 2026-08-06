@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
-        /// Epic 5146 slice 01 (#5692) — ADR-132 D68. The nonce half of the same guarantee, and the
+        /// Epic 5146 slice 01 (#5692) — ADR-137 D68. The nonce half of the same guarantee, and the
         /// reason it needs its own case: consumption is a different conditional update over different
         /// columns, and it is the one that hands out a credential rather than spending one.
         /// The row is seeded through the service rather than driven through /embed/start: the thing

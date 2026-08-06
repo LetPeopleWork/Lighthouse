@@ -4615,7 +4615,7 @@ directly instead, on Firefox, with Chrome and Safari unrun as everywhere else in
 
 ### ADRs (this feature)
 
-- [ADR-132](./adr-132-viewer-identity-embed-session.md) — the sign-in hop, the handshake nonce, and
+- [ADR-137](./adr-137-viewer-identity-embed-session.md) — the sign-in hop, the handshake nonce, and
   what replaces the API key. **Supersedes ADR-129** on identity and both of its endpoints.
 - [ADR-130](./adr-130-embed-only-cookie-policy.md) — **unchanged, in full.** Nothing in viewer identity
   touches how the cookie reaches the browser.

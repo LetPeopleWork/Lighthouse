@@ -357,7 +357,7 @@ namespace Lighthouse.Backend
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
 
-        // Security review F3, carried to ADR-132 D58: an embed cookie is otherwise believed on sight,
+        // Security review F3, carried to ADR-137 D58: an embed cookie is otherwise believed on sight,
         // leaving live frames running for the rest of the window after the key or the person behind
         // them is gone - making "delete them" advice that is not true when an administrator reaches
         // for it. Whoever the cookie names is re-resolved on every request instead.

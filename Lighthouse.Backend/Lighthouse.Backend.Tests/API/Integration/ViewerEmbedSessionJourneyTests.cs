@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-132. The three hops read in order: a viewer signs in at top
+    /// Epic 5146 slice 01 (#5692) — ADR-137. The three hops read in order: a viewer signs in at top
     /// level, the resolver polls the outcome back, the frame is entered as that person.
     /// </summary>
     public class ViewerEmbedSessionJourneyTests

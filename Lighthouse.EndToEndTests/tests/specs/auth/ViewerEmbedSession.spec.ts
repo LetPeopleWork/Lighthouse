@@ -64,7 +64,7 @@ test.describe("@auth viewer-identity embed session E2E", () => {
 		},
 	);
 
-	// The one walking skeleton for this flow (ADR-132). It is the first thing in this epic that is
+	// The one walking skeleton for this flow (ADR-137). It is the first thing in this epic that is
 	// genuinely end-to-end testable: hop 1 is a real OIDC login against the real Keycloak, so nothing
 	// here is simulated. What it deliberately does not cover is Forge — the modal, router.open, a
 	// nested partitioned cookie — which needs two registrable domains and lives in slice 02.

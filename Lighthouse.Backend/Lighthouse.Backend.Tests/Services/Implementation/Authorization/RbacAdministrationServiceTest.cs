@@ -900,7 +900,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         /// <summary>
-        /// ADR-132 D59, one level below the journey test: the stored-snapshot fallback is gated on
+        /// ADR-137 D59, one level below the journey test: the stored-snapshot fallback is gated on
         /// auth_method, so an ordinary cookie principal never reaches it even though the same profile
         /// carries a snapshot that an embed principal resolves through.
         /// </summary>

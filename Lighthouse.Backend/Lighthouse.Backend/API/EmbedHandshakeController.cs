@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace Lighthouse.Backend.API
 {
-    // ADR-132 hop 2. A second controller on the embed prefix so [AllowAnonymous] never lands on the
+    // ADR-137 hop 2. A second controller on the embed prefix so [AllowAnonymous] never lands on the
     // minting one: the resolver holds no credential and is given exactly one read verb.
     [Route("api/v1/embed")]
     [Route("api/latest/embed")]

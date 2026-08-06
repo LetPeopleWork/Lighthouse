@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 namespace Lighthouse.Backend.API
 {
-    // ADR-132 hop 1. Outside /api on purpose: an /api challenge becomes a bare 401, which is the
+    // ADR-137 hop 1. Outside /api on purpose: an /api challenge becomes a bare 401, which is the
     // blank rectangle D26 exists to prevent.
     [Route("embed")]
     [ApiController]
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
     {
         public const string StartPath = "/embed/start";
 
-        // ADR-132 DQ-1: one class-level code, never prose and never anything about who the viewer is
+        // ADR-137 DQ-1: one class-level code, never prose and never anything about who the viewer is
         // or what the instance holds.
         public const string NoAccessRefusalCode = "no_access";
 

@@ -16,11 +16,11 @@ namespace Lighthouse.Backend.Tests.API
             // blank rectangle inside the frame instead of a legible refusal.
             typeof(EmbedEntryController),
 
-            // ADR-132 hop 1: the sign-in hop challenges the identity provider itself, by name. A
+            // ADR-137 hop 1: the sign-in hop challenges the identity provider itself, by name. A
             // policy challenge here would forward to the SPA login page instead.
             typeof(EmbedStartController),
 
-            // ADR-132 hop 2: the Forge resolver holds no credential, so the poll is anonymous by
+            // ADR-137 hop 2: the Forge resolver holds no credential, so the poll is anonymous by
             // design. It is a separate controller from EmbedSessionController for exactly this reason.
             typeof(EmbedHandshakeController),
         ];

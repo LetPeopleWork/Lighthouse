@@ -4,7 +4,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-132 D57/D58. The embed cookie validator re-resolves a subject
+    /// Epic 5146 slice 01 (#5692) — ADR-137 D57/D58. The embed cookie validator re-resolves a subject
     /// on every request, and it must never create one.
     /// </summary>
     public class S14_ViewerEmbedSubjectValidatorTests

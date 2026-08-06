@@ -1,6 +1,6 @@
 # ADR-129: Embed session — token exchange and identity model
 
-**Status**: **Superseded** by [ADR-132](./adr-132-viewer-identity-embed-session.md) (2026-08-06)
+**Status**: **Superseded** by [ADR-137](./adr-137-viewer-identity-embed-session.md) (2026-08-06)
 **Date**: 2026-08-04
 **Feature**: `epic-5146-jira-forge-app` (ADO Epic 5146, Story 5641)
 **Decider**: Morgan (Solution Architect), DESIGN re-run after slice 01
@@ -12,7 +12,7 @@
 > the `router.open` probe: Forge can open a **top-level** tab, where nothing is framed and nothing
 > refuses. With D48 the API-key embed mode is dropped and the viewer signs in as themselves. This ADR
 > is retained because it is the reasoning that produced the shipped code and the security review that
-> produced most of ADR-132's requirements. **What survives**: the opaque-token-with-server-state
+> produced most of ADR-137's requirements. **What survives**: the opaque-token-with-server-state
 > choice and its alternatives, the fast-digest-not-KDF argument, the query-string hand-off and its
 > three mitigations, and the Earned-Trust stance of refusing a credential that cannot honour its
 > contract. **What does not**: the identity model, both endpoints, and the claim that RBAC needs no

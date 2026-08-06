@@ -30,7 +30,7 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-132, viewer-identity embed session.
+    /// Epic 5146 slice 01 (#5692) — ADR-137, viewer-identity embed session.
     ///
     /// Differs from <see cref="EmbedSessionTestHost"/> in one way that matters: there is no
     /// TestAuthHandler. Hop 1 only counts a principal authenticated on the ordinary cookie scheme

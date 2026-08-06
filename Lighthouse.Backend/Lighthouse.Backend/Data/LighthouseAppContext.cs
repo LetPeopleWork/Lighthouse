@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasIndex(t => t.HandshakeNonceHash);
 
-            // Subject is deliberately not a foreign key: profiles are created lazily (ADR-132 D52).
+            // Subject is deliberately not a foreign key: profiles are created lazily (ADR-137 D52).
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasIndex(t => t.Subject);
 

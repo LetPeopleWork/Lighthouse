@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { KeycloakLoginPage } from "./KeycloakLoginPage";
 
 /**
- * The backend-served embed surfaces: `/embed/start` (ADR-132 hop 1, which ends on a static terminal
+ * The backend-served embed surfaces: `/embed/start` (ADR-137 hop 1, which ends on a static terminal
  * page in the orphaned tab) and `/embed/enter` (ADR-129 hop 3, where only the refusal renders its
  * own page — a success redirects into the SPA).
  */

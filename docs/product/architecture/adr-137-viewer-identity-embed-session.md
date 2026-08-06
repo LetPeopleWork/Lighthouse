@@ -1,4 +1,4 @@
-# ADR-132: Viewer-identity embed session — the sign-in hop, the handshake nonce, and what replaces the API key
+# ADR-137: Viewer-identity embed session — the sign-in hop, the handshake nonce, and what replaces the API key
 
 **Status**: Accepted
 **Date**: 2026-08-06

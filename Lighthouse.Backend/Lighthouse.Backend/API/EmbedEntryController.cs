@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.API
             return Redirect(ResolveReturnPath(returnPath));
         }
 
-        // ADR-132 D63: a redeemed row names either the viewer who signed in or an API key's owner.
+        // ADR-137 D63: a redeemed row names either the viewer who signed in or an API key's owner.
         private Task<ClaimsPrincipal?> ResolvePrincipalAsync(
             EmbedSessionTokenRedemption redemption,
             CancellationToken cancellationToken)

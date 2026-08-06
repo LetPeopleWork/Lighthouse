@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Configuration
 
         public int TokenLifetimeSeconds { get; set; } = DefaultTokenLifetimeSeconds;
 
-        // ADR-132 DQ-2: the token's window is bounded by one machine redirect, the handshake
+        // ADR-137 DQ-2: the token's window is bounded by one machine redirect, the handshake
         // outcome's by a human finishing a login. Sharing the 60s would say "try again" to a
         // sign-in that worked, only for the slowest users.
         public int HandshakeOutcomeLifetimeSeconds { get; set; } = DefaultHandshakeOutcomeLifetimeSeconds;

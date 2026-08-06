@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         public const string AuthMethodClaimType = "auth_method";
         public const string AuthMethodValue = "api-key";
 
-        // ADR-132 D59: what 01-05 gates the stored group snapshot on. A viewer principal is rebuilt
+        // ADR-137 D59: what 01-05 gates the stored group snapshot on. A viewer principal is rebuilt
         // from a subject and carries no live group claims.
         public const string AuthMethodEmbedValue = "embed";
         public const string SubjectClaimType = "sub";
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             return new ClaimsPrincipal(identity);
         }
 
-        // ADR-132: the viewer path builds its principal here too, and for the same reason the key
+        // ADR-137: the viewer path builds its principal here too, and for the same reason the key
         // path does. The class stays pure — no repository, no clock, no HttpContext.
         public static ClaimsPrincipal Create(string subject, string? displayName, string authenticationScheme)
         {

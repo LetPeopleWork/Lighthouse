@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-132 D53/D54. Two storage-level guarantees that EF InMemory
+    /// Epic 5146 slice 01 (#5692) — ADR-137 D53/D54. Two storage-level guarantees that EF InMemory
     /// cannot see: it enforces neither check constraints nor foreign keys.
     /// </summary>
     [TestFixture]

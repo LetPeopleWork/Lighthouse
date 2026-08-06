@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         Task<EmbedSessionToken?> FindByHandshakeNonceHashAsync(string nonceHash, CancellationToken cancellationToken);
 
         /// <summary>
-        /// ADR-132 D68/DQ-2: stamps the outcome consumed only if nobody has consumed it yet, and in the
+        /// ADR-137 D68/DQ-2: stamps the outcome consumed only if nobody has consumed it yet, and in the
         /// same statement writes the secret the poll just minted (D71) and swaps the outcome window for
         /// the token window redemption enforces. Racing pollers see exactly one 1.
         /// </summary>

@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Models.Auth
 
             using (Assert.EnterMultipleScope())
             {
-                // ADR-132 D65: null, not empty. IX_EmbedSessionTokens_TokenId is unique and exempts
+                // ADR-137 D65: null, not empty. IX_EmbedSessionTokens_TokenId is unique and exempts
                 // NULLs; an empty-string default would collide across refusal rows and fail the
                 // IS NULL arm of CK_EmbedSessionTokens_GrantOrRefusal. The original rationale —
                 // that no unset row should carry a real, lookupable identifier — is served by null.

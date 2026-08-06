@@ -1,6 +1,6 @@
 namespace Lighthouse.Backend.Models.Auth
 {
-    // ADR-132 D63: a redeemed row names either an API key or a viewer, never both, so the caller
+    // ADR-137 D63: a redeemed row names either an API key or a viewer, never both, so the caller
     // branches on which one arrived rather than on a sentinel.
     public readonly record struct EmbedSessionTokenRedemption(bool Succeeded, int? ApiKeyId, string? Subject)
     {
