@@ -604,3 +604,475 @@ the instrumentable ones.
    dependencies will land on (D17). Without designing #4365, decide only this: does the row model and the
    view's layout leave room for a dependency indicator and a per-Feature detail affordance, so #4365 is
    an extension rather than a rebuild?
+
+---
+
+## Wave: DESIGN / [REF] DDD List
+
+Domain layer, 2026-08-06, Hera (DDD Architect), interaction mode = **PROPOSE**. Density: lean, Tier-1
+only. Full analysis in `docs/product/architecture/brief.md` → `## Domain Model —
+epic-5375-manual-sorting`. ADRs: **ADR-132** (ownership + consistency), **ADR-133** (event + recompute).
+
+Nothing in the DISCUSS wave above is rewritten. Two locked decisions are **refined** (D13 demoted from
+contract to algorithm; D11 corrected for the empty-Portfolio set) and one AC's wording is **sharpened**
+(AC-3.6). Each is called out below rather than applied silently.
+
+| # | Decision | Source |
+|---|---|---|
+| **DDD-1** | **No ordering aggregate.** `Feature.ManualRank` (`int?`) is a scalar attribute of the existing `Feature` aggregate; the *sequence* is derived at read time and has no root. A "Backlog Ordering" root and an instance-settings-owned list are both rejected as god aggregates (Vernon Rule 2). Instance settings owns the **policy**, not the data. | ADR-132 §1 |
+| **DDD-2** | **`Feature` stays untokened.** No optimistic-concurrency token, per ADR-027 — it is rewritten on every sync, so a token would manufacture 409s on routine refreshes. | ADR-132 §3 |
+| **DDD-3** | **The ordering is a total order, not a permutation**: `ManualRank` ASC, **nulls last**, ties broken by `Feature.Id` ASC. Total over any rank multiset — gaps, duplicates and nulls all yield a deterministic sequence. | ADR-132 §2, INV-O1 |
+| **DDD-4** | **D13 refined.** Dense contiguous 1..N is **not** a transactional invariant. The block renumber stays as the move *algorithm*; contiguity is a post-condition nothing may rely on. This is what makes DDD-1 available at all, and it lets slice 03 swap in slot permutation without touching a consumer. | ADR-132 §2, INV-O2 |
+| **DDD-5** | **The `#` column is a computed ordinal, not the stored rank.** Free — `FeatureRepository.GetAll` (`:16-18`) already materialises and sorts the whole table. Positions count Done Features, which is what AC-1.5/1.7 require. | ADR-132 §2, INV-O3 |
+| **DDD-6** | **One DB transaction per move**, re-reading the target's rank *inside* the boundary. Not a lock over all Features, not the update queue. A concurrent refresh **may** interleave with a renumber: the collision produces a duplicate rank, which DDD-3 resolves by `Id`. | ADR-132 §3 |
+| **DDD-7** | **The move command carries identities, not positions** (`beforeFeatureId` / `afterFeatureId`). A rank-carrying command would need a token; an identity-carrying one does not. D18's endpoint shape was already the concurrency-safe one. Two simultaneous moves are last-writer-wins on intent — no 409, stated not mitigated. | ADR-132 §3 |
+| **DDD-8** | **A committed move publishes `FeatureRankChanged(int FeatureId)`**; a handler resolves the Feature's Portfolios and calls `IForecastUpdater.TriggerUpdate`. Flipping the switch publishes `FeatureOrderingPolicyChanged(FeatureOrderingPolicy)`. **No new debounce** — `UpdateQueueService` already parks a single coalesced follow-up (`:78-88`, `:198-230`), so a burst of moves collapses to at most two forecast runs per Portfolio. | ADR-133 |
+| **DDD-9** | **D11 corrected.** `Portfolios.All(canWrite)` is `true` for a Feature in **no** Portfolio, so a literal transcription would let anyone move the 4 orphans the premise check found. The rule is `Portfolios.Any() && Portfolios.All(canWrite)` — an orphan is movable by nobody. | ADR-132 §4 |
+| **DDD-10** | **ES rejected, CQRS unchanged.** ADR-027 D7 stands: no event store, no move audit trail, no replay. The "give me my old order back" need is already met by D5/D9 keeping the untouched source `Order`. CQRS-lite is unchanged — the move is a command, the ordered list with its ordinal is a read model on the same store. | brief.md, ES/CQRS assessment |
+
+---
+
+## Wave: DESIGN / [REF] Ubiquitous Language
+
+`Order` is taken and must never drift. It means the **source system's** value, always.
+
+| Term | Meaning |
+|---|---|
+| **Order** | The connector's value (`WorkItemBase.Order`), overwritten every sync (`:142`). Never the manual concept. |
+| **Manual Rank** | The instance's own ordering value for one Feature (`Feature.ManualRank`). |
+| **Position** | The computed 1-based ordinal in the global order. Derived, never persisted. What the `#` column shows. |
+| **Forecast Queue** | The sequence the simulation draws from (`ForecastService.cs:201-209`). The thing being ordered. Not "the backlog" — the tracker owns that word. |
+| **Ordering Policy** | `SourceOrder` \| `ManualOrder`. An enum, not a boolean: "manual sorting on/off" names a UI switch, not a domain concept. |
+| **Move** | The one command. Insert-at-target, carrying identities. Not "reorder"/"sort"/"drag". |
+
+**"Priority" is rejected** — ADO, Jira and Linear all ship a real field by that name, and this is a
+queue position, not a judgement of importance.
+
+**Terminology boundary (D16).** Every term above is *internal*. The user-facing noun stays configurable
+via `getTerm(TERMINOLOGY_KEYS.FEATURE/FEATURES)`, so UI copy composes as *"{Features} position"* —
+the noun is the instance's word, the concept word is not run through the terminology service. No
+literal "Epic", "Initiative" or "Story" anywhere.
+
+---
+
+## Wave: DESIGN / [REF] Bounded-Change Contract — the Move command
+
+The aggregate boundary is the test universe. DELIVER asserts the complement, not just the delta.
+
+- **Universe**: the set of `(FeatureId, ManualRank)` over all Features, plus the Ordering Policy value.
+- **Declared delta** for `Move(featureId, before|after targetId)`: `ManualRank` of the moved Feature and
+  of the Features in the shifted block. Nothing else.
+- **Complement equality**: `WorkItemBase.Order` byte-identical for **every** Feature (this is D5's
+  promise, and it is directly testable); `State`, `StateCategory`, `FeatureWork`, `Forecasts`,
+  `Portfolios` membership and every other field unchanged; the Ordering Policy unchanged.
+- **Relative-order complement**: for any pair of Features neither of which is the moved one, relative
+  order is unchanged. This is AC-3.4 restated as a property — and it is the property both D4 and its
+  slot-permutation fallback preserve, which is why the swap is safe.
+
+---
+
+## Wave: DESIGN / [REF] DISCUSS Open Questions — domain-layer answers
+
+| Q | Answer |
+|---|---|
+| **1. Where the switch is stored** | **Not a domain call — stays open for the solution architect.** Domain constraint only: single-valued, instance-scoped, read at **exactly one** selection point, and modelled as the `SourceOrder`/`ManualOrder` enum rather than a bare boolean. `AppSetting` vs `OptionalFeature` is a persistence choice; DISCUSS's `AppSetting` proposal is not contradicted here. |
+| **2. Where the manual comparison lives** | **Not a domain call — open.** Domain constraint: one selection point, and it must implement DDD-3's **full** sort key (rank, nulls last, `Id`). A consumer sorting by rank alone is wrong only when duplicates or nulls exist — the hardest bug class to notice, hence ADR-132's enforcement test. |
+| **3. Rank storage, renumbering, transaction boundary** | **Answered, and partly dissolved.** D13's block renumber is kept as the algorithm (DDD-4); contiguity is not a contract; the boundary is one transaction per move (DDD-6). The question's premise — "so a concurrent refresh cannot interleave with a renumber" — is **retired**: it may interleave, and DDD-3 makes the result harmless. |
+| **4. `GET /features` result-set filtering** | **Not a domain call — open.** One domain constraint: filtering must not change the position values. Positions are global (DDD-5) and are computed **before** the RBAC filter, not after. |
+| **5. D11's strictness** | **Confirmed as coherent, corrected in one place** (DDD-9). Domain layer confirms the rule is right, not that it is usable — that stays a field question, unchanged from DISCUSS. The tooltip naming a Portfolio the user cannot read is a UX/authorization-disclosure call for the solution architect; the domain layer only requires that the *decision* be `Any() && All()`. |
+| **6. Seeding transaction** | **Mostly dissolved by DDD-3.** Seeding need not be atomic with anything: a partially-seeded instance is still totally ordered, because unseeded Features sort at the tail by `Id`. Synchronous is adequate; queued is an ergonomics choice, not a correctness one. |
+| **7. Forward-compatibility with Epic #4365** | **Out of the domain layer.** No domain concept introduced here constrains a dependency model: `Feature` gains one scalar, no new root, no changed relation. A future `FeatureDependency` is a separate aggregate referencing Features by id (Vernon Rule 3), which this design neither helps nor hinders. Layout is the solution architect's. |
+
+---
+
+## Wave: DESIGN / [REF] Refinements to DISCUSS artifacts (no silent changes)
+
+| Item | Change | Why |
+|---|---|---|
+| **D13** | Demoted from invariant to algorithm (DDD-4). The wording "dense contiguous integer" survives as *what the code does*; "renumbered across the affected block" survives verbatim. What changes is that nothing may depend on it. | D13 explicitly invited DESIGN revision. |
+| **D11** | The mutation rule gains `Portfolios.Any() &&` (DDD-9). | `All()` over the empty set grants access to orphans. |
+| **AC-3.6** | "the dates move on the next forecast run" → **"the move triggers a forecast run"**. Same observable, stronger promise; the integration test is unchanged in shape. | DDD-8 / ADR-133. |
+| **AC-2.6 / AC-5.3** | "receives a rank at the end of the list" is satisfied either by a written `max + 1` or by a null rank sorting last (DDD-3). The observable — appears last, no notification — is identical. Crafters may implement the cheap form. | INV-O4. |
+| **AC-1.5** | Reconfirmed, with the mechanism pinned: the position is a **computed ordinal**, not the stored rank, and counts Done Features. | DDD-5. |
+
+Nothing else in the DISCUSS wave is touched. D1-D10, D12, D14-D18 stand as written.
+
+---
+
+## Wave: DESIGN / [REF] Domain-layer Handoff
+
+**To**: `nw-solution-architect` (DESIGN, application layer) — then `nw-acceptance-designer` (DISTILL).
+
+Fixed for the solution architect:
+
+1. `Feature.ManualRank` (`int?`) on the existing aggregate. No new root, no new token, ADR-027's token
+   set unchanged. One additive nullable column, expand-only, via `CreateMigration`.
+2. The ordering function is `rank ASC, nulls last, Id ASC`, implemented **once**. Contiguity is not a
+   contract; nothing reads a rank value; the `#` column is a computed ordinal.
+3. The move endpoint takes identities only, runs in one transaction that re-reads the target's rank
+   inside the boundary, uses a set-based UPDATE for the shift (keeping it off `SaveWithRetry`), and does
+   not serialise against the sync path.
+4. A committed move publishes `FeatureRankChanged(featureId)`; the handler resolves the Feature's
+   Portfolios and calls `IForecastUpdater.TriggerUpdate`. Reuse the existing coalescing; add no debounce.
+5. Authority is `Portfolios.Any() && Portfolios.All(PortfolioWrite)`.
+
+The DELIVER acceptance test for DDD-3/DDD-4: feed a deliberately gapped, duplicated and partially-null
+rank set through all five ordering call sites (`FeatureRepository.cs:18`/`:23`, `PortfolioDto.cs:15`,
+`FeaturesController.cs:93`, `WorkItemService.cs:535`) and assert identical sequences. The DELIVER test
+for the bounded-change contract: assert `WorkItemBase.Order` is byte-identical across every Feature
+after a move.
+
+---
+
+## Wave: DESIGN / [REF] Application Layer — preamble
+
+Application layer, 2026-08-06, Morgan (Solution Architect), interaction mode = **PROPOSE**. Density:
+lean, Tier-1 only. Full analysis in `docs/product/architecture/brief.md` → `## Application
+Architecture — epic-5375-manual-sorting`. ADRs: **ADR-134** (policy store + single ordering seam),
+**ADR-135** (position), **ADR-136** (authorization).
+
+Nothing in the DISCUSS wave or the Domain-Model sections above is rewritten. Two DISCUSS **premises**
+are corrected (Q4's "first result-set-filtered endpoint"; the `OptionalFeature` framing), two ACs are
+**refined** (AC-1.2, AC-3.8) and two slice-brief lines are **corrected** (slice-01's `rank`,
+slice-03's retired transaction premise). Each is listed in *Refinements*, below, rather than applied
+silently.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+**Backend — CREATE NEW (10)**
+
+| Component | Kind | Responsibility |
+|---|---|---|
+| `FeatureOrderingPolicy` | enum | `SourceOrder` \| `ManualOrder`. The domain vocabulary ADR-132 named |
+| `IFeatureOrderingPolicyProvider` / `FeatureOrderingPolicyProvider` | driven port + adapter | Reads `AppSettingKeys.FeatureOrderingPolicy`; absent row ⇒ `SourceOrder`. No principal, no HTTP |
+| `IFeatureOrdering` / `FeatureOrdering` | domain service | **The single selection point.** `Order(IEnumerable<Feature>)`. The only production type that constructs a comparer |
+| `ManualRankComparer` | value | `ManualRank` ASC, nulls last, `Id` ASC — INV-O1's full key |
+| `IFeaturePositionMap` / `FeaturePositionMap` | read model | `featureId -> 1-based ordinal` over the whole table, from a projection query. ADR-135 |
+| `FeatureOrderKey` | record | `(int Id, string Order, int? ManualRank)`. The projection shape — the type is the evidence that no `Include` graph is loaded |
+| `IFeatureRankingService` / `FeatureRankingService` | domain service | ADR-132's sole rank writer. Insert-at-target, one transaction, set-based block UPDATE, publishes `FeatureRankChanged` |
+| `IFeatureMoveAuthorization` / `FeatureMoveAuthorization` | authorization | `Portfolios.Any() && Portfolios.All(canWrite)`. Returns `FeatureMoveVerdict(CanMove, MoveBlockReason, BlockingPortfolios)`. ADR-136 |
+| `FeatureRankChanged`, `FeatureOrderingPolicyChanged` | events | Past-tense `record`s in `Models/Events/`, matching `PortfolioFeaturesRefreshed`. ADR-133 |
+| `FeatureRankChangedForecastTriggerHandler` | event handler | Resolves Portfolios from the Feature, calls `IForecastUpdater.TriggerUpdate`. Mirrors `TeamDataRefreshedForecastTriggerHandler.cs:13-27` |
+
+**Backend — EXTEND (8)**
+
+| Component | Change |
+|---|---|
+| `Feature` | `+ public int? ManualRank { get; set; }`. **Deliberately absent from `Update`** (`Feature.cs:172-178`) |
+| `FeatureRepository` | `:18`, `:23` → `featureOrdering.Order(...)` |
+| `PortfolioDto` | `:15` → `featureOrdering.Order(portfolio.Features)`; constructor takes `IFeatureOrdering`. Two call sites: `PortfolioController.cs:47`, `PortfoliosController.cs:50` |
+| `WorkItemService` | `:535` → `featureOrdering.Order(features)` |
+| `FeaturesController` | `+ GET /features`, `+ PATCH /features/{id}/rank`, **`− :93`** (redundant re-sort), and `GetFeaturesByPredicate` populates position + verdict |
+| `FeatureDto` | `+ Position`, `+ CanMove`, `+ MoveBlockReason`, `+ BlockingPortfolios`. All additive |
+| `AppSettingKeys` / `IAppSettingService` / `AppSettingService` | `+ FeatureOrderingPolicy` key, `+ GetFeatureOrderingPolicy()`, `+ SetFeatureOrderingPolicy(policy)` (which runs INV-A3's seed and publishes) |
+| `AppSettingsController` | `+ GET/PUT FeatureOrdering`, PUT carries `[LicenseGuard(RequirePremium = true)]` |
+
+**Frontend — CREATE NEW (5)**
+
+| Component | Responsibility |
+|---|---|
+| `pages/Features/FeaturesView.tsx` | The `/features` page. Reference class: `PortfolioFeatureList.tsx` minus the portfolio-scoped props |
+| `components/Common/FeatureListDataGrid/FeatureMoveMenu.tsx` | The row menu. Renders enabled/disabled + tooltip from a verdict it is **given**, never one it derives |
+| `hooks/useFeatureOrdering.ts` | The one place AC-3.7/3.8/3.9/3.10 resolve. Returns `{ enabled: true } \| { enabled: false; reason: "not-premium" \| "policy-off" \| "sorted" \| "no-write" \| "orphan" }` |
+| `pages/Settings/System/FeatureOrderingSettings.tsx` | The switch + AC-5.5 help text, composed from `getTerm` at render time |
+| `models/FeatureOrdering.ts` | Policy type + block-reason union + zod schema |
+
+**Frontend — EXTEND (9)**
+
+| Component | Change |
+|---|---|
+| `FeatureListDataGrid.tsx` | `+ showPosition?`, `+ ordering?`. **Injects** the position column first and the actions column last, exactly as it already injects warnings + active-work at `:60-73`. Owns `isSortActive` |
+| `columns.tsx` | `+ createPositionColumn(headerLabel)` (`field: "position"`, sortable, w70; header `"#"` under `SourceOrder`, `"Manual"` under `ManualOrder` — the label is a prop so the factory stays policy-ignorant), `+ createFeatureOrderingActionsColumn(binding)` (`sortable: false`) |
+| `FeatureListDataGrid/index.ts`, `types.ts` | Export + prop types |
+| `DataGridBase.tsx` | `+ onSortModelChange?: (m: GridSortModel) => void`. Additive; `undefined` for ~20 existing grids |
+| `App/Header/Header.tsx:58-61` | Third entry `{ path: "/features", text: getTerm(TERMINOLOGY_KEYS.FEATURES) }`. Adds the `useTerminology()` hook the component does not currently call |
+| `App.tsx:224` | `<Route path="/features" element={<FeaturesView />} />`, lazy like its neighbours |
+| `services/Api/FeatureService.ts` | `+ getAllFeatures()`, `+ moveFeature(id, { beforeFeatureId \| afterFeatureId })` |
+| `models/Feature.ts` | `FeatureSchema` + `Feature.fromParsed` gain the four new fields |
+| `pages/Settings/System/SystemSettingsTab.tsx` | One `InputGroup` hosting the new panel |
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Route / surface | Guards | AC |
+|---|---|---|---|
+| HTTP | `GET api/v1\|latest/features` | `[Authorize]` only — **no `LicenseGuard`** (D12). Rows filtered by `PortfolioRead` via the shipped `GetFeaturesByPredicate` | AC-1.2, AC-1.3 |
+| HTTP | `PATCH api/v1\|latest/features/{featureId}/rank` | `[LicenseGuard(RequirePremium = true)]` + `IFeatureMoveAuthorization` → 403. Body carries **exactly one** of `beforeFeatureId` / `afterFeatureId`; `beforeFeatureId: null` ⇒ to the end | AC-3.1, AC-3.7, AC-3.8, AC-3.10, AC-4.2 |
+| HTTP | `GET api/v1\|latest/appsettings/FeatureOrdering` | class-level `[RbacGuard]` ⇒ `SystemAdmin` | AC-5.4 |
+| HTTP | `PUT api/v1\|latest/appsettings/FeatureOrdering` | `[LicenseGuard(RequirePremium = true)]` + inherited `SystemAdmin` | AC-2.5, AC-2.7, AC-5.1 |
+| UI | Top nav, third entry → `/features` | none | AC-1.1 |
+| UI | Portfolio → detail → Features tab | unchanged component; gains both injected columns | AC-1.5, AC-3.x, AC-4.4 |
+| UI | Settings → System → the new `InputGroup` | premium-disabled switch via `useLicenseRestrictions()` + `LicenseTooltip` | AC-2.5, AC-5.5 |
+| CLI / MCP | — | **No change**, per DISCUSS. The clients call none of these routes | — |
+
+The four relative gestures and both targeted gestures collapse onto the single `PATCH` shape: Top ⇒
+`before` the first **visible** row; Up ⇒ `before` the previous visible row; Down ⇒ `after` the next
+visible row; Bottom ⇒ `beforeFeatureId: null`; "Move above/below X" ⇒ `before`/`after` X. "Visible"
+means after `hideCompleted` and after any grid filter (AC-3.3).
+
+---
+
+## Wave: DESIGN / [REF] Driven Ports + Adapters
+
+| Port | Adapter | Substrate | Earned-Trust probe |
+|---|---|---|---|
+| `IFeatureOrderingPolicyProvider` | `AppSettingRepository` row | the instance database | Absent row must read `SourceOrder`, not throw. Probe: delete the row, assert `GET /features` returns the source order (this is also the downgrade path) |
+| `IFeaturePositionMap` | `LighthouseAppContext.Features` projection | SQLite / PostgreSQL / SQL Server | Assert the ordinal sequence is identical across providers for a rank set containing gaps, duplicates, nulls **and** all five `Order` shapes. The comparison runs in memory, so provider divergence would be a collation surprise in the `string.Compare` fallback — probe it rather than assume it |
+| `IFeatureRankingService` → block UPDATE | `LighthouseAppContext` transaction | ditto | Assert the set-based UPDATE does **not** route through `SaveWithRetry`'s reload-and-retry path (ADR-027 flags it), and that a move concurrent with a sync append leaves a total order (ADR-132 §3 says the duplicate is harmless — prove it rather than cite it) |
+| `IFeatureMoveAuthorization` → `IRbacAdministrationService` | shipped RBAC service | in-process | Assert 403 for the orphan case with `SystemAdmin`, which is the one where the naive implementation returns 200 |
+| `IDomainEventDispatcher` | shipped dispatcher | in-process | Covered by the shipped `DomainEventDispatcherSeamArchUnitTest`; no new probe |
+| `IForecastUpdater` → `UpdateQueueService` | shipped queue | in-process | Covered by ADR-133's coalescing test; no new probe |
+| EF migration | `Create-Migration.ps1` across all provider assemblies | all | Shipped `ExpandOnlyMigrationGuardTest`, unmodified |
+
+**No external integration is added or touched.** `WorkItemBase.Order` is already populated by the
+connectors, and D8 forbids write-back, so no tracker API is called on any path in this feature.
+Contract testing is therefore **N/A, because there is no consumer-provider boundary to pin** — stated
+rather than skipped.
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+| Choice | Verdict | Licence / rationale |
+|---|---|---|
+| MUI-X DataGrid **Community** | REUSE | Row reordering and tree data are Pro and **not licensed**. D18's discrete actions were chosen before the licence question was asked, which is why no Pro feature is needed. `onSortModelChange` and `sortable` are Community. MIT |
+| No drag-and-drop library | DECLINE | S14 found none installed; D18 removed the need. Not adding `dnd-kit`, `react-beautiful-dnd` or `@hello-pangea/dnd` — each is a new dependency for a deferred gesture |
+| ArchUnitNET 0.13.3 | REUSE | Already in the test project (16 `*ArchUnitTest.cs` files). Two new rules, both mirroring `LicenseGateSingleSourceArchUnitTest.cs`. Apache-2.0 |
+| NUnit 4.6 + Moq + EF InMemory + `WebApplicationFactory` | REUSE | Project standard. **One caveat**: EF InMemory has no transactions, so ADR-132 §3's concurrency claims must be probed on a real provider, not asserted against InMemory |
+| zod | REUSE | Already the frontend parse boundary (`models/Feature.ts`). Four additive optional keys |
+| No new NuGet, no new npm package | — | Nothing in this feature needs one |
+
+---
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| # | Decision | Source |
+|---|---|---|
+| **SA-1** | **The Ordering Policy is an `AppSetting` enum**, key `FeatureOrdering:Policy`, absent ⇒ `SourceOrder`. `OptionalFeature` rejected — a `bool` where the domain named an enum, a silent no-op where AC-2.5 needs 403, and a server-seeded description string that cannot run through `getTerm`, which makes AC-5.5 unsatisfiable there. | ADR-134 §1, §A |
+| **SA-2** | **One ordering port, `IFeatureOrdering`; five call sites become four.** `FeaturesController.cs:93` is **deleted** (it re-sorts what `GetAllByPredicate` already sorted). Enforced by `FeatureOrderingSingleSourceArchUnitTest`. | ADR-134 §2 |
+| **SA-3** | **INV-A3 — the seed fills nulls only, appending.** One rule satisfies AC-2.1, AC-2.6 and AC-5.3. Synchronous, no progress UI. | ADR-134 §3 |
+| **SA-4** | **The sync path never writes `ManualRank`.** INV-O4's `max + 1` tail append is declined so K2/AC-2.2 is absolute. Structural, not guarded: `Feature.Update` copies by explicit enumeration. | ADR-134 §4 |
+| **SA-5** | **Position is a computed global ordinal from a narrow projection**, before filtering. DTO field `Position`. A SQL window function is **structurally unavailable** — `FeatureComparer`'s parse ladder has no `ORDER BY` equivalent, so it would serve only half the policy. | ADR-135 |
+| **SA-6** | **`GET /features` reuses the shipped `GetFeaturesByPredicate`** — DISCUSS's "first result-set-filtered endpoint" premise is wrong; `FeaturesController.cs:97-99` already does it. | ADR-136 §1 |
+| **SA-7** | **Orphans are visible and unmovable.** The shipped filter admits them; tightening it would silently change two live endpoints. ADR-132 §4's `Any()` already freezes them. Refines AC-1.2. | ADR-136 §1 |
+| **SA-8** | **The move conjunction lives in `IFeatureMoveAuthorization`**, consumed by the endpoint (enforcement) and the DTO (hint). `RbacGuardAttribute` cannot express it — it resolves one scope id from a route key (`:78-102`). | ADR-136 §2 |
+| **SA-9** | **The block reason names only Portfolios the caller can read**; otherwise a true unnamed sentence. Symmetric with `FeatureDto.cs:47-55`, which already hides unreadable Portfolios. Refines AC-3.8. | ADR-136 §3 |
+| **SA-10** | **The client must not re-derive the verdict.** `projects.every(p => isPortfolioAdmin(p.id))` **fails open** twice — `projects` is read-filtered, and it is empty for an orphan. Pinned by a Vitest. | ADR-136 §4 |
+| **SA-11** | **Shared UI is injected by `FeatureListDataGrid`, not passed by callers** — the pattern already at `:60-73`. This is what makes D10's "one change, both surfaces" literal. | brief.md |
+| **SA-12** | **`useFeatureOrdering()` is the single frontend gate.** AC-3.7/3.8/3.9/3.10 are four reasons for one visual state; four scattered `if`s is the frontend twin of the five-`if` backend failure. | brief.md |
+| **SA-13** | **`DataGridBase` gains one optional `onSortModelChange`** so the grid can know a sort is active (AC-3.9). Additive; `undefined` for every existing grid. | brief.md |
+| **SA-14** | **No index on `ManualRank`.** No query plan sorts in SQL; the only candidate write would add amplification to every sync. Falsifiable revisit: K6's 500 ms p95 failing at measured size. | brief.md |
+| **SA-15** | **#4365 forward-compat is two affordances that already exist** — the additive DTO/zod row model, and `WorkItemsDialog` via `onShowDetails`. Nothing is reserved or stubbed. | brief.md |
+| **SA-16** | **ADR-133's optional optimisation is taken**: `FeatureOrderingPolicyChanged` skips the forecast fan-out on *enable*, because INV-A3 makes "nothing moved" checkable in one comparison. Disable and re-enable still fan out. | ADR-133 |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+**HARD GATE.** Every overlapping component classified. CREATE NEW requires evidence that extending is
+**impossible**, not inconvenient.
+
+### REUSE AS-IS (13) — consumed unmodified
+
+`FeatureComparer` (source semantics untouched, per the DISCUSS out-of-scope list) · `LicenseGuardAttribute`
+· `RbacGuardAttribute` · `IRbacAdministrationService` · `IDomainEventDispatcher` · `IForecastUpdater` +
+`UpdateQueueService` coalescing · `EntityReferenceDto` · `Create-Migration.ps1` ·
+`ExpandOnlyMigrationGuardTest` · `useRbac()` / `useRbacGate()` · `useLicenseRestrictions()` +
+`LicenseTooltip` · `useHideCompletedFeatures` · `useTerminology` / `getTerm` · `WorkItemsDialog` ·
+`InputGroup` · `DataGridBase` virtualisation (AC-1.9 needs no new work).
+
+### EXTEND (17)
+
+Listed in *Component Decomposition* above. The three worth naming here:
+
+- **`FeaturesController`** — extended rather than joined by a new controller, because the result-set
+  filter and `FeatureDto` construction already live in one private helper there. A second controller
+  would mean a second filter (ADR-136 §A).
+- **`FeatureListDataGrid` + `columns.tsx`** — S16's promise cashed. Both new columns are injected by
+  the grid, not passed by callers, so the Portfolio surface gets them without editing
+  `PortfolioFeatureList.tsx` at all.
+- **`PortfolioDto`** — gains a service constructor parameter. Precedent: `FeatureDto` already takes
+  `ILighthouseClock` (`FeatureDto.cs:16`). Two call sites.
+
+### CREATE NEW (15) — each with the impossibility evidence
+
+| Component | Why extending is impossible |
+|---|---|
+| `IFeatureOrdering` + `FeatureOrdering` | The thing being created is *the absence of choice at four call sites*. No existing type sits on all four paths: `FeatureRepository` cannot reach `PortfolioDto`'s navigation-collection sort or `WorkItemService`'s pre-`Save` list sort (ADR-134 §C). Extending `FeatureComparer` with a mode leaves five construction sites each needing the policy (§B) |
+| `ManualRankComparer` | `FeatureComparer` parses `Order`; this compares `ManualRank` with a nulls-last rule and an `Id` tie-break. No shared code, and merging them would put the branch back inside the comparer that §B rejects |
+| `FeatureOrderingPolicy` enum | New vocabulary. ADR-132 fixed it as an enum specifically so it is not a bool |
+| `IFeatureOrderingPolicyProvider` | `IAppSettingService` is extended for the read/write; the *provider* exists so `FeatureOrdering` depends on one method rather than on the whole settings service, which would drag `TimeProvider` and the survey-nudge surface into the ordering path |
+| `IFeaturePositionMap` + `FeatureOrderKey` | `FeatureRepository.GetAll()` produces the right order but loads three `Include` graphs for every Feature in the instance (`FeatureRepository.cs:38-46`); `/features/ids` would pay a whole-instance graph load to number a handful of rows (ADR-135 §C). The projection cannot be expressed through `RepositoryBase<Feature>`, whose contract is `IEnumerable<Feature>` |
+| `IFeatureRankingService` | First write path on `Feature`'s ordering; nothing exists to extend. ADR-132 names it the sole writer |
+| `IFeatureMoveAuthorization` + `FeatureMoveVerdict` + `MoveBlockReason` | **`RbacGuardAttribute` resolves exactly one scope id from a route key** (`:78-102`) and `RbacGuardRequirement` has no all-of-a-set member. The rule's scope set is discovered from the entity's own state after loading it, so the attribute would need a pluggable scope-set resolver — new machinery on the mechanism the entire product's authorization depends on, to serve one endpoint (ADR-136 §C) |
+| `FeatureRankChanged`, `FeatureOrderingPolicyChanged` | New facts. ADR-133 §D rejected folding them into a coarser existing event |
+| `FeatureRankChangedForecastTriggerHandler` | `TeamDataRefreshedForecastTriggerHandler` resolves Portfolios from a **Team**; this resolves them from a **Feature**. Same shape, different source — a shared base would abstract over a one-line difference |
+| `MoveFeatureRankRequest` | Request DTO for a route that did not exist |
+| `FeaturesView.tsx` | `/features` has no page. `PortfolioFeatureList` is the reference class, not the component — it takes an `IPortfolio` and derives `involvedTeams`, `featuresInProgress` and its storage keys from it; a portfolio-less variant would be a mass of optional props |
+| `FeatureMoveMenu.tsx` | No row-action menu exists in `FeatureListDataGrid` today |
+| `useFeatureOrdering.ts` | `useRbacGate` answers **one** role-shaped question (`RbacGateRequirement` is a three-case union of scoped roles). This composes a policy setting, a licence status and a per-row server verdict. Adding a fourth non-role case to `useRbacGate` would make it not-an-RBAC-hook |
+| `FeatureOrderingSettings.tsx` | The Optional Features table is a generic Name/Description/Enabled renderer over server-seeded strings; AC-5.5's terminology-resolved help text cannot be produced there (ADR-134 §A.3) |
+| `models/FeatureOrdering.ts` | New types |
+
+### DELIBERATELY NOT REUSED (4) — the tempting shortcuts, named
+
+| Not reused | Why |
+|---|---|
+| **MUI-X row reordering** | Pro-licensed and not held. D18 removed the need before the licence was checked, so this is a non-cost rather than a workaround |
+| **The `OptionalFeature` mechanism** | The single most tempting reuse in this feature — a shipped premium gate, `SystemAdmin` guard, Settings UI and seeder, all free. It loses on AC-5.5 (server-seeded description vs `getTerm`), and the D16 violation is silent: the row would just say "Feature" on an instance that says "Deliverables" |
+| **`[RbacGuard(PortfolioWrite)]` on the move endpoint** | Would look right and be wrong: it resolves one scope from the route, so it would authorize against whichever Portfolio the caller named rather than every Portfolio the Feature belongs to |
+| **`FeatureRepository.GetAll()` for the position map** | Correct output, ~20× the bytes, paid by `/features/ids` on the Portfolio surface |
+
+---
+
+## Wave: DESIGN / [REF] C4 diagrams
+
+### L1 — System Context
+
+```mermaid
+C4Context
+    title System Context — Feature ordering (Epic 5375)
+    Person(po, "Product Owner", "Decides what the forecast should sequence first")
+    Person(admin, "Config Admin", "Owns the instance-wide ordering policy")
+    System(lh, "Lighthouse", "Forecasts delivery dates from a Feature queue")
+    System_Ext(tracker, "Work Tracking System", "ADO / Jira / Linear / CSV / ServiceNow")
+    Rel(po, lh, "Moves a Feature in the order, reads its position")
+    Rel(admin, lh, "Switches the ordering policy on and off")
+    Rel(lh, tracker, "Reads Features and their source Order from")
+    UpdateRelStyle(lh, tracker, $offsetY="-20")
+```
+
+The one arrow that is **not** drawn is the point: D8 forbids write-back, so nothing flows from
+Lighthouse to the tracker. The absent arrow is the decision.
+
+### L2 — Container
+
+```mermaid
+C4Container
+    title Container Diagram — Feature ordering (Epic 5375)
+    Person(po, "Product Owner")
+    Person(admin, "Config Admin")
+    Container(spa, "Lighthouse SPA", "React 18 + TypeScript + MUI-X Community", "Renders the Features view and the Portfolio Feature list from one shared grid")
+    Container(api, "Lighthouse Backend", "ASP.NET Core 10, modular monolith", "Serves the ordered, RBAC-filtered read and the one move command")
+    ContainerDb(db, "Instance Database", "SQLite / PostgreSQL / SQL Server", "Stores Feature.ManualRank and the ordering policy")
+    System_Ext(tracker, "Work Tracking System")
+    Rel(po, spa, "Reads positions in, moves Features from")
+    Rel(admin, spa, "Switches the ordering policy in")
+    Rel(spa, api, "Requests the ordered list from / sends a move to", "HTTPS, GET /features, PATCH /features/{id}/rank")
+    Rel(api, db, "Reads the rank and policy from / writes one rank block to")
+    Rel(api, tracker, "Refreshes Features from", "never writes rank back (D8)")
+    Rel(api, spa, "Pushes forecast completion to", "SignalR")
+```
+
+### L3 — Component: the ordering read/write seam
+
+Included below the usual threshold, for the reason brief.md states: this is where four decisions have
+to be read together, and "how do you know every ordering path agrees?" is the question this feature
+will attract.
+
+```mermaid
+C4Component
+    title Component Diagram — the ordering read/write seam
+    Container_Boundary(api, "Lighthouse Backend") {
+        Component(ctrl, "FeaturesController", "ASP.NET controller", "GET /features, PATCH /features/{id}/rank; GetFeaturesByPredicate is the ONE result-set filter")
+        Component(setctrl, "AppSettingsController", "ASP.NET controller", "PUT FeatureOrdering — premium + SystemAdmin")
+        Component(ord, "FeatureOrdering", "domain service", "THE single selection point; the only type that constructs a comparer")
+        Component(prov, "FeatureOrderingPolicyProvider", "driven adapter", "Reads the policy; absent row means SourceOrder")
+        Component(pos, "FeaturePositionMap", "read model", "Narrow projection over the whole table, ordered, numbered 1..N")
+        Component(rank, "FeatureRankingService", "domain service", "Insert-at-target; one transaction; sole rank writer")
+        Component(authz, "FeatureMoveAuthorization", "authorization", "Portfolios.Any() AND Portfolios.All(write)")
+        Component(repo, "FeatureRepository", "driven adapter", "Materialises and orders Features")
+        Component(disp, "DomainEventDispatcher", "in-process", "After-commit, ADR-027 D2")
+        Component(fc, "ForecastService", "domain service", "Draws from the first FeatureWIP Features in sequence")
+    }
+    ContainerDb(db, "Instance Database")
+    Container(spa, "Lighthouse SPA")
+
+    Rel(spa, ctrl, "Requests the ordered list from / sends a move to")
+    Rel(spa, setctrl, "Flips the policy through")
+    Rel(ctrl, repo, "Reads ordered Features from")
+    Rel(ctrl, pos, "Reads global positions from")
+    Rel(ctrl, authz, "Asks the move verdict of")
+    Rel(ctrl, rank, "Delegates the move to")
+    Rel(setctrl, prov, "Writes the policy through")
+    Rel(repo, ord, "Orders through")
+    Rel(pos, ord, "Orders through")
+    Rel(fc, repo, "Reads the forecast queue from")
+    Rel(ord, prov, "Reads the policy from")
+    Rel(rank, db, "Shifts one rank block in", "one transaction, set-based UPDATE")
+    Rel(rank, disp, "Publishes FeatureRankChanged to")
+    Rel(pos, db, "Projects Id + Order + ManualRank from", "no Include graph")
+    UpdateRelStyle(fc, repo, $offsetY="30")
+```
+
+Read the diagram for the invariant: **every path that produces an order passes through
+`FeatureOrdering`** — the API read, the position map and the forecast queue alike. That single
+convergence is K4, and `FeatureOrderingSingleSourceArchUnitTest` is what keeps the picture true.
+
+---
+
+## Wave: DESIGN / [REF] Refinements to upstream artifacts (no silent changes)
+
+| Item | Change | Why |
+|---|---|---|
+| **DISCUSS Q4 premise** | "First endpoint whose rows are RBAC-filtered" — **wrong**. `FeaturesController.cs:97-99` already does it, and both shipped GETs route through it. | Read from code this wave. |
+| **DISCUSS Q1 premise** | `OptionalFeature` framed as "preview capability" — **wrong**; `IsPremium` and `IsPreview` are separate flags (`OptionalFeature.cs:17-19`). Still rejected, on three better grounds. | ADR-134 §A. |
+| **AC-1.2** | "and lists nothing else" → orphaned Features are **visible and unmovable**. | SA-7 / ADR-136 §1. |
+| **AC-3.8** | The tooltip names a blocking Portfolio **only when the caller may read it**; otherwise a true unnamed sentence. | SA-9 / ADR-136 §3. |
+| **slice-01** | "an additive `rank` integer on `FeatureDto`" → **`position`**. | INV-O2 forbids reading a rank value; the two diverge once gaps exist. |
+| **slice-03** | "Transaction boundary such that a concurrent work-item refresh cannot interleave with a renumber" — **retired**. | ADR-132 §3 already retired the premise. |
+| **DISCUSS Q6** | Seeding is synchronous, no progress UI, governed by INV-A3. | ADR-134 §3. |
+
+Nothing else is touched. D1-D18 stand as written; DDD-1 … DDD-10 stand as written.
+
+---
+
+## Wave: DESIGN / [REF] Open Questions
+
+Carried forward deliberately. **No silent N/A.**
+
+| # | Question | Owner | Note |
+|---|---|---|---|
+| **OQ-1** | Does per-row move-verdict evaluation stay inside AC-1.9's budget at 500 Features? | DELIVER, measured | The mitigation (resolve the writable-Portfolio set once per request) is **required, not optional**. If still hot, add `GetWritablePortfolioIdsAsync` to `IRbacAdministrationService`, mirroring the readable one. A measurement away, not a redesign. |
+| **OQ-2** | Is D11's `Any() && All()` usable in a real multi-team instance? | field | Unchanged from DISCUSS and from the domain layer. All 90 Portfolio-linked Features on the dev instance sit in exactly one Portfolio, so it ships proven by integration test and seeded demo data alone. **Three ADR-136 decisions rest on it.** |
+| **OQ-3** | Does the `string.Compare` fallback in `FeatureComparer` behave identically across SQLite, PostgreSQL and SQL Server? | DISTILL / DELIVER | The comparison runs **in memory**, so it should be provider-independent — but "should" is the word this project has been burned by. The driven-port probe table makes it an assertion. Only bites instances whose `Order` is non-numeric (Jira LexoRank, ServiceNow record numbers). |
+| **OQ-4** | Should `Move to Bottom` materialise ranks for *all* null-ranked rows or only those it jumps? | DELIVER | INV-O4 says the jumped ones. On an instance where the policy was enabled and many Features have since arrived, "the ones it jumps" may be most of the tail. Bounded either way; flagged so the crafter does not discover it as a surprise. |
+| **OQ-5** | Does the Features view need search before slice 03 ships? | slice 01's dogfood | Slice 01's hypothesis 2 is still **inconclusive** — the premise check measured a dev instance, not a customer's. If it fires, slices 03/04 re-plan behind search. Not designed for here, deliberately. |
+| **OQ-6** | Website premium/pricing copy. | DELIVER | Unchanged from DISCUSS: owed, unverified, separate repo, confirm with the user before editing marketing copy. |
+| **OQ-7** | A `FeatureRankChanged` handler that throws is logged and swallowed (`DomainEventDispatcher.cs:20-34`), leaving the rank correct and the dates stale. | accepted gap | Named, not fixed. On a feature whose promise is "the forecast follows your priority", it is the one failure indistinguishable from success. No new observability ships; the future fix is a subscriber on the same event, not a redesign. There is **no AT for it** — DISTILL should not invent one against a swallowed exception. |
+
+---
+
+## Wave: DESIGN / [REF] Application-layer Handoff
+
+**To**: `nw-acceptance-designer` (DISTILL). **And**: `nw-platform-architect` (DEVOPS) — KPI section
+only; **no new infrastructure, no new dependency, no new external integration**. K2, K4 and K6 remain
+the instrumentable ones.
+
+Fixed for DISTILL:
+
+1. **One ordering seam.** `IFeatureOrdering` is the only type that constructs a comparer; four call
+   sites, not five (`FeaturesController.cs:93` is deleted). The AT for K4 feeds a gapped + duplicated +
+   partially-null rank set through `FeatureRepository.GetAll`, `GetAllByPredicate`, `PortfolioDto.Features`
+   and `GET /features` and asserts identical sequences.
+2. **`Position` is a computed global ordinal**, not the stored rank and not a row index. The AT that
+   pins it is AC-1.5's literal case: a non-contiguous subset returning `4` and `17`.
+3. **`GET /features` is `GetFeaturesByPredicate(_ => true)`.** Orphans appear and are unmovable — the
+   AT asserts 403 for a `SystemAdmin` on an orphan.
+4. **The move verdict is server-computed.** The single most important AT in the feature asserts
+   `canMove == false` ⟺ `PATCH` returns 403, across a read/write scope matrix. A Vitest separately
+   pins that `FeatureMoveMenu` renders disabled when `projects` is empty **or** fully writable — the
+   two fail-open shapes.
+5. **INV-A3.** Enable ⇒ `1..N` in pre-flip order; disable ⇒ ranks retained; re-enable ⇒ latecomers
+   append, no re-seed. One AT sequence covers AC-2.1, AC-2.6, AC-5.3.
+6. **The sync writes no rank.** Full refresh ⇒ every `ManualRank` byte-identical, every `Order`
+   updated (K2 / AC-2.2), plus a unit test on `Feature.Update`.
+7. **Test-stack caveat**: EF InMemory has no transactions. ADR-132 §3's concurrency claims must be
+   probed on a real provider or they are not probed at all.
+
+Two things DISTILL must **not** assume: that contiguity holds (INV-O2 — the ATs should deliberately
+produce gaps), and that a passing frontend test implies a correct gate (SA-10 — the fail-open
+expression passes every naive test).
