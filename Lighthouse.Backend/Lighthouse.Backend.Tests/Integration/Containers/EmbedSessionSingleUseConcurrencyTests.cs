@@ -172,17 +172,14 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             try
             {
+                await WarmRedemptionPathAsync(clients);
+
                 using var barrier = new Barrier(ConcurrentRedemptions);
                 var redemptions = clients
                     .Select(client => Task.Run(async () =>
                     {
                         barrier.SignalAndWait();
-                        using var response = await client.GetAsync(new Uri(
-                            $"{EmbedSessionTestHost.EntryPath}?token={Uri.EscapeDataString(token)}",
-                            UriKind.Relative));
-                        var cookie = EmbedSessionTestHost.ReadCookieValue(response, EmbedSessionTestHost.EmbedCookieName);
-
-                        return (response.StatusCode, CarriesEmbedCookie: cookie is { Length: > 0 });
+                        return await RedeemAsync(client, token);
                     }))
                     .ToList();
 
@@ -195,6 +192,47 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     client.Dispose();
                 }
             }
+        }
+
+        // D73, second half: hoisting the clients is not enough on its own. The first request through
+        // /embed/enter pays for JIT, the EF query compile and a physical Npgsql connection, and that
+        // cost swamps the request itself. In a cold process every racer pays it at once and they
+        // arrive together; once an earlier test in the fixture has warmed the process, only the
+        // connection opens are left to vary, the spread wins, and the losers read a row the winner
+        // has already committed. Each caller therefore spends one refused redemption before the
+        // barrier, so the raced request is the first one for nobody.
+        private static async Task WarmRedemptionPathAsync(IReadOnlyList<HttpClient> clients)
+        {
+            var warmups = clients
+                .Select(client => Task.Run(async () => await RedeemAsync(client, UnknownToken())))
+                .ToList();
+
+            var outcomes = await Task.WhenAll(warmups);
+
+            // The warm-up doubles what this fixture spends against EmbedSession, and TestServer
+            // reports no remote IP, so every client here shares the one "unknown" partition:
+            // 1 setup request + 8 warm-ups + 8 raced = 17 of 20 per 60 seconds. Asserted rather
+            // than commented, so raising ConcurrentRedemptions fails here saying why, instead of
+            // turning into a 429 the race below would read as a refusal.
+            Assert.That(outcomes.Select(outcome => outcome.StatusCode), Is.All.EqualTo(HttpStatusCode.Unauthorized),
+                "precondition: the warm-up must be refused for the token it presents, not rate limited");
+        }
+
+        private static string UnknownToken()
+        {
+            return $"{ViewerEmbedTestHost.NewNonce()}.{ViewerEmbedTestHost.NewNonce()}";
+        }
+
+        private static async Task<(HttpStatusCode StatusCode, bool CarriesEmbedCookie)> RedeemAsync(
+            HttpClient client,
+            string token)
+        {
+            using var response = await client.GetAsync(new Uri(
+                $"{EmbedSessionTestHost.EntryPath}?token={Uri.EscapeDataString(token)}",
+                UriKind.Relative));
+            var cookie = EmbedSessionTestHost.ReadCookieValue(response, EmbedSessionTestHost.EmbedCookieName);
+
+            return (response.StatusCode, CarriesEmbedCookie: cookie is { Length: > 0 });
         }
 
         private static async Task<ViewerEmbedTestHost.HandshakeReading> PollHandshakeAsync(HttpClient client, string nonce)

@@ -45,15 +45,19 @@ namespace Lighthouse.Backend.Tests.Models.Auth
         }
 
         [Test]
-        public void EmbedSessionToken_UnsetIdentifiers_AreEmpty()
+        public void EmbedSessionToken_UnsetIdentifiers_AreNull()
         {
             var token = new EmbedSessionToken();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(token.TokenId, Is.Empty,
+                // ADR-132 D65: null, not empty. IX_EmbedSessionTokens_TokenId is unique and exempts
+                // NULLs; an empty-string default would collide across refusal rows and fail the
+                // IS NULL arm of CK_EmbedSessionTokens_GrantOrRefusal. The original rationale —
+                // that no unset row should carry a real, lookupable identifier — is served by null.
+                Assert.That(token.TokenId, Is.Null,
                     "a default sentinel would be a real, lookupable TokenId shared by every unset row");
-                Assert.That(token.SecretHash, Is.Empty);
+                Assert.That(token.SecretHash, Is.Null);
                 Assert.That(token.RedeemedAt, Is.Null);
                 Assert.That(token.RevokedAt, Is.Null);
             }
