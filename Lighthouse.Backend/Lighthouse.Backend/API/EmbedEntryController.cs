@@ -133,10 +133,8 @@ namespace Lighthouse.Backend.API
             return returnPath;
         }
 
-        private ContentResult Refuse()
+        private static ContentResult Refuse()
         {
-            Response.StatusCode = StatusCodes.Status401Unauthorized;
-
             return new ContentResult
             {
                 StatusCode = StatusCodes.Status401Unauthorized,
