@@ -17,5 +17,15 @@ namespace Lighthouse.Backend.API.DTO
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? RefusalCode { get; set; }
+
+        /// <summary>
+        /// How long the session this grant leads to will last, so the Forge app can decide on a
+        /// later page load whether the embed cookie it already holds is still worth framing. It
+        /// cannot find out any other way — D13 gives a cross-origin frame no observable signal, and
+        /// the cookie is HttpOnly and partitioned. Seconds rather than an instant, because the
+        /// session starts at hop 3, not here.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? SessionLifetimeSeconds { get; set; }
     }
 }

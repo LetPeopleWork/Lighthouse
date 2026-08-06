@@ -472,6 +472,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 using var document = JsonDocument.Parse(Body);
                 return document.RootElement.GetProperty(propertyName).GetString() ?? string.Empty;
             }
+
+            public int ReadInt32(string propertyName)
+            {
+                using var document = JsonDocument.Parse(Body);
+                return document.RootElement.GetProperty(propertyName).GetInt32();
+            }
         }
 
         /// <summary>D62: the lost race must be observable. The only server-side observable is the log.</summary>

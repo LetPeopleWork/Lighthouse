@@ -1,4 +1,5 @@
 using System.Net;
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Security
@@ -192,6 +193,31 @@ namespace Lighthouse.Backend.Tests.API.Security
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound),
                 "the same answer Disabled gives (D31): the embed surface does not exist on an instance "
                 + "whose authentication cannot work");
+        }
+
+        /// <summary>
+        /// The Forge app has to decide, on a later page load, whether the embed cookie it already
+        /// holds is still worth framing — and it cannot ask: D13 gives a cross-origin frame no
+        /// observable signal, and the cookie is HttpOnly and partitioned. So the grant carries the
+        /// window. Hardcoding it in the app would duplicate `Embed:SessionLifetimeMinutes` and drift
+        /// from it, which is the shape of Bug #5696.
+        /// </summary>
+        [Test]
+        public async Task AGrant_CarriesTheSessionWindow_AndNothingElseDoes()
+        {
+            var (_, grant) = await host.GrantEmbedSessionAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var neverIssued = await ViewerEmbedTestHost.PollHandshakeAsync(host.AuthEnabled, ViewerEmbedTestHost.NewNonce());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(grant.HasProperty("sessionLifetimeSeconds"), Is.True,
+                    "a granted handshake must say how long the session it leads to lasts");
+                Assert.That(grant.ReadInt32("sessionLifetimeSeconds"),
+                    Is.EqualTo(EmbedConfiguration.DefaultSessionLifetimeMinutes * 60),
+                    "and it must be the configured window, not a number the app guessed");
+                Assert.That(neverIssued.HasProperty("sessionLifetimeSeconds"), Is.False,
+                    "D45: a response that carries it on anything but a grant is an existence oracle");
+            }
         }
 
         private async Task<string> ConsumedNonceAsync(string subject)

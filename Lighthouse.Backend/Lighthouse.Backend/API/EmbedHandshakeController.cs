@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.API
 {
@@ -17,8 +18,17 @@ namespace Lighthouse.Backend.API
     [AllowAnonymous]
     public class EmbedHandshakeController(
         IAuthModeResolver authModeResolver,
-        IEmbedSessionTokenService embedSessionTokenService) : ControllerBase
+        IEmbedSessionTokenService embedSessionTokenService,
+        IOptionsMonitor<EmbedConfiguration> embedConfiguration) : ControllerBase
     {
+        private int ResolveSessionLifetimeSeconds()
+        {
+            var configured = embedConfiguration.CurrentValue.SessionLifetimeMinutes;
+            var minutes = configured > 0 ? configured : EmbedConfiguration.DefaultSessionLifetimeMinutes;
+
+            return minutes * 60;
+        }
+
         [HttpGet("handshake/{nonce}")]
         [EnableRateLimiting(RateLimitingConfiguration.EmbedSessionPolicy)]
         [ProducesResponseType<EmbedHandshakeResponse>(StatusCodes.Status200OK)]
@@ -43,6 +53,9 @@ namespace Lighthouse.Backend.API
                 Token = outcome.Token,
                 ExpiresAt = outcome.ExpiresAt,
                 RefusalCode = outcome.RefusalCode,
+
+                // Only on a grant: D45 keeps unresolved, unknown, consumed and refused identical.
+                SessionLifetimeSeconds = outcome.Token is null ? null : ResolveSessionLifetimeSeconds(),
             });
         }
     }
