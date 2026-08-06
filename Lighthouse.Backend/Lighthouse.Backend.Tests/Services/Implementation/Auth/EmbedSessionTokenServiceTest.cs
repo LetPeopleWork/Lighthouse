@@ -144,9 +144,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         }
 
         /// <summary>
-        /// Slice 03 removed the API-key mint, and the mint was the only thing that pruned. Every
-        /// sign-in attempt writes a row here — a grant or a refusal — so without this the table is
-        /// append-only forever, on the one path that is left.
+        /// Recording an outcome is the only write there is, so it is the only place a prune can
+        /// happen — without it the table is append-only forever.
         /// </summary>
         [Test]
         public async Task RecordingAHandshakeOutcome_PrunesTheRowsAlreadySpent()
@@ -162,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task RecordingAHandshakeRefusal_PrunesTheRowsAlreadySpent()
         {
             await CreateSubject().RecordHandshakeRefusalAsync(
-                "viewer", Nonce, "no_access", TestContext.CurrentContext.CancellationToken);
+                "viewer", Nonce, "no_profile", TestContext.CurrentContext.CancellationToken);
 
             repository.Verify(
                 store => store.PruneSpentAsync(FixedNow.UtcDateTime, It.IsAny<CancellationToken>()),

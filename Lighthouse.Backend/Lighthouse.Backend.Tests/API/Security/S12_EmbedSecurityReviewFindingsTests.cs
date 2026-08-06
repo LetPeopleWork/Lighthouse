@@ -3,9 +3,8 @@ using Lighthouse.Backend.Configuration;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    // Epic 5146 slice 02a (#5641) — the S1-S10 security review of 2026-08-04, finding F1.
-    // F2 and F3 guarded the API-key embed session, which no longer exists; F3's control now reads
-    // "deleting the viewer ends their live frame" and lives in S14.
+    // Epic 5146 slice 02a (#5641) — the S1-S10 security review of 2026-08-04, finding F1. F3's
+    // control lives in S14; F2 has no subject left to guard.
     public class S12_EmbedSecurityReviewFindingsTests
     {
         // F1. Every other rate-limit test configures the policy it then exercises, so all of them pass

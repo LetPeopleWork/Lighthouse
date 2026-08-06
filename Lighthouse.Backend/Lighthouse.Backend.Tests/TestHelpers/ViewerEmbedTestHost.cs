@@ -90,6 +90,37 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public CapturedLogEvents LogEvents { get; } = new();
 
+        /// <summary>
+        /// All three hops share the EmbedSession policy, so a fixture driving many sign-ins spends
+        /// three permits each. Raised here rather than by racing fewer callers — S12 is what pins the
+        /// shipped limit, and a concurrency probe must not be shaped by one.
+        /// </summary>
+        public WebApplicationFactory<Program> WithEmbedRateLimit(int permitLimit, int windowSeconds)
+        {
+            return BuildHost(
+                configuredAuthority: true,
+                premiumLicence: true,
+                extraSettings: new Dictionary<string, string?>
+                {
+                    ["RateLimits:Enabled"] = "true",
+                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:PermitLimit"] = permitLimit.ToString(CultureInfo.InvariantCulture),
+                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:WindowSeconds"] = windowSeconds.ToString(CultureInfo.InvariantCulture),
+                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:QueueLimit"] = "0",
+                });
+        }
+
+        /// <summary>An instance whose grants carry a deliberately short — or misconfigured — token window.</summary>
+        public WebApplicationFactory<Program> WithTokenLifetime(int seconds)
+        {
+            return BuildHost(
+                configuredAuthority: true,
+                premiumLicence: true,
+                extraSettings: new Dictionary<string, string?>
+                {
+                    [TokenLifetimeConfigurationKey] = seconds.ToString(CultureInfo.InvariantCulture),
+                });
+        }
+
         public static HttpClient CreateClient(WebApplicationFactory<Program> host)
         {
             return host.CreateClient(new WebApplicationFactoryClientOptions
@@ -143,37 +174,6 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 : $"{EntryPath}?token={Uri.EscapeDataString(token)}&returnPath={Uri.EscapeDataString(returnPath)}";
 
             return await client.GetAsync(path);
-        }
-
-        /// <summary>
-        /// All three hops share the EmbedSession policy, so a fixture driving many sign-ins spends
-        /// three permits each. Raised here rather than by racing fewer callers — S12 is what pins the
-        /// shipped limit, and a concurrency probe must not be shaped by one.
-        /// </summary>
-        public WebApplicationFactory<Program> WithEmbedRateLimit(int permitLimit, int windowSeconds)
-        {
-            return BuildHost(
-                configuredAuthority: true,
-                premiumLicence: true,
-                extraSettings: new Dictionary<string, string?>
-                {
-                    ["RateLimits:Enabled"] = "true",
-                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:PermitLimit"] = permitLimit.ToString(CultureInfo.InvariantCulture),
-                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:WindowSeconds"] = windowSeconds.ToString(CultureInfo.InvariantCulture),
-                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:QueueLimit"] = "0",
-                });
-        }
-
-        /// <summary>An instance whose grants carry a deliberately short — or misconfigured — token window.</summary>
-        public WebApplicationFactory<Program> WithTokenLifetime(int seconds)
-        {
-            return BuildHost(
-                configuredAuthority: true,
-                premiumLicence: true,
-                extraSettings: new Dictionary<string, string?>
-                {
-                    [TokenLifetimeConfigurationKey] = seconds.ToString(CultureInfo.InvariantCulture),
-                });
         }
 
         public static async Task<HttpResponseMessage> GetAsViewerAsync(
