@@ -13,7 +13,11 @@ import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
-import { createActiveWorkColumn, createWarningsColumn } from "./columns";
+import {
+	createActiveWorkColumn,
+	createPositionColumn,
+	createWarningsColumn,
+} from "./columns";
 import type { FeatureListDataGridProps } from "./types";
 
 const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
@@ -61,11 +65,13 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 				columns={(() => {
 					const [nameCol, ...restCols] = columns;
+					const positionCol = createPositionColumn("#");
 					const warningsCol = createWarningsColumn();
 					const activeWorkCol = getActiveWorkTeams
 						? createActiveWorkColumn(getActiveWorkTeams)
 						: null;
 					return [
+						positionCol,
 						nameCol,
 						warningsCol,
 						...(activeWorkCol ? [activeWorkCol] : []),

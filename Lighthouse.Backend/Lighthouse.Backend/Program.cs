@@ -1018,6 +1018,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IPercentilesOverTimeSeriesQuery, PercentilesOverTimeSeriesQuery>();
             builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
+            builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();

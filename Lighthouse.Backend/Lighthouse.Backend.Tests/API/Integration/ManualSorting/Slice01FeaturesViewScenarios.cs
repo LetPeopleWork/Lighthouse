@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @walking_skeleton @driving_port @AC-1.2
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task The_product_owner_sees_every_feature_from_the_portfolios_they_may_read_and_nothing_else()
         {
             var platform = GivenAPortfolio("Platform");
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @driving_port @AC-1.5 — the literal proof case: two rows shown next to each other read 4 and 17
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task Two_features_shown_next_to_each_other_report_their_places_across_the_whole_instance()
         {
             var platform = GivenAPortfolio("Platform");
@@ -54,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @AC-1.4 — many-to-many membership (S7); the shared-Feature case the dev instance has none of
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task A_feature_two_portfolios_share_is_listed_once_and_names_both()
         {
             var platform = GivenAPortfolio("Platform");
@@ -70,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @AC-1.2 refined by ADR-136 §1 — a Feature in no Portfolio is visible to everyone
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task A_feature_belonging_to_no_portfolio_stays_visible()
         {
             var platform = GivenAPortfolio("Platform");
@@ -86,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @AC-1.3 — the view is general infrastructure, not a premium sorting page (D12)
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task The_features_view_opens_on_an_instance_with_no_premium_licence()
         {
             var platform = GivenAPortfolio("Platform");
@@ -103,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @AC-1.7 — finished Features keep their place, so hiding them cannot renumber the rest (DDD-5)
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task A_finished_feature_still_occupies_its_place_in_the_order()
         {
             var platform = GivenAPortfolio("Platform");
@@ -120,7 +114,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @error @AC-1.8 — a tracker that never ranked this Feature (ServiceNow, a CSV without the column)
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task A_feature_the_tracker_never_ranked_still_reports_its_place()
         {
             var platform = GivenAPortfolio("Platform");
@@ -135,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @AC-1.9 (backend half) — the read port answers for an instance of five hundred Features
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task The_features_view_answers_for_an_instance_of_five_hundred_features()
         {
             var platform = GivenAPortfolio("Platform");
@@ -153,7 +145,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @AC-1.2 @branch — self-hosted single-user default: everyone may move everything
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task With_access_control_switched_off_every_portfolio_is_writable()
         {
             using var store = BuildIsolatedContext();
@@ -166,7 +157,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @error @branch — a half-configured instance must fail closed
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task With_access_control_only_half_configured_no_portfolio_is_writable()
         {
             using var store = BuildIsolatedContext();
@@ -179,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @branch — an access-control manager already passes the per-Portfolio check everywhere
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task Whoever_administers_access_control_may_write_every_portfolio()
         {
             using var store = BuildIsolatedContext();
@@ -192,7 +181,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @error @branch — an unrecognised caller must fail closed
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task An_unrecognised_caller_may_write_no_portfolio()
         {
             using var store = BuildIsolatedContext();
@@ -205,7 +193,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         // @error @branch — the predicate swap itself: reading a Portfolio never implies writing it
         [Test]
-        [Ignore("RED — Epic 5375 slice 01 not implemented")]
         public async Task Someone_who_may_only_read_a_portfolio_may_not_write_it()
         {
             using var store = BuildIsolatedContext();

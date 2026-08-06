@@ -71,5 +71,9 @@ namespace Lighthouse.Backend.API.DTO
 
         // Non-empty means the feature cannot be forecast, and names the teams to chase (ADR-112).
         public List<string> TeamsWithoutForecast { get; } = [];
+
+        // The place this Feature holds across the whole instance (ADR-135). Null on the read paths that
+        // do not number - the ordinal is only meaningful over the full ordered set.
+        public int? Position { get; set; }
     }
 }

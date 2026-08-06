@@ -36,14 +36,18 @@ export const createForecastsColumn = (
 	),
 });
 
-// __SCAFFOLD__ Epic 5375 slice 01 (DISTILL). The value is the backend-supplied global position
-// (ADR-135) — never the row index. Shared factory, so it lands on the Features view and the
-// Portfolio Feature list at once (D10).
+// The value is the backend-supplied global position (ADR-135) — never the row index. Shared factory,
+// so it lands on the Features view and the Portfolio Feature list at once (D10).
 export const createPositionColumn = (
-	_headerLabel: string,
-): DataGridColumn<IFeature & GridValidRowModel> => {
-	throw new Error("Not yet implemented — RED scaffold");
-};
+	headerLabel: string,
+): DataGridColumn<IFeature & GridValidRowModel> => ({
+	field: "position",
+	headerName: headerLabel,
+	width: 70,
+	sortable: true,
+	valueGetter: (_, row) => row.position,
+	renderCell: ({ row }) => <span>{row.position ?? ""}</span>,
+});
 
 export const createStateColumn = (): DataGridColumn<
 	IFeature & GridValidRowModel

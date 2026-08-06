@@ -19,7 +19,7 @@ const renderCell = (row: IFeature, headerLabel = "#") => {
 	render(column.renderCell?.({ row, value: row.position }));
 };
 
-describe.skip("createPositionColumn — RED, slice 01 not implemented", () => {
+describe("createPositionColumn", () => {
 	it("shows the place the row holds across the whole instance", () => {
 		renderCell(feature({ position: 17 }));
 

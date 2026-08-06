@@ -38,8 +38,10 @@ namespace Lighthouse.Backend.Tests.API
             parentFeatures.Clear();
             workItems.Clear();
 
+            // Mirrors FeatureRepository.GetAllByPredicate, which orders by FeatureComparer before returning -
+            // the controller no longer re-sorts what the repository already sorted (ADR-134 / SA-2).
             featureRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Union(parentFeatures).Where(predicate.Compile()).AsQueryable());
+                .Returns((Expression<Func<Feature, bool>> predicate) => features.Union(parentFeatures).Where(predicate.Compile()).OrderBy(f => f, new FeatureComparer()).AsQueryable());
 
             featureRepositoryMock.Setup(x => x.GetById(It.IsAny<int>()))
                 .Returns((int id) => features.Union(parentFeatures).SingleOrDefault(f => f.Id == id));
@@ -419,7 +421,14 @@ namespace Lighthouse.Backend.Tests.API
 
         private FeaturesController CreateSubject()
         {
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
+            var featurePositionMapMock = new Mock<IFeaturePositionMap>();
+            featurePositionMapMock
+                .Setup(x => x.GetAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => features.Union(parentFeatures)
+                    .Select((feature, index) => (feature.Id, Position: index + 1))
+                    .ToDictionary(entry => entry.Id, entry => entry.Position));
+
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
     }
 }

@@ -3,12 +3,22 @@ import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IFeatureService {
+	getAllFeatures(): Promise<IFeature[]>;
 	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]>;
 	getFeaturesByReferences(featureReferences: string[]): Promise<IFeature[]>;
 	getFeatureWorkItems(featureId: number): Promise<IWorkItem[]>;
 }
 
 export class FeatureService extends BaseApiService implements IFeatureService {
+	// Every Feature the caller may read, across every Portfolio, in forecast order (US-01).
+	getAllFeatures(): Promise<IFeature[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>("/features");
+
+			return BaseApiService.deserializeFeatures(response.data);
+		});
+	}
+
 	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]> {
 		return this.withErrorHandling(async () => {
 			// Return empty array if no feature IDs are provided

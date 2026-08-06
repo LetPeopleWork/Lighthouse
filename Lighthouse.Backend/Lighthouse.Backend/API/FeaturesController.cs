@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -21,22 +21,39 @@ namespace Lighthouse.Backend.API
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IRbacAdministrationService rbacAdministrationService;
         private readonly IBlockedItemService blockedItemService;
+        private readonly IFeaturePositionMap featurePositionMap;
         private readonly ILighthouseClock clock;
 
+#pragma warning disable S107 // The position map is a read-model port of its own (ADR-135); folding it into another dependency would hide which read paths number their rows.
         public FeaturesController(
             IRepository<Feature> featureRepository,
             IWorkItemRepository workItemRepository,
             IBlackoutPeriodService blackoutPeriodService,
             IRbacAdministrationService rbacAdministrationService,
             IBlockedItemService blockedItemService,
+            IFeaturePositionMap featurePositionMap,
             ILighthouseClock clock)
+#pragma warning restore S107
         {
             this.featureRepository = featureRepository;
             this.workItemRepository = workItemRepository;
             this.blackoutPeriodService = blackoutPeriodService;
             this.rbacAdministrationService = rbacAdministrationService;
             this.blockedItemService = blockedItemService;
+            this.featurePositionMap = featurePositionMap;
             this.clock = clock;
+        }
+
+        /// <summary>
+        /// Every Feature the caller may read, across every Portfolio, in the order the forecast draws from.
+        /// Not premium-gated (D12) - the view is general infrastructure, not the sorting page.
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<List<FeatureDto>>> GetAllFeatures()
+        {
+            var features = await GetFeaturesByPredicate(_ => true);
+
+            return Ok(features);
         }
 
         [HttpGet("ids")]
@@ -90,15 +107,19 @@ namespace Lighthouse.Backend.API
 
         private async Task<List<FeatureDto>> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)
         {
-            var features = featureRepository.GetAllByPredicate(predicate).OrderBy(f => f, new FeatureComparer()).ToList();
+            var features = featureRepository.GetAllByPredicate(predicate).ToList();
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
+            var positions = await featurePositionMap.GetAsync(HttpContext?.RequestAborted ?? default);
             var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
             return features
                 .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
-                .Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet))
+                .Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet)
+                {
+                    Position = positions.TryGetValue(f.Id, out var position) ? position : null,
+                })
                 .ToList();
         }
 

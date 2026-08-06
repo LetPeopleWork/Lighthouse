@@ -155,14 +155,44 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ToList();
         }
 
-        // __SCAFFOLD__ Epic 5375 slice 01 (DISTILL). Mirrors GetReadablePortfolioIdsAsync with
-        // HasPortfolioWritePermission swapped in; all four early returns carry over unchanged.
-        public Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
+        /// <summary>
+        /// Epic 5375 OQ-1. The write twin of <see cref="GetReadablePortfolioIdsAsync"/>: same four early
+        /// returns, <see cref="HasPortfolioWritePermission"/> swapped in. Diverging on any branch would be
+        /// silent over- or under-permission on a write path rather than a visible error.
+        /// </summary>
+        public async Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
             ClaimsPrincipal principal,
             IEnumerable<int> portfolioIds,
             CancellationToken cancellationToken = default)
         {
-            throw new InvalidOperationException("Not yet implemented — RED scaffold");
+            var distinctPortfolioIds = portfolioIds.Distinct().ToArray();
+
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return distinctPortfolioIds;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return [];
+            }
+
+            if (await CanManageRbacAsync(principal, cancellationToken))
+            {
+                return distinctPortfolioIds;
+            }
+
+            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
+            if (currentUser is null)
+            {
+                return [];
+            }
+
+            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+
+            return distinctPortfolioIds
+                .Where(portfolioId => HasPortfolioWritePermission(effectivePermissions, portfolioId))
+                .ToList();
         }
 
 

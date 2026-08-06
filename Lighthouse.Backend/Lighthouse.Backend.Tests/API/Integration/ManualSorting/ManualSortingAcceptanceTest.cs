@@ -212,18 +212,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         /// </summary>
         protected async Task<(HttpStatusCode Status, string Body)> GetAllFeatures()
         {
-            try
-            {
-                var response = await Client.GetAsync("/api/latest/features");
-                return (response.StatusCode, await response.Content.ReadAsStringAsync());
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("SPA default page", StringComparison.Ordinal))
-            {
-                // No route is mapped, so the request falls through to the SPA fallback, which throws
-                // because the test host has no wwwroot. Report the 404 it really is, so a scenario fails
-                // on its own assertion instead of on host plumbing.
-                return (HttpStatusCode.NotFound, "<no route mapped for the Features view read port>");
-            }
+            var response = await Client.GetAsync("/api/latest/features");
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
         // --- Writable-batch port under test (OQ-1 closure) ---

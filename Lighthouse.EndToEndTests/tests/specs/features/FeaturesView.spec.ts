@@ -11,11 +11,11 @@ const testWithFeatures = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 //     unlicensed instance and the 500-row read -> Slice01FeaturesViewScenarios.cs
 //   - the position cell's rendering and the terminology-driven nav label -> columns.position.test.tsx
 //     and Header.featuresNav.test.tsx
-//
-// RED until slice 01 ships: skipped so the suite stays pushable. Un-skip to resume.
-testWithFeatures.skip(
+testWithFeatures(
 	"should list the seeded features in forecast order, each showing where it sits",
-	async ({ overviewPage }) => {
+	async ({ testData, overviewPage }) => {
+		expect(testData.portfolios.length).toBeGreaterThan(0);
+
 		const featuresPage =
 			await overviewPage.lighthousePage.goToFeatures("Features");
 

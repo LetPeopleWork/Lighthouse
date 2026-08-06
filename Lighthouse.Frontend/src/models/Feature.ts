@@ -18,8 +18,7 @@ export interface IFeature extends IWorkItem {
 	forecasts: IWhenForecast[];
 	// Non-empty means no forecast exists at all, and names the teams to chase (ADR-112).
 	teamsWithoutForecast?: string[];
-	// __SCAFFOLD__ Epic 5375: the place in the order across the whole instance, supplied by the
-	// backend (ADR-135). Optional until the parse boundary carries it.
+	// The place in the order across the whole instance, supplied by the backend (ADR-135).
 	position?: number;
 
 	getRemainingWorkForFeature(): number;
@@ -53,6 +52,7 @@ export const FeatureSchema = z.object({
 	totalWork: WorkByTeamSchema,
 	forecasts: z.array(WhenForecastSchema),
 	teamsWithoutForecast: z.array(z.string()).optional().default([]),
+	position: z.number().nullable().optional(),
 });
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
@@ -169,6 +169,7 @@ export class Feature implements IFeature {
 			WhenForecast.new(forecast.probability, forecast.expectedDate),
 		);
 		feature.teamsWithoutForecast = data.teamsWithoutForecast ?? [];
+		feature.position = data.position ?? undefined;
 		return feature;
 	}
 }

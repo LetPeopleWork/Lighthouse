@@ -60,7 +60,7 @@ const renderHeaderWhereFeaturesAreCalled = (featuresTerm: string) => {
 	);
 };
 
-describe.skip("Header — the way in to the Features view (RED, slice 01 not implemented)", () => {
+describe("Header — the way in to the Features view", () => {
 	it("offers a third way in beside Overview and System Settings", async () => {
 		renderHeaderWhereFeaturesAreCalled("Features");
 

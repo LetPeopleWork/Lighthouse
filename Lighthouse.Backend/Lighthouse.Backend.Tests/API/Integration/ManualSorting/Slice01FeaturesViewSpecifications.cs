@@ -222,10 +222,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         private static List<ListedFeature> ParseListedFeatures((HttpStatusCode Status, string Body) response)
         {
+#pragma warning disable NUnit2045 // Guard-then-parse, not independent asserts: under Assert.Multiple the JSON parse below would run on a failed response and throw over the clear message.
             Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
                 $"The Features view read port must answer. Body: {Excerpt(response.Body)}");
             Assert.That(response.Body.TrimStart(), Does.StartWith("["),
                 $"The read port must return a JSON array, not HTML/other — the endpoint appears unimplemented. Body starts: {Excerpt(response.Body)}");
+#pragma warning restore NUnit2045
 
             using var document = JsonDocument.Parse(response.Body);
 
@@ -241,10 +243,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         private static int ReadPosition(JsonElement element)
         {
+#pragma warning disable NUnit2045 // Guard-then-read: the second assert is only meaningful once the property exists, and GetInt32 below would throw under Assert.Multiple.
             Assert.That(element.TryGetProperty("position", out var position), Is.True,
                 $"Every row must carry its place in the order. Row: {Excerpt(element.ToString())}");
             Assert.That(position.ValueKind, Is.EqualTo(JsonValueKind.Number),
                 $"The position must be a number — never null, never a blank string. Row: {Excerpt(element.ToString())}");
+#pragma warning restore NUnit2045
 
             return position.GetInt32();
         }

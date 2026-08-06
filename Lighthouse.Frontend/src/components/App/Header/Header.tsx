@@ -17,6 +17,8 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { useTerminology } from "../../../services/TerminologyContext";
 import LicenseStatusIcon from "../../Common/LicenseStatus/LicenseStatusIcon";
 import ThemeToggler from "../../Common/ThemeToggler/ThemeToggler";
 import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
@@ -39,6 +41,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
 	const theme = useTheme();
 	const rbac = useRbac();
+	const { getTerm } = useTerminology();
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const [mobileOpen, setMobileOpen] = useState(false);
 	const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
@@ -58,6 +61,8 @@ const Header: React.FC<HeaderProps> = ({
 	const navigationLinks = [
 		{ path: "/", text: "Overview" },
 		{ path: "/settings", text: "System Settings" },
+		// D16: the instance's own word for its Features, never a hard-coded "Features".
+		{ path: "/features", text: getTerm(TERMINOLOGY_KEYS.FEATURES) },
 	];
 
 	const drawer = (
