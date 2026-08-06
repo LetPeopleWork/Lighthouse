@@ -50,6 +50,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListedPositionsAre(response, PlatformPositions);
         }
 
+        // @AC-1.5 — the place belongs to the instance, not to whoever is looking: callers holding disjoint
+        // scopes over the two Portfolios a Feature shares must all read the same number for it (ADR-135).
+        [Test]
+        public async Task Callers_with_disjoint_scopes_read_the_same_place_for_the_feature_they_share()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var payments = GivenAPortfolio("Payments");
+            GivenAFeatureTheTrackerRanked("Rebuild the search index", "1", platform);
+            GivenAFeatureTheTrackerRanked("Move checkout to the new gateway", "2", platform, payments);
+            GivenAFeatureTheTrackerRanked("Retire the legacy importer", "3", payments);
+
+            GivenTheCallerMayReadOnly(platform);
+            var throughPlatform = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            GivenTheCallerMayWriteOnly(payments);
+            var throughPayments = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            GivenTheCallerAdministersTheInstance();
+            var throughTheWholeInstance = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            ThenTheSharedFeatureReportsTheSamePlaceToEveryCaller(
+                "Move checkout to the new gateway", throughPlatform, throughPayments, throughTheWholeInstance);
+        }
+
         // @AC-1.4 — many-to-many membership (S7); the shared-Feature case the dev instance has none of
         [Test]
         public async Task A_feature_two_portfolios_share_is_listed_once_and_names_both()
@@ -124,6 +148,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             var response = await WhenTheProductOwnerOpensTheFeaturesView();
 
             ThenEveryListedFeatureReportsAPosition(response);
+        }
+
+        // @AC-1.2 — the rows and their places are numbered by one and the same key, so a rank the tracker
+        // repeated, or never gave at all, can never leave the list reading out of position order.
+        [Test]
+        public async Task Features_the_tracker_ranked_alike_are_listed_in_the_order_their_places_claim()
+        {
+            var platform = GivenAPortfolio("Platform");
+            GivenAFeatureTheTrackerRanked("Rebuild the search index", "5", platform);
+            GivenAFeatureTheTrackerRanked("Retire the legacy importer", "5", platform);
+            GivenAFeatureTheTrackerNeverRanked("Arrived without a rank", platform);
+            GivenAFeatureTheTrackerNeverRanked("Also arrived without a rank", platform);
+            GivenAFeatureTheTrackerRanked("Publish the partner catalogue", "1", platform);
+            GivenTheCallerMayReadOnly(platform);
+
+            var response = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            ThenTheListedPositionsAscend(response);
         }
 
         // @AC-1.9 (backend half) — the read port answers for an instance of five hundred Features

@@ -28,6 +28,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	loading = false,
 	emptyStateMessage,
 	getActiveWorkTeams,
+	showPosition = false,
 }) => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -53,7 +54,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		? createActiveWorkColumn(getActiveWorkTeams)
 		: null;
 	const gridColumns = [
-		createPositionColumn("#"),
+		...(showPosition ? [createPositionColumn("#")] : []),
 		nameColumn,
 		createWarningsColumn(),
 		...(activeWorkColumn ? [activeWorkColumn] : []),

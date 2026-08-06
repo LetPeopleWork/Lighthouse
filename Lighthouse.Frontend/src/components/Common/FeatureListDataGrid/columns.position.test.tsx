@@ -16,7 +16,7 @@ const feature = (overrides: Partial<IFeature> = {}): IFeature =>
 
 const renderCell = (row: IFeature, headerLabel = "#") => {
 	const column = createPositionColumn(headerLabel);
-	render(column.renderCell?.({ row, value: row.position }));
+	return render(column.renderCell?.({ row, value: row.position }));
 };
 
 describe("createPositionColumn", () => {
@@ -26,16 +26,10 @@ describe("createPositionColumn", () => {
 		expect(screen.getByText("17")).toBeInTheDocument();
 	});
 
-	it("shows a place for a feature that arrived without a rank from the tracker", () => {
-		renderCell(feature({ position: 42 }));
+	it("leaves the cell blank when the place is missing", () => {
+		const { container } = renderCell(feature());
 
-		expect(screen.getByText("42")).toBeInTheDocument();
-	});
-
-	it("leaves the cell blank rather than printing NaN when the place is missing", () => {
-		renderCell(feature());
-
-		expect(screen.queryByText("NaN")).not.toBeInTheDocument();
+		expect(container.textContent).toBe("");
 	});
 
 	it("takes the header label it is given rather than naming the concept itself", () => {

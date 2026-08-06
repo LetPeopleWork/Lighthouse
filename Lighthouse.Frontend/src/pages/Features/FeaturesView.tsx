@@ -68,6 +68,7 @@ const FeaturesView: React.FC = () => {
 				hideCompletedStorageKey="lighthouse_hide_completed_features_all"
 				loading={isLoading}
 				emptyStateMessage={`No ${featuresTerm} found`}
+				showPosition
 			/>
 		</Container>
 	);

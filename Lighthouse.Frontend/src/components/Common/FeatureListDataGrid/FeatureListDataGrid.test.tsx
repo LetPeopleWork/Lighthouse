@@ -25,6 +25,7 @@ const createFeature = (
 		stateCategory: string;
 		remainingWork: { [key: number]: number };
 		isUsingDefaultFeatureSize: boolean;
+		position: number;
 	}>,
 ): Feature => {
 	const feature = new Feature();
@@ -42,6 +43,7 @@ const createFeature = (
 	feature.forecasts = [];
 	feature.url = "";
 	feature.state = overrides.stateCategory === "Done" ? "Closed" : "Active";
+	feature.position = overrides.position;
 	return feature;
 };
 
@@ -424,5 +426,44 @@ describe("FeatureListDataGrid", () => {
 		expect(
 			screen.queryByTestId("active-work-indicator"),
 		).not.toBeInTheDocument();
+	});
+
+	// AC-1.5 names only the Features view and the Portfolio Feature list; a whole-instance ordinal
+	// inside a team- or delivery-scoped subset would misread, so the column is opt-in.
+	const rankedFeatures = [
+		createFeature({ id: 1, stateCategory: "ToDo", position: 17 }),
+	];
+
+	it("should not show the position column when the surface does not ask for it", async () => {
+		const { container } = render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={rankedFeatures}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		await screen.findAllByText("Active");
+		expect(container.querySelector('[data-field="position"]')).toBeNull();
+		expect(screen.queryByText("17")).not.toBeInTheDocument();
+	});
+
+	it("should show the position column when the surface asks for it", async () => {
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={rankedFeatures}
+					columns={defaultColumns}
+					storageKey="test-grid"
+					hideCompletedStorageKey="test-hide-completed"
+					showPosition
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(await screen.findByText("17")).toBeInTheDocument();
 	});
 });

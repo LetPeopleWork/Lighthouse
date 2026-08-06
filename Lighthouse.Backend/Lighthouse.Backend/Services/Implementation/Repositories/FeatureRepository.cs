@@ -15,12 +15,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         {
             var features = GetFeatures().ToList();
 
-            return features.OrderBy(f => f, new FeatureComparer());
+            // Id is the second half of the ordering key ADR-135's position map numbers by; without it, rows tied on Order come back in a different sequence than their positions claim.
+            return features.OrderBy(f => f, new FeatureComparer()).ThenBy(f => f.Id);
         }
 
         public override IQueryable<Feature> GetAllByPredicate(Expression<Func<Feature, bool>> predicate)
         {
-            var features = GetFeatures().Where(predicate).AsEnumerable().OrderBy(f => f, new FeatureComparer());
+            var features = GetFeatures().Where(predicate).AsEnumerable().OrderBy(f => f, new FeatureComparer()).ThenBy(f => f.Id);
 
             return features.AsQueryable();
         }

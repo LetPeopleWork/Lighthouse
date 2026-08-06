@@ -138,6 +138,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_portfolio_${portfolio.id}`}
 				loading={features.length === 0}
 				getActiveWorkTeams={getActiveWorkTeams}
+				showPosition
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog

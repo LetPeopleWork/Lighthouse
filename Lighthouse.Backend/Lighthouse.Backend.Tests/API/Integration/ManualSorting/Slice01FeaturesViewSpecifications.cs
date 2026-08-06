@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         private void GivenTheCallerMayReadOnly(params int[] portfolioIds) => TheCallerCanReadPortfolios(portfolioIds);
 
+        private void GivenTheCallerMayWriteOnly(params int[] portfolioIds) => TheCallerCanWritePortfolios(portfolioIds);
+
         private void GivenTheCallerAdministersTheInstance() => TheCallerAdministersTheWholeInstance();
 
         private void GivenTheInstanceHasNoPremiumLicence() => TheInstanceIsNotLicensedForPremium();
@@ -160,6 +162,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
             Assert.That(listed.Select(f => f.Position).ToArray(), Is.EqualTo(expectedPositions),
                 $"The position is the rank across the whole instance, never the index of the visible row. Body: {response.Body}");
+        }
+
+        private static void ThenTheListedPositionsAscend((HttpStatusCode Status, string Body) response)
+        {
+            var positions = ParseListedFeatures(response).Select(f => f.Position).ToArray();
+
+            Assert.That(positions, Is.Ordered.Ascending,
+                $"Rows and places are numbered by the same key, so the list can never read out of position order — not where the tracker repeated a rank, nor where it gave none. Positions: {string.Join(", ", positions)}");
+        }
+
+        private static void ThenTheSharedFeatureReportsTheSamePlaceToEveryCaller(
+            string featureName,
+            params (HttpStatusCode Status, string Body)[] responses)
+        {
+            var places = responses
+                .Select(response => ParseListedFeatures(response).Single(f => f.Name == featureName).Position)
+                .Distinct()
+                .ToArray();
+
+            Assert.That(places, Has.Length.EqualTo(1),
+                $"The place is the rank across the whole instance, so it cannot move with the caller's scope. Places read: {string.Join(", ", places)}");
         }
 
         private static void ThenTheFeatureIsListedOnceNaming((HttpStatusCode Status, string Body) response, string featureName, string[] expectedPortfolios)

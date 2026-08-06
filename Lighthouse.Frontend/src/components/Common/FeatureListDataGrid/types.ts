@@ -10,5 +10,7 @@ export interface FeatureListDataGridProps {
 	hideCompletedStorageKey: string;
 	loading?: boolean;
 	emptyStateMessage?: string;
+	/** AC-1.5 names the Features view and the Portfolio Feature list; a whole-instance ordinal inside any other, narrower subset would misread. */
+	showPosition?: boolean;
 	getActiveWorkTeams?: (feature: IFeature) => IEntityReference[];
 }
