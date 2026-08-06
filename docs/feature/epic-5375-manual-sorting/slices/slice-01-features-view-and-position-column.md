@@ -95,3 +95,10 @@ Same day: open the view on the dogfood instance and try to answer one real quest
 important sitting below something unimportant?" Then pick the Feature with the worst 85% date and check
 whether its position explains it. If either takes more than a minute, that is the hypothesis firing, and
 it is worth writing down before slice 02 builds on this surface.
+
+**Start the D7 clock here.** D7 accepts that new Features append silently — no badge, no notification —
+with the stated revisit trigger "if the tail turns out to be where real work hides". That trigger needs
+someone actually watching for it, or it is decoration. From this slice onward, note on each dogfood visit
+whether Features that arrived since the last sort are being found and placed, or are accumulating
+unsorted at the end of the list. Two weeks of accumulation on a real instance reopens D7 **before**
+slice 03 ships the move actions that would otherwise be used to dig the tail out by hand.

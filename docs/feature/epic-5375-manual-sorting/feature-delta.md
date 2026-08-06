@@ -418,8 +418,20 @@ slice. The new view is also amortised across two epics rather than charged entir
 | K4 | Cross-surface agreement | All five ordering call sites (S4) return the same sequence in every state (on/off/mid-refresh) | Integration test asserting Portfolio DTO, features endpoint and forecast input agree (AC-2.3) |
 | K5 | RBAC containment | A `PortfolioWrite`-on-A user cannot change the rank of any Feature outside A, and cannot move a Feature shared with a Portfolio they lack write on | 403 assertions per AC-3.7/3.8; no move affordance rendered |
 | K6 | Move round trip on a realistic instance | ≤500ms p95 from action to persisted-and-rerendered, at 500 Features | Backend timing assertion on the block renumber (D13) + manual profile on the Features view (AC-1.9) |
-| K7 | Are relative moves enough? | Over 2 weeks of dogfooding, the share of moves that are Move-to-Top vs multi-step Move-Up sequences | Direct observation. This is slice 04's go/no-go signal, not a pass/fail target — a high Move-to-Top share means the picker can be dropped |
+| K7 | Are relative moves enough? | **Primary signal**: any observed run of **≥3 consecutive Move-Ups on the same Feature** within one sitting. **Secondary**: the Move-to-Top share of all moves. | Direct observation over 2 weeks. See the K7 reading rule below — the review flagged that "mostly Move to Top" left the mixed case undefined, which would have made a cancellable slice un-cancellable in practice. |
 | K8 | Adoption verdict | ≥1 pilot instance whose connector has no meaningful rank (ServiceNow or CSV) turns it on and is still on after 2 weeks | Benjamin's customer conversations. Cross-instance telemetry remains blocked on Epic 5015 (opt-in telemetry, no timeline), so this is qualitative by necessity, not by choice |
+
+### K7 reading rule (slice 04 go/no-go)
+
+Deliberately **not** a percentage band. Two weeks of single-operator dogfooding produces on the order of
+tens of moves, and a band over that sample is noise dressed as a threshold. The run signal is direct
+evidence and survives a small sample; the share is context.
+
+| Observation | Verdict for slice 04 |
+|---|---|
+| **Any** run of ≥3 consecutive Move-Ups on one Feature | **Build it.** That run *is* someone hand-climbing toward a target the picker collapses into one action. One clear instance is enough — it is existence proof, not a frequency claim. |
+| Zero such runs **and** Move-to-Top ≥ ~75% of moves | **Drop it**, not defer it. The decision people actually make is binary ("this is next" / "this is not"), and long-range placement was imagined rather than needed. |
+| Zero such runs, Move-to-Top below that | **Re-time, do not decide.** Neither signal fired; the sample is too thin. Carry slice 04 to the next dogfood window rather than building or deleting on no evidence. |
 
 ---
 
@@ -1287,6 +1299,20 @@ one exception and reports the 404, so each scenario fails on its own `Then`. A s
 
 Frontend and E2E scenarios are `describe.skip` / `.skip` and were not executed; their scaffolds throw
 `Not yet implemented — RED scaffold` on first call.
+
+### Hard gate for DELIVER — the fail-open move verdict
+
+Raised by the DESIGN reviewer and adopted. The client-side expression a reviewer would most naturally
+write for "may I move this Feature?" is `projects.every(p => isPortfolioAdmin(p.id))`, and it **fails open
+twice**: `projects` is already read-filtered, and `every` is vacuously true on the empty array an orphan
+Feature produces. Both paths render the move actions *enabled* for someone who may not move anything.
+
+That is the exact trap ADR-136 exists to close, and it currently sits behind `describe.skip` like every
+other slice-01 test. It must be **un-skipped and green before the slice-03 code review**, not merely
+before DELIVER completes — a skipped test for a fail-open authorization path is indistinguishable from no
+test. Both paths need their own assertion: empty `projects`, and a non-empty fully-writable `projects`
+whose Features are not all writable. And the assertion is that the component does **not** re-derive the
+verdict at all — the server-computed verdict is the only source.
 
 **Owed at GREEN — delete the SPA-fallback catch.** `ManualSortingAcceptanceTest.GetAllFeatures` (`:215-226`)
 wraps the request in a `catch (InvalidOperationException) when (… "SPA default page" …)` that reports the

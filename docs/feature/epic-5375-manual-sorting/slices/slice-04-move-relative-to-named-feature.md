@@ -38,10 +38,16 @@ start in Q3" — instead of clicking Move Up two hundred times.
 buttons over drag (D18). The measurement is K7: over two weeks of dogfooding slice 03, what share of
 moves are a single Move to Top versus a run of Move Ups climbing toward a specific target?
 
-- Mostly **Move to Top** → the real decision is binary ("this is next" / "this is not"), long-range
-  placement is imagined rather than needed, and **this slice is dropped**.
-- Runs of **Move Up** aimed at a particular row → people are already doing manually what the picker
-  does in one step, and the slice is justified by observed behaviour rather than by anticipation.
+The reading rule is pinned in `feature-delta.md` → "K7 reading rule", and is a **run** signal rather than
+a percentage band — two weeks of single-operator dogfooding yields tens of moves, and a band over that
+sample is noise dressed as a threshold:
+
+- **Any** run of ≥3 consecutive Move-Ups on one Feature → **build it**. That run is someone hand-climbing
+  toward a target the picker collapses into one action. One clear instance is existence proof.
+- Zero such runs **and** Move-to-Top ≥ ~75% of moves → **drop it**. The real decision is binary and
+  long-range placement was imagined rather than needed.
+- Zero such runs, Move-to-Top below that → **re-time, do not decide**. Neither signal fired and the
+  sample is too thin to build or delete on.
 
 **Confirms**, if it holds, that a Feature list of real size needs an absolute gesture and not only
 relative ones — which is also the thing that would eventually justify revisiting drag.
