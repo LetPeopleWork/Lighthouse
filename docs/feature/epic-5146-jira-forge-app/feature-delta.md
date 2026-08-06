@@ -1961,7 +1961,7 @@ and Safari remain unrun, as everywhere else in this epic.
 | **D43** | **The "OIDC" authentication mode does not put the identity provider into the Forge app.** Lighthouse runs its *own* login in a top-level tab opened by `router.open`, against whatever provider that instance is already configured with. | Wall 1 is real, and this routes around it rather than through it: Forge never learns the provider exists, so there is no per-customer manifest entry, no per-tenant OAuth client, and no reason for a customer to move their SSO anywhere. The maintainer's phrasing — "the same provider you have set up for Lighthouse" — becomes true by construction rather than by configuration. |
 | **D44** | **The tab flow (`router.open`), not the full-page flow (`router.navigate`).** | Both need the same nonce handshake, so `navigate` buys nothing and costs leaving the product. It also cannot be observed (see E). The tab's only defect is that it is orphaned, which is one line of instruction. |
 | **D45** | **The handshake nonce reuses the embed token's discipline** — single use, short expiry, bound to the installation, rate limited, no existence oracle. | The start endpoint is unauthenticated by definition, and the modal displays the full URL to the user and writes it to browser history. The threat shape is the one `EmbedSessionTokenService` already answers; a second, weaker mechanism beside it would be the finding. |
-| **D46** | **`#5663` is unchanged by this spike and remains the blocker for a prospect's own instance.** | Stated explicitly because finding A reads, at a glance, like it removes the wall. It does not. |
+| **D46** | **The customer-managed-egress wall is unchanged by this spike and remains what blocks a prospect's own instance.** | Stated explicitly because finding A reads, at a glance, like it removes the wall. It does not. **Board note (2026-08-06):** the story that tracked this, **#5663, is `Removed`** — every reference to it in this document as "still open" describes the *constraint*, not a live work item. Maintainer's call the same day: leave it Removed and revisit after the pitch, because it only matters once a prospect wants their own data in the frame. |
 
 ### What a proof of concept would have to show
 
@@ -2563,3 +2563,37 @@ shape is the one that worked here — an extension with three buttons, measuring
 **Not scope.** It does not change the verdict, and K1 is still 0. Recorded as a candidate for the
 follow-up epic, and worth knowing *before* anyone concludes that a Jira app is the only shape this idea
 has.
+
+## Wave: SPIKE / [REF] DQ-3 answered — the check constraint round-trips both providers (2026-08-06)
+
+Run before DISTILL, on the same reasoning ADR-130's `Partitioned` question was run first: the data shape
+depends on the answer, and it was cheap.
+
+**Method.** A throwaway console project in the scratchpad against the exact package versions the
+solution pins — `Microsoft.EntityFrameworkCore` / `.Sqlite` **10.0.10**, `Npgsql.EntityFrameworkCore.PostgreSQL`
+**10.0.3** — with D54's entity shape and `ToTable(t => t.HasCheckConstraint(...))`. The real model was
+not touched and no migration was generated, so nothing had to be cleaned up afterwards.
+
+**Two questions, deliberately separated**, because the dangerous outcome is a yes to the first and a no
+to the second: a model that looks guarded and is not.
+
+| | SQLite | Postgres |
+|---|---|---|
+| Q1 — constraint present in generated DDL | **YES** | **YES** |
+| Q2 — legal grant row accepted | yes | yes |
+| Q2 — legal refusal row accepted | yes | yes |
+| Q2 — **illegal row refused** | **YES** — `SQLite Error 19: 'CHECK constraint failed: CK_Tokens_GrantOrRefusal'` | **YES** — `23514: new row for relation "Tokens" violates check constraint` |
+
+Both legal shapes are accepted, so the constraint is discriminating rather than rejecting everything —
+the check that makes a green Q2 mean something.
+
+**Consequence: D54 stands as designed.** Rung 1 holds; no ladder is needed, and `TokenId`/`SecretHash`
+can be nullable behind a storage-level guarantee rather than a service-layer convention. DQ-3 is closed.
+
+**One thing this surfaces rather than settles.** SQLite cannot add a check constraint to an existing
+table with `ALTER TABLE`; EF's SQLite migration will perform a **table rebuild**. That is precisely
+where D53's cascade trap lives — the peer review's HIGH finding was that a behaviour change can hide
+inside an additive migration, and a rebuild of a table carrying an `OnDelete(DeleteBehavior.Cascade)`
+foreign key is the concrete shape of it. Expected, not verified: the probe used `EnsureCreated`, not a
+migration. **Confirm it when the real migration is generated**, and let the named real-provider test
+D53 already requires cover it. This does not reopen DQ-3; it sharpens what D53's test must assert.
