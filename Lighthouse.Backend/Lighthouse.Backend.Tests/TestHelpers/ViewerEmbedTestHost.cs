@@ -32,11 +32,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// <summary>
     /// Epic 5146 slice 01 (#5692) — ADR-137, viewer-identity embed session.
     ///
-    /// Differs from <see cref="EmbedSessionTestHost"/> in one way that matters: there is no
-    /// TestAuthHandler. Hop 1 only counts a principal authenticated on the ordinary cookie scheme
-    /// (D56), and a header-borne test scheme never reaches that branch — so an interactive session
-    /// here is a real <c>.Lighthouse.Session</c> cookie, protected with the host's own data
-    /// protector and read back by the production cookie handler.
+    /// There is deliberately no TestAuthHandler here. Hop 1 only counts a principal authenticated on
+    /// the ordinary cookie scheme (D56), and a header-borne test scheme never reaches that branch —
+    /// so an interactive session here is a real <c>.Lighthouse.Session</c> cookie, protected with the
+    /// host's own data protector and read back by the production cookie handler.
     /// </summary>
     public sealed class ViewerEmbedTestHost : IDisposable
     {
