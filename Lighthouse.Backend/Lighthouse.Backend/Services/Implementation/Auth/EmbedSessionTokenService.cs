@@ -56,7 +56,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             }
 
             var stored = await repository.FindByTokenIdAsync(tokenId, cancellationToken);
-            if (stored is null || !SecretMatches(secret, stored.SecretHash))
+
+            // A row without an API key is a viewer-path row (ADR-132 D63); this entry point only redeems the API-key path.
+            if (stored is null || stored.ApiKeyId is not int apiKeyId || !SecretMatches(secret, stored.SecretHash))
             {
                 return EmbedSessionTokenRedemption.Refused;
             }
@@ -70,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return EmbedSessionTokenRedemption.Refused;
             }
 
-            return new EmbedSessionTokenRedemption(true, stored.ApiKeyId);
+            return new EmbedSessionTokenRedemption(true, apiKeyId);
         }
 
         public async Task RevokeAllAsync(int apiKeyId, CancellationToken cancellationToken)
@@ -117,8 +119,13 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             return Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
         }
 
-        private static bool SecretMatches(string presentedSecret, string storedHash)
+        private static bool SecretMatches(string presentedSecret, string? storedHash)
         {
+            if (storedHash is null)
+            {
+                return false;
+            }
+
             return CryptographicOperations.FixedTimeEquals(
                 Encoding.UTF8.GetBytes(HashSecret(presentedSecret)),
                 Encoding.UTF8.GetBytes(storedHash));

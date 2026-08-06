@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ApiKeyId")
+                    b.Property<int?>("ApiKeyId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
@@ -157,28 +157,45 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("HandshakeConsumedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HandshakeNonceHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("RedeemedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RefusalCode")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SecretHash")
-                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TokenId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApiKeyId");
 
+                    b.HasIndex("HandshakeNonceHash");
+
+                    b.HasIndex("Subject");
+
                     b.HasIndex("TokenId")
                         .IsUnique();
 
-                    b.ToTable("EmbedSessionTokens");
+                    b.ToTable("EmbedSessionTokens", t =>
+                        {
+                            t.HasCheckConstraint("CK_EmbedSessionTokens_GrantOrRefusal", "(\"TokenId\" IS NOT NULL AND \"SecretHash\" IS NOT NULL AND \"RefusalCode\" IS NULL) OR (\"TokenId\" IS NULL AND \"SecretHash\" IS NULL AND \"RefusalCode\" IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Auth.UserProfile", b =>
@@ -1480,8 +1497,7 @@ namespace Lighthouse.Backend.Migrations
                     b.HasOne("Lighthouse.Backend.Models.Auth.ApiKey", null)
                         .WithMany()
                         .HasForeignKey("ApiKeyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.ApiKeyPermission", b =>

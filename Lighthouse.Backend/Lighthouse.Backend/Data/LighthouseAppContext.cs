@@ -156,13 +156,19 @@ namespace Lighthouse.Backend.Data
                 .IsUnique();
 
             modelBuilder.Entity<EmbedSessionToken>()
-                .Property(t => t.TokenId)
-                .IsRequired();
+                .HasIndex(t => t.HandshakeNonceHash);
+
+            // Subject is deliberately not a foreign key: profiles are created lazily (ADR-132 D52).
+            modelBuilder.Entity<EmbedSessionToken>()
+                .HasIndex(t => t.Subject);
 
             modelBuilder.Entity<EmbedSessionToken>()
-                .Property(t => t.SecretHash)
-                .IsRequired();
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_EmbedSessionTokens_GrantOrRefusal",
+                    """("TokenId" IS NOT NULL AND "SecretHash" IS NOT NULL AND "RefusalCode" IS NULL) OR ("TokenId" IS NULL AND "SecretHash" IS NULL AND "RefusalCode" IS NOT NULL)"""));
 
+            // Explicit: ApiKeyId is optional now, and EF's default for an optional relationship is
+            // ClientSetNull — which would silently delete ADR-131's revocation lever 1.
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasOne<ApiKey>()
                 .WithMany()
