@@ -78,9 +78,6 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<int>>(portfolioIds.ToList());
 
-        public Task<bool> HasAnyReadableScopeAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
-            => Task.FromResult(ExtractGrants(principal).Count > 0);
-
         public Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
             => CanSatisfyRequirementAsync(principal, RbacGuardRequirement.TeamRead, teamId, cancellationToken);
 

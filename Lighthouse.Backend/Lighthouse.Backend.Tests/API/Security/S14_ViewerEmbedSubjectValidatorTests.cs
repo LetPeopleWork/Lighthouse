@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         /// than a discovery.
         /// </summary>
         [Test]
-        public async Task AFirstTimeViewersClick_CreatesTheirProfileAndRefusesThem()
+        public async Task AFirstTimeViewersClick_CreatesTheirProfileAndFramesThem()
         {
             var nonce = ViewerEmbedTestHost.NewNonce();
             var sessionCookie = host.ForgeInteractiveSessionCookie(
@@ -104,8 +104,10 @@ namespace Lighthouse.Backend.Tests.API.Security
                     "hop 1 must resolve a profile before it can ask RBAC anything, and resolution creates — "
                     + "observable to an administrator as a new row in the user list, which is the declared "
                     + "effect rather than an incident");
-                Assert.That(handshake.HasProperty("refusalCode"), Is.True,
-                    "the new row grants nothing, so the viewer is refused rather than framed empty");
+                Assert.That(handshake.HasProperty("token"), Is.True,
+                    "the new row grants nothing, and that is no longer a reason to refuse: RBAC is "
+                    + "enforced per request, so the frame shows them exactly what they may see — "
+                    + $"which is Lighthouse's own empty state. Got {handshake.StatusCode} {handshake.Body}");
             }
         }
 

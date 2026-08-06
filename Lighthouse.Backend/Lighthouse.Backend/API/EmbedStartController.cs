@@ -21,14 +21,14 @@ namespace Lighthouse.Backend.API
     public class EmbedStartController(
         IAuthModeResolver authModeResolver,
         ICurrentUserProfileService currentUserProfileService,
-        IRbacAdministrationService rbacAdministrationService,
         IEmbedSessionTokenService embedSessionTokenService) : ControllerBase
     {
         public const string StartPath = "/embed/start";
 
         // ADR-137 DQ-1: one class-level code, never prose and never anything about who the viewer is
-        // or what the instance holds.
-        public const string NoAccessRefusalCode = "no_access";
+        // or what the instance holds. `no_access` retired 2026-08-06 with the readable-scope
+        // conjunct; what is left is the one case where a sign-in succeeds and still names nobody.
+        public const string NoProfileRefusalCode = "no_profile";
 
         private const int MinimumNonceLength = 22;
         private const int MaximumNonceLength = 128;
@@ -130,17 +130,25 @@ namespace Lighthouse.Backend.API
             // appears in the administrator's user list.
             var profile = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
 
-            if (profile is not null
-                && await rbacAdministrationService.HasAnyReadableScopeAsync(principal, cancellationToken))
+            // D49/D60 also required a readable scope here. Amended by the maintainer 2026-08-06,
+            // and the reason is that it never protected anything: RBAC is enforced on every
+            // request, so a viewer holding nothing sees nothing either way. What it did do was
+            // refuse the most ordinary onboarding shapes there are — an administrator who has not
+            // created a team yet, a viewer waiting to be assigned one — and tell them, after a
+            // sign-in that worked, to go away. Lighthouse's own empty state says it better.
+            //
+            // D31's ladder above is untouched: an instance whose authentication is off, blocked or
+            // misconfigured genuinely has no embed surface, and that is a different sentence.
+            if (profile is null)
             {
-                await embedSessionTokenService.RecordHandshakeGrantAsync(profile.Subject, nonce, cancellationToken);
-                return TerminalPage(GrantHtml);
+                await embedSessionTokenService.RecordHandshakeRefusalAsync(
+                    null, nonce, NoProfileRefusalCode, cancellationToken);
+
+                return TerminalPage(RefusalHtml);
             }
 
-            await embedSessionTokenService.RecordHandshakeRefusalAsync(
-                profile?.Subject, nonce, NoAccessRefusalCode, cancellationToken);
-
-            return TerminalPage(RefusalHtml);
+            await embedSessionTokenService.RecordHandshakeGrantAsync(profile.Subject, nonce, cancellationToken);
+            return TerminalPage(GrantHtml);
         }
 
         // D61: the orphaned tab ends on a page a person can read, not on a redirect or an error.

@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IAuthModeResolver> authModeResolver = null!;
         private Mock<ICurrentUserProfileService> currentUserProfileService = null!;
-        private Mock<IRbacAdministrationService> rbacAdministrationService = null!;
         private Mock<IEmbedSessionTokenService> embedSessionTokenService = null!;
         private Mock<IAuthenticationService> authenticationService = null!;
         private ServiceProvider requestServices = null!;
@@ -43,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API
                 .Returns(new RuntimeAuthStatus { Mode = AuthMode.Enabled });
 
             currentUserProfileService = new Mock<ICurrentUserProfileService>();
-            rbacAdministrationService = new Mock<IRbacAdministrationService>();
             embedSessionTokenService = new Mock<IEmbedSessionTokenService>();
 
             authenticationService = new Mock<IAuthenticationService>();
@@ -162,11 +160,6 @@ namespace Lighthouse.Backend.Tests.API
                 .Setup(service => service.GetOrCreateFromPrincipalAsync(
                     It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new UserProfile { Subject = ViewerSubject });
-
-            rbacAdministrationService
-                .Setup(service => service.HasAnyReadableScopeAsync(
-                    It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
         }
 
         private EmbedStartController CreateSubject()
@@ -174,7 +167,6 @@ namespace Lighthouse.Backend.Tests.API
             return new EmbedStartController(
                 authModeResolver.Object,
                 currentUserProfileService.Object,
-                rbacAdministrationService.Object,
                 embedSessionTokenService.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext },

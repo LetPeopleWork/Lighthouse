@@ -159,9 +159,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "the profile carries a snapshot, but this principal presented a live token with no groups");
         }
 
-        /// <summary>D49: authenticated and provisioned with nothing gets a refusal, not an empty Lighthouse.</summary>
+        /// <summary>
+        /// D49 said a viewer provisioned with nothing gets a refusal rather than an empty Lighthouse.
+        /// Reversed by the maintainer 2026-08-06: the refusal protected nothing — RBAC is enforced on
+        /// every request, so this viewer sees the same nothing either way — while turning the most
+        /// ordinary onboarding shape there is into a dead end after a sign-in that worked.
+        /// </summary>
         [Test]
-        public async Task AViewerWithNoReadableScope_IsRefusedByLighthouseRatherThanFramedEmpty()
+        public async Task AViewerWithNoReadableScope_IsFramedAndLeftToLighthousesOwnEmptyState()
         {
             var nonce = ViewerEmbedTestHost.NewNonce();
             var sessionCookie = host.ForgeInteractiveSessionCookie(
@@ -173,35 +178,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That((int)start.StatusCode, Is.EqualTo(200),
-                    "the refused viewer is told why on the terminal page, not shown an error");
-                Assert.That(handshake.HasProperty("refusalCode"), Is.True,
-                    $"the Jira page must be able to stop polling and say something true; got {handshake.StatusCode} {handshake.Body}");
-                Assert.That(handshake.HasProperty("token"), Is.False,
-                    "a refusal must not carry a redeemable credential (D54)");
+                    "the viewer ends on the terminal page, not on an error");
+                Assert.That(handshake.HasProperty("token"), Is.True,
+                    $"holding no scope is not a reason to withhold the frame; got {handshake.StatusCode} {handshake.Body}");
+                Assert.That(handshake.HasProperty("refusalCode"), Is.False,
+                    "and nothing is refused, so nothing names a refusal");
             }
         }
 
-        /// <summary>D54, observed at the service boundary. The storage-level guarantee is probed separately.</summary>
+        /// <summary>
+        /// The frame carries the viewer's own permissions, which for this one are none — so the
+        /// emptiness has to be real rather than incidental. Without this, the test above passes
+        /// equally well on a frame that quietly shows somebody else's teams.
+        /// </summary>
         [Test]
-        public async Task ARefusedViewer_LeavesNoRedeemableRowBehind()
+        public async Task AViewerWithNoReadableScope_SeesNoTeamsThroughTheFrameTheyWereGiven()
         {
-            var nonce = ViewerEmbedTestHost.NewNonce();
-            var sessionCookie = host.ForgeInteractiveSessionCookie(
-                host.AuthEnabled, ViewerEmbedTestHost.UnprovisionedViewerSubject, "Unprovisioned Viewer");
+            var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.UnprovisionedViewerSubject);
 
-            using var start = await ViewerEmbedTestHost.StartAsync(host.AuthEnabled, nonce, sessionCookie: sessionCookie);
+            var teams = await ReadTeamIdsAsync(host.AuthEnabled, embedCookie: embedCookie);
 
-            var rows = host.ReadEmbedSessionTokens();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(rows, Has.Count.EqualTo(1),
-                    "exactly one row records the outcome, written at resolution rather than at router.open (D51)");
-                Assert.That(rows[0].TokenId, Is.Null.Or.Empty,
-                    "a refusal row holds no token id");
-                Assert.That(rows[0].SecretHash, Is.Null.Or.Empty,
-                    "and no secret a redemption could ever match");
-            }
+            Assert.That(teams, Is.Empty,
+                "framed, and still holding nothing — the empty state is Lighthouse's answer, not the app's");
         }
 
         private static async Task<IReadOnlyList<int>> ReadTeamIdsAsync(

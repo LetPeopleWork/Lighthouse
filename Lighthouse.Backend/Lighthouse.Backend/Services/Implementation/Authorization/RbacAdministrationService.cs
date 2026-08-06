@@ -155,34 +155,6 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ToList();
         }
 
-        public async Task<bool> HasAnyReadableScopeAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
-        {
-            if (!await IsRbacEnforcedAsync(cancellationToken))
-            {
-                return true;
-            }
-
-            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
-            {
-                return false;
-            }
-
-            if (await CanManageRbacAsync(principal, cancellationToken))
-            {
-                return true;
-            }
-
-            var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
-            if (currentUser is null)
-            {
-                return false;
-            }
-
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-
-            return effectivePermissions.Any(entry => IsReadableScope(entry.Key, entry.Value));
-        }
-
         public async Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
         {
             if (!await IsRbacEnforcedAsync(cancellationToken))
@@ -1222,16 +1194,6 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         {
             return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Team, teamId), out var role)
                 && (role == UserRole.TeamAdmin || role == UserRole.Viewer);
-        }
-
-        private static bool IsReadableScope(PermissionScopeKey key, UserRole role)
-        {
-            return key.ScopeType switch
-            {
-                PermissionScopeType.Team => role is UserRole.TeamAdmin or UserRole.Viewer,
-                PermissionScopeType.Portfolio => role is UserRole.PortfolioAdmin or UserRole.Viewer,
-                _ => false,
-            };
         }
 
         private static bool HasTeamWritePermission(
