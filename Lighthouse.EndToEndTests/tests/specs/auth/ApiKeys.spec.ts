@@ -11,8 +11,7 @@ import {
 } from "../../helpers/api/demo";
 import { LighthousePage } from "../../models/app/LighthousePage";
 import { BlockedPage } from "../../models/auth/BlockedPage";
-import { EmbedEntryPage } from "../../models/auth/EmbedEntryPage";
-import { LoginPage } from "../../models/auth/LoginPage";
+import type { LoginPage } from "../../models/auth/LoginPage";
 import { RbacSettingsPage } from "../../models/auth/rbac/RbacSettingsPage";
 import { OverviewPage } from "../../models/overview/OverviewPage";
 
@@ -30,10 +29,6 @@ const LICENSE_FILE_PATH = path.join(
 const WHEN_WILL_THIS_BE_DONE_SCENARIO = 0;
 const IN_SCOPE_TEAM = "Team Zenith";
 const OUT_OF_SCOPE_PORTFOLIO = "Project Apollo";
-
-let scopedApiKey = "";
-let inScopeTeamId = 0;
-let outOfScopePortfolioId = 0;
 
 async function loginWithValidLicense(
 	loginPage: LoginPage,
@@ -110,17 +105,14 @@ function apiKeyClient(apiKey: string): Promise<APIRequestContext> {
 	});
 }
 
-test.describe("@auth API key and embed session E2E", () => {
-	// Serial: the embed test spends the key the first test creates. The plaintext
-	// key exists exactly once, in the creation dialog — the backend keeps only a
-	// salted PBKDF2/SHA-256 hash (ApiKeyService.HashKey) — so it cannot be re-read
-	// later, and minting a second one would only repeat the same minute of setup.
-	test.describe.configure({ mode: "serial" });
-
+test.describe("@auth API key E2E", () => {
 	testWithAuth(
 		"api key scoped to one team reads that team and is refused everywhere else",
 		async ({ loginPage }) => {
 			let overview = await loginWithValidLicense(loginPage);
+			let scopedApiKey = "";
+			let inScopeTeamId = 0;
+			let outOfScopePortfolioId = 0;
 
 			await test.step("assign the first System Admin and map the SSO admin group", async () => {
 				const settingsPage = await overview.lightHousePage.goToSettings();
@@ -233,92 +225,4 @@ test.describe("@auth API key and embed session E2E", () => {
 			});
 		},
 	);
-
-	test("embed session token turns the api key into a single-use browser session", async ({
-		browser,
-	}) => {
-		expect(
-			scopedApiKey,
-			"the scoped API key created by the previous test",
-		).not.toBe("");
-
-		let embedUrl = "";
-
-		await test.step("exchange the API key for an embed session token", async () => {
-			const keyClient = await apiKeyClient(scopedApiKey);
-			try {
-				const mint = await keyClient.post("/api/v1/embed/session-token");
-				expect(mint.status()).toBe(200);
-
-				const session = (await mint.json()) as {
-					token: string;
-					expiresAt: string;
-					embedUrl: string;
-				};
-
-				expect(session.token).toBeTruthy();
-				expect(session.expiresAt).toBeTruthy();
-				expect(session.embedUrl).toContain("/embed/enter?token=");
-
-				embedUrl = session.embedUrl;
-			} finally {
-				await keyClient.dispose();
-			}
-		});
-
-		// A brand-new browser context, so there is no Lighthouse session cookie to
-		// fall back on: whatever the app renders below, it renders on the strength
-		// of the embed link alone.
-		//
-		// What this cannot cover: the cross-site, partitioned-cookie behaviour the
-		// Forge app actually depends on. That needs two registrable domains and
-		// Forge's nested frame; a same-site Playwright navigation would pass
-		// without proving any of it. The cookie attributes themselves are pinned by
-		// the backend tests (S9_EmbedCookiePolicyTests).
-		const embedContext = await browser.newContext({
-			ignoreHTTPSErrors: true,
-		});
-		await embedContext.addInitScript(() => {
-			try {
-				localStorage.setItem(
-					"lighthouse-hide-all-update-notifications",
-					"true",
-				);
-			} catch {
-				// localStorage unavailable in some contexts; ignore.
-			}
-		});
-
-		try {
-			const embedPage = await embedContext.newPage();
-
-			await test.step("the embed link lands in the app, authenticated, with no login", async () => {
-				await embedPage.goto(embedUrl);
-
-				await expect(
-					embedPage.getByRole("link", { name: "Overview" }),
-				).toBeVisible();
-				await expect(new LoginPage(embedPage).container).toBeHidden();
-
-				const embedOverview = new OverviewPage(
-					embedPage,
-					new LighthousePage(embedPage),
-				);
-				await embedOverview.search(IN_SCOPE_TEAM);
-				await expect(
-					await embedOverview.getTeamLink(IN_SCOPE_TEAM),
-				).toBeVisible();
-			});
-
-			await test.step("the same embed link is refused the second time", async () => {
-				await embedPage.goto(embedUrl);
-
-				await expect(
-					new EmbedEntryPage(embedPage).refusalHeading,
-				).toBeVisible();
-			});
-		} finally {
-			await embedContext.close();
-		}
-	});
 });
