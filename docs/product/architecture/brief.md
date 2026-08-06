@@ -4434,6 +4434,218 @@ for.
 
 ---
 
+## Application Architecture — viewer-identity-embed-session (ADO Epic 5146)
+
+Supersedes the identity model of the section above. That section stays on the record: it is the
+reasoning that produced the shipped code, and the security review it triggered is where most of this
+design's requirements come from.
+
+### What changed, and why it is not a redesign for its own sake
+
+The API-key embed session existed because slice 01 proved a framed Lighthouse cannot complete an
+interactive login — the identity provider refuses to be framed (`X-Frame-Options`), a category result
+across Auth0, Entra, Okta and Keycloak. If the viewer cannot sign in, the identity has to come from
+somewhere that is not the viewer, and a scoped API key was the least-bad somewhere.
+
+Two probes on 2026-08-06 removed the premise. Forge's Custom UI sandbox blocks `window.open`
+(measured), but **`router.open` is not `window.open`** — it is Atlassian's own navigation, performed
+outside our frame, opening a **top-level tab** where nothing is framed and nothing refuses. A
+throwaway PoC then ran the whole chain and the frame rendered the viewer's own name in the user menu.
+
+The maintainer closed the rest (D48): there is no viewer-less case, so the API-key embed mode is
+dropped. **Installation becomes zero-credential** — an administrator supplies a URL and nothing else.
+
+Full analysis, decisions D50–D63 and the slice plan:
+`docs/feature/epic-5146-jira-forge-app/feature-delta.md`.
+
+### Shape — three hops, no durable credential anywhere
+
+| Step | Surface | Who is authenticated |
+|---|---|---|
+| 1 | `GET /embed/start?nonce=N`, top-level tab via `router.open` | Nobody yet — challenges OIDC when the interactive session cookie is absent |
+| 2 | `GET /api/v1/embed/handshake/{nonce}`, polled by the Forge resolver | **Nobody. Unauthenticated by construction** |
+| 3 | `GET /embed/enter?token=…`, the nested frame | The viewer, under `LighthouseEmbedCookie` |
+
+The Forge resolver gets exactly one verb — poll. It cannot create, revoke or mutate anything, which
+is a stronger read/write split than the API-key design achieved, where the same caller could both
+mint and revoke.
+
+### Key invariants introduced
+
+1. **The framed session is the viewer's own.** Its principal carries `sub`, `name` and
+   `auth_method=embed`, and never `api_key_id`. Every RBAC decision inside the frame is the decision
+   the same person would get in an ordinary tab.
+2. **Pending and unknown are the same state.** A handshake has no database row until `/embed/start`
+   decides its outcome, so "not resolved yet", "never existed", "expired" and "already read" are one
+   response. The no-existence-oracle property is structural rather than carefully shaped.
+3. **Grant and refusal are a discriminated outcome.** A refused viewer must not hold a live credential
+   row. Enforced at the storage layer by a check constraint, with a recorded ladder to a
+   repository-level guard if the constraint does not round-trip both provider assemblies.
+4. **Only an interactive session cookie can start a handshake.** An embed cookie is *challenged*, not
+   refused — it completes an ordinary login and arrives holding a real session. This closes security
+   review F2 (a session minting its own successor) by construction rather than by exclusion.
+5. **The embed cookie validator re-resolves the subject on every request, and never creates.**
+   Deleting a user ends their live frames within one request. The read-only lookup port is separate
+   from `ICurrentUserProfileService` precisely because the latter's method *creates* — calling it from
+   the validator would re-create the profile an administrator just deleted, on that user's very next
+   request, with every test still green.
+6. **Lighthouse has no user deactivation.** Only `DeleteUserAsync`. Any wording promising "deactivate
+   and the frames end" describes a feature that does not exist.
+
+### The finding that forced an RBAC change
+
+`RbacAdministrationService.GetVirtualPermissionsAsync:1093` gates the stored group-snapshot fallback
+on `api_key_id` being present:
+
+```csharp
+if (groupValues.Count == 0 && TryGetApiKeyId(principal, out _))
+```
+
+A viewer-identity embed principal carries `sub` and, correctly, no `api_key_id`; it also carries no
+live group claims, because it is rebuilt from a stored subject. **A viewer whose entire Lighthouse
+access comes from an `RbacGroupMapping` therefore resolves zero permissions inside the frame while
+working perfectly in an ordinary tab.** It fails closed, so nothing errors — the frame is simply
+empty.
+
+Worse, it makes the D49 refusal *wrong* rather than merely incomplete: the refusal decision runs at
+`/embed/start` under the interactive OIDC principal, which **does** carry live group claims. Lighthouse
+would decide *grant*, and the session that grant authorises would resolve nothing. The decision and
+the session it authorises would evaluate different permission sets.
+
+**The change**: the snapshot fallback is re-gated on `auth_method` ∈ {`api-key`, `embed`} — the actual
+predicate (*principals that structurally cannot carry live group claims*) instead of a proxy for it.
+An ordinary OIDC cookie principal has no `auth_method` claim at all, so its behaviour is byte-identical
+and the fail-open risk of a bare widening does not arise. The snapshot is fresh by construction,
+because hop 1 *is* an OIDC sign-in and `WriteGroupSnapshotOnTokenValidatedAsync` writes it minutes
+before the framed session reads it.
+
+**ADR-129's headline property — "RBAC needs no change" — is spent.** That is the price of viewer
+identity, and it is one conjunct in the most security-sensitive method in the codebase.
+
+### The one open security question, answered
+
+The handshake is unauthenticated and cannot be made otherwise: zero-credential install leaves the
+Forge resolver with nothing to authenticate with.
+
+The four proposed defences — 256-bit nonce, single use, short TTL, `EmbedSessionPolicy` rate limiting
+— are individually correct, collectively necessary, and **none of them addresses the actual
+residual**, which is not brute force. It is **nonce disclosure**: Atlassian's external-link modal
+displays the full destination URL by design, on every `router.open` call, and the nonce is in it.
+An attacker who reads it and beats the legitimate poll gets a session as **that viewer**.
+
+Binding the grant to the installation — D45's own instruction — is **unachievable under D48**, because
+binding needs a shared secret and zero-credential install is precisely its removal. D45 and D48 are in
+genuine tension; D48 wins, because the residual it leaves is narrower than the surface it removes.
+
+**Verdict: not sufficient as stated; sufficient for this epic with the residual named and one
+addition.** What an attacker gets: one session, as one viewer, at most 30 minutes, non-sliding, with
+no renewal path, ended by deleting the user. What the design it replaces gave up on compromise:
+everyone who could open the Jira page, permanently, plus a customer credential in a third party's
+storage. The addition is **observability** — a second read of a consumed nonce emits a structured
+event and the Jira page says "sign-in could not be completed" rather than polling into silence. That
+prevents nothing and converts an invisible impersonation into a visible anomaly on both sides.
+
+### Component decomposition
+
+Nine components, all backend. Two are new endpoints, three are reworked, one is a new read-only port
+whose entire justification is that it *cannot write*.
+
+`/embed/start` is the only component that both decides and writes, and the two are separated on
+purpose: the refusal predicate is a question asked of RBAC (mutating nothing) and the row write is a
+single insert recording the answer. The cookie validator is the mirror image — a read on a
+write-shaped seam, where the obvious available service creates and the port it is handed must not.
+
+### Reuse Analysis
+
+Twenty-two rows in the feature workspace. Notable verdicts:
+
+- **EXTEND, not replace, `EmbedSessionToken`** — the row's terminal state, expiry, single-use marker
+  and prune path are all already correct; three columns and a nullable FK are the delta.
+- **REUSE AS-IS, `SmartAuthSchemeSelector`** — F4's shipped precedence inversion (session outranks
+  embed) is exactly what the new start-endpoint guard needs.
+- **REUSE AS-IS, the whole embed cookie scheme** — ADR-130 is untouched by viewer identity.
+- **CREATE NEW, a read-only `UserProfile` lookup port** — justified not by dependency count but
+  because the existing method creates, and creating in the validator silently undoes user deletion.
+- **NOT DELETED, and named so** — `ApiKeyController`, API-key scopes, `RbacGuardRequirement` and
+  `ApiKeyAuthenticationHandler` all stay. API keys still serve the API; only the *embed* path goes.
+  "The API key is gone" is the natural misreading of D48 and it would delete a shipped feature.
+
+### Expand-only migration — one trap worth naming here
+
+`EmbedSessionToken.ApiKeyId` becomes nullable and is **not dropped this release**. When that FK
+becomes optional, EF's default delete behaviour changes from the declared `Cascade` to `ClientSetNull`
+— so the cascade must be **re-declared explicitly**, or ADR-131's revocation lever 1 disappears during
+the slice where both paths still run, without a single failing test. `ExpandOnlyMigrationGuardTest`
+cannot catch it: that guard is about destructive *schema* changes, and this is a behaviour change
+inside an additive one. The control is a real-provider test — insert an API-key-bound row, delete the
+key, assert the row is gone — which also cannot run on EF InMemory, because it does not enforce
+foreign keys at all.
+
+### Naming debt, recorded not paid
+
+`EmbedSessionToken` now names a row that may hold no token; `ApiKeyPrincipalFactory` now builds
+principals for people. Renaming a table is a destructive migration and the project is expand-only, so
+both keep their names and the renames ride the same contract-phase drop that removes the `ApiKeyId`
+column. Same treatment as the `RecordedAt`/`RecordedDay` split already carried elsewhere.
+
+### Architectural enforcement (this feature)
+
+Four layers, each answering a different question.
+
+**Storage** — a check constraint makes "a refused viewer holds a live credential" non-representable,
+probed by attempting the illegal insert on both providers and requiring refusal. **Wire** — ADR-130's
+existing `Set-Cookie` assertions carry unchanged, both halves. **Behavioural** — the group-mapped RBAC
+regression, which must use an `RbacGroupMapping` fixture because a viewer with an explicit permission
+row passes with or without the fix. **Migration** — `ExpandOnlyMigrationGuardTest`, unmodified, over an
+additive migration generated with `Create-Migration.ps1`.
+
+Two probes are load-bearing and neither can run on EF InMemory: both single-use conditional updates
+under genuine concurrency, and the check constraint itself.
+
+No new ArchUnitNET rule, and that is a decline rather than an omission — as before, the invariants
+here are runtime, wire and storage level, and an import-graph rule cannot see any of them.
+
+### External integration — contract testing
+
+D22 stands: **no consumer-driven contract test** during this epic. The Forge app is the only consumer,
+it lives in a private repository, it is deliberately PoC quality and outside this repo's CI, and its
+runtime preflight is the contract check. The one external dependency that *would* warrant a contract
+test — Atlassian's `router.open` and modal behaviour — is not an API with a schema; it was probed
+directly instead, on Firefox, with Chrome and Safari unrun as everywhere else in this epic.
+
+### ADRs (this feature)
+
+- [ADR-132](./adr-132-viewer-identity-embed-session.md) — the sign-in hop, the handshake nonce, and
+  what replaces the API key. **Supersedes ADR-129** on identity and both of its endpoints.
+- [ADR-130](./adr-130-embed-only-cookie-policy.md) — **unchanged, in full.** Nothing in viewer identity
+  touches how the cookie reaches the browser.
+- [ADR-131](./adr-131-embed-token-lifecycle-and-revocation-store.md) — **keeps** the database-backed
+  store, the conditional-update single use, the 60-second expiry, opportunistic pruning and all three
+  rejected alternatives, whose reasoning is about topology. **Loses** its `ApiKeyId` binding and
+  revocation lever 1, which becomes "deleting the user ends every session that names them" — stronger,
+  because it acts on established sessions rather than only unredeemed tokens.
+- [ADR-129](./adr-129-embed-session-token-exchange-and-identity.md) — **superseded**, retained as the
+  record of why the shipped code looks as it does.
+
+### C4
+
+System Context (L1) and Container (L2) in Mermaid in the feature workspace →
+"Wave: DESIGN / [REF] C4 diagrams (viewer identity)". **L3 omitted, deliberately** — and this reverses
+the prior section's call for a reason: that design's hard part was a two-hop *credential* flow, which
+a component diagram reads well. This design's hard parts are an RBAC conjunct and a read/write split
+on a profile lookup, and a component box can show neither.
+
+### Open items carried into DISTILL
+
+Seven, DQ-1..DQ-7 in the feature workspace. Three worth naming here: **DQ-2**, how long a handshake
+outcome lives, because getting it wrong produces "sign-in worked but the frame says try again",
+intermittently; **DQ-3**, whether the check constraint round-trips both provider assemblies, which is
+rung 1 of a ladder and should be answered first and cheaply; and **DQ-7**, `/embed/start` under
+`AuthMode.Misconfigured`, which was never asked before because no endpoint in this feature challenged
+an identity provider until now.
+
+---
+
 ## Domain Model — epic-5375-manual-sorting
 
 Feature: epic-5375-manual-sorting (ADO Epic #5375 "Manual Sorting", Premium)
