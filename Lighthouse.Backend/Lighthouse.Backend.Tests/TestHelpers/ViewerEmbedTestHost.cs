@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Moq;
 
@@ -373,13 +374,24 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     // Only its discovery document is stubbed, so the challenge itself stays production.
                     services.PostConfigure<OpenIdConnectOptions>(
                         OpenIdConnectDefaults.AuthenticationScheme,
-                        options => options.Configuration = new OpenIdConnectConfiguration
+                        options =>
                         {
-                            Issuer = "https://example.test/oidc",
-                            AuthorizationEndpoint = StubbedAuthorizationEndpoint,
-                            TokenEndpoint = "https://example.test/oidc/token",
-                            EndSessionEndpoint = "https://example.test/oidc/logout",
-                            JwksUri = "https://example.test/oidc/jwks",
+                            var configuration = new OpenIdConnectConfiguration
+                            {
+                                Issuer = "https://example.test/oidc",
+                                AuthorizationEndpoint = StubbedAuthorizationEndpoint,
+                                TokenEndpoint = "https://example.test/oidc/token",
+                                EndSessionEndpoint = "https://example.test/oidc/logout",
+                                JwksUri = "https://example.test/oidc/jwks",
+                            };
+
+                            // Both, as ForwardedHeadersOidcTestHost does: this hook runs after the
+                            // framework's own post-configure, which has already built an HTTP
+                            // configuration manager from MetadataAddress. Setting only Configuration
+                            // leaves the stub inert and the challenge reaches the network.
+                            options.Configuration = configuration;
+                            options.ConfigurationManager =
+                                new StaticConfigurationManager<OpenIdConnectConfiguration>(configuration);
                         });
 
                     var licenseServiceMock = new Mock<ILicenseService>();

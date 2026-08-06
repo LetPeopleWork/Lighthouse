@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         ILogger<EmbedSessionTokenService> logger) : IEmbedSessionTokenService
     {
         private const int DefaultTokenLifetimeSeconds = 60;
+        private const int DefaultHandshakeOutcomeLifetimeSeconds = 300;
         private const int TokenIdByteLength = 16;
         private const int SecretByteLength = 32;
         private const char TokenSeparator = '.';
@@ -46,6 +47,38 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 Token = $"{tokenId}{TokenSeparator}{secret}",
                 ExpiresAt = expiresAt,
             };
+        }
+
+        public Task RecordHandshakeGrantAsync(string? subject, string nonce, CancellationToken cancellationToken)
+        {
+            // The secret hashed here is generated and immediately discarded: the constraint requires a
+            // grant row to carry one, and until the outcome is claimed nobody may hold it. Consumption
+            // (ADR-132 D68) writes the secret the viewer actually receives.
+            return RecordHandshakeOutcomeAsync(
+                new EmbedSessionToken
+                {
+                    TokenId = GenerateUrlSafeValue(TokenIdByteLength),
+                    SecretHash = HashSecret(GenerateUrlSafeValue(SecretByteLength)),
+                    Subject = subject,
+                },
+                nonce,
+                cancellationToken);
+        }
+
+        public Task RecordHandshakeRefusalAsync(
+            string? subject,
+            string nonce,
+            string refusalCode,
+            CancellationToken cancellationToken)
+        {
+            return RecordHandshakeOutcomeAsync(
+                new EmbedSessionToken
+                {
+                    RefusalCode = refusalCode,
+                    Subject = subject,
+                },
+                nonce,
+                cancellationToken);
         }
 
         public async Task<EmbedSessionTokenRedemption> RedeemAsync(string? token, CancellationToken cancellationToken)
@@ -85,10 +118,30 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             logger.LogInformation("Revoked {Count} outstanding embed session tokens for API key {ApiKeyId}", revoked, apiKeyId);
         }
 
+        private async Task RecordHandshakeOutcomeAsync(
+            EmbedSessionToken outcome,
+            string nonce,
+            CancellationToken cancellationToken)
+        {
+            var now = timeProvider.GetUtcNow().UtcDateTime;
+
+            outcome.HandshakeNonceHash = HashSecret(nonce);
+            outcome.CreatedAt = now;
+            outcome.ExpiresAt = now.AddSeconds(ResolveHandshakeOutcomeLifetimeSeconds());
+
+            await repository.AddAsync(outcome, cancellationToken);
+        }
+
         private int ResolveTokenLifetimeSeconds()
         {
             var configured = embedConfiguration.CurrentValue.TokenLifetimeSeconds;
             return configured > 0 ? configured : DefaultTokenLifetimeSeconds;
+        }
+
+        private int ResolveHandshakeOutcomeLifetimeSeconds()
+        {
+            var configured = embedConfiguration.CurrentValue.HandshakeOutcomeLifetimeSeconds;
+            return configured > 0 ? configured : DefaultHandshakeOutcomeLifetimeSeconds;
         }
 
         private static bool TrySplit(string? token, out string tokenId, out string secret)

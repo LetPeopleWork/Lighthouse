@@ -184,11 +184,6 @@ namespace Lighthouse.Backend.Tests.API.Security
         /// a provider the instance cannot talk to is a worse failure than saying nothing.
         /// </summary>
         [Test]
-        [Ignore("DELIVER pre-requisite: with no route yet, the request reaches the SPA fallback and "
-            + "ASP.NET throws 'No authenticationScheme was specified' before the assertion runs — an "
-            + "exception, not a named failure. Un-ignore once /embed/start answers its AuthMode check "
-            + "first; the assertion is already the one that matters and must not be weakened to make "
-            + "this pass for an unrelated reason.")]
         public async Task Start_DoesNotChallengeAMisconfiguredIdentityProvider()
         {
             using var response = await ViewerEmbedTestHost.StartAsync(

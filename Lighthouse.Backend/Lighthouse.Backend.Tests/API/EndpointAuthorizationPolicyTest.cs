@@ -15,6 +15,10 @@ namespace Lighthouse.Backend.Tests.API
             // Epic 5146 D26: the embed token is the credential, and a challenge here would render a
             // blank rectangle inside the frame instead of a legible refusal.
             typeof(EmbedEntryController),
+
+            // ADR-132 hop 1: the sign-in hop challenges the identity provider itself, by name. A
+            // policy challenge here would forward to the SPA login page instead.
+            typeof(EmbedStartController),
         ];
 
         [Test]

@@ -21,6 +21,13 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
             IEnumerable<int> portfolioIds,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// ADR-132 D49: whether this principal may read anything at all. Not answerable from
+        /// <see cref="UserAuthorizationSummary"/>, which carries only admin rights, and not worth
+        /// enumerating every id for — the caller only needs the yes/no.
+        /// </summary>
+        Task<bool> HasAnyReadableScopeAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
+
         Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default);
 
         Task<bool> CanWriteTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default);
