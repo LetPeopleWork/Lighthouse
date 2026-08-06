@@ -20,10 +20,14 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .SingleOrDefaultAsync(token => token.TokenId == tokenId, cancellationToken);
         }
 
+        // ADR-131: one predicate, so the affected-row count is the single-use verdict.
         public Task<int> TryMarkRedeemedAsync(string tokenId, DateTime redeemedAt, CancellationToken cancellationToken)
         {
-            return Outstanding()
-                .Where(token => token.TokenId == tokenId && token.ExpiresAt > redeemedAt)
+            return context.EmbedSessionTokens
+                .Where(token => token.TokenId == tokenId
+                    && token.RedeemedAt == null
+                    && token.RevokedAt == null
+                    && token.ExpiresAt > redeemedAt)
                 .ExecuteUpdateAsync(
                     setters => setters.SetProperty(token => token.RedeemedAt, redeemedAt),
                     cancellationToken);
@@ -67,14 +71,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     || token.RedeemedAt != null
                     || token.RevokedAt != null)
                 .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        // Outstanding is "nobody has spent this row yet". Expiry is a separate question, which only
-        // TryMarkRedeemedAsync has to ask (ADR-131).
-        private IQueryable<EmbedSessionToken> Outstanding()
-        {
-            return context.EmbedSessionTokens
-                .Where(token => token.RedeemedAt == null && token.RevokedAt == null);
         }
 
         // D68 keeps the nonce hash after consumption, so the row stays findable and the precondition
