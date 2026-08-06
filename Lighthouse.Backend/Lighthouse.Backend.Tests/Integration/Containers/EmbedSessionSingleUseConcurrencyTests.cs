@@ -43,20 +43,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var apiKey = await CreateApiKeyAsync(factory);
             var token = await EmbedSessionTestHost.MintTokenAsync(factory, apiKey);
 
-            using var barrier = new Barrier(ConcurrentRedemptions);
-            var redemptions = Enumerable.Range(0, ConcurrentRedemptions)
-                .Select(_ => Task.Run(async () =>
-                {
-                    barrier.SignalAndWait();
-                    using var response = await EmbedSessionTestHost.EnterAsync(factory, token);
-                    return response.StatusCode;
-                }))
-                .ToList();
+            var outcomes = await RaceRedemptionsAsync(factory, token);
 
-            var statuses = await Task.WhenAll(redemptions);
-
-            var successes = statuses.Count(status => status == HttpStatusCode.Redirect);
-            var refusals = statuses.Count(status => status == HttpStatusCode.Unauthorized);
+            var successes = outcomes.Count(outcome => outcome.StatusCode == HttpStatusCode.Redirect);
+            var refusals = outcomes.Count(outcome => outcome.StatusCode == HttpStatusCode.Unauthorized);
 
             using (Assert.EnterMultipleScope())
             {
@@ -152,19 +142,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var nonce = await RecordHandshakeGrantAsync(factory);
             var token = await ClaimViewerTokenAsync(factory, nonce);
 
-            using var barrier = new Barrier(ConcurrentRedemptions);
-            var redemptions = Enumerable.Range(0, ConcurrentRedemptions)
-                .Select(_ => Task.Run(async () =>
-                {
-                    barrier.SignalAndWait();
-                    using var response = await EmbedSessionTestHost.EnterAsync(factory, token);
-                    var cookie = EmbedSessionTestHost.ReadCookieValue(response, EmbedSessionTestHost.EmbedCookieName);
-
-                    return (response.StatusCode, CarriesEmbedCookie: cookie is { Length: > 0 });
-                }))
-                .ToList();
-
-            var outcomes = await Task.WhenAll(redemptions);
+            var outcomes = await RaceRedemptionsAsync(factory, token);
 
             var sessions = outcomes.Count(outcome =>
                 outcome.StatusCode == HttpStatusCode.Redirect && outcome.CarriesEmbedCookie);
@@ -177,6 +155,45 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     + "redirect alone would pass on a response that redirects without signing anyone in");
                 Assert.That(refusals, Is.EqualTo(ConcurrentRedemptions - 1),
                     "and every loser is refused legibly rather than handed a second frame");
+            }
+        }
+
+        // D73: the clients are built ABOVE the barrier. CreateClient starts and locks the test server
+        // and costs orders of magnitude more than the request it precedes, so a barrier that also
+        // gates construction staggers the callers, every loser reads the row after the winner has
+        // committed, and the atomic update under test is never exercised.
+        private static async Task<(HttpStatusCode StatusCode, bool CarriesEmbedCookie)[]> RaceRedemptionsAsync(
+            PostgresEmbedFactory factory,
+            string token)
+        {
+            var clients = Enumerable.Range(0, ConcurrentRedemptions)
+                .Select(_ => EmbedSessionTestHost.CreateClient(factory))
+                .ToList();
+
+            try
+            {
+                using var barrier = new Barrier(ConcurrentRedemptions);
+                var redemptions = clients
+                    .Select(client => Task.Run(async () =>
+                    {
+                        barrier.SignalAndWait();
+                        using var response = await client.GetAsync(new Uri(
+                            $"{EmbedSessionTestHost.EntryPath}?token={Uri.EscapeDataString(token)}",
+                            UriKind.Relative));
+                        var cookie = EmbedSessionTestHost.ReadCookieValue(response, EmbedSessionTestHost.EmbedCookieName);
+
+                        return (response.StatusCode, CarriesEmbedCookie: cookie is { Length: > 0 });
+                    }))
+                    .ToList();
+
+                return await Task.WhenAll(redemptions);
+            }
+            finally
+            {
+                foreach (var client in clients)
+                {
+                    client.Dispose();
+                }
             }
         }
 
