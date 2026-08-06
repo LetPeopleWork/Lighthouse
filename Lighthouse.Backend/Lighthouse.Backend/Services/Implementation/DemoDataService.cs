@@ -394,12 +394,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
             premiumScenarios.Add(newProductInitiative);
 
-            // The only scenario with two Portfolios, and both CSVs carry the same ORI-101 Feature - so this
-            // is the one seeded instance where a Feature belongs to several Portfolios at once. ADR-136's
-            // Any() && All() move rule only says anything on such a Feature, and no real instance has
-            // produced one yet. Premium is forced rather than chosen: PortfolioUpdater refuses to refresh a
-            // second Portfolio without a premium licence, so a free two-Portfolio scenario would seed and
-            // then stay empty.
+            // Both CSVs carry the same ORI-101 Feature, so this is the only seeded Feature belonging to two
+            // Portfolios at once - the case ADR-136's move rule needs. Premium is forced, not chosen:
+            // PortfolioUpdater refuses to refresh a second Portfolio unlicensed, so a free variant would seed empty.
             var sharedFeature = CreatesScenario(15, "Shared Features", "Two portfolios that both work on the same Feature. Where does shared work sit in the order?");
             sharedFeature.IsPremium = true;
 

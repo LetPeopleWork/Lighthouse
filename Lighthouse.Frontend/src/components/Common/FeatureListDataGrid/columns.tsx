@@ -3,16 +3,35 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
 import type { IFeature } from "../../../models/Feature";
+import { getWorkItemName } from "../../../utils/featureName";
 import {
 	CANNOT_FORECAST_SHORT,
 	cannotBeForecast,
 	cannotForecastReason,
 } from "../../../utils/forecast/cannotForecast";
 import type { DataGridColumn } from "../DataGrid/types";
+import FeatureName from "../FeatureName/FeatureName";
 import ForecastInfoList from "../Forecasts/ForecastInfoList";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
 import ActiveWorkIndicator from "./ActiveWorkIndicator";
 import WarningsIndicator from "./WarningsIndicator";
+
+// FeatureListDataGrid pins this column first, so every feature list renders the name the same way.
+export const createNameColumn = (
+	featureTerm: string,
+): DataGridColumn<IFeature & GridValidRowModel> => ({
+	field: "name",
+	headerName: `${featureTerm} Name`,
+	hideable: false,
+	width: 300,
+	flex: 1,
+	renderCell: ({ row }) => (
+		<FeatureName
+			name={getWorkItemName(row.name, row.referenceId)}
+			url={row.url ?? ""}
+		/>
+	),
+});
 
 export const createForecastsColumn = (
 	headerName = "Forecasts",
@@ -36,8 +55,7 @@ export const createForecastsColumn = (
 	),
 });
 
-// The value is the backend-supplied global position (ADR-135) — never the row index. Shared factory,
-// so it lands on the Features view and the Portfolio Feature list at once (D10).
+// The value is the backend-supplied global position, never the row index (ADR-135).
 export const createPositionColumn = (
 	headerLabel: string,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({

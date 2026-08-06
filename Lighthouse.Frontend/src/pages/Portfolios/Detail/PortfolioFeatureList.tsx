@@ -4,12 +4,12 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
+	createNameColumn,
 	createParentColumn,
 	createStateColumn,
 } from "../../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
 import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
-import FeatureName from "../../../components/Common/FeatureName/FeatureName";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
@@ -97,22 +97,9 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 		fetchFeaturesInProgress();
 	}, [portfolio.involvedTeams, teamMetricsService]);
 
-	// Define columns
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
 		() => [
-			{
-				field: "name",
-				headerName: `${featureTerm} Name`,
-				hideable: false,
-				width: 300,
-				flex: 1,
-				renderCell: ({ row }) => (
-					<FeatureName
-						name={getWorkItemName(row.name, row.referenceId)}
-						url={row.url ?? ""}
-					/>
-				),
-			},
+			createNameColumn(featureTerm),
 			{
 				field: "progress",
 				headerName: "Progress",

@@ -156,9 +156,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         }
 
         /// <summary>
-        /// Epic 5375 OQ-1. The write twin of <see cref="GetReadablePortfolioIdsAsync"/>: same four early
-        /// returns, <see cref="HasPortfolioWritePermission"/> swapped in. Diverging on any branch would be
-        /// silent over- or under-permission on a write path rather than a visible error.
+        /// The write twin of <see cref="GetReadablePortfolioIdsAsync"/>, kept branch-for-branch identical with
+        /// <see cref="HasPortfolioWritePermission"/> swapped in: diverging here is silent over-permission (Epic 5375 OQ-1).
         /// </summary>
         public async Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
             ClaimsPrincipal principal,

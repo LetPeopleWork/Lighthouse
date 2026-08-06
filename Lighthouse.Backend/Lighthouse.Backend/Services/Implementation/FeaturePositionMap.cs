@@ -6,9 +6,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Lighthouse.Backend.Services.Implementation
 {
     /// <summary>
-    /// ADR-135: one narrow projection over the whole Features table — no <c>Include</c> graph — ordered by
-    /// the same comparison every read path uses, then numbered from 1. Numbering happens before the RBAC
-    /// filter, which is what makes the position global rather than an index into what the caller may see.
+    /// Numbers the whole Features table from 1 by the same comparison every read path uses, before any RBAC
+    /// filter runs - which is what makes the position global rather than an index into the caller's rows (ADR-135).
     /// </summary>
     public class FeaturePositionMap : IFeaturePositionMap
     {
@@ -24,6 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public async Task<IReadOnlyDictionary<int, int>> GetAsync(CancellationToken cancellationToken = default)
         {
+            // The SQL OrderBy feeds a stable in-memory sort, so equal order values tie-break by Id rather than by provider.
             var orderKeys = await context.Features
                 .AsNoTracking()
                 .OrderBy(feature => feature.Id)

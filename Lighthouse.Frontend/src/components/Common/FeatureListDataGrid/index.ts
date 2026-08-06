@@ -1,6 +1,7 @@
 export {
 	createActiveWorkColumn,
 	createForecastsColumn,
+	createNameColumn,
 	createParentColumn,
 	createPositionColumn,
 	createStateColumn,

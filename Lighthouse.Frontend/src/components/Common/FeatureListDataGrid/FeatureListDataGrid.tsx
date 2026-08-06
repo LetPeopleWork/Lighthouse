@@ -46,6 +46,20 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			: features;
 	}, [features, hideCompleted]);
 
+	// The caller supplies the name column first and the surface-specific ones last; the shared columns
+	// every feature list carries are inserted around them here.
+	const [nameColumn, ...surfaceColumns] = columns;
+	const activeWorkColumn = getActiveWorkTeams
+		? createActiveWorkColumn(getActiveWorkTeams)
+		: null;
+	const gridColumns = [
+		createPositionColumn("#"),
+		nameColumn,
+		createWarningsColumn(),
+		...(activeWorkColumn ? [activeWorkColumn] : []),
+		...surfaceColumns,
+	];
+
 	return (
 		<TableContainer component={Paper}>
 			<Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 2 }}>
@@ -63,21 +77,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			</Box>
 			<DataGridBase
 				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
-				columns={(() => {
-					const [nameCol, ...restCols] = columns;
-					const positionCol = createPositionColumn("#");
-					const warningsCol = createWarningsColumn();
-					const activeWorkCol = getActiveWorkTeams
-						? createActiveWorkColumn(getActiveWorkTeams)
-						: null;
-					return [
-						positionCol,
-						nameCol,
-						warningsCol,
-						...(activeWorkCol ? [activeWorkCol] : []),
-						...restCols,
-					];
-				})()}
+				columns={gridColumns}
 				storageKey={storageKey}
 				loading={loading}
 				emptyStateMessage={emptyStateMessage}

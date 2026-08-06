@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.API
         private readonly IFeaturePositionMap featurePositionMap;
         private readonly ILighthouseClock clock;
 
-#pragma warning disable S107 // The position map is a read-model port of its own (ADR-135); folding it into another dependency would hide which read paths number their rows.
+#pragma warning disable S107 // Every parameter is a distinct port this controller drives; bundling them into a parameter object would only hide the arity, not the coupling.
         public FeaturesController(
             IRepository<Feature> featureRepository,
             IWorkItemRepository workItemRepository,
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.API
             }
 
             var readablePortfolioIdSet = await GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
-            if (feature.Portfolios.Count > 0 && !feature.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
+            if (!IsReadableBy(feature, readablePortfolioIdSet))
             {
                 return NotFound();
             }
@@ -109,28 +109,37 @@ namespace Lighthouse.Backend.API
         {
             var features = featureRepository.GetAllByPredicate(predicate).ToList();
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
-            var positions = await featurePositionMap.GetAsync(HttpContext?.RequestAborted ?? default);
+            var positions = await featurePositionMap.GetAsync(RequestAborted);
             var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
             return features
-                .Where(f => f.Portfolios.Count == 0 || f.Portfolios.Any(p => readablePortfolioIdSet.Contains(p.Id)))
+                .Where(f => IsReadableBy(f, readablePortfolioIdSet))
                 .Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet)
                 {
+                    // Null only if the Feature was deleted between the row read and the position read.
                     Position = positions.TryGetValue(f.Id, out var position) ? position : null,
                 })
                 .ToList();
+        }
+
+        // ADR-136: a Feature in no Portfolio is visible to everyone; otherwise one readable Portfolio is enough.
+        private static bool IsReadableBy(Feature feature, HashSet<int> readablePortfolioIds)
+        {
+            return feature.Portfolios.Count == 0 || feature.Portfolios.Any(p => readablePortfolioIds.Contains(p.Id));
         }
 
         private async Task<HashSet<int>> GetReadablePortfolioIds(IEnumerable<int> portfolioIds)
         {
             var requestedPortfolioIds = portfolioIds.Distinct().ToArray();
             var readablePortfolioIds = await rbacAdministrationService
-                .GetReadablePortfolioIdsAsync(User, requestedPortfolioIds, HttpContext?.RequestAborted ?? default)
+                .GetReadablePortfolioIdsAsync(User, requestedPortfolioIds, RequestAborted)
                 .ConfigureAwait(false);
 
             return readablePortfolioIds is { } ? readablePortfolioIds.ToHashSet() : requestedPortfolioIds.ToHashSet();
         }
+
+        private CancellationToken RequestAborted => HttpContext?.RequestAborted ?? default;
     }
 }

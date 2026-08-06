@@ -11,44 +11,39 @@ namespace Lighthouse.Backend.Models
         }
 
         /// <summary>
-        /// The same ladder, reachable without a <see cref="Feature"/> — ADR-135's position map numbers a
-        /// narrow projection and must order it by this comparison, not by a second one.
+        /// The same ladder without a <see cref="Feature"/>, so ADR-135's position map orders its projection
+        /// by this comparison rather than by a second copy of it.
         /// </summary>
         public static int CompareOrderValues(string x, string y)
         {
-            // Convert order strings to integers for comparison
             var xIsInt = int.TryParse(x, out int xNum);
             var yIsInt = int.TryParse(y, out int yNum);
 
             if (xIsInt && yIsInt)
             {
-                // Both are numbers, compare them numerically
                 return xNum.CompareTo(yNum);
             }
-            else if (xIsInt)
+
+            if (xIsInt)
             {
-                // x is a number, it should come first
                 return -1;
             }
-            else if (yIsInt)
+
+            if (yIsInt)
             {
-                // y is a number, it should come first
                 return 1;
             }
-            else
+
+            var xIsDouble = double.TryParse(x, out double xDouble);
+            var yIsDouble = double.TryParse(y, out double yDouble);
+
+            if (xIsDouble && yIsDouble)
             {
-                var xIsDouble = double.TryParse(x, out double xDouble);
-                var yIsDouble = double.TryParse(y, out double yDouble);
-
-                if (xIsDouble && yIsDouble)
-                {
-                    // Linear is using double values, but the lower the number, the higher the index.
-                    return xDouble.CompareTo(yDouble) * -1;
-                }
-
-                // Both are strings, compare them alphabetically
-                return string.Compare(x, y, StringComparison.CurrentCulture);
+                // Linear ranks with doubles, and the lower the number the higher the place - hence the inversion.
+                return xDouble.CompareTo(yDouble) * -1;
             }
+
+            return string.Compare(x, y, StringComparison.CurrentCulture);
         }
     }
 }

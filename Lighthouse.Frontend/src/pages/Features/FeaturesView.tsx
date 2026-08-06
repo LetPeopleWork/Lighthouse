@@ -5,15 +5,14 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import type { DataGridColumn } from "../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
+	createNameColumn,
 	createStateColumn,
 } from "../../components/Common/FeatureListDataGrid/columns";
 import FeatureListDataGrid from "../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
-import FeatureName from "../../components/Common/FeatureName/FeatureName";
 import type { IFeature } from "../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../services/TerminologyContext";
-import { getWorkItemName } from "../../utils/featureName";
 
 const FeaturesView: React.FC = () => {
 	const { featureService } = useContext(ApiServiceContext);
@@ -38,19 +37,7 @@ const FeaturesView: React.FC = () => {
 
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
 		() => [
-			{
-				field: "name",
-				headerName: `${featureTerm} Name`,
-				hideable: false,
-				width: 300,
-				flex: 1,
-				renderCell: ({ row }) => (
-					<FeatureName
-						name={getWorkItemName(row.name, row.referenceId)}
-						url={row.url ?? ""}
-					/>
-				),
-			},
+			createNameColumn(featureTerm),
 			{
 				field: "projects",
 				headerName: portfoliosTerm,
