@@ -143,6 +143,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 + "unconfigured instance falls back to it rather than to zero");
         }
 
+        /// <summary>
+        /// Slice 03 removed the API-key mint, and the mint was the only thing that pruned. Every
+        /// sign-in attempt writes a row here — a grant or a refusal — so without this the table is
+        /// append-only forever, on the one path that is left.
+        /// </summary>
+        [Test]
+        public async Task RecordingAHandshakeOutcome_PrunesTheRowsAlreadySpent()
+        {
+            await CreateSubject().RecordHandshakeGrantAsync("viewer", Nonce, TestContext.CurrentContext.CancellationToken);
+
+            repository.Verify(
+                store => store.PruneSpentAsync(FixedNow.UtcDateTime, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task RecordingAHandshakeRefusal_PrunesTheRowsAlreadySpent()
+        {
+            await CreateSubject().RecordHandshakeRefusalAsync(
+                "viewer", Nonce, "no_access", TestContext.CurrentContext.CancellationToken);
+
+            repository.Verify(
+                store => store.PruneSpentAsync(FixedNow.UtcDateTime, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
         private EmbedSessionTokenService CreateSubject()
         {
             var options = new Mock<IOptionsMonitor<EmbedConfiguration>>();

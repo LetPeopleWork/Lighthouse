@@ -57,7 +57,7 @@ async function ensurePremiumLicense(
  * before any scope reads as held. `Authorization__EmergencySystemAdminSubjects__0` is set in
  * `ci_verifyauth.yml` and does not help — the gate short-circuits ahead of the emergency bypass.
  * Bootstrapping through the UI is what every other auth spec does; doing it here too is what
- * stops this one depending on `EmbedSessionAndApiKeys.spec.ts` sorting first.
+ * stops this one depending on `ApiKeys.spec.ts` sorting first.
  */
 async function ensureFirstSystemAdmin(
 	overviewPage: OverviewPage,

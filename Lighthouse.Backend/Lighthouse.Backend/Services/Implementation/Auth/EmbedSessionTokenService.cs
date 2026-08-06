@@ -175,6 +175,11 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         {
             var now = timeProvider.GetUtcNow().UtcDateTime;
 
+            // Slice 03 deleted the API-key mint, which was the only thing that pruned. This is the
+            // one write left on the viewer path, so it inherits the job — otherwise the table is
+            // append-only for the lifetime of the instance.
+            await repository.PruneSpentAsync(now, cancellationToken);
+
             outcome.HandshakeNonceHash = HashSecret(nonce);
             outcome.CreatedAt = now;
             outcome.ExpiresAt = now.AddSeconds(ResolveHandshakeOutcomeLifetimeSeconds());
