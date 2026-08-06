@@ -1,0 +1,27 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/EmbedStartController.cs",
+      "**/API/EmbedHandshakeController.cs",
+      "**/API/EmbedEntryController.cs",
+      "**/API/DTO/EmbedHandshakeResponse.cs",
+      "**/Configuration/EmbedConfiguration.cs",
+      "**/Models/Auth/EmbedSessionToken.cs",
+      "**/Models/Auth/EmbedSessionTokenRedemption.cs",
+      "**/Services/Implementation/Auth/ApiKeyPrincipalFactory.cs",
+      "**/Services/Implementation/Auth/EmbedSessionTokenService.cs",
+      "**/Services/Implementation/Repositories/EmbedSessionTokenRepository.cs",
+      "**/Services/Implementation/Repositories/UserProfileLookup.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Embed|FullyQualifiedName~ApiKey|FullyQualifiedName~SmartAuthScheme|FullyQualifiedName~UserProfileLookup|FullyQualifiedName~EndpointAuthorizationPolicy)&FullyQualifiedName!~Containers",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

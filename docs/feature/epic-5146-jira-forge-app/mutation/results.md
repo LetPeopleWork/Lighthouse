@@ -330,3 +330,62 @@ Two of the new assertions were sabotage-verified before the run, per the ledger 
 assertion whose failure you have not seen proves nothing: `configured > 0` was temporarily changed
 to `>= 0` and the entry-point guard's `||` to `&&`; both new tests went red, and both mutations were
 reverted before the run started.
+
+---
+
+# Mutation testing — 5694 (slice 03: remove the API-key embed path)
+
+Run 2026-08-06 against `main`. Gate is 80 % kill rate; `CLAUDE.md` sets `per-feature`, so this is a
+real gate rather than a nightly.
+
+| stack | score | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **89.00 %** | 200 | 178 | 14 | 8 | 13 m 10 s |
+| Frontend (StrykerJS) | *N/A* | — | — | — | — | — |
+
+**Frontend is N/A, not skipped.** `git diff 4d91ea229..HEAD --stat -- Lighthouse.Frontend/` is
+empty: this slice is a backend deletion plus an E2E spec split. Nothing for StrykerJS to mutate.
+
+Config: `stryker.5694.backend.json` beside this file. Same arrangement as the earlier runs — copy it
+into `Lighthouse.Backend.Tests/` under the conventional name and run from there:
+
+```
+cp docs/feature/epic-5146-jira-forge-app/mutation/stryker.5694.backend.json \
+   Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.epic5146-slice03.json
+cd Lighthouse.Backend/Lighthouse.Backend.Tests
+TZ=Europe/Zurich dotnet stryker --config-file stryker-config.epic5146-slice03.json
+```
+
+## Per file
+
+| file | tested | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| `Configuration/EmbedConfiguration.cs` | 4 | 4 | 0 | 0 | **100 %** |
+| `Models/Auth/EmbedSessionTokenRedemption.cs` | 1 | 1 | 0 | 0 | **100 %** |
+| `Services/Implementation/Auth/ApiKeyPrincipalFactory.cs` | 25 | 25 | 0 | 0 | **100 %** |
+| `Services/Implementation/Repositories/UserProfileLookup.cs` | 1 | 1 | 0 | 0 | **100 %** |
+| `API/EmbedStartController.cs` | 35 | 33 | 2 | 0 | 94.3 % |
+| `API/EmbedHandshakeController.cs` | 9 | 8 | 1 | 0 | 88.9 % |
+| `Services/Implementation/Repositories/EmbedSessionTokenRepository.cs` | 26 | 23 | 2 | 1 | 88.5 % |
+| `Services/Implementation/Auth/EmbedSessionTokenService.cs` | 72 | 62 | 7 | 3 | 86.1 % |
+| `API/EmbedEntryController.cs` | 27 | 21 | 2 | 4 | 77.8 % |
+| **total** | **200** | **178** | **14** | **8** | **89.00 %** |
+
+`EmbedEntryController` is the one file below the gate on its own. Its survivors are the log-text and
+`AuthenticationProperties` mutants recorded as equivalent in the 5692 run — the same set, minus the
+API-key branch that no longer exists to be mutated.
+
+## What this run does not cover, on purpose
+
+The `test-case-filter` excludes `Containers`, so the Postgres fixtures do not run: one container per
+mutant is prohibitive. Their subjects — the conditional updates behind ADR-131, the check constraint,
+the nonce-replay event name — are therefore **covered by tests that this score does not count**. That
+was true of the 5692 run too and is recorded there for the same reason.
+
+## Context
+
+Ran after the adversarial review, not before. The review rejected the slice on a BLOCKER — the
+readable-scope reversal was argued on "RBAC is enforced per request", and `LogsController` had no
+guard at all, so a scope-less viewer with an embed cookie could download the instance log. Fixed and
+covered by `AViewerWithNoReadableScope_CannotReachInstanceWideSurfaces` before this run. Scoring code
+a reviewer had rejected would have measured the wrong thing.
