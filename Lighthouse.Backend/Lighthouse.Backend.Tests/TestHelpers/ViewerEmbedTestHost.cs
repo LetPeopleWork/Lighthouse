@@ -210,6 +210,37 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return new TicketDataFormat(protector).Protect(ticket);
         }
 
+        /// <summary>
+        /// Hop 1 and hop 2 for a viewer who is already signed in. The nonce is spent on return —
+        /// polling it again is the consumed-nonce case, not a repeat of this call.
+        /// </summary>
+        public async Task<(string Nonce, HandshakeReading Grant)> GrantEmbedSessionAsync(string subject)
+        {
+            var nonce = NewNonce();
+            var sessionCookie = ForgeInteractiveSessionCookie(AuthEnabled, subject, subject);
+
+            using var start = await StartAsync(AuthEnabled, nonce, sessionCookie: sessionCookie);
+            var grant = await PollHandshakeAsync(AuthEnabled, nonce);
+
+            Assert.That(grant.HasProperty("token"), Is.True,
+                "precondition: the first poll must win the nonce and be granted an embed session; "
+                + $"got {grant.StatusCode} {grant.Body}");
+
+            return (nonce, grant);
+        }
+
+        /// <summary>Hop 3 on top of <see cref="GrantEmbedSessionAsync"/>: the redeemed embed cookie.</summary>
+        public async Task<string> EstablishEmbedCookieAsync(string subject)
+        {
+            var (_, grant) = await GrantEmbedSessionAsync(subject);
+
+            using var entry = await EnterAsync(AuthEnabled, grant.ReadString("token"));
+            var embedCookie = ReadCookieValue(entry, EmbedCookieName);
+
+            Assert.That(embedCookie, Is.Not.Null.And.Not.Empty, "precondition: the entry point must issue an embed cookie");
+            return embedCookie!;
+        }
+
         public void SeedRbacFixture()
         {
             using var scope = root.Services.CreateScope();

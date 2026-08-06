@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task DeletingTheViewer_EndsTheirLiveFrame()
         {
-            var embedCookie = await EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
 
             using var beforeDeletion = await ViewerEmbedTestHost.GetAsViewerAsync(
                 host.AuthEnabled, ViewerEmbedTestHost.TeamsPath, embedCookie: embedCookie);
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task RejectingADeletedViewer_DoesNotBringTheirProfileBack()
         {
-            var embedCookie = await EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
             await host.DeleteViewerAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
 
             using var firstAfterDeletion = await ViewerEmbedTestHost.GetAsViewerAsync(
@@ -126,24 +126,6 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             var body = await response.Content.ReadAsStringAsync();
             return body.Contains(FirstTimeViewerSubject, StringComparison.Ordinal);
-        }
-
-        private async Task<string> EstablishEmbedCookieAsync(string subject)
-        {
-            var nonce = ViewerEmbedTestHost.NewNonce();
-            var sessionCookie = host.ForgeInteractiveSessionCookie(host.AuthEnabled, subject, subject);
-
-            using var start = await ViewerEmbedTestHost.StartAsync(host.AuthEnabled, nonce, sessionCookie: sessionCookie);
-            var handshake = await ViewerEmbedTestHost.PollHandshakeAsync(host.AuthEnabled, nonce);
-
-            Assert.That(handshake.HasProperty("token"), Is.True,
-                $"precondition: the viewer must be granted an embed session; got {handshake.StatusCode} {handshake.Body}");
-
-            using var entry = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, handshake.ReadString("token"));
-            var embedCookie = ViewerEmbedTestHost.ReadCookieValue(entry, ViewerEmbedTestHost.EmbedCookieName);
-
-            Assert.That(embedCookie, Is.Not.Null.And.Not.Empty, "precondition: the entry point must issue an embed cookie");
-            return embedCookie!;
         }
     }
 }

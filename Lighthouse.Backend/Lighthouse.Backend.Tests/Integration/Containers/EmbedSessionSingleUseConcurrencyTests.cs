@@ -78,34 +78,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             var nonce = await RecordHandshakeGrantAsync(factory);
             var neverIssued = await ViewerEmbedTestHost.PollHandshakeAsync(factory, ViewerEmbedTestHost.NewNonce());
 
-            // The clients are built before the barrier on purpose. Creating one starts the test server
-            // and is far slower than the request itself, so a barrier that also gates construction
-            // staggers the callers and the race never happens.
-            var clients = Enumerable.Range(0, ConcurrentPolls)
-                .Select(_ => ViewerEmbedTestHost.CreateClient(factory))
-                .ToList();
-
-            ViewerEmbedTestHost.HandshakeReading[] readings;
-            try
-            {
-                using var barrier = new Barrier(ConcurrentPolls);
-                var polls = clients
-                    .Select(client => Task.Run(async () =>
-                    {
-                        barrier.SignalAndWait();
-                        return await PollHandshakeAsync(client, nonce);
-                    }))
-                    .ToList();
-
-                readings = await Task.WhenAll(polls);
-            }
-            finally
-            {
-                foreach (var client in clients)
-                {
-                    client.Dispose();
-                }
-            }
+            var readings = await RaceAsync(
+                ConcurrentPolls,
+                () => ViewerEmbedTestHost.CreateClient(factory),
+                client => PollHandshakeAsync(client, nonce));
 
             var grants = readings.Where(reading => reading.HasProperty("token")).ToList();
             var losers = readings.Where(reading => !reading.HasProperty("token")).ToList();
@@ -158,32 +134,47 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        // D73: the clients are built ABOVE the barrier. CreateClient starts and locks the test server
-        // and costs orders of magnitude more than the request it precedes, so a barrier that also
-        // gates construction staggers the callers, every loser reads the row after the winner has
-        // committed, and the atomic update under test is never exercised.
-        private static async Task<(HttpStatusCode StatusCode, bool CarriesEmbedCookie)[]> RaceRedemptionsAsync(
+        private static Task<(HttpStatusCode StatusCode, bool CarriesEmbedCookie)[]> RaceRedemptionsAsync(
             PostgresEmbedFactory factory,
             string token)
         {
-            var clients = Enumerable.Range(0, ConcurrentRedemptions)
-                .Select(_ => EmbedSessionTestHost.CreateClient(factory))
-                .ToList();
+            return RaceAsync(
+                ConcurrentRedemptions,
+                () => EmbedSessionTestHost.CreateClient(factory),
+                client => RedeemAsync(client, token),
+                WarmRedemptionPathAsync);
+        }
+
+        // D73: the clients are built ABOVE the barrier. CreateClient starts and locks the test server
+        // and costs orders of magnitude more than the request it precedes, so a barrier that also
+        // gates construction staggers the callers, every loser reads the row after the winner has
+        // committed, and the atomic update under test is never exercised. Structural here rather than
+        // restated per race, so a new race cannot get it wrong.
+        private static async Task<T[]> RaceAsync<T>(
+            int callers,
+            Func<HttpClient> createClient,
+            Func<HttpClient, Task<T>> call,
+            Func<IReadOnlyList<HttpClient>, Task>? warmUp = null)
+        {
+            var clients = Enumerable.Range(0, callers).Select(_ => createClient()).ToList();
 
             try
             {
-                await WarmRedemptionPathAsync(clients);
+                if (warmUp is not null)
+                {
+                    await warmUp(clients);
+                }
 
-                using var barrier = new Barrier(ConcurrentRedemptions);
-                var redemptions = clients
+                using var barrier = new Barrier(callers);
+                var calls = clients
                     .Select(client => Task.Run(async () =>
                     {
                         barrier.SignalAndWait();
-                        return await RedeemAsync(client, token);
+                        return await call(client);
                     }))
                     .ToList();
 
-                return await Task.WhenAll(redemptions);
+                return await Task.WhenAll(calls);
             }
             finally
             {

@@ -45,6 +45,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             + "everything would pass this line while meaning nothing, which is why the two legal shapes "
             + "are asserted alongside it";
 
+        private const string CascadeLostMessage =
+            "deleting an API key must still revoke every token it minted while the API-key path is "
+            + "reachable (slice 01 keeps it reachable on purpose)";
+
         [Test]
         public async Task OnSqlite_TheGrantOrRefusalConstraint_DiscriminatesRatherThanRejectsEverything()
         {
@@ -104,10 +108,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 Assert.That(probe.AfterDeletion, Is.Zero, CascadeLostMessage);
             }
         }
-
-        private static string CascadeLostMessage =>
-            "deleting an API key must still revoke every token it minted while the API-key path is "
-            + "reachable (slice 01 keeps it reachable on purpose)";
 
         private static async Task<ConstraintProbe> ProbeConstraintAsync(LighthouseAppContext context)
         {

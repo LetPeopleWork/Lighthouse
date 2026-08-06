@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task AnEmbedCookie_CannotStartAHandshake()
         {
-            var embedCookie = await EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
             var renewalNonce = ViewerEmbedTestHost.NewNonce();
 
             using var renewal = await ViewerEmbedTestHost.StartAsync(
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task AnOrdinarySession_OutranksAnEmbedCookieOnTheSameRequest()
         {
-            var embedCookie = await EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
             var sessionCookie = host.ForgeInteractiveSessionCookie(
                 host.AuthEnabled,
                 ViewerEmbedTestHost.GroupMappedViewerSubject,
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task UnknownPendingConsumedAndMalformedNonces_AreOneIdenticalResponse()
         {
-            var consumedNonce = await GrantAndConsumeAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var consumedNonce = await ConsumedNonceAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
 
             var neverIssued = await ViewerEmbedTestHost.PollHandshakeAsync(host.AuthEnabled, ViewerEmbedTestHost.NewNonce());
             var issuedButUnresolved = await PollAfterChallengedStartAsync();
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task ASecondReadOfAConsumedNonce_IsRecordedAsAnAnomaly()
         {
-            var consumedNonce = await GrantAndConsumeAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
+            var consumedNonce = await ConsumedNonceAsync(ViewerEmbedTestHost.ExplicitViewerSubject);
 
             await ViewerEmbedTestHost.PollHandshakeAsync(host.AuthEnabled, consumedNonce);
 
@@ -194,35 +194,9 @@ namespace Lighthouse.Backend.Tests.API.Security
                 + "whose authentication cannot work");
         }
 
-        private async Task<string> EstablishEmbedCookieAsync(string subject)
+        private async Task<string> ConsumedNonceAsync(string subject)
         {
-            var nonce = ViewerEmbedTestHost.NewNonce();
-            var sessionCookie = host.ForgeInteractiveSessionCookie(host.AuthEnabled, subject, subject);
-
-            using var start = await ViewerEmbedTestHost.StartAsync(host.AuthEnabled, nonce, sessionCookie: sessionCookie);
-            var handshake = await ViewerEmbedTestHost.PollHandshakeAsync(host.AuthEnabled, nonce);
-
-            Assert.That(handshake.HasProperty("token"), Is.True,
-                $"precondition: the viewer must be granted an embed session; got {handshake.StatusCode} {handshake.Body}");
-
-            using var entry = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, handshake.ReadString("token"));
-            var embedCookie = ViewerEmbedTestHost.ReadCookieValue(entry, ViewerEmbedTestHost.EmbedCookieName);
-
-            Assert.That(embedCookie, Is.Not.Null.And.Not.Empty, "precondition: the entry point must issue an embed cookie");
-            return embedCookie!;
-        }
-
-        private async Task<string> GrantAndConsumeAsync(string subject)
-        {
-            var nonce = ViewerEmbedTestHost.NewNonce();
-            var sessionCookie = host.ForgeInteractiveSessionCookie(host.AuthEnabled, subject, subject);
-
-            using var start = await ViewerEmbedTestHost.StartAsync(host.AuthEnabled, nonce, sessionCookie: sessionCookie);
-            var first = await ViewerEmbedTestHost.PollHandshakeAsync(host.AuthEnabled, nonce);
-
-            Assert.That(first.HasProperty("token"), Is.True,
-                $"precondition: the first poll must win the nonce; got {first.StatusCode} {first.Body}");
-
+            var (nonce, _) = await host.GrantEmbedSessionAsync(subject);
             return nonce;
         }
 
