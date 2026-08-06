@@ -145,6 +145,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 "no display name is not the same as a blank one — the SPA falls back only when the claim is absent");
         }
 
+        // ADR-137: the viewer overload. A viewer principal is rebuilt from a subject alone, so the
+        // display name is the one optional part and both name claims come from it or neither does.
+        [Test]
+        public void CreateForViewer_WithADisplayName_CarriesItOnBothNameClaims()
+        {
+            var principal = ApiKeyPrincipalFactory.Create(OwnerSubject, OwnerDisplayName, SchemeUnderTest);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(principal.FindFirst(ApiKeyPrincipalFactory.NameClaimType)?.Value,
+                    Is.EqualTo(OwnerDisplayName));
+                Assert.That(principal.FindFirst(ClaimTypes.Name)?.Value, Is.EqualTo(OwnerDisplayName),
+                    "ClaimsPrincipal.Identity.Name reads this one, and the framed SPA reads that — without it "
+                    + "a working embed renders the viewer as anonymous");
+            }
+        }
+
+        [Test]
+        [TestCase((string?)null)]
+        [TestCase("")]
+        [TestCase("   ")]
+        public void CreateForViewer_WithoutADisplayName_EmitsNeitherNameClaim(string? blankDisplayName)
+        {
+            var principal = ApiKeyPrincipalFactory.Create(OwnerSubject, blankDisplayName, SchemeUnderTest);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(principal.FindFirst(ApiKeyPrincipalFactory.NameClaimType), Is.Null);
+                Assert.That(principal.FindFirst(ClaimTypes.Name), Is.Null,
+                    "a blank name is not a name — the SPA falls back only when the claim is absent");
+            }
+        }
+
+        [Test]
+        [TestCase((string?)null)]
+        [TestCase("")]
+        [TestCase("   ")]
+        public void CreateForViewer_WithoutASubject_RefusesToBuildAPrincipal(string? blankSubject)
+        {
+            Assert.That(
+                () => ApiKeyPrincipalFactory.Create(blankSubject!, OwnerDisplayName, SchemeUnderTest),
+                Throws.InstanceOf<ArgumentException>(),
+                "a principal with no sub matches no RBAC row; building one signs the caller in as no-one");
+        }
+
         // The factory is pure over its scheme argument, so the parity property is stated with two
         // arbitrary names rather than coupling this test to the scheme registry.
         private const string SchemeUnderTest = "AnyScheme";
