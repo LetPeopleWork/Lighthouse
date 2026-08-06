@@ -13,7 +13,9 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string? SecretHash { get; set; }
 
-        // ADR-137 D63: the API-key path stays mintable this release, so the column stays and turns optional.
+        // ADR-137 D63: nothing mints against this any more — the column outlives the path because
+        // migrations here are expand-only, and it goes with the D63 renames at the contract-phase
+        // drop. `NamesAnIdentity` still reads it, so rows written before slice 03 stay redeemable.
         public int? ApiKeyId { get; set; }
 
         public string? Subject { get; set; }

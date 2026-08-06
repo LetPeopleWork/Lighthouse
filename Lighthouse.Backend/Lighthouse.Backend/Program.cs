@@ -1007,7 +1007,6 @@ namespace Lighthouse.Backend
             // Services
             builder.Services.AddScoped<IConfigFileUpdater, ConfigFileUpdater>();
             builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
-            builder.Services.AddScoped<IApiKeyIdentityResolver, ApiKeyIdentityResolver>();
             builder.Services.AddScoped<IEmbedSessionTokenService, EmbedSessionTokenService>();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
             builder.Services.AddScoped<IAppSettingService, AppSettingService>();

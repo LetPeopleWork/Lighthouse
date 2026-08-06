@@ -42,9 +42,10 @@ namespace Lighthouse.Backend.API
         private const string RefusalHtml = """
             <!DOCTYPE html>
             <html lang="en"><head><meta charset="utf-8"><title>Lighthouse embed session</title></head>
-            <body><h1>Lighthouse has nothing to show you</h1>
-            <p>You are signed in, but no team or portfolio has been shared with you yet. Ask a
-            Lighthouse administrator for access, then close this tab and try again.</p></body></html>
+            <body><h1>Lighthouse could not tell who you are</h1>
+            <p>The sign-in worked, but this Lighthouse did not recognise it as an account. That is a
+            fault on the instance, not something you can fix — report it to whoever runs it, with
+            the time you tried. You can close this tab.</p></body></html>
             """;
 
         [HttpGet("start")]

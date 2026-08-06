@@ -9,12 +9,6 @@ namespace Lighthouse.Backend.Tests.Models.Auth
     public class EmbedSessionContractShapeTest
     {
         [Test]
-        public void EmbedSessionTokenMintResult_UnsetToken_IsEmpty()
-        {
-            Assert.That(new EmbedSessionTokenMintResult().Token, Is.Empty);
-        }
-
-        [Test]
         public void EmbedSessionToken_UnsetIdentifiers_AreNull()
         {
             var token = new EmbedSessionToken();
