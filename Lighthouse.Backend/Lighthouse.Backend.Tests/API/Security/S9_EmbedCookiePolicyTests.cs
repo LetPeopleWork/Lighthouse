@@ -9,15 +9,21 @@ namespace Lighthouse.Backend.Tests.API.Security
     // Epic 5146 slice 02a (#5641) — ADR-130; feature security checklist S5, S6.
     public class S9_EmbedCookiePolicyTests
     {
+        // Spelled out rather than taken from the production constants: this fixture is what pins the
+        // shipped names, and reading them from the code under test would assert nothing.
+        private const string EmbedCookieName = ".Lighthouse.Embed";
+        private const string EmbedCookieScheme = "LighthouseEmbedCookie";
+        private const string SessionCookieName = ".Lighthouse.Session";
+
         private static readonly TimeSpan ExpectedEmbedCookieLifetime = TimeSpan.FromMinutes(30);
 
-        private EmbedSessionTestHost host = null!;
+        private ViewerEmbedTestHost host = null!;
 
         [SetUp]
         public void SetUp()
         {
-            host = new EmbedSessionTestHost();
-            host.SeedSystemAdminAndPortfolios();
+            host = new ViewerEmbedTestHost();
+            host.SeedRbacFixture();
         }
 
         [TearDown]
@@ -29,11 +35,10 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S9_EmbedEntryPoint_SetCookieHeader_CarriesSecureSameSiteNoneAndPartitioned()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
-            var setCookie = EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName);
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
+            var setCookie = ViewerEmbedTestHost.ReadSetCookie(response, EmbedCookieName);
 
             // The framework does not validate CookieBuilder.Extensions, so the guard is the literal
             // header rather than the call site (spike/findings.md, 2026-08-04).
@@ -52,11 +57,10 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S9_EmbedEntryPoint_IssuesACookieThatDiesWithTheBrowserSession()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
-            var setCookie = EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName);
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
+            var setCookie = ViewerEmbedTestHost.ReadSetCookie(response, EmbedCookieName);
 
             using (Assert.EnterMultipleScope())
             {
@@ -70,12 +74,11 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S9_EmbedEntryPoint_DoesNotTouchTheOrdinarySessionCookie()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
 
-            Assert.That(EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.SessionCookieName), Is.Null,
+            Assert.That(ViewerEmbedTestHost.ReadSetCookie(response, SessionCookieName), Is.Null,
                 "two cookie names is what lets an embed session and an ordinary session coexist in one browser");
         }
 
@@ -84,11 +87,11 @@ namespace Lighthouse.Backend.Tests.API.Security
         {
             using var scope = host.AuthEnabled.Services.CreateScope();
             var monitor = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>();
-            var embedOptions = monitor.Get(EmbedSessionTestHost.EmbedCookieScheme);
+            var embedOptions = monitor.Get(EmbedCookieScheme);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(embedOptions.Cookie.Name, Is.EqualTo(EmbedSessionTestHost.EmbedCookieName));
+                Assert.That(embedOptions.Cookie.Name, Is.EqualTo(EmbedCookieName));
                 Assert.That(embedOptions.ExpireTimeSpan, Is.EqualTo(ExpectedEmbedCookieLifetime));
                 Assert.That(embedOptions.SlidingExpiration, Is.False,
                     "a sliding embed cookie would make the revocation gap unbounded");
@@ -105,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(sessionOptions.Cookie.Name, Is.EqualTo(EmbedSessionTestHost.SessionCookieName));
+                Assert.That(sessionOptions.Cookie.Name, Is.EqualTo(SessionCookieName));
                 Assert.That(built.SameSite, Is.EqualTo(SameSiteMode.Lax),
                     "the embed relaxation must stay confined to the embed cookie — this is the blast-radius guarantee");
                 Assert.That(built.Secure, Is.True);

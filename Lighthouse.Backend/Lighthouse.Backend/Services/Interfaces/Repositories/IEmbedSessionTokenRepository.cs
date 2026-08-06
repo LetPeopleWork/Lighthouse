@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 
         Task<int> TryConsumeHandshakeRefusalAsync(string nonceHash, DateTime consumedAt, CancellationToken cancellationToken);
 
-        Task<int> RevokeOutstandingForApiKeyAsync(int apiKeyId, DateTime revokedAt, CancellationToken cancellationToken);
-
         Task<int> PruneSpentAsync(DateTime now, CancellationToken cancellationToken);
     }
 }

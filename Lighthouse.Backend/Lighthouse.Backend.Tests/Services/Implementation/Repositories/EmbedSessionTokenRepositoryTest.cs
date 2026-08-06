@@ -91,26 +91,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
-        [Test]
-        public async Task RevokeOutstandingForApiKey_LeavesTokensOfOtherKeysAndAlreadySpentTokensAlone()
-        {
-            await GivenTokens(
-                AToken("outstanding-of-this-key", expiresAt: Later),
-                Spent(AToken("already-redeemed-of-this-key", expiresAt: Later), redeemedAt: Earlier),
-                AToken("outstanding-of-another-key", expiresAt: Later, apiKeyId: OtherApiKeyId));
-
-            var revoked = await CreateSubject().RevokeOutstandingForApiKeyAsync(ApiKeyId, Now, CancellationToken.None);
-            var stillRedeemable = await CreateSubject().TryMarkRedeemedAsync("outstanding-of-another-key", Now, CancellationToken.None);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(revoked, Is.EqualTo(1),
-                    "revocation cascades from one API key only, and a token already spent needs no revoking");
-                Assert.That(stillRedeemable, Is.EqualTo(1),
-                    "another key's outstanding token is untouched");
-            }
-        }
-
         private EmbedSessionTokenRepository CreateSubject()
         {
             return new EmbedSessionTokenRepository(DatabaseContext);

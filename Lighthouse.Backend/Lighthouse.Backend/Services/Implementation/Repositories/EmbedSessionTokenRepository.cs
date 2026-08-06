@@ -60,15 +60,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     cancellationToken);
         }
 
-        public Task<int> RevokeOutstandingForApiKeyAsync(int apiKeyId, DateTime revokedAt, CancellationToken cancellationToken)
-        {
-            return Outstanding()
-                .Where(token => token.ApiKeyId == apiKeyId)
-                .ExecuteUpdateAsync(
-                    setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
-                    cancellationToken);
-        }
-
         public Task<int> PruneSpentAsync(DateTime now, CancellationToken cancellationToken)
         {
             return context.EmbedSessionTokens

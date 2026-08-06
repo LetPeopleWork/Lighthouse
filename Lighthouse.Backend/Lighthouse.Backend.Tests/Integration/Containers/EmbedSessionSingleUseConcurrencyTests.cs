@@ -33,31 +33,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         // survives every mutation of it.
         private const string NonceReplayEventName = "EmbedHandshakeNonceReplayed";
 
-        [Test]
-        public async Task Redeem_ManySimultaneousRedemptionsOfOneToken_ExactlyOneEstablishesASession()
-        {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
-            using var factory = new PostgresEmbedFactory(postgres.GetConnectionString());
-
-            MigrateAndSeedOwner(factory);
-            var apiKey = await CreateApiKeyAsync(factory);
-            var token = await EmbedSessionTestHost.MintTokenAsync(factory, apiKey);
-
-            var outcomes = await RaceRedemptionsAsync(factory, token);
-
-            var successes = outcomes.Count(outcome => outcome.StatusCode == HttpStatusCode.Redirect);
-            var refusals = outcomes.Count(outcome => outcome.StatusCode == HttpStatusCode.Unauthorized);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(successes, Is.EqualTo(1),
-                    "single use is the conditional update's affected-row count; a read-then-write passes every "
-                    + "single-threaded test and hands out extra sessions exactly when it matters");
-                Assert.That(refusals, Is.EqualTo(ConcurrentRedemptions - 1),
-                    "every loser of the race must be refused legibly, not served a second session");
-            }
-        }
-
         /// <summary>
         /// Epic 5146 slice 01 (#5692) — ADR-137 D68. The nonce half of the same guarantee, and the
         /// reason it needs its own case: consumption is a different conditional update over different
@@ -104,9 +79,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
-        /// The viewer half of single use. The API-key case above does not cover it: a subject-bound row
-        /// runs through a different NamesAnIdentity branch and a different principal construction, so a
-        /// regression could land on one path and not the other.
+        /// Single use at the entry point: ADR-131's affected-row count, on the provider that can
+        /// actually model the conditional update.
         /// </summary>
         [Test]
         public async Task Enter_ManySimultaneousRedemptionsOfOneViewerToken_ExactlyOneEstablishesASession()
@@ -127,7 +101,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(sessions, Is.EqualTo(1),
-                    "a viewer-identity token is single use in the same sense an API-key one is; counting the "
+                    "single use is the conditional update's affected-row count; a read-then-write passes every "
+                    + "single-threaded test and hands out extra sessions exactly when it matters. Counting the "
                     + "redirect alone would pass on a response that redirects without signing anyone in");
                 Assert.That(refusals, Is.EqualTo(ConcurrentRedemptions - 1),
                     "and every loser is refused legibly rather than handed a second frame");
@@ -140,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         {
             return RaceAsync(
                 ConcurrentRedemptions,
-                () => EmbedSessionTestHost.CreateClient(factory),
+                () => ViewerEmbedTestHost.CreateClient(factory),
                 client => RedeemAsync(client, token),
                 WarmRedemptionPathAsync);
         }
@@ -219,9 +194,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             string token)
         {
             using var response = await client.GetAsync(new Uri(
-                $"{EmbedSessionTestHost.EntryPath}?token={Uri.EscapeDataString(token)}",
+                $"{ViewerEmbedTestHost.EntryPath}?token={Uri.EscapeDataString(token)}",
                 UriKind.Relative));
-            var cookie = EmbedSessionTestHost.ReadCookieValue(response, EmbedSessionTestHost.EmbedCookieName);
+            var cookie = ViewerEmbedTestHost.ReadCookieValue(response, ViewerEmbedTestHost.EmbedCookieName);
 
             return (response.StatusCode, CarriesEmbedCookie: cookie is { Length: > 0 });
         }
@@ -279,19 +254,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 ScopeId = null,
             });
             dbContext.SaveChanges();
-        }
-
-        private static async Task<string> CreateApiKeyAsync(PostgresEmbedFactory factory)
-        {
-            using var scope = factory.Services.CreateScope();
-            var apiKeyService = scope.ServiceProvider.GetRequiredService<IApiKeyService>();
-            var creationResult = await apiKeyService.CreateApiKeyAsync(
-                "embed-concurrency-key",
-                "epic 5146 slice 02a",
-                createdByUser: OwnerSubject,
-                ownerSubject: OwnerSubject);
-
-            return creationResult.PlainTextKey;
         }
 
         private sealed class PostgresEmbedFactory : WebApplicationFactory<Program>

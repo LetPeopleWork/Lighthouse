@@ -3,7 +3,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    // Epic 5146 slice 02a (#5641) — ADR-129 / ADR-131; feature security checklist S3, S4, S8, S10.
+    // Epic 5146 slice 02a (#5641) — ADR-131 / ADR-137; feature security checklist S3, S4, S8, S10.
     public class S8_EmbedEntryPointTests
     {
         private const int ShortTokenLifetimeSeconds = 1;
@@ -17,13 +17,13 @@ namespace Lighthouse.Backend.Tests.API.Security
             "http://evil.example",
         ];
 
-        private EmbedSessionTestHost host = null!;
+        private ViewerEmbedTestHost host = null!;
 
         [SetUp]
         public void SetUp()
         {
-            host = new EmbedSessionTestHost();
-            host.SeedSystemAdminAndPortfolios();
+            host = new ViewerEmbedTestHost();
+            host.SeedRbacFixture();
         }
 
         [TearDown]
@@ -35,10 +35,9 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_ValidToken_RedirectsToACleanUrlThatNoLongerCarriesTheToken()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
             var location = response.Headers.Location?.ToString();
 
             using (Assert.EnterMultipleScope())
@@ -54,10 +53,9 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_Response_SuppressesTheReferrer()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
 
             var referrerPolicy = response.Headers.TryGetValues("Referrer-Policy", out var values)
                 ? string.Join(",", values)
@@ -70,11 +68,10 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_TokenAlreadyRedeemed_RefusedLegibly()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var firstResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
-            using var replayResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+            using var firstResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
+            using var replayResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
             var replayBody = await replayResponse.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
@@ -86,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Assert.That(replayBody, Is.Not.Empty,
                     "a refusal inside a frame must be readable, never an empty rectangle");
                 Assert.That(replayResponse.Content.Headers.ContentType?.MediaType, Is.EqualTo("text/html"));
-                Assert.That(EmbedSessionTestHost.ReadSetCookie(replayResponse, EmbedSessionTestHost.EmbedCookieName), Is.Null,
+                Assert.That(ViewerEmbedTestHost.ReadSetCookie(replayResponse, ViewerEmbedTestHost.EmbedCookieName), Is.Null,
                     "a refused redemption issues no session");
             }
         }
@@ -94,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_UnknownToken_RefusedLegibly()
         {
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, "unknown.token");
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, "unknown.token");
             var body = await response.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
@@ -108,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_MalformedToken_RefusedLegibly()
         {
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, "no-separator-at-all");
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, "no-separator-at-all");
             var body = await response.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
@@ -121,8 +118,8 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_MissingToken_RefusedLegibly()
         {
-            using var client = EmbedSessionTestHost.CreateClient(host.AuthEnabled);
-            using var response = await client.GetAsync(EmbedSessionTestHost.EntryPath);
+            using var client = ViewerEmbedTestHost.CreateClient(host.AuthEnabled);
+            using var response = await client.GetAsync(ViewerEmbedTestHost.EntryPath);
             var body = await response.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
@@ -135,58 +132,38 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_ExpiredToken_RefusedLegibly()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
             var shortLivedHost = host.WithTokenLifetime(ShortTokenLifetimeSeconds);
-            var token = await EmbedSessionTestHost.MintTokenAsync(shortLivedHost, apiKey);
+            var token = await host.MintTokenAsync(shortLivedHost, ViewerEmbedTestHost.ExplicitViewerSubject);
 
             await Task.Delay(TimeSpan.FromSeconds(ShortTokenLifetimeSeconds + 1));
 
-            using var response = await EmbedSessionTestHost.EnterAsync(shortLivedHost, token);
+            using var response = await ViewerEmbedTestHost.EnterAsync(shortLivedHost, token);
             var body = await response.Content.ReadAsStringAsync();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
                 Assert.That(body, Is.Not.Empty);
-                Assert.That(EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName), Is.Null);
+                Assert.That(ViewerEmbedTestHost.ReadSetCookie(response, ViewerEmbedTestHost.EmbedCookieName), Is.Null);
             }
         }
 
         [Test]
         public async Task S8_Enter_GenuineTokenIdWithAWrongSecret_Refused_AndLeavesTheRealTokenSpendable()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
             var forgedToken = $"{token.Split('.')[0]}.{ForgedSecret}";
 
-            using var forgedResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, forgedToken);
-            using var genuineResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
+            using var forgedResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, forgedToken);
+            using var genuineResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(forgedResponse.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
                     "the token id is only an identifier — all the entropy is in the secret, so half a token must never redeem");
-                Assert.That(EmbedSessionTestHost.ReadSetCookie(forgedResponse, EmbedSessionTestHost.EmbedCookieName), Is.Null);
+                Assert.That(ViewerEmbedTestHost.ReadSetCookie(forgedResponse, ViewerEmbedTestHost.EmbedCookieName), Is.Null);
                 Assert.That(genuineResponse.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
                     "and the rejected attempt must not have spent the real token, or a guessed id becomes a denial of service");
-            }
-        }
-
-        [Test]
-        public async Task S8_Enter_OwnerUnlinkedAfterTheTokenWasMinted_RefusedLegibly()
-        {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
-            host.UnlinkEveryApiKeyOwner();
-
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
-                    "D30: the owner link is re-checked at redemption, not trusted from mint time — an unlinked key resolves no permissions");
-                Assert.That(EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName), Is.Null,
-                    "the guard must refuse before the cookie is written, or the frame gets a session with no identity in it");
             }
         }
 
@@ -195,11 +172,10 @@ namespace Lighthouse.Backend.Tests.API.Security
         [TestCase(-30)]
         public async Task S8_Enter_TokenLifetimeConfiguredNonPositive_FallsBackToTheDefaultWindow(int configuredLifetimeSeconds)
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
             var misconfiguredHost = host.WithTokenLifetime(configuredLifetimeSeconds);
-            var token = await EmbedSessionTestHost.MintTokenAsync(misconfiguredHost, apiKey);
+            var token = await host.MintTokenAsync(misconfiguredHost, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(misconfiguredHost, token);
+            using var response = await ViewerEmbedTestHost.EnterAsync(misconfiguredHost, token);
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect),
                 "a non-positive lifetime is a misconfiguration, not an instruction to mint tokens that are dead on arrival");
@@ -209,10 +185,9 @@ namespace Lighthouse.Backend.Tests.API.Security
         [TestCaseSource(nameof(OffHostReturnPaths))]
         public async Task S8_Enter_ReturnPathPointsOffHost_NeverRedirectsThere(string offHostReturnPath)
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token, offHostReturnPath);
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token, offHostReturnPath);
             var location = response.Headers.Location?.ToString() ?? string.Empty;
 
             Assert.That(location, Does.Not.Contain("evil.example"),
@@ -222,16 +197,16 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_ReturnPathIsALocalPath_RedirectsThere()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var token = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var deepLink = $"/teams/{ViewerEmbedTestHost.ExplicitTeamId}";
+            var token = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token, "/portfolios/4201");
+            using var response = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, token, deepLink);
             var location = response.Headers.Location?.ToString();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Redirect));
-                Assert.That(location, Does.Contain("/portfolios/4201"),
+                Assert.That(location, Does.Contain(deepLink),
                     "a local return path is how the Forge app deep-links a view");
             }
         }
@@ -239,11 +214,10 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_AuthenticationDisabled_Absent_WhileEnabledRedirects()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var enabledToken = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var enabledToken = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var enabledResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, enabledToken);
-            using var disabledResponse = await EmbedSessionTestHost.EnterAsync(host.AuthDisabled, "any-token");
+            using var enabledResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, enabledToken);
+            using var disabledResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthDisabled, "any-token");
 
             using (Assert.EnterMultipleScope())
             {
@@ -256,11 +230,10 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_LicenceBlocked_Refused_WhileEnabledRedirects()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var enabledToken = await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey);
+            var enabledToken = await host.MintTokenAsync(host.AuthEnabled, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            using var enabledResponse = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, enabledToken);
-            using var blockedResponse = await EmbedSessionTestHost.EnterAsync(host.LicenceBlocked, "any-token");
+            using var enabledResponse = await ViewerEmbedTestHost.EnterAsync(host.AuthEnabled, enabledToken);
+            using var blockedResponse = await ViewerEmbedTestHost.EnterAsync(host.LicenceBlocked, "any-token");
 
             using (Assert.EnterMultipleScope())
             {

@@ -49,6 +49,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public const string SessionCookieName = SmartAuthSchemeSelector.SessionCookieName;
         public const string EmbedCookieName = SmartAuthSchemeSelector.EmbedCookieName;
+        public const string TokenLifetimeConfigurationKey = "Embed:TokenLifetimeSeconds";
+        public const string EmbedRateLimitPolicy = "EmbedSession";
 
         public const string GroupClaimName = "groups";
         public const string StubbedAuthorizationEndpoint = "https://example.test/oidc/authorize";
@@ -131,10 +133,48 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return new HandshakeReading((int)response.StatusCode, body);
         }
 
-        public static async Task<HttpResponseMessage> EnterAsync(WebApplicationFactory<Program> host, string token)
+        public static async Task<HttpResponseMessage> EnterAsync(
+            WebApplicationFactory<Program> host,
+            string token,
+            string? returnPath = null)
         {
             using var client = CreateClient(host);
-            return await client.GetAsync($"{EntryPath}?token={Uri.EscapeDataString(token)}");
+            var path = returnPath is null
+                ? $"{EntryPath}?token={Uri.EscapeDataString(token)}"
+                : $"{EntryPath}?token={Uri.EscapeDataString(token)}&returnPath={Uri.EscapeDataString(returnPath)}";
+
+            return await client.GetAsync(path);
+        }
+
+        /// <summary>
+        /// All three hops share the EmbedSession policy, so a fixture driving many sign-ins spends
+        /// three permits each. Raised here rather than by racing fewer callers — S12 is what pins the
+        /// shipped limit, and a concurrency probe must not be shaped by one.
+        /// </summary>
+        public WebApplicationFactory<Program> WithEmbedRateLimit(int permitLimit, int windowSeconds)
+        {
+            return BuildHost(
+                configuredAuthority: true,
+                premiumLicence: true,
+                extraSettings: new Dictionary<string, string?>
+                {
+                    ["RateLimits:Enabled"] = "true",
+                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:PermitLimit"] = permitLimit.ToString(CultureInfo.InvariantCulture),
+                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:WindowSeconds"] = windowSeconds.ToString(CultureInfo.InvariantCulture),
+                    [$"RateLimits:Policies:{EmbedRateLimitPolicy}:QueueLimit"] = "0",
+                });
+        }
+
+        /// <summary>An instance whose grants carry a deliberately short — or misconfigured — token window.</summary>
+        public WebApplicationFactory<Program> WithTokenLifetime(int seconds)
+        {
+            return BuildHost(
+                configuredAuthority: true,
+                premiumLicence: true,
+                extraSettings: new Dictionary<string, string?>
+                {
+                    [TokenLifetimeConfigurationKey] = seconds.ToString(CultureInfo.InvariantCulture),
+                });
         }
 
         public static async Task<HttpResponseMessage> GetAsViewerAsync(
@@ -148,14 +188,21 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return await client.GetAsync(path);
         }
 
-        public static string? ReadCookieValue(HttpResponseMessage response, string cookieName)
+        public static string? ReadSetCookie(HttpResponseMessage response, string cookieName)
         {
+            ArgumentNullException.ThrowIfNull(response);
+
             if (!response.Headers.TryGetValues("Set-Cookie", out var values))
             {
                 return null;
             }
 
-            var setCookie = values.FirstOrDefault(value => value.StartsWith($"{cookieName}=", StringComparison.Ordinal));
+            return values.FirstOrDefault(value => value.StartsWith($"{cookieName}=", StringComparison.Ordinal));
+        }
+
+        public static string? ReadCookieValue(HttpResponseMessage response, string cookieName)
+        {
+            var setCookie = ReadSetCookie(response, cookieName);
             if (setCookie is null)
             {
                 return null;
@@ -214,19 +261,33 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// Hop 1 and hop 2 for a viewer who is already signed in. The nonce is spent on return —
         /// polling it again is the consumed-nonce case, not a repeat of this call.
         /// </summary>
-        public async Task<(string Nonce, HandshakeReading Grant)> GrantEmbedSessionAsync(string subject)
+        public Task<(string Nonce, HandshakeReading Grant)> GrantEmbedSessionAsync(string subject)
+        {
+            return GrantEmbedSessionAsync(AuthEnabled, subject);
+        }
+
+        public async Task<(string Nonce, HandshakeReading Grant)> GrantEmbedSessionAsync(
+            WebApplicationFactory<Program> host,
+            string subject)
         {
             var nonce = NewNonce();
-            var sessionCookie = ForgeInteractiveSessionCookie(AuthEnabled, subject, subject);
+            var sessionCookie = ForgeInteractiveSessionCookie(host, subject, subject);
 
-            using var start = await StartAsync(AuthEnabled, nonce, sessionCookie: sessionCookie);
-            var grant = await PollHandshakeAsync(AuthEnabled, nonce);
+            using var start = await StartAsync(host, nonce, sessionCookie: sessionCookie);
+            var grant = await PollHandshakeAsync(host, nonce);
 
             Assert.That(grant.HasProperty("token"), Is.True,
                 "precondition: the first poll must win the nonce and be granted an embed session; "
                 + $"got {grant.StatusCode} {grant.Body}");
 
             return (nonce, grant);
+        }
+
+        /// <summary>The redeemable token a granted handshake hands the frame.</summary>
+        public async Task<string> MintTokenAsync(WebApplicationFactory<Program> host, string subject)
+        {
+            var (_, grant) = await GrantEmbedSessionAsync(host, subject);
+            return grant.ReadString("token");
         }
 
         /// <summary>Hop 3 on top of <see cref="GrantEmbedSessionAsync"/>: the redeemed embed cookie.</summary>
@@ -379,7 +440,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private WebApplicationFactory<Program> BuildHost(
             bool configuredAuthority,
             bool premiumLicence,
-            bool authenticationEnabled = true)
+            bool authenticationEnabled = true,
+            Dictionary<string, string?>? extraSettings = null)
         {
             var host = root.WithWebHostBuilder(builder =>
             {
@@ -397,6 +459,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     builder.UseSetting(
                         "Authentication:MetadataAddress",
                         "https://example.test/oidc/.well-known/openid-configuration");
+                }
+
+                foreach (var entry in extraSettings ?? [])
+                {
+                    builder.UseSetting(entry.Key, entry.Value);
                 }
 
                 builder.ConfigureServices(services =>

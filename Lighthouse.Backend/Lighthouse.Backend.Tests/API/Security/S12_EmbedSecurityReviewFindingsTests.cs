@@ -1,31 +1,13 @@
-using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using Lighthouse.Backend.Configuration;
-using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    // Epic 5146 slice 02a (#5641) — the S1-S10 security review of 2026-08-04, findings F1 and F2.
-    // Both shipped past 33 acceptance tests and a 90.91% mutation score, because each is invisible to
-    // the shape of test the rest of the suite is written in.
+    // Epic 5146 slice 02a (#5641) — the S1-S10 security review of 2026-08-04, finding F1.
+    // F2 and F3 guarded the API-key embed session, which no longer exists; F3's control now reads
+    // "deleting the viewer ends their live frame" and lives in S14.
     public class S12_EmbedSecurityReviewFindingsTests
     {
-        private EmbedSessionTestHost host = null!;
-
-        [SetUp]
-        public void SetUp()
-        {
-            host = new EmbedSessionTestHost();
-            host.SeedSystemAdminAndPortfolios();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            host.Dispose();
-        }
-
         // F1. Every other rate-limit test configures the policy it then exercises, so all of them pass
         // whether or not the shipped configuration defines one. An undefined policy does not fail
         // loudly: Program.cs falls through to GetNoLimiter, and the endpoint runs unthrottled forever.
@@ -62,94 +44,5 @@ namespace Lighthouse.Backend.Tests.API.Security
                 }
             }
         }
-
-        // F2. The embed cookie's principal carries api_key_id from the same shared claims factory, so a
-        // claim-only check accepts it and the session mints its own successor - renewing indefinitely
-        // past the 30 minutes ADR-130 set SlidingExpiration=false to bound. The credential has to be
-        // presented on the request, not merely reflected in the principal.
-        [Test]
-        public async Task EmbedSession_CannotMintItsOwnSuccessor()
-        {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var embedCookie = await host.EstablishEmbedCookieAsync(apiKey);
-
-            using var client = EmbedSessionTestHost.WithEmbedCookie(
-                EmbedSessionTestHost.CreateClient(host.AuthEnabled), embedCookie);
-
-            using var renewal = await client.PostAsync("/api/v1/embed/session-token", null);
-            using var withKey = await EmbedSessionTestHost.ExchangeAsync(host.AuthEnabled, apiKey);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(renewal.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
-                    "an established embed session must not be able to extend itself");
-                Assert.That(withKey.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                    "differential control: the same instance still mints for a directly presented key");
-            }
-        }
-
-        // The same reasoning applies to revoke-all: it reads the api_key_id claim through the same
-        // helper, so it would accept an embed cookie for exactly the same reason.
-        [Test]
-        public async Task EmbedSession_CannotRevokeOnBehalfOfTheKey()
-        {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var embedCookie = await host.EstablishEmbedCookieAsync(apiKey);
-
-            using var client = EmbedSessionTestHost.WithEmbedCookie(
-                EmbedSessionTestHost.CreateClient(host.AuthEnabled), embedCookie);
-
-            using var response = await client.PostAsync("/api/v1/embed/session-token/revoke-all", null);
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
-        }
-
-        // F3. The header path resolves the key on every request, so deleting it ends access at once.
-        // A cookie is believed on sight unless something re-checks, which would leave live frames
-        // running for the rest of the window - and "delete the key" is the revocation advice an
-        // administrator would be given.
-        [Test]
-        public async Task DeletingTheApiKey_EndsAnAlreadyEstablishedEmbedSession()
-        {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-            var embedCookie = await host.EstablishEmbedCookieAsync(apiKey);
-
-            using var client = EmbedSessionTestHost.WithEmbedCookie(
-                EmbedSessionTestHost.CreateClient(host.AuthEnabled), embedCookie);
-
-            using var beforeDeletion = await client.GetAsync(InScopePortfolioPath);
-            host.DeleteEveryApiKey();
-            using var afterDeletion = await client.GetAsync(InScopePortfolioPath);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(beforeDeletion.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                    "differential control: the session reads its in-scope resource while the key exists");
-                Assert.That(afterDeletion.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized),
-                    "deleting the key must end the session it authorised, not merely stop new ones");
-            }
-        }
-
-        // F4's scheme-selection half is a pure decision and is pinned as one in
-        // SmartAuthSchemeSelectorTest - an integration test here would route through the test
-        // authentication handler, which is header-borne and never reaches the cookie branch at all.
-
-        // A directly presented key still reaches both endpoints - the guard rejects the cookie route,
-        // not the header route.
-        [Test]
-        public async Task DirectlyPresentedKey_StillReachesRevokeAll()
-        {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
-
-            using var client = EmbedSessionTestHost.CreateClient(host.AuthEnabled);
-            client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-
-            using var response = await client.PostAsync("/api/v1/embed/session-token/revoke-all", null);
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-        }
-
-        private static string InScopePortfolioPath =>
-            $"/api/v1/portfolios/{EmbedSessionTestHost.InScopePortfolioId}";
     }
 }

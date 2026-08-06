@@ -21,35 +21,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         // The test surface and the operator's alert both key on the name, so the message stays free to change.
         private static readonly EventId NonceReplayedEvent = new(0, "EmbedHandshakeNonceReplayed");
 
-        public async Task<EmbedSessionTokenMintResult> MintAsync(int apiKeyId, CancellationToken cancellationToken)
-        {
-            var now = timeProvider.GetUtcNow().UtcDateTime;
-            await repository.PruneSpentAsync(now, cancellationToken);
-
-            var tokenId = GenerateUrlSafeValue(TokenIdByteLength);
-            var secret = GenerateUrlSafeValue(SecretByteLength);
-            var expiresAt = now.AddSeconds(ResolveTokenLifetimeSeconds());
-
-            await repository.AddAsync(
-                new EmbedSessionToken
-                {
-                    TokenId = tokenId,
-                    SecretHash = HashSecret(secret),
-                    ApiKeyId = apiKeyId,
-                    CreatedAt = now,
-                    ExpiresAt = expiresAt,
-                },
-                cancellationToken);
-
-            logger.LogDebug("Minted embed session token for API key {ApiKeyId}, expiring at {ExpiresAt}", apiKeyId, expiresAt);
-
-            return new EmbedSessionTokenMintResult
-            {
-                Token = $"{tokenId}{TokenSeparator}{secret}",
-                ExpiresAt = expiresAt,
-            };
-        }
-
         public Task RecordHandshakeGrantAsync(string? subject, string nonce, CancellationToken cancellationToken)
         {
             // CK_EmbedSessionTokens_GrantOrRefusal requires a grant row to carry a secret hash, but
@@ -145,16 +116,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             }
 
             return new EmbedSessionTokenRedemption(true, stored.ApiKeyId, stored.Subject);
-        }
-
-        public async Task RevokeAllAsync(int apiKeyId, CancellationToken cancellationToken)
-        {
-            var revoked = await repository.RevokeOutstandingForApiKeyAsync(
-                apiKeyId,
-                timeProvider.GetUtcNow().UtcDateTime,
-                cancellationToken);
-
-            logger.LogInformation("Revoked {Count} outstanding embed session tokens for API key {ApiKeyId}", revoked, apiKeyId);
         }
 
         private async Task<EmbedHandshakeOutcome> ConsumeGrantAsync(

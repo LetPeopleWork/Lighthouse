@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -14,13 +15,16 @@ namespace Lighthouse.Backend.Tests.API.Security
     {
         private const int ConcurrentSessions = 8;
 
-        private EmbedSessionTestHost host = null!;
+        // Start, handshake and enter all draw on the EmbedSession policy, so one sign-in costs three.
+        private const int PermitsPerSignIn = 3;
+
+        private ViewerEmbedTestHost host = null!;
 
         [SetUp]
         public void SetUp()
         {
-            host = new EmbedSessionTestHost();
-            host.SeedSystemAdminAndPortfolios();
+            host = new ViewerEmbedTestHost();
+            host.SeedRbacFixture();
         }
 
         [TearDown]
@@ -32,12 +36,14 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task ConcurrentEmbedSignIns_RelaxedAttributesNeverLeakOntoTheOrdinaryCookie()
         {
-            var apiKey = await host.CreateReadScopedKeyAsync(EmbedSessionTestHost.InScopePortfolioId);
+            // Disposed with the host, which owns every instance it derives.
+            var instance = host.WithEmbedRateLimit(
+                permitLimit: ConcurrentSessions * PermitsPerSignIn, windowSeconds: 60);
 
             var tokens = new List<string>();
             for (var index = 0; index < ConcurrentSessions; index++)
             {
-                tokens.Add(await EmbedSessionTestHost.MintTokenAsync(host.AuthEnabled, apiKey));
+                tokens.Add(await host.MintTokenAsync(instance, ViewerEmbedTestHost.ExplicitViewerSubject));
             }
 
             using var barrier = new Barrier(ConcurrentSessions * 2);
@@ -47,14 +53,14 @@ namespace Lighthouse.Backend.Tests.API.Security
             var embedHeaders = tokens.Select(token => Task.Run(async () =>
             {
                 barrier.SignalAndWait();
-                using var response = await EmbedSessionTestHost.EnterAsync(host.AuthEnabled, token);
-                return EmbedSessionTestHost.ReadSetCookie(response, EmbedSessionTestHost.EmbedCookieName);
+                using var response = await ViewerEmbedTestHost.EnterAsync(instance, token);
+                return ViewerEmbedTestHost.ReadSetCookie(response, ViewerEmbedTestHost.EmbedCookieName);
             })).ToList();
 
             var ordinaryCookies = Enumerable.Range(0, ConcurrentSessions).Select(_ => Task.Run(() =>
             {
                 barrier.SignalAndWait();
-                return BuildOrdinarySessionCookie();
+                return BuildOrdinarySessionCookie(instance);
             })).ToList();
 
             var embedResults = await Task.WhenAll(embedHeaders);
@@ -73,9 +79,9 @@ namespace Lighthouse.Backend.Tests.API.Security
             }
         }
 
-        private CookieOptions BuildOrdinarySessionCookie()
+        private static CookieOptions BuildOrdinarySessionCookie(WebApplicationFactory<Program> instance)
         {
-            using var scope = host.AuthEnabled.Services.CreateScope();
+            using var scope = instance.Services.CreateScope();
             var monitor = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>();
 
             return monitor

@@ -1,43 +1,13 @@
 using Lighthouse.Backend.Models.Auth;
-using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.Models.Auth
 {
-    // Epic 5146 slice 02a (#5641) — ADR-129. The Forge resolver reads these property names off the
-    // wire and branches on the refusal code, so a rename breaks it with no compiler and no server
-    // error. The default of every string is asserted too: a DTO that ships a placeholder instead of
-    // an empty value is a token the resolver would dutifully send back to the entry point.
+    // Epic 5146 slice 02a (#5641) — ADR-129 / ADR-137. The default of every field is asserted: a DTO
+    // that ships a placeholder instead of an empty value is a token the resolver would dutifully
+    // send back to the entry point.
     [TestFixture]
     public class EmbedSessionContractShapeTest
     {
-        private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web);
-
-        [Test]
-        public void EmbedSessionTokenResponse_WireShape_IsTokenExpiresAtAndEmbedUrl()
-        {
-            using var document = JsonDocument.Parse(JsonSerializer.Serialize(new EmbedSessionTokenResponse(), WireOptions));
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(document.RootElement.GetProperty("token").GetString(), Is.Empty);
-                Assert.That(document.RootElement.GetProperty("embedUrl").GetString(), Is.Empty);
-                Assert.That(document.RootElement.TryGetProperty("expiresAt", out _), Is.True,
-                    "the resolver re-mints on expiry, so it needs the expiry it was given");
-            }
-        }
-
-        [Test]
-        public void EmbedSessionRefusal_WireShape_IsReasonAndMessage()
-        {
-            using var document = JsonDocument.Parse(JsonSerializer.Serialize(new EmbedSessionRefusal(), WireOptions));
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(document.RootElement.GetProperty("reason").GetString(), Is.Empty);
-                Assert.That(document.RootElement.GetProperty("message").GetString(), Is.Empty);
-            }
-        }
-
         [Test]
         public void EmbedSessionTokenMintResult_UnsetToken_IsEmpty()
         {

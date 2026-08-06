@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
     // MarkRedeemed would offer callers a way to lose the race.
     public interface IEmbedSessionTokenService
     {
-        Task<EmbedSessionTokenMintResult> MintAsync(int apiKeyId, CancellationToken cancellationToken);
-
         /// <summary>
         /// ADR-137 D51/D54: the outcome of a sign-in hop is recorded once, at resolution. A grant and
         /// a refusal are separate operations because a row can only ever be one of the two
@@ -24,8 +22,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
         Task<EmbedHandshakeOutcome> ConsumeHandshakeAsync(string? nonce, CancellationToken cancellationToken);
 
         Task<EmbedSessionTokenRedemption> RedeemAsync(string? token, CancellationToken cancellationToken);
-
-        Task RevokeAllAsync(int apiKeyId, CancellationToken cancellationToken);
     }
 
     public sealed record EmbedHandshakeOutcome(string? Token, DateTime? ExpiresAt, string? RefusalCode)
