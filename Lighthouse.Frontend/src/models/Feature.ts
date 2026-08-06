@@ -18,6 +18,9 @@ export interface IFeature extends IWorkItem {
 	forecasts: IWhenForecast[];
 	// Non-empty means no forecast exists at all, and names the teams to chase (ADR-112).
 	teamsWithoutForecast?: string[];
+	// __SCAFFOLD__ Epic 5375: the place in the order across the whole instance, supplied by the
+	// backend (ADR-135). Optional until the parse boundary carries it.
+	position?: number;
 
 	getRemainingWorkForFeature(): number;
 	getRemainingWorkForTeam(id: number): number;
@@ -70,6 +73,7 @@ export class Feature implements IFeature {
 	totalWork: { [key: number]: number } = {};
 	forecasts: IWhenForecast[] = [];
 	teamsWithoutForecast: string[] = [];
+	position?: number;
 
 	owningTeam!: string;
 

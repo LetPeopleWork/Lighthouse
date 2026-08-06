@@ -21,6 +21,14 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
             IEnumerable<int> portfolioIds,
             CancellationToken cancellationToken = default);
 
+        // Epic 5375 OQ-1: resolves the writable set once per request so a per-row move verdict is not
+        // one permission check per Portfolio per row.
+        Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
+            ClaimsPrincipal principal,
+            IEnumerable<int> portfolioIds,
+            CancellationToken cancellationToken = default);
+
+
         Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default);
 
         Task<bool> CanWriteTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default);

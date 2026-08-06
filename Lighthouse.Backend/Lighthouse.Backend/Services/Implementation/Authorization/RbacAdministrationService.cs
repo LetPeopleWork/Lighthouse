@@ -155,6 +155,17 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ToList();
         }
 
+        // __SCAFFOLD__ Epic 5375 slice 01 (DISTILL). Mirrors GetReadablePortfolioIdsAsync with
+        // HasPortfolioWritePermission swapped in; all four early returns carry over unchanged.
+        public Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
+            ClaimsPrincipal principal,
+            IEnumerable<int> portfolioIds,
+            CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException("Not yet implemented — RED scaffold");
+        }
+
+
         public async Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
         {
             if (!await IsRbacEnforcedAsync(cancellationToken))

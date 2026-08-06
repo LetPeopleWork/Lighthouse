@@ -2,6 +2,7 @@ export {
 	createActiveWorkColumn,
 	createForecastsColumn,
 	createParentColumn,
+	createPositionColumn,
 	createStateColumn,
 	createWarningsColumn,
 } from "./columns";

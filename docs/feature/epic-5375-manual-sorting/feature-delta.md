@@ -1112,3 +1112,205 @@ Fixed for DISTILL:
 Two things DISTILL must **not** assume: that contiguity holds (INV-O2 — the ATs should deliberately
 produce gaps), and that a passing frontend test implies a correct gate (SA-10 — the fail-open
 expression passes every naive test).
+
+---
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Slice 01 only (US-01, AC-1.1 … AC-1.9). Density lean, Tier-1 only. **No Gherkin** — this project
+carries none since epic-5427; the executable SSOT is the NUnit partial-class pair plus the co-located
+Vitest files, per `PercentilesOverTime`.
+
+**Backend acceptance — `Slice01FeaturesViewScenarios.cs` (13, all `[Ignore("RED — Epic 5375 slice 01 not implemented")]`)**
+
+| # | Scenario | Tags | AC |
+|---|---|---|---|
+| 1 | `The_product_owner_sees_every_feature_from_the_portfolios_they_may_read_and_nothing_else` | `@walking_skeleton @driving_port @real-io` | AC-1.2 |
+| 2 | `Two_features_shown_next_to_each_other_report_their_places_across_the_whole_instance` | `@driving_port @real-io` | AC-1.5 |
+| 3 | `A_feature_two_portfolios_share_is_listed_once_and_names_both` | `@driving_port @real-io` | AC-1.4 |
+| 4 | `A_feature_belonging_to_no_portfolio_stays_visible` | `@error @driving_port` | AC-1.2 (as refined, SA-7 / ADR-136 §1) |
+| 5 | `The_features_view_opens_on_an_instance_with_no_premium_licence` | `@driving_port` | AC-1.3 |
+| 6 | `A_finished_feature_still_occupies_its_place_in_the_order` | `@driving_port` | AC-1.7 (backend half) |
+| 7 | `A_feature_the_tracker_never_ranked_still_reports_its_place` | `@error @driving_port` | AC-1.8 |
+| 8 | `The_features_view_answers_for_an_instance_of_five_hundred_features` | `@driving_port` | AC-1.9 (backend half) |
+| 9 | `With_access_control_switched_off_every_portfolio_is_writable` | `@branch` | OQ-1 branch 1 |
+| 10 | `With_access_control_only_half_configured_no_portfolio_is_writable` | `@error @branch` | OQ-1 branch 2 |
+| 11 | `Whoever_administers_access_control_may_write_every_portfolio` | `@branch` | OQ-1 branch 3 |
+| 12 | `An_unrecognised_caller_may_write_no_portfolio` | `@error @branch` | OQ-1 branch 4 |
+| 13 | `Someone_who_may_only_read_a_portfolio_may_not_write_it` | `@error @branch` | OQ-1, the predicate swap itself |
+
+Scenarios 9-13 drive the **real** `RbacAdministrationService` over an isolated store, not the
+claims-driven double — asserting the four early returns against the double would assert nothing. The
+thirteenth is the one that fails if `HasPortfolioReadPermission` is copied instead of swapped.
+
+**Frontend — `columns.position.test.tsx` (6) + `Header.featuresNav.test.tsx` (3), all `describe.skip`**
+
+| Scenario | AC |
+|---|---|
+| shows the place the row holds across the whole instance | AC-1.5 |
+| shows a place for a feature that arrived without a rank from the tracker | AC-1.8 |
+| leaves the cell blank rather than printing NaN when the place is missing | AC-1.8 |
+| takes the header label it is given rather than naming the concept itself | D16 / the factory stays policy-ignorant |
+| stays sortable, so re-sorting the grid never hides the column | AC-1.6 |
+| reads the place off the row, never off where the row sits in the visible list | AC-1.5, AC-1.6 |
+| offers a third way in beside Overview and System Settings | AC-1.1 |
+| leads to the Features view | AC-1.1 |
+| wears the word this instance uses for its features | AC-1.1, D16 |
+
+The last one renders under a `TerminologyProvider` returning `Deliverables` and asserts `Features` is
+absent — a hard-coded label passes the first two and fails this one.
+
+**E2E — `FeaturesView.spec.ts` (1, `.skip`)** — walking skeleton, demo data, through `FeaturesPage`.
+
+Error/edge share: 6 of 13 backend scenarios (46%), plus 1 of 6 column tests.
+
+---
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+Slice 01 adds no driven adapter. Its ports:
+
+| Port | Treatment | Covered by |
+|---|---|---|
+| `FeatureRepository` / `LighthouseAppContext` (Features + Portfolios) | real adapter, real SQLite via `TestWebApplicationFactory` | scenarios 1-8 (`@real-io`) |
+| `IRbacAdministrationService` (result-set filter) | the shipped `ClaimsDrivenRbacAdministrationService`, which this wave made **grant-honouring** (see Scaffolds) | scenarios 1-8 |
+| `IRbacAdministrationService.GetWritablePortfolioIdsAsync` | the **real** service over an isolated store | scenarios 9-13 |
+| `ILicenseService` | faked (external/non-deterministic) | scenario 5 |
+
+`IFeaturePositionMap` / `IFeatureOrdering` are DESIGN's decomposition, not slice-01 driving ports; they
+are exercised through the read endpoint, never directly (Mandate 1).
+
+**Not covered, deliberately** — OQ-3 (`string.Compare` parity across SQLite / PostgreSQL / SQL Server).
+The driven-port probe table asks for it; slice 01 runs on SQLite only, so it stays open for DELIVER.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+C# is not Python: a missing type is a compile error, which makes the whole test project BROKEN rather
+than RED. Each scaffold below exists so `dotnet build` / `tsc -b` succeed at zero warnings and the tests
+fail on their assertions.
+
+| File | Scaffold | Marker |
+|---|---|---|
+| `Services/Interfaces/Authorization/IRbacAdministrationService.cs` | `+ GetWritablePortfolioIdsAsync` | — (interface widening) |
+| `Services/Implementation/Authorization/RbacAdministrationService.cs` | body throws `InvalidOperationException("Not yet implemented — RED scaffold")` | `// __SCAFFOLD__` |
+| `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx` | `+ createPositionColumn(headerLabel)`, throws | `// __SCAFFOLD__` |
+| `Lighthouse.Frontend/src/models/Feature.ts` | `+ position?: number` on `IFeature` and the class | `// __SCAFFOLD__` |
+
+**Deviation from the skill's Mandate 7, stated not skipped**: the skill asks for NUnit's
+`AssertionException`. Production `Lighthouse.Backend` does not (and must not) reference NUnit, so the
+scaffold throws `InvalidOperationException` with the same message. `NotImplementedException` is still
+avoided. The failure classifies as RED either way — see the red-classification below.
+
+**Not scaffolded, on purpose**:
+
+- The `GET /features` route. It is not a compile dependency; an unmapped route is a genuine RED. The
+  harness translates the test host's SPA-fallback exception into the 404 it really is, so the scenario
+  fails on its own assertion (see red-classification).
+- `FeatureSchema` / `Feature.fromParsed`. Wiring `position` through the zod boundary would make part of
+  the feature green from DISTILL — that is Fixture Theater. The interface field is type-only.
+
+**Shared-contract change, blast radius measured**: `IRbacAdministrationService` has exactly two
+implementations. `ClaimsDrivenRbacAdministrationService` gained the new method **and** had both batch
+methods rewritten to resolve the same grants the per-id checks do — previously
+`GetReadablePortfolioIdsAsync` returned every id it was handed, which would have made AC-1.2's scenario
+vacuous. Full backend suite after the change: **4465 passed, 0 regressions** (the only other 2 failures
+are a pre-existing missing `valid_not_expired_license.json` in this worktree, unrelated).
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+| Layer | Path | Precedent |
+|---|---|---|
+| Backend acceptance | `Lighthouse.Backend.Tests/API/Integration/ManualSorting/{ManualSortingAcceptanceTest, Slice01FeaturesViewScenarios, Slice01FeaturesViewSpecifications}.cs` | `API/Integration/PercentilesOverTime/` — same harness/scenarios/specifications triple, same `public partial class` |
+| Frontend unit | `src/components/Common/FeatureListDataGrid/columns.position.test.tsx`, `src/components/App/Header/Header.featuresNav.test.tsx` | co-located `*.test.tsx`, as `columns.test.tsx` already is |
+| E2E | `Lighthouse.EndToEndTests/tests/specs/features/FeaturesView.spec.ts` + POM `tests/models/features/FeaturesPage.ts` | `specs/portfolios/PortfolioOverview.spec.ts` + `models/portfolios/` |
+
+New POM entry point: `LighthousePage.goToFeatures(navigationLabel)` — takes the label rather than
+assuming `Features`, because D16 makes it the instance's own word.
+
+---
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+| Driving port (DESIGN) | Slice-01 scenario | Protocol exercised |
+|---|---|---|
+| `GET api/v1\|latest/features` | 1-8 | real HTTP through `WebApplicationFactory` |
+| UI top nav → `/features` | `Header.featuresNav.test.tsx` + E2E skeleton | rendered link + real click |
+| Portfolio → detail → Features tab | — | **not covered in slice 01.** The column is added to the shared factory, so `columns.position.test.tsx` covers the cell for both surfaces; that the Portfolio list passes `showPosition` is DELIVER's wiring, and `PortfolioFeatureList.test.tsx` is where it belongs |
+| `PATCH .../rank`, Settings → System switch | — | out of slice 01 (slices 02-04) |
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **Wave-decision reconciliation**: passed, 0 contradictions. This project keeps one narrative file, so
+  there are no `discuss/` `design/` `devops/` subdirectories to cross-read; DESIGN recorded every change
+  to DISCUSS in its two "Refinements to … (no silent changes)" sections, both present and consistent
+  (D13, D11, AC-3.6, AC-2.6/5.3, AC-1.5; then DISCUSS Q1/Q4, AC-1.2, AC-3.8, slice-01 `rank`→`position`,
+  slice-03, DISCUSS Q6). `deliverable_type` resolves to `application` — no plugin or skill reviewer.
+- **Demo data owes a multi-Portfolio set with one shared Feature** — **still owed, not delivered here.**
+  The premise check found zero shared Features on the dev instance, so ADR-136's `Any() && All()` rule
+  has no real-data case. Scenario 3 covers it as an integration test on seeded data, which is what OQ-2
+  says D11 ships on; the demo-data seeder change stays owed for DELIVER, and the E2E skeleton
+  deliberately does not depend on it.
+- **`GET /features` route, `FeatureDto.Position`, `IFeaturePositionMap`, `FeatureOrdering`** — DELIVER.
+- **EF migration** — not needed by slice 01; `ManualRank` is slice 02.
+
+---
+
+## Wave: DISTILL / [REF] Red classification (fail-for-the-right-reason gate)
+
+Suite run once before the `[Ignore]` markers went on. 13 of 13 backend scenarios classify as
+`MISSING_FUNCTIONALITY`.
+
+| Scenarios | Failure | Class |
+|---|---|---|
+| 1-8 | `The Features view read port must answer. Body: <no route mapped for the Features view read port>` | `MISSING_FUNCTIONALITY` |
+| 9-13 | `InvalidOperationException : Not yet implemented — RED scaffold` (from the production scaffold) | `MISSING_FUNCTIONALITY` |
+
+The unmapped route reaches the SPA fallback, and what that returns depends on whether `wwwroot` has
+been populated by a frontend build — so both worlds were checked. With no `wwwroot` the fallback
+throws and the harness reports the 404 (row 1 above). With `wwwroot` present it serves `index.html`,
+and the scenario fails on `The read port must return a JSON array, not HTML/other — the endpoint
+appears unimplemented. Body starts: <!doctype html>`. Both are the scenario's own assertion; neither
+is host plumbing. Verified by un-skipping scenario 1 against a populated `wwwroot` and re-skipping it.
+
+**One wrong-RED was found and fixed.** On the first run all 8 HTTP scenarios failed with
+`InvalidOperationException : The SPA default page middleware could not return the default page
+'/index.html'` — the unmapped route falls through to the SPA fallback, which throws because the test
+host has no `wwwroot`. The assertion never ran: `SETUP_FAILURE`, not RED. The harness now catches that
+one exception and reports the 404, so each scenario fails on its own `Then`. A second run confirmed all
+13 fail on their assertions.
+
+Frontend and E2E scenarios are `describe.skip` / `.skip` and were not executed; their scaffolds throw
+`Not yet implemented — RED scaffold` on first call.
+
+**Owed at GREEN — delete the SPA-fallback catch.** `ManualSortingAcceptanceTest.GetAllFeatures` (`:215-226`)
+wraps the request in a `catch (InvalidOperationException) when (… "SPA default page" …)` that reports the
+404 the unmapped route really is. It exists only so RED scenarios fail on their own `Then` rather than on
+host plumbing. Once the route is mapped the catch is unreachable, and leaving it means a future
+accidental un-mapping is reported as "endpoint unimplemented" instead of surfacing as a routing
+regression — the same message, but pointing at the wrong cause. Remove it in the same commit that maps
+the route.
+
+Gates after the markers went on: `dotnet build` 0 warnings / 0 errors · `dotnet test` green (13 skipped)
+· `pnpm test` 3941 passed / 9 skipped · `pnpm build` clean · Biome clean on every file this wave
+touched · E2E `tsc --noEmit` clean.
+
+---
+
+## Wave: DISTILL / [REF] Not made testable as written
+
+No silent N/A.
+
+| AC | Gap |
+|---|---|
+| **AC-1.6** | "Sorting the grid by another column leaves every position value unchanged" is covered only as the column contract (the value comes off the row, the column stays sortable). Whether MUI-X re-sorting really leaves the rendered values alone is a grid behaviour no unit test observes; it wants a Playwright assertion, which slice 01 does not spend its one E2E on. Flagged for DELIVER. |
+| **AC-1.7** | Split. The backend half — finished Features keep their place, so the toggle cannot renumber the rest — is scenario 6. The "hidden by default" half rides on the shipped `useHideCompletedFeatures` (already defaults to true) and is only observable once `FeaturesView` exists; it belongs in that component's own test. Not written here, because writing it would have meant scaffolding a whole page component. |
+| **AC-1.9** | Split. "Answers for 500 Features" is scenario 8. "**Stays interactive**" is a UI-performance claim with no budget in the AC and no instrument in this stack; the E2E skeleton runs on demo data, not 500 rows. Stated, not faked. |
+| **AC-1.1** | The *third* position ("beside Overview and System Settings") is asserted only as presence + href + label. Ordering within the nav bar is not pinned — a nav-order assertion would break on every future entry for no user-visible gain. |
+| **OQ-3** | Provider parity for the `string.Compare` fallback: not probed. SQLite only. |
+| **OQ-7** | No AT, as DESIGN instructed — a swallowed handler exception has no observable to assert against. |

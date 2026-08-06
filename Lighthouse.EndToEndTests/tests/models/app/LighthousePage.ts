@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { LoginPage } from "../auth/LoginPage";
 import { SessionExpiredPage } from "../auth/SessionExpiredPage";
+import { FeaturesPage } from "../features/FeaturesPage";
 import { OverviewPage } from "../overview/OverviewPage";
 import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { SettingsPage } from "../settings/SettingsPage";
@@ -39,6 +40,13 @@ export class LighthousePage {
 	async createNewPortfolio(): Promise<AddPortfolioWizard> {
 		await this.page.goto("/portfolios/new");
 		return new AddPortfolioWizard(this.page);
+	}
+
+	// Epic 5375 slice 01 — the third top-level entry. The label is the instance's own word for its
+	// Features (D16), so the caller passes it rather than this method assuming "Features".
+	async goToFeatures(navigationLabel: string): Promise<FeaturesPage> {
+		await this.page.getByRole("link", { name: navigationLabel }).click();
+		return new FeaturesPage(this.page);
 	}
 
 	async goToSettings(): Promise<SettingsPage> {

@@ -72,11 +72,37 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<int>>(teamIds.ToList());
 
+        // The batch methods resolve the same grants the per-id checks do, so an integration test that
+        // hands out PortfolioRead on one Portfolio really is filtered to it (Epic 5375 AC-1.2).
         public Task<IReadOnlyList<int>> GetReadablePortfolioIdsAsync(
             ClaimsPrincipal principal,
             IEnumerable<int> portfolioIds,
             CancellationToken cancellationToken = default)
-            => Task.FromResult<IReadOnlyList<int>>(portfolioIds.ToList());
+            => ScopedTo(principal, portfolioIds, RbacGuardRequirement.PortfolioRead, cancellationToken);
+
+        public Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
+            ClaimsPrincipal principal,
+            IEnumerable<int> portfolioIds,
+            CancellationToken cancellationToken = default)
+            => ScopedTo(principal, portfolioIds, RbacGuardRequirement.PortfolioWrite, cancellationToken);
+
+        private async Task<IReadOnlyList<int>> ScopedTo(
+            ClaimsPrincipal principal,
+            IEnumerable<int> portfolioIds,
+            RbacGuardRequirement requirement,
+            CancellationToken cancellationToken)
+        {
+            var granted = new List<int>();
+            foreach (var portfolioId in portfolioIds.Distinct())
+            {
+                if (await CanSatisfyRequirementAsync(principal, requirement, portfolioId, cancellationToken))
+                {
+                    granted.Add(portfolioId);
+                }
+            }
+
+            return granted;
+        }
 
         public Task<bool> CanReadTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
             => CanSatisfyRequirementAsync(principal, RbacGuardRequirement.TeamRead, teamId, cancellationToken);
