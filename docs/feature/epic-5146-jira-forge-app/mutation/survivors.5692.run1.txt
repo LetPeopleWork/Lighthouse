@@ -1,0 +1,163 @@
+file                                                           tested  kill  surv nocov   score
+------------------------------------------------------------------------------------------------
+API/EmbedEntryController.cs                                        34    27     4     3   79.4%
+API/EmbedHandshakeController.cs                                     5     4     1     0   80.0%
+API/EmbedStartController.cs                                        37    27    10     0   73.0%
+Models/Auth/EmbedSessionTokenRedemption.cs                          1     1     0     0  100.0%
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs             25    18     7     0   72.0%
+Services/Implementation/Auth/EmbedSessionTokenService.cs           79    57    18     4   72.2%
+Services/Implementation/Repositories/EmbedSessionTokenRepository.cs     26    24     2     0   92.3%
+Services/Implementation/Repositories/UserProfileLookup.cs           1     1     0     0  100.0%
+------------------------------------------------------------------------------------------------
+TOTAL                                                             208   159    42     7   76.4%
+
+
+=== 49 SURVIVORS / NO-COVERAGE ===
+
+API/EmbedEntryController.cs:58  [Survived] Block removal mutation
+    
+    -> {}
+API/EmbedEntryController.cs:71  [Survived] Object initializer mutation
+    
+    -> new AuthenticationProperties {}
+API/EmbedEntryController.cs:93  [Survived] Statement mutation
+    
+    -> ;
+API/EmbedEntryController.cs:94  [Survived] String mutation
+    
+    -> ""
+API/EmbedEntryController.cs:109  [NoCoverage] Block removal mutation
+    
+    -> {}
+API/EmbedEntryController.cs:118  [NoCoverage] Statement mutation
+    
+    -> ;
+API/EmbedEntryController.cs:118  [NoCoverage] String mutation
+    
+    -> ""
+API/EmbedHandshakeController.cs:36  [Survived] Conditional (false) mutation
+    
+    -> (false?StatusCode(StatusCodes.Status403Forbidden) :NotFound())
+API/EmbedStartController.cs:63  [Survived] String mutation
+    
+    -> ""
+API/EmbedStartController.cs:63  [Survived] String mutation
+    
+    -> ""
+API/EmbedStartController.cs:81  [Survived] Logical mutation
+    
+    -> !authentication.Succeeded && authentication.Principal is null
+API/EmbedStartController.cs:91  [Survived] Equality mutation
+    
+    -> nonce.Length <= MinimumNonceLength
+API/EmbedStartController.cs:91  [Survived] Equality mutation
+    
+    -> nonce.Length >= MaximumNonceLength
+API/EmbedStartController.cs:96  [Survived] Linq method mutation (All() to Any())
+    
+    -> nonce.Any
+API/EmbedStartController.cs:109  [Survived] Conditional (false) mutation
+    
+    -> (false?StatusCode(StatusCodes.Status403Forbidden) :NotFound())
+API/EmbedStartController.cs:117  [Survived] Object initializer mutation
+    
+    -> new AuthenticationProperties {}
+API/EmbedStartController.cs:119  [Survived] String mutation
+    
+    -> $""
+API/EmbedStartController.cs:149  [Survived] Object initializer mutation
+    
+    -> new ContentResult {}
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:34  [Survived] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:42  [Survived] LogicalNotExpression to un-LogicalNotExpression mutation
+    
+    -> string.IsNullOrWhiteSpace(displayName)
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:42  [Survived] String mutation
+    
+    -> (displayName!=null)
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:42  [Survived] String mutation
+    
+    -> (displayName!="")
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:42  [Survived] String mutation
+    
+    -> (displayName.Trim()!="")
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:44  [Survived] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs:45  [Survived] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:22  [Survived] String mutation
+    
+    -> ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:44  [Survived] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:44  [Survived] String mutation
+    
+    -> ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:88  [NoCoverage] Block removal mutation
+    
+    -> {}
+Services/Implementation/Auth/EmbedSessionTokenService.cs:98  [Survived] Equality mutation
+    
+    -> stored.ExpiresAt < now
+Services/Implementation/Auth/EmbedSessionTokenService.cs:125  [Survived] Block removal mutation
+    
+    -> {}
+Services/Implementation/Auth/EmbedSessionTokenService.cs:143  [Survived] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:143  [Survived] String mutation
+    
+    -> ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:157  [Survived] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:157  [Survived] String mutation
+    
+    -> ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:179  [NoCoverage] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:196  [NoCoverage] Statement mutation
+    
+    -> ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:207  [Survived] String mutation
+    
+    -> ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:233  [Survived] Conditional (true) mutation
+    
+    -> (true?configured :EmbedConfiguration.DefaultHandshakeOutcomeLifetimeSeconds)
+Services/Implementation/Auth/EmbedSessionTokenService.cs:233  [Survived] Conditional (false) mutation
+    
+    -> (false?configured :EmbedConfiguration.DefaultHandshakeOutcomeLifetimeSeconds)
+Services/Implementation/Auth/EmbedSessionTokenService.cs:233  [Survived] Equality mutation
+    
+    -> configured < 0
+Services/Implementation/Auth/EmbedSessionTokenService.cs:233  [Survived] Equality mutation
+    
+    -> configured >= 0
+Services/Implementation/Auth/EmbedSessionTokenService.cs:243  [Survived] String mutation
+    
+    -> "Stryker was here!"
+Services/Implementation/Auth/EmbedSessionTokenService.cs:244  [Survived] String mutation
+    
+    -> "Stryker was here!"
+Services/Implementation/Auth/EmbedSessionTokenService.cs:248  [Survived] Boolean mutation
+    
+    -> true
+Services/Implementation/Auth/EmbedSessionTokenService.cs:254  [Survived] Boolean mutation
+    
+    -> true
+Services/Implementation/Auth/EmbedSessionTokenService.cs:273  [NoCoverage] Boolean mutation
+    
+    -> true
+Services/Implementation/Repositories/EmbedSessionTokenRepository.cs:94  [Survived] Logical mutation
+    
+    -> token.HandshakeNonceHash == nonceHash                     || token.HandshakeConsumedAt == null
+Services/Implementation/Repositories/EmbedSessionTokenRepository.cs:96  [Survived] Equality mutation
+    
+    -> token.ExpiresAt >= consumedAt

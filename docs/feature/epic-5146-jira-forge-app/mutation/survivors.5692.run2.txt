@@ -1,0 +1,45 @@
+file                                                                   tested  kill  surv nocov   score
+--------------------------------------------------------------------------------------------------------
+API/EmbedEntryController.cs                                                34    27     4     3   79.4%
+API/EmbedHandshakeController.cs                                             5     4     1     0   80.0%
+API/EmbedStartController.cs                                                37    35     2     0   94.6%
+Models/Auth/EmbedSessionTokenRedemption.cs                                  1     1     0     0  100.0%
+Services/Implementation/Auth/ApiKeyPrincipalFactory.cs                     25    25     0     0  100.0%
+Services/Implementation/Auth/EmbedSessionTokenService.cs                   79    67    10     2   84.8%
+Services/Implementation/Repositories/EmbedSessionTokenRepository.cs        26    24     2     0   92.3%
+Services/Implementation/Repositories/UserProfileLookup.cs                   1     1     0     0  100.0%
+--------------------------------------------------------------------------------------------------------
+TOTAL                                                                     208   184    19     5  88.46%
+
+=== REMAINING SURVIVORS / NO-COVERAGE (24) ===
+
+API/EmbedEntryController.cs:58  [Survived] Block removal mutation  ->  {}
+API/EmbedEntryController.cs:71  [Survived] Object initializer mutation  ->  new AuthenticationProperties {}
+API/EmbedEntryController.cs:93  [Survived] Statement mutation  ->  ;
+API/EmbedEntryController.cs:94  [Survived] String mutation  ->  ""
+API/EmbedEntryController.cs:109  [NoCoverage] Block removal mutation  ->  {}
+API/EmbedEntryController.cs:118  [NoCoverage] Statement mutation  ->  ;
+API/EmbedEntryController.cs:118  [NoCoverage] String mutation  ->  ""
+API/EmbedHandshakeController.cs:36  [Survived] Conditional (false) mutation  ->  (false?StatusCode(StatusCodes.Status403Forbidden) :NotFound())
+API/EmbedStartController.cs:81  [Survived] Logical mutation  ->  !authentication.Succeeded && authentication.Principal is null
+API/EmbedStartController.cs:109  [Survived] Conditional (false) mutation  ->  (false?StatusCode(StatusCodes.Status403Forbidden) :NotFound())
+Services/Implementation/Auth/EmbedSessionTokenService.cs:22  [Survived] String mutation  ->  ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:44  [Survived] Statement mutation  ->  ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:44  [Survived] String mutation  ->  ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:143  [Survived] Statement mutation  ->  ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:143  [Survived] String mutation  ->  ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:157  [Survived] Statement mutation  ->  ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:157  [Survived] String mutation  ->  ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:179  [NoCoverage] Statement mutation  ->  ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:196  [NoCoverage] Statement mutation  ->  ;
+Services/Implementation/Auth/EmbedSessionTokenService.cs:207  [Survived] String mutation  ->  ""
+Services/Implementation/Auth/EmbedSessionTokenService.cs:243  [Survived] String mutation  ->  "Stryker was here!"
+Services/Implementation/Auth/EmbedSessionTokenService.cs:244  [Survived] String mutation  ->  "Stryker was here!"
+Services/Implementation/Repositories/EmbedSessionTokenRepository.cs:94  [Survived] Logical mutation  ->  token.HandshakeNonceHash == nonceHash || token.HandshakeConsumedAt == null
+Services/Implementation/Repositories/EmbedSessionTokenRepository.cs:96  [Survived] Equality mutation  ->  token.ExpiresAt >= consumedAt
+
+Categories are recorded in results.md, section "Survivors left behind, with their category":
+log text (13) | covered outside the filter (1) | equivalent (5+1 no-coverage) | repository predicate
+boundary, not chased (2).
+
+Source report: Lighthouse.Backend/Lighthouse.Backend.Tests/StrykerOutput/2026-08-06.16-47-00/reports/mutation-report.json

@@ -1,3 +1,139 @@
+# Mutation testing — 5692 (viewer-identity embed session, slice 01)
+
+Run 2026-08-06 against `main` @ `8e2846f43`. Gate is 80 % kill rate.
+
+| stack | score | tested | killed | survived | no coverage | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET) | **88.46 %** | 208 | 184 | 19 | 5 | 0 | 12 m 03 s |
+| Frontend (StrykerJS) | *N/A* | — | — | — | — | — | — |
+
+**Frontend is N/A, not skipped**: slice 01 is backend-only — three hops of a server-side sign-in
+flow plus the cookie they issue. Nothing under `Lighthouse.Frontend/` changed.
+
+Config: `stryker.5692.backend.json`, byte-identical between the two runs below. Neither the `mutate`
+list nor the `test-case-filter` was touched — the score moved because the tests did.
+
+## Backend
+
+### Before and after
+
+A first run at 16:17 scored **76.44 %**. This pass added tests only; `git diff --stat --
+Lighthouse.Backend/Lighthouse.Backend/` is empty.
+
+| file | tested | killed before | killed after | score before | score after |
+| --- | --- | --- | --- | --- | --- |
+| `Services/Implementation/Auth/ApiKeyPrincipalFactory.cs` | 25 | 18 | 25 | 72.0 % | **100 %** |
+| `Models/Auth/EmbedSessionTokenRedemption.cs` | 1 | 1 | 1 | 100 % | **100 %** |
+| `Services/Implementation/Repositories/UserProfileLookup.cs` | 1 | 1 | 1 | 100 % | **100 %** |
+| `API/EmbedStartController.cs` | 37 | 27 | 35 | 73.0 % | 94.6 % |
+| `Services/Implementation/Repositories/EmbedSessionTokenRepository.cs` | 26 | 24 | 24 | 92.3 % | 92.3 % |
+| `Services/Implementation/Auth/EmbedSessionTokenService.cs` | 79 | 57 | 67 | 72.2 % | 84.8 % |
+| `API/EmbedHandshakeController.cs` | 5 | 4 | 4 | 80.0 % | 80.0 % |
+| `API/EmbedEntryController.cs` | 34 | 27 | 27 | 79.4 % | 79.4 % |
+| **total** | **208** | **159** | **184** | **76.44 %** | **88.46 %** |
+
+### Closed by this pass
+
+New file `Lighthouse.Backend.Tests/API/EmbedStartControllerTest.cs` — hop 1 at the cheapest level
+that still runs the real controller. The journey tests already cover the wiring; these cover the
+edges of the nonce contract, the challenge's return address and the shape of the terminal page.
+
+| scenario | mutant it kills |
+| --- | --- |
+| `Start` sets `Referrer-Policy: no-referrer` | both string mutants on `EmbedStartController.cs:63` — the header name and its value. D39: the nonce rides in the query string, so a Referer carries a live handshake onward |
+| a nonce of exactly 22 and exactly 128 characters proceeds to the identity provider | `:91` `nonce.Length < Minimum` → `<=`, and `> Maximum` → `>=` — the bounds are inclusive |
+| a nonce of 21 and of 129 characters is refused | (the other side of the same bounds; no new mutant, but the boundary is meaningless asserted from one side) |
+| a nonce whose first character is legal and whose remaining 30 are not is refused | `:96` `nonce.All(...)` → `nonce.Any(...)`. Security-relevant: under the mutant one legal character admits an otherwise arbitrary string |
+| the challenge's `RedirectUri` round-trips `/embed/start?nonce=…` and names the OIDC scheme | `:117` `new AuthenticationProperties {}` and `:119` `$""` — under either the viewer completes a login that resolves nothing |
+| a viewer with readable scope ends on a 200 `text/html; charset=utf-8` page whose body says so | `:149` `new ContentResult {}`. The empty initializer still answers 200 (that is `ContentResult`'s default), so status alone could never kill it — the type and the body are what pin D61 |
+
+New file `Lighthouse.Backend.Tests/Services/Implementation/Auth/EmbedSessionTokenServiceTest.cs` —
+the edges the journey and container tests cannot reach cheaply, driven through the injected
+`TimeProvider` so the instants are exact rather than whatever the wall clock happened to be.
+
+| scenario | mutant it kills |
+| --- | --- |
+| a `null` / `""` / `"   "` nonce is `Unresolved` and never reaches the store | `:88` block removal on the blank-nonce guard (previously **no coverage** at all) |
+| an outcome whose window closes at exactly this instant is `Unresolved`, even when the consuming update would have succeeded | `:98` `stored.ExpiresAt <= now` → `<`. The repository mock is set to return 1 affected row on purpose: without that, the mutant falls through to a no-op update and answers `Unresolved` anyway, and the boundary stays invisible |
+| seven malformed tokens (`null`, `""`, `"   "`, no separator, three parts, empty id, empty secret) are refused **without a store read** | `:125` block removal on the `TrySplit` guard, `:248` and `:254` `return false` → `true` inside `TrySplit`. All three produce an empty token id that finds no row and refuses anyway, so the response alone cannot separate them — the `Times.Never` verification is what makes them observable, and it states a real rule: a token that is not two non-empty halves names no row, and looking one up turns the store into a timing oracle |
+| a grant row carrying **no digest** is refused even when the redeeming update would succeed | `:273` `SecretMatches`' `storedHash is null` → `return true` (previously **no coverage**). Under the mutant, whoever guesses a token id is signed in |
+| the handshake outcome expires after the configured lifetime, and after `DefaultHandshakeOutcomeLifetimeSeconds` when the configured value is 0 | all four mutants on `:233` — `configured > 0` → `< 0` and → `>= 0`, plus both conditional collapses. DQ-2: an unconfigured instance falls back to the human-login window, not to zero |
+
+`ApiKeyPrincipalFactoryTest.cs` — three scenarios added for the ADR-137 viewer overload, which had
+no test at all. `Create(string, string?, string)` is `public static` and pure, so no host is needed.
+
+| scenario | mutant it kills |
+| --- | --- |
+| a viewer with a display name carries it on **both** `name` and `ClaimTypes.Name` | `:42` the `!` on `IsNullOrWhiteSpace(displayName)`, and the two `claims.Add` statements at `:44` and `:45`. `ClaimsPrincipal.Identity.Name` reads the second one, which is what the framed SPA renders |
+| a `null` / `""` / `"   "` display name emits **neither** claim | the three string rewrites of `IsNullOrWhiteSpace(displayName)` at `:42` — `!= null` is separated by the blank cases, `!= ""` and `.Trim() != ""` by the `null` and whitespace cases |
+| a blank subject refuses to build a principal | `:34` `ArgumentException.ThrowIfNullOrWhiteSpace(subject)` removal. Only `""` and `"   "` kill it — with `null` the mutant throws from the `Claim` constructor anyway, which is why the case is parameterised rather than picked |
+
+29 test cases added; backend suite 4493 → 4522, 0 failed, 0 skipped, 0 build warnings, and
+`dotnet format analyzers --severity info` reports nothing in any of the three files.
+
+### Survivors left behind, with their category
+
+19 survived + 5 no-coverage. None is a missing behavioural test.
+
+**Deliberately not asserted — log text (13).** `EmbedSessionTokenService.cs:23` states outright that
+the message is free to change because the operator's alert keys on the EventId *name*. Asserting
+the prose would contradict the decision that made it prose.
+
+| file:line | mutant |
+| --- | --- |
+| `EmbedSessionTokenService.cs:44` | statement removal + string — the `LogDebug` on mint |
+| `EmbedSessionTokenService.cs:143` | statement removal + string — the `LogWarning` on a refused redemption |
+| `EmbedSessionTokenService.cs:157` | statement removal + string — the `LogInformation` on revoke-all |
+| `EmbedSessionTokenService.cs:179` and `:196` | `LogNonceReplayed()` statement removal on the lost-race branches of `ConsumeGrantAsync` / `ConsumeRefusalAsync` (**no coverage**: only the container fixtures reach a lost race) |
+| `EmbedSessionTokenService.cs:207` | the replay warning's message template |
+| `EmbedEntryController.cs:93` and `:94` | statement removal + string — the `LogWarning` for an owner unlinked after minting |
+| `EmbedEntryController.cs:118` | statement removal + string — the `LogWarning` for a viewer whose profile is gone (**no coverage**) |
+
+**Covered outside the filter (1).** `EmbedSessionTokenService.cs:22`, the EventId *name*
+`"EmbedHandshakeNonceReplayed"`. This one **is** the contract (D62/D67) and **is** asserted —
+`EmbedSessionSingleUseConcurrencyTests.Handshake_ManySimultaneousPollsOfOneNonce_…` counts log
+events by that name and requires `ConcurrentPolls - 1` of them. That fixture starts a real Postgres
+container per test, so the config excludes it via `FullyQualifiedName!~Containers`; a container per
+mutant is prohibitive, and the filter stays as it is.
+
+**Equivalent (5).** The mutation cannot change anything a caller can observe.
+
+| file:line | mutant | why |
+| --- | --- | --- |
+| `EmbedStartController.cs:81` | `!Succeeded \|\| Principal is null` → `&&` | ASP.NET's own invariant makes the second conjunct redundant: `AuthenticateResult.Succeeded` is `Ticket != null`, `Principal` is `Ticket?.Principal`, and `AuthenticationTicket`'s constructor rejects a null principal. So `Succeeded == false` implies `Principal == null` and the two forms are the same predicate. **This contradicts the run-1 triage**, which expected a case where exactly one conjunct holds; no handler can produce one |
+| `EmbedStartController.cs:109` and `EmbedHandshakeController.cs:36` | `mode == AuthMode.Blocked ? 403 : 404` → always 404 | the `Blocked` branch is unreachable. `BlockedModeFilter` is a **global** MVC action filter (`Program.cs:268`) that short-circuits with 403 for every path outside `/api/latest/{auth,license,version}` — both embed routes are outside it, so neither action body ever runs in blocked mode. `S13_…_AreBlockedWhenThePremiumLicenceIsNotValid` already asserts the 403 on both endpoints and passes under the mutant, which is exactly why it survived. **This contradicts the run-1 triage**; killing it would need the guard moved or the filter's allow-list widened, i.e. a production change, and D44 records that the filter refusing first is the intended order |
+| `EmbedSessionTokenService.cs:243` and `:244` | `tokenId = string.Empty` / `secret = string.Empty` → `"Stryker was here!"` | these are `TrySplit`'s `out` parameters on its **failure** path. The single caller checks the `bool` first, and on the success path both are overwritten by `parts[0]` / `parts[1]`. Killing them would mean asserting a private helper's out-parameters. **This contradicts the run-1 triage**, which read these two line numbers as the `Replace('+','-')` / `Replace('/','_')` calls in `Base64UrlEncode` — those are at `:290`–`:291` and were already killed |
+| `EmbedEntryController.cs:58` | `if (!redemption.Succeeded) { return Refuse(); }` block removal | `EmbedSessionTokenRedemption.Refused` reports `ApiKeyId = 0`, so the fall-through resolves API key `0`, gets `null`, and returns the identical 401 with the identical HTML and no cookie. Defence in depth where the second guard subsumes the first; rows never start at id 0 on either provider. Same finding as the 5641 run, at a new line number |
+| `EmbedEntryController.cs:71` | `new AuthenticationProperties { IsPersistent = false }` → `{}` | `IsPersistent` reads `false` whether absent or explicitly `false`, so the cookie is a session cookie either way. The *value* mutation on the same line is killed by `S9_EmbedCookiePolicyTests`, so D40 itself stays pinned |
+| `EmbedEntryController.cs:109` | `if (string.IsNullOrWhiteSpace(subject)) { return null; }` block removal (**no coverage**) | F7 defence in depth, and `RedeemAsync` already refuses a row naming nobody — which is why nothing reaches it. Under the mutant a blank subject reaches `FindBySubjectAsync`, matches no profile and refuses with the same 401 |
+
+**Not chased — repository predicate boundary (2).** `EmbedSessionTokenRepository.cs:94` (the
+`&&` between the nonce hash and `HandshakeConsumedAt == null`) and `:96` (`ExpiresAt > consumedAt`
+→ `>=`). I could **not** confirm the run-1 triage's claim that these are covered outside the
+filter: `EmbedSessionTokenRepositoryTest.cs` is inside the filter and has no
+`TryConsumeHandshakeGrantAsync` coverage at all, and the container fixture drives a single nonce
+that is never at its expiry instant, so neither mutant would die there either. These are genuinely
+unasserted boundaries on a private query predicate. They are left because the gate is met at
+88.46 % with production untouched, not because they are unkillable — a repository-level fixture
+asserting consumption at exactly `ExpiresAt`, and a second nonce that must not be swept up, would
+close both.
+
+## Production defects exposed
+
+None. Every survivor triaged to log text, an equivalent mutant, or a boundary left unasserted by
+choice. Three of the run-1 triage's targets turned out to be equivalent mutants rather than gaps
+(`EmbedStartController.cs:81`, the two D31 ladders, and `EmbedSessionTokenService.cs:243`/`:244`);
+they are recorded above with the evidence, so the next pass does not spend a cycle re-deriving it.
+
+## Verification
+
+`dotnet build` — 0 warnings, 0 errors. `dotnet test` — 4522 passed, 0 failed, 0 skipped.
+`dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes` — no finding in any
+file this pass touched (the ~35 pre-existing CA1861/CA1825 hits are all in generated EF migrations).
+`git diff --stat -- Lighthouse.Backend/Lighthouse.Backend/` — empty.
+
+---
+
 # Mutation testing — 5641 (embed session: exchange an API key for a framed Lighthouse session)
 
 Run 2026-08-04 against `main` @ `6fb1ea02a`. Gate is 80 % kill rate on both stacks.
