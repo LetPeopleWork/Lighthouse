@@ -220,6 +220,25 @@ namespace Lighthouse.Backend.Tests.API.Security
             }
         }
 
+        /// <summary>
+        /// The advertised window and the cookie's own expiry are two readings of one setting, and
+        /// they have to agree — the app stops re-signing-in on the strength of the first while the
+        /// second decides when the session actually dies. A non-positive setting is where they
+        /// drifted: the advertised value fell back, the cookie did not, so `0` promised half an hour
+        /// against a cookie that expired on arrival.
+        /// </summary>
+        [TestCase(45, 45)]
+        [TestCase(0, EmbedConfiguration.DefaultSessionLifetimeMinutes)]
+        [TestCase(-5, EmbedConfiguration.DefaultSessionLifetimeMinutes)]
+        public void TheAdvertisedWindow_IsTheOneTheCookieEnforces(int configuredMinutes, int expectedMinutes)
+        {
+            var configuration = new EmbedConfiguration { SessionLifetimeMinutes = configuredMinutes };
+
+            Assert.That(configuration.ResolveSessionLifetimeMinutes(), Is.EqualTo(expectedMinutes),
+                "both the cookie's ExpireTimeSpan and the handshake's sessionLifetimeSeconds read "
+                + "this, and a second opinion is how they came apart");
+        }
+
         private async Task<string> ConsumedNonceAsync(string subject)
         {
             var (nonce, _) = await host.GrantEmbedSessionAsync(subject);

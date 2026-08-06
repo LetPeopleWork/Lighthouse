@@ -719,7 +719,7 @@ namespace Lighthouse.Backend
                 // appends the attribute verbatim (spike/findings.md, 2026-08-04).
                 embedOptions.Cookie.Extensions.Add("Partitioned");
 
-                embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.SessionLifetimeMinutes);
+                embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.ResolveSessionLifetimeMinutes());
                 embedOptions.SlidingExpiration = false;
 
                 embedOptions.Events.OnValidatePrincipal = RejectEmbedPrincipalWhoseIdentityIsGone;

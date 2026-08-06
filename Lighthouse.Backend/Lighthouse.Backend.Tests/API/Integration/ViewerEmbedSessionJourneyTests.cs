@@ -196,10 +196,43 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.UnprovisionedViewerSubject);
 
-            var teams = await ReadTeamIdsAsync(host.AuthEnabled, embedCookie: embedCookie);
+            using var response = await ViewerEmbedTestHost.GetAsViewerAsync(
+                host.AuthEnabled, ViewerEmbedTestHost.TeamsPath, embedCookie: embedCookie);
+            var teams = await ReadTeamIdsAsync(response);
 
-            Assert.That(teams, Is.Empty,
-                "framed, and still holding nothing — the empty state is Lighthouse's answer, not the app's");
+            using (Assert.EnterMultipleScope())
+            {
+                // Read deliberately without the helper's tolerance for a failed request: it maps any
+                // non-success onto an empty list, so "empty" here would otherwise also be satisfied by
+                // a 401 — a frame that never worked, asserted as a frame that worked and showed nothing.
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                    "the frame has to actually work before its emptiness means anything");
+                Assert.That(teams, Is.Empty,
+                    "framed, and still holding nothing — the empty state is Lighthouse's answer, not the app's");
+            }
+        }
+
+        /// <summary>
+        /// The reversal of D49/D60 rests on one claim: RBAC is enforced per request, so framing a
+        /// viewer who holds nothing exposes nothing. That claim is only worth what the weakest
+        /// unguarded endpoint says, so it is asserted rather than argued — against the instance-wide
+        /// surfaces, which is where a scope-less principal would do damage if it were false.
+        /// </summary>
+        [TestCase("/api/latest/logs")]
+        [TestCase("/api/latest/logs/download")]
+        // Not /api/latest/systeminfo itself: it carries the version and auth status the app shell
+        // reads for every signed-in user, and guarding it blanked the banner. Only the refresh
+        // history is instance-wide.
+        [TestCase("/api/latest/systeminfo/refreshlog")]
+        public async Task AViewerWithNoReadableScope_CannotReachInstanceWideSurfaces(string path)
+        {
+            var embedCookie = await host.EstablishEmbedCookieAsync(ViewerEmbedTestHost.UnprovisionedViewerSubject);
+
+            using var response = await ViewerEmbedTestHost.GetAsViewerAsync(host.AuthEnabled, path, embedCookie: embedCookie);
+
+            Assert.That((int)response.StatusCode, Is.EqualTo((int)HttpStatusCode.Forbidden),
+                $"{path} returns instance-wide data. Holding an embed cookie and no permission must not "
+                + "be enough to read it — being signed in is not the same as being allowed");
         }
 
         private static async Task<IReadOnlyList<int>> ReadTeamIdsAsync(
@@ -210,6 +243,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using var response = await ViewerEmbedTestHost.GetAsViewerAsync(
                 factory, ViewerEmbedTestHost.TeamsPath, sessionCookie, embedCookie);
 
+            return await ReadTeamIdsAsync(response);
+        }
+
+        // A refused request reads as no teams. That is the right answer for a caller asking
+        // "which of these can they see", and the wrong one for a caller asserting emptiness —
+        // which is why the empty-expecting test checks the status itself before calling this.
+        private static async Task<IReadOnlyList<int>> ReadTeamIdsAsync(HttpResponseMessage response)
+        {
             if (!response.IsSuccessStatusCode)
             {
                 return [];

@@ -53,10 +53,7 @@ namespace Lighthouse.Backend.API
 
         private int ResolveSessionLifetimeSeconds()
         {
-            var configured = embedConfiguration.CurrentValue.SessionLifetimeMinutes;
-            var minutes = configured > 0 ? configured : EmbedConfiguration.DefaultSessionLifetimeMinutes;
-
-            return minutes * 60;
+            return embedConfiguration.CurrentValue.ResolveSessionLifetimeMinutes() * 60;
         }
     }
 }

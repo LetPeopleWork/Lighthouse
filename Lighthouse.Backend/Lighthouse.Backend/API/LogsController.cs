@@ -1,12 +1,20 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
+﻿using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
 namespace Lighthouse.Backend.API
 {
+    // The log file is instance-wide: every team and portfolio name, every work-tracking URL, every
+    // connector error, whatever the current level captures. Until 2026-08-06 this controller carried
+    // no guard at all and was admitted by the fallback policy, which asks only that the caller be
+    // authenticated — so any account on the instance could download it, and after ADR-137 that set
+    // includes every viewer who reaches the Jira frame.
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    [RbacGuard(RbacGuardRequirement.SystemAdmin)]
     public class LogsController : ControllerBase
     {
         private readonly ILogConfiguration logConfiguration;

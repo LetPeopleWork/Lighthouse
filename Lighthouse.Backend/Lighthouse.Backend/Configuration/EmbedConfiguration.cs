@@ -20,5 +20,17 @@ namespace Lighthouse.Backend.Configuration
         public int HandshakeOutcomeLifetimeSeconds { get; set; } = DefaultHandshakeOutcomeLifetimeSeconds;
 
         public int SessionLifetimeMinutes { get; set; } = DefaultSessionLifetimeMinutes;
+
+        /// <summary>
+        /// Two callers need this number and must agree: the cookie's <c>ExpireTimeSpan</c>, and the
+        /// window the handshake advertises so the Forge app knows when to stop reusing a session.
+        /// They disagreed — the advertised value fell back on a non-positive setting and the cookie
+        /// did not — so a configured <c>0</c> produced a cookie that expired on arrival and a grant
+        /// promising thirty minutes.
+        /// </summary>
+        public int ResolveSessionLifetimeMinutes()
+        {
+            return SessionLifetimeMinutes > 0 ? SessionLifetimeMinutes : DefaultSessionLifetimeMinutes;
+        }
     }
 }

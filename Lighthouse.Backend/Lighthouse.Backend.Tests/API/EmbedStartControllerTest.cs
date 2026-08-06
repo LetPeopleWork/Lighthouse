@@ -123,9 +123,9 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task Start_ForAViewerWhoCanSeeSomething_EndsOnAReadablePage()
+        public async Task Start_ForASignedInViewer_EndsOnAReadablePage()
         {
-            GivenAnAuthenticatedViewerWithReadableScope();
+            GivenAnAuthenticatedViewerWithAProfile();
 
             var result = await CreateSubject().Start(ValidNonce, TestToken);
 
@@ -142,7 +142,44 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        private void GivenAnAuthenticatedViewerWithReadableScope()
+        /// <summary>
+        /// The one refusal the D49/D60 reversal left behind, and the only one the controller can
+        /// still produce: the sign-in succeeded and resolved to nobody. Without this the whole
+        /// refusal arm — the branch, the page, the recorded outcome — is unexercised, which is how
+        /// the prune leak got in.
+        /// </summary>
+        [Test]
+        public async Task Start_ForASignInThatResolvesToNoProfile_RefusesAndRecordsWhy()
+        {
+            GivenAnAuthenticatedViewerWithAProfile();
+            currentUserProfileService
+                .Setup(service => service.GetOrCreateFromPrincipalAsync(
+                    It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((UserProfile?)null);
+
+            var result = await CreateSubject().Start(ValidNonce, TestToken);
+
+            var page = result as ContentResult;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(page!.StatusCode, Is.EqualTo(StatusCodes.Status200OK),
+                    "D61: a refusal is still a page a person reads, not an error code");
+                Assert.That(page.Content, Does.Contain("could not tell who you are"),
+                    "and it names the instance's fault rather than asking the viewer to request access");
+            }
+
+            embedSessionTokenService.Verify(
+                service => service.RecordHandshakeRefusalAsync(
+                    null,
+                    ValidNonce,
+                    EmbedStartController.NoProfileRefusalCode,
+                    It.IsAny<CancellationToken>()),
+                Times.Once,
+                "the Forge page is waiting on the handshake, so the refusal has to be recorded there too");
+        }
+
+        private void GivenAnAuthenticatedViewerWithAProfile()
         {
             var identity = new ClaimsIdentity(
                 [new Claim(ApiKeyPrincipalFactory.SubjectClaimType, ViewerSubject)],
