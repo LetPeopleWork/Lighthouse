@@ -26,8 +26,7 @@ namespace Lighthouse.Backend.API
         public const string StartPath = "/embed/start";
 
         // ADR-137 DQ-1: one class-level code, never prose and never anything about who the viewer is
-        // or what the instance holds. `no_access` retired 2026-08-06 with the readable-scope
-        // conjunct; what is left is the one case where a sign-in succeeds and still names nobody.
+        // or what the instance holds.
         public const string NoProfileRefusalCode = "no_profile";
 
         private const int MinimumNonceLength = 22;
@@ -130,15 +129,9 @@ namespace Lighthouse.Backend.API
             // appears in the administrator's user list.
             var profile = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
 
-            // D49/D60 also required a readable scope here. Amended by the maintainer 2026-08-06,
-            // and the reason is that it never protected anything: RBAC is enforced on every
-            // request, so a viewer holding nothing sees nothing either way. What it did do was
-            // refuse the most ordinary onboarding shapes there are — an administrator who has not
-            // created a team yet, a viewer waiting to be assigned one — and tell them, after a
-            // sign-in that worked, to go away. Lighthouse's own empty state says it better.
-            //
-            // D31's ladder above is untouched: an instance whose authentication is off, blocked or
-            // misconfigured genuinely has no embed surface, and that is a different sentence.
+            // A sign-in that worked and still names nobody is the only refusal left here: what a
+            // viewer may read is RBAC's answer on every request, not this hop's (D49/D60, amended
+            // 2026-08-06). D31's ladder above is a different sentence and is untouched.
             if (profile is null)
             {
                 await embedSessionTokenService.RecordHandshakeRefusalAsync(

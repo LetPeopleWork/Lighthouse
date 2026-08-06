@@ -10,8 +10,8 @@ using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.API
 {
-    // ADR-137 hop 2. A second controller on the embed prefix so [AllowAnonymous] never lands on the
-    // minting one: the resolver holds no credential and is given exactly one read verb.
+    // ADR-137 hop 2. Its own controller on the embed prefix so [AllowAnonymous] covers nothing but
+    // this one read verb: the poller holds no credential.
     [Route("api/v1/embed")]
     [Route("api/latest/embed")]
     [ApiController]
@@ -21,14 +21,6 @@ namespace Lighthouse.Backend.API
         IEmbedSessionTokenService embedSessionTokenService,
         IOptionsMonitor<EmbedConfiguration> embedConfiguration) : ControllerBase
     {
-        private int ResolveSessionLifetimeSeconds()
-        {
-            var configured = embedConfiguration.CurrentValue.SessionLifetimeMinutes;
-            var minutes = configured > 0 ? configured : EmbedConfiguration.DefaultSessionLifetimeMinutes;
-
-            return minutes * 60;
-        }
-
         [HttpGet("handshake/{nonce}")]
         [EnableRateLimiting(RateLimitingConfiguration.EmbedSessionPolicy)]
         [ProducesResponseType<EmbedHandshakeResponse>(StatusCodes.Status200OK)]
@@ -57,6 +49,14 @@ namespace Lighthouse.Backend.API
                 // Only on a grant: D45 keeps unresolved, unknown, consumed and refused identical.
                 SessionLifetimeSeconds = outcome.Token is null ? null : ResolveSessionLifetimeSeconds(),
             });
+        }
+
+        private int ResolveSessionLifetimeSeconds()
+        {
+            var configured = embedConfiguration.CurrentValue.SessionLifetimeMinutes;
+            var minutes = configured > 0 ? configured : EmbedConfiguration.DefaultSessionLifetimeMinutes;
+
+            return minutes * 60;
         }
     }
 }
