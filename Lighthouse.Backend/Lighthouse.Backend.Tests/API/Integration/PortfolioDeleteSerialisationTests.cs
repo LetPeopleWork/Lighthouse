@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
@@ -25,14 +27,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private WebApplicationFactory<Program> hostedFactory;
         private HttpClient client;
         private GateableWorkItemService gateableWorkItemService;
-        private CapturingLoggerProvider capturingLoggerProvider;
+        private CapturedLogMessages capturedLogMessages;
 
         [SetUp]
         public void Init()
         {
             factory = new TestWebApplicationFactory<Program>();
             gateableWorkItemService = new GateableWorkItemService();
-            capturingLoggerProvider = new CapturingLoggerProvider();
+            capturedLogMessages = new CapturedLogMessages();
 
             var permissiveLicense = new Mock<ILicenseService>();
             permissiveLicense.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -47,9 +49,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     services.AddSingleton<ILicenseService>(permissiveLicense.Object);
                 });
 
-                builder.ConfigureLogging(logging =>
+                // D72: an ILoggerProvider added here would be inert. Serilog is the pipeline.
+                builder.ConfigureServices(services =>
                 {
-                    logging.AddProvider(capturingLoggerProvider);
+                    services.RemoveAll<ILoggerFactory>();
+                    services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                        new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(capturedLogMessages).CreateLogger(),
+                        dispose: true));
                 });
             });
 
@@ -78,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             client.Dispose();
             hostedFactory.Dispose();
             factory.Dispose();
-            capturingLoggerProvider.Dispose();
         }
 
         [Test]
@@ -104,7 +109,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-                Assert.That(capturingLoggerProvider.ContainsMessageFragment("DbUpdateConcurrencyException"), Is.False);
+                capturedLogMessages.AssertNothingLoggedMatching("DbUpdateConcurrencyException");
                 Assert.That(PortfolioExists(portfolio.Id), Is.False);
             }
         }
@@ -162,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(responses[1].StatusCode, Is.AnyOf(acceptableStatusCodes));
                 Assert.That(responses.Any(r => r.StatusCode == HttpStatusCode.NoContent), Is.True, "At least one DELETE must succeed");
                 Assert.That(PortfolioExists(portfolio.Id), Is.False);
-                Assert.That(capturingLoggerProvider.ContainsMessageFragment("DbUpdateConcurrencyException"), Is.False);
+                capturedLogMessages.AssertNothingLoggedMatching("DbUpdateConcurrencyException");
             }
         }
 
@@ -182,7 +187,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(refreshResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(PortfolioExists(portfolio.Id), Is.False);
-                Assert.That(capturingLoggerProvider.ContainsMessageFragment("DbUpdateConcurrencyException"), Is.False);
+                capturedLogMessages.AssertNothingLoggedMatching("DbUpdateConcurrencyException");
             }
         }
 
@@ -210,7 +215,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deleteResponse.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
-                Assert.That(capturingLoggerProvider.ContainsMessageFragment("DbUpdateConcurrencyException"), Is.False);
+                capturedLogMessages.AssertNothingLoggedMatching("DbUpdateConcurrencyException");
                 Assert.That(PortfolioExists(portfolio.Id), Is.False);
             }
         }
@@ -334,37 +339,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             public Task UpdateWorkItemsForTeam(Team team)
             {
                 return Task.CompletedTask;
-            }
-        }
-
-        private sealed class CapturingLoggerProvider : ILoggerProvider
-        {
-            private readonly ConcurrentBag<string> messages = new();
-
-            public ILogger CreateLogger(string categoryName) => new CapturingLogger(messages);
-
-            public bool ContainsMessageFragment(string fragment)
-            {
-                return messages.Any(m => m.Contains(fragment, StringComparison.OrdinalIgnoreCase));
-            }
-
-            public void Dispose() { }
-
-            private sealed class CapturingLogger(ConcurrentBag<string> messages) : ILogger
-            {
-                public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-                public bool IsEnabled(LogLevel logLevel) => true;
-
-                public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-                {
-                    var message = formatter(state, exception);
-                    if (exception != null)
-                    {
-                        message = $"{message} :: {exception.GetType().FullName}: {exception.Message}";
-                    }
-                    messages.Add(message);
-                }
             }
         }
     }
