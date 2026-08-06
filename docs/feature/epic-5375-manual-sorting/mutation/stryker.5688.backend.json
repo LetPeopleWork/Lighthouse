@@ -1,0 +1,21 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/FeaturePositionMap.cs",
+      "**/Models/FeatureComparer.cs",
+      "**/Models/FeatureOrderKey.cs",
+      "**/Services/Implementation/Repositories/FeatureRepository.cs",
+      "**/API/FeaturesController.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~FeatureComparer|FullyQualifiedName~Slice01FeaturesView|FullyQualifiedName~FeaturesController|FullyQualifiedName~FeatureRepository|FullyQualifiedName~PortfolioDto",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

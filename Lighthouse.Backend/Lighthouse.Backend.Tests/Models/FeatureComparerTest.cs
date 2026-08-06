@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var result = comparer.Compare(null, null);
 
-            Assert.That(result, Is.EqualTo(0));
+            Assert.That(result, Is.Zero);
         }
 
         [Test]
@@ -122,6 +122,33 @@ namespace Lighthouse.Backend.Tests.Models
             var features = new List<Feature> { new() { Order = "10" }, null!, new() { Order = "2" } };
 
             Assert.That(() => features.OrderBy(f => f, new FeatureComparer()).ToList(), Throws.Nothing);
+        }
+
+        // The int rung must win outright: falling through to the double rung would invert this pair,
+        // because that rung ranks the lower number higher.
+        [Test]
+        public void Compare_WhenOnlyTheRightOrderIsAnInt_RanksTheIntAheadOfTheDecimal()
+        {
+            var comparer = new FeatureComparer();
+            var decimalRanked = new Feature { Order = $"{9.5}" };
+            var intRanked = new Feature { Order = "5" };
+
+            var result = comparer.Compare(decimalRanked, intRanked);
+
+            Assert.That(result, Is.GreaterThan(0));
+        }
+
+        // Both operands start with a digit, so this asserts the string fallback rather than punctuation collation.
+        [Test]
+        public void Compare_WhenOnlyTheLeftOrderIsADouble_FallsBackToStringComparison()
+        {
+            var comparer = new FeatureComparer();
+            var doubleRanked = new Feature { Order = $"{9.5}" };
+            var nonNumeric = new Feature { Order = "1abc" };
+
+            var result = comparer.Compare(doubleRanked, nonNumeric);
+
+            Assert.That(result, Is.GreaterThan(0));
         }
     }
 }
