@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.API
     [AllowAnonymous]
     public class EmbedEntryController(
         IEmbedSessionTokenService embedSessionTokenService,
-        IApiKeyIdentityResolver apiKeyIdentityResolver,
         IUserProfileLookup userProfileLookup,
         IAuthModeResolver authModeResolver,
         ILogger<EmbedEntryController> logger) : ControllerBase
@@ -59,7 +58,7 @@ namespace Lighthouse.Backend.API
                 return Refuse();
             }
 
-            var principal = await ResolvePrincipalAsync(redemption, cancellationToken);
+            var principal = await ResolveViewerPrincipalAsync(redemption.Subject, cancellationToken);
             if (principal is null)
             {
                 return Refuse();
@@ -75,30 +74,7 @@ namespace Lighthouse.Backend.API
             return Redirect(ResolveReturnPath(returnPath));
         }
 
-        // ADR-137 D63: a redeemed row names either the viewer who signed in or an API key's owner.
-        private Task<ClaimsPrincipal?> ResolvePrincipalAsync(
-            EmbedSessionTokenRedemption redemption,
-            CancellationToken cancellationToken)
-        {
-            return redemption.ApiKeyId is int apiKeyId
-                ? Task.FromResult(ResolveApiKeyOwnerPrincipal(apiKeyId))
-                : ResolveViewerPrincipalAsync(redemption.Subject, cancellationToken);
-        }
-
-        private ClaimsPrincipal? ResolveApiKeyOwnerPrincipal(int apiKeyId)
-        {
-            var identity = apiKeyIdentityResolver.ResolveByApiKeyId(apiKeyId);
-            if (identity is null || identity.OwnerResolutionState != ApiKeyOwnerResolutionState.Resolved)
-            {
-                logger.LogWarning(
-                    "Embed session refused: API key {ApiKeyId} no longer resolves to a linked owner",
-                    apiKeyId);
-                return null;
-            }
-
-            return ApiKeyPrincipalFactory.Create(identity, SmartAuthSchemeSelector.EmbedCookieScheme);
-        }
-
+        // ADR-137 D48: a redeemed row names the viewer who signed in, and nobody else.
         private async Task<ClaimsPrincipal?> ResolveViewerPrincipalAsync(
             string? subject,
             CancellationToken cancellationToken)

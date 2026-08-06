@@ -376,17 +376,10 @@ namespace Lighthouse.Backend
             var principal = context.Principal;
             var services = context.HttpContext.RequestServices;
 
-            var apiKeyClaim = principal?.FindFirst(ApiKeyPrincipalFactory.ApiKeyIdClaimType)?.Value;
-            if (apiKeyClaim is not null)
-            {
-                return int.TryParse(apiKeyClaim, NumberStyles.Integer, CultureInfo.InvariantCulture, out var apiKeyId)
-                    && services.GetRequiredService<IApiKeyIdentityResolver>().ResolveByApiKeyId(apiKeyId) is not null;
-            }
-
             var subject = principal?.FindFirst(ApiKeyPrincipalFactory.SubjectClaimType)?.Value;
             if (string.IsNullOrWhiteSpace(subject))
             {
-                // A principal naming neither a key nor a person is nobody; it must not fall through open.
+                // A principal naming nobody must not fall through open.
                 return false;
             }
 
