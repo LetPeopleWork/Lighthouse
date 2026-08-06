@@ -17,8 +17,19 @@ namespace Lighthouse.Backend.Services.Interfaces.Auth
 
         Task RecordHandshakeRefusalAsync(string? subject, string nonce, string refusalCode, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// ADR-132 D68: reads a recorded outcome back exactly once. Unknown, unresolved, expired and
+        /// already-consumed nonces all answer <see cref="EmbedHandshakeOutcome.Unresolved"/>.
+        /// </summary>
+        Task<EmbedHandshakeOutcome> ConsumeHandshakeAsync(string? nonce, CancellationToken cancellationToken);
+
         Task<EmbedSessionTokenRedemption> RedeemAsync(string? token, CancellationToken cancellationToken);
 
         Task RevokeAllAsync(int apiKeyId, CancellationToken cancellationToken);
+    }
+
+    public sealed record EmbedHandshakeOutcome(string? Token, DateTime? ExpiresAt, string? RefusalCode)
+    {
+        public static EmbedHandshakeOutcome Unresolved { get; } = new(null, null, null);
     }
 }

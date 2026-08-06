@@ -20,6 +20,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         private const int SecretByteLength = 32;
         private const char TokenSeparator = '.';
 
+        // The test surface and the operator's alert both key on the name, so the message stays free to change.
+        private static readonly EventId NonceReplayedEvent = new(0, "EmbedHandshakeNonceReplayed");
+
         public async Task<EmbedSessionTokenMintResult> MintAsync(int apiKeyId, CancellationToken cancellationToken)
         {
             var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -81,6 +84,43 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 cancellationToken);
         }
 
+        public async Task<EmbedHandshakeOutcome> ConsumeHandshakeAsync(string? nonce, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(nonce))
+            {
+                return EmbedHandshakeOutcome.Unresolved;
+            }
+
+            var nonceHash = HashSecret(nonce);
+            var now = timeProvider.GetUtcNow().UtcDateTime;
+            var stored = await repository.FindByHandshakeNonceHashAsync(nonceHash, cancellationToken);
+
+            // D45: never resolved, never existed and long expired are one answer, because a channel
+            // that can tell them apart is an oracle for live sessions.
+            if (stored is null || stored.ExpiresAt <= now)
+            {
+                return EmbedHandshakeOutcome.Unresolved;
+            }
+
+            if (stored.HandshakeConsumedAt is not null)
+            {
+                LogNonceReplayed();
+                return EmbedHandshakeOutcome.Unresolved;
+            }
+
+            if (stored.TokenId is { Length: > 0 } tokenId)
+            {
+                return await ConsumeGrantAsync(tokenId, nonceHash, now, cancellationToken);
+            }
+
+            if (stored.RefusalCode is { Length: > 0 } refusalCode)
+            {
+                return await ConsumeRefusalAsync(refusalCode, nonceHash, now, cancellationToken);
+            }
+
+            return EmbedHandshakeOutcome.Unresolved;
+        }
+
         public async Task<EmbedSessionTokenRedemption> RedeemAsync(string? token, CancellationToken cancellationToken)
         {
             if (!TrySplit(token, out var tokenId, out var secret))
@@ -116,6 +156,56 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 cancellationToken);
 
             logger.LogInformation("Revoked {Count} outstanding embed session tokens for API key {ApiKeyId}", revoked, apiKeyId);
+        }
+
+        private async Task<EmbedHandshakeOutcome> ConsumeGrantAsync(
+            string tokenId,
+            string nonceHash,
+            DateTime now,
+            CancellationToken cancellationToken)
+        {
+            // D71: the digest written at resolution has no plaintext anywhere, so a grant row that
+            // leaks before the poll is unredeemable — the secret only exists once this poll mints it.
+            var secret = GenerateUrlSafeValue(SecretByteLength);
+
+            // DQ-2: the row leaves the 300-second outcome window for the 60-second token window, so
+            // the expiry advertised here is the one TryMarkRedeemedAsync actually enforces.
+            var expiresAt = now.AddSeconds(ResolveTokenLifetimeSeconds());
+
+            var affectedRows = await repository.TryConsumeHandshakeGrantAsync(
+                nonceHash, now, HashSecret(secret), expiresAt, cancellationToken);
+
+            if (affectedRows != 1)
+            {
+                LogNonceReplayed();
+                return EmbedHandshakeOutcome.Unresolved;
+            }
+
+            return new EmbedHandshakeOutcome($"{tokenId}{TokenSeparator}{secret}", expiresAt, null);
+        }
+
+        private async Task<EmbedHandshakeOutcome> ConsumeRefusalAsync(
+            string refusalCode,
+            string nonceHash,
+            DateTime now,
+            CancellationToken cancellationToken)
+        {
+            var affectedRows = await repository.TryConsumeHandshakeRefusalAsync(nonceHash, now, cancellationToken);
+
+            if (affectedRows != 1)
+            {
+                LogNonceReplayed();
+                return EmbedHandshakeOutcome.Unresolved;
+            }
+
+            return new EmbedHandshakeOutcome(null, null, refusalCode);
+        }
+
+        // D62: an invisible impersonation becomes a visible anomaly for one log line. N1 still applies
+        // — neither the nonce nor its hash may appear here.
+        private void LogNonceReplayed()
+        {
+            logger.LogWarning(NonceReplayedEvent, "An embed handshake nonce was read again after it had been spent");
         }
 
         private async Task RecordHandshakeOutcomeAsync(

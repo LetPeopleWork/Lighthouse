@@ -32,6 +32,37 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     cancellationToken);
         }
 
+        public Task<EmbedSessionToken?> FindByHandshakeNonceHashAsync(string nonceHash, CancellationToken cancellationToken)
+        {
+            return context.EmbedSessionTokens
+                .AsNoTracking()
+                .FirstOrDefaultAsync(token => token.HandshakeNonceHash == nonceHash, cancellationToken);
+        }
+
+        public Task<int> TryConsumeHandshakeGrantAsync(
+            string nonceHash,
+            DateTime consumedAt,
+            string secretHash,
+            DateTime tokenExpiresAt,
+            CancellationToken cancellationToken)
+        {
+            return UnconsumedOutcome(nonceHash, consumedAt)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(token => token.HandshakeConsumedAt, consumedAt)
+                        .SetProperty(token => token.SecretHash, secretHash)
+                        .SetProperty(token => token.ExpiresAt, tokenExpiresAt),
+                    cancellationToken);
+        }
+
+        public Task<int> TryConsumeHandshakeRefusalAsync(string nonceHash, DateTime consumedAt, CancellationToken cancellationToken)
+        {
+            return UnconsumedOutcome(nonceHash, consumedAt)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(token => token.HandshakeConsumedAt, consumedAt),
+                    cancellationToken);
+        }
+
         public Task<int> RevokeOutstandingForApiKeyAsync(int apiKeyId, DateTime revokedAt, CancellationToken cancellationToken)
         {
             return context.EmbedSessionTokens
@@ -50,6 +81,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     || token.RedeemedAt != null
                     || token.RevokedAt != null)
                 .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        // D68 keeps the nonce hash after consumption, so the row stays findable and the precondition
+        // that decides the winner is HandshakeConsumedAt rather than the hash's absence.
+        private IQueryable<EmbedSessionToken> UnconsumedOutcome(string nonceHash, DateTime consumedAt)
+        {
+            return context.EmbedSessionTokens
+                .Where(token => token.HandshakeNonceHash == nonceHash
+                    && token.HandshakeConsumedAt == null
+                    && token.ExpiresAt > consumedAt);
         }
     }
 }
