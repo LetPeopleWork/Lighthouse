@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         TimeProvider timeProvider,
         ILogger<EmbedSessionTokenService> logger) : IEmbedSessionTokenService
     {
-        private const int DefaultTokenLifetimeSeconds = 60;
-        private const int DefaultHandshakeOutcomeLifetimeSeconds = 300;
         private const int TokenIdByteLength = 16;
         private const int SecretByteLength = 32;
         private const char TokenSeparator = '.';
@@ -54,9 +52,9 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 
         public Task RecordHandshakeGrantAsync(string? subject, string nonce, CancellationToken cancellationToken)
         {
-            // The secret hashed here is generated and immediately discarded: the constraint requires a
-            // grant row to carry one, and until the outcome is claimed nobody may hold it. Consumption
-            // (ADR-132 D68) writes the secret the viewer actually receives.
+            // CK_EmbedSessionTokens_GrantOrRefusal requires a grant row to carry a secret hash, but
+            // nobody may hold the secret until the outcome is claimed — D68's consumption writes the
+            // one the viewer actually receives.
             return RecordHandshakeOutcomeAsync(
                 new EmbedSessionToken
                 {
@@ -226,13 +224,13 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         private int ResolveTokenLifetimeSeconds()
         {
             var configured = embedConfiguration.CurrentValue.TokenLifetimeSeconds;
-            return configured > 0 ? configured : DefaultTokenLifetimeSeconds;
+            return configured > 0 ? configured : EmbedConfiguration.DefaultTokenLifetimeSeconds;
         }
 
         private int ResolveHandshakeOutcomeLifetimeSeconds()
         {
             var configured = embedConfiguration.CurrentValue.HandshakeOutcomeLifetimeSeconds;
-            return configured > 0 ? configured : DefaultHandshakeOutcomeLifetimeSeconds;
+            return configured > 0 ? configured : EmbedConfiguration.DefaultHandshakeOutcomeLifetimeSeconds;
         }
 
         private static bool NamesAnIdentity(EmbedSessionToken stored)
