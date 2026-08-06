@@ -1,0 +1,333 @@
+schema_version: 1
+feature_id: epic-5375-manual-sorting
+updated: 2026-08-06
+note: >
+  Epic 5375 (reported by Lorenzo, 2026-06-30), tagged Premium. The ADO description was a four-line
+  sketch; this journey is the result of the DISCUSS dive-in on 2026-08-06 and is grounded in a
+  pre-DISCUSS code reality check (WorkItemBase.cs, FeatureComparer.cs, FeatureRepository.cs,
+  PortfolioDto.cs, FeaturesController.cs, WorkItemService.cs, ForecastService.cs, LighthouseAppContext.cs,
+  AzureDevOps/WorkItemExtensions.cs, Jira/JiraWorkTrackingConnector.cs + IssueFactory.cs,
+  Linear/LinearWorkTrackingConnector.cs, Csv/CsvWorkTrackingConnector.cs,
+  ServiceNow/ServiceNowWorkItemMapper.cs, LicenseGuardAttribute.cs, RbacGuardRequirement.cs,
+  PortfolioFeatureList.tsx, FeatureListDataGrid.tsx, App.tsx).
+
+  Three load-bearing finds the sketch did not carry:
+
+  (1) Ordering is NOT cosmetic. ForecastService.GetSimulationResultsOfFeatureToUpdate (:201-209) draws
+  each simulated day's work from the first FeatureWIP remaining Features in Order sequence, so reordering
+  moves the 50/70/85/95% dates. This epic is a forecasting feature wearing a UI hat, and that is where
+  its value comes from.
+
+  (2) WorkItemBase.Update (:142) copies Order from the source system on EVERY refresh, so a manual value
+  written into that field is destroyed on the next sync. The manual rank must be a separate persisted
+  field — which is also what makes the off-switch a genuine revert rather than a re-import.
+
+  (3) Feature <-> Portfolio is MANY-TO-MANY (LighthouseAppContext.cs:217-219). That is what turns
+  "scoped to the Portfolio" from a detail into the epic's central decision (D4), and what forces the
+  RBAC rule in D11.
+
+  Per-connector Order quality, which is the real driver of the top-scoring job: ADO = StackRank,
+  Jira = LexoRank, Linear = SortOrder (inverted), CSV = optional column, ServiceNow = the record NUMBER,
+  which is not a rank at all.
+
+  REVISED later the same day after user input, in four ways that all narrowed risk. The sorting page
+  became a GENERAL Features view (D17) added as the third top-level nav entry beside Overview and System
+  Settings (Header.tsx:59-60 has exactly those two today) — free, always visible, RBAC-filtered, and the
+  surface ADO Epic #4365 "Dependencies" (Premium, New, "Set dependencies on Features") will later land
+  on. Reordering ships as DISCRETE MOVE ACTIONS rather than drag-and-drop (D18), which removes the epic's
+  only hard blocker: no DnD library is installed and MUI-X row reorder is Pro-licensed. The Portfolio
+  surface reuses the EXISTING Feature list rather than gaining a new one (D10) — FeatureListDataGrid and
+  its columns factory are already shared, so the column and the action menu are written once. And Done
+  Features are treated as irrelevant to ranking rather than merely hideable (D15). Net effect: 4 slices
+  instead of 5, one fewer implementation of the same gesture, and the new view amortised across two epics.
+
+journeys:
+
+  - name: own-the-order-lighthouse-forecasts-against
+    goal: >
+      A product owner whose tracker rank does not match what the team agreed to build next takes
+      ownership of the ordering inside Lighthouse: a new Features view shows every Feature they can see
+      in the order the forecast simulates, an instance switch hands that order over starting from today's
+      sequence, a Move to Top on their own Portfolio's list pushes a Feature up the queue, and the
+      forecast dates move with it — without touching the tracker and without moving Features they do not
+      own.
+    persona: "product-owner (primary: reorders; config-admin: owns the instance switch and the
+      reversibility question; delivery-forecaster: consumes the dates that ordering moves, does not
+      reorder)"
+
+    emotional_arc:
+      start: >
+        Resigned — "Lighthouse says this Feature lands in November, and I have no idea why. The list is
+        in some order but nobody decided it, and on ServiceNow it is literally sorted by ticket number."
+      middle: >
+        Purposeful — "so the top of the list gets the throughput first. Then this one is late because it
+        is fourteenth, not because the team is slow. Move to Top, and only inside my own Portfolio."
+      end: >
+        Accountable — "the dates on this board come from priorities we agreed, and they stop moving on
+        their own every time somebody re-ranks a backlog in Jira. If I want the tracker's opinion back,
+        the switch turns off and my order is still there."
+
+    design_decisions_resolved:
+      - id: D1
+        question: What grain gets manually sorted?
+        decision: >
+          Features only. Work items inside a Feature are not manually orderable (user, 2026-08-06).
+          Feature order is the only ordering any consumer reads; work-item order has no consumer today,
+          so ordering it would ship plumbing.
+      - id: D2
+        question: Is manual sorting all-or-nothing?
+        decision: >
+          Yes — one instance-wide switch. When ON, every Feature is manually ranked and the source Order
+          is ignored entirely. No mixed mode, no per-Portfolio or per-Feature opt-in. Straight from the
+          epic ("It's either or"); a partial opt-in would leave a team's forecast with two incomparable
+          orderings.
+      - id: D3
+        question: One global order, or one per Portfolio?
+        decision: >
+          One global total order. Forced by the code: a team spans Portfolios, so per-Portfolio orderings
+          give its Monte Carlo simulation no unambiguous next Feature. The epic already says it — "they
+          are all in relation to each other".
+      - id: D4
+        question: >
+          What does a reorder made through a FILTERED view (one Portfolio's list) do to the one global
+          order?
+        decision: >
+          Insert-at-target (user, 2026-08-06, chosen over slot permutation). The dragged Feature lands at
+          the global rank of the row it was dropped onto; the block it jumped shifts by one. Worked
+          example: global F1 F2 F3 F4 F5 F6, Portfolio A = {F2, F4, F5}, drag F5 above F2 yields
+          F1 F5 F2 F3 F4 F6.
+
+          Why not slot permutation (re-deal A's Features into the global slots they already occupied,
+          leaving non-members' rank numbers untouched): both rules let F5 cross F3, which is invisible
+          from A's page — that is unavoidable the moment a shared order is edited through a filter. The
+          difference is volume. Slot permutation also drags F2 from rank 2 to rank 4, crossing F3
+          downward: two crossings instead of one. It protects non-members' absolute rank numbers, which
+          nothing consumes, at the cost of relative order, which is the only thing ForecastService reads.
+
+          The decisive argument is D11: because the visible set is already RBAC-filtered, the instance
+          page is a filtered view too. Insert-at-target is one rule for every surface and every
+          permission scope; a rule defined against "the visible slot set" would give two users different
+          results from the same gesture.
+      - id: D5
+        question: Where does the manual rank live?
+        decision: >
+          A new persisted field, never in WorkItemBase.Order. Forced by WorkItemBase.Update (:142), which
+          overwrites Order from source on every sync. Keeping Order intact is also what makes D9's revert
+          real rather than a re-import.
+      - id: D6
+        question: What is the order the moment the switch is flipped on?
+        decision: >
+          Seeded from the current FeatureComparer result, so the visible order is byte-identical the
+          instant it flips. A switch that reshuffles the board on activation is indistinguishable from a
+          bug. Slice 02's learning hypothesis probes exactly this — FeatureComparer's int-before-string
+          rule and string.Compare tie-breaking are applied at five call sites, two of which sort a subset.
+      - id: D7
+        question: What happens to a Feature that arrives after the last sort?
+        decision: >
+          Appended silently to the end. No badge, no notification, no "needs triage" state (user,
+          2026-08-06, choosing the epic's original wording over a badge alternative that was offered).
+          Accepted cost, eyes open: a new Feature is invisible until someone scrolls the instance-wide
+          page, and it forecasts last until then. Revisit if the tail turns out to be where real work
+          hides.
+      - id: D8
+        question: Is the manual order written back to the tracker?
+        decision: >
+          Never (user, 2026-08-06). ADO StackRank, Jira Rank and Linear SortOrder are not written.
+          Lighthouse owns its own ordering. Rank write-back — LexoRank generation in particular — is its
+          own epic if it is ever wanted.
+      - id: D9
+        question: Is the switch a one-way door?
+        decision: >
+          No. Turning it off restores the source order immediately and RETAINS the manual ranks, so
+          turning it back on restores the manual order rather than re-seeding. Nearly free given D5's
+          separate fields, and it converts an irreversible-sounding decision into an experiment — which
+          is what the config admin's anxiety force is about.
+      - id: D10
+        question: Where does the sorting UI live?
+        decision: >
+          Two surfaces, one order — and neither is new UI built for sorting (user, 2026-08-06, second
+          pass: "For sorting/viewing on Portfolio, we should use the existing Features View"). Surface (a)
+          is the general Features view of D17; surface (b) is the EXISTING Portfolio detail Feature list,
+          which gains a row-action menu and a column and nothing else. FeatureListDataGrid and its
+          columns.tsx factory are already shared and caller-parameterised, so both are written once.
+      - id: D11
+        question: Who may reorder, and what may they see?
+        decision: >
+          Everyone may OPEN the Features view; content is filtered to Portfolios the user can read;
+          ACTIONS require PortfolioWrite (user, 2026-08-06 — "Portfolio write for both, but you will only
+          see the features from portfolios you have rights", and second pass: "This is viewable by all,
+          what they see and if they can do any actions is governed by their role"). DISCUSS adds the
+          mutation rule the answers did not cover: a Feature may be moved only if the user holds
+          PortfolioWrite on EVERY Portfolio it belongs to, because the many-to-many relation means one
+          move can re-sequence an object another Portfolio forecasts against. A shared Feature the user
+          only partly owns renders its move actions disabled, naming the blocking Portfolio. Flagged to
+          DESIGN as possibly too strict — field use decides.
+
+          Note for DESIGN: GET /features is the first endpoint whose RESULT SET is RBAC-filtered rather
+          than whose ACCESS is RBAC-gated. That is a different shape from every existing guard.
+      - id: D12
+        question: What exactly does the premium licence gate?
+        decision: >
+          The MANUAL order, not the VISIBLE one. The Features view, its position column and its help text
+          ship to every instance, licensed or not, and STAY VISIBLE when manual sorting is off. The switch
+          and every move action require premium. Follows from D17 — the view is general infrastructure
+          that later hosts dependencies, not a sorting page wearing a hat — and from the fact that the
+          position column reports something already true and already driving every forecast, so
+          withholding it would be withholding an explanation rather than a feature.
+      - id: D13
+        question: How is rank stored and renumbered?
+        decision: >
+          Dense contiguous integer, renumbering the affected block on each move. Simplest correct thing
+          at hundreds-to-low-thousands of Features. A sparse or LexoRank-style key would avoid the block
+          UPDATE but buys nothing at this size and costs a rebalancing path; noted for DESIGN, not chosen.
+      - id: D14
+        question: What happens when the user sorts the grid by a column?
+        decision: >
+          RELATIVE move actions (Up/Down/Top/Bottom) are disabled with an explanatory tooltip, because
+          they have no predictable meaning when the grid is sorted by Name. ABSOLUTE ones ("Move above
+          Feature X") stay available under any sort, because they name their target explicitly. D18
+          improves on what drag could have offered here — a drag while sorted is simply meaningless,
+          whereas an explicitly-targeted move is not. Filtering, including the existing hideCompleted
+          toggle, stays fully compatible under both, because D4 translates through the TARGET row's
+          global rank, which is well-defined under any filter.
+      - id: D15
+        question: Do Done Features participate in the ordering?
+        decision: >
+          They are IRRELEVANT to ranking and are hidden by default on both ordering surfaces, and
+          excluded from the "move above/below Feature X" target picker (user, 2026-08-06: "while done
+          features also have a rank, they are not really relevant, as the main thing for ranking is
+          forecasting and done items dont matter"). Confirmed in code: InitializeSimulationResults only
+          admits FeatureWork with RemainingWorkItems > 0, so a Done Feature already contributes nothing
+          to a forecast. They KEEP whatever rank they hold — no special storage rule, no rank
+          reclamation — because hiding rather than un-ranking keeps D7 simple if a Feature reopens.
+      - id: D16
+        question: What are these things called in the UI?
+        decision: >
+          Whatever the instance calls them — the NAV ENTRY, page title, column header, switch label and
+          every line of help text resolve through getTerm(TERMINOLOGY_KEYS.FEATURE/FEATURES), which the
+          Portfolio Feature list already does. The nav entry is the most visible instance of this rule in
+          the product so far: an instance that renames Features to "Deliverables" gets a "Deliverables"
+          tab. "Epic" is the ADO wording, not the UI wording.
+      - id: D17
+        question: Where does the instance-wide Feature surface live, and what is it FOR?
+        decision: >
+          A general Features view, added as the THIRD top-level navigation entry beside Overview and
+          System Settings (Header.tsx:59-60 has exactly those two today), at /features (user,
+          2026-08-06). It lists every Feature the user can see across all Portfolios, and it is the
+          surface that will later host ADO Epic #4365 "Dependencies".
+
+          This reframes the largest piece of the epic from "a page for a premium feature" into "a shared
+          surface two epics land on", which is exactly why D12 makes it free and always visible. Nothing
+          of #4365's requirements is designed here — the only obligation carried is not to build a
+          surface that would have to be rebuilt for it.
+      - id: D18
+        question: How does the user actually move a Feature?
+        decision: >
+          DISCRETE MOVE ACTIONS, not drag-and-drop: Move to Top, Move Up, Move Down, Move to Bottom, and
+          Move above/below a named Feature. Drag-and-drop is explicitly DEFERRED, not planned (user,
+          2026-08-06: "Drag and Drop is nice, but we can also work with arrows ... That may be enough for
+          the beginning").
+
+          Three things this buys. It neutralises the epic's only hard blocker — no DnD library is
+          installed and MUI-X row reorder is Pro-licensed, so drag would have forced a dependency
+          decision before any UI could be written. It is keyboard- and screen-reader-operable by
+          construction, which drag never is. And long-range moves become POSSIBLE at all: on a
+          300-Feature list, "Move above Feature X" is the only usable gesture, since dragging across 200
+          rows is not a real interaction.
+
+          Every action reduces to the same insert-at-target primitive (D4), so the rule is unchanged and
+          the endpoint is a single shape carrying exactly one of beforeFeatureId / afterFeatureId.
+
+    shared_artifacts:
+      - name: global feature rank
+        source_of_truth: >
+          The new nullable rank column on Feature (D5, D13). Written only by the rank service
+          (insert-at-target) and by the seeding routine on enable. Never written by the sync path. Every
+          move action in D18 reduces to one call against that service, so there is exactly one writer
+          regardless of how many gestures the UI offers.
+      - name: source order
+        source_of_truth: >
+          WorkItemBase.Order, owned exclusively by the connectors and refreshed on every sync
+          (WorkItemBase.cs:142). Read by FeatureComparer when the switch is off, and by the seeding
+          routine once, at enable.
+      - name: manual-sorting instance switch
+        source_of_truth: >
+          One instance setting (DESIGN open question 2: AppSetting vs OptionalFeature). Read by the
+          single comparison-selection point that all five ordering call sites consume — five independent
+          checks is the failure mode KPI K4 exists to catch.
+      - name: feature position shown to the user
+        source_of_truth: >
+          An additive rank field on FeatureDto, populated from whichever order is active. The UI never
+          computes it from the row index — it is the GLOBAL position, so two Features shown consecutively
+          in one Portfolio may read 4 and 17.
+
+    error_paths:
+      - trigger: A move is attempted on a Feature the user lacks write on (shared across Portfolios)
+        recovery: >
+          Move actions render disabled with a tooltip naming the blocking Portfolio; the endpoint returns
+          403 if called directly. No partial move, no silent no-op.
+      - trigger: A relative move (Up/Down/Top/Bottom) is attempted while the grid is sorted by a column
+        recovery: >
+          Those actions are disabled with a tooltip explaining why (D14). "Move above/below Feature X"
+          stays enabled, because it names its target rather than inferring it from screen position — so
+          the user is never left with no way to move anything.
+      - trigger: A relative move would land on a hidden row (a Done Feature, or one filtered out)
+        recovery: >
+          The move targets the previous or next VISIBLE row, jumping hidden ones rather than landing on
+          them (D15). What the user sees move is what moved.
+      - trigger: A work-item refresh runs while a renumber is in flight
+        recovery: >
+          The renumber holds a transaction boundary that the refresh cannot interleave with (DESIGN open
+          question 4). Order and rank are separate columns, so the refresh's write to Order is never in
+          conflict with the rank write.
+      - trigger: The switch is enabled on a large instance
+        recovery: >
+          Seeding writes a rank for every Feature in the instance. DESIGN open question 6 decides whether
+          that is synchronous or queued and what the UI shows while it runs.
+      - trigger: A non-premium instance calls the enable or reorder endpoints directly
+        recovery: 403 via LicenseGuardAttribute(RequirePremium = true); the UI renders the standard premium affordance.
+
+    out_of_scope:
+      - Drag-and-drop reordering (D18) — deferred, not planned. Revisit only if the button actions prove
+        genuinely insufficient, and note it would then also need an accessible equivalent, which the
+        buttons already are.
+      - >
+        Anything from ADO Epic #4365 "Dependencies". This feature builds the surface #4365 will land on
+        (D17) and nothing else — no dependency model, no dependency column, no graph. The only obligation
+        carried is not to build a Features view that would have to be rebuilt.
+      - Search, grouping, saved views or virtualised scrolling on the Features view beyond what
+        FeatureListDataGrid already provides. If slice 01's hypothesis fires, that changes — as a re-plan,
+        not as silent scope growth.
+      - Rank reclamation for Done Features (D15) — they are hidden, not un-ranked.
+      - Write-back of the manual order to any tracker (D8).
+      - Work-item-level ordering inside a Feature (D1).
+      - Per-Portfolio independent orderings (D3).
+      - Mixed mode — per-Feature or per-Portfolio opt-in while the instance switch is off (D2).
+      - Any badge, banner, count or digest for newly arrived Features (D7).
+      - CLI and MCP surfaces for reordering — a set-rank command would be plumbing with no decision
+        attached to its output.
+      - Move actions on the Team detail page.
+      - Bulk operations, multi-select moves, CSV import of an order.
+      - Ordering history or audit trail.
+      - Any change to FeatureComparer's existing int/double/string semantics for the switch-off path.
+
+    success_signals:
+      - Seeding is order-preserving across all five Order shapes — int, LexoRank, inverted double, record
+        number, empty (K1).
+      - Zero rank churn across five consecutive full refreshes with the switch on (K2).
+      - Moving a Feature into the top FeatureWIP positions changes its 85% date by at least a day (K3) —
+        and the fixture must carry VARIABLE throughput, since constant-throughput data cannot demonstrate
+        a sequencing effect at all (Epic 5459's lesson).
+      - All five ordering call sites agree in every state: on, off, mid-refresh (K4).
+      - A PortfolioWrite-on-A user cannot move any Feature outside A, nor one shared with a Portfolio they
+        lack write on (K5).
+      - Move round trip under 500ms p95 at 500 Features (K6).
+      - Every move action operable by keyboard alone, with its outcome announced to a screen reader —
+        asserted rather than assumed, since accessibility is a stated reason for choosing buttons over
+        drag (D18).
+      - Over two weeks of dogfooding, the share of moves that are a single Move to Top versus runs of
+        Move Up aimed at a target (K7). This is the go/no-go signal for the "move above Feature X" picker,
+        not a pass/fail bar — a high Move-to-Top share means that slice is dropped rather than deferred.
+      - At least one pilot instance whose connector has no meaningful rank — ServiceNow or CSV — turns it
+        on and is still on two weeks later (K8). Qualitative by necessity — cross-instance telemetry
+        stays blocked on Epic 5015.

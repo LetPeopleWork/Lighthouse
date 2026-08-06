@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-03
+updated: 2026-08-06
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -38,6 +38,7 @@ feature_context:
   - servicenow-pre-close-bucket
   - epic-5146-jira-forge-app
   - quiet-deliberate-choices
+  - epic-5375-manual-sorting
 
 jobs:
   - id: job-rbac-bootstrap
@@ -4516,3 +4517,259 @@ jobs:
         warnings that do matter. Current satisfaction: 1 — there is no way to silence it short of
         raising the whole log level, which hides the useful warnings too. Gap: 4, ranked above the
         onboarding job because it damages a diagnostic surface rather than costing screen space.
+
+  - id: job-po-order-features-when-the-connector-has-no-rank
+    title: Supply a priority order when the connector never had one
+    persona: product-owner
+    feature_context: epic-5375-manual-sorting
+    created: 2026-08-06
+    note: >
+      NEW in epic-5375-manual-sorting (ADO Epic #5375, reported by Lorenzo 2026-06-30, tagged Premium).
+      The highest-gap job in the set, and the one the epic's sketch did not name. Lighthouse's entire
+      ordering signal is the single string WorkItemBase.Order (:36), and what each connector puts in it
+      varies wildly: ADO writes Microsoft.VSTS.Common.StackRank, Jira writes the LexoRank, Linear writes
+      SortOrder (inverted — lower means higher), the CSV connector writes an OPTIONAL order column, and
+      ServiceNowWorkItemMapper (:123) writes the record NUMBER. A record number is not a rank. So on a
+      ServiceNow or rank-less-CSV instance, FeatureComparer is sequencing the forecast by ticket-id text,
+      and ForecastService.GetSimulationResultsOfFeatureToUpdate (:201-209) then hands each simulated day's
+      throughput to whatever sits at the top of that. The dates are computed against an order nobody chose.
+
+      WIDENED by the premise check run 2026-08-06 against the dev instance's real recorded data. There is
+      a SECOND, far more common class of instance with no meaningful order: any instance wired to more
+      than one tracker. FeatureComparer sorts int-parseable values ahead of everything non-int
+      (FeatureComparer.cs:14-25), so every ADO Feature outranks every Jira and Linear Feature
+      unconditionally, whatever anyone's priority. Measured on the dev instance: 86 int-parseable
+      (ADO StackRank), 4 LexoRank strings (Jira), 4 doubles (Linear) — three bands, segregated by
+      connector rather than by intent. This job is therefore not a ServiceNow/CSV niche.
+    job_story: >
+      When my work tracking connector gives Lighthouse no priority signal at all — a ServiceNow record
+      number, or a CSV export with no order column — I want to supply the order myself, so my forecasts
+      are sequenced by what we actually intend to build rather than by ticket id or import order.
+    dimensions:
+      functional: >
+        Set and persist an explicit order over all Features, which every ordering call site and the Monte
+        Carlo forecast then read, replacing the source string entirely while the instance switch is on.
+      emotional: >
+        Move from "I cannot explain why Lighthouse thinks this lands in November" to "these dates come
+        from the sequence we agreed in planning".
+      social: >
+        Present a forecast in a stakeholder review and be able to defend the sequence it assumes, rather
+        than discovering mid-meeting that it is alphabetical by incident number.
+    forces:
+      push: >
+        There is no workaround inside Lighthouse. The only lever is editing records in the tracker, and on
+        ServiceNow there is no rank field to edit — the connector is reading the record number because
+        nothing better exists. Every forecast on such an instance is quietly mis-sequenced.
+      pull: >
+        An order Lighthouse owns, that survives sync, and that visibly moves the dates when changed.
+      anxiety: >
+        "If I take ownership, does the board jump the moment I flip the switch, and can I ever hand it
+        back?" Answered by D6 (seed from today's order, so nothing moves) and D9 (the switch is
+        bidirectional and manual ranks are retained).
+      habit: >
+        Product owners already maintain a ranked backlog somewhere — in a spreadsheet, on a wall, in the
+        tracker. The change is doing it where the forecast can see it, not doing it at all.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — the forecast, which is the product's core output, is sequenced by a value that
+        carries no priority information. Current satisfaction: 0 — not "poor", but absent: there is no
+        partial workaround, because the field the connector reads does not exist in the source system.
+        Gap: 5, the highest in this feature and among the highest in the file. This is the job that makes
+        the epic worth its premium tag rather than a convenience.
+
+  - id: job-po-own-the-order-the-forecast-uses
+    title: Make Lighthouse forecast in the order we actually agreed
+    persona: product-owner
+    feature_context: epic-5375-manual-sorting
+    created: 2026-08-06
+    job_story: >
+      When my tracker's rank does not match what the team agreed to build next — because someone else
+      re-ranked the backlog, or because the rank was never maintained — I want to set the order Lighthouse
+      forecasts against directly in Lighthouse, so the dates I show stakeholders come from our real
+      priority instead of a stale StackRank.
+    dimensions:
+      functional: >
+        Drag a Feature to a new position and have the change persist across every subsequent sync, with
+        the forecast re-sequencing accordingly on the next run.
+      emotional: >
+        Move from resignation ("the tool has its own opinion about our priorities") to ownership ("the
+        tool reflects the decision we made on Tuesday").
+      social: >
+        Answer "why is that one late?" with "because we put it fourteenth" rather than "I'm not sure how
+        it decides that".
+    forces:
+      push: >
+        The tracker's rank churns for reasons outside this team — WorkItemBase.Update (:142) re-imports it
+        on every refresh, so a re-rank by anyone in ADO or Jira silently re-sequences the forecast between
+        one look and the next, with no signal that anything changed.
+      pull: >
+        One drag, and the sequence stops being someone else's decision.
+      anxiety: >
+        "If Lighthouse stops following the tracker, do the two drift apart until nobody trusts either?"
+        Accepted cost, eyes open: D8 rules out write-back, so the tracker and Lighthouse genuinely can
+        disagree. The trade is deliberate — the alternative is generating LexoRanks and writing into
+        someone else's system, which is a larger and more dangerous feature.
+      habit: >
+        Re-ranking in the tracker is the current behaviour and does not have to stop; it simply stops
+        being the only channel, and stops being authoritative while the switch is on.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 2
+      gap: 3
+      rationale: >
+        Importance: 5 — same core output as the job above. Current satisfaction: 2, not 0, because a real
+        workaround exists on ADO, Jira and Linear: go and re-rank the backlog at source. It costs a round
+        trip, it is frequently not the product owner's call to make, and it is undone by the next person
+        who drags something in the tracker. Gap: 3.
+
+  - id: job-po-reorder-inside-my-own-portfolio
+    title: Reprioritise my own Portfolio without touching anyone else's
+    persona: product-owner
+    feature_context: epic-5375-manual-sorting
+    created: 2026-08-06
+    note: >
+      This job exists because Feature <-> Portfolio is MANY-TO-MANY (LighthouseAppContext.cs:217-219): a
+      Feature can sit in several Portfolios at once, and there is exactly ONE global order (D3), because a
+      team spans Portfolios and its simulation needs an unambiguous next Feature. So "reorder my own
+      Portfolio" is not a separate list — it is a constrained edit to the shared one, which is what
+      decision D4 (insert-at-target) and the RBAC rule D11 exist to define.
+    job_story: >
+      When I own one Portfolio on an instance several teams share, I want to reprioritise my own Features
+      from the page I already work on, so I can act without an admin and without discovering later that I
+      moved someone else's delivery.
+    dimensions:
+      functional: >
+        Move actions on the Portfolio's own Feature list (Move to Top / Up / Down / Bottom, plus Move
+        above a named Feature); the edit lands in the single global order via insert-at-target, and
+        Features belonging to Portfolios the user cannot write are not movable.
+      emotional: >
+        Move from "I'd better ask before touching that" to "this is mine to change".
+      social: >
+        Reprioritise without having to justify it to owners of Portfolios the change does not affect.
+    forces:
+      push: >
+        Without a scoped surface the whole feature is admin-only: the only editable view would be the
+        instance-wide Features view, and reordering there is not something every Portfolio owner should
+        have to reach for to change their own priorities.
+      pull: >
+        Reordering where the work is already being looked at, on the Portfolio detail page, using the
+        Feature list that is already there.
+      anxiety: >
+        "Am I moving things I cannot see?" Answered honestly rather than reassuringly: a Portfolio's
+        Features are generally non-contiguous in the global order, so Move to Top from a Portfolio list
+        DOES cross one Feature outside the view — it lands above that Portfolio's own first Feature, not
+        at global rank 1. Insert-at-target was chosen partly because it causes exactly one such crossing
+        where slot permutation causes two.
+      habit: >
+        Reordering a backlog from a row menu is how every work tracker already works; the expectation is
+        set outside Lighthouse.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 0
+      gap: 3
+      rationale: >
+        Importance: 3 — only bites on multi-Portfolio instances, and single-Portfolio instances get the
+        same outcome from the instance-wide page. Current satisfaction: 0 — no ordering surface exists at
+        all today. Gap: 3. Ranked below the two ownership jobs because it is about WHERE the capability is
+        reachable rather than whether it exists, but it is not optional: without it the feature ships
+        admin-only, which for most instances means it ships unused.
+
+  - id: job-config-admin-switch-ordering-ownership
+    title: Hand ordering to Lighthouse, and be able to hand it back
+    persona: config-admin
+    feature_context: epic-5375-manual-sorting
+    created: 2026-08-06
+    job_story: >
+      When I decide Lighthouse should own priority rather than mirror the tracker, I want one instance
+      switch that starts from today's order and can be undone, so nobody's forecast jumps the moment I
+      flip it and I am not making a decision I cannot walk back.
+    dimensions:
+      functional: >
+        One premium, SystemAdmin-guarded instance setting. Enabling seeds a rank for every Feature from
+        the current order so the visible list does not move. Disabling restores the source order
+        immediately and RETAINS the manual ranks, so re-enabling restores them rather than re-seeding.
+      emotional: >
+        Move from "this reads like a one-way door and I am not flipping it on a live instance" to "I can
+        try this on Monday and undo it on Tuesday".
+      social: >
+        Turn it on without having to warn every team first that their dates may move.
+    forces:
+      push: >
+        The epic's own framing — "if you enable manual sort, everything will be manually maintained" —
+        reads as irreversible and all-encompassing, which is precisely the shape of change an
+        administrator defers indefinitely on a system other people depend on.
+      pull: >
+        A switch whose first effect is visibly nothing, and whose off position is a real revert rather
+        than a re-import.
+      anxiety: >
+        "What happens to Features that arrive while it is on, and to the ones that arrived while it was
+        off?" Answered by D7: they append to the end, silently — accepted cost, stated rather than hidden,
+        since it means new work forecasts last until someone sorts it.
+      habit: >
+        Administrators already expect instance-level settings to be reversible and to preview their effect;
+        Lighthouse's other premium settings behave this way.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — nothing is broken while ordering stays with the tracker, but this switch is the
+        gate every other job in the feature passes through, and an irreversible-feeling gate does not get
+        opened. Current satisfaction: 1 — the closest current experience is other premium toggles, which
+        set the expectation this one has to meet. Gap: 3.
+
+  - id: job-po-see-the-order-that-drives-the-forecast
+    title: See where a Feature sits in the queue Lighthouse simulates
+    persona: product-owner
+    feature_context: epic-5375-manual-sorting
+    created: 2026-08-06
+    note: >
+      The one job in this feature that is NOT premium (D12) and needs no manual ordering at all — it makes
+      an existing, already-load-bearing fact visible. ForecastService (:201-209) draws each simulated day's
+      throughput from the first FeatureWIP remaining Features in order, so list position already moves the
+      50/70/85/95% dates on every instance today. The list is rendered in that order
+      (PortfolioFeatureList via FeatureListDataGrid, no initial sort model) but nothing says so, so it
+      reads as arbitrary. It is also only ever visible one Portfolio at a time — which is why this job is
+      served by a new general Features view (D17), the third top-level nav entry, that ADO Epic 4365
+      "Dependencies" will later share.
+    job_story: >
+      When two Features have very different forecast dates, I want to see where each one sits in the queue
+      Lighthouse simulates, so I can tell a priority effect from a throughput effect before I go and try
+      to fix the wrong thing.
+    dimensions:
+      functional: >
+        A position column showing each Feature's GLOBAL rank — not its index in the visible rows, so two
+        Features shown consecutively inside a Portfolio may read 4 and 17 — plus one line of help text
+        saying the top of the list gets the teams' throughput first.
+      emotional: >
+        Move from "the tool produced a date and I have to take it on faith" to "I can see the mechanism".
+      social: >
+        Explain a late date to a stakeholder in one sentence, pointing at a number on screen.
+    forces:
+      push: >
+        The order is already deciding the dates and is already on screen, but unlabelled. A product owner
+        chasing a bad forecast has no way to tell whether to fix the sequence or fix the flow, so the
+        cheapest available diagnosis is invisible.
+      pull: >
+        One column that turns a rendered order into information.
+      anxiety: >
+        "If the number is the global position, why do the Features in my Portfolio skip numbers?" Answered
+        in the help text — it is a queue across the whole instance, and the gaps are other Portfolios'
+        Features.
+      habit: >
+        Reading a ranked list top-to-bottom is universal; the only new idea is that this particular list
+        is an input rather than a presentation.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — no metric is wrong and no decision is blocked; a diagnosis is simply slower than it
+        needs to be. Current satisfaction: 1 — the order is technically visible, in that the rows are in it,
+        but nothing identifies it as meaningful. Gap: 2, ranked lowest in this feature deliberately: it
+        explains a problem rather than solving one, and framing a column as more than that would be
+        dishonest. It ships first anyway, because it is the cheapest way to find out whether the source
+        order is meaningful enough for the rest of the epic to be aimed correctly.
