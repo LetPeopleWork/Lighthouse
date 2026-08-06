@@ -1,15 +1,45 @@
 import type { Locator, Page } from "@playwright/test";
+import { KeycloakLoginPage } from "./KeycloakLoginPage";
 
 /**
- * The `/embed/enter` entry point (ADR-129). It is served by the backend rather
- * than the SPA, so on success there is nothing to assert here — the browser is
- * redirected into the app. Only the refusal renders its own page.
+ * The backend-served embed surfaces: `/embed/start` (ADR-132 hop 1, which ends on a static terminal
+ * page in the orphaned tab) and `/embed/enter` (ADR-129 hop 3, where only the refusal renders its
+ * own page — a success redirects into the SPA).
  */
 export class EmbedEntryPage {
+	static readonly START_PATH = "/embed/start";
+
+	static readonly GRANT_HEADING = "You are signed in to Lighthouse";
+	static readonly REFUSAL_HEADING = "Lighthouse has nothing to show you";
+
 	readonly page: Page;
 
 	constructor(page: Page) {
 		this.page = page;
+	}
+
+	/**
+	 * What `router.open` does from the Jira page: a top-level navigation, unauthenticated, which the
+	 * instance answers with an OIDC challenge against whatever provider it is already configured with.
+	 */
+	async openSignInTab(nonce: string): Promise<KeycloakLoginPage> {
+		await this.page.goto(
+			`${EmbedEntryPage.START_PATH}?nonce=${encodeURIComponent(nonce)}`,
+		);
+
+		return new KeycloakLoginPage(this.page);
+	}
+
+	get signInCompleteHeading(): Locator {
+		return this.page.getByRole("heading", {
+			name: EmbedEntryPage.GRANT_HEADING,
+		});
+	}
+
+	get noAccessHeading(): Locator {
+		return this.page.getByRole("heading", {
+			name: EmbedEntryPage.REFUSAL_HEADING,
+		});
 	}
 
 	get refusalHeading(): Locator {

@@ -149,6 +149,15 @@ Before: the app only ever shows the one instance whose URL was compiled into it;
 After: a Jira site administrator opens **Settings → Apps → Lighthouse**, pastes `https://lighthouse.example.com`, presses **Connect**, approves Forge's egress consent modal → sees `Connected — Lighthouse v26.8.1.14`, and the global page then frames that instance for everyone on the site.
 Decision enabled: whether Lighthouse-in-Jira is worth anything against *their* board — the difference between a canned demo and a real evaluation. The consent step is itself a finding: it is what a shipped app would cost a customer (D21).
 
+> **Superseded 2026-08-06 — read the pitch and the AC below as the 2026-08-02 belief, not the design.**
+> Two things changed. **D48** deleted the API-key mode entirely, so there is no key to paste and no
+> shared identity to frame: installation is zero-credential, and each viewer signs in as themselves
+> (D43, D47, and `ADR-132`). Everything below that describes a **Connect**-and-mint settings flow
+> describes a mechanism that no longer exists. And **CA-5** already recorded that the out-of-scope list
+> forbids the change this epic went on to make. What survives intact is the *job*: evaluating against
+> your own data rather than somebody's demo — which is still gated on customer-managed egress, still
+> unbuilt, and tracked nowhere since that story was Removed (see **D46**).
+
 **AC**
 - **AC-02.1** Given a valid Lighthouse base URL, when a **Jira site administrator** presses **Connect**, then the app calls `GET {url}/api/v1/version/current`, and on `200` shows `Connected — Lighthouse v{version}` and persists the URL for the Jira site. On first use of a new domain the administrator is shown Forge's egress consent modal and must approve **both `FRAMES` and `FETCH_BACKEND_SIDE`** before the global page renders (D9, D10).
 - **AC-02.2** Given a URL that resolves but is not a Lighthouse (non-200 other than 404, or a 200 whose body is not a version string), when the administrator presses **Connect**, then the app shows *"That URL responded, but it does not look like a Lighthouse instance"* and does **not** persist it. The body is classified as **text**, not JSON, and a `404` is a real Lighthouse with an empty version — see the probe response-shape note under Driven ports.
@@ -269,6 +278,13 @@ Slice briefs: `docs/feature/epic-5146-jira-forge-app/slices/slice-0{1,2,3}-*.md`
 
 K4 is the load-bearing one. If it goes non-zero, the epic has silently stopped being a lightweight
 wrapper and D1/D7 need to be re-decided rather than quietly amended.
+
+**Third rewording, 2026-08-06 (D48, D50–D63).** The bound moved again and this time it moved *outward*:
+the viewer-identity path adds two endpoints, three columns and an RBAC re-gate, and it **deletes** the
+API-key embed path rather than sitting beside it. K4 as originally written has been wrong since
+2026-08-03; the honest reading now is that this epic changed Lighthouse, deliberately, and the record of
+each step is above rather than behind a rewrite. Do not read the DISCUSS wave as a description of what
+was built — read it as what was believed on 2026-08-02.
 
 ## Wave: DISCUSS / [REF] Definition of Ready — validation
 
@@ -2597,3 +2613,304 @@ inside an additive migration, and a rebuild of a table carrying an `OnDelete(Del
 foreign key is the concrete shape of it. Expected, not verified: the probe used `EnsureCreated`, not a
 migration. **Confirm it when the real migration is generated**, and let the named real-provider test
 D53 already requires cover it. This does not reopen DQ-3; it sharpens what D53's test must assert.
+
+## Wave: DISTILL / [REF] Preamble — slice 01 only (2026-08-06)
+
+Scope: **ADO #5692 only**, the viewer path added *alongside* the API-key path. Nothing is deleted
+here; deletion is slice 03 (#5694). Everything below was written against the tree at `main`
+(`4a9bccc74`) and **compiled and run** — the counts in the red-classification section are measured,
+not predicted.
+
+Second DISTILL run on this epic. The first (2026-08-04) specified the API-key embed session and its
+sections sit at lines 1354-1626; **this one does not replace them** — slice 01 keeps the API-key path
+reachable, so both sets of tests are live at the same time. Where a heading name would have collided
+it carries a `— slice 01` suffix, on the same reasoning the D43/D44 numbering collision was recorded
+rather than silently worked around.
+
+Language and stack, restated because the methodology's examples assume otherwise: this is **C# .NET
+10 with NUnit 4.6 + Moq + EF InMemory + `WebApplicationFactory`**, and **Playwright + TypeScript with
+Page Objects** for E2E. There are no `.feature` files, no pytest-bdd and no property-based testing
+library in this repository, and none were introduced. Given/When/Then lives in test names and in the
+shape of each test body.
+
+### Prior-wave consultation
+
+| Artefact | Read | What it changed here |
+|---|---|---|
+| `feature-delta.md` DESIGN D50–D63, DQ-1..DQ-8 | ✓ | The whole input |
+| `feature-delta.md` SPIKE — `router.open`, viewer-identity PoC, DQ-3 answered | ✓ | DQ-3 is closed, so the check constraint is asserted as a storage guarantee rather than a service convention |
+| `adr-132`, `adr-130`, `adr-131`, `adr-129` (superseded) | ✓ | ADR-132 is the specification; ADR-130 carries whole; ADR-131 keeps redemption |
+| `security-review.md` F1–F4, S1–S14 | ✓ | F2/F3/F4 each have a named carried-over test below |
+| Shipped code: `EmbedEntryController`, `EmbedSessionTokenService`, `SmartAuthSchemeSelector`, `RbacAdministrationService:1093`, `Program.cs:364/694`, `GroupClaimParser` | ✓ | Produced D64, which the DESIGN wave could not have seen |
+| Shipped tests: `EmbedSessionTestHost`, `S12_…FindingsTests`, `F_BE_1_GroupSnapshotInheritanceTests`, `EmbedSessionSingleUseConcurrencyTests`, `BlockedCountSnapshotMigrationTests` | ✓ | Every new file imitates an existing one; no new test idiom was invented |
+| `Lighthouse.EndToEndTests` — `Auth.spec.ts`, `EmbedSessionAndApiKeys.spec.ts`, `KeycloakLoginPage`, `RbacSettingsPage`, `playwright.config.ts` | ✓ | Answers DQ-6 with evidence rather than assumption |
+| `docs/ci-learnings.md`, root `CLAUDE.md` | ✓ | Zero-warning build, sparse comments, POM-only, one skeleton per flow |
+| `discuss/`, `design/`, `devops/` subdirectories | ⊘ | Do not exist — single-file convention. Not treated as missing artefacts |
+
+### Reconciliation
+
+No `wave-decisions.md` files exist for this feature, so reconciliation ran against the DISCUSS,
+DESIGN and SPIKE sections of this file directly. **One contradiction found, and it is already
+resolved in the document**: CA-10 records the 2026-08-05 post-mortem's *"the API-key embed path is
+therefore not retired"* being reversed one day later by D48. DISTILL follows D48 and the CA-1..CA-11
+table. Zero unresolved contradictions.
+
+## Wave: DISTILL / [REF] Decisions (D64–D67)
+
+| # | Decision | Rationale |
+|---|---|---|
+| **D64** | **D56's "authenticated on `CookieScheme`" is `await HttpContext.AuthenticateAsync(SmartAuthSchemeSelector.CookieScheme)`, never an inspection of `ClaimsIdentity.AuthenticationType`.** | Found while making the test RED. After an OIDC login the identity's `AuthenticationType` is `OpenIdConnect` — the OIDC handler builds the identity and signs it into the cookie scheme, so only the **ticket** names `Cookies`. A crafter reaching for the obvious `User.Identity.AuthenticationType == CookieScheme` writes a check that refuses every real interactive session, and the failure is a silent challenge loop rather than an exception. Consequence for tests: `ViewerEmbedTestHost` forges a genuine protected `.Lighthouse.Session` cookie from the host's own `IDataProtectionProvider` rather than routing through `TestAuthHandler`, which is header-borne and never reaches the cookie branch at all — the same reason `S12` gave for leaving F4 to a unit test. |
+| **D65** | **The D54 check constraint is named `CK_EmbedSessionTokens_GrantOrRefusal`.** | The SPIKE probe used `CK_Tokens_GrantOrRefusal` against a throwaway model. The real table is `EmbedSessionTokens`. A test asserts the name is present in the generated DDL on both providers, so the name is now a contract rather than an incidental. |
+| **D66** | **The D61 terminal page carries an `<h1>` of exactly "You are signed in to Lighthouse" (grant) or "Lighthouse has nothing to show you" (refusal).** | A static page with no subresources has nothing else to locate. Pinned in `EmbedEntryPage` as `GRANT_HEADING` / `REFUSAL_HEADING`, so changing the copy is one edit in the POM and one in the controller. The wording itself is a maintainer call; the *existence of a pinned string* is the decision. |
+| **D67** | **D62's lost race is a structured log entry with `EventId.Name = "EmbedHandshakeNonceReplayed"`, asserted on the name rather than the message.** | The message will be rewritten; the event name is the stable surface. This is DQ-4's proposed answer promoted far enough to be testable — see the DQ section, where the *shape* question (log line vs first-class security event) is still open. |
+
+## Wave: DISTILL / [REF] Scenario list — slice 01
+
+Tag vocabulary mapped onto this repository: `@driving_port` = entered through an HTTP endpoint;
+`@real-io` = real relational provider; `@in-memory` = EF InMemory; `@walking_skeleton` = the one E2E
+per flow; `@error` = a refusal or negative path.
+
+| # | Scenario (test name) | File | Tags | Carries |
+|---|---|---|---|---|
+| 1 | `Control_AForgedInteractiveCookie_IsARealLighthouseSession` | `ViewerEmbedSessionJourneyTests` | `@in-memory @control` | D64 — the trust anchor for every row below |
+| 2 | `AnInteractiveSignIn_HandsTheFrameTheViewersOwnPermissions` | `ViewerEmbedSessionJourneyTests` | `@driving_port @in-memory` | Slice 01's hypothesis, on scopes not on names |
+| 3 | `Control_AGroupMappedViewerInAnOrdinaryTab_AlreadySeesTheirTeam` | `ViewerEmbedSessionJourneyTests` | `@in-memory @control` | Stops row 5 being vacuous |
+| 4 | `AGroupMappedViewer_SeesTheSameTeamInsideTheFrameAsOutsideIt` | `ViewerEmbedSessionJourneyTests` | `@driving_port @in-memory` | **D59.** Uses an `RbacGroupMapping`, never a `UserPermission` |
+| 5 | `AnOrdinarySession_WithNoLiveGroups_StillInheritsNothingFromTheStoredSnapshot` | `ViewerEmbedSessionJourneyTests` | `@in-memory` | The fail-open guard on D59 |
+| 6 | `AViewerWithNoReadableScope_IsRefusedByLighthouseRatherThanFramedEmpty` | `ViewerEmbedSessionJourneyTests` | `@driving_port @error` | D49 |
+| 7 | `ARefusedViewer_LeavesNoRedeemableRowBehind` | `ViewerEmbedSessionJourneyTests` | `@driving_port @error` | D54 at the service boundary |
+| 8 | `AnAnonymousStart_ChallengesTheIdentityProviderAtTopLevel` | `S13_ViewerEmbedHandshakeTests` | `@driving_port` | Reuse row 13 — asserts the *explicit* OIDC scheme, so `ForwardChallenge` to the SPA login page fails the test |
+| 9 | `AnEmbedCookie_CannotStartAHandshake` | `S13_…` | `@driving_port @error` | **F2 equivalent** |
+| 10 | `AnOrdinarySession_OutranksAnEmbedCookieOnTheSameRequest` | `S13_…` | `@driving_port` | **F4**, now at integration level and not only in `SmartAuthSchemeSelectorTest` |
+| 11 | `UnknownPendingConsumedAndMalformedNonces_AreOneIdenticalResponse` | `S13_…` | `@driving_port @error` | D45 — asserts the four readings are equal to *each other*, so it pins the property without pinning the wire shape |
+| 12 | `ASecondReadOfAConsumedNonce_IsRecordedAsAnAnomaly` | `S13_…` | `@driving_port @error` | **D62** |
+| 13 | `AMissingNonce_IsRefusedBeforeAnyIdentityProviderIsInvolved` | `S13_…` | `@driving_port @error` | Driving-port contract, 400 |
+| 14 | `StartAndHandshake_AreInvisibleWhenAuthenticationIsDisabled` | `S13_…` | `@driving_port @error` | D31 |
+| 15 | `StartAndHandshake_AreBlockedWhenThePremiumLicenceIsNotValid` | `S13_…` | `@driving_port @error` | D44 |
+| 16 | `Start_DoesNotChallengeAMisconfiguredIdentityProvider` | `S13_…` | `@driving_port @error` | **DQ-7** |
+| 17 | `DeletingTheViewer_EndsTheirLiveFrame` | `S14_ViewerEmbedSubjectValidatorTests` | `@driving_port @error` | **F3 equivalent**, D57/D58 |
+| 18 | `RejectingADeletedViewer_DoesNotBringTheirProfileBack` | `S14_…` | `@driving_port` | D57's trap — the mirror that separates a read-only port from `GetOrCreateFromPrincipalAsync` |
+| 19 | `AFirstTimeViewersClick_CreatesTheirProfileAndRefusesThem` | `S14_…` | `@driving_port @error` | S13's declared effect, asserted rather than left to be discovered |
+| 20 | `OnSqlite_` / `OnPostgres_TheGrantOrRefusalConstraint_DiscriminatesRatherThanRejectsEverything` | `ViewerEmbedStorageGuaranteeTests` | `@real-io` | **D54/D65.** Asserts both legal shapes alongside the illegal one, so a constraint that rejects everything cannot pass |
+| 21 | `OnSqlite_` / `OnPostgres_DeletingAnApiKey_StillRemovesTheEmbedSessionRowsItMinted` | `ViewerEmbedStorageGuaranteeTests` | `@real-io` | **D53**, the peer review's only HIGH. Green today on purpose |
+| 22 | `a viewer signs in at top level and the frame belongs to them` | `ViewerEmbedSession.spec.ts` | `@walking_skeleton @driving_port @real-io` | The one E2E for this flow: real Keycloak, real redemption, resolver holding no credential |
+
+Error and refusal paths are 12 of 24 backend tests — 50%.
+
+## Wave: DISTILL / [REF] Test placement — as built, against the DESIGN table
+
+Every row of the DESIGN test-placement table is honoured. Two additions and one deferral:
+
+| DESIGN row | Landed as | Note |
+|---|---|---|
+| Whole flow, real OIDC → E2E, one skeleton | `ViewerEmbedSession.spec.ts`, scenario 22 | POM-only. `EmbedEntryPage` extended with the start page and the terminal page (reuse row 20); no inline `page.locator()` |
+| D49 refusal → integration | Scenarios 6, 7 | |
+| D49 "never arrives" → integration for the pending shape | Scenario 11 (`issuedButUnresolved`) | The bounded timeout is Forge-side and stays untested |
+| D59 → integration with an `RbacGroupMapping` fixture | Scenarios 3, 4 | The fixture has **two** teams: one reachable only by group mapping, one only by explicit permission. Scenario 2 asserts the frame sees the second and *not* the first, which is what makes "the viewer's own permissions" a statement about identity rather than about access |
+| Ordinary cookie principal unchanged → unit + integration | Scenario 5 (integration) | The unit half is DELIVER's, against `GetVirtualPermissionsAsync` directly |
+| Both single-use properties under concurrency → real provider | **Not written.** It extends `EmbedSessionSingleUseConcurrencyTests` and needs the nonce method that does not exist | Named in Pre-requisites as DELIVER's obligation |
+| D54 check constraint → both providers | Scenario 20 | |
+| D53 cascade → real provider | Scenario 21 | |
+| D57 no-recreate mirror | Scenario 18 | |
+| D56 embed cookie cannot start a handshake | Scenario 9 | |
+| Pending / unknown / expired / consumed → table-driven | Scenario 11 | Written as one test over four readings rather than four cases, because the assertion is *equality between them* |
+| `Set-Cookie` wire assertions, `returnPath` negatives, `AuthMode` gating | Existing `S8_`/`S9_` carry unchanged; scenarios 14–16 add the new endpoints | |
+| Shipped-config rate-limit guard (F1's second ask) | Already exists — `S12_…EveryDeclaredRateLimitPolicy_IsDefinedInTheShippedConfiguration` | Verified, not re-written. It loops over `RateLimitingConfiguration`'s constants, so the three new endpoints inherit it for free |
+
+**Addition, not in the DESIGN table:** scenarios 1 and 3, the two controls. They are green before the
+feature exists and their only job is to make the other twenty failures mean something.
+
+## Wave: DISTILL / [REF] Driving-adapter coverage — slice 01
+
+| Driving port (DESIGN) | Exercised by protocol | Scenarios |
+|---|---|---|
+| `StartEmbedSignIn` — `GET /embed/start?nonce=N` | HTTP through `WebApplicationFactory`, and a real browser navigation in E2E | 2, 4, 6, 7, 8, 9, 10, 13, 14, 15, 16, 19, 22 |
+| `PollEmbedHandshake` — `GET /api/v1/embed/handshake/{nonce}` | HTTP, anonymous client with no cookie jar; E2E uses a separate `apiRequest` context so a shared jar cannot hide an authentication dependency | 2, 4, 6, 11, 12, 14, 15, 22 |
+| `EnterEmbedSession` — `GET /embed/enter?token=T` | HTTP; existing `S8_EmbedEntryPointTests` carries the unchanged half | 2, 4, 9, 10, 17, 18, 22 |
+
+Every contract clause in the DESIGN driving-port table has at least one scenario, except
+`returnPath` handling, which is unchanged from D26 and already covered by `S8_`.
+
+## Wave: DISTILL / [REF] Driven-adapter coverage — slice 01
+
+| Driven port | Real I/O? | Scenario | Gap |
+|---|---|---|---|
+| `EmbedSessionTokenStore` | EF InMemory for the journey; **real provider** for the storage guarantees | 20, 21 | **The two single-use concurrency properties are not written** — see Pre-requisites |
+| `DiscriminatedOutcomeConstraint` | Real SQLite + real Postgres | 20 | — |
+| `UserProfileLookup` | EF InMemory | 17, 18 | — |
+| `RbacDecision` (modified, D59) | EF InMemory | 3, 4, 5 | — |
+| `OidcChallenge` | Real Keycloak in E2E; **discovery document stubbed** at integration | 8, 22 | The stub is one `PostConfigure<OpenIdConnectOptions>` setting `Configuration` — the challenge machinery itself stays production, and the identity provider is the one external, non-deterministic port the Architecture of Reference says to fake |
+| `EmbedCookieIssuer` | Existing `S9_EmbedCookiePolicyTests`, unchanged | — | ADR-130 untouched |
+| `ForgeRouterOpen` | Not testable from here | — | Slice 02 |
+
+## Wave: DISTILL / [REF] Named limitation — the unauthenticated handshake (DQ-8)
+
+Recorded here, in the specification, because an accepted residual that lives only in a DESIGN
+document is one refactor away from being an undocumented one (D39's precedent).
+
+**The limitation.** `GET /api/v1/embed/handshake/{nonce}` is unauthenticated and cannot be made
+otherwise under D48. An attacker who obtains the nonce *before the legitimate poll consumes it*
+receives the viewer's embed token. The nonce is visible because **Atlassian's external-link modal
+displays the full destination URL on every `router.open` call, by design** — measured, not assumed —
+and because it lands in the tab's browser history. Entropy, TTL, single use and rate limiting are all
+present, all necessary, and none of them touches this: the attacker is not guessing, they are reading.
+
+**Blast radius, in full.** One session, as one viewer, for at most `Embed:SessionLifetimeMinutes`
+(30), non-sliding, with **no renewal path** — D56 means an embed cookie cannot start a handshake, and
+scenario 9 is the test that keeps that true. Ended immediately by deleting the user (D57/D58;
+scenario 17). It confers **no other viewer, no durable credential, and no write the viewer could not
+already perform**.
+
+**Acceptance rationale.** The design this replaces had an equivalent compromise of *everyone who can
+open the Jira page, permanently, plus a customer credential in a third party's storage* (S1, S2,
+D23). The new residual is narrower in blast radius and narrower in attacker. The trade is strongly
+favourable, and it is accepted **for a feasibility epic**. A later slice that stops being about
+feasibility inherits this as an **open item, not a settled one**.
+
+**What must not be read as a mitigation.** D62 (scenario 12) prevents nothing. It converts an
+invisible impersonation into a visible anomaly on both sides. That is worth one log line and one
+branch, and it is not a control.
+
+## Wave: DISTILL / [REF] Red classification — slice 01
+
+Measured on 2026-08-06 against `main`. `dotnet build` clean, **zero warnings**. Full
+`API.Security` + `API.Integration` run: **635 existing tests pass, 16 new fail** — no collateral damage.
+
+| Classification | Count | Tests |
+|---|---|---|
+| **RED for the right reason** — a named assertion fires because the behaviour is missing | 16 | Scenarios 2, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, and the SQLite half of 20 |
+| **GREEN by design** — controls and regression guards, authored to stay green | 3 | Scenarios 1, 3, and the SQLite half of 21 |
+| **Cannot be RED yet — `[Ignore]`d, and a DELIVER pre-requisite** | 1 | Scenario 16, `Start_DoesNotChallengeAMisconfiguredIdentityProvider`. **Amended on review, 2026-08-06:** it was counted inside the 16 above *and* listed here, which is contradictory. It is now `[Ignore]`d with the reason in the attribute, so the RED count is **15**, and un-ignoring it is DELIVER's obligation once `/embed/start` answers its `AuthMode` check before any scheme lookup. The assertion is already the right one and must not be weakened to make it pass for an unrelated reason |
+| **Not run here** | 3 | The Postgres halves of 20 and 21 (`requires-docker`), and the E2E skeleton (22) |
+
+**Why scenario 16 cannot be RED.** With no `/embed/start` route and no authority configured, the
+request falls through to the SPA fallback, which tries to challenge — and in `Misconfigured` mode no
+authentication scheme is registered at all, so ASP.NET throws
+`InvalidOperationException: No authenticationScheme was specified`. That is an exception, not an
+assertion, so today the test fails for the wrong reason. **It converts to a genuine assertion the
+moment the endpoint exists and answers its `AuthMode` check before anything else** — which is exactly
+the ordering D31 and D44 already require. The alternative was to weaken the assertion until it passed
+for a reason unrelated to the feature, which is worse. Recorded rather than smoothed over.
+
+**Why the rest of the RED is trustworthy.** Sixteen of the twenty failures reach their assertion
+through a forged `.Lighthouse.Session` cookie. If that forgery were not a real session, every one of
+them would be a setup failure wearing the costume of a product failure. Scenario 1 is the control
+that rules it out, and it passes. Scenario 3 does the same job for scenario 5, which would otherwise
+pass vacuously against a fixture that grants nobody anything.
+
+**Two things the crafter must not "fix" by changing the test.** Scenario 8 asserts the redirect goes
+to the *identity provider's* authorization endpoint; today it goes to `/Account/Login`, which is the
+cookie scheme's `ForwardChallenge` — precisely the mistake reuse row 13 warns about, and the
+assertion exists to catch it. Scenario 11 asserts four readings equal **each other**, not a
+particular body: making them equal by making them all 404 is a legitimate implementation, making them
+differ is not.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+1. **The migration comes first.** `Create-Migration.ps1`, both provider assemblies, additive,
+   `ApiKeyId` **not** dropped. The SPIKE's closing note stands: SQLite cannot add a check constraint
+   with `ALTER TABLE`, so EF will emit a **table rebuild**, and that rebuild is where D53's cascade
+   can silently become `ClientSetNull`. Scenario 21 is the guard and it is green today — if it goes
+   red after the migration, the migration ate revocation lever 1.
+2. **The two single-use concurrency properties are owed** and are not in this DISTILL: two
+   simultaneous nonce polls yield exactly one grant, two simultaneous redemptions yield exactly one
+   session. They extend `EmbedSessionSingleUseConcurrencyTests` and need the repository method that
+   does not exist yet, so they cannot be authored ahead of it. **Real provider only** — EF InMemory
+   cannot model the conditional update.
+3. **`GetVirtualPermissionsAsync` needs a unit test of its own** for the ordinary-principal-unchanged
+   half. Scenario 5 covers it through HTTP; the unit level is where a mutation survivor would show.
+4. **Nothing in this DISTILL touches production code.** No entity property was added, no scaffold
+   type was created, and there is no `__SCAFFOLD__` equivalent. In C# a missing type is a build break
+   rather than a runtime import error, so scaffolding would have meant either shipping an entity
+   change without its migration — which breaks every real-provider migration test in the suite — or
+   adding types no test needs. Both were rejected. Instead every test enters through **HTTP**, where
+   a missing endpoint is a runtime 404, and the two storage tests use **raw SQL against the migrated
+   schema**, where a missing column is a caught `DbException` folded into a boolean the test asserts
+   on. That is why the suite compiles with zero warnings while twenty of its assertions are
+   unsatisfied.
+
+## Wave: DISTILL / [REF] Open questions — proposed answers, not decisions
+
+Each of these is a **proposal for the maintainer**. Where a test had to pin something to be writable,
+the pin is recorded as D64–D67 and the underlying question stays open.
+
+| # | Proposed answer | Reasoning | Status |
+|---|---|---|---|
+| **DQ-1** | **Three codes, not two: `no_access`, `auth_unavailable`, `instance_unavailable`.** | Writing the scenarios surfaced the gap the question anticipated. The first two cover "you signed in and hold nothing" and "this instance cannot authenticate you". Neither covers the `Blocked` licence state, which is real, reachable and *administrator-fixable* (scenario 15), and which the Jira page must be able to name — "no access" would send a viewer to ask for permissions they already have. Still class-level, still closed, per S14. | **Proposed.** No test asserts a specific code string; scenarios 6 and 19 assert only that `refusalCode` is present, so this can be settled without touching a test |
+| **DQ-2** | **Two clocks, not one. Keep `Embed:TokenLifetimeSeconds` (60s) for the token, and give the handshake outcome its own `Embed:HandshakeOutcomeLifetimeSeconds`, defaulting to 300.** | Reusing one value is the failure mode the question names. The token's 60 seconds is bounded by *machine* latency — mint to redeem is one redirect. The outcome's lifetime is bounded by *human* latency: it must survive from "login finished" to "the next poll lands", and a login can take minutes behind a password manager or an MFA prompt. Under a shared 60s the poll returns pending after a slow login and the page says "try again" for a sign-in that worked — intermittently, and only for the slowest users, which is the worst possible distribution. The token expiry the poll returns is computed **fresh at poll time**, so the 60s window starts when the frame learns about it, not when the login ended. | **Proposed.** Needs one number from the maintainer, and a measurement of the Forge resolver's real poll interval, which nobody has |
+| **DQ-3** | Closed by the SPIKE. | — | **Answered** — D54 stands, and scenario 20 is the standing proof |
+| **DQ-4** | **A structured log line, not a first-class security event.** `LogWarning` with `EventId.Name = "EmbedHandshakeNonceReplayed"`. | The codebase has no security-event channel, and introducing one for a single event builds the abstraction before the second caller. The honest test of "would anyone look" is that a self-hosted operator would not, and there is no telemetry to carry it anywhere else. What the log *does* buy is a post-incident answer to "did this happen", which is worth having and costs nothing. | **Proposed.** D67 pins the event **name** because scenario 12 asserts on it; the shape question is the maintainer's |
+| **DQ-5** | **One paragraph in the Jira-app installation documentation, under a heading an administrator reads before installing** — not in the RBAC docs, where only someone already looking would find it. | The row appears with no role assignment, so it grants nothing; the surprise is the user list growing, and the person surprised is the administrator. Same pattern the SPA's `/auth/me` already has, but the Jira page puts it one click from a much wider audience. | **Proposed.** Documentation placement, no test. Belongs to slice 02's finalization, when there is an installation flow to document |
+| **DQ-6** | **Integration-only. The E2E skeleton carries none of the D59 divergence.** | Checked rather than assumed. `playwright.config.ts` seeds five Keycloak users (`systemadmin@`, `portfolioadmin@`, `portfolioreader@`, `teamadmin@`, `teamreader@`) and one group, `system-admins`. A group-mapped Keycloak viewer therefore *can* exist — `EmbedSessionAndApiKeys.spec.ts` already makes `systemadmin@user.com` one via `RbacSettingsPage.addSystemAdminGroupMapping` — but it is a group-mapped **System Admin**, created at runtime, and a System Admin resolves everything through the system scope whether or not the group mapping is consulted. The case D59 needs is someone whose **only** access is a group→role mapping at *Viewer* level, and producing one means driving `ScopedAccessPage.addScopedGroupMapping` through the browser before the skeleton can start. That is fixture work E2E should not carry, for a divergence an integration fixture proves precisely. | **Proposed**, with evidence. Scenarios 3, 4 and 5 are where D59 lives |
+| **DQ-7** | **404, the same answer `Disabled` gives.** | `AuthModeResolver` already puts the validity check *ahead* of the enabled check, so `Misconfigured` is what an instance with a broken OIDC registration reports. Challenging from there sends a viewer at a provider the instance cannot talk to, in a tab, past a modal naming the destination — a worse failure than silence, and one the viewer cannot act on. 404 keeps the embed surface's rule simple and true: it exists only on an instance whose authentication works. The SPA's `MisconfiguredPage` is the right surface for the *administrator*, and it is reached through the SPA, not through a Jira frame. | **Proposed.** Scenario 16 asserts it, and is the one test that cannot yet be RED |
+| **DQ-8** | Done — see the named-limitation section above, which carries both the blast radius and the acceptance rationale in the required form. | — | **Answered** |
+
+## Wave: DISTILL / [REF] What slice 01 does not test
+
+Stated so that a green suite is not read as more than it is.
+
+- **Nothing Forge.** No modal, no `router.open`, no resolver, no nested frame, no partitioned cookie
+  in a genuinely cross-site context. Slice 02, and no probe has yet run the poll from a real resolver.
+- **One engine.** The E2E skeleton runs wherever the suite runs; Chrome and Safari remain unrun across
+  this entire epic.
+- **The Forge-side bounded timeout** for D49's "never arrives" shape. It lives in the other
+  repository, which has no tests by decision.
+- **The API-key path is not re-proved.** Slice 01 keeps it *reachable* (DESIGN's addition), and the
+  existing `S7_`/`S8_`/`S10_`/`S12_` suites are what keep it honest. Scenario 21 is the one new test
+  that exists purely to protect it.
+- **K1 is still 0.** This is a better demo, not demand evidence.
+
+## Wave: DISTILL / [REF] Final review gate — four reviewers, 2026-08-06
+
+Eclipse (DISCUSS), Architect (DESIGN), Forge (DEVOPS) and Sentinel (DISTILL) ran in parallel against
+the whole file. Three of the four returned a rejection. **Most of that was wave-sequencing confusion,
+and it is recorded here so the next reader does not re-litigate it.**
+
+### Applied
+
+| Finding | Change |
+|---|---|
+| **Sentinel — internal-state assertions.** `S14` asserted `UserProfiles` row counts, coupling an acceptance test to the schema. | `CountProfiles` is **deleted from the test host**. `RejectingADeletedViewer_DoesNotBringTheirProfileBack` now issues a **second** request after the rejection and requires it to be `401` — a lookup that creates would have resurrected the profile on the first rejection, so the second would answer `200` or `403`. That is the same control, observable at the port, and it is a *stronger* assertion than the row count because it also catches a resurrection that happens one request late. `AFirstTimeViewersClick…` now reads `GET /api/v1/authorization/users` as an administrator, which is literally the declared effect — the viewer appearing in the customer's user list. |
+| **Sentinel — scenario 16 ships as a throwing test.** | `[Ignore]`d with the reason in the attribute, RED count corrected from 16 to 15, un-ignoring recorded as DELIVER's obligation. |
+| **Sentinel — RED tally contradicted itself.** Scenario 16 was inside the 16 *and* in the "cannot be RED" row. | Corrected in the classification table above. |
+| **Eclipse — the DISCUSS sections still describe the API-key model.** | Forward-references added from K4 and US-02 to D48 and CA-5. |
+| **Forge — the two shipped defects were never filed.** | Filed against #5146. |
+| **Forge — no rollback story for an expand-only migration.** | Written below. |
+
+### Rejected, with reasons
+
+- **Architect's four blockers** were all one observation: `EmbedSessionToken` has no `Subject`, the three
+  endpoints do not exist, the validator still resolves an API key, and the RBAC gate still reads
+  `api_key_id`. All true, and all of them are **the work slice 01 exists to do**. A DESIGN reviewed after
+  DISTILL and before DELIVER will always find the production code unchanged; that is the wave order, not
+  a defect. Its HIGH findings restate D53, D54, D57 and D60, which are already decisions.
+- **Forge's headline blocker was the absent DEVOPS wave.** This feature does not warrant one: no new
+  infrastructure, no topology change, no pipeline change — three endpoints and an expand-only migration
+  inside an application that already ships. The platform-shaped material that genuinely exists (the
+  tunnel, two provider assemblies, an out-of-repo consumer) is already written up here. Writing the
+  section to satisfy a reviewer would be ceremony.
+- **Eclipse's F9 is factually wrong.** It reports that line 189 references a non-existent `CA-5`. `CA-5`
+  is at line 887, titled exactly what the reference implies. Recorded because it calibrates how much of
+  the rest to take on trust.
+- **Sentinel's HIGH-1 quoted code that is not in the file.** It reported the E2E asserting a heading by
+  literal string; the spec already used the `EmbedEntryPage.signInCompleteHeading` getter, which is bound
+  to the D66 constant. The neighbouring line it walked past was the real one — an inline
+  `getByRole("link", …)` in a spec, against the POM-only rule — and that has been moved onto
+  `LighthousePage.overviewLink`. The viewer assertion was also strengthened from "a name is present" to
+  "the name is **this** viewer", which is what D47 actually claims.
+
+### Rollback, for the expand-only migration
+
+Named because Forge was right that it was missing.
+
+- **On a no-go verdict** the migration stays. Expand-only means the added columns are inert, not
+  removed; the drop belongs to a later contract-phase migration, alongside the `ApiKeyId` drop that
+  D52 already defers. Retaining three unused nullable columns costs nothing an operator can measure.
+- **If slice 02 or 03 has to be undone**, the lever is not the schema. Slice 01 deliberately leaves the
+  API-key path *mintable*, so reverting the Forge app to it is a deployment of the app, not a database
+  change. That is the whole reason the slice ordering keeps both paths alive.
+- **The one irreversible step is slice 03**, which deletes the API-key embed path. It should not run
+  until the viewer path has been exercised against a real prospect — which is the same gate the verdict
+  already imposes.
+- **`AuthMode` is the runtime kill switch.** The embed surface 404s unless authentication is `Enabled`,
+  so an operator can take the whole feature off the air without a deploy.

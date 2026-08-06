@@ -142,6 +142,15 @@ export class LighthousePage {
 		return new LoginPage(this.page);
 	}
 
+	/** The name in the header. Epic 5146 D47: "it rendered" and "it rendered as me" are different results. */
+	get currentUserDisplay(): Locator {
+		return this.page.getByTestId("current-user-display");
+	}
+
+	get overviewLink(): Locator {
+		return this.page.getByRole("link", { name: "Overview" });
+	}
+
 	private GetContributorsButton(): Locator {
 		return this.page.getByTestId(
 			"https://github.com/LetPeopleWork/Lighthouse/blob/main/CONTRIBUTORS.md",
