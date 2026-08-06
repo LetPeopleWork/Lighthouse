@@ -81,5 +81,47 @@ namespace Lighthouse.Backend.Tests.Models
             
             Assert.That(result, Is.EqualTo(expectedResult));
         }
+
+        // IComparer<T> declares both operands nullable and the contract is total, so a null element must
+        // sort rather than throw. Nulls sort first, matching Comparer<T>.Default.
+        [Test]
+        public void Compare_BothFeaturesAreNull_TreatsThemAsEqual()
+        {
+            var comparer = new FeatureComparer();
+
+            var result = comparer.Compare(null, null);
+
+            Assert.That(result, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Compare_LeftFeatureIsNull_SortsItFirst()
+        {
+            var comparer = new FeatureComparer();
+            var feature = new Feature { Order = "10" };
+
+            var result = comparer.Compare(null, feature);
+
+            Assert.That(result, Is.LessThan(0));
+        }
+
+        [Test]
+        public void Compare_RightFeatureIsNull_SortsItFirst()
+        {
+            var comparer = new FeatureComparer();
+            var feature = new Feature { Order = "10" };
+
+            var result = comparer.Compare(feature, null);
+
+            Assert.That(result, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void Sorting_ACollectionContainingANull_DoesNotThrow()
+        {
+            var features = new List<Feature> { new() { Order = "10" }, null!, new() { Order = "2" } };
+
+            Assert.That(() => features.OrderBy(f => f, new FeatureComparer()).ToList(), Throws.Nothing);
+        }
     }
 }

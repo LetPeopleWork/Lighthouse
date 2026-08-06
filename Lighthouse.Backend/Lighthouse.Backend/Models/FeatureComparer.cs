@@ -7,6 +7,17 @@ namespace Lighthouse.Backend.Models
     {
         public int Compare(Feature? x, Feature? y)
         {
+            // IComparer<T>'s contract is total over nulls; nulls sort first, as Comparer<T>.Default does.
+            if (x is null)
+            {
+                return y is null ? 0 : -1;
+            }
+
+            if (y is null)
+            {
+                return 1;
+            }
+
             return CompareOrderValues(x.Order, y.Order);
         }
 
