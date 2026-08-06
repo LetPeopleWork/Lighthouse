@@ -6,6 +6,7 @@ import { LighthousePage } from "../../models/app/LighthousePage";
 import { BlockedPage } from "../../models/auth/BlockedPage";
 import { EmbedEntryPage } from "../../models/auth/EmbedEntryPage";
 import type { LoginPage } from "../../models/auth/LoginPage";
+import type { OverviewPage } from "../../models/overview/OverviewPage";
 
 const LICENSE_FILE_PATH = path.join(
 	process.cwd(),
@@ -24,16 +25,16 @@ function newNonce(): string {
 		.join("");
 }
 
-async function ensurePremiumLicense(loginPage: LoginPage): Promise<void> {
+async function ensurePremiumLicense(
+	loginPage: LoginPage,
+): Promise<OverviewPage> {
 	const keycloakLoginPage = await loginPage.clickSignIn();
 	const overviewPage = await keycloakLoginPage.login(
 		TestConfig.AUTH_TEST_USER_USERNAME,
 		TestConfig.AUTH_TEST_USER_PASSWORD,
 	);
 
-	const overviewLink = overviewPage.page.getByRole("link", {
-		name: "Overview",
-	});
+	const overviewLink = overviewPage.lighthousePage.overviewLink;
 	const blockedTitle = overviewPage.page.getByText("LighthousePremium License");
 
 	await Promise.any([
@@ -43,8 +44,10 @@ async function ensurePremiumLicense(loginPage: LoginPage): Promise<void> {
 
 	if (await blockedTitle.isVisible()) {
 		const blockedPage = new BlockedPage(overviewPage.page);
-		await blockedPage.uploadLicense(LICENSE_FILE_PATH);
+		return await blockedPage.uploadLicense(LICENSE_FILE_PATH);
 	}
+
+	return overviewPage;
 }
 
 test.describe("@auth viewer-identity embed session E2E", () => {
@@ -55,11 +58,9 @@ test.describe("@auth viewer-identity embed session E2E", () => {
 	testWithAuth(
 		"the instance is licensed for the embed session",
 		async ({ loginPage }) => {
-			await ensurePremiumLicense(loginPage);
+			const overviewPage = await ensurePremiumLicense(loginPage);
 
-			await expect(
-				loginPage.page.getByRole("link", { name: "Overview" }),
-			).toBeVisible();
+			await expect(overviewPage.lighthousePage.overviewLink).toBeVisible();
 		},
 	);
 
