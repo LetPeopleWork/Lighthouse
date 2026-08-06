@@ -148,7 +148,7 @@ test.describe("@auth viewer-identity embed session E2E", () => {
 				// permissions are their own is asserted on scopes in ViewerEmbedSessionJourneyTests,
 				// where a fixture can hold two viewers and this level cannot.
 				await expect(lighthousePage.currentUserDisplay).toContainText(
-					TestConfig.AUTH_TEST_USER_USERNAME,
+					TestConfig.AUTH_TEST_USER_DISPLAY_NAME,
 				);
 			});
 

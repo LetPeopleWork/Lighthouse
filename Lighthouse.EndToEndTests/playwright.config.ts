@@ -21,6 +21,8 @@ export class TestConfig {
 	static readonly SERVICENOWDEFAULTUSER: string = "admin";
 
 	static readonly AUTH_TEST_USER_USERNAME: string = "test@user.com";
+	/** What the UI renders for that user — firstName + lastName from the seeded Keycloak realm. */
+	static readonly AUTH_TEST_USER_DISPLAY_NAME: string = "Test User";
 	static readonly AUTH_TEST_USER_PASSWORD: string = "Test123!!?lsdkaflaskdf";
 
 	static readonly AUTHZ_TEST_SYSTEMADMIN_USERNAME : string = "systemadmin@user.com";
