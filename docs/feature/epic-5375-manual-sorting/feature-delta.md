@@ -1036,13 +1036,49 @@ Carried forward deliberately. **No silent N/A.**
 
 | # | Question | Owner | Note |
 |---|---|---|---|
-| **OQ-1** | Does per-row move-verdict evaluation stay inside AC-1.9's budget at 500 Features? | DELIVER, measured | The mitigation (resolve the writable-Portfolio set once per request) is **required, not optional**. If still hot, add `GetWritablePortfolioIdsAsync` to `IRbacAdministrationService`, mirroring the readable one. A measurement away, not a redesign. |
+| ~~**OQ-1**~~ | ~~Does per-row move-verdict evaluation stay inside AC-1.9's budget at 500 Features?~~ | **CLOSED** — user, 2026-08-06 | **Decided: add the writable batch method rather than measure first.** `GetWritablePortfolioIdsAsync(ClaimsPrincipal, IEnumerable<int>, CancellationToken)` on `IRbacAdministrationService`, mirroring `GetReadablePortfolioIdsAsync` (`RbacAdministrationService.cs:122-155`) exactly and swapping `HasPortfolioReadPermission` for the **already-existing** `HasPortfolioWritePermission` (`:1205`). Lands in **slice 01**, alongside the `GET /features` endpoint that needs it. See "OQ-1 closure" below for the one part that is not mechanical. |
 | **OQ-2** | Is D11's `Any() && All()` usable in a real multi-team instance? | field | Unchanged from DISCUSS and from the domain layer. All 90 Portfolio-linked Features on the dev instance sit in exactly one Portfolio, so it ships proven by integration test and seeded demo data alone. **Three ADR-136 decisions rest on it.** |
 | **OQ-3** | Does the `string.Compare` fallback in `FeatureComparer` behave identically across SQLite, PostgreSQL and SQL Server? | DISTILL / DELIVER | The comparison runs **in memory**, so it should be provider-independent — but "should" is the word this project has been burned by. The driven-port probe table makes it an assertion. Only bites instances whose `Order` is non-numeric (Jira LexoRank, ServiceNow record numbers). |
 | **OQ-4** | Should `Move to Bottom` materialise ranks for *all* null-ranked rows or only those it jumps? | DELIVER | INV-O4 says the jumped ones. On an instance where the policy was enabled and many Features have since arrived, "the ones it jumps" may be most of the tail. Bounded either way; flagged so the crafter does not discover it as a surprise. |
 | **OQ-5** | Does the Features view need search before slice 03 ships? | slice 01's dogfood | Slice 01's hypothesis 2 is still **inconclusive** — the premise check measured a dev instance, not a customer's. If it fires, slices 03/04 re-plan behind search. Not designed for here, deliberately. |
 | **OQ-6** | Website premium/pricing copy. | DELIVER | Unchanged from DISCUSS: owed, unverified, separate repo, confirm with the user before editing marketing copy. |
 | **OQ-7** | A `FeatureRankChanged` handler that throws is logged and swallowed (`DomainEventDispatcher.cs:20-34`), leaving the rank correct and the dates stale. | accepted gap | Named, not fixed. On a feature whose promise is "the forecast follows your priority", it is the one failure indistinguishable from success. No new observability ships; the future fix is a subscriber on the same event, not a redesign. There is **no AT for it** — DISTILL should not invent one against a swallowed exception. |
+
+### OQ-1 closure — `GetWritablePortfolioIdsAsync`
+
+Decided by the user on 2026-08-06, ahead of measuring: add the batch method rather than resolve the
+write set per row and see whether it hurts. It removes the ~1000-check worst case by construction and
+makes the read path symmetric with the write path it already has.
+
+The body is a mirror of `GetReadablePortfolioIdsAsync` (`RbacAdministrationService.cs:122-155`) with one
+predicate swapped — `HasPortfolioWritePermission` (`:1205`) already exists and is already used by
+`CanWritePortfolioAsync` (`:238-262`) and `CanManagePortfolioMembershipAsync` (`:604`), so no new
+permission logic is written.
+
+**The part that is not mechanical, and the reason this gets its own note:** the four early returns in
+that method are the security surface, and each means something different for *write* than it does for
+read. They must be copied deliberately, not pattern-matched:
+
+| Branch | Read behaviour | Correct write behaviour |
+|---|---|---|
+| `!IsRbacEnforcedAsync` (`:129`) | returns **all** requested ids | **Same** — with RBAC off, everyone may move everything. This is the single-user/self-hosted default and it must stay permissive. |
+| `!IsEnforcementGateSatisfiedAsync` (`:134`) | returns **none** | **Same** — fail closed. A half-configured RBAC instance must not hand out write. |
+| `CanManageRbacAsync` (`:139`) | returns **all** | **Same** — an RBAC manager already passes `PortfolioWrite` everywhere via `CanWritePortfolioAsync`. Diverging here would make the batch method disagree with the per-id one, which is the exact bug this method exists to avoid. |
+| `currentUser is null` (`:144`) | returns **none** | **Same** — fail closed. |
+
+So all four branches carry over unchanged. That is worth asserting in tests rather than assuming, because
+the failure mode of getting one wrong is silent over-permission on a write path, not a visible error.
+
+**Consumers**: the `GET /features` per-row move verdict (slice 01, one call per request) and
+`IFeatureMoveAuthorization` (slice 03). Note the two are **not** interchangeable — this method answers
+"which of these Portfolios may the caller write?", while ADR-136's rule is
+`Portfolios.Any() && Portfolios.All(canWrite)` over one Feature's Portfolios. The batch method supplies
+the set; the `Any() && All()` conjunction still has to be applied per Feature on top of it, and the
+`Any()` guard is what stops an orphan Feature from passing vacuously.
+
+**Scope note**: this widens `IRbacAdministrationService`, a cross-cutting interface. Per the project's
+shared-contract rule, grep for implementations and test doubles and extend the relevant fake before
+changing the interface — `CanUsePremiumFeatures`-style mocks are spread across the backend test suite.
 
 ---
 

@@ -16,7 +16,15 @@ Lighthouse actually simulates — and read one line saying that this order is wh
 - New page reusing `FeatureListDataGrid` (S16) — not a new grid.
 - `GET api/v1|latest/features` — ranked list filtered to Features in Portfolios the caller holds
   `PortfolioRead` on (D11). **Not** premium-gated (D12). A Feature in several such Portfolios appears
-  once, showing all of them.
+  once, showing all of them. DESIGN found the filter already exists: this is
+  `FeaturesController.GetFeaturesByPredicate` (`:100`) with a true predicate, not new machinery.
+- **`GetWritablePortfolioIdsAsync` on `IRbacAdministrationService`** (closes OQ-1, user decision
+  2026-08-06). Mirrors `GetReadablePortfolioIdsAsync` (`RbacAdministrationService.cs:122-155`) with
+  `HasPortfolioWritePermission` (`:1205`) swapped in. Resolves the writable set **once per request** so
+  the per-row move verdict is not ~1000 permission checks at 500 rows. All four early-return branches
+  carry over unchanged and each needs its own test — getting one wrong is silent over-permission on a
+  write path, not a visible error. Widening `IRbacAdministrationService` is a shared-contract change:
+  extend the test doubles first.
 - Position column added to the shared `columns.tsx` factory, so it lands on the Features view **and** the
   existing Portfolio Feature list in one change (D10). Value is the Feature's global rank, supplied by
   the backend — an additive `rank` integer on `FeatureDto` — not computed from the row index.
