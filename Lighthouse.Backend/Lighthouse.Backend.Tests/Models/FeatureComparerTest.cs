@@ -138,9 +138,9 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(result, Is.GreaterThan(0));
         }
 
-        // Both operands start with a digit, so this asserts the string fallback rather than punctuation collation.
+        // Mirrors the int rung: a rank the comparer can read as a number outranks one it cannot.
         [Test]
-        public void Compare_WhenOnlyTheLeftOrderIsADouble_FallsBackToStringComparison()
+        public void Compare_WhenOnlyTheLeftOrderIsADouble_RanksTheDoubleAheadOfTheNonNumeric()
         {
             var comparer = new FeatureComparer();
             var doubleRanked = new Feature { Order = $"{9.5}" };
@@ -148,7 +148,61 @@ namespace Lighthouse.Backend.Tests.Models
 
             var result = comparer.Compare(doubleRanked, nonNumeric);
 
-            Assert.That(result, Is.GreaterThan(0));
+            Assert.That(result, Is.LessThan(0));
+        }
+
+        // A multi-connector instance carries all three rank shapes at once — ADO integers, Linear
+        // decimals and Jira LexoRanks. Without a rung of its own, a decimal compares against a
+        // LexoRank as text, and the three-way relation stops being an order at all.
+        [Test]
+        public void Compare_AcrossEveryRankShape_IsTransitive()
+        {
+            var comparer = new FeatureComparer();
+            var orders = new[] { "5", "-45661", $"{9.5}", $"{8.75}", "9-high", "0|i0007c:", "" };
+
+            var features = orders.Select(order => new Feature { Order = order }).ToList();
+
+            foreach (var first in features)
+            {
+                foreach (var second in features)
+                {
+                    foreach (var third in features)
+                    {
+                        if (comparer.Compare(first, second) >= 0 || comparer.Compare(second, third) >= 0)
+                        {
+                            continue;
+                        }
+
+                        Assert.That(
+                            comparer.Compare(first, third),
+                            Is.LessThan(0),
+                            $"'{first.Order}' < '{second.Order}' < '{third.Order}', so '{first.Order}' must sort before '{third.Order}'");
+                    }
+                }
+            }
+        }
+
+        // The forecast draws throughput from Features in Order sequence, so a comparer whose result
+        // depends on the input sequence hands two callers two different forecasts over one backlog.
+        [Test]
+        public void Sorting_TheSameRanksInADifferentInputOrder_ProducesTheSameSequence()
+        {
+            var orders = new[] { "5", "-45661", $"{9.5}", $"{8.75}", "9-high", "0|i0007c:", "" };
+
+            var sorted = orders
+                .Select(order => new Feature { Order = order })
+                .OrderBy(f => f, new FeatureComparer())
+                .Select(f => f.Order)
+                .ToList();
+
+            var sortedFromReversedInput = orders
+                .Reverse()
+                .Select(order => new Feature { Order = order })
+                .OrderBy(f => f, new FeatureComparer())
+                .Select(f => f.Order)
+                .ToList();
+
+            Assert.That(sortedFromReversedInput, Is.EqualTo(sorted));
         }
     }
 }

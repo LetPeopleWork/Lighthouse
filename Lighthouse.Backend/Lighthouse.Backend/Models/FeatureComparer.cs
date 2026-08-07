@@ -54,6 +54,18 @@ namespace Lighthouse.Backend.Models
                 return xDouble.CompareTo(yDouble) * -1;
             }
 
+            // A decimal needs a rung of its own for the same reason an int does: comparing it against a
+            // LexoRank as text makes the relation intransitive, and the whole ladder stops being an order.
+            if (xIsDouble)
+            {
+                return -1;
+            }
+
+            if (yIsDouble)
+            {
+                return 1;
+            }
+
             return string.Compare(x, y, StringComparison.CurrentCulture);
         }
     }

@@ -78,6 +78,14 @@ Vernon's rules, applied:
 > needs no repair job. Move-to-Bottom materialises a rank for any null-ranked row it must jump —
 > bounded work, on the one operation that cares about the tail.
 
+> **INV-O5 (the source-rank ladder is bucketed, so it is an order).** Until `ManualRank` exists, and
+> for every Feature that never receives one, the ordering falls to `FeatureComparer` over the source
+> `Order` string. That ladder ranks by shape first — integers, then decimals, then text — and only
+> compares within a shape. The bucketing is what makes it transitive: before 2026-08-07 a decimal
+> compared against a LexoRank *as text*, which produced real cycles on any instance carrying more than
+> one connector (`9.5 < 8.75 < "9-high" < 9.5`), and made the sorted result depend on the input order.
+> A comparer that is not an order cannot support INV-O1's "total over any rank multiset".
+
 The relaxation is not a performance argument. A dense renumber over 500 rows is one `UPDATE … WHERE
 rank BETWEEN …`, milliseconds on SQLite, comfortably inside K6's 500 ms budget. What the relaxation
 buys is (a) the absence of any cross-Feature invariant, which is what makes §1's "no aggregate" answer
