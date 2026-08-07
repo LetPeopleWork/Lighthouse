@@ -27,13 +27,23 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var lastPlace = orderKeys.Max(orderKey => orderKey.ManualRank) ?? 0;
-
+            // Re-read inside the write step and take only what is still unplaced. A rank written between
+            // the projection above and here - by a move, or by a second admin flipping the switch at the
+            // same moment - is somebody's chosen place and is never overwritten. Two seeds racing can
+            // still land on the same number, which INV-O2 allows: duplicates keep a total order because
+            // the tie falls to Id.
             var features = await context.Features
-                .Where(feature => unplaced.Contains(feature.Id))
+                .Where(feature => unplaced.Contains(feature.Id) && feature.ManualRank == null)
                 .ToDictionaryAsync(feature => feature.Id);
 
-            foreach (var featureId in unplaced)
+            if (features.Count == 0)
+            {
+                return;
+            }
+
+            var lastPlace = await context.Features.MaxAsync(feature => feature.ManualRank) ?? 0;
+
+            foreach (var featureId in unplaced.Where(features.ContainsKey))
             {
                 features[featureId].ManualRank = ++lastPlace;
             }

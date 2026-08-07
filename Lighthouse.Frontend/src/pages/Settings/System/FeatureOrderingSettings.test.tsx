@@ -149,5 +149,35 @@ describe("FeatureOrderingSettings — who owns the order", () => {
 			expect(helpText.textContent).toContain("Deliverables");
 		});
 		expect(helpText.textContent).not.toContain("Features");
+
+		const toggle = await screen.findByTestId("feature-ordering-toggle");
+		expect(toggle.textContent).toContain("Deliverables");
+		expect(toggle.textContent).not.toContain("Features");
+	});
+
+	// Flipping twice before the first answer lands would send the instance a decision it never made.
+	it("cannot be flipped again while the first flip is still in flight", async () => {
+		const settingsService = aLicensedInstanceFollowingTheTracker();
+		let finishTheFirstFlip: () => void = () => {};
+		settingsService.updateFeatureOrdering = vi.fn().mockReturnValue(
+			new Promise<void>((resolve) => {
+				finishTheFirstFlip = resolve;
+			}),
+		);
+
+		renderTheSwitch({ settingsService, isPremium: true });
+
+		const toggle = await screen.findByTestId("feature-ordering-toggle");
+		await userEvent.click(toggle);
+
+		await waitFor(() => {
+			expect(toggle.querySelector("input")).toBeDisabled();
+		});
+
+		finishTheFirstFlip();
+		await waitFor(() => {
+			expect(toggle.querySelector("input")).not.toBeDisabled();
+		});
+		expect(settingsService.updateFeatureOrdering).toHaveBeenCalledTimes(1);
 	});
 });

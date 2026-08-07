@@ -168,6 +168,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(whatThisInstanceChose, afterTakingItOverAgain);
         }
 
+        // @driving_port @real-io @AC-5.3 — the second half of the AC, and the only path that exercises
+        // appending after an existing place: a Feature arrives while the tracker has the order back, so
+        // taking it over again must place the newcomer at the END rather than re-reading the tracker.
+        [Test]
+        public async Task A_feature_that_arrived_while_the_tracker_had_the_order_back_is_placed_last_when_it_is_taken_over_again()
+        {
+            var platform = GivenAPortfolio("Platform");
+            GivenAFeatureTheTrackerRanked("Rebuild the search index", "FTR-1", "10", platform);
+            GivenAFeatureTheTrackerRanked("Retire the legacy importer", "FTR-2", "20", platform);
+            GivenTheCallerAdministersTheInstance();
+
+            await WhenTheConfigAdminHandsTheOrderOver();
+            await WhenTheConfigAdminGivesTheOrderBack();
+
+            // The tracker would put the newcomer first, and it must still land last.
+            await WhenTheTrackerSyncsWithItsOwnNewOrder(platform, ("FTR-1", "10"), ("FTR-2", "20"), ("FTR-LATE", "1"));
+            await WhenTheConfigAdminHandsTheOrderOver();
+
+            var afterTakingItOverAgain = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            string[] theNewcomerLast = ["Rebuild the search index", "Retire the legacy importer", "FTR-LATE"];
+            ThenTheListReads(afterTakingItOverAgain, theNewcomerLast);
+            ThenEveryFeatureHoldsOnePlaceOfItsOwn(afterTakingItOverAgain);
+        }
+
         // @error @driving_port @real-io @AC-2.6 @AC-5.3 — a Feature the tracker would rank first arrives
         // while this instance owns the order, and lands last without announcing itself (D7).
         [Test]

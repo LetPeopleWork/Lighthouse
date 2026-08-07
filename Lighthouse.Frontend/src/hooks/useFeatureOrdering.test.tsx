@@ -68,4 +68,35 @@ describe("useFeatureOrdering", () => {
 			expect(result.current.positionColumnLabel).toBe("#");
 		});
 	});
+
+	// An instance that cannot answer must read as following the tracker, which is what it did before
+	// anyone could choose. Guessing the other way would re-sequence every forecast on a failed request.
+	it("follows the tracker when the instance cannot say who owns the order", async () => {
+		const settingsService = createMockSettingsService();
+		settingsService.getFeatureOrdering = vi
+			.fn()
+			.mockRejectedValue(new Error("the instance is unreachable"));
+
+		const apiContext = createMockApiServiceContext({ settingsService });
+
+		const wrapper = ({ children }: { children: React.ReactNode }) => (
+			<QueryClientProvider
+				client={
+					new QueryClient({ defaultOptions: { queries: { retry: false } } })
+				}
+			>
+				<ApiServiceContext.Provider value={apiContext}>
+					{children}
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>
+		);
+
+		const { result } = renderHook(() => useFeatureOrdering(), { wrapper });
+
+		await waitFor(() => {
+			expect(settingsService.getFeatureOrdering).toHaveBeenCalled();
+		});
+		expect(result.current.policy).toBe("SourceOrder");
+		expect(result.current.positionColumnLabel).toBe("#");
+	});
 });

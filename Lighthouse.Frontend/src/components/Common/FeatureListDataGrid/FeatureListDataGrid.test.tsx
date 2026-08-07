@@ -6,6 +6,16 @@ import { Feature } from "../../../models/Feature";
 import { createForecastsColumn, createStateColumn } from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
 
+let mockedPolicy: "SourceOrder" | "ManualOrder" = "SourceOrder";
+
+vi.mock("../../../hooks/useFeatureOrdering", () => ({
+	useFeatureOrdering: () => ({
+		policy: mockedPolicy,
+		positionColumnLabel: mockedPolicy === "ManualOrder" ? "Manual" : "#",
+		refresh: vi.fn(),
+	}),
+}));
+
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
 		getTerm: (key: string) => {
@@ -466,4 +476,32 @@ describe("FeatureListDataGrid", () => {
 
 		expect(await screen.findByText("17")).toBeInTheDocument();
 	});
+
+	// Epic 5375 AC-5.4 — the column names whoever owns the order, and the grid must render the heading
+	// the ordering seam gives it rather than one of its own.
+	it.each([
+		["SourceOrder", "#"],
+		["ManualOrder", "Manual"],
+	] as const)(
+		"should head the position column with %s's label",
+		async (policy, expectedHeading) => {
+			mockedPolicy = policy;
+
+			render(
+				<MemoryRouter>
+					<FeatureListDataGrid
+						features={rankedFeatures}
+						columns={defaultColumns}
+						storageKey="test-grid"
+						hideCompletedStorageKey="test-hide-completed"
+						showPosition
+					/>
+				</MemoryRouter>,
+			);
+
+			expect(
+				await screen.findByRole("columnheader", { name: expectedHeading }),
+			).toBeInTheDocument();
+		},
+	);
 });

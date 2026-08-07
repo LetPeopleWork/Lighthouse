@@ -5,6 +5,12 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class FeatureOrdering(IFeatureOrderingPolicyProvider policyProvider) : IFeatureOrdering
     {
+        private static readonly Comparer<FeatureOrderKey> ByManualRank =
+            Comparer<FeatureOrderKey>.Create((left, right) => ManualRankComparer.CompareRanks(left.ManualRank, right.ManualRank));
+
+        private static readonly Comparer<FeatureOrderKey> BySourceOrder =
+            Comparer<FeatureOrderKey>.Create((left, right) => FeatureComparer.CompareOrderValues(left.Order, right.Order));
+
         public IEnumerable<Feature> Order(IEnumerable<Feature> features)
         {
             var comparer = ThisInstanceOwnsTheOrder()
@@ -19,9 +25,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IEnumerable<FeatureOrderKey> Order(IEnumerable<FeatureOrderKey> orderKeys)
         {
-            var comparer = ThisInstanceOwnsTheOrder()
-                ? Comparer<FeatureOrderKey>.Create((left, right) => ManualRankComparer.CompareRanks(left.ManualRank, right.ManualRank))
-                : Comparer<FeatureOrderKey>.Create((left, right) => FeatureComparer.CompareOrderValues(left.Order, right.Order));
+            var comparer = ThisInstanceOwnsTheOrder() ? ByManualRank : BySourceOrder;
 
             return orderKeys.OrderBy(orderKey => orderKey, comparer).ThenBy(orderKey => orderKey.Id);
         }

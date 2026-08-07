@@ -320,43 +320,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         }
 
         /// <summary>
-        /// Reads who owns the order on this instance. <c>SystemAdmin</c>-guarded (AC-2.7), not premium —
-        /// an unlicensed instance must still be able to see that it follows the tracker.
+        /// Reads who owns the order on this instance. Open to any caller: every feature list asks it to
+        /// name its position column, so only changing the answer takes an instance administrator.
         /// </summary>
-        protected Task<(HttpStatusCode Status, string Body)> GetOrderingPolicy()
-            => Send(() => Client.GetAsync("/api/latest/appsettings/FeatureOrdering"));
-
-        /// <summary>
-        /// Hands ordering ownership over, or gives it back. <c>SystemAdmin</c> + premium (AC-2.5, AC-2.7).
-        /// The body is written as raw JSON on purpose: the policy is a wire contract this slice does not
-        /// yet own a type for, so the scenario cannot go green by compiling against one.
-        /// </summary>
-        protected Task<(HttpStatusCode Status, string Body)> SetOrderingPolicy(string policy)
+        protected async Task<(HttpStatusCode Status, string Body)> GetOrderingPolicy()
         {
-            var body = new StringContent($"{{\"policy\":\"{policy}\"}}", System.Text.Encoding.UTF8, "application/json");
-            return Send(() => Client.PutAsync("/api/latest/appsettings/FeatureOrdering", body));
+            var response = await Client.GetAsync("/api/latest/appsettings/FeatureOrdering");
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
         /// <summary>
-        /// OWED AT GREEN — delete this once the ordering-policy routes are mapped. An unmapped route falls
-        /// through to the SPA fallback, which throws when the test host has no <c>wwwroot</c>: the scenario
-        /// then dies on host plumbing and its own assertion never runs (SETUP_FAILURE, not RED). This
-        /// reports the 404 the unmapped route really is, so every scenario fails on its own Then. Leaving
-        /// it after the routes exist would report a future accidental un-mapping as "unimplemented"
-        /// instead of surfacing it as the routing regression it would be. Same trap, same fix and same
-        /// debt as slice 01's <c>GetAllFeatures</c> catch.
+        /// Hands ordering ownership over, or gives it back. <c>SystemAdmin</c> + premium (AC-2.5, AC-2.7).
+        /// The body stays raw JSON rather than the shipped DTO, so these scenarios judge the wire contract
+        /// a client really sends and cannot be kept green by a rename on the server side.
         /// </summary>
-        private static async Task<(HttpStatusCode Status, string Body)> Send(Func<Task<HttpResponseMessage>> request)
+        protected async Task<(HttpStatusCode Status, string Body)> SetOrderingPolicy(string policy)
         {
-            try
-            {
-                var response = await request();
-                return (response.StatusCode, await response.Content.ReadAsStringAsync());
-            }
-            catch (InvalidOperationException exception) when (exception.Message.Contains("SPA default page", StringComparison.Ordinal))
-            {
-                return (HttpStatusCode.NotFound, "<no route mapped for the ordering policy port>");
-            }
+            var body = new StringContent($"{{\"policy\":\"{policy}\"}}", System.Text.Encoding.UTF8, "application/json");
+            var response = await Client.PutAsync("/api/latest/appsettings/FeatureOrdering", body);
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
         /// <summary>

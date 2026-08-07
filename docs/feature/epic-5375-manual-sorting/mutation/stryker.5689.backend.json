@@ -1,0 +1,24 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/FeatureOrdering.cs",
+      "**/Services/Implementation/FeatureOrderingPolicyProvider.cs",
+      "**/Services/Implementation/FeatureRankSeeder.cs",
+      "**/Services/Implementation/FeaturePositionMap.cs",
+      "**/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs",
+      "**/Models/ManualRankComparer.cs",
+      "**/Services/Implementation/AppSettingService.cs",
+      "**/API/DTO/PortfolioDto.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~ManualSorting|FullyQualifiedName~ManualRankComparer|FullyQualifiedName~Slice01FeaturesView|FullyQualifiedName~AppSettingService|FullyQualifiedName~SurveyNudge|FullyQualifiedName~FeatureRepository|FullyQualifiedName~PortfolioDto|FullyQualifiedName~FeaturesController|FullyQualifiedName~FeatureOrdering",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

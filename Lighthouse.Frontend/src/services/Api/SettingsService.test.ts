@@ -54,4 +54,40 @@ describe("SettingsService", () => {
 			mockRefreshSettings,
 		);
 	});
+
+	// Epic 5375 — who owns the order. The read is what every feature list asks to name its position
+	// column; the write is the switch itself.
+	it.each(["ManualOrder", "SourceOrder"] as const)(
+		"should read %s back as who owns the order",
+		async (policy) => {
+			mockedAxios.get.mockResolvedValueOnce({ data: { policy } });
+
+			expect(await settingsService.getFeatureOrdering()).toBe(policy);
+			expect(mockedAxios.get).toHaveBeenCalledWith(
+				"/appsettings/FeatureOrdering",
+			);
+		},
+	);
+
+	it("should reject an ordering the client does not know", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: { policy: "WhateverOrder" },
+		});
+
+		await expect(settingsService.getFeatureOrdering()).rejects.toThrow();
+	});
+
+	it.each(["ManualOrder", "SourceOrder"] as const)(
+		"should hand the order to %s",
+		async (policy) => {
+			mockedAxios.put.mockResolvedValueOnce({});
+
+			await settingsService.updateFeatureOrdering(policy);
+
+			expect(mockedAxios.put).toHaveBeenCalledWith(
+				"/appsettings/FeatureOrdering",
+				{ policy },
+			);
+		},
+	);
 });

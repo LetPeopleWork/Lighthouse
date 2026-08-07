@@ -1,153 +1,100 @@
-# Mutation testing — 5688 (Manual sorting: a Features view showing the order that drives the forecast)
+# Mutation testing — 5689 (Manual sorting: hand ordering ownership to Lighthouse)
 
-Run 2026-08-06 against `worktree-deep-brewing-starfish`, rebased on `main` @ `ba2b30157`. Gate is 80 %
-kill rate on both stacks.
+Run 2026-08-07 against `main` @ `5f055dc30` + the quality-gate working tree. Gate is 80 % kill rate on
+both stacks.
 
 | stack | score | tested | killed | survived | timeout | wall clock |
 | --- | --- | --- | --- | --- | --- | --- |
-| Backend (Stryker.NET) | **80.39 %** | 50 | 41 | 9 | 0 | 2 m 50 s |
-| Frontend (StrykerJS 9.6.1) | **80.00 %** | 70 | 56 | 10 | 0 | ~2 m |
+| Backend (Stryker.NET) | **85.42 %** | 96 | 82 | 14 | 0 | 2 m 10 s |
+| Frontend (StrykerJS) | **84.78 %** | 46 | 39 | 7 | 0 | 1 m 36 s |
 
-Configs: `stryker.5688.backend.json`, `stryker.5688.frontend.json`, `vitest.stryker.mutation.ts`.
+Configs: `stryker.5689.backend.json`, `stryker.5689.frontend.json`, `vitest.stryker.mutation.5689.ts`.
 
-The backend gate passed on the second run. The first scored **66.67 %** (34 killed / 10 survived /
-7 no-coverage); eight survivors were closed by new tests and the run repeated. Both runs are recorded
-below, because the first one is where the useful finding was.
+The vitest config sits beside the others but is **not committed** — `.gitignore:445` (`**/vitest.stryker*.ts`)
+excludes it repo-wide, as it does slice 01's. Recreate it by copying the neighbouring `.5689` file's
+shape and narrowing `test.include` to the specs covering the mutated files; StrykerJS resolves it
+relative to `Lighthouse.Frontend/`, so it has to be copied there for the run and removed afterwards.
+
+Both stacks were run twice. The first backend run scored **73.96 %** and the first frontend run
+**57.14 %**; the sections below record what the survivors exposed and what was written to close them.
+No survivor was closed by loosening a test.
 
 ## Backend
 
-### Per file
-
-| File | Killed | Survived | No coverage | Score |
-| --- | --- | --- | --- | --- |
-| `Services/Implementation/FeaturePositionMap.cs` | 4 | 0 | 0 | **100 %** |
-| `Models/FeatureComparer.cs` | 17 | 1 | 0 | **94.4 %** |
-| `Services/Implementation/Repositories/FeatureRepository.cs` | 7 | 1 | 0 | **87.5 %** |
-| `API/FeaturesController.cs` | 13 | 7 | 1 | 61.9 % |
-| `Program.cs` | — | — | — | n/a (all mutants ignored or compile-error; DI registration only) |
-
-**Read the aggregate with that table next to it.** The three files this slice created or reshaped score
-28/29 = **96.6 %**. The 80.39 % aggregate is dragged down almost entirely by `FeaturesController.cs`,
-whose seven survivors are all in `GetFeatureWorkItems` and the blocked-item projection — code paths this
-slice never touched. Stryker.NET mutates whole files and **ignores line ranges** (`file.cs:20-40` silently
-widens to the whole file), so there is no way to scope to the changed lines; the choice is mutate the
-whole file and report per-file, or exclude it entirely. Excluding it would have hidden the 13 genuine
-kills the new endpoint earned, so it stays in with this note.
+| file | tested | killed | survived |
+| --- | --- | --- | --- |
+| `Services/Implementation/FeatureOrdering.cs` | 9 | 9 | 0 |
+| `Services/Implementation/FeaturePositionMap.cs` | 2 | 2 | 0 |
+| `Services/Implementation/FeatureOrderingPolicyProvider.cs` | 7 | 6 | 1 |
+| `Services/Implementation/FeatureRankSeeder.cs` | 8 | 4 | 4 |
+| `Models/ManualRankComparer.cs` | 13 | 13 | 0 |
+| `Services/Implementation/AppSettingService.cs` | 52 | 46 | 6 |
+| `API/DTO/PortfolioDto.cs` | 4 | 1 | 3 |
+| `.../Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs` | 1 | 1 | 0 |
 
 ### Closed by this pass
 
-Eight survivors, each verified by re-applying the mutant by hand and confirming the intended test goes
-red — not merely by watching the score move.
+| survivor | what it exposed | now pinned by |
+| --- | --- | --- |
+| `ManualRankComparer` — 8 mutants with **no coverage at all** | The comparer had no test of its own. Its null branches were reachable only through an integration path that never passes a null, so "never-placed sorts last" and "a null Feature does not throw" were both unasserted — the second is the bug the source-order ladder already shipped once (`1eccb8ef0`). | `ManualRankComparerTest` — 7 focused cases over places, never-placed, null Features and antisymmetry |
+| `FeatureRankSeeder:44` — `MaxAsync(...) ?? 0` → `0` | **A real coverage hole in AC-5.3.** No test ever ran the seed with some Features already placed, so the "latecomers append after the last place" path was never executed. Every existing scenario either seeded from scratch or found nothing unplaced. | `A_feature_that_arrived_while_the_tracker_had_the_order_back_is_placed_last_when_it_is_taken_over_again` |
+| `AppSettingService:110` — the `PublishAsync` call removed | Nothing asserted the policy change is announced. Without the event the places move and every forecast date stays where it was — the one failure indistinguishable from success on this feature. | `SetFeatureOrderingPolicy_AnnouncesTheChange` (both directions) |
+| `FeatureOrderingPolicyChangedForecastTriggerHandler:27` — `TriggerUpdate` removed | The handler had no test. | `FeatureOrderingPolicyChangedForecastTriggerHandlerTest` — 3 cases including the no-Portfolios instance |
+| — (not a survivor, found while triaging) | The seed-then-record ordering that D6 rests on was asserted nowhere. | `SetFeatureOrderingPolicy_TakingTheOrderOver_SeedsBeforeItRecordsTheChoice` |
 
-| Mutant | Now killed by |
-| --- | --- |
-| `FeatureComparer:43-46` block removal on `if (yIsInt) return 1;` | `Compare_WhenOnlyTheRightOrderIsAnInt_RanksTheIntAheadOfTheDecimal`. Most pairs do not discriminate — `Compare("abc","5")` and `Compare("0.5","5")` both stay positive by a different route. `Compare("9.5","5")` is the pair that does: `1` normally, `-1` mutated. |
-| `FeatureComparer:51` `&&` → `\|\|` | `Compare_WhenOnlyTheLeftOrderIsADouble_FallsBackToStringComparison`. `Compare("9.5","1abc")` is positive normally and negative mutated, because the failed `TryParse` leaves `yDouble` at 0. Both operands start with a digit so no punctuation-collation assumption is involved. |
-| `FeatureRepository:19` `OrderBy` → `OrderByDescending` | `GetAll_OrdersFeaturesByTheFeatureComparerLadder` |
-| `FeatureRepository:19` `ThenBy` → `ThenByDescending` | `GetAll_FeaturesTiedOnOrder_ComeBackInAscendingId` |
-| `FeatureRepository:24` `OrderBy`/`ThenBy` → descending (×2) | `GetAllByPredicate_AppliesTheSameOrderingToTheFilteredSet` |
-| `FeatureRepository:31` `f.Id == id` → `!=` | `GetById_ReturnsTheFeatureWithThatId` |
-| `FeatureRepository:36` predicate dropped | `GetByPredicate_ReturnsTheSingleMatchingFeature` |
-
-**The finding worth more than the score**: `FeatureRepository` had **no test file at all**. `GetAll()` is
-what `ForecastService` reads to decide which Features a team's simulated throughput lands on, and slice 01
-had just added a `.ThenBy(f => f.Id)` tie-break to it that nothing exercised. The mutation run is what
-surfaced that; the suite was green throughout.
-
-Second observation, recorded because it changes what the tie-break test is worth: removing
-`if (yIsInt) return 1;` does not merely misorder one pair — it makes the comparer **asymmetric**, so
-`Compare("3","")` and `Compare("","3")` both return −1. Fed to `OrderBy`'s quicksort that scrambles the
-whole sequence, which is why the two repository ordering tests catch it as well. The new `GetAll`
-coverage therefore guards the comparer's int rung too.
+**Config trap worth carrying forward**: the first run reported all 13 `ManualRankComparer` mutants as
+`NoCoverage` *after* its test was written, because `test-case-filter` did not match
+`ManualRankComparerTest`. The filter must name every changed file's tests, not just the headline ones —
+a file whose tests are filtered out reports as uncovered across the board and looks like missing tests.
 
 ### Accepted survivors
 
-| Mutant | Why it stays |
+| survivor | why it cannot be killed meaningfully |
 | --- | --- |
-| `FeatureComparer:54` `* -1` → `/ -1` | **Equivalent mutant.** `CompareTo` yields only −1, 0 or 1, and for those three values `* -1` and `/ -1` are identical. Unkillable by construction. |
-| `FeaturesController:100` `AsEnumerable()` → `Reverse()` | In `GetFeatureWorkItems`, pre-existing. Work-item order within a Feature is not part of any AC in this slice and no test asserts it. |
-| `FeaturesController:102` ×2 (logical + equality on `w.Team != null && IsBlocked(...)`) | Pre-existing blocked-item projection, untouched by this slice. |
-| `FeaturesController:119` `Any()` → `All()` on `IsBlocked` | Pre-existing blocked-item projection. Belongs to Epic 5074's surface, not this one. |
-| `FeaturesController:138` `.ConfigureAwait(false)` → `true` | No observable behaviour change in a test host. |
-| `FeaturesController:140` conditional → always-true | Requires an `IRbacAdministrationService` returning null from the batch call; the shipped service never does. |
-| `FeaturesController:143` `HttpContext?.RequestAborted ?? default` → `default` | Equivalent under test: the token is never signalled during a request, so both branches behave identically. |
-| `FeaturesController:76` (no coverage) | Block removal in a path the filtered test set does not reach. |
-| `FeatureRepository:36` `SingleOrDefault()` → `Single()` | Pre-existing `GetByPredicate`; differs only when no element matches, which no caller in this slice exercises. |
-
-### Not mutated
-
-`RbacAdministrationService.cs` (1469 lines, ~39 changed), `DemoDataService.cs` (scenario 15 only),
-`FeatureDto.cs` (one auto-property) and the two interface files are excluded from `mutate`. In each case
-the change is a small fraction of a large file, so mutating it would bury this slice's score under
-untouched code with no diagnostic value.
-
-`GetWritablePortfolioIdsAsync` is the one exclusion worth justifying explicitly, because it is
-security-relevant: it is covered instead by five dedicated acceptance scenarios that drive the **real**
-`RbacAdministrationService` over an isolated store, one per early-return branch (RBAC not enforced,
-enforcement gate unsatisfied, RBAC manager, unrecognised caller) plus the predicate swap itself. That is
-stronger evidence than mutating a method whose branches are already enumerated one-per-test.
+| `FeatureRankSeeder:27` — first `return` removed | Equivalent. Falling through reaches the second early return via an empty result set, with the same observable. |
+| `FeatureRankSeeder:36` — `&&` → `\|\|` | Equivalent. `unplaced` is derived from exactly the null-ranked set, so widening the predicate to "or unplaced" selects the same rows. The guard is defence-in-depth against a concurrent writer, not a filter this run can distinguish. |
+| `FeatureRankSeeder:41` — second `return` removed | Reachable only when another writer placed every candidate between the two reads. That is a genuine race; a deterministic test cannot enter it. |
+| `FeatureRankSeeder:51` — `SaveChangesAsync` removed | Equivalent **through a shared context**: `AppSettingService` calls the policy provider next, whose `repository.Save()` runs on the same scoped `LighthouseAppContext` and flushes the tracked rank changes. The explicit save is kept because relying on a later caller to flush is not a boundary worth having. |
+| `FeatureOrderingPolicyProvider:35` — `repository.Update(existing)` removed | Equivalent. The entity was loaded through the same context and is already tracked, so EF writes it either way. |
+| `AppSettingService` ×6, `PortfolioDto` ×3 | Not this change. Survey-nudge cadence, refresh settings, install timestamp and the percentile block are pre-existing code pulled in by whole-file globs (Stryker.NET ignores line ranges). Their coverage is a separate question from slice 02. |
 
 ## Frontend
 
-Also passed on the second run. The first scored **57.14 %** (40 killed / 26 survived / 4 no-coverage).
-
-### Per file
-
-| File | Killed | Survived | Score | First run |
-| --- | --- | --- | --- | --- |
-| `pages/Features/FeaturesView.tsx` | 21 | 0 | **100 %** | 33.3 % |
-| `components/Common/FeatureListDataGrid/columns.tsx` | 12 | 3 (+1 no-cov) | 75.0 % | 62.5 % |
-| `components/App/Header/Header.tsx` | 7 | 2 | 77.8 % | 77.8 % |
-| `components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx` | 16 | 5 | 76.2 % | 76.2 % |
+| file | tested | killed | survived |
+| --- | --- | --- | --- |
+| `pages/Settings/System/FeatureOrderingSettings.tsx` | 19 | 19 | 0 |
+| `models/FeatureOrdering.ts` | 6 | 6 | 0 |
+| `hooks/useFeatureOrdering.ts` | 14 | 9 | 5 |
+| `components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx` | 4 | 2 | 2 |
+| `services/Api/SettingsService.ts` | 3 | 3 | 0 |
 
 ### Closed by this pass
 
-`FeaturesView.tsx` went from 33.3 % to **100 %** — all 21 mutants killed, zero survivors. It was the one
-genuine coverage gap in new code: a 77-line component shipped with two tests. Seven were added, and every
-assertion was proven falsifiable by applying the mutant to the component and confirming the test goes red.
-
-The survivors that needed the most care, because the obvious assertion does not discriminate:
-
-| Mutant | What the killing test had to observe |
-| --- | --- |
-| `useState(true)` → `false` | The grid must show its loading state *before* rows arrive — asserting the final rendered list passes either way. |
-| `join(", ")` → `join("")` | The Portfolio cell text must be asserted **exactly** (`"Platform, Payments"`). Asserting that both names appear passes under both. |
-| `sortable: false` → `true` | Paired with a positive check that another column *does* offer a sort control, so "no control found" cannot pass vacuously. |
-| `useMemo` deps `[featureTerm, portfoliosTerm]` → `[]` | The column titles must change when the instance renames the concepts mid-session — which required the terminology mock to become mutable. |
-| `` `No ${featuresTerm} found` `` → `""` | The empty state must be read through the terminology provider, so a hard-coded "Features" fails. |
-
-One survivor the sub-agent reported as unreachable — `color="text.secondary"` → `""`, on the grounds that
-jsdom does not resolve the MUI palette — turned out to be killed by one of the sibling assertions. Recorded
-because the reasoning was sound and the conclusion still wrong: it is worth re-scoring before accepting an
-"equivalent mutant" claim.
+| survivor | what it exposed | now pinned by |
+| --- | --- | --- |
+| `SettingsService.ts:47-50` — the route string and both bodies | **The two new service methods had no test at all.** The URL could become `""` and nothing noticed. | `SettingsService.test.ts` — reads both policies back, rejects one the client does not know, and pins the `PUT` body |
+| `models/FeatureOrdering.ts:7-14` — the zod enum members and the schema object | The parse boundary was never exercised. Now covered through the service, including the rejection case. | as above |
+| `FeatureListDataGrid.tsx` — the position column's label | **AC-5.4's actual observable was unasserted**: nothing checked that the grid renders the heading the ordering seam hands it. The column factory was tested, the wiring was not. | `should head the position column with %s's label` — both policies, asserted on the rendered column header |
+| `useFeatureOrdering.ts` — the catch body | The documented failure mode ("an instance that cannot answer follows the tracker") had no test. | `follows the tracker when the instance cannot say who owns the order` |
+| `FeatureOrderingSettings.tsx:33-38` — `isSaving` | Nothing stopped a second flip while the first was in flight. | `cannot be flipped again while the first flip is still in flight` |
+| `useFeatureOrdering.ts` — `isLoading` | Not a missing test: **dead API surface.** No caller read it. Deleted rather than tested. | — |
 
 ### Accepted survivors
 
-All ten are pre-existing behaviour swept into scope, not new code:
-
-| Mutant | Why it stays |
+| survivor | why it cannot be killed meaningfully |
 | --- | --- |
-| `Header.tsx:62`, `:63` — `path: "/"` and `path: "/settings"` → `""` | The **pre-existing** Overview and System Settings nav entries. This slice added only the third entry, whose path and terminology-driven label are both killed. Pinning the other two is Header's own coverage debt. |
-| `columns.tsx:25`, `:28`, `:31` (+1 no-coverage) | Inside `createNameColumn` — `hideable`, `width`, `flex`. Pre-existing behaviour that the L4 refactor *moved* into a shared factory; the refactor did not change it, and no AC in this slice constrains it. |
-| `FeatureListDataGrid.tsx:28`, `:44`, `:57` ×2, `:60` | The grid's pre-existing column-assembly and storage-key wiring. The one line this slice added — the `showPosition` conditional injection — is killed by the two tests added for review finding F3. |
+| `useFeatureOrdering.ts:29,32` — the catch body emptied / its literal blanked | Equivalent. The fallback sets `SourceOrder`, which is already the initial state, so an emptied catch is observationally identical. The assignment stays because it states the intent where a future default change would otherwise break it silently. |
+| `useFeatureOrdering.ts:34,38` — `useCallback` / `useEffect` dependency arrays emptied | Standard StrykerJS React survivors. Emptying them changes re-render bookkeeping, not any output these tests can observe. |
+| `FeatureListDataGrid.tsx:62,65` — the empty `else` branch of the two column spreads replaced with a junk column | Killing this means asserting the grid's exact column set, which breaks on every future column for no user-visible gain. The columns that matter are asserted by field and by header. |
 
-### Not mutated
+## Not mutated
 
-`App.tsx` (one route line), `models/Feature.ts` (one optional zod key), `index.ts`/`types.ts` (exports only).
-No behaviour to mutate meaningfully.
-
-## Workflow traps hit this run — worth carrying forward
-
-1. **`vitest.configFile` resolves relative to the run directory, not to the Stryker config.** Pointing it
-   at `docs/feature/<feature>/mutation/vitest.stryker.mutation.ts` fails with `UNRESOLVED_ENTRY` when
-   Stryker runs from `Lighthouse.Frontend/`. The committed copy is the canonical one; copy it to
-   `Lighthouse.Frontend/vitest.stryker.mutation.ts` for the run and delete it afterwards.
-2. **A clean `git diff` does not mean a clean binary.** Restoring a mutated source file with a tool that
-   preserves the backup's mtime (e.g. `shutil.move`) leaves MSBuild believing the output is up to date, so
-   `dotnet build` reports "0 Warnings" and the next `dotnet test` runs against a **mutant**. Three minutes
-   of green-looking output, all meaningless. After any tool restores source files, `touch` them or build
-   `--no-incremental` before trusting the result.
-3. **Never run `dotnet build` and `dotnet test` concurrently** — the assemblies are replaced mid-run and
-   hundreds of tests fail in `SetUpTearDownItem.RunSetUp`, which reads exactly like a real regression.
-4. Contrary to an earlier note in this repo, **whole-file `mutate` globs do scope correctly** on
-   Stryker.NET: 14203 mutants created project-wide, 50 tested. It is *line ranges* that are ignored.
+- `Models/Feature.cs`, `Models/FeatureOrderingPolicy.cs`, `Models/FeatureOrderKey.cs`,
+  `Models/Events/FeatureOrderingPolicyChanged.cs`, `AppSettingKeys.cs` — data and declarations, no
+  behaviour to mutate.
+- `FeatureRepository.cs`, `WorkItemService.cs`, `FeaturesController.cs`, `AppSettingsController.cs` —
+  slice 02 changed one call site in each. Stryker.NET ignores line ranges, so mutating them would bury
+  a few lines under hundreds of untouched ones. The single seam they all now route through
+  (`FeatureOrdering.cs`) scored **9/9**, and `FeatureOrderingSingleSourceArchUnitTest` fails if any of
+  them reaches for a comparer directly — verified by introducing the violation and watching it go red.
+- `SystemSettingsTab.tsx` — one `InputGroup` hosting the panel; the panel itself is at 100 %.

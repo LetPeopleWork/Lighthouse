@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation;
 using Moq;
 using Lighthouse.Backend.Services.Interfaces;
@@ -11,11 +12,63 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class AppSettingServiceTests
     {
         private Mock<IRepository<AppSetting>> repositoryMock;
+        private Mock<IFeatureOrderingPolicyProvider> policyProviderMock;
+        private Mock<IFeatureRankSeeder> rankSeederMock;
+        private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<AppSetting>>();
+            policyProviderMock = new Mock<IFeatureOrderingPolicyProvider>();
+            rankSeederMock = new Mock<IFeatureRankSeeder>();
+            domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+        }
+
+        // Epic 5375 — the order of these three steps is the whole of D6. Seeding has to happen while the
+        // stored policy still says the tracker owns the order, or it reads the order it is about to make.
+        [Test]
+        public async Task SetFeatureOrderingPolicy_TakingTheOrderOver_SeedsBeforeItRecordsTheChoice()
+        {
+            var steps = new List<string>();
+            rankSeederMock.Setup(s => s.SeedMissingRanks()).Callback(() => steps.Add("seed")).Returns(Task.CompletedTask);
+            policyProviderMock.Setup(p => p.SetPolicy(It.IsAny<FeatureOrderingPolicy>())).Callback(() => steps.Add("record")).Returns(Task.CompletedTask);
+
+            await CreateService().SetFeatureOrderingPolicy(FeatureOrderingPolicy.ManualOrder);
+
+            Assert.That(steps, Is.EqualTo(new[] { "seed", "record" }));
+        }
+
+        [Test]
+        public async Task SetFeatureOrderingPolicy_GivingTheOrderBack_PlacesNobody()
+        {
+            await CreateService().SetFeatureOrderingPolicy(FeatureOrderingPolicy.SourceOrder);
+
+            using (Assert.EnterMultipleScope())
+            {
+                rankSeederMock.Verify(s => s.SeedMissingRanks(), Times.Never);
+                policyProviderMock.Verify(p => p.SetPolicy(FeatureOrderingPolicy.SourceOrder), Times.Once);
+            }
+        }
+
+        // Without the announcement the places move and every forecast date stays where it was (ADR-133).
+        [TestCase(FeatureOrderingPolicy.ManualOrder)]
+        [TestCase(FeatureOrderingPolicy.SourceOrder)]
+        public async Task SetFeatureOrderingPolicy_AnnouncesTheChange(FeatureOrderingPolicy policy)
+        {
+            await CreateService().SetFeatureOrderingPolicy(policy);
+
+            domainEventDispatcherMock.Verify(
+                d => d.PublishAsync(It.Is<FeatureOrderingPolicyChanged>(e => e.Policy == policy), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public void GetFeatureOrderingPolicy_AsksTheOnlyReaderOfTheSetting()
+        {
+            policyProviderMock.Setup(p => p.GetPolicy()).Returns(FeatureOrderingPolicy.ManualOrder);
+
+            Assert.That(CreateService().GetFeatureOrderingPolicy(), Is.EqualTo(FeatureOrderingPolicy.ManualOrder));
         }
 
         [Test]
@@ -144,9 +197,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             return new AppSettingService(
                 repositoryMock.Object,
-                Mock.Of<IFeatureOrderingPolicyProvider>(),
-                Mock.Of<IFeatureRankSeeder>(),
-                Mock.Of<IDomainEventDispatcher>(),
+                policyProviderMock.Object,
+                rankSeederMock.Object,
+                domainEventDispatcherMock.Object,
                 TimeProvider.System);
         }
 

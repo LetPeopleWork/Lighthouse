@@ -11,7 +11,6 @@ export interface FeatureOrderingState {
 	policy: FeatureOrderingPolicy;
 	/** What the position column calls itself under that policy. */
 	positionColumnLabel: string;
-	isLoading: boolean;
 	refresh: () => Promise<void>;
 }
 
@@ -21,7 +20,6 @@ export interface FeatureOrderingState {
  */
 export const useFeatureOrdering = (): FeatureOrderingState => {
 	const [policy, setPolicy] = useState<FeatureOrderingPolicy>("SourceOrder");
-	const [isLoading, setIsLoading] = useState(true);
 
 	const { settingsService } = useContext(ApiServiceContext);
 
@@ -32,8 +30,6 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 			// An instance that cannot answer follows the tracker, which is what it did before anyone
 			// could choose. Failing closed here would silently re-sequence every forecast.
 			setPolicy("SourceOrder");
-		} finally {
-			setIsLoading(false);
 		}
 	}, [settingsService]);
 
@@ -47,7 +43,6 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 			policy === "ManualOrder"
 				? MANUAL_ORDER_COLUMN_LABEL
 				: SOURCE_ORDER_COLUMN_LABEL,
-		isLoading,
 		refresh,
 	};
 };
