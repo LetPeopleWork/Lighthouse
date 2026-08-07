@@ -1055,3 +1055,34 @@ get re-applied.
 - **Root cause**: the workflow maps `ServiceNowLighthouseIntegrationTestInstance: ${{ secrets.SERVICENOWLIGHTHOUSEINTEGRATIONTESTINSTANCE }}`, and that repository secret was never created. GitHub still exports the variable — holding the **empty string**. The test read it as `Environment.GetEnvironmentVariable(name) ?? DefaultInstanceUrl`, and `??` only catches `null`, so `""` sailed through and became the instance URL. The companion `?? throw` on the token accessor had the same hole: an unset token would have produced a confusing authentication failure instead of the explicit "set this variable" message it was written to give.
 - **Fix**: `ServiceNowWorkTrackingConnectorIntegrationTest` reads through a `FromEnvironment` helper that maps null **and** whitespace to empty, then branches on length — fallback to the default instance, explicit throw for the missing token.
 - **Rule going forward**: never read a CI-supplied secret with `??`. Any environment variable that arrives from `${{ secrets.* }}` MUST be tested with `string.IsNullOrWhiteSpace`, because an unconfigured secret is indistinguishable from a configured empty one at the process boundary. The corollary is a review rule: a test whose category is excluded from the local filter has, by definition, never run on the developer's machine in the shape CI runs it — treat the first push of a new integration category as an unverified change and expect one red run.
+
+### 2026-08-07 — the coalescing handover marked the key Completed before requeueing it, so `/update/status` could still read idle
+- **Symptom**: `Verify Backend / backend` failed on run 31203153029 with 1 of 4584 —
+  `UpdateQueueServiceTests.EnqueueUpdate_TriggerArrivesWhileInFlight_KeyStaysActiveAcrossTheHandover`,
+  `Assert.That(observedIdle, Is.False)` / `Expected: False, But was: True`. Green locally across three
+  full runs, so it reads as a flake and is not one.
+- **Root cause**: `ExecuteUpdateAsync` called `statusStore.Advance(key, Completed)` inside the try/catch,
+  *then* `TryScheduleRerun` → `statusStore.Requeue(key)`. `HasActiveWork()` counts only `Queued` and
+  `InProgress`, so between those two statements the key was present but terminal — i.e. idle to every
+  poller. The 2026-07-27 fix's comment ("the key never leaves the store") was true and insufficient:
+  what matters is not presence, it is being *counted as active*. The window is two statements wide, which
+  is why only a contended CI runner lands in it.
+- **Fix**: `UpdateQueueService.ExecuteUpdateAsync` now records the terminal *progress* in the try/catch
+  and applies it with `Advance` only **after** `TryScheduleRerun` declines. The coalesced path never
+  advances to a terminal status at all, so the key goes Queued → InProgress → Queued.
+- **Rule going forward**: when a status store distinguishes "present" from "active", a handover must
+  never pass through a terminal status — decide the follow-up first, and only mark terminal on the path
+  that really terminates. Asserting the key is still *in* the store is not the same invariant as
+  asserting it is still *counted*, and a test that polls the counted view will find the difference on a
+  loaded runner long before a reviewer does.
+
+### 2026-08-07 — suspected flake: `ATeamCoveringSeveralKindsOfWork_StillLearnsWhenItsWorkChangedState`
+- **Symptom**: failed once in a local full-suite run (22 s for a test that takes 4 s alone), immediately
+  after a Stryker run had saturated the machine. Passed alone, and passed on the next full run. Not seen
+  in CI.
+- **Root cause**: not established. Same family as the `*UpdaterTest` background-service timing races
+  already recorded — a slow assertion under CPU saturation, not shared state.
+- **Fix**: none. Recorded, not quarantined.
+- **Rule going forward**: a single backend test failing once with a duration several times its solo
+  runtime is contention until proven otherwise — re-run it alone and re-run the suite before treating it
+  as a regression, and never in parallel with a mutation run.

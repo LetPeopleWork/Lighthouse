@@ -173,23 +173,28 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
                 statusStore.Advance(updateKey, UpdateProgress.InProgress);
 
-                UpdateStatus terminalStatus;
+                UpdateProgress terminalProgress;
                 try
                 {
                     await ExecuteUpdateTask(updateTask);
-                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
+                    terminalProgress = UpdateProgress.Completed;
                 }
                 catch (Exception ex)
                 {
-                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Failed) ?? updateStatus;
+                    terminalProgress = UpdateProgress.Failed;
                     logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
                 }
 
+                // The follow-up is decided BEFORE the key is marked terminal. `HasActiveWork` counts only
+                // Queued and InProgress, so advancing to Completed first and requeueing after opens exactly
+                // the idle window the coalescing exists to close — two statements wide, and CI run
+                // 31203153029 landed in it.
                 if (TryScheduleRerun(updateType, id, updateKey, updateStatus))
                 {
                     return;
                 }
 
+                var terminalStatus = statusStore.Advance(updateKey, terminalProgress) ?? updateStatus;
                 statusStore.Remove(updateKey);
 
                 // A trigger can land in the window between the check above and this removal: it saw the key
