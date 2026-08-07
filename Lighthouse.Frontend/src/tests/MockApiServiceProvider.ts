@@ -117,6 +117,8 @@ export const createMockSettingsService = (): ISettingsService => {
 	return {
 		getRefreshSettings: vi.fn(),
 		updateRefreshSettings: vi.fn(),
+		getFeatureOrdering: vi.fn(),
+		updateFeatureOrdering: vi.fn(),
 	};
 };
 

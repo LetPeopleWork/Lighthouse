@@ -2,6 +2,7 @@ import {
 	type IRefreshSettings,
 	RefreshSettingsSchema,
 } from "../../models/AppSettings/RefreshSettings";
+import type { FeatureOrderingPolicy } from "../../models/FeatureOrdering";
 import { BaseApiService } from "./BaseApiService";
 
 export interface ISettingsService {
@@ -10,6 +11,8 @@ export interface ISettingsService {
 		settingName: string,
 		refreshSettings: IRefreshSettings,
 	): Promise<void>;
+	getFeatureOrdering(): Promise<FeatureOrderingPolicy>;
+	updateFeatureOrdering(policy: FeatureOrderingPolicy): Promise<void>;
 }
 
 export class SettingsService
@@ -36,5 +39,15 @@ export class SettingsService
 				refreshSettings,
 			);
 		});
+	}
+
+	// __SCAFFOLD__ — Epic 5375 slice 02
+	async getFeatureOrdering(): Promise<FeatureOrderingPolicy> {
+		throw new Error("Not yet implemented — RED scaffold");
+	}
+
+	// __SCAFFOLD__ — Epic 5375 slice 02
+	async updateFeatureOrdering(_policy: FeatureOrderingPolicy): Promise<void> {
+		throw new Error("Not yet implemented — RED scaffold");
 	}
 }

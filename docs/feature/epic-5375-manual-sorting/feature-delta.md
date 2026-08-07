@@ -1340,3 +1340,275 @@ No silent N/A.
 | **AC-1.1** | The *third* position ("beside Overview and System Settings") is asserted only as presence + href + label. Ordering within the nav bar is not pinned — a nav-order assertion would break on every future entry for no user-visible gain. |
 | **OQ-3** | Provider parity for the `string.Compare` fallback: not probed. SQLite only. |
 | **OQ-7** | No AT, as DESIGN instructed — a swallowed handler exception has no observable to assert against. |
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Premise Check Results (run 2026-08-07, before the migration)
+
+The slice brief asks for this before anything is written, and it was run first. Source: the same dev
+database the slice-01 check used (`Lighthouse.Backend/Lighthouse.Backend/LighthouseAppContext.db`, real
+recorded history, now **97** Features / 3 Portfolios / 4 orphans, 89 int-parseable + 4 doubles + 4
+LexoRanks). The four ordering call sites plus `FeaturePositionMap` were compiled against the **real**
+`FeatureComparer.cs` and run over that data — the source file itself, not a transcription.
+
+**The hypothesis as the brief states it — CONFIRMED.** `0235b0f3a` gave a decimal its own rung, and the
+comparison is now a total order: **0 antisymmetry violations and 0 transitivity violations** over both
+the 94 distinct `Order` values the dev instance actually carries and a synthetic set covering all five
+connector shapes at once (stack ranks, LexoRanks, inverted doubles, ServiceNow record numbers, empty).
+Every whole-table path agrees — `FeatureRepository.GetAll`, `GetAllByPredicate` and `FeaturePositionMap`
+produce byte-identical sequences — and **every real-data subset sort agreed with the whole-table sort
+restricted to it**, for all three Portfolios. D6 can seed from the current order; US-02's "nothing
+moves" promise stands; slice 03 may assume one unambiguous global sequence.
+
+**But it agrees by luck, not by construction — and that is the finding.** Two of the four call sites,
+`PortfolioDto.cs:15` and `WorkItemService.cs:535`, sort with the comparer **alone**; the two whole-table
+paths add `.ThenBy(f => f.Id)`. `OrderBy` is a stable sort, so where two Features carry the same `Order`
+those two sites resolve the tie by **whatever order EF happened to materialise the navigation
+collection in** — which no `ORDER BY` pins. Forcing that collection to come back Id-descending flips all
+three tied pairs on Portfolio 34, and a synthetic non-Done three-way tie flips too. On today's data the
+ties are the same three Done pairs slice 01 found, and EF hands the rows back Id-ascending, so nobody
+has ever seen it.
+
+Three consequences, all of which make slice 02 *easier* rather than harder:
+
+1. **SA-2 is load-bearing, not tidiness.** The single `IFeatureOrdering` seam must carry INV-O1's full
+   key (`ManualRank` ASC, nulls last, `Id` ASC) at **all four** call sites including the two subset ones.
+   The `FeatureOrderingSingleSourceArchUnitTest` and K4's AT are what convert "agrees today" into
+   "agrees". Scenario 4 below is this finding written as an assertion, with two Features deliberately
+   tied.
+2. **The seed must read a whole-table, Id-tie-broken sequence.** Seeding from a per-Portfolio query would
+   bake the ambiguity into stored ranks, where it stops being latent.
+3. **Nothing here re-scopes US-02.** The brief's failure branch — "D6 needs an explicit ordering snapshot
+   from the query path the user was looking at" — is **not** taken.
+
+**Culture, named because the ladder is culture-sensitive and nobody had said so.** `int.TryParse`,
+`double.TryParse` and `string.Compare(..., CurrentCulture)` all read the ambient culture, so the ladder
+is in principle server-locale-dependent. Re-running the whole check under `en_US`, `de_DE` and `tr_TR`
+produced identical output. That is *evidence, not proof* — the probe could not confirm the runtime
+culture actually switched, and the dev instance's four doubles all carry two decimals, which is the
+easy case. Recorded as a second half of **OQ-3** rather than closed.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Scenario list with tags
+
+US-02 (AC-2.1 … AC-2.7) and US-05 (AC-5.1 … AC-5.5). Density lean, Tier-1 only. **No Gherkin** — same
+house pattern as slice 01: the NUnit partial-class triple plus co-located Vitest.
+
+**Backend acceptance — `Slice02ManualRankScenarios.cs` (13 methods → 17 cases, fixture-level
+`[Ignore("RED — Epic 5375 slice 02 not implemented")]`)**
+
+| # | Scenario | Tags | AC |
+|---|---|---|---|
+| 1 | `Handing_the_order_over_moves_nobody_whatever_the_tracker_wrote` — **5 cases**, one per connector `Order` shape | `@walking_skeleton @driving_port @real-io` | AC-2.1 |
+| 2 | `Handing_the_order_over_moves_nobody_on_an_instance_wired_to_several_trackers` | `@driving_port @real-io` | AC-2.1 |
+| 3 | `The_tracker_may_re_rank_all_it_likes_and_the_order_this_instance_shows_never_moves` | `@driving_port @real-io` | AC-2.2 / K2 |
+| 4 | `Every_way_in_reports_the_same_order_even_where_the_tracker_ranked_two_features_alike` | `@driving_port @real-io` | AC-2.3 / K4 |
+| 5 | `Giving_the_order_back_restores_the_trackers_own_sequence_straight_away` | `@driving_port @real-io` | AC-2.4, AC-5.1 |
+| 6 | `The_places_this_instance_chose_survive_giving_the_order_back` | `@driven-port-probe` | AC-5.2 |
+| 7 | `Taking_the_order_over_again_restores_what_this_instance_chose_not_what_the_tracker_since_decided` | `@driving_port @real-io` | AC-5.3 |
+| 8 | `A_feature_arriving_while_this_instance_owns_the_order_lands_last` | `@error @driving_port @real-io` | AC-2.6 |
+| 9 | `An_instance_without_a_premium_licence_may_not_hand_the_order_over` | `@error @driving_port` | AC-2.5 |
+| 10 | `Someone_who_may_only_run_a_portfolio_may_not_hand_the_order_over` | `@error @driving_port` | AC-2.7 |
+| 11 | `Before_anyone_chooses_the_instance_follows_the_tracker` | `@error @driving_port` | AC-5.1, the absent-row probe |
+| 12 | `A_ragged_set_of_places_is_still_one_unambiguous_order` | `@error @driving_port @real-io` | INV-O2 / DDD-3 |
+| 13 | `Taking_the_order_over_disturbs_nothing_but_the_places` | `@driven-port-probe` | AC-2.1, D5's complement |
+
+Three carry the slice, and they are the three the brief named. **#3** drives five *real* refreshes
+through the production `WorkItemService` with the tracker rewriting its own order every time, then
+asserts the tracker's value really did change — a scenario where the sync silently stopped running would
+otherwise pass. **#7** is the only shape in which "restores rather than re-seeds" is observable at all:
+the tracker reshuffles *while the order is given back*, so a re-seed and a restore produce different
+lists. **#4** is the premise check, with two Features tied on `5`.
+
+**Frontend — `FeatureOrderingSettings.test.tsx` (6) + `useFeatureOrdering.test.tsx` (4), all
+`describe.skip`**
+
+| Scenario | AC |
+|---|---|
+| shows the tracker owning the order until somebody decides otherwise | AC-5.1 |
+| hands the order to this instance when the switch is turned on | AC-2.1 |
+| gives the order back to the tracker when the switch is turned off | AC-5.1 |
+| cannot be flipped on an instance without a premium licence | AC-2.5 |
+| says the places this instance chose are kept if the order is given back | AC-5.5 |
+| wears the word this instance uses for its features | AC-5.5, D16 |
+| reports the tracker owning the order before anybody has chosen | AC-5.1 |
+| reports this instance owning the order once it has been handed over | AC-2.1 |
+| names the position column after whoever owns the order | AC-2.x header |
+| gives the position column its plain heading back when the tracker owns the order | AC-5.4 |
+
+The terminology one renders under a `TerminologyProvider` returning `Deliverables` and asserts `Features`
+is **absent** — a hard-coded label passes the other five and fails this one, exactly as slice 01's nav
+test does.
+
+**E2E — `ManualSortingSwitch.spec.ts` (1, `.skip`, `@premium @walking_skeleton`)** — read the list, flip
+the switch on Settings → System, read the list again, assert it is identical and the heading changed.
+
+Error/edge share: 5 of 13 backend scenarios (38%), plus 1 of 6 switch tests. Below the skill's 40% bar,
+and left there deliberately: the sixth error path a reviewer would ask for is "the switch removes the
+move actions" (AC-5.4), and there are no move actions until slice 03. Padding the count with a permuted
+licence or role case would raise the ratio without covering a failure mode the five do not already.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Adapter coverage
+
+| Port | Treatment | Covered by |
+|---|---|---|
+| `IFeatureOrderingPolicyProvider` → `AppSetting` row | real adapter, real SQLite via `TestWebApplicationFactory` | 1-13; **#11 is the probe DESIGN asked for** — absent row must read `SourceOrder` and not throw |
+| `Feature.ManualRank` → `LighthouseAppContext` | real adapter, real SQLite | 6, 12, 13 (read back through the store) |
+| `IFeatureOrdering` / `IFeaturePositionMap` | exercised through the read ports, never directly (Mandate 1) | 1-5, 7, 8, 12 |
+| `IWorkTrackingConnector` | **faked** (external/non-deterministic) — everything downstream of it, including the real `WorkItemService`, stays production | 3, 5, 7, 8 |
+| `ILicenseService` | faked (external/non-deterministic) | 9 |
+| `IRbacAdministrationService` | shipped `ClaimsDrivenRbacAdministrationService`, grant-honouring since slice 01 | 10 |
+| EF migration | shipped `ExpandOnlyMigrationGuardTest`, unmodified | the migration below |
+
+**Not covered, deliberately** — the seed's transaction boundary. DDD-6/OQ-6 already dissolved it (a
+partially-seeded instance is still totally ordered, because unseeded Features sort at the tail), and EF
+InMemory has no transactions anyway. Scenario 12 asserts the property that makes the boundary a
+non-question; it does not assert the boundary.
+
+**Not covered, deliberately** — provider parity, both halves of OQ-3. SQLite only, as in slice 01.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Scaffolds
+
+Same constraint as slice 01: in C# a missing type is a compile error, which makes the project BROKEN
+rather than RED, so each scaffold exists only so `dotnet build` / `tsc -b` succeed at zero warnings and
+the tests fail on their assertions.
+
+| File | Scaffold | Marker |
+|---|---|---|
+| `Models/Feature.cs` | `+ public int? ManualRank { get; set; }`, **deliberately absent from `Update`** (SA-4) | — (additive property) |
+| `Lighthouse.Migrations.{Sqlite,Postgres}/Migrations/*_AddFeatureManualRank.cs` | the additive column, both providers | — (generated) |
+| `Lighthouse.Frontend/src/models/FeatureOrdering.ts` | policy type + `IFeatureOrdering`, **types only** | `// __SCAFFOLD__` |
+| `services/Api/SettingsService.ts` | `+ getFeatureOrdering`, `+ updateFeatureOrdering`, both throw | `// __SCAFFOLD__` |
+| `hooks/useFeatureOrdering.ts` | throws | `// __SCAFFOLD__` |
+| `pages/Settings/System/FeatureOrderingSettings.tsx` | throws on render | `// __SCAFFOLD__` |
+| `tests/MockApiServiceProvider.ts` | the two new `ISettingsService` members | — (test double) |
+
+**The migration is scaffolded, and that is a deliberate departure worth naming.** `DatabaseConfigurator`
+calls `Database.Migrate()` on startup, so a model property without a migration is not an inert stub — it
+breaks every real instance with `no such column: f.ManualRank` the moment anyone runs the app. The
+column is also a hard precondition: without it, scenarios 6, 12 and 13 cannot express what they are
+about. So the property and the migration ship together, generated by the project's own
+`Create-Migration.ps1` across both provider assemblies (nullable `int`, `AddColumn` only, `Down` drops
+it) — expand-only, per `feedback_expand_only_migrations`.
+
+**Not scaffolded, on purpose**:
+
+- The two ordering-policy routes. They are not a compile dependency; an unmapped route is a genuine RED.
+- `FeatureOrderingPolicy` as a C# enum, `AppSettingKeys.FeatureOrdering`, `IFeatureOrdering`,
+  `ManualRankComparer`, `FeatureRankingService`. None is needed to compile a test that talks HTTP. The
+  policy body is written as **raw JSON** in the harness precisely so no scenario can go green by
+  compiling against a type somebody added.
+- The zod schema and `SystemSettingsTab`'s hosting of the new panel. Wiring either would make part of
+  the slice green from DISTILL — Fixture Theater, same call slice 01 made about `position`.
+
+**Shared-contract change, blast radius measured**: `ISettingsService` gains two members. One
+implementation (`SettingsService`) and one factory (`createMockSettingsService`); both extended before
+the interface widened, per the project's shared-contract rule. `Feature` gains one nullable column, which
+is additive for every consumer.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Test placement
+
+| Layer | Path | Precedent |
+|---|---|---|
+| Backend acceptance | `Lighthouse.Backend.Tests/API/Integration/ManualSorting/Slice02ManualRank{Scenarios,Specifications}.cs` on the shared `ManualSortingAcceptanceTest` harness | slice 01's own triple, extended rather than copied |
+| Frontend unit | `src/pages/Settings/System/FeatureOrderingSettings.test.tsx`, `src/hooks/useFeatureOrdering.test.tsx` | co-located, as `BlackoutSettings.test.tsx` and `useHideCompletedFeatures.test.ts` already are |
+| E2E | `Lighthouse.EndToEndTests/tests/specs/features/ManualSortingSwitch.spec.ts` + POM additions | `specs/features/FeaturesView.spec.ts` |
+
+The harness gained four things and no scenario owns any of them: the faked connector factory (mirroring
+`PortfolioBlockedHistoryAcceptanceTest`, which is where the "fake only the connector, keep the real
+`WorkItemService`" pattern comes from), `DriveAPortfolioRefresh`, the two policy ports, and
+`ReadStoredOrderingColumns`. New POM surface: `SystemConfigurationPage.handOrderingOverToThisInstance()`
+— which waits on the `PUT` rather than on a rendered state, per
+`project_e2e_debounced_autosave_navigation_race` — plus `FeaturesPage.getListedFeatureNames()` and
+`getPositionColumnHeading()`.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Driving-adapter coverage
+
+| Driving port (DESIGN) | Slice-02 scenario | Protocol exercised |
+|---|---|---|
+| `PUT api/v1\|latest/appsettings/FeatureOrdering` | 1-10, 12, 13 | real HTTP through `WebApplicationFactory` |
+| `GET api/v1\|latest/appsettings/FeatureOrdering` | 10, 11 | real HTTP |
+| `GET api/v1\|latest/features` | 1-5, 7, 8, 9, 11, 12 | real HTTP |
+| `GET api/v1\|latest/portfolios/{id}` (the `PortfolioDto` call site) | 4 | real HTTP |
+| work-item refresh (`IWorkItemService.UpdateFeaturesForPortfolio`) | 3, 5, 7, 8 | real service port, faked connector behind it |
+| UI Settings → System switch | `FeatureOrderingSettings.test.tsx` + the E2E skeleton | rendered switch + real click |
+| `PATCH .../rank` | — | **out of slice 02** (slice 03) |
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Pre-requisites
+
+- **Review gate**: `@nw-acceptance-designer-reviewer` (Sentinel) — **APPROVED, 0 blockers, 0 high**, one
+  informational note on the error-share ratio, answered above. Eclipse / Architect / Forge were **not**
+  re-dispatched, and that is stated rather than skipped: slice 01 already ran the full four-wave gate
+  over the identical DISCUSS/DESIGN text, and slice 02 changes none of it. Sentinel is the reviewer that
+  never skips, and it ran.
+- **Wave-decision reconciliation**: passed, 0 contradictions. Re-read for this slice; DESIGN's two
+  "Refinements to … (no silent changes)" sections still cover every change to DISCUSS, and nothing in
+  slice 02's surface touches a decision the later sections revise. `deliverable_type` resolves to
+  `application` — no plugin or skill reviewer.
+- **DEVOPS**: deliberately skipped, as for slice 01 — no new infrastructure, no new dependency, no new
+  external integration. K2 and K4 are the instrumentable KPIs and both are ACs here.
+- **The migration is already generated** (both providers). DELIVER inherits it rather than creating it.
+- **`FeatureOrderingPolicy`, the policy provider, `IFeatureOrdering`, `ManualRankComparer`, the two
+  routes, `AppSettingKeys.FeatureOrdering`, the seed, `FeatureOrderingPolicyChanged`** — DELIVER.
+- **The E2E needs a premium licence on the instance under test** (`reference_premium_license_dev_seed`),
+  which is why it carries `@premium`. It was **not run** — see below.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Red classification (fail-for-the-right-reason gate)
+
+Suite run twice, before the `[Ignore]` marker went on. 17 of 17 backend cases and 10 of 10 frontend
+tests classify as `MISSING_FUNCTIONALITY`.
+
+| Cases | Failure | Class |
+|---|---|---|
+| 1-10, 12, 13 | `The ordering switch must accept 'ManualOrder' … Body: <no route mapped for the ordering policy port>` | `MISSING_FUNCTIONALITY` |
+| 9 | `Handing the order over is premium (S11), and a refusal is not a silent no-op. Expected: Forbidden` | `MISSING_FUNCTIONALITY` |
+| 10 | `Who owns the order is an instance-wide decision, so it takes an instance administrator. Expected: Forbidden` | `MISSING_FUNCTIONALITY` |
+| 11 | `The read port must answer, not fall through to the single-page app — the port appears unimplemented. Body starts: <!doctype html>` | `MISSING_FUNCTIONALITY` |
+| frontend (10) | `Error: Not yet implemented — RED scaffold` | `MISSING_FUNCTIONALITY` |
+
+**The same wrong-RED slice 01 found, found again — and it did not announce itself.** On the first run
+**all 17** backend cases died on `InvalidOperationException : The SPA default page middleware could not
+return the default page '/index.html'`. The assertion never ran: `SETUP_FAILURE`, not RED. An unmapped
+route falls through to the SPA fallback, and what that does depends on the verb — a `GET` is served
+`index.html` from a populated `wwwroot`, a `PUT` throws. Both worlds were checked and both are now
+reported as what they are: the harness's `Send` helper translates that one exception into the 404, and
+scenario 11 additionally refuses a body that begins with `<`. A second run confirmed every case fails on
+its own `Then`.
+
+**Owed at GREEN — delete `ManualSortingAcceptanceTest.Send`'s catch** in the same commit that maps the
+ordering-policy routes, for the reason slice 01 recorded: once the routes exist the catch is unreachable,
+and leaving it means a future accidental un-mapping is reported as "unimplemented" rather than surfacing
+as the routing regression it would be.
+
+Gates after the marker went on: `dotnet build` 0 warnings / 0 errors · `pnpm build` clean · Biome clean
+on 681 files · E2E `tsc --noEmit` clean · E2E Biome clean.
+
+---
+
+## Wave: DISTILL / [REF] Slice-02 Not made testable as written
+
+No silent N/A.
+
+| AC | Gap |
+|---|---|
+| **AC-2.6** | Split. "Lands at the end of the list" is scenario 8. "**Produces no notification, badge or log entry**" is not asserted, because there is no notification or badge surface in this product to assert the absence against, and a log assertion would pin an implementation rather than a behaviour. Stated, not faked — and D7's revisit trigger is already being watched from slice 01's dogfood. |
+| **AC-2.3** | Partly. Scenario 4 compares **two** of the four call sites (`GET /features` and the Portfolio DTO). `FeatureRepository.GetAll`/`GetAllByPredicate` are the ones both of those already route through, and `WorkItemService.cs:535` sorts a list on its way *into* `UpdateFeatures` with no read port downstream of it, so it has no observable of its own. The fourth is DELIVER's `FeatureOrderingSingleSourceArchUnitTest` — a structural assertion, not a behavioural one. Named because "all five call sites agree" reads as one test and is really two mechanisms. |
+| **AC-5.2** | Judged against the **store**, not a port. While the order is given back there is by construction no read port that would show a retained place; scenario 7 covers the same fact behaviourally, and 6 pins the column itself. Tagged `@driven-port-probe` rather than passed off as an acceptance test. |
+| **AC-5.4** | Split. The heading reverting is `useFeatureOrdering.test.tsx`. "**Removes every move action**" cannot be tested here — there are no move actions until slice 03; it belongs to that slice's `FeatureMoveMenu` tests and is recorded there rather than stubbed here. |
+| **AC-2.2** | The refresh is driven through the real `IWorkItemService` with a **faked connector**. The one thing this cannot prove is that a real connector's response shape does not carry something that writes a rank; SA-4 makes that structural (`Feature.Update` copies by explicit enumeration) and the unit test DESIGN asked for on `Feature.Update` is DELIVER's. |
+| **OQ-3** | Now **two** questions, not one: provider parity for `string.Compare` (unchanged, unprobed, SQLite only) and the culture-sensitivity of the whole parse ladder, newly named by this slice's premise check and probed only weakly. |
+| **OQ-4** | Untouched — it is about `Move to Bottom`, which is slice 03. |
+| **E2E** | The walking skeleton is written and `.skip`ped but was **not executed**: it needs a premium licence on a live instance, and slice 01's screenshots are already stale from the nav reorder, so a run here would have mixed two unrelated diffs. It must be un-skipped and green before slice 02's code review. |

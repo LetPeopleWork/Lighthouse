@@ -48,6 +48,30 @@ export class SystemConfigurationPage {
 		await featureToggleRequest;
 	}
 
+	/**
+	 * Epic 5375 slice 02 — hands ordering ownership to this instance and waits for the switch to be
+	 * taken, so a caller never navigates away on a stale "saved".
+	 */
+	async handOrderingOverToThisInstance(): Promise<void> {
+		const toggle = this.page
+			.getByTestId("feature-ordering-toggle")
+			.getByRole("switch");
+
+		if (await toggle.isChecked()) {
+			return;
+		}
+
+		const switchTaken = this.page.waitForResponse(
+			(response) =>
+				response.url().includes("/api/latest/appsettings/FeatureOrdering") &&
+				response.request().method() === "PUT" &&
+				response.status() === 200,
+		);
+
+		await toggle.click();
+		await switchTaken;
+	}
+
 	async setInterval(
 		interval: number,
 		settings: PeriodicRefreshSettingType,

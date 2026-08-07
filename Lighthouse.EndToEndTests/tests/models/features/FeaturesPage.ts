@@ -32,6 +32,22 @@ export class FeaturesPage {
 		return Number.parseInt(text, 10);
 	}
 
+	/** Epic 5375 slice 02 — the sequence itself, which is what "nothing moved" is judged against. */
+	async getListedFeatureNames(): Promise<string[]> {
+		const cells = await this.featureRows
+			.locator('[data-field="name"]')
+			.allInnerTexts();
+		return cells.map((text) => text.trim());
+	}
+
+	/** "#" while the tracker owns the order, the manual heading once this instance does (AC-5.4). */
+	async getPositionColumnHeading(): Promise<string> {
+		const header = this.page.locator(
+			'.MuiDataGrid-columnHeader[data-field="position"] .MuiDataGrid-columnHeaderTitle',
+		);
+		return (await header.innerText()).trim();
+	}
+
 	async getListedPositions(): Promise<number[]> {
 		const cells = await this.featureRows
 			.locator('[data-field="position"]')
