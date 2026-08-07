@@ -59,6 +59,10 @@ namespace Lighthouse.Backend.Models
 
         public int EstimatedSize { get; set; } = 0;
 
+        // This instance's own place for the Feature, never the tracker's (ADR-132). Deliberately absent
+        // from Update - the sync writes Order and nothing else (ADR-134 SA-4).
+        public int? ManualRank { get; set; }
+
         public string OwningTeam { get; set; } = string.Empty;
 
         [NotMapped]

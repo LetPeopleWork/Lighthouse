@@ -526,6 +526,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<bool>("IsUsingDefaultFeatureSize")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("ManualRank")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
