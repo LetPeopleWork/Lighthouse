@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
@@ -366,6 +367,7 @@ namespace Lighthouse.Backend.Tests.API
                 workTrackingConnectorFactoryMock.Object,
                 workTrackingSystemConnectionRepoMock.Object,
                 rbacAdministrationServiceMock.Object,
+                FeatureOrderingTestHelper.FollowingTheTracker(),
                 TestToday.Clock
             );
         }

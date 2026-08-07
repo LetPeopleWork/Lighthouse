@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         private FeatureRepository CreateSubject()
         {
-            return new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            return new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
         }
     }
 }

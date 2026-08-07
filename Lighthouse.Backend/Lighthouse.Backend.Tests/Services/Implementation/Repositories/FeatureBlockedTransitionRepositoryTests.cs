@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Url = "https://letpeople.work/feature",
             });
 
-            var featureRepository = new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
             featureRepository.Add(feature);
             await featureRepository.Save();
 

@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -220,7 +221,12 @@ namespace Lighthouse.Backend.Tests.Services
 
         private AppSettingService CreateService(TimeProvider timeProvider)
         {
-            return new AppSettingService(repositoryMock.Object, timeProvider);
+            return new AppSettingService(
+                repositoryMock.Object,
+                Mock.Of<IFeatureOrderingPolicyProvider>(),
+                Mock.Of<IFeatureRankSeeder>(),
+                Mock.Of<IDomainEventDispatcher>(),
+                timeProvider);
         }
 
         private SystemInfoService CreateSystemInfoService(IAppSettingService appSettingService)

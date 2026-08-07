@@ -34,7 +34,7 @@ const renderTheHookOnAnInstanceWhere = (policy: FeatureOrderingPolicy) => {
 	return renderHook(() => useFeatureOrdering(), { wrapper });
 };
 
-describe.skip("useFeatureOrdering", () => {
+describe("useFeatureOrdering", () => {
 	it("reports the tracker owning the order before anybody has chosen", async () => {
 		const { result } = renderTheHookOnAnInstanceWhere("SourceOrder");
 

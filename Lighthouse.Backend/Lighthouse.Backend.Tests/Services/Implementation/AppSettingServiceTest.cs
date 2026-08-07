@@ -2,6 +2,8 @@
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation;
 using Moq;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
@@ -140,7 +142,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private AppSettingService CreateService()
         {
-            return new AppSettingService(repositoryMock.Object, TimeProvider.System);
+            return new AppSettingService(
+                repositoryMock.Object,
+                Mock.Of<IFeatureOrderingPolicyProvider>(),
+                Mock.Of<IFeatureRankSeeder>(),
+                Mock.Of<IDomainEventDispatcher>(),
+                TimeProvider.System);
         }
 
         private void SetupRepositoryForKeys(params string[] keyValuePairs)

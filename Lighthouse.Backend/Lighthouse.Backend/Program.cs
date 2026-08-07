@@ -1019,6 +1019,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IProcessBehaviorSeriesQuery, ProcessBehaviorSeriesQuery>();
             builder.Services.AddScoped<IForecastService, ForecastService>();
             builder.Services.AddScoped<IFeaturePositionMap, FeaturePositionMap>();
+            builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();
+            builder.Services.AddScoped<IFeatureOrdering, FeatureOrdering>();
+            builder.Services.AddScoped<IFeatureRankSeeder, FeatureRankSeeder>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();
@@ -1145,6 +1148,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
             builder.Services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
+            builder.Services.AddScoped<IDomainEventHandler<FeatureOrderingPolicyChanged>, FeatureOrderingPolicyChangedForecastTriggerHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, BlockedCountSnapshotRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, BlockedCountSnapshotRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, PercentilesOverTimeRecordingHandler>();

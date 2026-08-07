@@ -150,7 +150,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Mock.Of<IFeatureStateTransitionRepository>(),
                 ServiceProvider.GetRequiredService<IDomainEventDispatcher>(),
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
-                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()));
+                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()),
+                FeatureOrderingTestHelper.FollowingTheTracker());
         }
 
         private sealed class TransitionProbeState

@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             await subject.UpdateFeaturesForPortfolio(portfolio);
 
-            var featureRepository = new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
             var transitionRepository = new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>());
 
             var persistedFeature = featureRepository.GetByPredicate(f => f.ReferenceId == "F-100");
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var secondSubject = CreateSubject(portfolio, secondIncoming);
             await secondSubject.UpdateFeaturesForPortfolio(portfolio);
 
-            var featureRepository = new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
             var transitionRepository = new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>());
 
             var persistedFeature = featureRepository.GetByPredicate(f => f.ReferenceId == "F-200");
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             await subject.UpdateFeaturesForPortfolio(portfolio);
 
-            var featureRepository = new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
             var transitionRepository = new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>());
 
             var persistedFeature = featureRepository.GetByPredicate(f => f.ReferenceId == "F-300");
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(connectorMock.Object);
 
-            var featureRepository = new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
             var workItemRepository = new WorkItemRepository(DatabaseContext, Mock.Of<ILogger<WorkItemRepository>>());
             var transitionRepository = new WorkItemStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<WorkItemStateTransitionRepository>>());
             var featureTransitionRepository = new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>());
@@ -169,7 +169,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 featureTransitionRepository,
                 Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>(),
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
-                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()));
+                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()),
+                FeatureOrderingTestHelper.FollowingTheTracker());
         }
     }
 }

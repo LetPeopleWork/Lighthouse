@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models.AppSettings;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
@@ -17,6 +18,10 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task EnsureInstallTimestamp();
 
         DateTimeOffset? GetInstallTimestamp();
+
+        FeatureOrderingPolicy GetFeatureOrderingPolicy();
+
+        Task SetFeatureOrderingPolicy(FeatureOrderingPolicy policy);
 
         DateTimeOffset? GetSurveyNudgeNextEligibleAt();
 

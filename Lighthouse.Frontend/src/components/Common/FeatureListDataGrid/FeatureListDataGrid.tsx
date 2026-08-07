@@ -8,6 +8,7 @@ import {
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useMemo } from "react";
+import { useFeatureOrdering } from "../../../hooks/useFeatureOrdering";
 import { useHideCompletedFeatures } from "../../../hooks/useHideCompletedFeatures";
 import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -33,6 +34,10 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
+	// The column names whoever owns the order. The factory stays policy-ignorant - it takes the label it
+	// is given - so this is the one place the two headings are chosen (ADR-134 SA-12).
+	const { positionColumnLabel } = useFeatureOrdering();
+
 	const { hideCompleted, handleToggleChange } = useHideCompletedFeatures(
 		hideCompletedStorageKey,
 	);
@@ -54,7 +59,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		? createActiveWorkColumn(getActiveWorkTeams)
 		: null;
 	const gridColumns = [
-		...(showPosition ? [createPositionColumn("#")] : []),
+		...(showPosition ? [createPositionColumn(positionColumnLabel)] : []),
 		nameColumn,
 		createWarningsColumn(),
 		...(activeWorkColumn ? [activeWorkColumn] : []),

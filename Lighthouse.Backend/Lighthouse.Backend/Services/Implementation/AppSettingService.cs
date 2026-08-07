@@ -1,12 +1,19 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class AppSettingService(IRepository<AppSetting> repository, TimeProvider timeProvider) : IAppSettingService
+    public class AppSettingService(
+        IRepository<AppSetting> repository,
+        IFeatureOrderingPolicyProvider featureOrderingPolicyProvider,
+        IFeatureRankSeeder featureRankSeeder,
+        IDomainEventDispatcher domainEventDispatcher,
+        TimeProvider timeProvider) : IAppSettingService
     {
         private const string RoundtripFormat = "O";
 
@@ -85,6 +92,22 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return parsed;
+        }
+
+        public FeatureOrderingPolicy GetFeatureOrderingPolicy() => featureOrderingPolicyProvider.GetPolicy();
+
+        public async Task SetFeatureOrderingPolicy(FeatureOrderingPolicy policy)
+        {
+            // D6 - seeding runs first on purpose, because the stored policy has not changed yet and so
+            // the sequence the seed reads is still the one the user was looking at when they flipped it.
+            if (policy == FeatureOrderingPolicy.ManualOrder)
+            {
+                await featureRankSeeder.SeedMissingRanks();
+            }
+
+            await featureOrderingPolicyProvider.SetPolicy(policy);
+
+            await domainEventDispatcher.PublishAsync(new FeatureOrderingPolicyChanged(policy));
         }
 
         public DateTimeOffset? GetSurveyNudgeNextEligibleAt()

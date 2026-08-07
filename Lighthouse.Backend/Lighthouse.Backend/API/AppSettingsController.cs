@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,6 +31,20 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult> UpdateFeatureRefreshSettings(RefreshSettings refreshSettings, CancellationToken cancellationToken)
         {
             await appSettingService.UpdateFeatureRefreshSettings(refreshSettings);
+            return Ok();
+        }
+
+        [HttpGet("FeatureOrdering")]
+        public ActionResult<FeatureOrderingDto> GetFeatureOrdering()
+        {
+            return Ok(new FeatureOrderingDto { Policy = appSettingService.GetFeatureOrderingPolicy() });
+        }
+
+        [HttpPut("FeatureOrdering")]
+        [LicenseGuard(RequirePremium = true)]
+        public async Task<ActionResult> UpdateFeatureOrdering(FeatureOrderingDto featureOrdering)
+        {
+            await appSettingService.SetFeatureOrderingPolicy(featureOrdering.Policy);
             return Ok();
         }
 

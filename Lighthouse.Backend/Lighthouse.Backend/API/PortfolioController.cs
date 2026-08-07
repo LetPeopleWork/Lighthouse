@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.API
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
         IRbacAdministrationService rbacAdministrationService,
+        IFeatureOrdering featureOrdering,
         IBlockedItemService blockedItemService,
         IUpdateQueueService updateQueueService,
         ILighthouseClock clock)
@@ -44,7 +45,7 @@ namespace Lighthouse.Backend.API
                 var readableTeamIdSet = (readableTeamIds ?? teamIds)
                     .ToHashSet();
 
-                return new PortfolioDto(portfolio, readableTeamIdSet);
+                return new PortfolioDto(portfolio, featureOrdering, readableTeamIdSet);
             });
         }
 

@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     [Category("acceptance")]
     [Category("epic-5375-manual-sorting")]
     [Category("slice-02")]
-    [Ignore("RED — Epic 5375 slice 02 not implemented. Un-skip in DELIVER, one scenario at a time.")]
     public partial class Slice02ManualRankTest
     {
         /// <summary>

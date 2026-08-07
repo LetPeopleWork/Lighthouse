@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -8,11 +9,11 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public PortfolioDto(Portfolio portfolio, ISet<int>? readableTeamIds = null) : base(portfolio)
+        public PortfolioDto(Portfolio portfolio, IFeatureOrdering featureOrdering, ISet<int>? readableTeamIds = null) : base(portfolio)
         {
             InvolvedTeams.AddRange(portfolio.CreateInvolvedTeamDtos(readableTeamIds));
 
-            foreach (var feature in portfolio.Features.OrderBy(f => f, new FeatureComparer()))
+            foreach (var feature in featureOrdering.Order(portfolio.Features))
             {
                 Features.Add(new EntityReferenceDto(feature.Id, feature.Name));
             }

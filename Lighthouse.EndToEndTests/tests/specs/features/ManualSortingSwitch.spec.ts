@@ -12,7 +12,7 @@ const testWithFeatures = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 //     back and taking it over again, the licence and the role -> Slice02ManualRankScenarios.cs
 //   - the switch, its premium affordance, its help text and the column's heading ->
 //     FeatureOrderingSettings.test.tsx and useFeatureOrdering.test.tsx
-testWithFeatures.skip(
+testWithFeatures(
 	"@premium @walking_skeleton a config admin hands the order to this instance and nothing moves",
 	async ({ testData, overviewPage }) => {
 		expect(testData.portfolios.length).toBeGreaterThan(0);

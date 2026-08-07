@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         private static PortfolioDto CreateSubject(Portfolio project)
         {
-            return new PortfolioDto(project);
+            return new PortfolioDto(project, FeatureOrderingTestHelper.FollowingTheTracker());
         }
     }
 }

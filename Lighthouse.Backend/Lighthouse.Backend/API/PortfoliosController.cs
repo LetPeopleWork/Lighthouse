@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.API
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
         IRbacAdministrationService rbacAdministrationService,
+        IFeatureOrdering featureOrdering,
         ILighthouseClock clock)
         : ControllerBase
     {
@@ -47,7 +48,7 @@ namespace Lighthouse.Backend.API
 
             foreach (var portfolio in allPortfolios.Where(portfolio => readablePortfolioIdSet.Contains(portfolio.Id)))
             {
-                var portfolioDto = new PortfolioDto(portfolio, effectiveReadableTeamIds);
+                var portfolioDto = new PortfolioDto(portfolio, featureOrdering, effectiveReadableTeamIds);
                 portfolioDtos.Add(portfolioDto);
             }
 

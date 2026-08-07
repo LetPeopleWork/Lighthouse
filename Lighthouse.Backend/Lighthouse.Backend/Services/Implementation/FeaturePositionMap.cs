@@ -11,29 +11,26 @@ namespace Lighthouse.Backend.Services.Implementation
     /// </summary>
     public class FeaturePositionMap : IFeaturePositionMap
     {
-        private static readonly Comparer<FeatureOrderKey> OrderKeyComparer =
-            Comparer<FeatureOrderKey>.Create((left, right) => FeatureComparer.CompareOrderValues(left.Order, right.Order));
-
         private readonly LighthouseAppContext context;
+        private readonly IFeatureOrdering featureOrdering;
 
-        public FeaturePositionMap(LighthouseAppContext context)
+        public FeaturePositionMap(LighthouseAppContext context, IFeatureOrdering featureOrdering)
         {
             this.context = context;
+            this.featureOrdering = featureOrdering;
         }
 
         public async Task<IReadOnlyDictionary<int, int>> GetAsync(CancellationToken cancellationToken = default)
         {
-            // The SQL OrderBy feeds a stable in-memory sort, so equal order values tie-break by Id rather than by provider.
             var orderKeys = await context.Features
                 .AsNoTracking()
-                .OrderBy(feature => feature.Id)
-                .Select(feature => new FeatureOrderKey(feature.Id, feature.Order))
+                .Select(feature => new FeatureOrderKey(feature.Id, feature.Order, feature.ManualRank))
                 .ToListAsync(cancellationToken);
 
             var positions = new Dictionary<int, int>(orderKeys.Count);
             var position = 0;
 
-            foreach (var orderKey in orderKeys.OrderBy(key => key, OrderKeyComparer))
+            foreach (var orderKey in featureOrdering.Order(orderKeys))
             {
                 positions[orderKey.Id] = ++position;
             }

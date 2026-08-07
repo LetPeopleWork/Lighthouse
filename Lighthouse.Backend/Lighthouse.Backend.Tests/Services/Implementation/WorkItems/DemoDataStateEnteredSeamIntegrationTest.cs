@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             connectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(realConnector);
 
             var workItemRepository = new WorkItemRepository(DatabaseContext, Mock.Of<ILogger<WorkItemRepository>>());
-            var featureRepository = new FeatureRepository(DatabaseContext, Mock.Of<ILogger<FeatureRepository>>());
+            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
             var transitionRepository = new WorkItemStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<WorkItemStateTransitionRepository>>());
             var featureTransitionRepository = new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>());
 
@@ -214,7 +214,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 featureTransitionRepository,
                 Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>(),
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
-                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()));
+                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()),
+                FeatureOrderingTestHelper.FollowingTheTracker());
         }
     }
 }

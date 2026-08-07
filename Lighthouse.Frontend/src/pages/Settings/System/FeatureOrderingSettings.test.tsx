@@ -62,7 +62,7 @@ const aLicensedInstanceFollowingTheTracker = () => {
 	return settingsService;
 };
 
-describe.skip("FeatureOrderingSettings — who owns the order", () => {
+describe("FeatureOrderingSettings — who owns the order", () => {
 	it("shows the tracker owning the order until somebody decides otherwise", async () => {
 		const settingsService = aLicensedInstanceFollowingTheTracker();
 
@@ -142,7 +142,12 @@ describe.skip("FeatureOrderingSettings — who owns the order", () => {
 		});
 
 		const helpText = await screen.findByTestId("feature-ordering-help-text");
-		expect(helpText.textContent).toContain("Deliverables");
+
+		// The terminology arrives on its own request, so the panel renders once with the seeded default
+		// before it lands. What matters is what it settles on.
+		await waitFor(() => {
+			expect(helpText.textContent).toContain("Deliverables");
+		});
 		expect(helpText.textContent).not.toContain("Features");
 	});
 });

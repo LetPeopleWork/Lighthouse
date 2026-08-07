@@ -23,7 +23,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IFeatureStateTransitionRepository featureStateTransitionRepository,
         IDomainEventDispatcher domainEventDispatcher,
         IBlockedItemService blockedItemService,
-        IFeatureBlockedTransitionRepository featureBlockedTransitionRepository)
+        IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
+        IFeatureOrdering featureOrdering)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -532,7 +533,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 }
             }
 
-            portfolio.UpdateFeatures(features.OrderBy(f => f, new FeatureComparer()));
+            portfolio.UpdateFeatures(featureOrdering.Order(features));
 
             await featureRepository.Save();
 

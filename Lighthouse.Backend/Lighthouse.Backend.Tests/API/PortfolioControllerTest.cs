@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
@@ -412,6 +413,7 @@ namespace Lighthouse.Backend.Tests.API
                 teamRepoMock.Object,
                 portfolioUpdaterMock.Object,
                 rbacAdministrationServiceMock.Object,
+                FeatureOrderingTestHelper.FollowingTheTracker(),
                 blockedItemServiceMock.Object,
                 updateQueueServiceMock.Object,
                 TestToday.Clock

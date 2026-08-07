@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -7,23 +8,21 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
     public class FeatureRepository : RepositoryBase<Feature>
     {
-        public FeatureRepository(LighthouseAppContext context, ILogger<FeatureRepository> logger) : base(context, (context) => context.Features, logger)
+        private readonly IFeatureOrdering featureOrdering;
+
+        public FeatureRepository(LighthouseAppContext context, IFeatureOrdering featureOrdering, ILogger<FeatureRepository> logger) : base(context, (context) => context.Features, logger)
         {
+            this.featureOrdering = featureOrdering;
         }
 
         public override IEnumerable<Feature> GetAll()
         {
-            var features = GetFeatures().ToList();
-
-            // Id is the second half of the ordering key ADR-135's position map numbers by; without it, rows tied on Order come back in a different sequence than their positions claim.
-            return features.OrderBy(f => f, new FeatureComparer()).ThenBy(f => f.Id);
+            return featureOrdering.Order(GetFeatures().ToList());
         }
 
         public override IQueryable<Feature> GetAllByPredicate(Expression<Func<Feature, bool>> predicate)
         {
-            var features = GetFeatures().Where(predicate).AsEnumerable().OrderBy(f => f, new FeatureComparer()).ThenBy(f => f.Id);
-
-            return features.AsQueryable();
+            return featureOrdering.Order(GetFeatures().Where(predicate).AsEnumerable()).AsQueryable();
         }
 
         public override Feature? GetById(int id)

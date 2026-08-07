@@ -21,5 +21,7 @@
         public const string SurveyNudgeNextEligibleAt = "SurveyNudge:NextEligibleAt";
 
         public const string SurveyNudgeRemindLaterCount = "SurveyNudge:RemindLaterCount";
+
+        public const string FeatureOrderingPolicy = "FeatureOrdering:Policy";
     }
 }
