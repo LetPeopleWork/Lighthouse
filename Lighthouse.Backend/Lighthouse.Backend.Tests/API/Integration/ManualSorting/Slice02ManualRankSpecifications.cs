@@ -64,6 +64,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             return SeedFeature(name, referenceId, sourceOrder, place, StateCategories.ToDo, portfolioIds);
         }
 
+        private int GivenTheresATeamWorkingOn(int portfolioId) => SeedTeamOn(portfolioId);
+
+        private void GivenTheTeamHasWorkLeftOn(int featureId, int teamId) => SeedWorkOn(featureId, teamId);
+
         private void GivenTheCallerAdministersTheInstance() => TheCallerAdministersTheWholeInstance();
 
         private void GivenTheCallerMayWriteOnly(params int[] portfolioIds) => TheCallerCanWritePortfolios(portfolioIds);

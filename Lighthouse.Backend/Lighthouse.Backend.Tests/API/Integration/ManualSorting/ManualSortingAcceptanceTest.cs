@@ -135,6 +135,65 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         }
 
         /// <summary>
+        /// Attaches a Team to a Portfolio, which is what puts a row in the <c>PortfolioTeam</c> join
+        /// table. Every fixture in this suite ran without one until an ordering write over a real
+        /// instance re-inserted those rows and failed on their unique key — a whole class of graph-write
+        /// bug that a Portfolio with no Teams cannot express.
+        /// </summary>
+        protected int SeedTeamOn(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var team = new Team
+            {
+                Name = $"Team {Guid.NewGuid():N}",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = $"Connection {Guid.NewGuid():N}",
+                    WorkTrackingSystem = WorkTrackingSystems.Jira,
+                },
+                DoneItemsCutoffDays = 365,
+                DataRetrievalValue = "project = TEST",
+                WorkItemTypes = ["Story"],
+                ToDoStates = ["New"],
+                DoingStates = ["In Progress"],
+                DoneStates = ["Done"],
+            };
+
+            var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
+            team.Portfolios.Add(portfolioRepository.GetById(portfolioId)!);
+
+            var teamRepository = sp.GetRequiredService<IRepository<Team>>();
+            teamRepository.Add(team);
+            teamRepository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        /// <summary>
+        /// Puts a Team on a Feature's work. This is the edge that drags the Team into the Feature read
+        /// graph, so the Portfolio the Team belongs to and the Team itself end up tracked together and
+        /// the join row between them becomes part of any write over that graph.
+        /// </summary>
+        protected void SeedWorkOn(int featureId, int teamId, int remainingWorkItems = 3)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var featureRepository = sp.GetRequiredService<IRepository<Feature>>();
+            var teamRepository = sp.GetRequiredService<IRepository<Team>>();
+
+            var feature = featureRepository.GetById(featureId)!;
+            var team = teamRepository.GetById(teamId)!;
+
+            feature.FeatureWork.Add(new FeatureWork(team, remainingWorkItems, remainingWorkItems, feature));
+
+            featureRepository.Update(feature);
+            featureRepository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// Seeds one Feature carrying the source-system order value verbatim (S1/S2 — the string the
         /// connector wrote), optionally linked to any number of Portfolios. An empty
         /// <paramref name="sourceOrder"/> is the AC-1.8 case; an empty <paramref name="portfolioIds"/>

@@ -260,6 +260,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(theList, theSameListAgain);
         }
 
+        // @error @driving_port @real-io @AC-2.1 — regression, found by hand on a restored database and by
+        // nothing in this suite. A Portfolio that has Teams has rows in the join table between them, and
+        // writing places over the loaded Feature graph re-inserted those rows. Every fixture here used a
+        // Portfolio with no Teams, which cannot express the failure at all.
+        [Test]
+        public async Task Handing_the_order_over_works_on_a_portfolio_that_has_teams()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var team = GivenTheresATeamWorkingOn(platform);
+            var searchIndex = GivenAFeatureTheTrackerRanked("Rebuild the search index", "FTR-1", "10", platform);
+            var legacyImporter = GivenAFeatureTheTrackerRanked("Retire the legacy importer", "FTR-2", "20", platform);
+            GivenTheTeamHasWorkLeftOn(searchIndex, team);
+            GivenTheTeamHasWorkLeftOn(legacyImporter, team);
+            GivenTheCallerAdministersTheInstance();
+
+            var before = await WhenTheProductOwnerOpensTheFeaturesView();
+            await WhenTheConfigAdminHandsTheOrderOver();
+            var after = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            ThenTheListIsUnchanged(before, after);
+        }
+
         // @AC-2.1 — the bounded-change complement. Taking the order over writes places and nothing else:
         // the tracker's own value, the state and the Portfolio membership all come through untouched (D5).
         [Test]

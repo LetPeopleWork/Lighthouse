@@ -1,27 +1,44 @@
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
-    public class FeatureRankSeeder(IRepository<Feature> featureRepository) : IFeatureRankSeeder
+    public class FeatureRankSeeder(LighthouseAppContext context, IFeatureOrdering featureOrdering) : IFeatureRankSeeder
     {
         public async Task SeedMissingRanks()
         {
-            // Read while the tracker still owns the order, so the sequence this reads is the one the user
-            // is looking at - which is the whole of D6's "nothing moves". The caller writes the policy
-            // afterwards, never before.
-            var features = featureRepository.GetAll().ToList();
+            // The same narrow projection the position map reads (ADR-135). Going through the Feature
+            // repository instead would load the whole Include graph - Portfolios, work, Teams, forecasts -
+            // and writing a place back over it re-inserts the join rows between a Portfolio and its Teams.
+            var orderKeys = await context.Features
+                .AsNoTracking()
+                .Select(feature => new FeatureOrderKey(feature.Id, feature.Order, feature.ManualRank))
+                .ToListAsync();
 
-            var lastPlace = features.Max(feature => feature.ManualRank) ?? 0;
+            var unplaced = featureOrdering.Order(orderKeys)
+                .Where(orderKey => orderKey.ManualRank is null)
+                .Select(orderKey => orderKey.Id)
+                .ToList();
 
-            foreach (var feature in features.Where(feature => feature.ManualRank is null))
+            if (unplaced.Count == 0)
             {
-                feature.ManualRank = ++lastPlace;
-                featureRepository.Update(feature);
+                return;
             }
 
-            await featureRepository.Save();
+            var lastPlace = orderKeys.Max(orderKey => orderKey.ManualRank) ?? 0;
+
+            var features = await context.Features
+                .Where(feature => unplaced.Contains(feature.Id))
+                .ToDictionaryAsync(feature => feature.Id);
+
+            foreach (var featureId in unplaced)
+            {
+                features[featureId].ManualRank = ++lastPlace;
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }
