@@ -203,19 +203,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheViewIsStillReachable(theViewItself);
         }
 
-        // @error @AC-2.7 — running a Portfolio does not make the instance's ordering yours to change
+        // @error @AC-2.7 — running a Portfolio does not make the instance's ordering yours to change.
+        // Reading who owns it is a different question: every feature list asks it to name its position
+        // column, so a refusal there would leave everyone but an instance administrator reading the
+        // wrong heading over the right order.
         [Test]
-        public async Task Someone_who_may_only_run_a_portfolio_may_not_hand_the_order_over()
+        public async Task Someone_who_may_only_run_a_portfolio_may_read_who_owns_the_order_but_not_change_it()
         {
             var platform = GivenAPortfolio("Platform");
             GivenAFeatureTheTrackerRanked("Rebuild the search index", "FTR-1", "10", platform);
             GivenTheCallerMayWriteOnly(platform);
 
             var refusedWrite = await WhenTheConfigAdminTriesToHandTheOrderOver();
-            var refusedRead = await WhenAnyoneAsksWhoOwnsTheOrder();
+            var read = await WhenAnyoneAsksWhoOwnsTheOrder();
 
             ThenTheInstanceRefusesTheCaller(refusedWrite);
-            ThenTheInstanceRefusesTheCaller(refusedRead);
+            ThenTheTrackerOwnsTheOrder(read);
         }
 
         // @error @AC-5.1 — the downgrade path and the fresh-install path are the same path: nothing has

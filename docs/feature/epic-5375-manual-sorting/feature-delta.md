@@ -1611,4 +1611,22 @@ No silent N/A.
 | **AC-2.2** | The refresh is driven through the real `IWorkItemService` with a **faked connector**. The one thing this cannot prove is that a real connector's response shape does not carry something that writes a rank; SA-4 makes that structural (`Feature.Update` copies by explicit enumeration) and the unit test DESIGN asked for on `Feature.Update` is DELIVER's. |
 | **OQ-3** | Now **two** questions, not one: provider parity for `string.Compare` (unchanged, unprobed, SQLite only) and the culture-sensitivity of the whole parse ladder, newly named by this slice's premise check and probed only weakly. |
 | **OQ-4** | Untouched — it is about `Move to Bottom`, which is slice 03. |
-| **E2E** | The walking skeleton is written and `.skip`ped but was **not executed**: it needs a premium licence on a live instance, and slice 01's screenshots are already stale from the nav reorder, so a run here would have mixed two unrelated diffs. It must be un-skipped and green before slice 02's code review. |
+| **E2E** | The walking skeleton is written and `.skip`ped but was **not executed**: it needs a premium licence on a live instance, and slice 01's screenshots are already stale from the nav reorder, so a run here would have mixed two unrelated diffs. It must be un-skipped and green before slice 02's code review. **Closed in DELIVER** — un-skipped and green against a licensed local instance, along with the eight features/portfolios specs around it. |
+
+---
+
+## Wave: DELIVER / [REF] Slice-02 Departures from DESIGN (no silent changes)
+
+All 17 backend scenarios, 10 Vitest and the E2E skeleton are green. Three decisions differ from what
+DESIGN wrote, each stated in the code at the point it applies rather than only here.
+
+| # | Departure | Why |
+|---|---|---|
+| **DEL-1** | **The ordering-policy READ is not RBAC-guarded.** DESIGN's driving-port table put `GET appsettings/FeatureOrdering` behind the class-level `[RbacGuard]` ⇒ `SystemAdmin`. `AppSettingsController`'s class-level guard is removed and re-applied to each of the four refresh routes and to the `PUT`; the `GET` is left authenticated-only. | `FeatureListDataGrid` reads the policy to name its position column, so on an RBAC-enforced instance every non-admin would have got a 403 on every feature list and read `#` over a manually-ordered list. The answer — which ordering this instance uses — is already visible in the list itself, so guarding it withheld nothing. User's call, 2026-08-07: *"as long as it's just possible to read which ordering is selected, that is fine."* The AT that pinned the old behaviour is rewritten, not deleted: `Someone_who_may_only_run_a_portfolio_may_read_who_owns_the_order_but_not_change_it` still asserts 403 on the write. |
+| **DEL-2** | **ADR-133's SA-16 optimisation is declined.** `FeatureOrderingPolicyChangedForecastTriggerHandler` fans out on every policy change, not only on disable. | SA-16's premise — INV-A3 seeds from the sequence already on screen, so nothing moved — holds only the *first* time. Taking the order over again after the tracker has re-ranked (AC-5.3) moves plenty. One coalesced run per Portfolio on a rare administrative action is cheaper than silently stale dates on a feature whose promise is "the forecast follows your priority". |
+| **DEL-3** | **`IFeatureRankSeeder` is a type DESIGN did not name.** | SA-3's seed needed a home. Putting it in `AppSettingService` would have given that class a `IRepository<Feature>` and an ordering dependency it has no other use for. |
+
+**Owed, still open at this checkpoint** — `ManualSortingAcceptanceTest.Send`'s SPA-fallback catch is now
+unreachable and must be deleted; the DISTILL red-classification section explains why leaving it
+misreports a future routing regression. Refactor, code review and mutation testing are **not** run yet:
+held for the user's manual verification.

@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Reflection;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -96,16 +97,45 @@ namespace Lighthouse.Backend.Tests.API
             return new AppSettingsController(appSettingServiceMock.Object);
         }
 
+        /// <summary>
+        /// Epic 5375 moved the guard from the class onto each route, because the ordering-policy read is
+        /// deliberately open — every feature list asks it to name its position column, so guarding it
+        /// would leave everyone but an instance administrator reading the wrong heading. Every other
+        /// route on this controller still requires SystemAdmin, and that is what this pins: a future
+        /// route added without a guard fails here rather than shipping open.
+        /// </summary>
         [Test]
-        public void Controller_HasSystemAdminRbacGuardAttribute()
+        public void EverySettingsRouteExceptTheOrderingPolicyReadRequiresSystemAdmin()
         {
-            var attribute = typeof(AppSettingsController)
-                .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
-                .Cast<RbacGuardAttribute>()
-                .SingleOrDefault();
+            var guardedRoutes = typeof(AppSettingsController)
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(method => method.Name != nameof(AppSettingsController.GetFeatureOrdering));
 
-            Assert.That(attribute, Is.Not.Null);
-            Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var route in guardedRoutes)
+                {
+                    var guard = route
+                        .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true)
+                        .Cast<RbacGuardAttribute>()
+                        .SingleOrDefault();
+
+                    Assert.That(guard, Is.Not.Null, $"{route.Name} must be guarded.");
+                    Assert.That(guard!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin), $"{route.Name} must require SystemAdmin.");
+                }
+
+                Assert.That(
+                    typeof(AppSettingsController).GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true),
+                    Is.Empty,
+                    "A class-level guard would silently re-close the ordering-policy read.");
+
+                Assert.That(
+                    typeof(AppSettingsController)
+                        .GetMethod(nameof(AppSettingsController.GetFeatureOrdering))!
+                        .GetCustomAttributes(typeof(RbacGuardAttribute), inherit: true),
+                    Is.Empty,
+                    "Reading which ordering the instance uses is open to every viewer.");
+            }
         }
     }
 }
