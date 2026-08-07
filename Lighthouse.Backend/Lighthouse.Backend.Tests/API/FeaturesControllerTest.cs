@@ -428,7 +428,16 @@ namespace Lighthouse.Backend.Tests.API
                     .Select((feature, index) => (feature.Id, Position: index + 1))
                     .ToDictionary(entry => entry.Id, entry => entry.Position));
 
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
+            // These tests are about the read paths, so the move surface answers "may move" for everything -
+            // a verdict of its own would make every row's authorization this fixture's opinion rather than
+            // ADR-136's, and that rule is judged in Slice03RelativeMovesScenarios.
+            var featureMoveAuthorizationMock = new Mock<IFeatureMoveAuthorization>();
+            featureMoveAuthorizationMock
+                .Setup(x => x.GetVerdictsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IReadOnlyCollection<Feature>>(), It.IsAny<ISet<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IReadOnlyCollection<Feature> requested, ISet<int> _, CancellationToken _) =>
+                    requested.ToDictionary(feature => feature.Id, _ => FeatureMoveVerdict.Allowed));
+
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, Mock.Of<IFeatureRankingService>(), Mock.Of<IFeatureOrderingPolicyProvider>(), new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
         }
     }
 }

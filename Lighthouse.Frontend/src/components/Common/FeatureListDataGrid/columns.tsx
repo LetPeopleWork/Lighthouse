@@ -14,6 +14,8 @@ import FeatureName from "../FeatureName/FeatureName";
 import ForecastInfoList from "../Forecasts/ForecastInfoList";
 import ParentWorkItemCell from "../ParentWorkItemCell/ParentWorkItemCell";
 import ActiveWorkIndicator from "./ActiveWorkIndicator";
+import FeatureMoveMenu from "./FeatureMoveMenu";
+import type { FeatureOrderingBinding } from "./types";
 import WarningsIndicator from "./WarningsIndicator";
 
 // FeatureListDataGrid pins this column first, so every feature list renders the name the same way.
@@ -65,6 +67,25 @@ export const createPositionColumn = (
 	sortable: true,
 	valueGetter: (_, row) => row.position,
 	renderCell: ({ row }) => <span>{row.position ?? ""}</span>,
+});
+
+// The four gestures live behind one menu so a row gains one control, not four (D18).
+export const createFeatureOrderingActionsColumn = (
+	binding: FeatureOrderingBinding,
+): DataGridColumn<IFeature & GridValidRowModel> => ({
+	field: "featureOrderingActions",
+	headerName: "",
+	width: 60,
+	sortable: false,
+	filterable: false,
+	renderCell: ({ row }) => (
+		<FeatureMoveMenu
+			feature={row}
+			gate={binding.resolveGate(row)}
+			onMove={(target) => binding.onMove(row.id, target)}
+			visibleNeighbours={binding.neighboursFor(row)}
+		/>
+	),
 });
 
 export const createStateColumn = (): DataGridColumn<

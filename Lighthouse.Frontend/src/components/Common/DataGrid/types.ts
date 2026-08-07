@@ -45,6 +45,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	loading?: boolean;
 	/** Initial sort model */
 	initialSortModel?: GridSortModel;
+	/** Lets a grid know a column sort is deciding its order, which some row actions have no meaning under (AC-3.9). */
+	onSortModelChange?: (sortModel: GridSortModel) => void;
 	/** Custom empty state message */
 	emptyStateMessage?: string;
 	/** Hide pagination (default: true) */

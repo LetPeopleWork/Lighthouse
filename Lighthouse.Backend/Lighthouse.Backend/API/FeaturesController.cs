@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -7,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.API
 {
@@ -22,6 +24,9 @@ namespace Lighthouse.Backend.API
         private readonly IRbacAdministrationService rbacAdministrationService;
         private readonly IBlockedItemService blockedItemService;
         private readonly IFeaturePositionMap featurePositionMap;
+        private readonly IFeatureMoveAuthorization featureMoveAuthorization;
+        private readonly IFeatureRankingService featureRankingService;
+        private readonly IFeatureOrderingPolicyProvider featureOrderingPolicyProvider;
         private readonly ILighthouseClock clock;
 
 #pragma warning disable S107 // Every parameter is a distinct port this controller drives; bundling them into a parameter object would only hide the arity, not the coupling.
@@ -32,6 +37,9 @@ namespace Lighthouse.Backend.API
             IRbacAdministrationService rbacAdministrationService,
             IBlockedItemService blockedItemService,
             IFeaturePositionMap featurePositionMap,
+            IFeatureMoveAuthorization featureMoveAuthorization,
+            IFeatureRankingService featureRankingService,
+            IFeatureOrderingPolicyProvider featureOrderingPolicyProvider,
             ILighthouseClock clock)
 #pragma warning restore S107
         {
@@ -41,6 +49,9 @@ namespace Lighthouse.Backend.API
             this.rbacAdministrationService = rbacAdministrationService;
             this.blockedItemService = blockedItemService;
             this.featurePositionMap = featurePositionMap;
+            this.featureMoveAuthorization = featureMoveAuthorization;
+            this.featureRankingService = featureRankingService;
+            this.featureOrderingPolicyProvider = featureOrderingPolicyProvider;
             this.clock = clock;
         }
 
@@ -105,6 +116,83 @@ namespace Lighthouse.Backend.API
             return Ok(items);
         }
 
+        /// <summary>
+        /// Moves one Feature to the place another one holds (D4). Every gesture in the UI — Top, Up, Down,
+        /// Bottom, and "above/below a named Feature" — arrives here, because they differ only in which row
+        /// the client names as the target.
+        /// </summary>
+        [HttpPatch("{featureId:int}/rank")]
+        [LicenseGuard(RequirePremium = true)]
+        public async Task<ActionResult> MoveFeature(int featureId, [FromBody] JsonElement move)
+        {
+            if (!TryReadTheTarget(move, out var targetFeatureId, out var placeBefore))
+            {
+                return BadRequest();
+            }
+
+            var feature = featureRepository.GetById(featureId);
+            if (feature is null)
+            {
+                return NotFound();
+            }
+
+            // While the tracker owns the order, a place written here is one nobody reads. Accepting it would
+            // leave the caller looking at an unmoved list with no way to tell why.
+            if (featureOrderingPolicyProvider.GetPolicy() != FeatureOrderingPolicy.ManualOrder)
+            {
+                return Forbid();
+            }
+
+            var verdicts = await GetMoveVerdicts([feature]);
+            if (!verdicts[feature.Id].CanMove)
+            {
+                return Forbid();
+            }
+
+            var placement = await featureRankingService.PlaceAsync(featureId, targetFeatureId, placeBefore, RequestAborted);
+
+            return placement == FeatureMovePlacement.Placed ? Ok() : NotFound();
+        }
+
+        /// <summary>
+        /// The command carries exactly one target (DDD-7). <c>beforeFeatureId: null</c> is the end of the
+        /// order; naming both, or neither, is not a move and is not guessed at.
+        /// </summary>
+        private static bool TryReadTheTarget(JsonElement move, out int? targetFeatureId, out bool placeBefore)
+        {
+            targetFeatureId = null;
+            placeBefore = true;
+
+            if (move.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            var namesBefore = move.TryGetProperty("beforeFeatureId", out var before);
+            var namesAfter = move.TryGetProperty("afterFeatureId", out var after);
+
+            if (namesBefore == namesAfter)
+            {
+                return false;
+            }
+
+            var named = namesBefore ? before : after;
+            placeBefore = namesBefore;
+
+            if (namesBefore && named.ValueKind == JsonValueKind.Null)
+            {
+                return true;
+            }
+
+            if (named.ValueKind != JsonValueKind.Number || !named.TryGetInt32(out var id))
+            {
+                return false;
+            }
+
+            targetFeatureId = id;
+            return true;
+        }
+
         private async Task<List<FeatureDto>> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)
         {
             var features = featureRepository.GetAllByPredicate(predicate).ToList();
@@ -114,14 +202,41 @@ namespace Lighthouse.Backend.API
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 forecastWindowStart, FeatureForecastWindow.EndFor(forecastWindowStart, features));
 
-            return features
-                .Where(f => IsReadableBy(f, readablePortfolioIdSet))
-                .Select(f => new FeatureDto(f, clock, blackoutPeriods, f.Portfolios.Any(p => blockedItemService.IsBlocked(f, p)), null, readablePortfolioIdSet)
-                {
-                    // Null only if the Feature was deleted between the row read and the position read.
-                    Position = positions.TryGetValue(f.Id, out var position) ? position : null,
-                })
+            var readable = features.Where(f => IsReadableBy(f, readablePortfolioIdSet)).ToList();
+            var verdicts = await featureMoveAuthorization.GetVerdictsAsync(User, readable, readablePortfolioIdSet, RequestAborted);
+
+            return readable
+                .Select(f => BuildFeatureDto(f, blackoutPeriods, readablePortfolioIdSet, positions, verdicts[f.Id]))
                 .ToList();
+        }
+
+        private FeatureDto BuildFeatureDto(
+            Feature feature,
+            IReadOnlyList<BlackoutPeriod> blackoutPeriods,
+            HashSet<int> readablePortfolioIds,
+            IReadOnlyDictionary<int, int> positions,
+            FeatureMoveVerdict verdict)
+        {
+            var isBlocked = feature.Portfolios.Any(p => blockedItemService.IsBlocked(feature, p));
+
+            var dto = new FeatureDto(feature, clock, blackoutPeriods, isBlocked, null, readablePortfolioIds)
+            {
+                // Null only if the Feature was deleted between the row read and the position read.
+                Position = positions.TryGetValue(feature.Id, out var position) ? position : null,
+                CanMove = verdict.CanMove,
+                MoveBlockReason = verdict.BlockReason,
+            };
+
+            dto.BlockingPortfolios.AddRange(verdict.BlockingPortfolios.Select(p => new EntityReferenceDto(p.Id, p.Name)));
+
+            return dto;
+        }
+
+        private async Task<IReadOnlyDictionary<int, FeatureMoveVerdict>> GetMoveVerdicts(IReadOnlyCollection<Feature> features)
+        {
+            var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
+
+            return await featureMoveAuthorization.GetVerdictsAsync(User, features, readablePortfolioIdSet, RequestAborted);
         }
 
         // ADR-136: a Feature in no Portfolio is visible to everyone; otherwise one readable Portfolio is enough.

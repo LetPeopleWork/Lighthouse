@@ -1,7 +1,7 @@
 import { Container, Typography } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { DataGridColumn } from "../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
@@ -25,15 +25,15 @@ const FeaturesView: React.FC = () => {
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 
-	useEffect(() => {
-		const fetchFeatures = async () => {
-			const featureData = await featureService.getAllFeatures();
-			setFeatures(featureData);
-			setIsLoading(false);
-		};
-
-		fetchFeatures();
+	const fetchFeatures = useCallback(async () => {
+		const featureData = await featureService.getAllFeatures();
+		setFeatures(featureData);
+		setIsLoading(false);
 	}, [featureService]);
+
+	useEffect(() => {
+		fetchFeatures();
+	}, [fetchFeatures]);
 
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
 		() => [
@@ -69,6 +69,8 @@ const FeaturesView: React.FC = () => {
 				loading={isLoading}
 				emptyStateMessage={`No ${featuresTerm} found`}
 				showPosition
+				// A move renumbers the whole instance, so the places every row shows are re-read, not patched.
+				onOrderChanged={fetchFeatures}
 			/>
 		</Container>
 	);

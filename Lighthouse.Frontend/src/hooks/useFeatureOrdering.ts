@@ -1,12 +1,14 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import type { IFeature } from "../models/Feature";
 import {
+	type FeatureMoveBlockReason,
 	type FeatureMoveGate,
 	type FeatureOrderingPolicy,
 	MANUAL_ORDER_COLUMN_LABEL,
 	SOURCE_ORDER_COLUMN_LABEL,
 } from "../models/FeatureOrdering";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { useLicenseRestrictions } from "./useLicenseRestrictions";
 
 export interface FeatureOrderingState {
 	/** Who decides the order this instance forecasts in. */
@@ -25,6 +27,11 @@ export interface FeatureOrderingState {
 	refresh: () => Promise<void>;
 }
 
+const refused = (
+	reason: FeatureMoveBlockReason,
+	blockingPortfolios: string[] = [],
+): FeatureMoveGate => ({ enabled: false, reason, blockingPortfolios });
+
 /**
  * The single place the ordering policy is read on the client (ADR-134 SA-12). Four scattered `if`s over
  * the same question is the frontend twin of the five-`if` backend failure this epic exists to prevent.
@@ -33,6 +40,8 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 	const [policy, setPolicy] = useState<FeatureOrderingPolicy>("SourceOrder");
 
 	const { settingsService } = useContext(ApiServiceContext);
+	const { licenseStatus } = useLicenseRestrictions();
+	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const refresh = useCallback(async () => {
 		try {
@@ -48,15 +57,37 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 		refresh();
 	}, [refresh]);
 
-	// __SCAFFOLD__ (Epic 5375 slice 03)
 	const resolveMoveGate = useCallback(
 		(
-			_feature: IFeature,
-			_options: { isSortActive: boolean },
+			feature: IFeature,
+			options: { isSortActive: boolean },
 		): FeatureMoveGate => {
-			throw new Error("Not yet implemented — RED scaffold");
+			// Ordered deliberately, not left to whichever `if` came first. An instance-wide reason removes
+			// the actions entirely (AC-3.10), so it outranks one that only greys them out.
+			if (!canUsePremiumFeatures) {
+				return refused("not-premium");
+			}
+
+			if (policy !== "ManualOrder") {
+				return refused("policy-off");
+			}
+
+			if (options.isSortActive) {
+				return refused("sorted");
+			}
+
+			// The server's word, carried through. Nothing here consults RBAC or looks at `projects`: both
+			// fail open, and an absent verdict is not permission (ADR-136 SA-10).
+			if (feature.canMove !== true) {
+				return refused(
+					feature.moveBlockReason === "orphan" ? "orphan" : "no-write",
+					(feature.blockingPortfolios ?? []).map((portfolio) => portfolio.name),
+				);
+			}
+
+			return { enabled: true };
 		},
-		[],
+		[canUsePremiumFeatures, policy],
 	);
 
 	return {

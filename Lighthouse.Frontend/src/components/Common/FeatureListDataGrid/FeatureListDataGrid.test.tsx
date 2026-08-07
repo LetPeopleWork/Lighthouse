@@ -12,6 +12,13 @@ vi.mock("../../../hooks/useFeatureOrdering", () => ({
 	useFeatureOrdering: () => ({
 		policy: mockedPolicy,
 		positionColumnLabel: mockedPolicy === "ManualOrder" ? "Manual" : "#",
+		// These tests are about the columns the grid injects, not about who may move a row - that verdict
+		// is judged in useFeatureOrdering.moveGate.test.tsx and FeatureMoveMenu.test.tsx.
+		resolveMoveGate: () => ({
+			enabled: false,
+			reason: "policy-off",
+			blockingPortfolios: [],
+		}),
 		refresh: vi.fn(),
 	}),
 }));

@@ -38,6 +38,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	idField = "id",
 	loading = false,
 	initialSortModel = [],
+	onSortModelChange,
 	emptyStateMessage = "No rows to display",
 	hidePagination = true,
 	enableExport = false,
@@ -341,6 +342,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					}}
 					onSortModelChange={(model) => {
 						updateState((prev) => ({ ...prev, sortModel: model }));
+						onSortModelChange?.(model);
 					}}
 					sx={{
 						"& .MuiDataGrid-cell": {

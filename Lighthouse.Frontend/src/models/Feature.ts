@@ -20,9 +20,8 @@ export interface IFeature extends IWorkItem {
 	teamsWithoutForecast?: string[];
 	// The place in the order across the whole instance, supplied by the backend (ADR-135).
 	position?: number;
-	// __SCAFFOLD__ (Epic 5375 slice 03) — the move verdict is the SERVER's, never re-derived here.
-	// `projects` is already read-filtered and is empty for an orphan, so any client-side conjunction
-	// over it fails open twice (ADR-136 SA-10).
+	// The move verdict is the SERVER's, never re-derived here. `projects` is already read-filtered and is
+	// empty for an orphan, so any client-side conjunction over it fails open twice (ADR-136 SA-10).
 	canMove?: boolean;
 	moveBlockReason?: string;
 	blockingPortfolios?: IEntityReference[];
@@ -59,6 +58,9 @@ export const FeatureSchema = z.object({
 	forecasts: z.array(WhenForecastSchema),
 	teamsWithoutForecast: z.array(z.string()).optional().default([]),
 	position: z.number().nullable().optional(),
+	canMove: z.boolean().nullable().optional(),
+	moveBlockReason: z.string().nullable().optional(),
+	blockingPortfolios: z.array(EntityReferenceSchema).optional().default([]),
 });
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
@@ -82,7 +84,7 @@ export class Feature implements IFeature {
 	position?: number;
 	canMove?: boolean;
 	moveBlockReason?: string;
-	blockingPortfolios?: IEntityReference[];
+	blockingPortfolios: IEntityReference[] = [];
 
 	owningTeam!: string;
 
@@ -179,6 +181,9 @@ export class Feature implements IFeature {
 		);
 		feature.teamsWithoutForecast = data.teamsWithoutForecast ?? [];
 		feature.position = data.position ?? undefined;
+		feature.canMove = data.canMove ?? undefined;
+		feature.moveBlockReason = data.moveBlockReason ?? undefined;
+		feature.blockingPortfolios = data.blockingPortfolios;
 		return feature;
 	}
 }

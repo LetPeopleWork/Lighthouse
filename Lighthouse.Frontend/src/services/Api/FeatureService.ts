@@ -59,9 +59,11 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 		});
 	}
 
-	// __SCAFFOLD__ (Epic 5375 slice 03)
-	moveFeature(_featureId: number, _target: FeatureMoveTarget): Promise<void> {
-		throw new Error("Not yet implemented — RED scaffold");
+	// Every gesture reduces to this one call; they differ only in which row is named as the target (D18).
+	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.patch(`/features/${featureId}/rank`, target);
+		});
 	}
 
 	async getFeatureWorkItems(featureId: number): Promise<IWorkItem[]> {

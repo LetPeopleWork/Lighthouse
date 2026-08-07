@@ -74,5 +74,14 @@ namespace Lighthouse.Backend.API.DTO
 
         // The place this Feature holds across the whole instance; null on read paths that do not number (ADR-135).
         public int? Position { get; set; }
+
+        // The move verdict is decided here and rendered as given (ADR-136). Null on read paths that do not
+        // authorize; a client must read "absent" as "not allowed", because absent is not permission.
+        public bool? CanMove { get; set; }
+
+        public string? MoveBlockReason { get; set; }
+
+        // Only Portfolios the caller may read are ever named (ADR-136 §3).
+        public List<EntityReferenceDto> BlockingPortfolios { get; } = [];
     }
 }

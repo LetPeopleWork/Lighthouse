@@ -61,15 +61,15 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	};
 
 	// Load features
-	useEffect(() => {
-		const fetchFeatures = async () => {
-			const featureIds = portfolio.features.map((fr) => fr.id);
-			const featureData = await featureService.getFeaturesByIds(featureIds);
-			setFeatures(featureData);
-		};
-
-		fetchFeatures();
+	const fetchFeatures = useCallback(async () => {
+		const featureIds = portfolio.features.map((fr) => fr.id);
+		const featureData = await featureService.getFeaturesByIds(featureIds);
+		setFeatures(featureData);
 	}, [portfolio.features, featureService]);
+
+	useEffect(() => {
+		fetchFeatures();
+	}, [fetchFeatures]);
 
 	// Fetch features in progress
 	useEffect(() => {
@@ -139,6 +139,8 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				loading={features.length === 0}
 				getActiveWorkTeams={getActiveWorkTeams}
 				showPosition
+				// A move renumbers the whole instance, so the places every row shows are re-read, not patched.
+				onOrderChanged={fetchFeatures}
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog

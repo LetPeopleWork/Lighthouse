@@ -2042,3 +2042,42 @@ No silent N/A.
 | **the optimistic reorder** | Not asserted. "Optimistic reorder in the grid, reconciled against the server response" is in the slice brief's IN scope, and it is a component concern with no acceptance-level observable: the E2E waits on the `PATCH` precisely so it cannot accidentally assert the optimistic state. Belongs in `FeatureListDataGrid.test.tsx` at DELIVER. |
 | **the renumber's transaction boundary** | Not probed — see the adapter coverage. The harness is single-threaded, and scenario 17 asserts the property that makes the race harmless rather than the race. |
 | **K7** | No test, by construction. "How often is the answer Move to Top versus a run of Move Ups" is a fortnight of field counting, and it is what slice 04's go/no-go rests on. |
+
+---
+
+## Wave: DELIVER / [REF] Slice-03 Departures from DESIGN (no silent changes)
+
+| Item | What shipped | Why |
+|---|---|---|
+| **The block renumber (D13 / DDD-4)** | A move renumbers the **whole sequence** 1..N, not the block between the two positions. | Over a ragged set a partial renumber is not sound: a row left untouched ahead of the block can hold a larger place than the ones just written (INV-O2 makes `900` a legal place). Whole-table is also what makes Move to Bottom mean the bottom — the unplaced tail sorts last and has to be given places (OQ-4). DDD-4 already demoted contiguity to a post-condition nothing may rely on, so writing it is free. |
+| **The set-based UPDATE** | One `ExecuteUpdateAsync` per row whose place actually changes, rather than loading Features and saving them back. | Two failures found on the way, both real: loading Features drags the navigation graph into the change tracker and re-inserts the `PortfolioTeam` join rows (`5f055dc30` in the same shape — it surfaced as `SQLite Error 19` the moment a fixture gave the Portfolio a Team), and an attached stub collides with the Feature the request already tracks. `ExecuteUpdateAsync` touches neither. |
+| **The transaction** | The unit of work runs inside `Database.CreateExecutionStrategy().ExecuteAsync(...)`. | Postgres runs with `EnableRetryOnFailure` (`DatabaseConfigurator.cs:35`), which refuses a user-initiated transaction unless the whole unit of work is handed to the strategy. A bare `BeginTransactionAsync` would have worked on every SQLite instance and thrown on every Postgres one. |
+| **`FeatureRankChanged` publication** | After the commit, outside the execution strategy. | A retried delegate would otherwise publish twice, and a run triggered by a move that then rolled back would forecast an order nobody chose. |
+| **The endpoint's answer while the tracker owns the order** | `403`. | DISTILL's call, recorded when the tests were written and unchanged here. DESIGN does not decide it; the alternative is a `200` that leaves the caller looking at an unmoved list. |
+| **A move naming neither target** | `400`, same as naming both. | DDD-7 says exactly one. `{}` and `{"beforeFeatureId":null}` are different commands and the endpoint reads the property's **presence**, not its value, to tell them apart. |
+| **`FeatureMoveMenu`'s disabled items** | `aria-disabled` plus a `title`, not the `disabled` prop. | A disabled element fires no events, so it carries no tooltip and a screen reader skips the very sentence that explains the refusal — which is the whole of AC-3.8 and half of AC-3.11. |
+| **AC-3.10's two reasons** | Render **nothing at all**, where AC-3.7/3.8/3.9 render disabled items with a tooltip. | AC-3.10's own words: "no move actions render at all". Four greyed-out entries explaining a capability the instance does not have would be worse than silence. |
+| **`useFeatureOrdering` now reads the licence** | It calls `useLicenseRestrictions()`, so the gate owns all five reasons rather than four. | SA-12 asks for one gate. Splitting the premium check back out to each caller is the scattered-`if` shape this epic exists to avoid. Cost, stated: the hook now depends on the licence, Team and Portfolio reads that hook performs, and a test rendering it must supply all three. |
+| **`FeatureListDataGrid` injects the actions column off `showPosition`** | One flag names both ordering surfaces; no caller passes the menu in. | SA-11 / D10 — the two surfaces that show a place are the two that let you change it. A second flag would let the two drift apart, which is the thing D10 forbids. |
+
+**Not departures, recorded because they were checked**: `Feature.Update` still omits `ManualRank` (SA-4) and `FeatureRankSeeder` still refuses to overwrite a place somebody chose. Neither was touched. No EF migration — slice 03 adds no column.
+
+---
+
+## Wave: DELIVER / [REF] Slice-03 Quality gates
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` | **4578 passed, 0 failed, 0 skipped** — the 18 slice-03 scenarios un-skipped and green |
+| `pnpm test` | **4004 passed, 0 skipped** — the 24 slice-03 Vitest un-skipped and green |
+| `pnpm build` | clean (`tsc -b` + `vite build`) |
+| Biome | clean on `./src` |
+| E2E `tsc --noEmit` | clean |
+| E2E `specs/features/` | **3 passed** against a live instance on a throwaway database with a premium licence — `FeaturesView`, `ManualSortingSwitch` and the new `ManualSortingMove` |
+| Adversarial review | `@nw-software-crafter-reviewer` — **APPROVED, 0 blockers, 0 high, 0 low** |
+| Mutation testing | **not run** — held for Benjamin's review of the slice first |
+
+**The hard gate is closed.** The fail-open move-verdict block in `FeatureMoveMenu.test.tsx` was un-skipped and green *before* the code review, as the slice-01 note required. Its three tests mock `useRbac` to answer yes to everything, so a component that re-derives the verdict passes the other twelve and fails those three.
+
+**The SPA-fallback catch is gone**, deleted in the same change that mapped the route, as owed. The unmapped-route sentinel it produced went with it, along with the one assertion that referenced it.

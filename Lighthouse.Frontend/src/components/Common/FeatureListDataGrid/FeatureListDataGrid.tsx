@@ -7,15 +7,18 @@ import {
 } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useFeatureOrdering } from "../../../hooks/useFeatureOrdering";
 import { useHideCompletedFeatures } from "../../../hooks/useHideCompletedFeatures";
 import type { IFeature } from "../../../models/Feature";
+import type { FeatureMoveTarget } from "../../../models/FeatureOrdering";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
 import {
 	createActiveWorkColumn,
+	createFeatureOrderingActionsColumn,
 	createPositionColumn,
 	createWarningsColumn,
 } from "./columns";
@@ -30,13 +33,19 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	emptyStateMessage,
 	getActiveWorkTeams,
 	showPosition = false,
+	onOrderChanged,
 }) => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
-	// The column names whoever owns the order. The factory stays policy-ignorant - it takes the label it
-	// is given - so this is the one place the two headings are chosen (ADR-134 SA-12).
-	const { positionColumnLabel } = useFeatureOrdering();
+	// The column names whoever owns the order, and the same hook decides whether a row may be moved. The
+	// factories stay policy-ignorant - they take what they are given - so this is the one place the two
+	// headings and the one verdict are chosen (ADR-134 SA-12).
+	const { positionColumnLabel, resolveMoveGate } = useFeatureOrdering();
+	const { featureService } = useContext(ApiServiceContext);
+
+	// "Up" has no predictable meaning in a list a column is sorting (D14), so the grid has to know.
+	const [isSortActive, setIsSortActive] = useState(false);
 
 	const { hideCompleted, handleToggleChange } = useHideCompletedFeatures(
 		hideCompletedStorageKey,
@@ -52,6 +61,29 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			: features;
 	}, [features, hideCompleted]);
 
+	// A scan per rendered row would be quadratic, and AC-1.9 asks this list to stay usable at five hundred.
+	const rowIndexById = useMemo(
+		() => new Map(filteredFeatures.map((row, index) => [row.id, index])),
+		[filteredFeatures],
+	);
+
+	// The rows either side of a Feature AS SHOWN. Hidden Done Features and anything the grid filtered out
+	// are jumped, not landed on (AC-3.3), which is why this reads the rendered list and not the raw one.
+	const neighboursFor = (feature: IFeature) => {
+		const index = rowIndexById.get(feature.id) ?? -1;
+
+		return {
+			firstId: filteredFeatures[0]?.id,
+			previousId: index > 0 ? filteredFeatures[index - 1].id : undefined,
+			nextId: index < 0 ? undefined : filteredFeatures[index + 1]?.id,
+		};
+	};
+
+	const moveFeature = async (featureId: number, target: FeatureMoveTarget) => {
+		await featureService.moveFeature(featureId, target);
+		await onOrderChanged?.();
+	};
+
 	// The caller supplies the name column first and the surface-specific ones last; the shared columns
 	// every feature list carries are inserted around them here.
 	const [nameColumn, ...surfaceColumns] = columns;
@@ -64,6 +96,18 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		createWarningsColumn(),
 		...(activeWorkColumn ? [activeWorkColumn] : []),
 		...surfaceColumns,
+		// The two surfaces that show a place are the two that let you change it (D10), so one flag names
+		// both and neither caller passes the menu in.
+		...(showPosition
+			? [
+					createFeatureOrderingActionsColumn({
+						resolveGate: (feature) =>
+							resolveMoveGate(feature, { isSortActive }),
+						neighboursFor,
+						onMove: moveFeature,
+					}),
+				]
+			: []),
 	];
 
 	return (
@@ -87,6 +131,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 				storageKey={storageKey}
 				loading={loading}
 				emptyStateMessage={emptyStateMessage}
+				onSortModelChange={(model) => setIsSortActive(model.length > 0)}
 			/>
 		</TableContainer>
 	);

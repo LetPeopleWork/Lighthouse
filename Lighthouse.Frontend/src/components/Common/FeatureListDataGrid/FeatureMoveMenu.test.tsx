@@ -75,11 +75,7 @@ const openTheMenu = async () => {
 	await userEvent.click(screen.getByRole("button", { name: /move/i }));
 };
 
-// describe.skip = RED scaffold; DELIVER enables it one at a time (ADR-025). The "the move verdict is
-// the server's alone" block is a HARD GATE: it must be un-skipped and green BEFORE the slice-03 code
-// review, not merely before DELIVER completes — a skipped test for a fail-open authorization path is
-// indistinguishable from no test.
-describe.skip("FeatureMoveMenu", () => {
+describe("FeatureMoveMenu", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

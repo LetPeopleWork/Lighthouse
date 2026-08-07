@@ -12,7 +12,7 @@ const testWithFeatures = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 //     forecast moving, and every refusal -> Slice03RelativeMovesScenarios.cs
 //   - the disabled states, the fail-open verdict trap, the four gestures' command shapes and the
 //     keyboard path -> FeatureMoveMenu.test.tsx and useFeatureOrdering.moveGate.test.tsx
-testWithFeatures.skip(
+testWithFeatures(
 	"@premium @walking_skeleton a product owner sends a Feature to the top and the order reads it back",
 	async ({ testData, overviewPage }) => {
 		expect(testData.portfolios.length).toBeGreaterThan(0);

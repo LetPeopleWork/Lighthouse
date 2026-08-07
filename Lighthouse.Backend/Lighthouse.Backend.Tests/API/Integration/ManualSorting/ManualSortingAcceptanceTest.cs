@@ -36,13 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     /// </summary>
     public abstract class ManualSortingAcceptanceTest
     {
-        /// <summary>
-        /// What <see cref="MoveFeature"/> reports when the route is not mapped at all. A scenario whose
-        /// expectation is loose about the status code has to reject this explicitly, or it would go green
-        /// against an endpoint nobody has written.
-        /// </summary>
-        protected const string NoRouteMappedForTheMovePort = "<no route mapped for the move port>";
-
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
@@ -383,21 +376,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         protected async Task<(HttpStatusCode Status, string Body)> MoveFeature(int featureId, string targetJson)
         {
             var body = new StringContent($"{{{targetJson}}}", System.Text.Encoding.UTF8, "application/json");
+            var response = await Client.PatchAsync($"/api/latest/features/{featureId}/rank", body);
 
-            try
-            {
-                var response = await Client.PatchAsync($"/api/latest/features/{featureId}/rank", body);
-                return (response.StatusCode, await response.Content.ReadAsStringAsync());
-            }
-            catch (InvalidOperationException exception) when (exception.Message.Contains("SPA default page", StringComparison.Ordinal))
-            {
-                // OWED AT GREEN — delete this catch in the commit that maps the route. An unmapped route
-                // falls through to the SPA fallback, which throws in a test host with no wwwroot, and the
-                // scenario would then fail on host plumbing instead of on its own Then. Once the route
-                // exists the catch is unreachable, and leaving it would report a future accidental
-                // un-mapping as "the move port refused" rather than as the routing regression it is.
-                return (HttpStatusCode.NotFound, NoRouteMappedForTheMovePort);
-            }
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
         /// <summary>
