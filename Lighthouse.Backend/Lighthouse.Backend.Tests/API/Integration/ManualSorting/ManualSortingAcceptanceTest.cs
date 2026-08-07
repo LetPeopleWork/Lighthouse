@@ -373,9 +373,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         /// <paramref name="targetJson"/> carries exactly one of <c>beforeFeatureId</c> / <c>afterFeatureId</c>;
         /// <c>"beforeFeatureId":null</c> is Move to Bottom.
         /// </summary>
-        protected async Task<(HttpStatusCode Status, string Body)> MoveFeature(int featureId, string targetJson)
+        protected Task<(HttpStatusCode Status, string Body)> MoveFeature(int featureId, string targetJson)
+            => MoveFeatureWithBody(featureId, $"{{{targetJson}}}");
+
+        /// <summary>
+        /// The same port with the body written out in full, for the shapes that are not an object with a
+        /// target in it — which a caller can send and the endpoint therefore has to answer.
+        /// </summary>
+        protected async Task<(HttpStatusCode Status, string Body)> MoveFeatureWithBody(int featureId, string rawBody)
         {
-            var body = new StringContent($"{{{targetJson}}}", System.Text.Encoding.UTF8, "application/json");
+            var body = new StringContent(rawBody, System.Text.Encoding.UTF8, "application/json");
             var response = await Client.PatchAsync($"/api/latest/features/{featureId}/rank", body);
 
             return (response.StatusCode, await response.Content.ReadAsStringAsync());

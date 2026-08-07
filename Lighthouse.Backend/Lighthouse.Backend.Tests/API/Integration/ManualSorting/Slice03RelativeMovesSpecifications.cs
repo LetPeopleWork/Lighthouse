@@ -148,6 +148,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         private async Task WhenTheProductOwnerSendsItToTheBottom(int featureId)
             => AssertTheMoveWasAccepted(await WhenTheProductOwnerTriesToSendItToTheBottom(featureId));
 
+        private Task<(HttpStatusCode Status, string Body)> WhenTheProductOwnerSendsSomethingThatIsNotACommand(int featureId)
+            => MoveFeatureWithBody(featureId, "[]");
+
+        private Task<(HttpStatusCode Status, string Body)> WhenTheProductOwnerNamesATargetThatIsNotAFeatureId(int featureId)
+            => MoveFeature(featureId, "\"beforeFeatureId\":\"the top\"");
+
         private Task WhenAForecastRunsFor(int portfolioId) => DriveAForecastRun(portfolioId);
 
         private Task WhenTheTrackerSyncsWithItsOwnNewOrder(int portfolioId, params (string ReferenceId, string SourceOrder)[] rowsFromTheTracker)

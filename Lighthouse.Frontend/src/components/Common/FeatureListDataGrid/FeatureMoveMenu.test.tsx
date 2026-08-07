@@ -239,6 +239,89 @@ describe("FeatureMoveMenu", () => {
 		});
 	});
 
+	// --- A refusal has to read like one. Four reasons, four different sentences ---
+	describe("what each refusal actually says", () => {
+		it("explains that a sorted list has no up and down", async () => {
+			renderTheMenu(theServerSaysNo("sorted"));
+			await openTheMenu();
+
+			expect(
+				await screen.findByText(/Sorting by a column/),
+			).toBeInTheDocument();
+		});
+
+		it("explains that a Feature nobody owns is nobody's to place", async () => {
+			renderTheMenu(theServerSaysNo("orphan"));
+			await openTheMenu();
+
+			expect(
+				await screen.findByText(/belongs to no Portfolio/),
+			).toBeInTheDocument();
+		});
+
+		// The named and unnamed refusals must not be the same sentence: one tells you who to ask, the
+		// other cannot, and a reader has to be able to tell those apart.
+		it("says whose delivery a half-owned move would re-sequence", async () => {
+			renderTheMenu(theServerSaysNo("no-write", ["New Product Initiative"]));
+			await openTheMenu();
+
+			expect(
+				await screen.findByText(/also worked on in New Product Initiative/),
+			).toBeInTheDocument();
+		});
+
+		it("still says a move would re-sequence somebody when it may name nobody", async () => {
+			renderTheMenu(theServerSaysNo("no-write"));
+			await openTheMenu();
+
+			const explanation = await screen.findByText(
+				/also worked on in a Portfolio you do not run/,
+			);
+			expect(explanation).toBeInTheDocument();
+			expect(explanation.textContent).not.toMatch(/New Product Initiative/);
+		});
+
+		it("explains nothing when there is nothing to explain", async () => {
+			renderTheMenu(theServerSaysYes);
+			await openTheMenu();
+
+			expect(screen.queryByText(/also worked on in/)).not.toBeInTheDocument();
+			expect(
+				screen.getByRole("menuitem", { name: "Move to Top" }),
+			).not.toHaveAttribute("title");
+		});
+	});
+
+	// --- A gesture with nowhere to go. The row at the top has no row above it ---
+	describe("a gesture the visible list cannot offer", () => {
+		it("disables every gesture that names a row, when there is no row to name", async () => {
+			const onMove = vi.fn().mockResolvedValue(undefined);
+
+			render(
+				<FeatureMoveMenu
+					feature={theSearchIndex()}
+					gate={theServerSaysYes}
+					onMove={onMove}
+					visibleNeighbours={{}}
+				/>,
+			);
+			await openTheMenu();
+
+			for (const gesture of ["Move to Top", "Move Up", "Move Down"]) {
+				expect(screen.getByRole("menuitem", { name: gesture })).toHaveAttribute(
+					"aria-disabled",
+					"true",
+				);
+			}
+
+			// The end of the order names no row, so it is always available.
+			await userEvent.click(
+				screen.getByRole("menuitem", { name: "Move to Bottom" }),
+			);
+			expect(onMove).toHaveBeenCalledWith({ beforeFeatureId: null });
+		});
+	});
+
 	// --- AC-3.11: buttons were chosen over drag BECAUSE of this, so it is asserted, not assumed ---
 	describe("operable without a mouse", () => {
 		it("opens and moves by keyboard alone", async () => {
@@ -255,15 +338,19 @@ describe("FeatureMoveMenu", () => {
 
 		it("announces the outcome, because a list that silently re-sorts tells a screen reader nothing", async () => {
 			renderTheMenu(theServerSaysYes);
-			await openTheMenu();
 
+			// Nothing to announce before anything has happened — an announcement on render would be
+			// read out on every page load.
+			expect(screen.getByRole("status")).toHaveTextContent("");
+
+			await openTheMenu();
 			await userEvent.click(
 				screen.getByRole("menuitem", { name: "Move to Top" }),
 			);
 
 			await waitFor(() => {
 				expect(screen.getByRole("status")).toHaveTextContent(
-					/Rebuild the search index/,
+					"Rebuild the search index — move to top",
 				);
 			});
 		});

@@ -318,6 +318,53 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theList, SearchIndex, LegacyImporter, PartnerCatalogue);
         }
 
+        // @error @driving_port — DDD-7, the two shapes a caller can send that are not a command at all: a
+        // body that is not an object, and a target that is not a Feature's identity. Neither is guessed at.
+        [Test]
+        public async Task A_move_whose_body_is_not_a_command_at_all_is_refused()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var ids = GivenTheTrackersOrderReads(platform, SearchIndex, LegacyImporter);
+            await GivenThisInstanceOwnsTheOrder();
+
+            var refused = await WhenTheProductOwnerSendsSomethingThatIsNotACommand(ids[1]);
+            var theList = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            ThenTheInstanceCannotMakeSenseOfTheMove(refused);
+            ThenTheOrderReads(theList, SearchIndex, LegacyImporter);
+        }
+
+        [Test]
+        public async Task A_move_naming_a_target_that_is_not_a_feature_id_is_refused()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var ids = GivenTheTrackersOrderReads(platform, SearchIndex, LegacyImporter);
+            await GivenThisInstanceOwnsTheOrder();
+
+            var refused = await WhenTheProductOwnerNamesATargetThatIsNotAFeatureId(ids[1]);
+            var theList = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            ThenTheInstanceCannotMakeSenseOfTheMove(refused);
+            ThenTheOrderReads(theList, SearchIndex, LegacyImporter);
+        }
+
+        // @error @driving_port — the Feature itself is gone. Deleted between the list being rendered and the
+        // menu being used is the ordinary way this happens, and it must not renumber anybody.
+        [Test]
+        public async Task A_move_of_a_feature_that_does_not_exist_changes_nothing()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var ids = GivenTheTrackersOrderReads(platform, SearchIndex, LegacyImporter);
+            await GivenThisInstanceOwnsTheOrder();
+
+            var refused = await WhenTheProductOwnerTriesToPlaceItAbove(987654, ids[0]);
+            var theList = await WhenTheProductOwnerOpensTheFeaturesView();
+
+            ThenTheMoveDidNotSucceed(refused);
+            ThenTheOrderReads(theList, SearchIndex, LegacyImporter);
+            ThenNoFreshForecastWasAskedFor();
+        }
+
         // @error @driving_port — a target that is not there. Whatever the instance answers, it must not
         // answer "done", and the order it shows afterwards must be the one it showed before.
         [Test]
