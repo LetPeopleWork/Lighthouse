@@ -2081,3 +2081,40 @@ No silent N/A.
 **The hard gate is closed.** The fail-open move-verdict block in `FeatureMoveMenu.test.tsx` was un-skipped and green *before* the code review, as the slice-01 note required. Its three tests mock `useRbac` to answer yes to everything, so a component that re-derives the verdict passes the other twelve and fails those three.
 
 **The SPA-fallback catch is gone**, deleted in the same change that mapped the route, as owed. The unmapped-route sentinel it produced went with it, along with the one assertion that referenced it.
+
+---
+
+## Wave: DELIVER / [REF] Slice 04 — DROPPED, not deferred (Benjamin, 2026-08-07)
+
+Slice 04 ("Move above/below a named Feature" plus its target picker, US-04) is **dropped**. The epic
+ends at slice 03.
+
+**The decision was taken early, and that is the departure worth naming.** DISCUSS designed slice 04 as
+the one cancellable slice and put its go/no-go behind **K7** — over a fortnight of dogfooding slice 03,
+what share of moves are "Move to Top" versus runs of Move Up. The reading rule is in
+`## Wave: DISCUSS / [REF] K7 reading rule`. **K7 was never read.** Slice 03 shipped and was verified the
+same day the epic wrapped, so there is no fortnight and no counts — the call is "keep it simple for now",
+not "the evidence says no".
+
+That distinction matters for whoever picks this up later: **the question slice 04 answers is still open**.
+Nothing was learned that says a long-range gesture is unnecessary; what was decided is that a 300-row
+list is not today's problem and a picker is not worth building on a guess.
+
+**Re-adding it is cheap by construction, and that is why dropping it is safe.** The whole design already
+assumes it:
+
+- `PATCH .../rank` takes `beforeFeatureId` / `afterFeatureId` — identities, not positions (DDD-7). "Move
+  above Feature X" *is* that command with X named directly; the endpoint needs no change at all.
+- `IFeatureRankingService.PlaceAsync` is already the one primitive, and slice 03's ATs pin both
+  directions (`Placing_a_feature_below_another_one_puts_it_immediately_after_it`).
+- D14 already says a targeted move stays available **under any sort**, unlike the relative ones — that
+  rule is written and untested rather than absent.
+- `FeatureMoveMenu` takes its gestures as a list; a fifth entry opening a picker is additive.
+
+So the remaining work is the picker UI and its Done-Feature exclusion (D15), not the ordering machinery.
+
+**What the drop pulls forward.** Slice 02 deferred screenshots and docs prose "to the epic's
+finalization", and OQ-6 (the website's premium/pricing copy, which still does not say manual sorting is
+premium) with them. Finalization is now, so those come due in this wrap-up rather than in a later slice.
+
+**ADO**: the slice-04 story is set to Removed. Epic 5375 closes on slice 03.
