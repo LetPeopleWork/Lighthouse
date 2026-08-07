@@ -20,6 +20,12 @@ export interface IFeature extends IWorkItem {
 	teamsWithoutForecast?: string[];
 	// The place in the order across the whole instance, supplied by the backend (ADR-135).
 	position?: number;
+	// __SCAFFOLD__ (Epic 5375 slice 03) — the move verdict is the SERVER's, never re-derived here.
+	// `projects` is already read-filtered and is empty for an orphan, so any client-side conjunction
+	// over it fails open twice (ADR-136 SA-10).
+	canMove?: boolean;
+	moveBlockReason?: string;
+	blockingPortfolios?: IEntityReference[];
 
 	getRemainingWorkForFeature(): number;
 	getRemainingWorkForTeam(id: number): number;
@@ -74,6 +80,9 @@ export class Feature implements IFeature {
 	forecasts: IWhenForecast[] = [];
 	teamsWithoutForecast: string[] = [];
 	position?: number;
+	canMove?: boolean;
+	moveBlockReason?: string;
+	blockingPortfolios?: IEntityReference[];
 
 	owningTeam!: string;
 

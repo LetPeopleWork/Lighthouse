@@ -1,4 +1,5 @@
 import type { IFeature } from "../../models/Feature";
+import type { FeatureMoveTarget } from "../../models/FeatureOrdering";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
 
@@ -7,6 +8,8 @@ export interface IFeatureService {
 	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]>;
 	getFeaturesByReferences(featureReferences: string[]): Promise<IFeature[]>;
 	getFeatureWorkItems(featureId: number): Promise<IWorkItem[]>;
+	/** Every gesture in D18 reduces to this one call (US-03, US-04). */
+	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void>;
 }
 
 export class FeatureService extends BaseApiService implements IFeatureService {
@@ -54,6 +57,11 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 
 			return BaseApiService.deserializeFeatures(response.data);
 		});
+	}
+
+	// __SCAFFOLD__ (Epic 5375 slice 03)
+	moveFeature(_featureId: number, _target: FeatureMoveTarget): Promise<void> {
+		throw new Error("Not yet implemented — RED scaffold");
 	}
 
 	async getFeatureWorkItems(featureId: number): Promise<IWorkItem[]> {

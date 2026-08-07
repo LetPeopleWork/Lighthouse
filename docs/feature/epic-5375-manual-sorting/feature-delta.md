@@ -1703,3 +1703,342 @@ No silent N/A.
 | **Website marketing surface** | **Deferred to pre-release**, user's call 2026-08-07. OQ-6 stays open: manual sorting is premium and the pricing copy does not say so yet. |
 | **ADO** | US 5689 → Resolved. Epic 5375 stays Active; slices 03 and 04 remain. |
 | **Workspace** | Kept. Three slices of four are not done, so nothing is archived. |
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Premise Check Results (run 2026-08-07, before any test was written)
+
+The slice brief asks for one thing first — **find a real shared Feature on the dogfood instance**, because
+AC-3.8 and D11 both hinge on one. It was run first, and the answer is no.
+
+Source: the dogfood database the slice-01 manual verification used
+(`Lighthouse.Backend/Lighthouse.Backend/LighthouseAppContext.db`, `http://localhost:5169`, real recorded
+history, last written 2026-08-07 15:50). **97 Features · 3 Portfolios · 93 Feature-Portfolio rows ·
+4 orphans · 0 Features in more than one Portfolio.**
+
+**And it is not merely absent — on this instance it is unreachable.** The three Portfolios sit on three
+*different* work-tracking connections (Azure DevOps 32, Jira 33, Linear 34), and a Feature is matched to
+an incoming row by `ReferenceId` alone (`WorkItemService.cs:518`) with no connection scope. So the only
+realistic path to one Feature in two Portfolios is **two Portfolios on the same connection whose queries
+both match it** — and this instance has one Portfolio per connection, over three disjoint id namespaces
+(ADO `1812`…`5698`, Jira `LGHTHSDMO-…`, Linear UUIDs). No amount of dogfooding the current setup
+produces the case.
+
+**Said out loud, as the brief asks: D11's most interesting case ships validated by integration test and
+seeded demo data alone.** Scenarios 9, 10 and 11 below are that test; demo scenario 15 *Shared Features*
+(`DemoDataService.cs:397-408`, premium, `ORI-101` across Launch Alignment and New Product Initiative) is
+that seeded data, and it shipped in slice 01. This is **OQ-2 unchanged**, now measured twice.
+
+**The actionable route, since the dogfood moment is the whole point of this slice**: load demo scenario
+15 on the dogfood instance before the dogfood run, which gives a second Portfolio on one connection and a
+genuinely shared Feature. That is a dogfood-setup step, not slice scope, and it is the only way the
+D4 verdict ("what happened to a Feature in a Portfolio you did **not** open") can be taken against a
+shared row rather than against a private one.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Scenario list with tags
+
+US-03 (AC-3.1 … AC-3.10). AC-3.11 is a keyboard/screen-reader promise with no backend observable and
+lives in the component test. Density lean, Tier-1 only. **No Gherkin** — same house pattern as slices 01
+and 02: the NUnit partial-class triple plus co-located Vitest.
+
+**Backend acceptance — `Slice03RelativeMovesScenarios.cs` (18, fixture-level
+`[Ignore("RED — Epic 5375 slice 03 not implemented")]`)**
+
+| # | Scenario | Tags | AC |
+|---|---|---|---|
+| 1 | `Placing_a_feature_where_another_one_stands_shifts_only_the_block_between_them` | `@walking_skeleton @driving_port @real-io` | AC-3.1, AC-3.4 |
+| 2 | `Move_to_top_of_my_portfolios_list_lands_above_that_lists_first_feature_not_the_instances` | `@driving_port @real-io` | AC-3.2 |
+| 3 | `Move_to_bottom_sends_the_feature_past_everybody_including_those_that_hold_no_place_yet` | `@driving_port @real-io` | AC-3.3, **OQ-4** |
+| 4 | `Placing_a_feature_below_another_one_puts_it_immediately_after_it` | `@driving_port @real-io` | AC-3.3 |
+| 5 | `The_new_place_survives_the_tracker_re_ranking_everything_on_the_next_sync` | `@driving_port @real-io` | AC-3.5 |
+| 6 | `Bringing_a_feature_to_the_front_of_the_queue_brings_its_date_forward_and_pushes_the_displaced_one_back` | `@driving_port @real-io` | AC-3.6 |
+| 7 | `A_move_asks_for_a_fresh_forecast_for_every_portfolio_the_feature_belongs_to` | `@driven-port-probe` | AC-3.6 / ADR-133 |
+| 8 | `Someone_who_may_only_read_a_portfolio_may_not_move_its_features` | `@error @driving_port` | AC-3.7 |
+| 9 | `A_feature_two_portfolios_share_may_be_moved_only_by_someone_who_may_write_both` | `@error @driving_port` | AC-3.8 / D11 |
+| 10 | `The_refusal_names_the_portfolio_standing_in_the_way_when_the_caller_may_read_it` | `@error @driving_port` | AC-3.8 |
+| 11 | `The_refusal_names_no_portfolio_the_caller_may_not_even_read` | `@error @driving_port` | AC-3.8 / SA-9 |
+| 12 | `A_feature_in_no_portfolio_may_be_moved_by_nobody_not_even_an_instance_administrator` | `@error @driving_port` | DDD-9 |
+| 13 | `An_instance_without_a_premium_licence_may_not_move_anything` | `@error @driving_port` | AC-3.10 |
+| 14 | `While_the_tracker_owns_the_order_a_move_is_refused_rather_than_quietly_stored` | `@error @driving_port` | AC-3.10 |
+| 15 | `A_move_naming_both_a_target_to_go_above_and_one_to_go_below_is_refused` | `@error @driving_port` | DDD-7 |
+| 16 | `A_move_against_a_target_that_does_not_exist_changes_nothing` | `@error @driving_port` | DDD-7 |
+| 17 | `Moving_within_a_ragged_set_of_places_still_leaves_one_unambiguous_order` | `@error @driving_port @real-io` | INV-O2 |
+| 18 | `A_move_disturbs_nothing_but_the_places` | `@driven-port-probe` | AC-3.1, D5's complement |
+
+Three carry the slice, and they are the three the brief named.
+
+**#2 is D4 itself**, and it is the only scenario in the epic where "top of *my* list" and "top of the
+instance" give different answers. Global `F1 F2 F3 F4 F5 F6`, Launch Alignment owns rows 2, 4 and 5; the
+product owner writes only that Portfolio and places F5 above F2; the assertion then switches to an
+instance administrator and reads the **whole** instance back as `F1 F5 F2 F3 F4 F6`. F5 lands above A's
+own first Feature and crosses `F3` — a Feature in a Portfolio that was never on screen. That crossing is
+the thing the dogfood moment is meant to judge.
+
+**#3 is OQ-4, and the answer turned out to be forced rather than chosen.** `ManualRankComparer` sorts a
+null place **last**, so a Move to Bottom that renumbers only the placed rows would leave the moved Feature
+*above* every Feature that arrived after the order was handed over. "To the end" therefore has to
+materialise the places of the whole unplaced tail it jumps — INV-O4's "only the ones it jumps" and
+"all of the null-ranked rows" are the same set the moment the target is the end of the list. The scenario
+seeds three placed Features, syncs a fourth in while the instance owns the order (so it holds no place),
+sends the first to the bottom and asserts the order reads `F2 F3 FTR-LATE F1`. **OQ-4 is closed by INV-O1
+rather than decided**, and the crafter inherits an assertion instead of a question.
+
+**#6 is AC-3.6, and the fixture carries variable throughput deliberately.** The team closes
+`1,0,3,0,2,0,0,4,1,0,2,0,0,3,1,0,0,2,5,0` items over the last twenty days; on a flat run chart every
+Feature finishes on the same simulated day and a sequencing change has nothing at all to show up in
+(`project_epic5459_multi_team_forecasts_resume`). With `FeatureWIP = 1` the queue head is the only Feature
+worked on, so the direction is deterministic even though the simulation is not: the Feature brought
+forward finishes sooner, the displaced one later, and both are asserted rather than "the dates changed".
+
+**AC-3.6 is split across #6 and #7, stated rather than skipped.** "The move triggers a forecast run"
+(DESIGN's refinement of AC-3.6, DDD-8/ADR-133) is a promise the background queue keeps on another thread,
+so a scenario that waited for it would be timing against a thread rather than asserting a promise. #7
+asserts the promise where it is made — a committed move asks `IForecastUpdater` for a run **for every
+Portfolio the Feature belongs to** — and #6 drives the Monte Carlo itself to assert that the order really
+decides the dates. #8 asserts the negative: a refused move spends no forecast run.
+
+**Frontend — `FeatureMoveMenu.test.tsx` (15) + `useFeatureOrdering.moveGate.test.tsx` (8), all
+`describe.skip`**
+
+| Block | Scenario | AC |
+|---|---|---|
+| **the move verdict is the server's alone** | keeps the actions disabled for a Feature that belongs to no Portfolio the caller can see | AC-3.8 / SA-10 |
+| | keeps the actions disabled when every Portfolio shown on the row is writable | AC-3.8 / SA-10 |
+| | enables the actions only because the server said so | AC-3.7 |
+| a refusal says why | names the Portfolio standing in the way | AC-3.8 |
+| | still says something when there is no Portfolio it may name | SA-9 |
+| | greys the relative moves out while the grid is sorted by a column | AC-3.9 / D14 |
+| no ordering of our own | renders no move actions at all (`not-premium`, `policy-off`) | AC-3.10 |
+| the four gestures | Move to Top / Up / Down / Bottom each send the one command shape | AC-3.1, AC-3.3, D18 |
+| | asks for nothing when a disabled action is clicked | AC-3.7 |
+| operable without a mouse | opens and moves by keyboard alone | AC-3.11 |
+| | announces the outcome | AC-3.11 |
+| the gate | six reasons resolved in one place, plus precedence and an absent verdict | AC-3.7 … AC-3.10 |
+
+**E2E — `ManualSortingMove.spec.ts` (1, `.skip`, `@premium @walking_skeleton`)** — hand the order over,
+send the bottom row to the top through the row menu, read the list back.
+
+Error/edge share: **10 of 18 backend scenarios (56%)**, plus 6 of 15 menu tests. Above the skill's 40%
+bar without padding, because this slice is the epic's first write surface and most of its promises are
+refusals.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Adapter coverage
+
+| Port | Treatment | Covered by |
+|---|---|---|
+| the move port → `LighthouseAppContext` block UPDATE | real adapter, real SQLite via `TestWebApplicationFactory` | 1-6, 17, 18 |
+| `IFeatureMoveAuthorization` → `IRbacAdministrationService` | shipped `ClaimsDrivenRbacAdministrationService`, grant-honouring since slice 01 | 8-13; **12 is the probe DESIGN asked for** — 403 for an orphan with `SystemAdmin`, the one case the naive implementation answers 200 |
+| `IForecastUpdater` → `UpdateQueueService` | **faked** — a background queue is external/non-deterministic to a scenario, and waiting on it would time a thread | 7 (positive), 8 (negative) |
+| `IForecastService` (real Monte Carlo, 10 000 trials) | real, driven explicitly by the scenario rather than through the queue | 6 |
+| `ILicenseService` | faked (external/non-deterministic) | 13 |
+| `IWorkTrackingConnector` | faked; everything downstream of it, including the real `WorkItemService`, stays production | 3, 5 |
+| `IFeatureOrderingPolicyProvider` / `IFeatureOrdering` / `IFeaturePositionMap` / `IFeatureRankSeeder` | exercised through the read and policy ports, never directly (Mandate 1) | all |
+| EF migration | **N/A — slice 03 adds no column.** `ManualRank` shipped in slice 02 and the verdict fields are computed, not stored | — |
+
+**Not covered, deliberately — the renumber's concurrency.** DESIGN's driven-port table asks for a move
+racing a sync append. These scenarios run on real SQLite through a single-threaded test host, so the
+race cannot be staged here; ADR-132 §3 says the collision produces a duplicate rank that DDD-3 resolves
+by `Id`, and **scenario 17 asserts the property that makes the race harmless** (a ragged set of places
+still reports one place per Feature) without asserting the race. Stated, not faked.
+
+**Not covered, deliberately — provider parity, both halves of OQ-3.** SQLite only, as in slices 01
+and 02.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Scaffolds
+
+**Backend: none, and that is a deliberate departure from slices 01 and 02 worth naming.** Every backend
+scenario talks raw JSON over real HTTP — the move body is written as `{"beforeFeatureId":N}` in the
+harness and the verdict is read out of the response with `TryGetProperty` — so nothing in the test
+project needs a production type in order to compile. `FeatureDto`'s `CanMove` / `MoveBlockReason` /
+`BlockingPortfolios`, `IFeatureMoveAuthorization`, `IFeatureRankingService`, `FeatureRankChanged` and its
+handler are **all DELIVER's**, and writing any of them here would let a scenario go green by compiling
+against a type somebody added rather than by the behaviour arriving.
+
+| File | Scaffold | Marker |
+|---|---|---|
+| `Lighthouse.Frontend/src/models/FeatureOrdering.ts` | `+ FeatureMoveBlockReason`, `+ FeatureMoveGate`, `+ FeatureMoveTarget`, **types only** | `// __SCAFFOLD__` |
+| `Lighthouse.Frontend/src/models/Feature.ts` | `+ canMove?`, `+ moveBlockReason?`, `+ blockingPortfolios?` on `IFeature` and the class, **not** through zod | `// __SCAFFOLD__` |
+| `services/Api/FeatureService.ts` | `+ moveFeature(featureId, target)`, throws | `// __SCAFFOLD__` |
+| `hooks/useFeatureOrdering.ts` | `+ resolveMoveGate(feature, { isSortActive })`, throws | `// __SCAFFOLD__` |
+| `components/Common/FeatureListDataGrid/FeatureMoveMenu.tsx` | throws on render | `// __SCAFFOLD__` |
+| `tests/MockApiServiceProvider.ts` | the new `IFeatureService` member | — (test double) |
+
+**Not scaffolded, on purpose**:
+
+- The `PATCH .../rank` route. It is not a compile dependency; an unmapped route is a genuine RED. The
+  harness translates the test host's SPA-fallback exception into the 404 it really is, so each scenario
+  fails on its own `Then` (see the red classification below).
+- The zod schema for the three new `FeatureDto` fields, `FeatureListDataGrid`'s injection of the actions
+  column, and `DataGridBase.onSortModelChange`. Wiring any of them would make part of the slice green
+  from DISTILL — Fixture Theater, the same call slices 01 and 02 made about `position` and the policy
+  routes.
+
+**Owed at GREEN — delete the SPA-fallback catch.** `ManualSortingAcceptanceTest.MoveFeature` wraps the
+request in a `catch (InvalidOperationException) when (… "SPA default page" …)` that reports the 404 the
+unmapped route really is. Remove it in the same commit that maps the route: once the route exists the
+catch is unreachable, and leaving it would report a future accidental un-mapping as "the move port
+refused" instead of surfacing as the routing regression it is. This is the identical debt slice 01
+incurred and paid.
+
+**Shared-contract change, blast radius measured**: `IFeatureService` gains one member — one
+implementation (`FeatureService`) and one factory (`createMockFeatureService`), both extended before the
+interface widened, per the project's shared-contract rule. `IFeature` gains three optional fields, which
+is additive for every consumer. `IRbacAdministrationService` is **not** widened again: slice 01's
+`GetWritablePortfolioIdsAsync` is the batch method `IFeatureMoveAuthorization` consumes.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Test placement
+
+| Layer | Path | Precedent |
+|---|---|---|
+| Backend acceptance | `Lighthouse.Backend.Tests/API/Integration/ManualSorting/Slice03RelativeMoves{Scenarios,Specifications}.cs` on the shared `ManualSortingAcceptanceTest` harness | slices 01 and 02's own triples, extended rather than copied |
+| Frontend unit | `src/components/Common/FeatureListDataGrid/FeatureMoveMenu.test.tsx`, `src/hooks/useFeatureOrdering.moveGate.test.tsx` | co-located, as `columns.position.test.tsx` and `useFeatureOrdering.test.tsx` already are |
+| E2E | `Lighthouse.EndToEndTests/tests/specs/features/ManualSortingMove.spec.ts` + `FeaturesPage.moveToTop` | `specs/features/ManualSortingSwitch.spec.ts` |
+
+The harness gained four things and no scenario owns any of them: `MoveFeature` (raw-JSON PATCH with the
+SPA-fallback translation), `SeedThroughputFor` (a run chart that is deliberately not flat),
+`DriveAForecastRun`, and `TheCallerCanWriteSomePortfoliosAndOnlyReadOthers` — the last because
+`TheCallerCanWritePortfolios` and `TheCallerCanReadPortfolios` each *replace* the caller's identity, so
+calling both would silently drop the first and quietly turn ADR-136's central scenario into a
+read-only one. `IForecastUpdater` is now faked at the factory, for every slice on this harness.
+
+New POM surface: `FeaturesPage.moveToTop(featureName)`, which waits on the `PATCH` rather than on a
+rendered state — the grid reorders optimistically, so a row that has already jumped says nothing about
+whether the instance accepted the move (`project_e2e_debounced_autosave_navigation_race`).
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Driving-adapter coverage
+
+| Driving port (DESIGN) | Slice-03 scenario | Protocol exercised |
+|---|---|---|
+| `PATCH api/v1\|latest/features/{featureId}/rank` | 1-9, 12-18 | real HTTP through `WebApplicationFactory` |
+| `GET api/v1\|latest/features` | 1-6, 8-14, 16-17 | real HTTP |
+| `PUT api/v1\|latest/appsettings/FeatureOrdering` | precondition in 17 of 18 | real HTTP |
+| work-item refresh (`IWorkItemService.UpdateFeaturesForPortfolio`) | 3, 5 | real service port, faked connector behind it |
+| forecast run (`IForecastService.UpdateForecastsForPortfolio`) | 6 | real service port, real Monte Carlo |
+| UI row action menu | `FeatureMoveMenu.test.tsx` + the E2E skeleton | rendered menu, real click, real keyboard |
+| `GET api/v1\|latest/portfolios/{id}` | — | **not re-covered here.** Slice 02's scenario 4 already pins that call site against the Features view; a move changes the sequence both read, not which sequence they read |
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Pre-requisites
+
+- **Wave-decision reconciliation**: passed, 0 contradictions. Re-read for this slice; DESIGN's two
+  "Refinements to … (no silent changes)" sections still cover every change to DISCUSS, including the one
+  that touches this slice directly (slice-03's "a concurrent work-item refresh cannot interleave with a
+  renumber" was **retired** by ADR-132 §3, and the scenarios honour the retirement rather than the brief).
+  `deliverable_type` resolves to `application` — no plugin or skill reviewer.
+- **DEVOPS**: deliberately skipped, as for slices 01 and 02 — no new infrastructure, no new dependency,
+  no new external integration, no new column. K7 is the instrumentable KPI here and it is a field count,
+  not an assertion.
+- **The fail-open move-verdict Vitest is the hard gate, and it did not exist to be un-skipped.** See the
+  section below.
+- **`IFeatureRankingService`, `IFeatureMoveAuthorization`, `FeatureRankChanged` + its handler, the
+  `PATCH` route, the three `FeatureDto` verdict fields and their zod schema, `FeatureMoveMenu`'s body,
+  `resolveMoveGate`'s body, `DataGridBase.onSortModelChange`, the actions column and the optimistic
+  reorder** — all DELIVER.
+- **The E2E needs a premium licence on the instance under test** (`reference_premium_license_dev_seed`),
+  which is why it carries `@premium`. It was **not run** — it is `.skip` against an endpoint that does
+  not exist.
+- **The dogfood run wants demo scenario 15 loaded first** (see the premise check), or the D4 verdict is
+  taken against a Feature nobody else holds.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 The hard gate — the fail-open move verdict
+
+Slice 01's DISTILL raised this and said it "currently sits behind `describe.skip` like every other
+slice-01 test" and "must be un-skipped and green before the slice-03 code review". **The test does not
+exist.** Slice 01 shipped `position` and nothing else of the verdict surface: there is no
+`FeatureMoveMenu`, no `canMove`, and no `describe.skip` block anywhere in the frontend matching it. The
+whole verdict surface — DTO fields, authorization service, menu — is slice 03's.
+
+So the gate carries, unchanged in force and changed in mechanics: **DISTILL has now written it**, as the
+`the move verdict is the server's alone` block in `FeatureMoveMenu.test.tsx`, and it must be un-skipped
+and green **before the slice-03 code review**, not merely before DELIVER completes. A skipped test for a
+fail-open authorization path is indistinguishable from no test — which is exactly what the last four
+weeks demonstrated.
+
+Both fail-open shapes have their own assertion, and the file mocks `useRbac` to answer **yes to
+everything** so that a component which re-derives the verdict passes every other test in the file and
+fails these three:
+
+1. **Empty `projects`** — `projects.every(…)` is vacuously true on the empty array an orphan Feature
+   produces, so the naive expression renders the actions *enabled* for a Feature nobody may move.
+2. **Fully-writable `projects`** — `projects` is already filtered to the Portfolios the caller may read,
+   so every Portfolio *on the row* can be writable while the Feature also sits in one the caller cannot
+   see at all.
+3. **The positive control** — the actions are enabled because the server said so, never because the row
+   looks writable.
+
+`useFeatureOrdering.moveGate.test.tsx` carries the same discipline one layer down: the gate reads the
+server's `canMove` and does not consult RBAC or `projects` at all, and an **absent** verdict reads as
+refused, because absent is not permission.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Red classification (fail-for-the-right-reason gate)
+
+Suite run before the `[Ignore]` / `describe.skip` markers went on. **18 of 18 backend scenarios and 23 of
+23 frontend tests classify as `MISSING_FUNCTIONALITY`.**
+
+| Cases | Failure | Class |
+|---|---|---|
+| Backend 1-9, 12-18 | `… Body: <no route mapped for the move port>` — each on its own `Then` (`Expected: OK` / `Forbidden` / `BadRequest`, `But was: NotFound`) | `MISSING_FUNCTIONALITY` |
+| Backend 10 | `A refusal a Portfolio owner cannot act on is a dead end … Expected: some item equal to "New Product Initiative", But was: <empty>` | `MISSING_FUNCTIONALITY` |
+| Backend 11 | `Expected: False, But was: null` — the row carries no verdict at all | `MISSING_FUNCTIONALITY` |
+| Frontend, all 23 | `Error: Not yet implemented — RED scaffold` from the production scaffold | `MISSING_FUNCTIONALITY` |
+
+**One wrong-RED was found and fixed, and it is the same one slice 01 hit.** On the first run every
+scenario that drives the move port failed with `InvalidOperationException : The SPA default page
+middleware could not return the default page '/index.html'` — an unmapped route falls through to the SPA
+fallback, which throws because the test host has no `wwwroot`. The assertion never ran: `SETUP_FAILURE`,
+not RED. `MoveFeature` now catches that one exception and reports the 404, so each scenario fails on its
+own `Then`.
+
+**A second wrong-RED was found and fixed, and it is the more interesting one.** Scenario 16 (a move
+against a target that does not exist) deliberately asserts only that the move *did not succeed* — whether
+that reads as `400` or `404` is not something the acceptance criteria decide. That expectation was
+satisfied by the unmapped route's own 404: the scenario went **green against an endpoint nobody had
+written**. It now rejects the harness's unmapped-route sentinel explicitly, and fails.
+
+Gates after the markers went on: `dotnet build` 0 warnings / 0 errors · `pnpm test` 3980 passed /
+23 skipped · `pnpm build` clean · Biome clean on every file this wave touched · E2E `tsc --noEmit` clean.
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Decisions taken and questions closed
+
+No silent N/A.
+
+| # | Item | Outcome |
+|---|---|---|
+| **OQ-4** | Should Move to Bottom materialise ranks for *all* null-ranked rows or only those it jumps? | **CLOSED, and forced rather than decided.** A null place sorts last (INV-O1), so "to the end" is not the end unless the unplaced tail is given places. When the target is the end of the list, "the ones it jumps" and "all of them" are the same set. Scenario 3 asserts it; the crafter inherits an assertion, not a question. |
+| **OQ-2** | Is D11's `Any() && All()` usable in a real multi-team instance? | **Unchanged, and now measured on the dogfood instance too** — zero shared Features, and structurally unreachable there. Ships proven by integration test and demo scenario 15 alone. The dogfood-setup route is named in the premise check. |
+| **New — refused vs quietly stored** | What does the move port answer while the **tracker** owns the order? | **DISTILL's call, named because DESIGN does not decide it.** Scenario 14 asserts a refusal. The alternative — accept and store a rank nobody reads — is harmless to the data (D9 retains ranks either way) but leaves a direct API caller looking at an unmoved list with no way to tell why, which is the silent no-op this project rejects. If DELIVER or a reviewer prefers `200`, only that one assertion changes. |
+| **New — the exact status for a missing target** | `400` or `404`? | **Deliberately not pinned.** Scenario 16 asserts only that the move did not report success and did not fall over. |
+| **OQ-3** | `string.Compare` parity across providers | Unchanged, still open. SQLite only. |
+| **OQ-7** | A `FeatureRankChanged` handler that throws is logged and swallowed | **No AT, as DESIGN instructed.** #7's assertion is that the trigger is *asked for*; what a subscriber does with it has no observable to assert against. |
+
+---
+
+## Wave: DISTILL / [REF] Slice-03 Not made testable as written
+
+No silent N/A.
+
+| AC | Gap |
+|---|---|
+| **AC-3.3** | Split. "Move to Bottom sends the Feature to the end of the global order" is backend scenario 3. "**Move Up targets the previous *visible* row**" has no backend observable at all — the server is told an identity, not a screen — so it is asserted on the client, from the `visibleNeighbours` the menu is given (`FeatureMoveMenu.test.tsx`). That the grid computes those neighbours from the rows actually rendered, after `hideCompleted` and after any filter, is DELIVER's wiring and belongs in `FeatureListDataGrid.test.tsx`. |
+| **AC-3.9** | Split. The gate's answer while a sort is active is `useFeatureOrdering.moveGate.test.tsx`. Whether MUI-X really reports its sort model through the new `DataGridBase.onSortModelChange` is grid behaviour no unit test observes; the gate is driven from an `isSortActive` flag, not from the grid. Flagged for DELIVER. |
+| **AC-3.11** | Partly. Keyboard operation is asserted (tab to the trigger, Enter, arrow, Enter). "Announces its outcome to a screen reader" is asserted as a `role="status"` region naming the Feature — which is the mechanism, not the experience. Whether a real screen reader reads it out is not observable in this stack. Stated, not faked. |
+| **the optimistic reorder** | Not asserted. "Optimistic reorder in the grid, reconciled against the server response" is in the slice brief's IN scope, and it is a component concern with no acceptance-level observable: the E2E waits on the `PATCH` precisely so it cannot accidentally assert the optimistic state. Belongs in `FeatureListDataGrid.test.tsx` at DELIVER. |
+| **the renumber's transaction boundary** | Not probed — see the adapter coverage. The harness is single-threaded, and scenario 17 asserts the property that makes the race harmless rather than the race. |
+| **K7** | No test, by construction. "How often is the answer Move to Top versus a run of Move Ups" is a fortnight of field counting, and it is what slice 04's go/no-go rests on. |

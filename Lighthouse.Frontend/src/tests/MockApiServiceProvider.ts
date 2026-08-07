@@ -164,6 +164,7 @@ export const createMockFeatureService = (): IFeatureService => {
 		getFeaturesByReferences: vi.fn(),
 		getFeaturesByIds: vi.fn(),
 		getFeatureWorkItems: vi.fn(),
+		moveFeature: vi.fn().mockResolvedValue(undefined),
 	};
 };
 

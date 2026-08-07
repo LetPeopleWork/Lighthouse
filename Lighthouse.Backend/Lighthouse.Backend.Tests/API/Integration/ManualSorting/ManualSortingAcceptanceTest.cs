@@ -8,8 +8,10 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -34,11 +36,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     /// </summary>
     public abstract class ManualSortingAcceptanceTest
     {
+        /// <summary>
+        /// What <see cref="MoveFeature"/> reports when the route is not mapped at all. A scenario whose
+        /// expectation is loose about the status code has to reject this explicitly, or it would go green
+        /// against an endpoint nobody has written.
+        /// </summary>
+        protected const string NoRouteMappedForTheMovePort = "<no route mapped for the move port>";
+
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
+        protected Mock<IForecastUpdater> ForecastUpdaterMock = null!;
 
         [SetUp]
         public void Init()
@@ -59,6 +69,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
                 .ReturnsAsync(() => []);
 
+            // The forecast runner is a background queue, so a scenario that waited for it would be timing
+            // against a thread rather than asserting a promise. Faking it turns ADR-133's "a move triggers a
+            // run" into something a test can see the moment the move commits.
+            ForecastUpdaterMock = new Mock<IForecastUpdater>();
+
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
@@ -74,6 +89,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
                         services.RemoveAll<IWorkTrackingConnectorFactory>();
                         services.AddScoped(_ => connectorFactoryMock.Object);
+
+                        services.RemoveAll<IForecastUpdater>();
+                        services.AddSingleton(_ => ForecastUpdaterMock.Object);
                     });
                 });
 
@@ -293,6 +311,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ApplyIdentity("test-portfolio-admin", string.Join(',', grants));
         }
 
+        /// <summary>
+        /// The scope shape ADR-136's rule is really about: the caller runs one Portfolio and can only look
+        /// at another. Applying the two grants separately would not express it — each call replaces the
+        /// caller's identity outright, so the second would silently drop the first.
+        /// </summary>
+        protected void TheCallerCanWriteSomePortfoliosAndOnlyReadOthers(int[] writablePortfolioIds, int[] readablePortfolioIds)
+        {
+            var grants = writablePortfolioIds
+                .Select(id => $"{ClaimsDrivenRbacAdministrationService.PortfolioAdminGrantPrefix}{id}")
+                .Concat(readablePortfolioIds.Select(id => $"{ClaimsDrivenRbacAdministrationService.ViewerPortfolioGrantPrefix}{id}"));
+
+            ApplyIdentity("test-portfolio-admin", string.Join(',', grants));
+        }
+
         protected void TheCallerAdministersTheWholeInstance()
         {
             ApplyIdentity("test-admin", ClaimsDrivenRbacAdministrationService.SystemAdminGrant);
@@ -339,6 +371,87 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             var body = new StringContent($"{{\"policy\":\"{policy}\"}}", System.Text.Encoding.UTF8, "application/json");
             var response = await Client.PutAsync("/api/latest/appsettings/FeatureOrdering", body);
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        /// <summary>
+        /// Moves one Feature relative to another (D18's single endpoint shape). The body stays raw JSON so
+        /// these scenarios judge the wire contract a client really sends: a rename on the server side
+        /// cannot keep them green, and no scenario can pass by compiling against a type somebody added.
+        /// <paramref name="targetJson"/> carries exactly one of <c>beforeFeatureId</c> / <c>afterFeatureId</c>;
+        /// <c>"beforeFeatureId":null</c> is Move to Bottom.
+        /// </summary>
+        protected async Task<(HttpStatusCode Status, string Body)> MoveFeature(int featureId, string targetJson)
+        {
+            var body = new StringContent($"{{{targetJson}}}", System.Text.Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await Client.PatchAsync($"/api/latest/features/{featureId}/rank", body);
+                return (response.StatusCode, await response.Content.ReadAsStringAsync());
+            }
+            catch (InvalidOperationException exception) when (exception.Message.Contains("SPA default page", StringComparison.Ordinal))
+            {
+                // OWED AT GREEN — delete this catch in the commit that maps the route. An unmapped route
+                // falls through to the SPA fallback, which throws in a test host with no wwwroot, and the
+                // scenario would then fail on host plumbing instead of on its own Then. Once the route
+                // exists the catch is unreachable, and leaving it would report a future accidental
+                // un-mapping as "the move port refused" rather than as the routing regression it is.
+                return (HttpStatusCode.NotFound, NoRouteMappedForTheMovePort);
+            }
+        }
+
+        /// <summary>
+        /// Gives a Team a run chart with a different number of items closed on each of the last days.
+        /// AC-3.6 needs the variation: with the same count every day every Feature finishes on the same
+        /// simulated day, so a sequencing change has nothing to show up in (Epic 5459's lesson).
+        /// <paramref name="itemsClosedPerDay"/> reads most-recent-day first.
+        /// </summary>
+        protected void SeedThroughputFor(int teamId, params int[] itemsClosedPerDay)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var today = sp.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
+            var workItemRepository = sp.GetRequiredService<IWorkItemRepository>();
+            var closed = 0;
+
+            for (var daysAgo = 0; daysAgo < itemsClosedPerDay.Length; daysAgo++)
+            {
+                for (var item = 0; item < itemsClosedPerDay[daysAgo]; item++)
+                {
+                    workItemRepository.Add(new WorkItem
+                    {
+                        Name = $"Closed item {++closed}",
+                        ReferenceId = $"WI-{teamId}-{closed}",
+                        Type = "Story",
+                        State = "Done",
+                        StateCategory = StateCategories.Done,
+                        TeamId = teamId,
+                        ParentReferenceId = string.Empty,
+                        Order = string.Empty,
+                        StartedDate = today.AddDays(-(daysAgo + 5)),
+                        ClosedDate = today.AddDays(-daysAgo),
+                    });
+                }
+            }
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Runs the production Monte Carlo forecast for a Portfolio. Scenarios drive it themselves rather
+        /// than waiting on the queue: whether a move *schedules* a run is a separate promise, asserted
+        /// against <see cref="ForecastUpdaterMock"/>.
+        /// </summary>
+        protected async Task DriveAForecastRun(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var portfolio = sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)
+                ?? throw new InvalidOperationException($"Portfolio {portfolioId} not found");
+
+            await sp.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio);
         }
 
         /// <summary>

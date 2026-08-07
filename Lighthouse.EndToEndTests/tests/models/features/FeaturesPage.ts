@@ -48,6 +48,27 @@ export class FeaturesPage {
 		return (await header.innerText()).trim();
 	}
 
+	/**
+	 * Epic 5375 slice 03 — the row action menu behind D18's four gestures. Waits on the move itself
+	 * rather than on a rendered state: the grid reorders optimistically, so a row that has already
+	 * jumped says nothing about whether the instance accepted the move
+	 * (`project_e2e_debounced_autosave_navigation_race`).
+	 */
+	async moveToTop(featureName: string): Promise<void> {
+		await this.getFeatureRow(featureName)
+			.getByRole("button", { name: /move/i })
+			.click();
+
+		const theMoveItself = this.page.waitForResponse(
+			(response) =>
+				response.request().method() === "PATCH" &&
+				response.url().includes("/rank"),
+		);
+
+		await this.page.getByRole("menuitem", { name: "Move to Top" }).click();
+		await theMoveItself;
+	}
+
 	async getListedPositions(): Promise<number[]> {
 		const cells = await this.featureRows
 			.locator('[data-field="position"]')
