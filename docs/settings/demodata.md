@@ -26,6 +26,7 @@ There are various scenarios, some of them are available in the community edition
 | Dependencies | Explore a portfolio where we have Epics with multiple Teams involved. | Complex portfolio planning, cross-team dependencies, program management. One Epic is also shared with a team that has closed nothing, so it shows the [Cannot forecast](../concepts/howlighthouseforecasts.html#when-a-team-cannot-be-forecast) state | Premium |
 | Quarterly Planning | See how a Quarterly Planning could look like for a Team that uses Monte Carlo Forecasts | Strategic planning sessions, OKR setting, long-term forecasting | Premium |
 | New Product Initiative | A portfolio with 20 unstarted features representing a new product in early planning stages | Initial forecasting for new initiatives, capacity planning, backlog prioritization, demonstrating "when will we finish?" forecasts | Premium |
+| Shared Features | Two portfolios that both work on the same Feature. Where does shared work sit in the order? | Showing that a Feature belongs to more than one Portfolio yet holds a single place in the forecast order, explaining the [Features page](../features/features.html) and its position column | Premium |
 
 ## Feedback
 We'd love to hear from you! Reach out to us at [contact@letpeople.work](mailto:contact@letpeople.work) or through our [Slack Channel](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A) if you have feedback on the scenarios or wish something else to be covered or adjusted.

@@ -114,7 +114,7 @@ That means, if you really want to ignore everything else, just remove all other 
 Because Lighthouse works this way, this is also the reason why the order is so important. In the above image, you can see that *Feature 1* is ordered above *Feature 2*, which itself is above *Feature 3*. That means that Lighthouse assume we first focus all our efforts on *Feature 1* (assuming a [Feature WIP of 1](#the-impact-of-feature-wip)), then on *Feature 2*, and only then on *Feature 3*. If you forecast *Portfolio 2*, the forecast will take into account that *Feature 1* and *Feature 2* must be done before that.
 
 {: .recommendation}
-The [Feature View](../teams/detail.html#features) in the Teams Detail Page will show you **all** Features the team is contributing towards in their order.
+The [Feature View](../teams/detail.html#features) in the Teams Detail Page will show you **all** Features the team is contributing towards in their order. If you want the full picture instead of one team's slice, the [Features page](../features/features.html) lists every Feature across all Portfolios in exactly the order described here.
 
 ## The Impact of Feature WIP
 By default, Lighthouse will assume that your Teams will work on one Feature at a time (*Feature WIP* = 1). In other words, this means that the forecast will check how many items can be done, and assume all those items will contribute to the first feature. So the Features will be done *in sequence*:

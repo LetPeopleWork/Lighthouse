@@ -1,71 +1,73 @@
 # Slice 01 — manual verification log
 
-**Feature**: epic-5375-manual-sorting · **ADO**: Story #5688 (Resolved, board column *Verification*)
-**Session**: 2026-08-07 · **Status**: incomplete — AC-1.7 in progress, three ACs unchecked
+**Feature**: epic-5375-manual-sorting · **ADO**: Story #5688
+**Sessions**: 2026-08-06, 2026-08-07 · **Status**: verified, with two findings fixed
 
-Verified against the dogfood dev instance, not demo data: Postgres `localhost:1886`, 82 Features in one
-Portfolio, ranks mirroring the real ADO backlog. Frontend built into `wwwroot`, backend on
-`http://localhost:5169` (`--launch-profile http`).
+Verified against a dogfood dev instance on `http://localhost:5169` (`--launch-profile http`), frontend
+built into `wwwroot`. The 2026-08-07 instance is **multi-connector** — 97 Features across three
+Portfolios (Lighthouse/ADO 81, Jira 4, Linear 7) plus 4 orphans — which is a stronger test of the
+position column than the single-Portfolio instance the 2026-08-06 pass used.
 
 ## Results
 
 | AC | Result | Evidence |
 |----|--------|----------|
-| AC-1.1 | **Findings F1, F2** | Nav entry present, routes to `/features`, label follows Settings → Terminology |
-| AC-1.2 | **Not checked** | `Authentication:Enabled` and `Authorization:Enabled` are both `false` in `appsettings.Development.json` — no user to restrict. Covered by `Slice01FeaturesViewScenarios.cs` |
-| AC-1.3 | **Pass (inspection)** | `FeaturesController.cs:16` carries `[Authorize]` only — no `LicenseGuard`; `Header.tsx:61-66` nav array is unconditional; `App.tsx:225` route has no license wrapper. Instance is licensed, so the non-premium path was not clicked through |
-| AC-1.4 | **Not checked** | One Portfolio, no shared Feature. Needs demo scenario 15 "Shared Features", and `DemoDataService.LoadScenarios` calls `ClearExistingData()` first — loading it destroys the dogfood DB |
-| AC-1.5 | **Pass** | List opens at `6`, not `1` — positions 1–5 are hidden Done Features still holding their place (DDD-5). Gaps between adjacent visible rows: `20 → 71` (Multiple Datasources? → Manual Signal Tracking) and `79 → 81`. `#` column present on the Portfolio Features tab with the same values (D10/S16) |
+| AC-1.1 | **Pass** (was F1) | Nav entry routes to `/features`, label follows Settings → Terminology. Placement fixed 2026-08-07 — see F1 |
+| AC-1.2 | **Not checked on an instance** | `Authentication:Enabled` and `Authorization:Enabled` are both `false` in `appsettings.Development.json` — no second user to restrict. Covered by `Slice01FeaturesViewScenarios.cs` |
+| AC-1.3 | **Pass (inspection)** | `FeaturesController.cs:16` carries `[Authorize]` only — no `LicenseGuard`; the `Header.tsx` nav array is unconditional; `App.tsx:225` route has no license wrapper. Instance is licensed, so the non-premium path was not clicked through |
+| AC-1.4 | **Pass** | A Feature placed in a second Portfolio renders once, listing `Lighthouse, Jira Portfolio`, holding a single position (13) |
+| AC-1.5 | **Pass** | Positions are instance-wide: the visible list opens at `1` and runs `…7 → 13`, with a `26 → 77` gap between adjacent visible rows. `#` column present on the Portfolio Features tab with the same values (D10/S16) |
 | AC-1.6 | **Pass** | Sorting by Name and by State leaves every position unchanged |
-| AC-1.7 | **In progress** | Default-hidden half proven by AC-1.5's opening at `6`. The toggle-off half — 82 rows from `1`, previously visible rows keeping their numbers — was not completed |
-| AC-1.8 | **Not checked** | Needs a Feature whose source `Order` is blank. The DTO does not expose `Order`, so the target has to come from the DB |
-| AC-1.9 | **Not checked** | 500 Features not reachable on this instance. Backend half pinned by a scenario test |
+| AC-1.7 | **Pass** | Toggle off reveals 97 rows numbered exactly `1..97`, and **not one** previously-visible row changed its number |
+| AC-1.8 | **Pass** | A Feature with an empty source `Order` renders position `89` — a number, no blank cell, no `NaN`. Empty sorts after every integer and ahead of the non-integer ranks, which is what `FeatureComparer`'s ladder specifies |
+| AC-1.9 | **Not measured** | 500 Features not reachable on a real instance. Backend half pinned by a scenario test; the UI half remains an open measurement |
+
+AC-1.4 and AC-1.8 were checked by seeding the two conditions directly in the dev database (a second
+Portfolio membership, and one blanked `Order`) and reverting both afterwards. The instance is back to
+its pre-check state.
+
+## Premise check (slice brief, "Verify the premise first")
+
+Run against the same instance. **Hypothesis 1 does not fire here**:
+
+- **0 of 97** Features have a null or empty `Order`. Blanks do not dominate.
+- 3 duplicate `Order` pairs out of 97. Ties are marginal.
+- Shape mix: 81 ADO StackRanks (`1999xxxxxx`), 7 Linear negative integers (`-45661`), 4 Linear doubles
+  (`33.74`, `-952.83`), 5 Jira LexoRanks (`0|i0007c:`). The live bucket layout is integers at 1–88,
+  doubles at 89–92, LexoRank strings at 93–96.
+
+That mix is also the case that makes `FeatureComparer`'s intransitivity reachable rather than
+theoretical — see the epic's open decisions.
+
+Hypothesis 2 (**is a flat ranked list usable at real size?**) stays **inconclusive**: 97 Features on a
+dev instance is not a customer's backlog, and the D7 clock — do newly-arrived Features get found and
+placed, or pile up unsorted at the tail? — starts from this dogfood, not from slice 01's ship date.
 
 ## Findings
 
-### F1 — the nav entry is in the wrong place
+### F1 — the nav entry was in the wrong place · **fixed 2026-08-07**
 
-It sits third, **after** System Settings; it belongs directly after Overview.
+It sat third, after System Settings; it belongs directly after Overview.
 
-Not a one-line reorder of `Header.tsx:61-66`. `LighthousePage.goToOverview` matches the concatenated
-nav text `"LighthouseOverviewSystem"`, so inserting between the two breaks every existing E2E spec.
-The locator is the brittle thing — tighten it first, then move the entry.
+The blocker was never the ordering: `LighthousePage.goToOverview` matched the concatenated nav text
+`"LighthouseOverviewSystem"`, so inserting an entry between the two broke every spec that navigates
+home. `OverviewPage.toolbar` had the same shape of problem.
 
-### F2 — the help text needs rewording
+Fixed by making the locators robust first — the desktop nav carries a `main-navigation` testid that
+both navigations scope to, and `toolbar` resolves the app bar by its banner role. The banner box was
+measured against what the old text locator matched (`0,0,1600,64` in both cases), so the licensing
+screenshot clips the same region it always did.
 
-`FeaturesView.tsx:62`:
+### F2 — the help text mentioned teams as a literal · **fixed 2026-08-07**
 
-```
-Lighthouse forecasts ${featuresTerm} in this order — the top of the list gets your teams' throughput first.
-```
+`featuresTerm` resolved through `getTerm`, but *teams* was hard-coded, so an instance that renames Team
+read its own word everywhere except that sentence. Rather than routing a second term, the sentence was
+shortened to `Lighthouse forecasts {Features} in this order.`
 
-Final copy is still open. Separately, and regardless of the wording chosen: `featuresTerm` resolves
-through `getTerm`, but **teams is a literal**. `TERMINOLOGY_KEYS.TEAMS` exists
-(`TerminologyKeys.ts:22`), so an instance that renames Team reads its own word everywhere except this
-sentence. If the final wording keeps a reference to teams, route it through `getTerm`.
+## Still open after this pass
 
-## Resuming on another machine
-
-```bash
-cd Lighthouse.Frontend && pnpm build          # builds into ../Lighthouse.Backend/.../wwwroot
-dotnet run --project Lighthouse.Backend/Lighthouse.Backend --launch-profile http
-```
-
-Then http://localhost:5169. Positions shift as the instance syncs — take the numbers from
-`GET /api/latest/features` at the moment of checking rather than from this document.
-
-Next open item is **AC-1.7**: flip *hide completed* off, confirm 82 rows from `1` and that rows
-already visible keep their numbers.
-
-For the three unchecked ACs, each needs an instance this one cannot be:
-
-- **AC-1.2** — auth + authz on, plus a second user holding `PortfolioRead` on a subset.
-- **AC-1.4** — demo scenario 15, on a throwaway DB (it wipes what is there).
-- **AC-1.8** — a Feature with a blank source `Order`; check the DB for one before hunting in the UI.
-
-## Not done: the dogfood moment
-
-The slice brief's premise check (`slices/slice-01-features-view-and-position-column.md`) was not run —
-neither the `Order` blank/tie query nor the two dogfood questions ("is anything important sitting below
-something unimportant?", and whether the worst 85% date is explained by its position). The learning
-hypothesis is therefore still open, as is the D7 clock the brief says to start here.
+- **AC-1.2** needs auth + authz enabled and a second user holding `PortfolioRead` on a subset.
+- **AC-1.9**'s UI half needs an instance with 500 Features.
+- **Screenshots** are not regenerated. The nav reorder changes the app bar in all 13 full-page docs
+  screenshots, so they are stale as of 2026-08-07 and owe a regeneration pass — remember to delete the
+  PNGs first, or a sub-0.5% diff silently keeps the old image.
