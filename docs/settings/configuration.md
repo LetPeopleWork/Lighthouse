@@ -71,6 +71,25 @@ While preview features should be relatively stable, it can be that they will not
 
 If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
 
+## Feature Order (Premium)
+By default, Lighthouse forecasts your Features in the order your work tracking system gives them — the rank or backlog order they already carry there. Every refresh re-reads that order, so a rank someone changes in Azure DevOps, Jira, or Linear re-sequences your forecast without anyone on your team deciding it. On connectors that have no meaningful rank at all, such as ServiceNow, the sequence was never yours to begin with.
+
+Turn *Let Lighthouse own the order of your Features* on and Lighthouse takes ownership instead.
+
+- **Nothing moves when you turn it on.** Lighthouse records the order you are already looking at, exactly as it stands. The list is identical the instant the switch flips — if it reshuffled, that would be indistinguishable from a bug.
+- **Refreshes stop re-sequencing it.** Your work tracking system keeps updating its own rank, and Lighthouse keeps ignoring it. Only the order it recorded decides what the forecast draws from.
+- **The `#` column heading changes to *Manual***, on the [Features page](../features/features.html) and on the Portfolio Feature list, so it is always visible which order you are reading.
+- **Features that arrive later go to the end** and stay there until you move them. They are not announced.
+
+### Turning it back off
+Turning the switch off hands the order straight back to your work tracking system, immediately and without a refresh. The places you chose are **kept** — turn it on again and they come back, rather than being re-read from the tracker. That makes the switch something you can try on a live instance instead of a decision you have to commit to.
+
+{: .note}
+Owning the order requires a [Premium license](../licensing/licensing.html#licensed-features). The Features page itself, and the `#` column on it, are available on every instance regardless.
+
+{: .recommendation}
+Changing who owns the order changes every forecasted date, because the order is what the simulation draws from. Expect the dates on your Portfolios to be recalculated shortly after you flip the switch either way.
+
 ## Terminology Configuration
 Lighthouse allows you to customize the terminology used throughout the application to better align with your organization's language and workflow conventions. This feature helps eliminate confusion by ensuring consistent terminology that matches how your team and organization refers to work items and concepts.
 

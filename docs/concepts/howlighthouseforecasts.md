@@ -116,6 +116,11 @@ Because Lighthouse works this way, this is also the reason why the order is so i
 {: .recommendation}
 The [Feature View](../teams/detail.html#features) in the Teams Detail Page will show you **all** Features the team is contributing towards in their order. If you want the full picture instead of one team's slice, the [Features page](../features/features.html) lists every Feature across all Portfolios in exactly the order described here.
 
+### Who decides that order
+By default your work tracking system does, through the rank your Features already carry there. Lighthouse re-reads it on every refresh, which means a rank changed in Azure DevOps, Jira, or Linear moves your forecasted dates without anyone on your team deciding it — and on a connector with no meaningful rank, such as ServiceNow, there was never an order worth reading.
+
+You can hand that decision to Lighthouse instead, with [Feature Order](../settings/configuration.html#feature-order-premium) under System Settings. Nothing moves when you turn it on; from then on refreshes no longer re-sequence the forecast.
+
 ## The Impact of Feature WIP
 By default, Lighthouse will assume that your Teams will work on one Feature at a time (*Feature WIP* = 1). In other words, this means that the forecast will check how many items can be done, and assume all those items will contribute to the first feature. So the Features will be done *in sequence*:
 

@@ -1626,7 +1626,80 @@ DESIGN wrote, each stated in the code at the point it applies rather than only h
 | **DEL-2** | **ADR-133's SA-16 optimisation is declined.** `FeatureOrderingPolicyChangedForecastTriggerHandler` fans out on every policy change, not only on disable. | SA-16's premise — INV-A3 seeds from the sequence already on screen, so nothing moved — holds only the *first* time. Taking the order over again after the tracker has re-ranked (AC-5.3) moves plenty. One coalesced run per Portfolio on a rare administrative action is cheaper than silently stale dates on a feature whose promise is "the forecast follows your priority". |
 | **DEL-3** | **`IFeatureRankSeeder` is a type DESIGN did not name.** | SA-3's seed needed a home. Putting it in `AppSettingService` would have given that class a `IRepository<Feature>` and an ordering dependency it has no other use for. |
 
-**Owed, still open at this checkpoint** — `ManualSortingAcceptanceTest.Send`'s SPA-fallback catch is now
-unreachable and must be deleted; the DISTILL red-classification section explains why leaving it
-misreports a future routing regression. Refactor, code review and mutation testing are **not** run yet:
-held for the user's manual verification.
+| **DEL-4** | **The ordering-policy READ is open** (see the Quality-gate section — this was DEL-1's original entry, kept here as the numbered decision). | See DEL-1. |
+
+---
+
+## Wave: DELIVER / [REF] Slice-02 Manual verification (2026-08-07, Benjamin)
+
+**PASSED, no findings.** Verified on a restored real database, including the sharpest available case:
+the order was changed in the tracker's own backlog, a refresh confirmed to move nothing while the
+switch was on, then the switch was turned off and the tracker's change appeared. That is AC-2.2 and
+AC-5.1 exercised against real data in one pass.
+
+**One defect found, and only by hand.** Handing the order over on a database that had Teams failed with
+`UNIQUE constraint failed: PortfolioTeam.PortfoliosId, PortfolioTeam.TeamsId`. `FeatureRankSeeder` read
+Features through `IRepository<Feature>` — whose `GetAll` loads the whole `Include` graph — and then
+called `Update` on each, and `RepositoryBase.Update` is `DbSet.Update`, which re-marks that entire graph
+and re-inserts the join rows. The seeder now reads the narrow `FeatureOrderKey` projection, loads only
+the rows it will place, and never calls `Update`.
+
+**Why 17 green scenarios missed it, which is the part worth keeping**: every fixture used a Portfolio
+with **no Teams**, so no join rows existed to violate. And a Team merely attached to a Portfolio is
+still not enough — the first repro attempt passed. The Team has to reach the Feature graph through
+`FeatureWork`, which is the edge that makes EF fix up the join. The harness gained `SeedTeamOn` and
+`SeedWorkOn`, and `Handing_the_order_over_works_on_a_portfolio_that_has_teams` reproduces the failure
+against the old code.
+
+---
+
+## Wave: DELIVER / [REF] Slice-02 Quality gate
+
+| gate | result |
+|---|---|
+| Code review (`@nw-software-crafter-reviewer`) | 1 blocker raised, **partly upheld** — see below |
+| Mutation, backend | **85.42 %** (first run 73.96 %) |
+| Mutation, frontend | **84.78 %** (first run 57.14 %) |
+| `dotnet test` | 4560 passed / 0 failed / 0 skipped |
+| `pnpm test` | 3980 passed / 0 failed / 0 skipped |
+| `dotnet build`, `pnpm build`, Biome, E2E `tsc` | clean, 0 warnings |
+
+Full survivor triage: `mutation/results.md`.
+
+**The reviewer's blocker, and why it was only partly upheld.** It reported that two concurrent seeds can
+assign duplicate ranks, "violating the invariant that each Feature has one unambiguous place". That
+invariant is not the one this design has: DDD-3/INV-O2 make duplicates, gaps and nulls *legal*, and
+`A_ragged_set_of_places_is_still_one_unambiguous_order` already proves the sequence stays total because
+ties fall to `Id`. So the stated violation is not one. The underlying concern was still worth acting on
+for a different reason: the seeder could have **overwritten a place somebody already chose**, which
+becomes a real defect the moment slice 03 starts writing ranks. It now re-reads inside the write step
+and takes only what is still unplaced. Racing seeds can still land on the same number, which INV-O2
+allows.
+
+**What the mutation survivors were actually worth.** Four were genuine holes, not score noise: AC-5.3's
+"latecomers append after the last place" path had never been executed by any test; nothing asserted the
+policy change is announced, and the handler that listens had no test at all; the two new
+`SettingsService` methods had no test whatsoever; and AC-5.4's real observable — that the grid renders
+the heading the ordering seam hands it — was unasserted. A fifth survivor exposed `isLoading` on
+`useFeatureOrdering` as dead API surface, which was deleted rather than tested.
+
+**Also closed here**: `FeatureOrderingSingleSourceArchUnitTest`, which ADR-134 SA-2 named and which the
+DISTILL premise-check section above had claimed existed. It does now, and it was verified by
+introducing a violation and watching it fail — not by watching it pass. And
+`ManualSortingAcceptanceTest`'s SPA-fallback catch is deleted, as the red-classification section owed.
+
+---
+
+## Wave: DELIVER / [REF] Slice-02 Finalization checklist
+
+No silent N/A.
+
+| item | state |
+|---|---|
+| **Docs prose** | Done — `settings/configuration.html#feature-order-premium` (the switch, both directions, the premium boundary), plus the "Where the order comes from" section on the Features page and "Who decides that order" in `concepts/howlighthouseforecasts.md`. |
+| **Screenshots** | **Deliberately deferred to the epic's finalization**, user's call 2026-08-07. Slice 01's nav reorder already staled all 13 page shots; regenerating twice for two slices of one epic is waste. The debt is the epic's, not this slice's. |
+| **Demo data** | N/A — slice 02 seeds no new surface. The shared-Feature scenario that slice 01 owed is unchanged. |
+| **Clients (CLI / MCP)** | N/A — the clients call none of the ordering routes, so no version bump. Unchanged from DESIGN's driving-port table. |
+| **Website marketing surface** | **Deferred to pre-release**, user's call 2026-08-07. OQ-6 stays open: manual sorting is premium and the pricing copy does not say so yet. |
+| **ADO** | US 5689 → Resolved. Epic 5375 stays Active; slices 03 and 04 remain. |
+| **Workspace** | Kept. Three slices of four are not done, so nothing is archived. |

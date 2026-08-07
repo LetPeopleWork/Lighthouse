@@ -12,7 +12,7 @@ Every other list in Lighthouse shows you a slice: the Features of one Portfolio,
 
 ## The position column
 
-The `#` column is the Feature's place in the order Lighthouse simulates, counted across the whole instance.
+The `#` column is the Feature's place in the order Lighthouse simulates, counted across the whole instance. Its heading reads *Manual* instead of `#` when Lighthouse owns the order (see below).
 
 It is **not** the row number. Two rows shown one after the other can read `26` and `77`, and that is correct — the numbers in between belong to Features that are filtered out of your current view. Positions count:
 
@@ -21,8 +21,14 @@ It is **not** the row number. Two rows shown one after the other can read `26` a
 
 So the position tells you where a Feature sits in the real forecast sequence, not where it sits on your screen. A Feature ordered above another gets your Teams' throughput first, which is what moves the forecasted dates.
 
+### Where the order comes from
+
+By default it comes from your work tracking system — the rank or backlog order your Features already carry there. Lighthouse reads it on every refresh, and never writes it back.
+
+That also means the tracker decides: a rank someone changes there re-sequences your forecast. If you would rather Lighthouse owned the order, turn on *Feature Order* under [System Settings → Configuration](../settings/configuration.html#feature-order-premium). Nothing moves when you do — Lighthouse records the order you are already looking at — but from then on refreshes stop re-sequencing it, and this column's heading reads *Manual* so you can tell which order you are reading. Turning it back off returns your tracker's order immediately.
+
 {: .note}
-The order comes from your work tracking system — the rank or backlog order your Features already carry there. Lighthouse reads it, it does not write it back.
+Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability. Reading it — this page and this column — is not.
 
 ## What you see
 
