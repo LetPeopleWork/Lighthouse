@@ -21,6 +21,10 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/portfolios/{portfolioId:int}")]
     [Route("api/latest/portfolios/{portfolioId:int}")]
     [ApiController]
+    // S107: the eighth collaborator is IFeatureOrdering, and it is here because ADR-134 SA-2 makes one
+    // seam the only place an ordering comparer may be built - so the DTO has to be handed it rather than
+    // reach for one. Same trade WorkItemService already took.
+#pragma warning disable S107
     public class PortfolioController(
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
@@ -31,6 +35,7 @@ namespace Lighthouse.Backend.API
         IUpdateQueueService updateQueueService,
         ILighthouseClock clock)
         : ControllerBase
+#pragma warning restore S107
     {
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]

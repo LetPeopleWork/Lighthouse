@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class AppSettingServiceTests
     {
+        private static readonly string[] SeedThenRecord = ["seed", "record"];
+
         private Mock<IRepository<AppSetting>> repositoryMock;
         private Mock<IFeatureOrderingPolicyProvider> policyProviderMock;
         private Mock<IFeatureRankSeeder> rankSeederMock;
@@ -36,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             await CreateService().SetFeatureOrderingPolicy(FeatureOrderingPolicy.ManualOrder);
 
-            Assert.That(steps, Is.EqualTo(new[] { "seed", "record" }));
+            Assert.That(steps, Is.EqualTo(SeedThenRecord));
         }
 
         [Test]

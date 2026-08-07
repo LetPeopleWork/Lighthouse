@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
+    // S107: see PortfolioController - the eighth collaborator is the ordering seam ADR-134 SA-2 requires.
+#pragma warning disable S107
     public class PortfoliosController(
         IRepository<Portfolio> portfolioRepository,
         IRepository<Team> teamRepository,
@@ -27,6 +29,7 @@ namespace Lighthouse.Backend.API
         IFeatureOrdering featureOrdering,
         ILighthouseClock clock)
         : ControllerBase
+#pragma warning restore S107
     {
         [HttpGet]
         public async Task<IEnumerable<PortfolioDto>> GetPortfolios()
