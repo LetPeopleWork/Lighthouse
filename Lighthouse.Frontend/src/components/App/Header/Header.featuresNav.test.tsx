@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { ITerminology } from "../../../models/Terminology";
@@ -22,7 +22,7 @@ vi.mock("../../../hooks/useUpdateAll", () => ({
 	}),
 }));
 
-// Epic 5375 slice 01 — US-01 AC-1.1 and D16. A third way in, next to Overview and System Settings,
+// Epic 5375 slice 01 — US-01 AC-1.1 and D16. A third way in, between Overview and System Settings,
 // wearing whatever this instance calls its Features.
 const renderHeaderWhereFeaturesAreCalled = (featuresTerm: string) => {
 	const terminology: ITerminology[] = [
@@ -69,6 +69,26 @@ describe("Header — the way in to the Features view", () => {
 				screen.getAllByRole("link", { name: "Features" }).length,
 			).toBeGreaterThan(0);
 		});
+	});
+
+	it("sits between Overview and System Settings", async () => {
+		renderHeaderWhereFeaturesAreCalled("Features");
+
+		await waitFor(() => {
+			expect(
+				screen.getAllByRole("link", { name: "Features" }).length,
+			).toBeGreaterThan(0);
+		});
+
+		const navigationLabels = within(screen.getByTestId("main-navigation"))
+			.getAllByRole("link")
+			.map((link) => link.textContent);
+
+		expect(navigationLabels).toEqual([
+			"Overview",
+			"Features",
+			"System Settings",
+		]);
 	});
 
 	it("leads to the Features view", async () => {

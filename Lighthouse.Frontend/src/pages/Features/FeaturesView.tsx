@@ -59,7 +59,7 @@ const FeaturesView: React.FC = () => {
 				{featuresTerm}
 			</Typography>
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-				{`Lighthouse forecasts ${featuresTerm} in this order — the top of the list gets your teams' throughput first.`}
+				{`Lighthouse forecasts ${featuresTerm} in this order.`}
 			</Typography>
 			<FeatureListDataGrid
 				features={features}

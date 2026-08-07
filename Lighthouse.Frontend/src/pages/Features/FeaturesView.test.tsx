@@ -160,7 +160,7 @@ describe("FeaturesView", () => {
 
 		expect(
 			await screen.findByText(
-				"Lighthouse forecasts Deliverables in this order — the top of the list gets your teams' throughput first.",
+				"Lighthouse forecasts Deliverables in this order.",
 			),
 		).toBeInTheDocument();
 	});

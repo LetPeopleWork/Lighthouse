@@ -166,7 +166,9 @@ export class OverviewPage {
 		return new PortfolioEditPage(this.page);
 	}
 
+	// The whole app bar, not the nav links inside it — the licensing screenshot clips its right third,
+	// which is where the status icons live.
 	get toolbar(): Locator {
-		return this.page.getByText("LighthouseOverviewSystem Settings");
+		return this.page.getByRole("banner");
 	}
 }

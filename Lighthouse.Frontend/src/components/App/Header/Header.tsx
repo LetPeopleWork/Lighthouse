@@ -60,9 +60,9 @@ const Header: React.FC<HeaderProps> = ({
 
 	const navigationLinks = [
 		{ path: "/", text: "Overview" },
-		{ path: "/settings", text: "System Settings" },
 		// D16: the instance's own word for its Features, never a hard-coded "Features".
 		{ path: "/features", text: getTerm(TERMINOLOGY_KEYS.FEATURES) },
+		{ path: "/settings", text: "System Settings" },
 	];
 
 	const drawer = (
@@ -147,7 +147,7 @@ const Header: React.FC<HeaderProps> = ({
 					</>
 				) : (
 					<>
-						<Box className="nav-links">
+						<Box className="nav-links" data-testid="main-navigation">
 							{navigationLinks.map((link) => (
 								<NavigationItem
 									key={link.text}

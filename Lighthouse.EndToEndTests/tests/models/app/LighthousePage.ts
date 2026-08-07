@@ -25,11 +25,12 @@ export class LighthousePage {
 	}
 
 	async goToOverview(): Promise<OverviewPage> {
-		await this.page
-			.getByText("LighthouseOverviewSystem")
-			.getByRole("link", { name: "Overview" })
-			.click();
+		await this.mainNavigation.getByRole("link", { name: "Overview" }).click();
 		return new OverviewPage(this.page, this);
+	}
+
+	get mainNavigation(): Locator {
+		return this.page.getByTestId("main-navigation");
 	}
 
 	async createNewTeam(): Promise<AddTeamWizard> {
@@ -42,10 +43,12 @@ export class LighthousePage {
 		return new AddPortfolioWizard(this.page);
 	}
 
-	// Epic 5375 slice 01 — the third top-level entry. The label is the instance's own word for its
-	// Features (D16), so the caller passes it rather than this method assuming "Features".
+	// Epic 5375 slice 01 — the entry between Overview and System Settings. The label is the instance's
+	// own word for its Features (D16), so the caller passes it rather than assuming "Features".
 	async goToFeatures(navigationLabel: string): Promise<FeaturesPage> {
-		await this.page.getByRole("link", { name: navigationLabel }).click();
+		await this.mainNavigation
+			.getByRole("link", { name: navigationLabel })
+			.click();
 		return new FeaturesPage(this.page);
 	}
 
