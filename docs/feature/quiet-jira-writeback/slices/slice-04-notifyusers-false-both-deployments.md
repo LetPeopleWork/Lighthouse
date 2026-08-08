@@ -30,8 +30,18 @@ whole approach needs rethinking.
   query param and record the item's outcome from the retry. A 403 on the suppressed attempt is *not* a
   write-back failure - the retry is what determines success. Any other non-success status keeps today's
   failure semantics.
-- The 403-and-retried condition is recorded on the result so slice 05 can surface it. Log it once per
-  connection per cycle, not once per issue - a portfolio-wide retry storm must not flood the log.
+- The 403-and-retried condition is recorded on the result so slice 05 can surface it, and is **logged at
+  `Warning`** (user decision, 2026-08-08). Until slice 05 ships this is the only signal the admin gets, so
+  it must be visible at default production log levels.
+  - **Deliberately louder than the surrounding code.** Write-back failures currently log at `LogDebug`
+    (`JiraWorkTrackingConnector.cs:292` and `:339`) and are therefore invisible in production. Matching
+    that style would swallow this warning - do not "align" it back down during review.
+  - **Once per connection per cycle, not once per issue** - a portfolio-wide retry storm must not flood
+    the log. The message names the connection and the affected project(s), and states the remedy: grant
+    `Administer Jira` globally, or `Administer Projects` on those projects.
+  - **Future:** once the task manager exists, the same condition should surface as a warning in the UI.
+    Out of scope for this epic - the log is what ships here; slice 05's connection-status surface is the
+    richer interim.
 - No settings, no DTO, no migration, no UI (D3 - always-on, mirroring ADO). D3 survives *because* of the
   retry: always-on is safe only when the fallback guarantees the write still lands.
 
