@@ -56,11 +56,15 @@ mappings to keep the issue history and API budget survivable.
   **one** Jira PUT is issued carrying all changed fields in a single `fields` object.
 - AC-05.2: Given the same on ADO, then one `UpdateWorkItemAsync` call is issued with a `JsonPatchDocument`
   carrying one operation per changed field.
-- AC-05.3: Given a batched write partially fails, when results are assembled, then each field still yields
-  its own `WriteBackItemResult` with correct `TargetFieldReference` and error message - the per-field
-  result contract is unchanged for callers.
-- AC-05.4: Given a batched write fails wholesale, then **every** field in that batch is marked failed with
-  the error - never a silent partial success.
+- AC-05.3: **RETIRED - partial application is impossible.** Both connectors reject a mixed-validity batch
+  atomically (verified 2026-08-08, see "Batched-write failure semantics" below). There is no partial-success
+  case to assemble results for.
+- AC-05.4: Given a batched write fails, then **every** field in that batch is marked failed - never a silent
+  partial success. This is now the *only* failure path.
+- AC-05.8 **(new, anti-regression):** Given a batch fails because **one** field is invalid, when write-back
+  completes, then the **remaining valid fields are still written**, and only the offending field is reported
+  failed. Today's per-field calls isolate failures; batching alone would lose all of them. See the
+  unbatched-retry note below.
 - AC-05.5: Given an issue with exactly one changed field, then behaviour is identical to today (one call,
   one result).
 - AC-05.6: Given ADO write-back, then `suppressNotifications: true` is still passed on the batched call.
@@ -103,6 +107,56 @@ reason (notification batching, not per-field notification).
 
 The slice still ships on its remaining wins. The email claim stays out of docs and release notes; it may
 hold for a customer with notification batching disabled, but that is unverified.
+
+## Batched-write failure semantics - VERIFIED 2026-08-08
+
+Probed against real instances (Jira Cloud `letpeoplework.atlassian.net`, ADO `dev.azure.com/huserben`,
+project `CMFTTestTeamProject`). **Both connectors fail atomically.** In every case the valid fields were
+proven valid by re-sending them alone immediately afterwards, and they applied.
+
+| Connector | Payload | Result | Did the valid fields land? |
+|---|---|---|---|
+| Jira | 3 fields, `duedate:"not-a-date"` | `400 {"errors":{"duedate":"The duedate must be of the format \"yyyy-MM-dd\""}}` | **no** |
+| Jira | 3 fields, unknown `customfield_99999` | `400 {"errors":{"customfield_99999":"Field ... cannot be set. It is not on the appropriate screen, or unknown."}}` | **no** |
+| Jira | same 2 valid fields alone | `204` | yes |
+| ADO | 3 ops, `TargetDate:"not-a-date"` | `400 WorkItemFieldInvalidException` `TF401326: Invalid field status 'InvalidType' for field 'Microsoft.VSTS.Scheduling.TargetDate'` | **no** (`rev` unchanged) |
+| ADO | 3 ops, unknown field | `400 WorkItemTrackingFieldDefinitionNotFoundException` `TF51535: Cannot find field ...` | **no** |
+| ADO | 3 ops, one field the PAT may not write (`System.Tags`) | `403` | **no** - permission failures are atomic too, not just validation |
+| ADO | same 2 valid fields alone | `200` | yes |
+
+### The regression this introduces, and the fix
+
+Today each field is its own call, so **a bad mapping loses only its own field**. Batching changes that: one
+misconfigured mapping would silently take down **every** write-back field on that work item. That is a
+regression nobody listed, and it is the reason for AC-05.8.
+
+**Mitigation - unbatched retry, mirroring slice 04's philosophy:** when the batched call fails, fall back to
+per-field calls for that item. The good fields land, the offending field fails alone, and attribution is
+exact without parsing vendor error strings. Cost is `1 + N` calls in the failure case only, which is rare;
+the happy path stays at 1 call and today's isolation is preserved exactly.
+
+### Error attribution differs by connector
+
+- **Jira** returns a structured **per-field map** (`errors: {fieldRef: message}`), so the culprit is
+  machine-readable and several culprits can be reported at once.
+- **ADO** returns a **single message naming one field** (`TF401326: ... for field 'X'`). Parsing TF-codes is
+  brittle; prefer the unbatched retry for attribution.
+
+### Revision / history reduction - measured on both
+
+| Connector | Batched | Unbatched |
+|---|---|---|
+| Jira | 1 PUT, 4 fields -> **1** changelog entry | 4 PUTs -> **4** entries |
+| ADO | 1 patch, 3 ops -> `rev` 1 -> **2** | 3 patches -> `rev` 1 -> **4** |
+
+ADO notifies **per revision**, so the ADO cut is a genuine notification reduction as well - inferred from
+revision count, not inbox-verified (no second ADO identity was available).
+
+### Incidental
+
+`AzureDevOpsWorkTrackingConnector.cs:322-324` already fans out per-field writes **in parallel**
+(`Task.WhenAll` over the batch). Batching replaces N parallel calls with 1, so the ADO win is call count
+and revision count rather than latency.
 
 ## Taste tests
 
