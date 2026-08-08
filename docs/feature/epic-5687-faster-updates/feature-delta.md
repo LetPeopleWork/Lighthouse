@@ -841,11 +841,294 @@ would have carried.
 
 ---
 
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+**DESIGN run**: 2026-08-08 · **Scope**: application / components · **Interaction mode**: propose ·
+**Architect**: Morgan (`nw-solution-architect` frame, run inline — the DISCUSS code read was already in
+context, so a cold dispatch would have re-derived it)
+
+- ✓ `docs/product/architecture/brief.md` (5113 lines) — per-feature `## Application Architecture —
+  {feature-id} (DESIGN delta)` append pattern; this feature follows it.
+- ✓ `docs/product/architecture/adr-076-cluster-aware-update-queue.md` — the update-lifecycle aggregate
+  and INV-1..4. Load-bearing here: delta sits **inside** one execution, so it touches no admission
+  invariant. INV-4 (one active lifecycle per `UpdateKey`) is unaffected.
+- ✓ `adr-027` (modular monolith, domain events, CQRS-lite), `adr-015` (state-transition placement),
+  `adr-107` (percentiles recording handler on refresh events) — read as the precedent for DDD-4.
+- ✓ `docs/product/architecture/c4-diagrams.md` (1408 lines) — per-feature append; this feature appends.
+- ✓ This file's DISCUSS wave (D1-D12, US-01..US-08, 44 ACs) and all 8 slice briefs.
+- ✓ `docs/product/journeys/epic-5687-faster-updates.yaml`
+- ⊘ `docs/feature/epic-5687-faster-updates/spike/` (no SPIKE ran — slice 04 carries a pre-slice probe)
+- ⊘ `.nwave/des-config.json` has no `rigor` key → standard defaults, per-wave review skipped
+  (consolidated review fires at end of DISTILL)
+
+**Contradiction check**: none. Nothing in DESIGN reverses a DISCUSS decision. Two DISCUSS statements were
+*sharpened* by code read during this wave and are recorded under Changed Assumptions below.
+
+---
+
+## Wave: DESIGN / [REF] DDD List
+
+| # | Decision | Verdict | One-line rationale |
+|---|---|---|---|
+| DDD-1 | Sweep capability lives on `IWorkTrackingConnector` behind a per-connection probe | **Accepted** | Mirrors the existing `SupportsTransitionHistory(connection)` idiom, and only a *per-connection* probe can say "yes for Jira Cloud, not yet for Jira DC" when both are one class. |
+| DDD-2 | Phase 2 is a named by-reference-id fetch on the same port | **Accepted** | Both connectors already own one internally (`GetAdoWorkItemsById`, Jira's key-OR query); this names existing behaviour rather than adding it, and keeps the diff and removal set in `WorkItemService`. |
+| DDD-3 | Sync-owned delta state is columns on the existing entities | **Accepted** | `UpdateTime` is already a sync-owned field on the same tokened aggregate, and the concurrency token rotates only on `Added` or on the explicit human-edit path — so a background write cannot 409 an admin. |
+| DDD-4 | Staleness evaluation becomes a second pass over the stored set inside `WorkItemService` | **Accepted** | Smallest correct change, and it keeps every domain event this feature can raise being collected in one method — which is what makes AC-2.5 readable as a test. |
+| DDD-5 | Mode resolution and fingerprint computation are pure static helpers, not injected collaborators | **Accepted** | Both are total functions of data already in hand; `WorkItemService` already carries 12 constructor dependencies with `#pragma S107` suppressed, and a 13th for a pure function would not earn its place. |
+| DDD-6 | `WorkItemService` is EXTENDED with the two-phase path; no new orchestrator type | **Accepted** | The removal rule, the diff and the event collection are already there and must stay in one place (D2); a new orchestrator would either duplicate them or hollow out the existing class. |
+| DDD-7 | The sync outcome (mode, scanned, fetched) bubbles back through `ITeamDataService` to the updater | **Accepted** | The counts originate where the fetch happens and are consumed where `RefreshLog` is written; passing them back is smaller than making either end reach across the other. Shared-contract change — see Reuse Analysis. |
+| DDD-8 | The fingerprint guard is a reflection test over the query-owner property surface | **Accepted** | ArchUnitNET constrains types and dependencies, not property membership; the invariant here is "every fetch-shaping property is registered or explicitly excluded", which is a reflection assertion. |
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `IWorkTrackingConnector` | `Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs` | **EXTEND** — `SupportsIncrementalSync(connection)`, two sweep methods, two by-id fetch overloads |
+| `RemoteRecordStamp` | `Models/` (new, `sealed record`) | **CREATE NEW** — `(string ReferenceId, DateTime ChangedAt)`; the sweep's return element. No behaviour, no equivalent type exists |
+| `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** — sweep via `fields=updated`; probe returns true for Cloud (slice 02), for DC after slice 04 |
+| `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** — sweep = existing WIQL + a second WIQL on `System.ChangedDate` |
+| `ServiceNowWorkTrackingConnector` | `…/ServiceNow/ServiceNowWorkTrackingConnector.cs` | **EXTEND** — sweep on `sys_updated_on`, `sysparm_fields` narrowed, `InAStableOrder` kept |
+| `LinearWorkTrackingConnector` | `…/Linear/LinearWorkTrackingConnector.cs` | **EXTEND** — sweep with `includeHistory: false` |
+| `CsvWorkTrackingConnector` | `…/Csv/CsvWorkTrackingConnector.cs` | **EXTEND** — probe returns `false`; sweeps throw `NotSupportedException` and are never reached (D11) |
+| `WorkItemService` | `Services/Implementation/WorkItems/WorkItemService.cs` | **EXTEND** — two-phase path in `RefreshWorkItems` / `RefreshFeatures`; staleness moves to its own pass over the stored set (DDD-4) |
+| `SyncModeResolver` | `Services/Implementation/WorkItems/` (new, static) | **CREATE NEW** — pure `Full`/`Delta` decision (D8). Justified: no existing type makes this decision, and it must be directly unit-testable across six branches without a service graph |
+| `FetchFingerprint` | `Services/Implementation/WorkItems/` (new, static) | **CREATE NEW** — pure `For(IWorkItemQueryOwner)` → `string`. Justified: the property set it hashes is the invariant AC-5.4 guards; nowhere else models it |
+| `WorkItemBase` | `Models/WorkItemBase.cs` | **EXTEND** — `DateTime? LastChangedRemote`, copied explicitly in `Update(…)` (D6) |
+| `WorkTrackingSystemOptionsOwner` | `Models/WorkTrackingSystemOptionsOwner.cs` | **EXTEND** — `string? FetchFingerprint`, alongside the existing sync-owned `UpdateTime` |
+| `RefreshLog` | `Models/RefreshLog.cs` | **EXTEND** — `Mode`, `RecordsScanned`, `RecordsFetched` |
+| `ITeamDataService` / `TeamDataService` | `Services/…/TeamData/` | **EXTEND** — returns a `SyncOutcome` instead of `Task` (DDD-7) |
+| `TeamUpdater` / `PortfolioUpdater` | `…/BackgroundServices/Update/` | **EXTEND** — write the new `RefreshLog` fields; emit the one summary line |
+| `UpdateServiceBase` | `…/BackgroundServices/Update/UpdateServiceBase.cs` | **EXTEND** — per-entity "checking last update" line demoted to Debug (US-01) |
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+**No new inbound surface.** Restated for the record because it is a deliberate decision (D4), not an
+oversight:
+
+| Port | Change |
+|---|---|
+| Background timer loop (`UpdateServiceBase.ExecuteAsync`) | Behaviour unchanged; emits the summary line |
+| `POST api/v1\|latest/teams/{id}` / `portfolios/{id}` manual triggers | Unchanged — a manual trigger runs whichever mode D8 resolves |
+| `GET api/v1\|latest/update/status` | Unchanged this epic (Epic #5511 owns the richer view) |
+| Container / systemd log stream | The observable surface this epic ships |
+
+---
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Driven port | Adapters | Change |
+|---|---|---|
+| `IWorkTrackingConnector` | Jira, ADO, ServiceNow, Linear, CSV | **Extended** with the probe, two sweeps, two by-id fetches |
+| `IWorkItemRepository`, `IRepository<Feature>`, `IWorkItemStateTransitionRepository` | EF Core (SQLite / Postgres) | Unchanged shape; the staleness pass reads the stored set through the existing predicate API |
+| `IRefreshLogService` | EF Core | Unchanged shape; the record it writes gains three fields |
+| `IDomainEventDispatcher` | In-process | Unchanged — the same events, raised from a different loop |
+| `IUpdateQueueService` | In-process / Postgres advisory lock + Redis (ADR-076) | **Untouched.** Delta is inside one execution; admission and INV-1..4 are unaffected |
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+Nothing new is introduced. Pinned, for the record: .NET 10 / ASP.NET Core, EF Core with the existing
+SQLite + Postgres + SQL Server provider set, NUnit 4.6 + Moq + EF InMemory for tests, Stryker.NET for
+mutation. No new package, no new substrate, no new external dependency — the saving in this epic comes
+from *not asking* the tracker, so nothing had to be added to make it possible.
+
+Migrations are generated with the existing `CreateMigration` PowerShell script across all providers, and
+are additive only (expand-only per release).
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `WorkItemService.RefreshWorkItems` | `WorkItems/WorkItemService.cs` | Fetch, diff, persist, remove, raise events | **EXTEND** | The removal rule (D2) and event collection already live here and must stay in one place. A new orchestrator would either duplicate them or leave a hollow shell |
+| `IWorkTrackingConnector.SupportsTransitionHistory` | `Interfaces/WorkTrackingConnectors/` | A per-connection capability probe | **EXTEND** (same idiom, new member) | The existing member proves the shape works and is the only form that can answer differently for Jira Cloud vs DC on one class |
+| `AzureDevOpsWorkTrackingConnector.GetAdoWorkItemsById` | `AzureDevOps/…:657` | Fetch a payload set by id | **EXTEND** — becomes the ADO implementation of the new by-id overload | Already exists and is already used by the current full path; the overload names it on the port |
+| `JiraWorkTrackingConnector.GetParentFeaturesDetails` | `Jira/…:150` | Fetch Features by reference id (`key = "X" OR …`) | **EXTEND** — extract its by-id query and let both the parent path and phase 2 call it | Behaviour-preserving extraction; two callers of one query beats two queries |
+| `WorkTrackingSystemOptionsOwner.UpdateTime` | `Models/…:16,136` | A sync-owned field on a tokened config aggregate | **EXTEND** — `FetchFingerprint` gets the same lifecycle | The precedent already exists and is safe; a side table would add a repository, a join and an orphan-cleanup path to solve a problem this field proves does not exist |
+| `RefreshLog` / `IRefreshLogService` | `Models/RefreshLog.cs` | Per-update duration + item count, already persisted | **EXTEND** | Two of the four numbers the summary line needs are already recorded here and simply never surfaced |
+| `DeduplicateByReferenceId` | `WorkItems/WorkItemService.cs` | Collapsing duplicate reference ids from a Jira DC page set | **EXTEND** — the sweep reuses it | The DC duplicate hazard is identical for stamps and for issues; one collapse rule, one warning format |
+| `AddStalenessEventIfThresholdCrossed` | `WorkItems/WorkItemService.cs` | The staleness rule itself | **EXTEND** — same method, called from a different loop (DDD-4) | The rule is correct; only *what it is called over* is wrong under delta |
+| `SyncModeResolver` | — | — | **CREATE NEW** | No type decides this today. Six branches (never swept / missing stamps / fingerprint changed / probe false / sweep failed / otherwise delta) each need a direct unit test; a pure static type gives that without a service graph and without a 13th constructor dependency |
+| `FetchFingerprint` | — | — | **CREATE NEW** | The fetch-shaping property set is not modelled anywhere. AC-5.4's guard test needs exactly one place to point at, which is the reason this is a type and not an inline expression |
+| `RemoteRecordStamp` | — | — | **CREATE NEW** | A two-field record with no behaviour. `SyncedItem` (private to `WorkItemService`) pairs a *persisted* item with its transitions and is a different concept |
+
+Zero unjustified CREATE NEW decisions: all three are types with no existing counterpart, and two of the
+three exist specifically to give a hard acceptance criterion something to point at.
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context
+
+```mermaid
+C4Context
+    title System Context — Lighthouse incremental work-tracking sync (Epic #5687)
+
+    Person(operator, "Platform Operator", "Runs the instance; reads the log; owns the relationship with the tracker")
+    Person(configAdmin, "Configuration Administrator", "Edits Team / Portfolio settings")
+    Person(flowCoach, "Flow Coach", "Reads the metrics; never acts here, but is who is harmed if delta is wrong")
+
+    System(lighthouse, "Lighthouse", "Flow metrics and Monte Carlo forecasting. Polls work-tracking systems on a timer")
+
+    System_Ext(jira, "Jira Cloud / Data Center", "JQL; issue payload + changelog; 'updated' per issue")
+    System_Ext(ado, "Azure DevOps", "WIQL returns ids; payload + revisions per item; 'System.ChangedDate'")
+    System_Ext(snow, "ServiceNow", "Table API; state-span reads per record; 'sys_updated_on'")
+    System_Ext(linear, "Linear", "GraphQL; history connection per issue; 'updatedAt'")
+    System_Ext(csv, "CSV upload", "A file the user already uploaded — no remote to spare")
+
+    Rel(operator, lighthouse, "Reads the update summary line", "container logs")
+    Rel(configAdmin, lighthouse, "Edits settings", "HTTPS")
+    Rel(flowCoach, lighthouse, "Reads metrics", "HTTPS")
+
+    Rel(lighthouse, jira, "Sweep (id + updated), then payload for the changed only", "REST")
+    Rel(lighthouse, ado, "Sweep (WIQL ids + ChangedDate), then payload + revisions for the changed only", "REST")
+    Rel(lighthouse, snow, "Sweep (sys_id + sys_updated_on), then spans for the changed only", "REST")
+    Rel(lighthouse, linear, "Sweep (id + updatedAt), then history for the changed only", "GraphQL")
+    Rel(lighthouse, csv, "Full parse, always", "file")
+
+    UpdateRelStyle(lighthouse, csv, $offsetY="20")
+```
+
+## Wave: DESIGN / [REF] C4 — Container
+
+```mermaid
+C4Container
+    title Container — where the two-phase fetch sits
+
+    Person(operator, "Platform Operator")
+
+    System_Boundary(lh, "Lighthouse") {
+        Container(spa, "React SPA", "React 18 + TS", "Unchanged by this epic (D4)")
+        Container(api, "ASP.NET Core backend", ".NET 10", "Hosts the update background services and the sync pipeline")
+        ContainerDb(db, "Relational store", "SQLite / Postgres / SQL Server", "Gains LastChangedRemote, FetchFingerprint, three RefreshLog columns")
+        Container(logs, "Structured log stream", "stdout", "One summary line per update — the epic's observable surface")
+    }
+
+    System_Ext(tracker, "Work-tracking system", "Jira / ADO / ServiceNow / Linear")
+
+    Rel(operator, logs, "docker logs / journalctl")
+    Rel(api, tracker, "Phase 1 sweep, then phase 2 payload for changed ids", "HTTPS")
+    Rel(api, db, "Reads stored stamps; writes payloads, stamps, fingerprint, RefreshLog", "EF Core")
+    Rel(api, logs, "Update summary line")
+    Rel(spa, api, "Unchanged", "HTTPS")
+```
+
+## Wave: DESIGN / [REF] C4 — Component (sync pipeline)
+
+```mermaid
+flowchart TB
+    subgraph BG["Background update services"]
+        US["UpdateServiceBase&lt;T&gt;<br/><i>per-entity chatter → Debug</i>"]
+        TU["TeamUpdater / PortfolioUpdater<br/><i>writes RefreshLog + summary line</i>"]
+    end
+
+    subgraph APP["Application"]
+        TDS["ITeamDataService<br/><i>returns SyncOutcome (DDD-7)</i>"]
+        WIS["WorkItemService<br/>RefreshWorkItems / RefreshFeatures"]
+        SMR["SyncModeResolver<br/><i>pure — Full | Delta (D8)</i>"]
+        FFP["FetchFingerprint<br/><i>pure — For(queryOwner)</i>"]
+    end
+
+    subgraph PORT["Driven port"]
+        C["IWorkTrackingConnector<br/>SupportsIncrementalSync(conn)<br/>SweepWorkItemsForTeam / SweepFeaturesForPortfolio<br/>GetWorkItemsForTeam(team, refIds)"]
+    end
+
+    subgraph ADAPT["Adapters"]
+        J["Jira<br/><i>Cloud: slice 02 · DC: slice 04</i>"]
+        A["Azure DevOps"]
+        S["ServiceNow"]
+        L["Linear"]
+        CSV["CSV<br/><i>probe = false (D11)</i>"]
+    end
+
+    subgraph STORE["Persistence"]
+        R["WorkItem / Feature repositories<br/><i>+ LastChangedRemote</i>"]
+        O["Team / Portfolio<br/><i>+ FetchFingerprint, beside UpdateTime</i>"]
+        RL["RefreshLog<br/><i>+ Mode, Scanned, Fetched</i>"]
+    end
+
+    US --> TU --> TDS --> WIS
+    WIS -->|"1 resolve mode"| SMR
+    SMR -->|"reads"| FFP
+    SMR -->|"reads"| O
+    WIS -->|"2 sweep (full id set)"| C
+    WIS -->|"3 payload for changed ids only"| C
+    C --> J & A & S & L & CSV
+    WIS -->|"4 persist + removed = stored − swept"| R
+    WIS -->|"5 staleness over the STORED set (D10/DDD-4)"| R
+    WIS -->|"6 SyncOutcome"| TDS
+    TU --> RL
+```
+
+---
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| ID | Decision |
+|---|---|
+| DDD-1 | Sweep behind `bool SupportsIncrementalSync(WorkTrackingSystemConnection)` + `SweepWorkItemsForTeam` / `SweepFeaturesForPortfolio` on `IWorkTrackingConnector` |
+| DDD-2 | Phase 2 is `GetWorkItemsForTeam(team, IReadOnlyCollection<string> referenceIds)` and the Feature equivalent, extracted from `GetParentFeaturesDetails` |
+| DDD-3 | `FetchFingerprint` on `WorkTrackingSystemOptionsOwner`; `LastChangedRemote` on `WorkItemBase` |
+| DDD-4 | Staleness evaluated in a second pass over the stored set inside `WorkItemService` |
+| DDD-5 | `SyncModeResolver` and `FetchFingerprint` are pure static types, not injected collaborators |
+| DDD-6 | `WorkItemService` extended in place; no new orchestrator |
+| DDD-7 | `SyncOutcome(Mode, Scanned, Fetched)` returned through `ITeamDataService` to the updater |
+| DDD-8 | Fingerprint completeness enforced by a reflection test over the query-owner property surface |
+
+ADRs written for this feature: **ADR-138** (two-phase incremental sync), **ADR-139** (sweep capability
+probe on the connector port), **ADR-140** (fetch fingerprint on the config aggregate), **ADR-141**
+(time-driven derivations evaluated over the stored set).
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+Two DISCUSS statements were sharpened by code read during DESIGN. Neither reverses a decision.
+
+1. **DISCUSS said** (D6): *"It must be copied explicitly inside `WorkItem.Update(…)`; the copy path drops
+   members that are not plain settable properties."* **DESIGN adds**: the same obligation applies to the
+   Feature copy path, which slice 03 touches. The DISCUSS text named only the work item because that is
+   the path slice 02 exercises. Rationale: the hazard is the copy-constructor pattern, not the type.
+
+2. **DISCUSS said** (D3): the fingerprint is stored "per Team and per Portfolio independently."
+   **DESIGN adds**: it lands on their shared base `WorkTrackingSystemOptionsOwner`, so "independently"
+   means one column definition inherited by both, not two definitions. Rationale: the fetch-shaping
+   properties the fingerprint hashes are themselves declared on that base
+   (`WorkItemTypes`, `AllStates`, `DoneItemsCutoffDays`, `DataRetrievalValue`), so hashing them anywhere
+   else would reach across the inheritance boundary for no gain.
+
+No `upstream-changes.md` is written: neither sharpening changes a user story or an acceptance criterion.
+
+---
+
+## Wave: DESIGN / [REF] Open Questions
+
+| ID | Question | Deferred to | Why it is safe to defer |
+|---|---|---|---|
+| OQ-1 | Does the Jira DC identity sweep return a *stable* id set across back-to-back calls? | Slice 04 pre-slice probe (DELIVER) | Carried from DISCUSS. Only DC is affected; the probe runs before any DC code is written, and the slice is written to stop rather than guess |
+| OQ-D1 | Is the by-reference-id fetch shape genuinely present on ServiceNow and Linear, or only on Jira and ADO? | Slices 07 / 08 | Verified present on the two connectors that ship first; if it is absent on a later one, that connector's slice adds it as its own step rather than blocking the contract |
+| OQ-D2 | What uncertainty window does each connector's timestamp granularity need (D12's residual)? | Per connector at slice time | It is a per-connector constant, not a design choice. Jira is minute-grained, ADO and Linear sub-second, ServiceNow second-grained; the safe default is one unit of the connector's own granularity |
+| OQ-D3 | Does anything other than `TeamUpdater` consume `ITeamDataService.UpdateTeamData`? | Slice 01, before the signature changes | A shared-contract change; the project rule is to grep usages and extend the test builders first, which is a slice-01 step, not a design unknown |
+
+---
+
 ## Handoff
 
-**To**: `nw-solution-architect` (DESIGN) — full artifact set · `nw-platform-architect` (DEVOPS) — the
-Outcome KPIs section only.
+**To**: `nw-platform-architect` (DEVOPS) — the Outcome KPIs section · `nw-acceptance-designer` (DISTILL)
+— the full artifact set.
 
-DESIGN's first questions are already framed: where the sweep belongs on `IWorkTrackingConnector` (a new
-capability method versus widening `GetWorkItemsForTeam`), whether the fingerprint lives on the entity or
-in a side table, and where the staleness evaluation moves to once it leaves the fetch loop (D10).
+DEVOPS has little to do here and should say so explicitly rather than inventing work: no new substrate,
+no new external dependency, no deployment-topology change, and the multi-replica behaviour is untouched
+(ADR-076's admission lock is orthogonal to what happens inside an execution). The one genuine DEVOPS
+question is whether the summary line's field names should match what the hosted fleet's log pipeline
+already parses.
+
+DISTILL's acceptance surface is unusually shaped and worth flagging: three of this epic's criteria assert
+that something does **not** change (AC-2.3 removal, AC-2.4 byte-identical unchanged items, AC-2.5
+staleness still fires). Those are the tests that catch the failure mode this design is built around —
+wrong data behind a green pipeline — and they need to be written as such, not as smoke tests.

@@ -5111,3 +5111,111 @@ is "how can you be sure all the ordering paths agree?", which is a picture, not 
 | **slice-01** | The DTO field is `position`, not `rank`. | INV-O2 forbids reading a rank value, and the two diverge once gaps exist (ADR-135). |
 | **slice-03** | "Transaction boundary such that a concurrent work-item refresh cannot interleave with a renumber" is **retired**. | ADR-132 §3 already retired the premise: it may interleave, and INV-O1 makes the collision harmless. |
 | **DISCUSS Q6** | Seeding is synchronous with no progress UI, governed by INV-A3. | ADR-132 made it need not be atomic; INV-A3 makes one rule serve AC-2.1, AC-2.6 and AC-5.3. |
+
+---
+
+## Application Architecture — epic-5687-faster-updates (DESIGN delta)
+
+**Feature**: `epic-5687-faster-updates` (ADO Epic #5687 "Faster Updates", child Stories #5724-#5731)
+**Wave**: DESIGN · **Date**: 2026-08-08 · **Architect**: Morgan (Solution Architect), scope =
+application/components, interaction mode = PROPOSE
+
+### Architectural Pattern
+
+Unchanged: modular monolith, ports and adapters. This feature adds no layer, no substrate and no
+external dependency. It changes *what a driven adapter is asked for* on a path that already exists —
+the saving comes from not asking the work-tracking system, not from remembering its answers, so nothing
+is cached and no component is introduced to hold state.
+
+### Key invariants introduced
+
+- **INV-F1 (removal fidelity).** Every cycle enumerates the full identity set of the query, so
+  `removed = stored − swept` retains exactly the meaning it has under a full fetch. A sweep that can
+  *lose* a reference id may never drive deletion — this is the acceptance rule that gates each
+  connector, and the reason Jira Data Center is probed before it is trusted.
+- **INV-F2 (per-record change detection).** Change is `swept.ChangedAt != stored.LastChangedRemote`,
+  compared item by item. No global watermark exists, so clock skew, watermark semantics and the
+  failed-cycle question are absent from the design rather than mitigated in it.
+- **INV-F3 (no partial mode).** An update is `full` or `delta`. Never swept, missing stamps, changed
+  fingerprint, unsupported connection, or a failed sweep all resolve to `full`. Ambiguity always
+  resolves to the expensive answer.
+- **INV-F4 (derivation completeness).** Only the remote fetch is incremental. Remaining-work rollup,
+  feature extrapolation, the percentile default size and forecast triggering recompute every cycle,
+  because they are functions of wall-clock and of other teams' data.
+- **INV-F5 (time-driven signals over the stored set).** Any signal that is a function of elapsed time
+  rather than of a field change is evaluated over every stored record, not over the fetched ones.
+  Staleness is the first member; `BlockedStalenessThresholdDays` is the obvious next.
+
+### Component Decomposition
+
+| Component | Change |
+|---|---|
+| `IWorkTrackingConnector` | EXTEND — `SupportsIncrementalSync(connection)`, `SweepWorkItemsForTeam`, `SweepFeaturesForPortfolio`, by-reference-id overloads of the two fetch methods |
+| `RemoteRecordStamp` | NEW — `sealed record (string ReferenceId, DateTime ChangedAt)`, no behaviour |
+| Jira / ADO / ServiceNow / Linear connectors | EXTEND — one sweep implementation each; Jira's probe is `true` for Cloud, `true` for DC only after its pagination probe passes |
+| `CsvWorkTrackingConnector` | EXTEND — probe returns `false`; sweeps throw as an assertion, never as control flow |
+| `WorkItemService` | EXTEND — two-phase path; staleness moves to its own pass over the stored set |
+| `SyncModeResolver`, `FetchFingerprint` | NEW — pure static; no DI (the service already carries 12 dependencies under a suppressed S107) |
+| `WorkItemBase`, `WorkTrackingSystemOptionsOwner`, `RefreshLog` | EXTEND — `LastChangedRemote`, `FetchFingerprint`, and `Mode`/`RecordsScanned`/`RecordsFetched` |
+| `ITeamDataService`, `TeamUpdater`, `PortfolioUpdater`, `UpdateServiceBase` | EXTEND — the sync outcome bubbles to where `RefreshLog` is written; per-entity log chatter demoted to Debug |
+
+### Driving Ports (HTTP)
+
+**None added, deliberately.** The observable surface of this feature is the structured log. A
+task-manager and admin-health view is ADO Epic #5511's scope, and the `RefreshLog` fields added here are
+what that epic will render — this feature feeds it rather than competing with it.
+
+### Driven Ports
+
+`IWorkTrackingConnector` is extended as above. The repositories, `IRefreshLogService` and
+`IDomainEventDispatcher` keep their shapes. `IUpdateQueueService` is untouched: ADR-076's per-entity
+advisory lock is an *admission* boundary, and everything in this feature happens inside a single
+admitted execution, so INV-1..4 there are unaffected.
+
+### Reuse Analysis
+
+Eight of eleven touched components are EXTEND. The three CREATE NEW types (`RemoteRecordStamp`,
+`SyncModeResolver`, `FetchFingerprint`) have no existing counterpart, and two of them exist specifically
+to give a hard acceptance criterion one place to point at. The full table with per-row justification is
+in `docs/feature/epic-5687-faster-updates/feature-delta.md`.
+
+Two rows worth surfacing here because they changed the design:
+
+- **`WorkTrackingSystemOptionsOwner.UpdateTime`** is already a sync-owned field on a
+  concurrency-tokened config aggregate, and it is safe because the token rotates only on
+  `EntityState.Added` or via the explicit `ApplyConcurrencyTokenForEdit` edit path. That precedent is
+  what allows `FetchFingerprint` to be a column rather than a side table.
+- **`GetAdoWorkItemsById` and Jira's key-OR query inside `GetParentFeaturesDetails`** mean phase 2 names
+  behaviour both connectors already have, rather than adding it.
+
+### Quality Attribute Strategies
+
+| Attribute | Strategy |
+|---|---|
+| Correctness | The one property that could lose data — removal — is computed from the same full id set as today, in one place, for every connector |
+| Operability | One structured summary line per update carrying mode, records scanned, records fetched and duration; per-entity chatter at Debug |
+| Efficiency | Payload, changelog, revisions and spans are paid for on change rather than on existence |
+| Evolvability | Per-connection capability, so a connector's rollout is a predicate change; the time-driven/change-driven split names a category rather than patching one signal |
+| Testability | Mode resolution and fingerprinting are total functions, directly unit-testable; fingerprint completeness is a reflection test over the query-owner property surface |
+
+### ADR References (this feature)
+
+- [ADR-138](./adr-138-two-phase-incremental-work-tracking-sync.md) — sweep identity, fetch the changed;
+  the removal rule is the binding constraint, not the cost
+- [ADR-139](./adr-139-incremental-sync-capability-probe-on-connector-port.md) — per-connection
+  capability on the existing port; a type test cannot express Jira Cloud vs DC on one class
+- [ADR-140](./adr-140-fetch-fingerprint-on-the-config-aggregate.md) — what makes a cycle full after a
+  configuration change, and why a column beats a side table here
+- [ADR-141](./adr-141-time-driven-derivations-over-the-stored-set.md) — the staleness trap incremental
+  sync creates, and the category it belongs to
+
+### Architectural Enforcement (this feature)
+
+| Rule | Enforced by |
+|---|---|
+| Every fetch-shaping property is in the fingerprint or explicitly excluded | Reflection test over the query-owner property surface (AC-5.4) — the failure it prevents is stale data with a green suite |
+| An unchanged record is byte-identical across a delta cycle | Acceptance test (AC-2.4) |
+| A record that left the query is removed on the next cycle | Acceptance test (AC-2.3), per connector |
+| An item untouched past the threshold still raises `WorkItemBecameStale` | Acceptance test (AC-2.5) — fails on any implementation that leaves the evaluation on the fetch loop |
+| `LastChangedRemote` survives the entity copy path | Dedicated test (AC-2.7) — losing it degrades delta to always-full with every other test green |
+| A sweep that cannot enumerate the full set does not drive deletion | Slice-04 pre-slice probe, before any Data Center code is written |

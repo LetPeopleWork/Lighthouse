@@ -1406,3 +1406,91 @@ Six commitments the diagrams make visible:
    `GetLikelihood`'s old `trialCounter == 0 → return 100` was ADO Bug #5586 and now returns 0; the
    guards remain the rollup's only source of certainty.
 
+---
+
+# C4 Architecture Diagrams — epic-5687-faster-updates
+
+Feature: epic-5687-faster-updates (ADO Epic #5687 "Faster Updates")
+Wave: DESIGN
+Date: 2026-08-08
+Architect: Morgan (Solution Architect)
+
+## C4 Level 1 — System Context (unchanged topology, changed conversation)
+
+No actor, system or integration is added or removed. The five external work-tracking systems, the three
+personas and the single Lighthouse system are exactly as they were. What changes is the *shape of the
+conversation* with each tracker: from "give me everything matching this query, with its full history" to
+"tell me what exists and when each last changed", followed by "now give me these few in full".
+
+The annotated Level 1 diagram lives in
+`docs/feature/epic-5687-faster-updates/feature-delta.md` → `## Wave: DESIGN / [REF] C4 — System Context`
+and is not duplicated here, because duplicating an unchanged topology is how the two copies drift.
+
+## C4 Level 2 — Container (unchanged; three columns and a log line)
+
+No container is added. The React SPA is untouched by decision (the observable surface of this feature is
+the structured log; the UI belongs to ADO Epic #5511 "Task Manager"). The relational store gains
+`LastChangedRemote`, `FetchFingerprint` and three `RefreshLog` columns. Diagram in the feature delta.
+
+## C4 Level 3 — Component: the two-phase sync path (the centerpiece)
+
+This is the level that earns its place: it is where four decisions have to be read together — mode
+resolution, the sweep, the diff that drives *both* the changed set and the removal set, and the staleness
+pass that had to leave the fetch loop. The reviewer question this feature attracts is "how do you know
+delta cannot lose an item?", and the answer is the shape of this graph, not a paragraph.
+
+```mermaid
+flowchart TB
+    subgraph BG["Background update services"]
+        US["UpdateServiceBase&lt;T&gt;<br/><i>per-entity chatter → Debug</i>"]
+        TU["TeamUpdater / PortfolioUpdater<br/><i>writes RefreshLog + the one summary line</i>"]
+    end
+
+    subgraph APP["Application"]
+        TDS["ITeamDataService<br/><i>returns SyncOutcome</i>"]
+        WIS["WorkItemService<br/>RefreshWorkItems / RefreshFeatures"]
+        SMR["SyncModeResolver<br/><i>pure — Full | Delta, INV-F3</i>"]
+        FFP["FetchFingerprint<br/><i>pure — For(queryOwner)</i>"]
+    end
+
+    subgraph PORT["Driven port — ADR-139"]
+        C["IWorkTrackingConnector<br/>SupportsIncrementalSync(conn)<br/>SweepWorkItemsForTeam / SweepFeaturesForPortfolio<br/>GetWorkItemsForTeam(team, refIds)"]
+    end
+
+    subgraph ADAPT["Adapters"]
+        J["Jira<br/><i>Cloud now · DC after its probe</i>"]
+        A["Azure DevOps"]
+        S["ServiceNow"]
+        L["Linear"]
+        CSV["CSV<br/><i>probe = false, permanently</i>"]
+    end
+
+    subgraph STORE["Persistence"]
+        R["WorkItem / Feature repositories<br/><i>+ LastChangedRemote</i>"]
+        O["Team / Portfolio<br/><i>+ FetchFingerprint, beside UpdateTime</i>"]
+        RL["RefreshLog<br/><i>+ Mode, Scanned, Fetched</i>"]
+    end
+
+    US --> TU --> TDS --> WIS
+    WIS -->|"1 resolve mode"| SMR
+    SMR -->|"reads"| FFP
+    SMR -->|"reads"| O
+    WIS -->|"2 sweep — FULL id set, INV-F1"| C
+    WIS -->|"3 payload for changed ids only, INV-F2"| C
+    C --> J & A & S & L & CSV
+    WIS -->|"4 persist · removed = stored − swept"| R
+    WIS -->|"5 staleness over the STORED set, INV-F5"| R
+    WIS -->|"6 SyncOutcome"| TDS
+    TU --> RL
+```
+
+Read the graph for the two things that make it safe:
+
+1. **Edge 2 and edge 4 read the same sweep result.** The changed set and the removal set are derived from
+   one enumeration of the full query, in one place. That is INV-F1, and it is why the cheaper
+   delta-query designs were rejected — they would have made edge 4 depend on a different, narrower
+   enumeration than edge 2.
+2. **Edge 5 points at the store, not at the fetch.** Staleness is a function of elapsed time, so the
+   record that goes stale is the record edge 3 stopped fetching. Pointing edge 5 at the stored set is
+   ADR-141, and it is the one change here that would otherwise have shipped silently.
+
