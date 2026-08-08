@@ -152,6 +152,13 @@ admin/project-admin on the bulk path exactly as on the per-issue path. The Cloud
 offers **no lower permission bar**, which was the entire stated point of slice 06. Bulk still reduces API
 calls (1 request for N issues) - that value survives; the permission argument does not.
 
+**Positive control for Q5:** the Q5c and Q5d bulk edits both landed on `SPIKEPRM-3` and both **delivered a
+watcher email** to A ("Be Hu made 2 updates", Due date 6/Oct then 6->7/Oct). So the bulk API is fully
+functional for B - the 403 is specific to the suppression request, not to bulk editing.
+
+**Default value:** omitting `sendBulkNotification` behaves as **`true`** (Q5d mailed the watcher). The flag
+must be sent explicitly to be quiet; there is no quiet-by-default.
+
 **Escalation raised per this slice's own acceptance criteria** - slice 06 must not be designed until the
 user rules on the remaining rationale.
 
@@ -249,6 +256,59 @@ team-managed project** (`SPIKEPRM`) binds a fresh scheme granting only to **proj
 2. Jira **Free** forbids editing permission schemes at all
    (`403 "Changing permission schemes is not allowed on the Jira free plan."`), so the under-permissioned
    credential had to be obtained by creating a new team-managed project rather than by demoting a user.
+
+## Requirements for a silent write-back (documentation input)
+
+This is the answer end users need, and it is **per project**, not per connection.
+
+**Jira Cloud - VERIFIED.** The write-back credential needs, for **every project** it writes into, either:
+
+- **Administer Jira** (global permission), or
+- **Administer Projects** (project permission) on that project.
+
+Without it, that project's write-backs are **not** silent - Lighthouse still writes the value (via the
+403 retry) but watchers are emailed. Because the permission is project-scoped, the **same connection can be
+silent in one project and noisy in another**. Docs must say this; a single connection-level yes/no would be
+wrong.
+
+**Jira Data Center - NOT VERIFIED.** Atlassian documents the same admin / project-admin requirement, and
+the behaviour is assumed identical pending the post-release check below. Do not claim DC suppression works
+until it is verified.
+
+**Azure DevOps.** Already suppresses via `suppressNotifications: true`
+(`AzureDevOpsWorkTrackingConnector.cs:356`); no additional permission is known to be required. Not
+re-verified by this spike.
+
+### What "silent" does NOT mean
+
+Suppression covers **email notification only**. Regardless of permission, every write-back still:
+
+- appears in the **issue history / changelog** (D1 - verified in every case here),
+- bumps the issue's `Updated` timestamp,
+- fires **webhooks**, listeners and automation rules.
+
+Docs must set this expectation explicitly, so an unsuppressible channel is never reported as a bug later.
+
+### Nuance worth documenting: batching already hides per-field noise
+
+Even with **no** suppression, Jira Cloud batches watcher mail per (recipient, issue) over a ~10 min window.
+So a user does not receive one email per changed field - they receive one digest per issue per window. The
+noise customers actually feel is **one email per issue per cycle**, which scales with portfolio size and is
+only addressed by suppression, not by batching fields into fewer calls.
+
+## Post-release DC checklist (Q1/Q2, plus one raised on 2026-08-08)
+
+1. **Q1** DC, permitted credential: does `?notifyUsers=false` stop watcher email? Does history still record?
+2. **Q2** DC, under-permissioned: 403 or silent ignore? Exact status + body.
+3. **Q10 (new)** The DC **UI** bulk-change wizard exposes a "Send mail for this update" checkbox that the
+   maintainer believes worked **without** admin rights. Determine whether that is because (a) the account
+   was in fact project admin - the most likely explanation, since every licensed user is project admin on
+   the Cloud test site via an `applicationRole` grant and that shape is common on DC, (b) the UI
+   bulk-change path enforces a different permission than the REST `notifyUsers` param, or (c) DC genuinely
+   differs from Cloud. If (b), a UI-equivalent REST path may exist that suppresses under a lower bar - and
+   the deferred slice 06 would deserve a second look on DC rather than Cloud.
+
+None of these change the shipped design: slice 04's retry-on-403 is safe under every outcome.
 
 ## Reproduction
 
