@@ -4,7 +4,7 @@ Flow metrics and probabilistic forecasting for Kubernetes. Postgres-only (ADR-08
 brings the whole stack up — API (SPA served in-process), bundled or external Postgres, optional MCP
 workload and OIDC — with one command.
 
-- **Chart version:** `0.1.10`
+- **Chart version:** `0.1.11`
 - **App image (appVersion):** `26.8.8.2`
 
 > This README's **Values** section is generated from `values.yaml` by [`helm-docs`](https://github.com/norwoodj/helm-docs).
@@ -16,8 +16,8 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.10 / APP 26.8.8.2
-helm install l8e letpeoplework/lighthouse --version 0.1.10 -f values-enterprise.yaml
+helm search repo lighthouse          # shows CHART 0.1.11 / APP 26.8.8.2
+helm install l8e letpeoplework/lighthouse --version 0.1.11 -f values-enterprise.yaml
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,
@@ -82,6 +82,7 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | oidc.callbackPath | string | `"/api/auth/callback"` | OIDC callback path. |
 | oidc.requireHttpsMetadata | bool | `true` | Require the OIDC issuer/metadata to be served over HTTPS (Authentication:RequireHttpsMetadata).    Keep true in production (Entra, Keycloak-behind-TLS, etc.). Set false ONLY for a plain-HTTP    issuer in local/dev clusters — the backend otherwise refuses to load HTTP OIDC metadata. |
 | oidc.allowedOrigins | list | `[]` | Browser-facing origins allowed to call the API under auth (Authentication:AllowedOrigins).    The backend fails closed if auth is on and this is empty (no wildcard CORS). Empty list =    derive the single ingress origin (scheme+host) from ingress.host/ingress.tls automatically.    Override only to allow extra origins (e.g. a separate SPA host). |
+| app.embed.enabled | bool | `false` | Serve the embed surface (`/embed/start`, `/embed/handshake`, `/embed/enter`) that signs a viewer into a framed Lighthouse — what the Jira app uses. Off unless you frame Lighthouse somewhere: the handshake nonce is not yet bound to whoever requested it, so on an instance that opts in, a crafted link can hand a viewer's session to someone else (Epic #5674). |
 | app.timeZone | string | `""` | Instance time zone as an IANA id (e.g. `Europe/Zurich`) used for every calendar day — "today", metric window bounds, the day a snapshot is filed under (Bug #5567). Empty keeps the pod's zone, which is UTC, so set this if your team is not on UTC. An id that cannot be resolved fails startup rather than falling back. |
 | app.proxy.trustedProxies | list | `[]` | Trusted reverse-proxy IPs (epic-5305 #5311) so OIDC redirect URIs + secure cookies are correct behind the ingress. |
 | app.proxy.trustedNetworks | list | `[]` | Trusted proxy CIDR networks. |

@@ -14,7 +14,12 @@ type: application
 # 0.1.7: track the v26.7.26.8 release — percentiles and PBC over time (Epic 5427).
 # 0.1.8: track the v26.8.1.14 release — ServiceNow connector and joint multi-team forecasts.
 # 0.1.9: track the v26.8.3.8 release — feature size and count over time in delivery metrics (Epic 5585).
-version: 0.1.10
+# 0.1.10: track the v26.8.8.2 release — the instance can own the order its Features are forecast in
+#         (Epic 5375).
+# 0.1.11: app.embed.enabled — opt a tenant into the embed surface the Jira app signs viewers in
+#         through. Off everywhere until set; the chart had no way to reach the setting at all
+#         before this (Epic #5674).
+version: 0.1.11
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
 appVersion: "26.8.8.2"
 home: https://docs.lighthouse.letpeople.work

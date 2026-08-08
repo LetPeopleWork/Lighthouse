@@ -11,6 +11,9 @@ data:
   Database__Provider: "postgres"
   Telemetry__Enabled: {{ .Values.telemetry.enabled | quote }}
   Shutdown__TimeoutSeconds: {{ .Values.shutdownTimeoutSeconds | quote }}
+  # Epic #5674: the embed surface is opt-in, and the chart is the only way a hosted tenant can
+  # reach the setting. Emitted always so the rendered ConfigMap states which way it is set.
+  Embed__Enabled: {{ .Values.app.embed.enabled | quote }}
   {{- with .Values.app.timeZone }}
   # Bug #5567: a pod's zone is UTC, so a non-UTC team must set this to get calendar days
   # that match its working day. Absent leaves the previous UTC behaviour untouched.

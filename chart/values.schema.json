@@ -92,6 +92,12 @@
     "app": {
       "type": "object",
       "properties": {
+        "embed": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" }
+          }
+        },
         "timeZone": { "type": "string" },
         "proxy": {
           "type": "object",

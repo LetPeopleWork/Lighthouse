@@ -126,6 +126,9 @@ oidc:
   allowedOrigins: []
 
 app:
+  embed:
+    # -- Serve the embed surface (`/embed/start`, `/embed/handshake`, `/embed/enter`) that signs a viewer into a framed Lighthouse — what the Jira app uses. Off unless you frame Lighthouse somewhere: the handshake nonce is not yet bound to whoever requested it, so on an instance that opts in, a crafted link can hand a viewer's session to someone else (Epic #5674).
+    enabled: false
   # -- Instance time zone as an IANA id (e.g. `Europe/Zurich`) used for every calendar day — "today", metric window bounds, the day a snapshot is filed under (Bug #5567). Empty keeps the pod's zone, which is UTC, so set this if your team is not on UTC. An id that cannot be resolved fails startup rather than falling back.
   timeZone: ""
   proxy:
