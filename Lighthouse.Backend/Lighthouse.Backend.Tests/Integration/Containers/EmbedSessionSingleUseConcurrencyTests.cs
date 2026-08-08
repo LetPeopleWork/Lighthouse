@@ -275,6 +275,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 // registering a second DbContext here would put two providers in one container.
                 builder.UseSetting("Database:Provider", "postgres");
                 builder.UseSetting("Database:ConnectionString", connectionString);
+                builder.UseSetting("Embed:Enabled", "true");
                 builder.UseSetting("Authentication:Enabled", "true");
                 builder.UseSetting("Authentication:Authority", "https://example.test/oidc");
                 builder.UseSetting("Authentication:ClientId", "lighthouse-embed-test");

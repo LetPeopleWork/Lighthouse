@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 
@@ -21,7 +22,8 @@ namespace Lighthouse.Backend.API
     public class EmbedStartController(
         IAuthModeResolver authModeResolver,
         ICurrentUserProfileService currentUserProfileService,
-        IEmbedSessionTokenService embedSessionTokenService) : ControllerBase
+        IEmbedSessionTokenService embedSessionTokenService,
+        IOptionsMonitor<EmbedConfiguration> embedConfiguration) : ControllerBase
     {
         public const string StartPath = "/embed/start";
 
@@ -98,6 +100,13 @@ namespace Lighthouse.Backend.API
 
         private IActionResult? ResolveSurfaceUnavailability()
         {
+            // An instance that has not opted in has no embed surface, ahead of anything the auth
+            // ladder would say about it. Epic #5674.
+            if (!embedConfiguration.CurrentValue.Enabled)
+            {
+                return NotFound();
+            }
+
             var mode = authModeResolver.Resolve().Mode;
             if (mode == AuthMode.Enabled)
             {

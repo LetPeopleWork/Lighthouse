@@ -49,6 +49,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public const string SessionCookieName = SmartAuthSchemeSelector.SessionCookieName;
         public const string EmbedCookieName = SmartAuthSchemeSelector.EmbedCookieName;
         public const string TokenLifetimeConfigurationKey = "Embed:TokenLifetimeSeconds";
+        public const string EmbedEnabledConfigurationKey = "Embed:Enabled";
         public const string EmbedRateLimitPolicy = "EmbedSession";
 
         public const string GroupClaimName = "groups";
@@ -77,6 +78,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             AuthDisabled = BuildHost(configuredAuthority: true, premiumLicence: true, authenticationEnabled: false);
             LicenceBlocked = BuildHost(configuredAuthority: true, premiumLicence: false);
             Misconfigured = BuildHost(configuredAuthority: false, premiumLicence: true);
+            EmbedDisabled = BuildHost(configuredAuthority: true, premiumLicence: true, embedEnabled: false);
         }
 
         public WebApplicationFactory<Program> AuthEnabled { get; }
@@ -87,6 +89,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         /// <summary>Authentication enabled with no authority — <see cref="AuthMode.Misconfigured"/> (DQ-7).</summary>
         public WebApplicationFactory<Program> Misconfigured { get; }
+
+        /// <summary>What every instance gets by default: no embed surface at all (Epic #5674).</summary>
+        public WebApplicationFactory<Program> EmbedDisabled { get; }
 
         public CapturedLogEvents LogEvents { get; } = new();
 
@@ -440,10 +445,13 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             bool configuredAuthority,
             bool premiumLicence,
             bool authenticationEnabled = true,
+            bool embedEnabled = true,
             Dictionary<string, string?>? extraSettings = null)
         {
             var host = root.WithWebHostBuilder(builder =>
             {
+                // Epic #5674: the shipped default is off, so every host that drives the hops opts in.
+                builder.UseSetting(EmbedEnabledConfigurationKey, embedEnabled ? "true" : "false");
                 builder.UseSetting("Authentication:Enabled", authenticationEnabled ? "true" : "false");
                 builder.UseSetting("Authentication:ClientId", "lighthouse-viewer-embed-test");
                 builder.UseSetting("Authentication:ClientSecret", "test-secret");

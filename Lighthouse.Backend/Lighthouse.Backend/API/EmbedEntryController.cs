@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Lighthouse.Backend.API
@@ -21,6 +22,7 @@ namespace Lighthouse.Backend.API
         IEmbedSessionTokenService embedSessionTokenService,
         IUserProfileLookup userProfileLookup,
         IAuthModeResolver authModeResolver,
+        IOptionsMonitor<EmbedConfiguration> embedConfiguration,
         ILogger<EmbedEntryController> logger) : ControllerBase
     {
         public const string EntryPath = "/embed/enter";
@@ -46,6 +48,13 @@ namespace Lighthouse.Backend.API
         {
             // The token rides in the query string (D39), so it must not travel onward in a Referer.
             Response.Headers["Referrer-Policy"] = "no-referrer";
+
+            // An instance that has not opted in has no embed surface, so a token minted before the
+            // switch was turned off cannot be redeemed either. Epic #5674.
+            if (!embedConfiguration.CurrentValue.Enabled)
+            {
+                return NotFound();
+            }
 
             if (authModeResolver.Resolve().Mode != AuthMode.Enabled)
             {

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Auth;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 using System.Security.Claims;
 
@@ -201,10 +203,15 @@ namespace Lighthouse.Backend.Tests.API
 
         private EmbedStartController CreateSubject()
         {
+            // These tests are about hop 1's own decisions, so the surface is opted in (Epic #5674).
+            var embedConfiguration = new Mock<IOptionsMonitor<EmbedConfiguration>>();
+            embedConfiguration.Setup(monitor => monitor.CurrentValue).Returns(new EmbedConfiguration { Enabled = true });
+
             return new EmbedStartController(
                 authModeResolver.Object,
                 currentUserProfileService.Object,
-                embedSessionTokenService.Object)
+                embedSessionTokenService.Object,
+                embedConfiguration.Object)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext },
             };

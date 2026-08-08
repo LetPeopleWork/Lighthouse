@@ -114,6 +114,8 @@ jobs:
           Database__Provider: sqlite
           Database__ConnectionString: 'Data Source=lighthouse.db'
           Kestrel__Endpoints__Http__Url: "http://localhost:5169"
+          # The embed surface ships off (Epic #5674); the @auth suite drives all three hops.
+          Embed__Enabled: true
           Authentication__Enabled: true
           Authentication__Authority: "http://localhost:38080/realms/Lighthouse"
           Authentication__ClientId: "lighthouse-app"

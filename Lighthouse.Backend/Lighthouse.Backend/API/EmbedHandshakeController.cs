@@ -30,6 +30,12 @@ namespace Lighthouse.Backend.API
             [FromRoute] string? nonce,
             CancellationToken cancellationToken = default)
         {
+            // An instance that has not opted in has no embed surface at all. Epic #5674.
+            if (!embedConfiguration.CurrentValue.Enabled)
+            {
+                return NotFound();
+            }
+
             // D31, the same two answers hop 1 gives: the embed surface does not exist on an instance
             // whose authentication is off or cannot work, and Blocked withholds a surface it admits to.
             var mode = authModeResolver.Resolve().Mode;

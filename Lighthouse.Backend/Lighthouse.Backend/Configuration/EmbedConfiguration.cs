@@ -12,6 +12,11 @@ namespace Lighthouse.Backend.Configuration
 
         public const int DefaultSessionLifetimeMinutes = 30;
 
+        // Off unless an instance opts in. The three embed hops exist for the Jira app, and until the
+        // handshake nonce is bound to its requester an instance that frames nothing should not carry
+        // the surface at all. Epic #5674.
+        public bool Enabled { get; set; }
+
         public int TokenLifetimeSeconds { get; set; } = DefaultTokenLifetimeSeconds;
 
         // ADR-137 DQ-2: the token's window is bounded by one machine redirect, the handshake
