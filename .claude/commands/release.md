@@ -1,5 +1,5 @@
 ---
-description: Cut a Lighthouse release end to end — sync docs + screenshots, draft release notes, check the clients for a new version, trigger the signed standalone GitHub release, and announce on Slack. Invoke this whenever the user says "let's release", "do a release", "ship a release", or "/release".
+description: Cut a Lighthouse release end to end — sync docs + screenshots, refresh the architecture overview, draft release notes, check the clients for a new version, trigger the signed standalone GitHub release, and announce on Slack. Invoke this whenever the user says "let's release", "do a release", "ship a release", or "/release".
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion, Skill, Task
 ---
 
@@ -45,13 +45,36 @@ Repos:
 
 Invoke the **`update-docs`** skill. It identifies stale/missing docs + `@screenshot` E2Es, gets the user's scope approval, runs the screenshot suite against a clean backend, and reports which `docs/assets/**.png` actually changed. Let it run to completion and surface its diff. Commit the doc/screenshot changes here (or fold them into the Phase 3 commit) — do not push yet.
 
+## Phase 1b — architecture overview
+
+`ARCHITECTURE.md` (repo root) describes the **general concepts** — modules, seams, cross-cutting mechanisms, topologies, load-bearing constraints. It is supposed to be updated in the same change that moves a concept, but a release is the backstop: nothing ships describing an architecture the code no longer has.
+
+1. See what architectural decisions landed since the last release:
+   ```bash
+   git -C /storage/repos/Lighthouse log "$LAST"..HEAD --diff-filter=A --name-only --format= -- 'docs/product/architecture/adr-*.md' | sort -u
+   git -C /storage/repos/Lighthouse log "$LAST"..HEAD --oneline -- ARCHITECTURE.md
+   ```
+   No new ADRs **and** no architecture-shaped commits (a new module folder, a new port/adapter pair, a new inbound surface, a new provider/topology) → say "architecture overview unchanged" and move on.
+2. For each new ADR, read its **Status** and **Relationship to prior ADRs** header lines. Two kinds matter more than the rest:
+   - an ADR that **amends or supersedes ADR-027** — it changed a load-bearing constraint, so §2 is wrong until you fix it;
+   - an ADR that **supersedes an ADR the overview cites by number** — the citation now points at a dead decision.
+3. Then check the handful of facts that rot silently, **against the code, not against the ADRs** (an accepted ADR is not evidence that the code does it):
+   - the ADR range in the header bullet and in the closing line of the ADR index vs. the highest `adr-NNN-*.md` on disk;
+   - the module table vs. the namespace patterns in `ModuleBoundariesArchUnitTest.cs`, and the enforced-rules list vs. the tests in `Lighthouse.Backend.Tests/Architecture/`;
+   - the authentication schemes vs. `SmartAuthSchemeSelector`, and the adapter choices vs. the registrations in `Program.cs`;
+   - the connector list vs. `Services.*.WorkTrackingConnectors`;
+   - the topology table vs. `chart/` and the health endpoints;
+   - the CI paragraph vs. `.github/workflows/`;
+   - framework majors (`TargetFramework`, React/MUI/Vite in `Lighthouse.Frontend/package.json`).
+4. Update the affected sections **and** add the load-bearing new ADRs to the ADR-index table at the end. Keep feature-level detail out — that belongs in `brief.md` and the ADRs. Commit separately from the screenshots (`docs(architecture): …`), or fold into Phase 3; do not push yet.
+
 ## Phase 2 — release notes
 
 Invoke the **`release-notes`** skill. It drafts the new `# Lighthouse <version>` block at the top of `docs/releasenotes/releasenotes.md` from the ADO items tagged "Release Notes" + the commits since the last tag, attributes community reporters, and adds first-time contributors to `docs/contributions/contributions.md`. Review the draft WITH the user; the heading version may be `vNext` or a date-based placeholder — that's fine, the real tag comes from CI in Phase 5 and you reconcile it there.
 
 ## Phase 3 — commit + push, wait for green
 
-Commit the docs + screenshots + release-notes changes (conventional message, e.g. `docs(release): notes + screenshots for <version>`), push to `main`, then watch the resulting `Build And Deploy Lighthouse` run until the gates are green (mirror `/clean-ci`'s watch loop; if anything fails, stop and offer `/clean-ci`). **This green run is the candidate the release is cut from** — note its `databaseId`.
+Commit whatever Phases 1–2 produced — docs, screenshots, the architecture overview, release notes (conventional message, e.g. `docs(release): notes + screenshots for <version>`), push to `main`, then watch the resulting `Build And Deploy Lighthouse` run until the gates are green (mirror `/clean-ci`'s watch loop; if anything fails, stop and offer `/clean-ci`). **This green run is the candidate the release is cut from** — note its `databaseId`.
 
 ## Phase 4 — clients: new version if changed since last release
 
@@ -136,6 +159,7 @@ Invoke the **`release-social`** skill (Slack only — LinkedIn was removed). Pas
 Summarize:
 - Released version (real tag) + GitHub release URL + asset count.
 - Docs/screenshots: which images changed.
+- Architecture overview: unchanged, or which sections moved and which ADRs drove it.
 - Release notes: headline count + contributors (and any first-timers added).
 - Helm chart: new `version` + `appVersion` (must match the app calver), and whether the `Helm Chart` run's `publish` job actually ran and landed the `.tgz` in `docs/charts/`.
 - Clients: published a new version / told user to trigger it / unchanged.
@@ -148,4 +172,5 @@ Summarize:
 - Never cut a release on a pipeline with a `failure` job or with jobs still `in_progress`. A run parked at `waiting` on the `Release` gate with every other job green is NOT "in progress" — it is the candidate (Phase 0.3).
 - Don't hand-create the git tag or the GitHub release — the `ci_release.yml` job owns tagging, signing, and asset upload. Your lever is the environment approval.
 - Don't bump client package versions by hand — Changesets + the clients' release job own that.
+- Don't let `ARCHITECTURE.md` go out describing an architecture the release doesn't have. A new ADR that amends ADR-027 is the loudest signal, but the check is against the code — an ADR can be accepted and unbuilt, and code can move without an ADR.
 - Keep the user in the loop at every gate; this command drives the motion, the user makes the calls.
