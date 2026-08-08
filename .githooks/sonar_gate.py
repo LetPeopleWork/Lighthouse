@@ -15,6 +15,21 @@ import sys
 
 INFRA_MARKERS = ("not activated", "not configured", "not enabled")
 
+# Findings that are published test fixtures rather than credentials. Keyed by file and the
+# CLI's masked rendering of the value, never by line number — lines move whenever the file is
+# edited, and a stale entry would silence a real finding. A different secret in the same file
+# still blocks.
+ACKNOWLEDGED_SECRETS = {
+    # The client secret of the example Keycloak realm in examples/keycloak/realm-export.json,
+    # which ci_verifyauth.yml starts on localhost:38080 for the auth E2E jobs. The realm is
+    # created from that export inside the CI container and grants nothing outside it.
+    ("ci_verifyauth.yml", "vTa*****************************"),
+}
+
+
+def is_acknowledged(issue: dict) -> bool:
+    return (issue.get("file"), issue.get("secret")) in ACKNOWLEDGED_SECRETS
+
 
 def is_infra_failure(message: str) -> bool:
     lowered = message.lower()
@@ -32,7 +47,9 @@ def main() -> int:
         print(f"sonar gate: could not parse analyze output:\n{raw}", file=sys.stderr)
         return 0
 
-    secret_issues = result.get("secrets", {}).get("issues", [])
+    reported_secrets = result.get("secrets", {}).get("issues", [])
+    secret_issues = [issue for issue in reported_secrets if not is_acknowledged(issue)]
+    acknowledged_count = len(reported_secrets) - len(secret_issues)
     agentic = result.get("agentic") or {}
     quality_issues = [
         issue
@@ -42,6 +59,9 @@ def main() -> int:
     failures = agentic.get("failures", [])
 
     blocking = bool(secret_issues) or bool(quality_issues)
+
+    if acknowledged_count:
+        print(f"  (skipped {acknowledged_count} acknowledged test fixture(s); see ACKNOWLEDGED_SECRETS)", file=sys.stderr)
 
     for issue in secret_issues:
         location = issue.get("file") or issue.get("path") or "?"
