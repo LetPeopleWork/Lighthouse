@@ -1,6 +1,35 @@
-# Slice 03 - Jira Cloud write-back via bulk edit API (`sendBulkNotification: false`)
+# Slice 06 - Jira Cloud write-back via bulk edit API (`sendBulkNotification: false`)
 
-**Type:** vertical | **Est:** ~1 day | **Stories:** US-03
+**Type:** vertical | **Est:** ~1 day | **Stories:** US-03 (#5507)
+
+> # DEFERRED OUT OF THIS EPIC - 2026-08-08
+>
+> **SPIKE-03 Q5 disproved this slice's reason to exist.** Its premise was that Cloud bulk edit delivers
+> suppression under "Make bulk changes" alone, without `Administer Jira`. Measured against a credential
+> holding exactly that (`BULK_CHANGE: true`, `ADMINISTER_PROJECTS: false`):
+>
+> ```
+> POST /rest/api/3/bulk/issues/fields  sendBulkNotification:false
+> 403 {"errors":[{"message":"You do not have the necessary permissions to disable bulk mail notifications for this operation."}]}
+> POST ... sendBulkNotification:true  -> 201    POST ... flag omitted -> 201
+> ```
+>
+> "Make bulk changes" permits **bulk editing** but not **suppression** - which needs admin/project-admin on
+> the bulk path exactly as on the per-issue path. There is **no lower permission bar**, so the Cloud/DC
+> split this slice introduces buys nothing that slice 04's retry does not already deliver.
+>
+> **Decision (user, 2026-08-08): defer.** What survives is call-count reduction (1 request for N issues),
+> which is real but is not what this slice was scoped around, and slices 01+02 already cut call volume.
+> Cost not worth paying now: v3 pinning, async taskId polling, a distinct error shape, and a Cloud-only
+> code path. Revisit only if API-call volume becomes a demonstrated problem.
+>
+> **Blocker to close first if it is revived:** the test site has no plain-text custom field, so
+> **string-typed write-back via bulk is unverified**. Only `datepicker`, `datetime` and `float` were
+> confirmed bulk-editable, and write-back targets are user-configured `customfield_*` of date / number /
+> **string** type. 19 fields are excluded from bulk edit entirely.
+>
+> Q5 mechanics were characterised anyway and are recorded in the SPIKE-03 findings - taskId shape, the
+> `/rest/api/3/bulk/queue/{taskId}` progress contract, and the trap that `ended` stays `null` at COMPLETE.
 
 ## Learning hypothesis
 

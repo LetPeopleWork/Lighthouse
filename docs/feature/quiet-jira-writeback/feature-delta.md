@@ -5,6 +5,37 @@ DISCUSS wave output. Density: lean + ask-intelligent, Tier-1 [REF] only. UX rese
 (brownfield, additive, one existing config surface). Premium feature. Feature-id: `quiet-jira-writeback`.
 ADO: Story #5500, tag `Release Notes`, reported by Manuel and Chris.
 
+## SPIKE-03 OUTCOME - 2026-08-08 (read this before DESIGN)
+
+The spike ran against Jira **Cloud** only (`letpeoplework.atlassian.net`); **no DC instance is obtainable
+before release**, so Q1/Q2 are deferred to post-release verification. Full evidence:
+`slices/slice-03-spike-jira-notification-suppression.md`. Three pre-commitments broke:
+
+| Was | Now |
+|---|---|
+| D7 unresolved: Cloud errors *or* silently ignores | **RESOLVED - Cloud 403s and drops the whole write** |
+| D2: Cloud bulk = lower permission bar (slice 06's premise) | **DISPROVED - suppression needs admin on the bulk path too** |
+| D10 / slice 02: one call = one email | **VOID - Jira batches per (recipient, issue); 1 PUT and 4 PUTs both sent 1 email** |
+| D4: `AuthenticationMethodKey` discriminates Cloud/DC | **REPLACE with `serverInfo.deploymentType`** |
+| D5: `mypermissions` predicts suppression | **CONFIRMED** - but must pass `projectKey`, else it over-reports |
+
+**Decisions taken (user, 2026-08-08):**
+
+1. **Slice 04 - optimistic retry.** Always send `notifyUsers=false`; on 403 retry without it. Always-on (D3)
+   is safe only because of this fallback - without it the slice is a regression for every customer whose
+   credential lacks admin/project-admin. `mypermissions` is *not* a gate in the write path.
+2. **Slice 06 - deferred out of this epic.** Its permission-bar rationale is gone; only call-count
+   reduction survives, and slices 01+02 already deliver that. ADO #5507 needs a state decision.
+3. **Slice 05 becomes a reporting companion, not a prerequisite** - it surfaces "this connection cannot
+   suppress notifications" rather than gating the write.
+
+Also corrected here: the slice **files** carried stale internal headings from the pre-2026-07-17 numbering
+(`slice-04-*.md` was headed "Slice 01", `slice-06-*.md` was headed "Slice 03"). Headings now match filenames
+and the story table below.
+
+Remaining verification debt: **string-typed** custom-field write-back is unverified (the test site has no
+plain-text custom field); DC behaviour (Q1/Q2) is unverified until post-release.
+
 ## [REF] Summary
 
 Lighthouse writes forecast percentiles, feature size and work-item age back into Jira fields on every

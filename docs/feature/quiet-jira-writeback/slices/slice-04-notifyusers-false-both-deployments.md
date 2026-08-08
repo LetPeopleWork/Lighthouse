@@ -1,6 +1,17 @@
-# Slice 01 - `notifyUsers=false` on Jira write-back (both deployments)
+# Slice 04 - `notifyUsers=false` on Jira write-back (both deployments)
 
-**Type:** vertical | **Est:** ~0.5 day | **Stories:** US-01
+**Type:** vertical | **Est:** ~0.5-1 day | **Stories:** US-01 (#5505)
+
+> **REVISED 2026-08-08 after SPIKE-03 Q4.** The always-on form of this slice (D3) is a **regression** and
+> must not ship. An under-permissioned credential does not get a silently-ignored param - it gets
+> `403 "To discard the user notification either admin or project admin permissions are required."` and the
+> **field update is dropped entirely** (verified: `SPIKEPRM-1.duedate` stayed `null`). Today those customers
+> have noisy-but-working write-back; unconditional `notifyUsers=false` would give them no write-back at all.
+>
+> **Decision (user, 2026-08-08): optimistic retry.** Send with `notifyUsers=false`; on **403**, retry the
+> identical PUT **without** the param. Write-back can then never regress. The `mypermissions` probe is *not*
+> a gate in the write path - it moves to slice 05 as the **visibility** surface that tells the admin this
+> connection cannot suppress notifications.
 
 ## Learning hypothesis
 
@@ -14,9 +25,15 @@ whole approach needs rethinking.
 ## What ships
 
 - `JiraWorkTrackingConnector.UpdateItem` issues `PUT rest/api/latest/issue/{id}?notifyUsers=false`
-  instead of the bare PUT at line 325. Applied to **both** Cloud and DC (D6) - Cloud supports the param
-  too, so parity ships now rather than waiting for slice 03's bulk transport.
-- No settings, no DTO, no migration, no UI (D3 - always-on, mirroring ADO).
+  instead of the bare PUT at line 325. Applied to **both** Cloud and DC (D6).
+- **403 fallback (new, from SPIKE-03 Q4):** when that PUT returns 403, retry the same payload without the
+  query param and record the item's outcome from the retry. A 403 on the suppressed attempt is *not* a
+  write-back failure - the retry is what determines success. Any other non-success status keeps today's
+  failure semantics.
+- The 403-and-retried condition is recorded on the result so slice 05 can surface it. Log it once per
+  connection per cycle, not once per issue - a portfolio-wide retry storm must not flood the log.
+- No settings, no DTO, no migration, no UI (D3 - always-on, mirroring ADO). D3 survives *because* of the
+  retry: always-on is safe only when the fallback guarantees the write still lands.
 
 ## IN scope
 
@@ -37,15 +54,23 @@ whole approach needs rethinking.
   update triggers write-back, then the field updates and the issue's watcher receives **no email**, while
   the change **does** appear in the issue history (D1 - asserted deliberately so the unsuppressible
   channel is never mistaken for a bug later).
-- Given the same on Jira Cloud with an admin credential, then no watcher email.
+- Given the same on Jira Cloud with an admin credential, then no watcher email. **(SPIKE-03 Q3: verified -
+  `DUMMY-6` suppressed, control `DUMMY-7` delivered.)**
+- Given a Jira Cloud credential **without** admin or project-admin, when write-back runs, then the first PUT
+  returns 403, the retry without the param succeeds, **the field value is written**, and the item is
+  reported successful. This is the anti-regression AC - it is the whole reason the slice was revised.
+- Given that same connection, then the inability to suppress is recorded once for slice 05 to surface.
 - Given an ADO connection, when write-back runs, then behaviour is unchanged.
 - Given `GetChangedFields` yields no changed value, then no Jira HTTP call is made at all.
 
 ## Dependencies
 
-- SPIKE-03 answers Q1-Q4. If Q2/Q4 report **silent ignore**, this slice still ships (it is strictly better
-  than today) but slice 02 becomes mandatory rather than merely valuable - because a silently-ignored
-  param means Lighthouse cannot tell success from failure on its own.
+- **SPIKE-03 reported 2026-08-08.** Q3/Q4 answered on Cloud; Q1/Q2 (DC) **deferred to post-release** - no DC
+  instance is obtainable before then. The DC path therefore ships on Cloud-verified behaviour plus
+  Atlassian's docs, and the retry fallback is what makes that acceptable: if DC turns out to behave
+  differently, the retry still lands the write.
+- The outcome was neither branch this note anticipated. Not "silent ignore" - a hard **403 that drops the
+  write**. Hence the retry, and hence slice 05 is now a *reporting* companion rather than a prerequisite.
 
 ## Taste tests
 

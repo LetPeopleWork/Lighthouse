@@ -87,3 +87,170 @@ Confirms the slice plan if all four hold.
 - Value-bearing: N/A - explicitly a probe, exempt from the slice value gate (D7).
 - Right-sized: 8 questions, two instances, timeboxed half a day. PASS.
 - Disproves a pre-commitment: yes - can invalidate D2, D4 and D5. PASS.
+
+---
+
+# FINDINGS - run 2026-08-08, Jira Cloud only
+
+Site `letpeoplework.atlassian.net` (Jira **Free** plan). Credentials: **A** =
+`atlassian.pushchair@huser-berta.com` (site admin, the CI integration credential), **B** =
+`benjamin@letpeople.work` (licensed user, no site admin).
+
+**DC was not probed** - no Data Center instance is available, and one cannot be obtained before release.
+Q1, Q2 and the DC half of Q7 are therefore **unanswered**, deliberately, and are deferred to a
+post-release verification. Everything below is Cloud-only evidence.
+
+## Verdicts
+
+| D | Verdict | Evidence |
+|---|---|---|
+| **D7** (Cloud: error or silent ignore?) | **RESOLVED - Jira ERRORS** | Q4 below |
+| **D2** (Cloud bulk = lower permission bar) | **DISPROVED** | Q5 below |
+| **D4** (`AuthenticationMethodKey` discriminates Cloud/DC) | **REPLACE** | Q7 below |
+| **D5** (`mypermissions` predicts suppression) | **CONFIRMED**, with a caveat | Q6 below |
+| **D10** (one call = one notification) | **history CONFIRMED**, email pending | Q9 below |
+
+## Q4 - under-permissioned `notifyUsers=false`: **HTTP 403, and the whole write is rejected**
+
+B (`ADMINISTER_PROJECTS: false` on project `SPIKEPRM`):
+
+```
+PUT /rest/api/2/issue/SPIKEPRM-1?notifyUsers=false
+403 {"errorMessages":["To discard the user notification either admin or project admin permissions are required."],"errors":{}}
+PUT /rest/api/3/issue/SPIKEPRM-1?notifyUsers=false   -> identical 403 (v2/v3 parity)
+PUT /rest/api/2/issue/SPIKEPRM-2                      -> 204 (control: same credential, no param)
+```
+
+The community report is right and the Cloud documentation is wrong: Jira **errors**, it does not silently
+ignore. Confirmed afterwards that `SPIKEPRM-1.duedate` was still `null` - **the field update did not
+happen**. The 403 rejects the entire request, not just the suppression.
+
+**Positive control for Q4:** the `SPIKEPRM-2` plain PUT (same credential B, no param, 204) **did** deliver a
+watcher email to A. So B can write and notify normally - the 403 is specific to the suppression request,
+not a broken credential, and `SPIKEPRM-1` produced no email only because nothing was written.
+
+**This inverts slice 04's premise.** Its Dependencies note assumed the worst case was "silent ignore", in
+which the slice would "still ship (it is strictly better than today)". The actual worst case is worse:
+shipping D3 (always-on `notifyUsers=false`, no settings) turns a **working-but-noisy** write-back into a
+**totally broken** one for every customer whose credential lacks admin or project-admin. That is a
+regression, not an improvement, and slice 04 cannot ship as written.
+
+## Q5 - Cloud bulk least-privilege: **DISPROVED, D2's Cloud rationale collapses**
+
+B holds `BULK_CHANGE: true` globally, `EDIT_ISSUES: true`, `ADMINISTER_PROJECTS: false`:
+
+```
+POST /rest/api/3/bulk/issues/fields  sendBulkNotification:false
+403 {"errors":[{"message":"You do not have the necessary permissions to disable bulk mail notifications for this operation."}]}
+
+POST ... sendBulkNotification:true    -> 201 {"taskId":"35636"}
+POST ... flag omitted                 -> 201 {"taskId":"35639"}
+```
+
+"Make bulk changes" is enough to **bulk edit**, but **not** to suppress notification - suppression needs
+admin/project-admin on the bulk path exactly as on the per-issue path. The Cloud transport therefore
+offers **no lower permission bar**, which was the entire stated point of slice 06. Bulk still reduces API
+calls (1 request for N issues) - that value survives; the permission argument does not.
+
+**Escalation raised per this slice's own acceptance criteria** - slice 06 must not be designed until the
+user rules on the remaining rationale.
+
+## Q5 mechanics (answered, useful regardless)
+
+- `POST /rest/api/3/bulk/issues/fields` -> **201**, body is only `{"taskId":"35628"}`.
+- Progress: `GET /rest/api/3/bulk/queue/{taskId}` -> `status:"COMPLETE"`, `progressPercent:100`,
+  `processedAccessibleIssues:[30541,30540]` (numeric **ids**, not keys), `invalidOrInaccessibleIssueCount:0`,
+  `failedAccessibleIssues:{}`.
+- **`ended` stays `null` even at COMPLETE** - do not gate completion on it; use `status`.
+- Submit latency ~784 ms for 2 issues. ~50-issue latency not measured.
+- Bulk-editable custom-field types confirmed: `datepicker`, `datetime`, `float`. **A plain text custom
+  field does not exist on this site, so the string write-back case is UNVERIFIED** - write-back targets are
+  user-configured `customfield_*` of date / number / string type (`WriteBackTriggerService.cs:115`,
+  `JiraWorkTrackingConnector.cs:310-312`), so this gap must be closed before slice 06.
+- 19 fields are excluded from bulk edit entirely (`Epic Link`, `Parent Link`, `Organizations`, forms, ...).
+
+## Q6 - `mypermissions` accuracy: **CONFIRMED both directions**
+
+| Project | `ADMINISTER_PROJECTS` predicted for B | Actual `notifyUsers=false` |
+|---|---|---|
+| `SPIKEPRM` | `false` | **403** |
+| `DUMMY` | `true` | **204** |
+
+The probe is a reliable pre-check. **Caveat (trap):** called **without** `projectKey`,
+`GET /rest/api/3/mypermissions?permissions=ADMINISTER_PROJECTS` returns `havePermission: true` at
+**HTTP 200** - it does not 400. A pre-check that omits project context silently over-reports. Since a
+write-back batch spans projects, D5's pre-check must be **evaluated per project**, not once per connection.
+
+## Q7 - deployment discriminator: **use `serverInfo`, not `AuthenticationMethodKey`**
+
+`GET /rest/api/2/serverInfo` -> `{"deploymentType":"Cloud","version":"1001.0.0-SNAPSHOT","buildNumber":100293}`.
+A positive capability signal, verifiable without a DC instance. D4's auth-key heuristic was never tested
+against DC and should be replaced by this rather than carried into DESIGN unverified.
+
+## Q8 - `latest` resolves to **v2**
+
+Fingerprinted via description shape on the same issue: `/rest/api/latest` -> plain string (v2 behaviour),
+`/rest/api/2` -> plain string, `/rest/api/3` -> ADF object. Lighthouse calls `rest/api/latest`
+(`JiraWorkTrackingConnector.cs:325`) and is therefore on **v2** today. The bulk API is v3-only, so slice 06
+must pin `/rest/api/3/` explicitly - confirmed, not assumed.
+
+## Q9 - one call = one notification
+
+**History half - CONFIRMED 4:1.** Same 4 fields, two issues:
+
+| Issue | Calls | Changelog entries |
+|---|---|---|
+| `DUMMY-4` | **1 PUT, 4 fields** | **1** entry (`summary, labels, duedate, priority`) |
+| `DUMMY-5` | **4 PUTs, 1 field each** | **4** entries |
+
+So slice 02's churn-reduction claim holds on issue history regardless of the email outcome.
+
+**Email half - ANSWERED, and it VOIDS slice 02's email claim.** Observed in B's inbox:
+
+| Issue | Calls | Changelog entries | **Emails** | Digest header |
+|---|---|---|---|---|
+| `DUMMY-4` | **1 PUT, 4 fields** (+1 bulk) | 2 | **1** | "made 2 updates" |
+| `DUMMY-5` | **4 PUTs, 1 field each** (+1 bulk) | 5 | **1** | "made 5 updates" |
+
+**Jira Cloud batches notifications per (recipient, issue) over a ~10 minute window**, so one call and four
+calls both produced exactly **one** email. Call count does not drive email count. The digest renders the
+four separate PUTs as four blocks and the single 4-field PUT as one block, but it is still one message.
+
+Consequence: **slice 02 must not claim "fewer emails".** On a site with notification batching enabled (the
+default) batching already collapses per-issue noise, and slice 02 changes nothing about it. Slice 02's
+value story is **API-call reduction and issue-history churn reduction (4:1, above)** only. The email claim
+may hold for a customer who has *disabled* batching, but that is unverified and must not be asserted in
+docs or release notes.
+
+Batching also means the whole "email storm" framing needs re-checking: the storm is per-issue-per-window,
+not per-write.
+
+## Q3 - `notifyUsers=false` on a permitted credential: **CONFIRMED (suppression works)**
+
+- `DUMMY-7` control (notifications ON, single PUT): **email delivered** ~3 min later, listing Due date. The
+  pipeline and notification scheme are verified good (scheme 10000 routes `Issue Updated` -> `AllWatchers`),
+  so a silent inbox elsewhere is real evidence rather than a broken setup.
+- `DUMMY-6` (`notifyUsers=false`, A = permitted credential): **no email**.
+- Cross-transport: the bulk write with `sendBulkNotification:false` landed `Start date` on `DUMMY-7` at
+  02:40 and it is **absent** from that issue's digest, while the same field written to `DUMMY-4` with
+  `sendBulkNotification:true` **is** present. Both suppression mechanisms work.
+
+The change still appears in issue history in every case (D1 holds) - the unsuppressible channel.
+
+## Incidental finding - permission-scheme shape matters
+
+All six pre-existing projects grant `ADMINISTER_PROJECTS` to holder type **`applicationRole` (any licensed
+user)**, so *every* user is project admin there and `notifyUsers=false` just works. A **newly created
+team-managed project** (`SPIKEPRM`) binds a fresh scheme granting only to **project roles** - no
+`applicationRole` grant. Two consequences:
+
+1. On a stock Cloud site the suppression failure may be **rarer** than the community report implies - but it
+   is entirely a function of one permission-scheme grant, so it cannot be assumed either way per customer.
+2. Jira **Free** forbids editing permission schemes at all
+   (`403 "Changing permission schemes is not allowed on the Jira free plan."`), so the under-permissioned
+   credential had to be obtained by creating a new team-managed project rather than by demoting a user.
+
+## Reproduction
+
+Probe scripts are throwaway (`curl` + `jq`), no production code touched, nothing committed to the
+connector. Scratch issues created: `DUMMY-4..7`, `SPIKEPRM-1..3`, plus project `SPIKEPRM` - all disposable.

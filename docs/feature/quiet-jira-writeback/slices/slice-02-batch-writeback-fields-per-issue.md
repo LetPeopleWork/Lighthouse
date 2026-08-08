@@ -28,18 +28,24 @@ call. Grouping by issue collapses 6 calls into 1.
 
 ## Value story
 
-**Before:** every mapped field that changes emails every watcher separately - six mappings, six emails on
-the same issue, same minute.
-**After:** one write per issue per cycle - one email.
+> **REVISED 2026-08-08 after SPIKE-03 Q9.** The original claim - six mappings, six emails, one email after -
+> is **void**. Jira Cloud batches notifications per (recipient, issue) over a ~10 min window, so 1 PUT and 4
+> PUTs to the same issue both produced exactly **one** email. Batching already collapses per-issue mail; this
+> slice does not change it. Do not state an email reduction in docs or release notes.
+
+**Before:** every mapped field that changes costs its own API call and its own issue-history entry - six
+mappings, six calls, six changelog entries on the same issue, same minute.
+**After:** one write per issue per cycle - one call, one changelog entry (**measured 4:1** in SPIKE-03 Q9).
 **Decision enabled:** the admin keeps write-back on even with a rich mapping set, instead of trimming
-mappings to keep the inbox survivable.
+mappings to keep the issue history and API budget survivable.
 
 ## Why this is the epic's most robust lever
 
 - **Permission-free.** Needs no `Administer Jira`, no "Make bulk changes", no `notifyUsers`, no bulk API.
 - **Deployment-free.** Identical on Jira Cloud and DC. No D4 discriminator involved.
-- **Survives a bad SPIKE.** If SPIKE-03 finds Cloud silently ignores `notifyUsers` on under-permissioned
-  credentials (D7's dangerous branch), this slice still delivers its cut with nothing granted.
+- **Survived the SPIKE.** SPIKE-03 found something worse than D7's dangerous branch - Cloud **403s** and
+  drops the whole write for under-permissioned credentials - and this slice is unaffected: it grants
+  nothing and asks for nothing.
 - **Attacks what D1 wrote off.** D1 correctly locks that issue history, `Updated` churn and webhook firings
   are unsuppressible *per write*. Nobody examined the *count* of writes. This does not suppress history -
   it divides it by ~6. Same for `Updated` churn, webhooks, listeners and automation rules.
@@ -84,17 +90,24 @@ mappings to keep the inbox survivable.
   per-pass. Batching before the seam exists would group within each of the N+2 passes and have to be
   reworked.
 
-## Verification note
+## Verification note - RESOLVED
 
-"Multiple fields in one PUT produces one watcher email" is near-certain but currently **assumed**. SPIKE-03
-Q9 verifies it against a real instance. If it turns out false - if Jira emits one notification per changed
-field regardless of call count - this slice's email claim collapses and only the API-call / history /
-churn reduction survives. Not a blocker (those wins alone justify it), but the value story would need
-rewording, so the claim is not stated in docs or release notes until Q9 reports.
+SPIKE-03 Q9 ran on 2026-08-08 against Jira Cloud. Outcome: **the email claim collapses, the API-call /
+history / churn reduction survives** - exactly the branch this note anticipated, for an unanticipated
+reason (notification batching, not per-field notification).
+
+| | 1 PUT, 4 fields | 4 PUTs, 1 field each |
+|---|---|---|
+| changelog entries | **1** | **4** |
+| emails to the watcher | **1** | **1** |
+
+The slice still ships on its remaining wins. The email claim stays out of docs and release notes; it may
+hold for a customer with notification batching disabled, but that is unverified.
 
 ## Taste tests
 
-- Value-bearing: yes - ~6x fewer emails, permission-free, both deployments. PASS.
+- Value-bearing: yes - ~6x fewer API calls and ~6x fewer issue-history entries, permission-free, both
+  deployments. (Was "~6x fewer emails" - retired by SPIKE-03 Q9.) PASS.
 - Right-sized: grouping logic in two connectors + one service. PASS.
 - Disproves a pre-commitment: yes - D1's implicit assumption that write count was fixed. PASS.
 - New abstraction required? No - a group-by on an existing list. PASS.
