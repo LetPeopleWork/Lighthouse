@@ -52,11 +52,12 @@ If this is toggled on, the Features will not be shown in a flat list, but groupe
 If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features.
 
 ### Feature Order
-Features are ordered based on the [order in your Work Tracking System](../../concepts/concepts.html#feature-order).
+Features are ordered based on the [order in your Work Tracking System](../../concepts/concepts.html#feature-order). To change it, adjust your Work Tracking System and [Refresh the Features](#refresh-features).
 
-{: .important}
-You **can't** reorder Features in Lighthouse itself, but have to adjust your Work Tracking System and [Refresh the Features](#refresh-features).  
-The order is crucial, as Lighthouse forecasts based on the [Feature WIP of each Team](#feature-wip) from highest to lowest ordered Feature.
+The order is crucial, as Lighthouse forecasts based on the [Feature WIP of each Team](#feature-wip) from highest to lowest ordered Feature. Note that the order is instance-wide: the Features of every Portfolio compete for the same Teams, so this list shows one slice of a longer sequence. The [Features page](../features/features.html) shows the whole of it.
+
+{: .note}
+If you would rather Lighthouse owned the order than your Work Tracking System, turn on [Feature Order](../settings/configuration.html#feature-order-premium) under System Settings. Each row then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom* — see [Moving a Feature](../features/features.html#moving-a-feature). Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
 
 {: .note}
 If you have toggled on the [Group Features by Parent](#group-features-by-parent), the respective Parent Features are shown in the order coming from your Work Tracking System.

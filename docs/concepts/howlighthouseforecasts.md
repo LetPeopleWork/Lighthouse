@@ -121,6 +121,8 @@ By default your work tracking system does, through the rank your Features alread
 
 You can hand that decision to Lighthouse instead, with [Feature Order](../settings/configuration.html#feature-order-premium) under System Settings. Nothing moves when you turn it on; from then on refreshes no longer re-sequence the forecast.
 
+Every Feature list then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom*, and a move re-forecasts straight away rather than waiting for the next refresh — so you can try an order and read the dates it produces. See [Moving a Feature](../features/features.html#moving-a-feature).
+
 ## The Impact of Feature WIP
 By default, Lighthouse will assume that your Teams will work on one Feature at a time (*Feature WIP* = 1). In other words, this means that the forecast will check how many items can be done, and assume all those items will contribute to the first feature. So the Features will be done *in sequence*:
 

@@ -250,6 +250,39 @@ testWithDemo(
 	},
 );
 
+// The populated overview, illustrating docs/teams/teams.md and docs/portfolios/portfolios.md. It had
+// been a hand-committed PNG with no test behind it, so it could not be regenerated when the top
+// navigation changed. "installation/landingpage.png" is the same page before any data exists.
+testWithDemo(
+	"Take @screenshot of the populated overview page",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.length).toBeGreaterThan(0);
+
+		await overviewPage.lightHousePage.goToOverview();
+
+		await takePageScreenshot(overviewPage.page, "features/overview.png", 3);
+	},
+);
+
+// Epic 5375 — the whole backlog in one place. Illustrates docs/features/features.md, which shipped
+// without an image. The nav label is the instance's own word for its Features (D16); the demo data
+// leaves Terminology at its seeded default, so "Features" is what the link reads here.
+testWithDemo(
+	"Take @screenshot of the Features page",
+	async ({ testData, overviewPage }) => {
+		expect(testData.portfolios.length).toBeGreaterThan(0);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const featuresPage =
+			await overviewPage.lightHousePage.goToFeatures("Features");
+
+		await expect(featuresPage.featureRows.first()).toBeVisible();
+		await expect(featuresPage.helpText).toBeVisible();
+
+		await takePageScreenshot(featuresPage.page, "features/featuresview.png", 3);
+	},
+);
+
 testWithDemo(
 	"Take @screenshot of delivery creation (manual and rule-based)",
 	async ({ testData, overviewPage }) => {

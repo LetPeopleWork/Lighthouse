@@ -10,6 +10,8 @@ The Features page lists every Feature Lighthouse knows about, across all your Po
 
 Every other list in Lighthouse shows you a slice: the Features of one Portfolio, or the Features one Team contributes to. This page shows the whole backlog in one place, which is the only view that matches how forecasting actually works — Lighthouse always takes all Features of all Portfolios into account. See [Why the Backlog Order Matters](../concepts/howlighthouseforecasts.html#why-the-backlog-order-matters).
 
+![The Features page](../assets/features/featuresview.png)
+
 ## The position column
 
 The `#` column is the Feature's place in the order Lighthouse simulates, counted across the whole instance. Its heading reads *Manual* instead of `#` when Lighthouse owns the order (see below).
@@ -29,6 +31,45 @@ That also means the tracker decides: a rank someone changes there re-sequences y
 
 {: .note}
 Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability. Reading it — this page and this column — is not.
+
+## Moving a Feature
+
+Once Lighthouse owns the order, every row carries an action menu with four moves:
+
+- **Move to Top**
+- **Move Up**
+- **Move Down**
+- **Move to Bottom**
+
+The same menu appears in the Feature lists on the [Portfolio](../portfolios/detail.html#features) and [Team](../teams/detail.html#features) pages. There is one order, so a move made anywhere is the move everyone sees.
+
+A move takes effect at once — Lighthouse re-forecasts immediately rather than waiting for the next refresh from your work tracking system.
+
+### What "up" and "down" mean in a filtered list
+
+**Move Up** and **Move Down** step to the neighbouring row *you can see*. Hidden completed Features and rows filtered out of your view are jumped over, not landed on. The Feature takes the place of the row it was moved past, and everything in between keeps its relative order.
+
+The two ends are not symmetric, and this is deliberate:
+
+- **Move to Top** puts the Feature above the first row of the list you are looking at. In a Portfolio's Feature list that is that Portfolio's first Feature, not the instance's.
+- **Move to Bottom** sends the Feature to the end of the whole order, not the end of your view.
+
+### When you cannot move something
+
+The menu opens either way and says why the moves are unavailable:
+
+- **A Feature shared with a Portfolio you do not run.** You need write access to *every* Portfolio a Feature belongs to, because moving it re-sequences their delivery too. The message names the blocking Portfolios you are allowed to see.
+- **A Feature in no Portfolio at all.** Nobody decides where it sits.
+- **The grid is sorted by another column.** Up and down have no meaning when a column decides what you are looking at. Sort by position again to move.
+
+On an instance where Lighthouse does not own the order, or without a Premium licence, the move actions are absent entirely rather than shown greyed out.
+
+{: .note}
+The whole menu is keyboard operable, and each move announces its outcome to a screen reader — the grid re-sorting silently says nothing on its own.
+
+### "I moved it and nothing happened"
+
+If you move a Feature up and a lower one is still forecast to finish first, that is usually [Feature WIP](../concepts/howlighthouseforecasts.html#the-impact-of-feature-wip), not the order. Your Teams work on the top *Feature WIP* Features in parallel, so a small Feature anywhere inside that window can finish before a large one above it — and several Features can even share the same forecasted dates. The order bites at the edge of that window, not inside it.
 
 ## What you see
 
