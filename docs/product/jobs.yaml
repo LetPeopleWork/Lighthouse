@@ -4773,3 +4773,201 @@ jobs:
         explains a problem rather than solving one, and framing a column as more than that would be
         dishonest. It ships first anyway, because it is the cheapest way to find out whether the source
         order is meaningful enough for the rest of the epic to be aimed correctly.
+
+  - id: job-operator-sync-without-hammering-the-tracker
+    title: Refresh a decades-deep tracker without refetching the whole of it
+    persona: platform-operator
+    feature_context: epic-5687-faster-updates
+    created: 2026-08-08
+    note: >
+      NEW in epic-5687 (ADO #5687 "Faster Updates"). The epic names its own worst case — an on-premise
+      Jira Data Center instance with 25 years of history. Verified in code during DISCUSS:
+      WorkItemService.RefreshWorkItems refetches the entire query result every cycle, and the removal
+      rule (stored item absent from the fetch is deleted) is what makes a naive delta unsafe, because
+      every item would become immortal. The chosen shape (D1/D2) keeps a full identity sweep every cycle
+      and narrows only the payload fetch, so removal semantics are untouched. The DoneItemsCutoffDays
+      window already bounds CLOSED items; it does nothing for open ones, which is why the cost does not
+      fall off on its own.
+    job_story: >
+      When Lighthouse refreshes a team or portfolio against a work-tracking system that holds years or
+      decades of history,
+      I want it to download in full only the records that actually moved since the last refresh, while
+      still noticing anything that was deleted or dropped out of my query,
+      so I can run a short refresh interval without making Lighthouse the heaviest API consumer on my
+      colleagues' Jira instance, and without waiting minutes to learn that a handful of things changed.
+    dimensions:
+      functional: >
+        Each cycle issues the same query, but asks first only for identity plus a remote-changed
+        timestamp; full payloads — fields, changelog, ADO revisions, ServiceNow state spans, Linear
+        history — are fetched only for records whose timestamp differs from the stored one, compared per
+        item rather than against a global watermark. The full identity set is enumerated every cycle, so
+        `removed = stored - swept` keeps exactly today's meaning. The first refresh, and any refresh
+        after a fetch-shaping configuration change, is still a full fetch.
+      emotional: >
+        Move from "I widened the interval to an hour because a refresh takes five minutes and I feel
+        slightly guilty pointing it at the shared instance" to "it costs almost nothing, so the interval
+        is a product decision again".
+      social: >
+        Stop being the integration the Jira administrator brings up in the platform meeting; be able to
+        answer "what does Lighthouse cost us?" with a number off a log line.
+    forces:
+      push: >
+        Every update refetches the world. On Jira the cost is compounded by the changelog: any issue with
+        more than 30 entries triggers extra paged requests at 100 per page, so the oldest, longest-lived
+        issues — exactly the ones that never change — are the most expensive to re-read. On ADO the
+        dominant cost is a per-item GetRevisionsAsync round trip to rebuild transitions, paid for every
+        item on every cycle.
+      pull: >
+        A cheap identity scan plus a handful of payload fetches; a refresh that costs seconds instead of
+        minutes, and a refresh interval chosen for how fresh the data should be rather than for how much
+        the fetch costs.
+      anxiety: >
+        "Will delta silently miss a deletion, or an item that left my query?" (No — the identity sweep
+        enumerates the full result set every cycle; removal semantics are unchanged, and that is why the
+        cheaper delta-query design was rejected.)
+        "Will an item that stops changing stop being noticed?" (This is the real trap: staleness is
+        time-driven, so the item that goes stale is precisely the item that stops being fetched. The
+        staleness evaluation moves off the fetched-item loop onto the stored set.)
+        "Will my metrics drift after weeks of deltas?" (An unchanged item's stored fields and transitions
+        must be byte-identical across a delta cycle, asserted directly, and anything ambiguous — a failed
+        sweep, a missing timestamp — resolves to a full fetch.)
+      habit: >
+        Operators today compensate by widening the refresh interval and accepting staler data. They must
+        learn they no longer need to, which means the saving has to be visible somewhere — hence the log
+        line, and hence its shipping first.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — the cost is paid on every cycle forever, it scales with the customer's history
+        rather than with their activity, and on the largest instances it forces a worse product (a longer
+        interval, staler numbers). It is also a community-reported complaint, not an internal hunch.
+        Current satisfaction: 1 — there is no incremental fetch anywhere in the codebase; the only lever a
+        user has today is to refresh less often. Gap: 3 — a genuinely missing capability, expressible on
+        every remote connector with one contract, and bounded by a removal rule that must not change.
+
+  - id: job-config-admin-know-which-settings-cost-a-refetch
+    title: Change a setting without wondering whether it just cost a full refetch
+    persona: config-admin
+    feature_context: epic-5687-faster-updates
+    created: 2026-08-08
+    note: >
+      NEW in epic-5687 (ADO #5687). The epic's own second question, quoted: "Depending on what setting was
+      changed, we may need to: Get everything again / Don't even need to update (e.g. if just add wait
+      states, that doesn't mean an update is needed from the source systems...)". Today the question is
+      moot because every cycle refetches everything; it becomes a correctness requirement the moment delta
+      exists, because a query edit that does not force a refetch would serve the old result set forever.
+      Note that saving a setting does not itself trigger a fetch today — TriggerUpdate is called from the
+      manual controller endpoints and the periodic loop only — so this job is about what MODE the next
+      scheduled cycle runs in, not about an immediate refresh.
+    job_story: >
+      When I change a Team or Portfolio setting in Lighthouse,
+      I want Lighthouse to work out by itself whether that change alters what has to be pulled from the
+      work-tracking system — and to pull nothing at all when the change is purely local —
+      so I can tune wait states, blocked rules or a staleness threshold as often as I like without
+      triggering a multi-minute refetch, and still trust that widening my query really did take effect.
+    dimensions:
+      functional: >
+        A fetch fingerprint over exactly the properties that shape the remote query — the query text,
+        work item types, states, the done-items cutoff, additional field definitions, the parent-override
+        field, and the connection. A mismatch makes the next cycle a full fetch and says so. Everything
+        outside that set — wait states, blocked rules, staleness threshold, named cycle times, ordering
+        policy, terminology — leaves the fingerprint alone and provokes no remote fetch. A guard test
+        fails when a fetch-shaping property is added without being registered, because the alternative
+        failure mode is stale data with a green test suite.
+      emotional: >
+        Move from "I batch up my settings edits because each one seems to cost something" to editing
+        freely, and from hoping a query change took effect to reading that it did.
+      social: >
+        Be the administrator who can tune the team's definitions during a retro without apologising for
+        the load it puts on the shared tracker.
+    forces:
+      push: >
+        There is no distinction today between an edit that changes what is fetched and one that does not,
+        because everything is refetched regardless. The epic author flagged this as an open question
+        before any code was written, which is the clearest possible signal that the distinction is real.
+      pull: >
+        The system classifies the edit itself. The admin never has to know which settings are "expensive",
+        and never has to be given a button that implies the automatic path is not trusted.
+      anxiety: >
+        "What if the fingerprint misses a field and I get stale data forever?" (The guard test enumerates
+        the properties reachable from the query builder and fails on an unregistered one; the exclusion
+        list is explicit and commented.)
+        "What if it is too eager and every save costs a refetch anyway?" (The collections are compared
+        order-insensitively, so re-saving the same states in a different order is not a change.)
+        "What happens on the release that introduces this?" (No stored fingerprint means the first cycle
+        is full — ambiguity always resolves to the expensive, safe answer.)
+      habit: >
+        Admins do not currently think about fetch cost at all, because the cost is uniform. The new idea
+        is that some edits are free, and the only place they will notice it is the log line — which is
+        exactly what that line is for.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — on its own this is a convenience, but it becomes a correctness gate the moment
+        delta ships: without it, a query edit silently keeps serving the previous result set on every
+        connector that has already been converted. Current satisfaction: 1 — no such classification exists
+        anywhere; the concept of a fetch-shaping setting is not represented in the model. Gap: 2 — a small,
+        enumerable, testable addition whose value is almost entirely defensive.
+
+  - id: job-operator-read-an-update-log-that-says-something
+    title: Read one line per update instead of a page of iteration
+    persona: platform-operator
+    feature_context: epic-5687-faster-updates
+    created: 2026-08-08
+    note: >
+      NEW in epic-5687 (ADO #5687), from the user's own aside during DISCUSS: "While we are at it, we may
+      clean up the logs, it's quite noisy on update right now". Counted during the wave: 38
+      Information/Debug statements on the update path, 17 in WorkItemService alone; UpdateServiceBase
+      logs one Information line per entity per cycle BEFORE deciding not to update it; "Updating Work
+      Items for Team {X}" is emitted three times per team per update. The duration and item count are
+      already recorded in RefreshLog and go unreported. This job ships FIRST in the epic because it is the
+      instrument every other slice's acceptance is read off — and because a UI for the same information is
+      Epic 5511's job, not this one's.
+    job_story: >
+      When I look at Lighthouse's logs to understand what an update just did,
+      I want a single line per update telling me which entity, in which mode, how much it saw, how much it
+      actually fetched and how long it took — rather than a per-entity, per-item stream I have to filter —
+      so I can tell a healthy cheap cycle from a full refetch or a stuck one at a glance, and decide
+      whether this instance's refresh interval is affordable.
+    dimensions:
+      functional: >
+        One Information-level structured summary line per completed update, carrying entity, mode
+        (full/delta), records scanned, records fetched, duration and success, backed by the same fields
+        added to RefreshLog. Per-entity and per-item chatter demoted to Debug — nothing deleted. A cycle
+        that skips an entity logs nothing at Information for it. Errors and warnings untouched.
+      emotional: >
+        Move from scrolling past a wall of iteration to reading the log the way you read a status line.
+      social: >
+        Answer "is Lighthouse healthy?" and "what does it cost us?" from a log excerpt, in a platform
+        channel, without a screenshot of a dashboard that does not exist yet.
+    forces:
+      push: >
+        The log currently narrates the loop rather than the outcome, and the two numbers an operator
+        actually wants — how long, and how much — are recorded to the database and never surfaced. On an
+        instance with many teams, the per-entity "checking last update" lines dominate the volume while
+        carrying no decision.
+      pull: >
+        One legible line per update, which doubles as the evidence for every performance claim the rest of
+        the epic makes.
+      anxiety: >
+        "Will I lose the diagnostics I use to debug a stuck update?" (Nothing is removed; the per-entity
+        and per-item lines move to Debug and come back by raising the level.)
+        "Is this a substitute for a real view?" (No — Epic 5511 owns the task-manager and admin-health UI,
+        and the RefreshLog fields added here are what it will render.)
+      habit: >
+        Operators have learned to grep. They will keep grepping; the change is that the thing they grep
+        for now exists.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — no metric is wrong and nothing is blocked, but the operator's cheapest diagnostic
+        is unavailable, and without it the rest of this epic cannot be measured or falsified. Current
+        satisfaction: 1 — the data exists in RefreshLog and is never surfaced, while the log emits volume
+        instead of signal. Gap: 2 — small, entirely additive, and load-bearing for the epic's other two
+        jobs, which is why it ships first despite ranking below them on value.

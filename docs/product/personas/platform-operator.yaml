@@ -46,6 +46,9 @@ primary_jobs:
   - job-saas-operator-observe-fleet
   - job-saas-operator-recover-from-disaster
   - job-saas-operator-dogfood-tenant-zero
+  # epic-5687-faster-updates SYNC-COST jobs (both flavours)
+  - job-operator-sync-without-hammering-the-tracker  # epic-5687 (2026-08-08, #5687): refresh a decades-deep tracker without refetching the whole of it
+  - job-operator-read-an-update-log-that-says-something  # epic-5687 (2026-08-08, #5687): one legible line per update instead of a page of iteration
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate

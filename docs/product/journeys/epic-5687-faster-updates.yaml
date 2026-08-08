@@ -1,0 +1,235 @@
+schema_version: 1
+feature_id: epic-5687-faster-updates
+updated: 2026-08-08
+note: >
+  Epic 5687 "Faster Updates" (created 2026-08-06, tagged Community / Documentation / Release Notes). The
+  ADO description is a five-line sketch with one concrete complaint in it — an on-premise Jira Data Center
+  instance with 25 years of history — and two questions the author already saw coming: what happens when
+  the config changes, and which settings do not warrant a remote fetch at all. This journey is the result
+  of the DISCUSS dive-in on 2026-08-08, grounded in a code reality check (WorkItemService.cs,
+  UpdateServiceBase.cs, TeamUpdater.cs, JiraWorkTrackingConnector.cs, AzureDevOpsWorkTrackingConnector.cs,
+  ServiceNowWorkTrackingConnector.cs, LinearWorkTrackingConnector.cs, WorkItemBase.cs, RefreshLog).
+
+  Three load-bearing finds the sketch did not carry:
+
+  (1) The deletion rule is what makes delta hard. WorkItemService.RefreshWorkItems removes any stored item
+  the fetch did not return. A naive "updated >= lastSync" query would silently make every item immortal —
+  which is why the chosen design keeps a FULL identity sweep every cycle and narrows only the payload
+  fetch. Removal semantics are the constraint, not the cost.
+
+  (2) Staleness is time-driven, not change-driven. WorkItemBecameStale fires from a comparison against
+  CurrentStateEnteredAt, evaluated today only for FETCHED items. Under delta the item that goes stale is
+  precisely the item that stops being fetched, so the evaluation must move onto the stored set. This is
+  the sharpest trap in the epic and the one most likely to ship silently.
+
+  (3) Only the remote fetch is deltaed. Remaining-work rollup, feature extrapolation, the percentile
+  default size and forecasts depend on wall-clock and on OTHER teams' data, so they keep recomputing every
+  cycle. Skipping them because this entity's records did not move would produce a stale portfolio behind a
+  fresh-looking sync.
+
+  Per-connector delta capability, assessed in full during this wave at the user's request:
+  Jira Cloud = `updated` (biggest win — changelog paging dominates); Jira DC = `updated`, but its offset
+  pagination is the known duplicate-ReferenceId hazard and must be probed before it drives deletions;
+  Azure DevOps = System.ChangedDate (structurally smallest change, removes the per-item GetRevisionsAsync
+  round trip); ServiceNow = sys_updated_on (lower value, paging already guarded); Linear = updatedAt
+  (lowest value, fastest API already); CSV = not applicable, the fetch is a file the user uploaded.
+
+  No UI ships in this epic (user decision): the observable surface is the log, and the RefreshLog fields
+  added here are what ADO Epic 5511 "Task Manager" will later render.
+
+journeys:
+
+  - name: refresh-a-decades-deep-tracker-cheaply
+    goal: >
+      A platform operator running Lighthouse against a tracker with years of history stops paying for the
+      whole of it on every cycle: the log tells them what an update costs, subsequent refreshes download
+      only the records that moved while still noticing everything that left the query, and the settings
+      they tune day to day cost nothing at all — so the refresh interval becomes a freshness decision
+      rather than a load decision.
+    persona: "platform-operator (primary: owns the instance and the relationship with the tracker it
+      hammers; config-admin: edits the settings and carries the did-my-edit-just-cost-a-refetch anxiety;
+      flow-coach: never acts here, but their metrics must stay correct, which is why delta cannot cut
+      corners)"
+
+    emotional_arc:
+      start: >
+        Resigned and slightly guilty — "a refresh takes five minutes against our Jira, so I set the
+        interval to an hour and live with staler numbers. I do not really know what it costs; the log is a
+        wall of 'Checking last update' and 'Updating Work Items for Team X' three times over, and the one
+        thing I want — how long, how much — is nowhere in it."
+      middle: >
+        Informed, then curious — "one line: mode=full, scanned 4013, fetched 4013, 4m51s. So THAT is what
+        it costs." Then, after delta: "mode=delta, scanned 4013, fetched 37, 11.8s. It still saw all four
+        thousand, so nothing can go missing — it just stopped downloading the ones that did not move."
+      end: >
+        In control — "I can refresh every few minutes now, and I can show my Jira admin the number. When I
+        widen the query it says so and re-pulls everything; when I add a wait state it fetches nothing at
+        all. I do not have to decide any of that, and I do not have to trust it blindly either — the line
+        says which one happened."
+
+    design_decisions_resolved:
+      - id: D1
+        question: How does an incremental refresh keep deletion and scope-exit detection correct?
+        decision: >
+          Two-phase (user, 2026-08-08). Phase 1 issues the SAME full query but asks only for identity plus
+          a remote-changed timestamp. Phase 2 fetches full payloads — fields, changelog, ADO revisions,
+          ServiceNow spans, Linear history — only for records whose timestamp moved.
+
+          Why not `updated >= lastSync` plus a periodic full reconcile: it turns correctness into a
+          scheduling parameter. An item that leaves the query lingers for up to N cycles, and every
+          forecast built on it is wrong for that window. Why not delta plus a manual "Full refresh"
+          button: it makes correctness a user chore and advertises that the automatic path is not trusted.
+      - id: D2
+        question: Do removal semantics change?
+        decision: >
+          No, and this is the point of D1. Because phase 1 enumerates the full result set every cycle,
+          `removed = stored - swept` keeps exactly today's meaning. No item can outlive its query. Hard
+          acceptance rule for every connector slice; a sweep that can LOSE an id may not drive deletion.
+      - id: D3
+        question: When does a configuration change force a full refetch?
+        decision: >
+          A fetch fingerprint over exactly the properties that shape the remote query (user, 2026-08-08):
+          DataRetrievalValue, WorkItemTypes, AllStates, DoneItemsCutoffDays, additional field definitions,
+          the parent-override field, WorkTrackingSystemConnectionId. Mismatch makes the next cycle a full
+          fetch and says so in the log. Everything else — wait states, blocked rules, staleness threshold,
+          named cycle times, ordering policy, terminology — sits outside the hash and provokes no remote
+          fetch at all, which is the epic's own second question answered.
+
+          Collections compare order-insensitively, so re-saving the same states in a different order is
+          not a change. A guard test fails when a fetch-shaping property is added without registration —
+          the alternative failure mode is stale data with a green suite.
+      - id: D4
+        question: Does anything ship in the UI?
+        decision: >
+          No (user, 2026-08-08). The observable surface is the log. A task-manager view of running and
+          queued updates, with cancel and a general admin-health dashboard, is ADO Epic 5511's job — and
+          the RefreshLog fields this epic adds are precisely what it will render. Building a view here
+          would duplicate that epic and delay this one.
+      - id: D5
+        question: What ships first?
+        decision: >
+          The log cleanup, not last but FIRST. It is the measuring instrument: without a summary line
+          reporting mode, records scanned, records fetched and duration, no later slice can demonstrate —
+          or falsify — that anything got faster. It also settles the user's secondary complaint ("quite
+          noisy on update right now") independently of whether delta ever ships.
+      - id: D6
+        question: Where does the remote-changed timestamp live?
+        decision: >
+          A nullable UTC LastChangedRemote persisted per work item and per feature; additive, expand-only
+          migration through the existing CreateMigration script. It must be copied explicitly inside
+          WorkItem.Update(...) — the copy path drops members that are not plain settable properties, and a
+          dropped timestamp degrades delta silently back to "always refetch": a performance regression
+          with every other test still green. It gets its own test for that reason.
+      - id: D7
+        question: Which connectors, in what order?
+        decision: >
+          Log, then Jira Cloud (team, then portfolio), then Jira Data Center, then the fingerprint, then
+          Azure DevOps, ServiceNow, Linear (user, 2026-08-08). All connectors are ASSESSED in this wave —
+          the user asked for that explicitly — but whether the last three stay in this epic or become a
+          follow-on feature is a checkpoint after the Jira slices land: "once we have the jira cases, we
+          can decide how to proceed with the others".
+      - id: D8
+        question: Is there a partial mode?
+        decision: >
+          No. An update is `full` or `delta`. It is full when the entity has never been swept, when the
+          fingerprint changed, when any stored record lacks a timestamp, or when the sweep itself failed.
+          Anything ambiguous resolves to full — the expensive answer is always the safe one, and a
+          two-value field is a two-value field in the log too.
+      - id: D9
+        question: Is derived work skipped when nothing moved?
+        decision: >
+          Never. Remaining-work rollup, feature extrapolation, the percentile default size and forecast
+          triggering recompute on every cycle exactly as today. They depend on wall-clock and on other
+          teams' throughput, so "this team's items did not move" says nothing about whether their outputs
+          changed. Skipping them would produce a stale portfolio behind a fresh-looking sync.
+      - id: D10
+        question: What happens to signals that are driven by time rather than by change?
+        decision: >
+          They are evaluated over the STORED set, not the fetched set. Staleness is the case that bites:
+          an item that stops changing is exactly the item that goes stale, and under delta it is exactly
+          the item that stops being fetched, so leaving AddStalenessEventIfThresholdCrossed on the
+          fetched-item loop would mean nothing ever goes stale again. This also preserves ADR-027's
+          assumption that a re-sync re-derives the signals.
+      - id: D11
+        question: Does the CSV connector participate?
+        decision: >
+          No, permanently. Its "fetch" is a file the user already uploaded; there is no remote call to
+          save. Recorded so a later slice does not re-open it.
+      - id: D12
+        question: Is change detected against a global watermark or per record?
+        decision: >
+          Per record. Because the sweep returns a timestamp for EVERY id, the comparison is
+          `swept.updated != stored.LastChangedRemote` item by item — which removes clock skew, server-time
+          drift and "what exactly was lastSync" from the design entirely. Residual risk (a second change
+          landing inside the same timestamp granularity as the fetch) is bounded by treating any record
+          whose timestamp falls inside the current sweep's uncertainty window as changed on the following
+          cycle too: one extra fetch for a handful of records, never a missed change.
+
+    shared_artifacts:
+      - name: sweep result — (referenceId, remoteChangedAt) for the full query
+        source_of_truth: the work-tracking connector's sweep, once per entity per cycle
+        consumed_by: >
+          the changed-set diff (which records need a payload), and the removal set
+          (`removed = stored - swept`). Both read the SAME sweep result; deriving them from two separate
+          calls would allow a record to be absent from one and present in the other.
+      - name: LastChangedRemote
+        source_of_truth: >
+          the remote system's own field — Jira `updated`, ADO System.ChangedDate, ServiceNow
+          sys_updated_on, Linear updatedAt — written to the stored record after a successful payload sync
+        consumed_by: the next cycle's per-record comparison (D12)
+      - name: fetch fingerprint
+        source_of_truth: >
+          computed from the entity's fetch-shaping properties at the start of an update; stored on the
+          Team / Portfolio
+        consumed_by: mode resolution (D3/D8) and the reason shown on the summary log line
+      - name: update summary line / RefreshLog row
+        source_of_truth: the completed update, once per entity per cycle
+        consumed_by: >
+          the operator reading the log (this epic), the outcome KPIs (all of them), and later ADO Epic
+          5511's task-manager and admin-health views
+
+    error_paths:
+      - trigger: the identity sweep fails or returns an obviously truncated result
+        recovery: >
+          fall back to a full fetch for that cycle and log it. Never a partial result (D8). A truncated
+          sweep driving `removed = stored - swept` would delete live records.
+      - trigger: Jira Data Center pagination returns duplicate reference ids within one sweep
+        recovery: >
+          collapse duplicates the way DeduplicateByReferenceId already does, and log the collapsed count.
+          If the id SET (not merely the id list) proves unstable across back-to-back sweeps, DC delta does
+          not ship on that sweep — the slice records the finding instead. This is the epic's one open
+          question and it is probed before any DC code is written, using a dev build run against a real
+          DC system (access arranged, user 2026-08-08) rather than reasoned about.
+      - trigger: a stored record has no LastChangedRemote (fresh install, or an upgrade into the feature)
+        recovery: the whole entity resolves to a full fetch for that cycle (D8)
+      - trigger: a fetch-shaping setting was changed since the last cycle
+        recovery: full fetch, with configuration named as the reason on the summary line (D3)
+      - trigger: a fetch-shaping property is added to the model without being registered in the fingerprint
+        recovery: >
+          the guard test fails in CI. There is no runtime recovery, which is the point — the runtime
+          symptom would be permanently stale data with no error anywhere.
+
+    out_of_scope:
+      - Any UI. Deferred to ADO Epic 5511 "Task Manager" by explicit user decision (D4).
+      - A manual "Force full refresh" action — D3 makes it unnecessary, and its presence would imply the
+        automatic path is not trusted.
+      - Webhooks or push from the work-tracking system. A different epic and a different trust model.
+      - Changing the shipped refresh-interval defaults. This epic makes a short interval affordable;
+        whether the default moves is a separate call once there are real numbers.
+      - The CSV connector (D11).
+      - Caching of any kind. The saving comes from not asking, not from remembering the answer.
+      - Write-back. TriggerWriteBackForTeam runs after the fetch and is untouched.
+
+    success_signals:
+      - A delta cycle's median duration is at least 70% below the same entity's full-cycle baseline.
+      - A delta cycle on a >=1000-record entity with <=5% churn issues at most 10% of a full cycle's
+        remote requests.
+      - Across 20 consecutive delta cycles, the stored reference ids equal the swept ids — zero drift.
+      - A wait-state, blocked-rule or staleness-threshold edit produces zero payload fetches next cycle.
+      - At most two Information lines per entity per update; none at all for a skipped entity.
+      - An item untouched past the staleness threshold still raises WorkItemBecameStale under delta.
+
+    jobs:
+      - job-operator-sync-without-hammering-the-tracker
+      - job-config-admin-know-which-settings-cost-a-refetch
+      - job-operator-read-an-update-log-that-says-something
