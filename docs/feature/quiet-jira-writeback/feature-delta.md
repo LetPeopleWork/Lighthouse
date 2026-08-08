@@ -36,6 +36,20 @@ and the story table below.
 Remaining verification debt: **string-typed** custom-field write-back is unverified (the test site has no
 plain-text custom field); DC behaviour (Q1/Q2) is unverified until post-release.
 
+**Scope decision (user, 2026-08-08): design for Cloud, assume DC behaves identically.** The maintainer will
+verify DC once this is live; if DC turns out to differ, that becomes a **dedicated feature**, not a change
+of course here. Practical consequences for DESIGN:
+
+- Do **not** build a Cloud/DC branch, a deployment discriminator, or DC-conditional behaviour. With slice 06
+  deferred there is one code path, and D4 is therefore **dropped** rather than implemented.
+  `serverInfo.deploymentType` stays recorded in the spike findings as the correct discriminator *if* one is
+  ever needed; it is not needed now.
+- The retry-on-403 fallback is what makes this assumption safe: whichever of the three possible DC behaviours
+  turns out to be real (403 like Cloud / silent ignore / correct suppression), no customer ends up worse off
+  than today. That is the property to preserve in design review.
+- Docs and release notes state the **Cloud-verified** behaviour. Do not claim DC suppression works until the
+  maintainer's post-release check confirms it.
+
 ## [REF] Summary
 
 Lighthouse writes forecast percentiles, feature size and work-item age back into Jira fields on every
@@ -45,20 +59,31 @@ Premium feature to stop an inbox problem.
 
 The noise has **two independent causes**, and the original DISCUSS pass only found the first:
 
-1. **Every write emails.** The Azure DevOps connector solves this: `AzureDevOpsWorkTrackingConnector.cs:356`
-   passes `suppressNotifications: true` unconditionally. The Jira connector at
-   `JiraWorkTrackingConnector.cs:325` issues a bare `PUT rest/api/latest/issue/{id}` with no suppression
-   parameter. A connector parity gap, not a missing platform capability. Addressed by slices 04-06.
-2. **Lighthouse writes far more often than it needs to** - amplified twice over, on *both* write-back
-   connectors, for reasons that have nothing to do with Jira (see "Write amplification" below). Addressed
-   by slices 01-02.
+1. **Every write emails - but as a per-issue digest, not per write.** The Azure DevOps connector
+   suppresses unconditionally (`AzureDevOpsWorkTrackingConnector.cs:356`, `suppressNotifications: true`);
+   the Jira connector at `JiraWorkTrackingConnector.cs:325` issues a bare
+   `PUT rest/api/latest/issue/{id}` with no suppression parameter. A connector parity gap, not a missing
+   platform capability. **Amended 2026-08-08 (SPIKE-03 Q9):** Jira Cloud batches watcher mail per
+   (recipient, issue) over a ~10 minute window, so the noise a user actually feels is **one email per
+   issue per window**, not one per write. Addressed by slice 04; slice 06 is deferred, its premise
+   disproved.
+2. **Lighthouse writes far more often than it needs to** - amplified on *both* write-back connectors, for
+   reasons that have nothing to do with Jira (see "Write amplification" below). Addressed by slices 01-02.
+   **Amended 2026-08-08 (DESIGN):** the pass-count amplifier is smaller than stated - `UpdateQueueService`
+   already coalesces duplicate `(Forecasts, portfolioId)` triggers, so N Teams produce at most **two**
+   forecast executions, not N. See ADR-144.
 
 Cause 2 was discovered on 2026-07-17 and reframes the epic. It matters disproportionately because it is
-**permission-free, deployment-free, and connector-agnostic** - the only lever that survives a bad SPIKE-03
-verdict, and it reduces the very channels D1 wrote off as unsuppressible.
+**permission-free, deployment-free, and connector-agnostic** - the only lever that survived SPIKE-03
+untouched, and it reduces the very channels D1 wrote off as unsuppressible. Its measured value is **API-call
+count and issue-history churn** (4:1); the email claim is **void** (Q9).
 
-The story's own doubt ("This may not be possible at all...") resolves to: **possible, for email only** -
-and separately, a large part of the volume is self-inflicted and fixable outright.
+The story's own doubt ("This may not be possible at all...") resolves to: **possible, for email only, and
+only where the credential holds Administer Jira or Administer Projects on that project** - and separately,
+a large part of the volume is self-inflicted and fixable outright. Where the credential lacks the
+permission, Jira **403s and drops the whole write**, which is why suppression ships with an optimistic
+retry ([ADR-142](../../product/architecture/adr-142-writeback-suppression-optimistic-retry.md)) rather
+than the unconditional form D3 originally described.
 
 ## [REF] Write amplification (verified 2026-07-17)
 
@@ -137,7 +162,7 @@ admins will refuse - which would leave the feature unadopted even though it "wor
 | D8 | ~~Out of scope: ... ADO (already correct), and write-back cadence/volume. Cadence is confirmed already-correct: `WriteBackService.GetChangedFields` only emits updates where `currentAdditionalFieldValue != update.Value`, so Lighthouse writes genuine changes only. Noise is Jira-side, per user confirmation 2026-07-16.~~ **OVERTURNED 2026-07-17.** The no-op guard is real but bounds only *value* changes, not *call count*. Two amplifiers went unexamined - one call per field rather than per issue, and N+2 uncoordinated passes per refresh round (see "Write amplification"). Noise is **substantially Lighthouse-side**, and ADO is *not* already correct: it suppresses email but emits the same per-field call storm, so it churns work-item revisions. **Still out of scope:** Linear and CSV (both `throw new NotSupportedException("Write-back is not supported for ...")`). |
 | D9 | **Event-driven write-back collection** (slice 01). Write intents are collected across a refresh cycle and flushed **once** at the end, replacing three uncoordinated inline call sites. Applies to both write-back-capable connectors (Jira, ADO) - the seam sits above the connector. Rationale: architectural seam first, so slice 02 groups once against the final shape rather than per-pass. (User decision, 2026-07-17.) |
 | D10 | **Per-issue field batching** (slice 02). Group `WriteBackFieldUpdate` by `WorkItemId`; one Jira PUT with a multi-field `fields` object, one ADO `JsonPatchDocument` with multiple operations. Both connectors. Permission-free, deployment-free, and the only lever that survives a bad SPIKE-03. The "one call = one email" premise is **assumed, not verified** - SPIKE-03 Q9 checks it, and the email claim ships in no doc or release note until it reports. |
-| D11 | **Forecast re-simulation jitter is out of scope.** Monte Carlo re-simulation can flip a percentile date by a day, making each pass a "genuine" change and defeating the `!=` guard. Raised 2026-07-17 as a possible noise floor; **user decision: ignore, do not design around it.** No hysteresis, no write-threshold, no local-value-after-write slice. (User decision, 2026-07-17.) |
+| D11 | **Forecast re-simulation jitter is out of scope.** Monte Carlo re-simulation can flip a percentile date by a day, making each pass a "genuine" change and defeating the `!=` guard. Raised 2026-07-17 as a possible noise floor; **user decision: ignore, do not design around it.** No hysteresis, no write-threshold, no local-value-after-write slice. (User decision, 2026-07-17.) **Scoped exception, 2026-08-08 (user, D-A7-R):** persisting a value *just successfully written to the tracker* into the local `AdditionalFieldValues` is permitted. It does not damp jitter — a re-simulated percentile genuinely differs and is still written — it makes the stored copy true rather than stale. D11's bars on hysteresis and write thresholds stand unchanged. |
 
 ## [REF] Technical grounding (verified)
 
@@ -269,9 +294,12 @@ Decision enabled: I leave write-back switched on.
 #### Acceptance Criteria
 - AC-01.1: Given a Jira connection with a write-back mapping and a changed forecast value, when a Team
   update triggers write-back, then the issue PUT carries `notifyUsers=false` and the field is updated.
-- AC-01.2: Given a real Jira DC instance with a watcher on the issue, when write-back updates the field,
-  then the watcher receives **no email**, and the change **is** present in the issue history (D1 - we
-  assert the history entry exists, so nobody later "fixes" the wrong thing).
+- ~~AC-01.2: Given a real Jira DC instance with a watcher on the issue, when write-back updates the field,
+  then the watcher receives no email, and the change is present in the issue history.~~ **RETIRED
+  2026-08-08 as a release gate** - no Data Center instance is obtainable before release. Moved to the
+  post-release DC checklist at the end of `slices/slice-03-spike-jira-notification-suppression.md`
+  (Q1/Q2/Q10). Safe to ship without it because the 403 retry (ADR-142) leaves no DC customer worse off
+  under any of the three possible behaviours. The history-entry assertion survives on AC-01.3 (D1).
 - AC-01.3: Given the same on a real Jira Cloud instance with an admin credential, then no watcher email.
 - AC-01.4: Given the ADO connector, when write-back runs, then behaviour is unchanged (`suppressNotifications: true`).
 - AC-01.5: Given `GetChangedFields` finds no changed value, when write-back runs, then no Jira call is
@@ -294,8 +322,12 @@ Decision enabled: I grant the permission, or I accept the emails knowingly - eit
   settings page loads, then it states that write-backs will not email watchers.
 - AC-02.2: Given a credential **lacking** the permission, then the page states that write-backs **will**
   email watchers and names the exact permission to grant and the account to grant it to.
-- AC-02.3: The required permission is deployment-correct per D4: DC -> `ADMINISTER` or
-  `ADMINISTER_PROJECTS`; Cloud -> per SPIKE-03's verdict (`BULK_CHANGE` once slice 06 lands).
+- ~~AC-02.3: The required permission is deployment-correct per D4: DC -> `ADMINISTER` or
+  `ADMINISTER_PROJECTS`; Cloud -> per SPIKE-03's verdict (`BULK_CHANGE` once slice 06 lands).~~
+  **RETIRED 2026-08-08** - D4 is dropped, so there is no deployment discriminator to assert, and slice 06
+  is Removed so `BULK_CHANGE` is never the answer. The requirement is the same on both deployments:
+  Administer Jira, or Administer Projects **on that project**. Covered by AC-02.1/AC-02.2 as restated per
+  D-A9 (per project, naming the affected ones).
 - AC-02.4: Given the `mypermissions` probe fails or times out, then the page degrades to an unknown
   state and never blocks saving the connection or claims quiet.
 - AC-02.5: Given a Linear, CSV or ADO connection, then no such status is shown (D8).
@@ -362,13 +394,13 @@ instance.
 
 | KPI | Target | Measurement |
 |---|---|---|
-| Watcher emails per Jira write-back cycle | **0** on a credential with the required permission | SPIKE-03 + slice AC on a real Cloud and DC instance with a watcher |
+| Watcher emails per Jira write-back cycle | **0** on a credential with the required permission **on that project** | SPIKE-03 Q3 (Cloud, verified); DC deferred to post-release |
 | **API calls per issue per write-back pass** | **1**, down from one-per-changed-field (~6 with a full mapping set) | AC-05.1 / AC-05.2 - both connectors |
-| **Write-back passes per refresh round** | **1**, down from N+2 for N teams | AC-04.1 - measured on a portfolio with >=3 teams |
-| **Watcher emails per issue per cycle without any granted permission** | **~1**, down from ~4N | slices 01+02 on a stock credential; the floor D1 leaves standing |
-| Jira connectors at ADO notification parity | 2/2 (Jira, ADO) | code assertion: every notification-capable connector suppresses |
-| Cloud permission required for quiet write-back | "Make bulk changes", **not** `Administer Jira` | AC-03.2 on a non-admin credential |
-| Admins who learn suppression is off *before* their team does | 100% of connections with an under-permissioned credential show the warning | AC-02.2 |
+| ~~**Write-back passes per refresh round** — **1**, down from N+2 for N teams~~ | **CORRECTED 2026-08-08 (DESIGN):** `UpdateQueueService` already coalesces duplicate `(Forecasts, portfolioId)` triggers, so the pre-change figure is **≈4 portfolio-level passes**, capped independently of N — not N+2. Target: **≤1 flush per update execution**, and **at most one write per `(work item, field)` per round** — the second half delivered by the D11 exception (D-A7-R), which makes a repeat pass find no change rather than needing to be coordinated away. | AC-04.1 as restated; ADR-144 |
+| ~~**Watcher emails per issue per cycle without any granted permission** — **~1**, down from ~4N~~ | **VOID 2026-08-08 (SPIKE-03 Q9):** Jira Cloud digests watcher mail per (recipient, issue) over a ~10 min window, so the pre-change figure was already ~1, not ~4N. Slices 01-02 change **call count and history churn**, not email count. | Do not carry into docs or release notes |
+| Jira connectors at ADO notification parity | 2/2 (Jira, ADO) | code assertion: every notification-capable connector attempts suppression |
+| ~~Cloud permission required for quiet write-back — "Make bulk changes", not `Administer Jira`~~ | **VOID (SPIKE-03 Q5):** suppression needs Administer Jira **or** Administer Projects on the bulk path too. Slice 06 Removed. The requirement is Administer Jira / Administer Projects, per project, on both transports. | SPIKE-03 Q5 |
+| Admins who learn suppression is off *before* their team does | 100% of connections with an under-permissioned credential surface it — **naming the affected projects** | AC-02.2, restated per D-A9 (OQ-3) |
 | Write-back disable-rate attributable to noise | 0 new reports post-release | ADO #5500 follow-ups; Manuel + Chris confirm |
 
 ## [REF] Pre-requisites
@@ -382,15 +414,24 @@ instance.
 
 ## [REF] Definition of Done
 
-1. Jira write-back sends no watcher email on DC and Cloud with an adequately-permissioned credential.
-2. Cloud path needs only "Make bulk changes" - never `Administer Jira` (AC-03.2).
-3. Under-permissioned credentials produce an honest warning on the connection, never a false claim (D5).
-4. ADO behaviour unchanged; Linear/CSV untouched.
-5. `WriteBackResult` per-item semantics preserved across the Cloud transport swap (AC-03.4).
+1. Jira write-back sends no watcher email on **Cloud** with a credential holding Administer Jira or
+   Administer Projects on that project. **DC half retired 2026-08-08 as a release gate** - no instance is
+   obtainable; it moves to the post-release checklist at the end of
+   `slices/slice-03-spike-jira-notification-suppression.md` (Q1/Q2/Q10).
+2. ~~Cloud path needs only "Make bulk changes" - never `Administer Jira` (AC-03.2).~~ **RETIRED
+   2026-08-08** - SPIKE-03 Q5 disproved it: suppression needs admin or project-admin on the bulk path too.
+   Slice 06 is Removed and AC-03.2 with it.
+3. Under-permissioned credentials produce an honest signal - a Warning per connection per flush (ADR-142)
+   and a per-project panel on the connection (ADR-145) - never a false claim (D5).
+4. ADO behaviour unchanged; Linear, CSV and ServiceNow untouched.
+5. ~~`WriteBackResult` per-item semantics preserved across the Cloud transport swap (AC-03.4).~~
+   **RETIRED 2026-08-08** - there is no transport swap; slice 06 is Removed. Per-item semantics must still
+   survive **batching**, which is AC-05.4/AC-05.8 and ADR-143 §3.
 6. Backend `dotnet build` zero warnings + `dotnet test` green; frontend `pnpm test` + `pnpm build` clean.
 7. SonarQube Cloud: no new issues.
 8. Mutation kill rate >=80% on changed backend + frontend units.
-9. Docs page for write-back added, stating the per-deployment permission and D1's email-only scope.
+9. Docs page for write-back added, stating the permission needed **per Jira project** (Cloud-verified
+   only), and D1's email-only scope.
 
 ## [REF] Scope Assessment
 
@@ -519,3 +560,223 @@ next.**
 - (e) **Jira has no throttle.** ADO chunks and parallelises with `ExecuteWithThrottle`
   (`AzureDevOpsWorkTrackingConnector.cs:320-325`); Jira is fully sequential with none. Out of scope for
   slice 02 by design - logged here so it is not lost.
+
+---
+
+# Wave: DESIGN — 2026-08-08
+
+Architect: Morgan (nw-solution-architect). Interaction mode **propose**. Density **lean** — Tier-1 `[REF]`
+sections only; Tier-2 expansions are catalogued below and deliberately not rendered.
+
+**Scope designed:** slices 01, 02, 04, 05 (ADO #5502, #5503, #5505, #5506).
+**Out:** slice 06 / #5507 — Removed, its least-privilege premise disproved by SPIKE-03 Q5. Not designed,
+not carried as future work beyond what the briefs already record.
+
+## Wave: DESIGN / [REF] Changed Assumptions (back-propagation)
+
+| # | Upstream claim | Where | Status after DESIGN | Action taken |
+|---|---|---|---|---|
+| CA-1 | `[REF] Summary`: "Every write emails" and suppression is always-on, mirroring ADO (D3 as written) | `[REF] Summary`, D3 | **Reconciled** with the SPIKE-03 OUTCOME block | Summary rewritten in place, dated and marked amended; D3 survives *because of* the ADR-142 retry, not unconditionally |
+| CA-2 | "Addressed by slices 04-06" | `[REF] Summary` cause 1 | **Stale** — slice 06 deferred | Summary now says slice 04, premise-disproved note on 06 |
+| CA-3 | Email is per write | `[REF] Summary`, D10, US-05 pitch | **Void** (Q9) — Jira Cloud digests per (recipient, issue) per ~10 min | Summary amended; slice 02's value story is call count + history churn only. Already corrected in `slice-02-*.md`; the Summary was the last place still carrying it |
+| CA-4 | "N+2 write-back passes per refresh round"; KPI "1, down from N+2 for N teams" | `[REF] Write amplification`, `[REF] Outcome KPIs`, AC-04.1 | **Overstated** — `UpdateQueueService` coalesces duplicate `(Forecasts, portfolioId)` triggers, so N Teams yield **at most two** forecast executions. Real portfolio-level count ≈4, not N+2 | Summary amended; ADR-144 records the mechanism; **AC-04.1 and the KPI need restating in DISTILL** (OQ-3) |
+| CA-5 | D4 — deployment discriminator via `AuthenticationMethodKey`, replaced by `serverInfo.deploymentType` | D4, AC-02.3, carried question (c)/(d) | **Dropped, not implemented** (user scope decision) | No discriminator is designed. Carried questions (c) and (d) are closed as not-applicable |
+| CA-6 | D5 — `mypermissions` is the honesty gate in the write path | D5, slice 05 brief | **Split**: it is not a gate (ADR-142), it is the pre-flight *reporting* source (ADR-145) | Recorded in both ADRs; slice 05 is a reporting companion, per the 2026-08-08 user decision |
+| CA-7 | "Write-back-capable connectors are Jira and ADO only… 'All connectors' = 2" | `[REF] Technical grounding` | **Incomplete** — there are **five** `IWorkTrackingConnector` implementations; ServiceNow also refuses (`ServiceNowWorkTrackingConnector.cs:956`) alongside CSV (`:422`) and Linear (`:814`) | Blast radius of any port change is **5**, and that is why ADR-143 keeps the port unchanged |
+| CA-8 | Slice 05's surface can ride the connection-validation advisory channel | slice 05 brief, ADR-127 | **Unavailable** — `ConnectionValidationResult` has no `Advisory` and no `SuccessWith`; #5612's merge removed them | ADR-145 designs its own read-only endpoint instead, and says why |
+| CA-9 | Carried question (b): preserve `WriteBackResult` semantics across batching *and* the async bulk transport | handoff §(b) | **Halved** — the bulk transport is out of scope, so only the batching pressure remains | ADR-143 §3 |
+| CA-10 | Two `[REF] Outcome KPIs` rows rested on disproved premises: "passes per refresh round: 1, down from N+2" and "Cloud permission required: Make bulk changes, not Administer Jira" | `[REF] Outcome KPIs` | **Corrected / void** — the first by the queue's coalescing (CA-4), the second by SPIKE-03 Q5 (bulk needs admin too) | Both rows struck through in place with the corrected figure and its evidence, rather than silently deleted |
+| CA-11 | KPI "watcher emails per issue per cycle: ~1, down from ~4N" | `[REF] Outcome KPIs` | **Void** — Q9's digest window means the pre-change figure was already ~1 | Struck through in place; must not reach docs or release notes |
+
+## Wave: DESIGN / [REF] Design Decisions (D-A series)
+
+| ID | Decision | Verdict | Where |
+|---|---|---|---|
+| **D-A1** | One Jira write path. No Cloud/DC branch, no deployment discriminator, no `serverInfo` read. | **LOCKED** (user scope decision) | — |
+| **D-A2** | Send `?notifyUsers=false` always; on **403 only**, retry the identical payload once without the parameter. No error-body matching. | **LOCKED** | ADR-142 |
+| **D-A2b** | **The retry's *outcome* discriminates a suppression refusal from an ordinary 403.** Retry succeeds → the 403 was about suppression. Retry also fails → it was not; the credential could not have written either way. A 403 that survives the retry is a plain write failure and is **never** reported as a suppression problem. | **LOCKED** (reviewer Finding 1, 2026-08-08) | ADR-142 §3 |
+| **D-A3** | Suppression outcome is a first-class fact: `WriteBackItemResult.NotificationSuppression ∈ {Suppressed, NotSuppressed, Unknown, NotApplicable}`. `Unknown` = the question arose and could not be answered (403 through the retry); `NotApplicable` = it never arose. ADO always `Suppressed`. | **LOCKED** | ADR-142 §3/§5 |
+| **D-A4** | The Warning log is emitted by `WriteBackService`, once per connection per flush, naming the connection, the affected Jira projects and the remedy — aggregating **`NotSuppressed` only, never `Unknown`**, so nobody is told to grant a permission that was not the problem. Not by the connector, not per issue. Deliberately louder than the surrounding `LogDebug`. | **LOCKED** | ADR-142 §6 |
+| **D-A5** | Group by work item inside each adapter; the port signature is unchanged. On **any non-403 failure**, re-send that item's fields individually. One rule, two orthogonal degradations: *403 → drop suppression, keep batch; other failure → drop batch, keep suppression.* | **LOCKED** | ADR-143 |
+| **D-A6** | `GetChangedFields` indexes items once via **`ToLookup(x => x.ReferenceId)`** — not `ToDictionary`, which would throw where today's code logs a warning and takes the first match on duplicate references. | **LOCKED** | ADR-143 §5 |
+| **D-A7** | `IWriteBackTriggerService` returns a plan (`IReadOnlyList<WriteBackFieldUpdate>`) and performs no I/O. A **scoped** `IWriteBackCollector` stages intents; `UpdateServiceBase.TriggerUpdate` flushes once in a `finally`. Dedup key `(connectionId, workItemId, targetFieldReference)`, last stage wins. | **LOCKED** | ADR-144 |
+| **D-A7-R** | **Scoped exception to D11:** after a *successful* write, `WriteBackService` persists the value into the item's local `AdditionalFieldValues`. The existing `!=` guard then sees the truth and the cross-execution duplicate disappears **by construction**. Bounded: success only, the written value only, inbound sync still wins. D11's jitter reasoning is untouched — a re-simulated percentile genuinely differs and is still written. | **RATIFIED 2026-08-08 (user)** | ADR-144 §The residue |
+| **D-A8** | No domain event is introduced for the flush. The dispatcher makes its own scope, publishes inline in registration order, and would move the ordering contract into `Program.cs`. | **LOCKED** | ADR-144 §6 |
+| **D-A9** | The suppression verdict's unit is the **Jira project**, never the connection. Connection-level rollup is derived (`Quiet` / `PartiallyNoisy` / `Noisy` / `Unknown`) and always names the affected projects. | **LOCKED** | ADR-145 §1 |
+| **D-A10** | Project key = substring of `ReferenceId` before the last `-` (Jira `ReferenceId = issue.Key`, `JiraWorkTrackingConnector.cs:1030`). A reference that does not match `^[A-Z][A-Z0-9_]*-\d+$` is reported as `Unknown`, never dropped and never folded into a neighbour. | **LOCKED** | ADR-145 §2 |
+| **D-A11** | **No request is ever issued without project context.** A required `projectKeys` parameter does not by itself forbid an empty collection; the rule that closes the Q6 trap is the behavioural one beside it — an empty set issues **zero** requests. Together they leave no path on which `mypermissions` goes out without a `projectKey`. Enforced by two named tests, not by the type system; a wrapper type was considered and rejected as ceremony. | **LOCKED** (wording sharpened per reviewer Finding 3) | ADR-145 §3 |
+| **D-A12** | The probe is a **capability interface** (`IWriteBackNotificationProbe`), implemented by Jira alone, type-tested at the call site — deliberately diverging from ADR-139's port-widening idiom on ADR-139's own criterion (variance here is per connector class, not per connection). Read methods only. | **LOCKED** | ADR-145 §4 |
+| **D-A13** | The surface is a separate read-only endpoint `GET /api/v1/worktrackingsystemconnections/{id}/writeback-notification-status` (`SystemAdmin`), not a widening of `WorkTrackingSystemConnectionDto` — which Lighthouse-Clients consumes. | **LOCKED** | ADR-145 §5 |
+| **D-A14** | Discovery for slice 05 is a **probe on demand** — `mypermissions?projectKey=` per project when the page asks, nothing stored, no cache, no invalidation policy. The probe (*will* it be quiet?) and the observed 403 (*was* it quiet?) are complementary and both ship. | **RATIFIED 2026-08-08 (user)** — option S2 | ADR-145 §6 |
+| **D-A15** | No EF migration, no settings field, no DTO change on the connection. D3 holds. | **LOCKED** | ADR-145 §6 |
+| **D-A16** | **Probe latency budget**, because a human waits on the page load: **3 s** per request, **10 s** total fan-out, at most **4** concurrent. On expiry the unanswered projects read `Unknown` while the answered ones still report, and the panel states how many of how many were checked. Copy says "could not check", never "not quiet". Bounds the large-N case rather than assuming "typically 1-5". | **LOCKED** (reviewer Finding 2, 2026-08-08) | ADR-145 §3a |
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Layer | Responsibility after this feature | Slice |
+|---|---|---|---|
+| `WriteBackTriggerService` | Application (resolver) | Resolve mappings + entities → `IReadOnlyList<WriteBackFieldUpdate>`. **Pure.** No I/O, no swallow. | 01 |
+| `WriteBackCollector` *(new, scoped)* | Application (shell) | Stage intents, dedupe by `(connection, item, field)`, flush once per update execution | 01 |
+| `UpdateServiceBase` | Application (host) | Owns the single flush point in the enqueued lambda's `finally` | 01 |
+| `WriteBackService` | Application | Index items once, diff against stored `AdditionalFieldValues`, delegate to the connector, aggregate the per-connection suppression rollup, emit the one Warning, and persist each **successfully-written** value back into `AdditionalFieldValues` (D-A7-R) | 01, 02, 04 |
+| `JiraWorkTrackingConnector` | Driven adapter | Group by item → one PUT with a multi-key `fields` object + `?notifyUsers=false`; 403 → unsuppressed retry; other failure → unbatched retry; report per-field results and suppression outcome | 02, 04 |
+| `AzureDevOpsWorkTrackingConnector` | Driven adapter | Group by item → one `JsonPatchDocument` with N operations, `suppressNotifications: true` preserved; failure → unbatched retry | 02 |
+| `JiraNotificationSuppressionProbe` *(new, on the Jira adapter)* | Driven adapter | `mypermissions?projectKey=` per project → per-project verdict. Read-only. | 05 |
+| `WriteBackNotificationStatusService` *(new)* | Application | Derive the project set from the connection's write-back targets, call the probe, roll up | 05 |
+| `WorkTrackingSystemConnectionsController` | Driving adapter (HTTP) | One new read-only action | 05 |
+| `WriteBackNotificationStatus.tsx` *(new)* | Frontend | Read-only panel beside `WriteBackMappingsEditor`; renders rollup + affected projects + `Unknown` degradation | 05 |
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Shape | Change |
+|---|---|---|
+| `GET /api/v1/worktrackingsystemconnections/{id}/writeback-notification-status` | `{ rollup, projects: [{ projectKey, verdict }], checkedAt }`, `[RbacGuard(SystemAdmin)]` | **NEW** (slice 05) |
+| Scheduled refresh (`UpdateServiceBase` background loop) → Team / Portfolio / Forecast update | unchanged externally; gains a terminal flush | EXTENDED (slice 01) |
+| Settings → Work Tracking Systems → Jira connection page | gains one read-only panel | EXTENDED (slice 05) |
+
+No new write endpoint. D3 stands — no toggle, no remedy action.
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | Change |
+|---|---|---|
+| `IWorkTrackingConnector.WriteFieldsToWorkItems` | Jira, Azure DevOps (2 of 5 implementations act; ServiceNow, Linear, CSV refuse) | **Signature UNCHANGED.** Batching and both retries are adapter-internal |
+| `IWriteBackNotificationProbe` *(new)* | `JiraWorkTrackingConnector` only; type-tested at the call site | **NEW**, read-only |
+| Jira REST — `PUT /rest/api/latest/issue/{key}?notifyUsers=false` | `HttpClient` via `GetJiraRestClientAsync` | EXTENDED (query param + retry). `latest` resolves to **v2** on Cloud (Q8); left as-is, nothing here needs v3 |
+| Jira REST — `GET /rest/api/latest/mypermissions?projectKey=…&permissions=ADMINISTER,ADMINISTER_PROJECTS` | same client | **NEW** |
+| Azure DevOps — `WorkItemTrackingHttpClient.UpdateWorkItemAsync(patch, id, suppressNotifications: true)` | Azure DevOps SDK | EXTENDED (multi-operation patch) |
+| `IRepository<Feature>` / `IWorkItemRepository` | EF Core | **EXTENDED (write)** — D-A7-R persists a successfully-written value into `AdditionalFieldValues`. No schema change: the column already exists and is already written by the inbound sync path |
+
+**External integration — contract testing.** Jira Cloud REST is a third-party API on which two behaviours
+are now load-bearing: the 403 refusal shape on `notifyUsers=false`, and the atomic rejection of a
+mixed-validity `fields` object. Consumer-driven contract tests (PactNet for .NET) are **recommended to
+platform-architect** for the Jira write-back and `mypermissions` interactions, so a change in either
+surfaces at build time rather than as a silent return to noisy write-back. Azure DevOps is exercised
+through its SDK and is covered by the existing integration suites.
+
+## Wave: DESIGN / [REF] Technology Choices
+
+| Choice | Verdict | Rationale |
+|---|---|---|
+| Existing `HttpClient` + `System.Text.Json` for the Jira calls | REUSE | Already the connector's transport; nothing here needs more |
+| Existing Azure DevOps SDK `JsonPatchDocument` | REUSE | Multi-operation is native to the type already in use |
+| No resilience library (Polly or similar) for the retries | REUSE nothing | Two single-shot, status-specific, non-idempotent-sensitive fallbacks. A policy engine would add a dependency to express `if (403) once` |
+| No cache/memo library | REUSE nothing | D-A7's residue is closed by the database or not at all (ADR-144 R2 rejected) |
+| No new persistence, no EF migration | — | D-A7-R writes to an existing column; D-A14 (probe on demand) stores nothing at all |
+| NUnit 4.6 + Moq + EF InMemory (backend), Vitest + RTL (frontend) | REUSE | Project standard; `JiraWriteBackTest` / `AzureDevOpsWriteBackTest` / `WriteBackServiceTest` already exist |
+| PactNet for the Jira contract tests | PROPOSED to DEVOPS | Apache-2.0, the .NET Pact implementation; only if platform-architect adopts the recommendation |
+
+All choices are open-source or already-owned. No proprietary component introduced.
+
+## Wave: DESIGN / [REF] Reuse Analysis (MANDATORY HARD GATE)
+
+Every overlapping component classified. `CREATE NEW` requires evidence that no existing component can
+carry the responsibility. Contract shape per principle 12: **pure** (return-only) / **bounded-change**
+(declared mutation set) / **unbounded-preservation** (must return a plan, never mutate).
+
+| Component | Verdict | Evidence | Contract shape | Universe | Assertion mechanism |
+|---|---|---|---|---|---|
+| `IWorkTrackingConnector` | **REUSE UNCHANGED** | Batching and retries are transport concerns; 3 of 5 implementations refuse write-back and would be re-signed for nothing (ADR-143) | — | — | Compile: no member added. ArchUnitNET: no new port member |
+| `WriteBackFieldUpdate` | **REUSE UNCHANGED** | Already `(WorkItemId, TargetFieldReference, Value)` — exactly the plan value | pure value | — | `required init` members, no setters |
+| `WriteBackResult` | **REUSE UNCHANGED** | Rollup is derived by `WriteBackService`, not stored on the result | pure value | — | — |
+| `WriteBackItemResult` | **EXTEND** | One additive member (`NotificationSuppression`); no existing field can express "written, but audibly". **No EF migration — verified:** `WriteBackResult` and `WriteBackItemResult` live only in `Models/WriteBack/` and appear in **no `DbSet<…>`** anywhere in the backend. They are ephemeral return types on `IWorkTrackingConnector`, never persisted, so widening them cannot touch the schema | pure value | — | Shared-contract rule: grep usages + extend test builders first |
+| `IWriteBackTriggerService` / `WriteBackTriggerService` | **EXTEND** | The resolution logic (`ResolveTeamUpdates:115`, `ResolvePortfolioUpdates`) is exactly what is needed; only the return type and the removal of the `writeBackService` call change | **pure** after the change | mappings × entities × clock × blackout days | ArchUnitNET: the type may not depend on `IWriteBackService` or any repository write path. Unit: resolve issues zero HTTP calls |
+| `WriteBackService` | **EXTEND** | Already the once-per-connection boundary that logs the summary — the natural aggregation and Warning site (ADR-142 §6), and the only place that knows a write succeeded, which is what D-A7-R needs | **bounded-change**: outbound writes via the connector, plus `AdditionalFieldValues` for successfully-written fields only | the connection's mapped fields | Unit: one Warning per connection per flush regardless of item count. Unit: a failed write leaves `AdditionalFieldValues` untouched |
+| `WriteBackService.GetChangedFields` | **EXTEND** | The `!=` guard is correct and must be preserved (AC-04.3 / AC-01.5); only the O(updates × items) scan changes | **pure** over (updates, connection, item lookup) | the diffed field set | Unit: duplicate `ReferenceId` still warns and takes the first match (the `ToLookup` trap) |
+| `JiraWorkTrackingConnector` write-back methods | **EXTEND** | The custom-field reference resolution and numeric coercion (`:310-312`) must survive per field inside the batch; rewriting would re-derive them | bounded-change: the named fields on the named Jira issue | one issue per call | Gold tests per ADR-142 / ADR-143 Earned-Trust tables |
+| `AzureDevOpsWorkTrackingConnector` write-back methods | **EXTEND** | `ExecuteWithThrottle` + `MaxChunkSize` chunking already exist and must be preserved around the batched call | bounded-change | one work item per call | Gold test: batched call still passes `suppressNotifications: true` (AC-04.4 / AC-05.6) |
+| `UpdateServiceBase` | **EXTEND** | The enqueued lambda already wraps `Update` in try/catch; the flush belongs in its `finally` — one site, inherited by all three updaters | bounded-change | the scope's staged intents | Integration: flush throws → refresh still completes and logs (AC-04.6) |
+| `PortfolioUpdater` / `ForecastUpdater` / `TeamUpdater` | **EXTEND** | Call sites change from `await Trigger…` to `collector.Stage(Resolve…)`; explicit ordering preserved | bounded-change | — | Existing `*UpdaterTest` suites |
+| `UpdateQueueService` | **REUSE UNCHANGED** | Its coalescing is what caps the forecast amplifier; touching it would be re-solving a solved problem in a file with a known race history | — | — | Existing coalescing tests |
+| `DomainEventDispatcher` | **NOT USED — with evidence** | Singleton creating its own scope per publish (`:11-12`, `Program.cs:1052`); a scoped accumulator would be two instances, and dispatch order would become DI registration order | — | — | ADR-144 §6 records the rejection so it is not re-proposed |
+| `ConnectionValidationResult` | **NOT REUSABLE — with evidence** | `Advisory` and `SuccessWith` do not exist in the file; removed by #5612's merge. Reuse would mean rebuilding a deleted backend + frontend contract | — | — | ADR-145 Alternatives |
+| `WorkTrackingSystemConnectionDto` | **NOT EXTENDED — with evidence** | Consumed by Lighthouse-Clients; widening it is a client contract change for a field one connector populates. ADR-006 precedent: separate route, stable shape | — | — | ADR-145 §5 |
+| `WorkTrackingSystemConnectionsController` | **EXTEND** | One additive read-only action on the controller that already owns this resource | pure read | — | RBAC guard test |
+| `WriteBackMappingsEditor.tsx` | **EXTEND** (host only) | The panel renders beside it; the editor's own responsibility is unchanged | — | — | Vitest render test |
+| **`IWriteBackCollector` / `WriteBackCollector`** | **CREATE NEW** | No existing component has update-execution lifetime *and* a staging responsibility. `WriteBackService` is scoped too but is the flush executor, not the accumulator; conflating them hides the seam slices 02-05 sit on. `UpdateQueueService` is a singleton and coalesces *updates*, not *field intents* | bounded-change on `Stage` (own dictionary only); the **only** impure member is `FlushAsync` | the staged intent map | Unit: `Stage` issues zero HTTP and zero DB calls. ArchUnitNET: `Stage` returns `void`, `FlushAsync` is the sole `Task`-returning member |
+| **`IWriteBackNotificationProbe` + Jira implementation** | **CREATE NEW** | No connector member answers "may this credential suppress on project X". `SupportsTransitionHistory` and `SupportsIncrementalSync` are synchronous per-connection booleans and cannot carry a per-project, remotely-determined verdict | **pure read** | outbound GET only | Interface exposes no write member (compile-enforced). Unit: every issued URI contains `projectKey=`; empty set → zero requests |
+| **`WriteBackNotificationStatusService`** | **CREATE NEW** | Project-set derivation + rollup belongs above the connector and outside the write path; putting it in `WriteBackService` would couple a read surface to a write pipeline that only runs on a schedule | **pure** over (reference ids, probe verdicts) | the connection's project set | Unit: unparseable reference → `Unknown`, never dropped |
+| **`WriteBackNotificationStatus.tsx`** | **CREATE NEW** | No existing component renders a connection-scoped capability panel; `ValidationAdvisory.tsx`'s channel was removed (CA-8) | pure render | — | Vitest: `Unknown` state renders "could not check", never "not quiet" |
+
+## Wave: DESIGN / [REF] Open Questions — ALL RESOLVED 2026-08-08
+
+| # | Question | Resolution | Recorded in |
+|---|---|---|---|
+| **OQ-1** | Slice 05 discovery shape — where the per-project suppression state lives and how it is discovered | **RATIFIED: S2, probe on demand.** No stored state, no migration, no cache, no invalidation. The required-`projectKeys` signature stays, so the Q6 trap remains unreachable by construction; the observed 403 keeps driving the Warning — the two are complementary, not alternatives. S1 rejected (cannot answer before the first noisy cycle, and never for a project whose values did not change); S3 rejected (reintroduces the invalidation problem S2 deletes) | ADR-145 §6 + Alternatives; D-A14 |
+| **OQ-2** | May `WriteBackService` persist a successfully-written value into the local `AdditionalFieldValues`? | **RATIFIED as a scoped exception to D11.** D11's motivation was forecast jitter and is untouched — a re-simulated percentile genuinely differs and is still written. The exception is limited to persisting a value *just successfully written to the tracker*, which makes the stored copy true rather than stale, and kills the residual duplicate pass **by construction rather than by coordination** | ADR-144 §The residue; D-A7-R |
+| **OQ-3** | Acceptance criteria that no longer describe a reachable state | **APPLIED.** AC-04.1 restated against the real ≈4 figure; AC-02.3 retired (D4 dropped); AC-01.2 and the DC half of the DoD retired *as release gates* and cross-referenced to the existing post-release DC checklist. Each marked retired in place with a one-line reason, in the style of the retired AC-05.3 | `slices/slice-01-*.md`, `slices/slice-04-*.md`, US-01/US-02 below, `[REF] Definition of Done` |
+| **OQ-4** | ADO #5507 state | Not a design question; DISCUSS already flagged it. Recorded so DISTILL does not inherit a dangling child | — |
+
+## Wave: DESIGN / [REF] Outcome collision check
+
+`nwave-ai outcomes check-delta docs/feature/quiet-jira-writeback/feature-delta.md` — run by the
+maintainer, 2026-08-08. **Exit code 0**, output verbatim:
+
+> 0 outcomes checked, 0 collisions across 0 outcomes
+
+**This is a vacuous pass, not a clean collision check.** Nothing was registered, so nothing was compared;
+the exit code says the tool ran, not that this feature's outcomes are unique. A manual proxy over
+`docs/` found both job ids (`job-config-admin-quiet-jira-writeback`,
+`job-config-admin-know-writeback-is-quiet`) and every KPI phrasing appearing only in this feature's
+artifacts plus `jobs.yaml`, `personas/config-admin.yaml` and `journeys/quiet-jira-writeback.yaml` — no
+overlap with another feature. Treat that grep, not the exit code, as the evidence.
+
+## Wave: DESIGN / [REF] Reviewer gate
+
+`nw-solution-architect-reviewer`, run by the maintainer 2026-08-08. Verdict **conditionally approved, no
+blockers**. Five findings; two closed by the maintainer, three applied here.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | **403 conflation.** A Jira PUT also 403s for reasons unrelated to suppression (no Edit Issues, work item not visible). Treating every 403 as a suppression refusal produces a *correct* outcome (INV-Q1 held) with a *wrong diagnosis* — telling the admin to grant a permission that was never the problem, on the surface whose whole job is diagnosis | **APPLIED** — D-A2b / INV-Q3b. Discriminated on **retry outcome**, not error body: retry succeeds → `NotSuppressed`; retry also fails → `Unknown`, excluded from the Warning and from slice 05's rollup. Earned-Trust probe added: *a 403 that persists across the retry is never reported as a suppression problem* |
+| 2 | **Probe SLA missing.** N `mypermissions` requests on a page load with no timeout or latency policy, and "typically 1-5 projects" quietly assumed the large-N case away | **APPLIED** — D-A16 / ADR-145 §3a. 3 s per request, 10 s total, 4 concurrent; partial verdicts kept and shown; unanswered projects read "could not check"; the panel states how many of how many were checked. Large-N is bounded by the total budget and by fanning out over distinct project keys rather than work items |
+| 3 | **"Structurally unreachable" overstates a test-enforced property.** Partly right — a required parameter does not forbid an *empty* collection; the trap is closed by the empty-set-issues-nothing rule beside it | **APPLIED** — D-A11 / INV-Q5 reworded to claim exactly what holds: *no request is ever issued without project context*, two rules together, enforced by two named tests. A non-empty wrapper type was considered and rejected as ceremony for one call site |
+| 4 | EF migration for `NotificationSuppression` | **Closed by maintainer, no action.** Verified: `WriteBackResult` / `WriteBackItemResult` exist only in `Models/WriteBack/` with no `DbSet<…>` anywhere in the backend — ephemeral return types on `IWorkTrackingConnector`, never persisted. Evidence now stated in the Reuse Analysis row so the next reader does not re-derive it |
+| 5 | Terminology | **Closed by maintainer, no action.** Every remaining `Epic` / `Story` / `Stories` hit is literal work-tracker vocabulary (`**Stories:** US-01 (#5505)` headers, "Epic 5500"), which the project rule exempts |
+
+## Wave: DESIGN / [REF] Contradictions found between the briefs and the code
+
+1. **Connector count.** `[REF] Technical grounding` says "'All connectors' = 2" and names CSV and Linear as
+   the refusers. There are **five** implementations; **ServiceNow refuses too**
+   (`ServiceNowWorkTrackingConnector.cs:956`). This is why ADR-143 refuses to widen the port. (CA-7)
+2. **Amplification arithmetic.** "N+2 passes per refresh round" ignores `UpdateQueueService`'s coalescing
+   (`EnqueueUpdate` → `TryAdmit` → single `pendingReruns` entry → `TryScheduleRerun`). The real figure is
+   ≈4 portfolio-level passes, capped independently of N. (CA-4)
+3. **The advisory channel slice 05 assumed.** `ConnectionValidationResult` has neither `Advisory` nor
+   `SuccessWith`. (CA-8)
+4. **`ForecastUpdater` is not an inline third pass.** `TeamDataRefreshedForecastTriggerHandler` *enqueues*
+   via `IForecastUpdater.TriggerUpdate`; it does not call the updater. The three "call sites" are four, and
+   they are not all in one process moment — which is the constraint that shapes ADR-144 and bounds what
+   slice 01 can deliver.
+5. **Stale slice numbering persists** despite the OUTCOME block's claim that headings were fixed:
+   `slice-05-*.md` is still headed `# Slice 02 -…`, and slice 04's OUT-of-scope list still points at
+   "slice 02" and "slice 03" under the pre-2026-07-17 numbering. Cosmetic, but it will mislead DISTILL.
+6. **Line references verified accurate** (no contradiction, recorded because the brief asked for it):
+   Jira `WriteFieldsToWorkItems:263` / `UpdateItems:276` / `UpdateItem:307-350`; ADO
+   `WriteFieldsToWorkItems:302` / `UpdateItemsInChunks:316` / `UpdateItems:330` / `suppressNotifications:356`;
+   `WriteBackService.GetChangedFields:86`; `WriteBackTriggerService.ResolveTeamUpdates:115`.
+
+## Wave: DESIGN / [REF] Tier-2 expansion catalog (listed, not rendered — density = lean)
+
+| # | Expansion | Trigger to render |
+|---|---|---|
+| T2-01 | ATAM sensitivity/trade-off worksheet for retry-versus-pre-check (ADR-142) | Reviewer challenges the rejection of the pre-check gate |
+| T2-02 | Per-connector sequence diagrams for the four degradation paths (happy, 403, invalid field, both) | DISTILL asks for step-level acceptance scaffolding |
+| T2-03 | `mypermissions` request/response fixture catalogue, including the project-less over-report | Slice 05 enters DISTILL |
+| T2-04 | Data Center post-release verification runbook (Q1 / Q2 / Q10) | Release ships and a DC instance becomes available |
+| T2-05 | Full ISO 25010 quality-attribute scenario set for write-back | Reviewer flags a completeness gap |
+| ~~T2-06~~ | ~~EF migration sketch + invalidation policy for ADR-145 option S1~~ | **RETIRED 2026-08-08** — S1 rejected; nothing is stored, so there is no migration and no invalidation policy to sketch |
+| T2-07 | Threat-model delta for the new read-only endpoint (project-key enumeration by a SystemAdmin) | Security review requested |
+| T2-08 | Jira throttling / concurrency parity design (the known gap at `AzureDevOpsWorkTrackingConnector.cs:320-325`) | Taken up as its own feature |
+
+## Wave: DESIGN / [REF] Handoff
+
+**To:** nw-acceptance-designer (DISTILL) — all three open questions are resolved and the AC changes are
+already applied in the slice briefs; nothing is owed back before DISTILL starts.
+**To:** nw-platform-architect (DEVOPS) — consumer-driven contract tests recommended for the Jira Cloud
+REST write-back and `mypermissions` interactions (PactNet), so the two load-bearing vendor behaviours
+(403-on-suppression, atomic batch rejection) fail the build rather than silently returning customers to
+noisy write-back.
+**Paradigm:** object-oriented, ports-and-adapters, per `CLAUDE.md`.
+**Blocking on the user:** nothing. OQ-1, OQ-2 and OQ-3 were ratified and applied on 2026-08-08. All four
+slices (01, 02, 04, 05) are fully designed.

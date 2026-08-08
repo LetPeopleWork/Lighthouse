@@ -51,8 +51,13 @@ refresh topology.
 
 ## Acceptance criteria
 
-- AC-04.1: Given a portfolio with N teams, when a refresh round completes, then write-back executes
-  **once**, not N+2 times.
+- AC-04.1: **RESTATED 2026-08-08 - the N+2 figure was wrong.** `UpdateQueueService.EnqueueUpdate` refuses
+  a duplicate `(Forecasts, portfolioId)` key and parks a single pending rerun, so N Teams already yield at
+  most **two** forecast executions, not N. The real pre-change figure is **~4 portfolio-level passes**,
+  capped independently of N. Restated: Given a portfolio with N teams, when a refresh round completes,
+  then (a) each update execution issues **at most one** write-back flush, and (b) across the round, each
+  `(work item, field)` whose value did not change is written **at most once** - the D11 exception
+  (D-A7-R) makes the second pass find no change rather than needing to be coordinated away.
 - AC-04.2: Given the same field on the same issue is resolved by more than one pass in a cycle, when the
   flush runs, then exactly one write is issued for that issue+field.
 - AC-04.3: Given a cycle where no mapped value changed, when the flush runs, then no connector call is

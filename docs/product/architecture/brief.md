@@ -5219,3 +5219,237 @@ Two rows worth surfacing here because they changed the design:
 | An item untouched past the threshold still raises `WorkItemBecameStale` | Acceptance test (AC-2.5) — fails on any implementation that leaves the evaluation on the fetch loop |
 | `LastChangedRemote` survives the entity copy path | Dedicated test (AC-2.7) — losing it degrades delta to always-full with every other test green |
 | A sweep that cannot enumerate the full set does not drive deletion | Slice-04 pre-slice probe, before any Data Center code is written |
+
+## Application Architecture — quiet-jira-writeback (ADO Epic #5500 "Quiet write-back")
+
+DESIGN wave, 2026-08-08, interaction mode PROPOSE. Slices 01, 02, 04, 05 (#5502, #5503, #5505, #5506).
+Slice 06 / #5507 is Removed — its least-privilege premise was disproved by SPIKE-03 Q5 and it is not
+designed here. Feature delta: `docs/feature/quiet-jira-writeback/feature-delta.md`.
+
+### The one hard problem
+
+Lighthouse writes forecast percentiles, Feature size and Work Item age back into Jira fields, and every
+write emails the watchers. The obvious fix — send `?notifyUsers=false`, as the Azure DevOps connector
+already does with `suppressNotifications: true` — is measurably a **regression**. SPIKE-03 established
+that Jira Cloud answers an under-permissioned suppression request with
+`403 "To discard the user notification either admin or project admin permissions are required."` and
+**drops the entire write** (`SPIKEPRM-1.duedate` stayed `null`). Atlassian's own documentation, which
+says the parameter is silently ignored, is wrong.
+
+So the design problem is not "how do we suppress" but **"how do we attempt suppression in a way that
+cannot cost a customer their write-back"** — and, because the permission is granted per Jira *project*
+while a Lighthouse connection spans many, **"how do we tell an administrator which projects are the
+problem"** without a connection-level yes/no that would be wrong in both directions.
+
+### Architectural Pattern
+
+Unchanged: modular monolith, ports-and-adapters, object-oriented (ADR-027). This feature adds no module,
+no new bounded context, no persistence and no EF migration. It sits entirely
+within WorkTracking-Integration plus a thin read surface on the existing connection settings page.
+
+### Key invariants introduced
+
+| # | Invariant | Why it is an invariant and not a preference |
+|---|---|---|
+| INV-Q1 | **A write-back can never end worse than it would have without suppression.** Suppression is attempted; a 403 degrades to the unsuppressed write and reports that write's outcome. | This is the property that licenses designing for Cloud and assuming Data Center behaves identically. All three possible DC behaviours land on a defined, non-regressing outcome. |
+| INV-Q2 | **A batch failure never loses a field the unbatched path would have written.** Non-403 failure re-sends the item's fields individually. | Both providers reject mixed-validity payloads atomically (verified). Batching without this turns one bad mapping into total write-back loss on that item. |
+| INV-Q3 | **The two degradations are keyed to disjoint statuses.** 403 → drop suppression, keep the batch. Any other failure → drop the batch, keep suppression. | Overlapping fallbacks would be order-dependent and untestable in combination. |
+| INV-Q3b | **A 403 that survives the retry is never reported as a suppression problem.** Retry succeeds → the 403 *was* about suppression (`NotSuppressed`). Retry also fails → it was not (`Unknown`), and the item feeds neither the Warning nor the per-project rollup. | A Jira PUT also 403s when the credential lacks Edit Issues or cannot see the work item. INV-Q1 holds either way — the write was going to fail — but the *diagnosis* would be wrong, and diagnosis is the entire job of the slice-05 surface. Discriminating on retry outcome costs nothing and needs no error-body parsing. |
+| INV-Q4 | **Suppression capability is expressed per Jira project, never per connection.** | The permission is project-scoped; the same connection is silent in one project and noisy in the next. A connection-level flag sends the administrator to grant a permission where it changes nothing. |
+| INV-Q5 | **No `mypermissions` request is ever issued without project context.** Required `projectKeys` **plus** the rule that an empty set issues zero requests. | `mypermissions` without `projectKey` answers `havePermission: true` at HTTP 200. Two rules together leave no path to a project-less call; the guarantee is test-enforced, not type-enforced, and is claimed as exactly that. |
+| INV-Q6 | **Write-back resolution is pure; only the flush writes.** `IWriteBackTriggerService` returns a plan value. | Makes "a resolver silently wrote" non-representable rather than merely untested. |
+
+### Component Decomposition
+
+| Component | Verdict | Responsibility |
+|---|---|---|
+| `WriteBackTriggerService` | EXTEND | Resolves mappings × entities → `IReadOnlyList<WriteBackFieldUpdate>`. Pure. Stops calling `IWriteBackService`. |
+| `WriteBackCollector` (scoped) | **CREATE NEW** | Stages intents across one update execution, dedupes `(connection, item, field)`, flushes once |
+| `UpdateServiceBase` | EXTEND | The single flush site — the `finally` of the enqueued lambda that already wraps `Update` |
+| `WriteBackService` | EXTEND | Indexes items once (`ToLookup`, not `ToDictionary`), diffs, delegates, aggregates the per-connection suppression rollup, emits one Warning per connection per flush, and persists each successfully-written value back into `AdditionalFieldValues` (D11 exception) |
+| `JiraWorkTrackingConnector` | EXTEND | Batched PUT + `notifyUsers=false`; 403 → unsuppressed retry; other failure → unbatched retry |
+| `AzureDevOpsWorkTrackingConnector` | EXTEND | Multi-operation `JsonPatchDocument`; `suppressNotifications: true` preserved; failure → unbatched retry |
+| `IWriteBackNotificationProbe` + Jira impl | **CREATE NEW** | Per-project `mypermissions` verdict. Read-only capability interface, Jira only |
+| `WriteBackNotificationStatusService` | **CREATE NEW** | Derives project keys from work-item references, calls the probe, rolls up |
+| `WriteBackNotificationStatus.tsx` | **CREATE NEW** | Read-only panel beside `WriteBackMappingsEditor` |
+
+Full Reuse Analysis, including the four components deliberately *not* reused and the evidence for each,
+is in the feature delta under `Wave: DESIGN / [REF] Reuse Analysis`.
+
+### Driving / Driven Ports
+
+**Driving (new):** `GET /api/v1/worktrackingsystemconnections/{id}/writeback-notification-status`,
+`[RbacGuard(SystemAdmin)]`, returning `{ rollup, projects[], checkedAt }`. A separate route rather than a
+wider `WorkTrackingSystemConnectionDto`, per ADR-006's one-route-one-shape precedent and because that DTO
+is a Lighthouse-Clients contract. No new write endpoint — D3 stands, no toggle, no remedy action.
+
+**Driven:** `IWorkTrackingConnector.WriteFieldsToWorkItems` keeps its signature. The port has **five**
+implementations — Jira, Azure DevOps, ServiceNow, Linear, CSV — and three of them refuse write-back
+outright, which is why batching lives in the two adapters that act rather than in the contract all five
+sign. `IWriteBackNotificationProbe` is a separate capability interface implemented by Jira alone.
+
+### Why the probe is a capability interface and not a port member
+
+ADR-139 established the opposite idiom for incremental sync: widen `IWorkTrackingConnector`, because
+capability varies **per connection** (Jira Cloud and Jira Data Center are one class and must answer
+differently) and a type test cannot express that. Here the variance is **per connector class** — Jira can
+always probe, the other four never can — which is exactly the condition ADR-139 named as making the type
+test adequate. The divergence is deliberate and argued from ADR-139's own criterion, not against it.
+
+### External integration — contract testing
+
+Jira Cloud REST carries two behaviours this design is load-bearing on: the 403 refusal shape for
+`notifyUsers=false`, and the atomic rejection of a mixed-validity `fields` object. **Contract tests are
+recommended to platform-architect for Jira** — consumer-driven contracts via PactNet — so that a change
+in either fails the build rather than silently returning customers to noisy write-back. Azure DevOps is
+consumed through its SDK and covered by the existing integration suites.
+
+### Quality Attribute Strategies
+
+| Attribute | Strategy |
+|---|---|
+| **Reliability** | INV-Q1 and INV-Q2 are both non-regression guarantees. Every failure path is defined and reports per field. |
+| **Performance efficiency** | API calls per work item per pass drop from one-per-changed-field (≈6) to 1. Portfolio-level write-back passes drop from ≈4 to 1 per execution, with repeats suppressed by the D11 exception. `GetChangedFields` drops from O(updates × items) to a single lookup build. The one **synchronous** cost is slice 05's probe fan-out on a page load — budgeted at 3 s per request, 10 s total, 4 concurrent, degrading to `Unknown` rather than hanging (ADR-145 §3a). |
+| **Observability** | Suppression outcome becomes a value on the result contract, not a log-scrape, with `Unknown` distinguished from `NotSuppressed` so an unrelated 403 never surfaces as a permission finding. One Warning per connection per flush at a level visible in production — deliberately louder than the surrounding `LogDebug` at `JiraWorkTrackingConnector.cs:292` / `:339`. |
+| **Security** | No new permission is requested of the customer. The status endpoint is `SystemAdmin`-guarded; it discloses Jira project keys the caller can already read on the connection. |
+| **Maintainability** | No port change across five implementations; no new persistence; no migration; the seam is one scoped collaborator with one flush site. |
+| **Testability** | The resolver becomes pure, so the whole "did this write?" question is answerable from a signature. Every degradation path has a named gold test in the ADRs' Earned Trust tables. |
+
+### The residual risks, stated
+
+1. **Data Center is unverified and will stay so until after release.** No instance is obtainable. INV-Q1
+   is what makes this acceptable: no DC customer can end up worse off under any of the three possible
+   behaviours. Docs and release notes state Cloud-verified behaviour only.
+2. **String-typed custom-field write-back is unverified** — the spike site had no plain-text custom field.
+   Numeric and date types are verified.
+3. **Project keys are derived from a naming convention** (`ReferenceId` before the last `-`). A reference
+   that does not parse is reported `Unknown`, never dropped and never folded into a neighbouring project.
+4. **The pre-flight verdict is true of the moment it was asked.** A permission scheme changed a minute
+   later invalidates it and nothing tells the user. The per-cycle Warning is the compensating control.
+5. **The write-back path now writes to `AdditionalFieldValues`**, which it previously only read. This is
+   the ratified scoped exception to D11 (ADR-144) and it is what removes the cross-execution duplicate by
+   construction. The rule bounding it — success only, the written value only, inbound sync still wins —
+   lives in one method and is asserted by test, not held by convention.
+
+### ADR References (this feature)
+
+- [ADR-142](./adr-142-writeback-suppression-optimistic-retry.md) — attempt suppression, retry unsuppressed
+  on 403, report the retry; the outcome becomes a fact on `WriteBackItemResult`
+- [ADR-143](./adr-143-batched-writeback-with-unbatched-retry.md) — batch per work item, fall back to
+  unbatched on any non-403 failure; grouping stays in the adapter
+- [ADR-144](./adr-144-writeback-collection-seam.md) — resolver returns a plan, scoped collector stages,
+  `UpdateServiceBase` flushes once; and what that cannot reach
+- [ADR-145](./adr-145-writeback-notification-suppression-visibility.md) — per-project verdict, probed on
+  demand and never stored; a probe that cannot omit project context; capability interface; separate
+  read-only endpoint
+
+### Architectural Enforcement (this feature)
+
+| Rule | Enforced by |
+|---|---|
+| The suppression retry fires on 403 and on nothing else | Gold test per status: 403 → exactly two requests; 400 → exactly one |
+| **A 403 that persists across the retry is never reported as a suppression problem** | Gold test: 403 on both attempts → item fails with `NotificationSuppression = Unknown`, **no** Warning, nothing added to the per-project rollup (INV-Q3b) |
+| A batch failure never loses a valid field | Gold test per connector: one invalid field in a batch → valid fields report success, the invalid one alone fails |
+| `suppressNotifications: true` survives ADO batching | Regression test on the batched patch call (AC-04.4 / AC-05.6) |
+| An empty cycle makes no connector call | Test on the no-op guard (AC-04.3 / AC-01.5) — the D8 guard must not be lost to the new seam |
+| Duplicate `ReferenceId` still warns rather than throwing | Unit test on the `ToLookup` index — a `ToDictionary` would pass every other test and throw only on real customer data |
+| `WriteBackTriggerService` performs no I/O | ArchUnitNET: the type may not depend on `IWriteBackService` or a repository write path |
+| The permission probe never issues a project-less request | Unit: every issued URI contains `projectKey=`; empty set → zero requests |
+| The probe fan-out is bounded when a human is waiting | Test: a slow project yields `Unknown` at 3 s while the others still report; the 10 s total caps wall-clock regardless of N; the panel says how many of how many were checked |
+| The probe cannot write | Compile-enforced — the capability interface declares read members only |
+| A flush failure does not abort a refresh | Integration test (AC-04.6), parity with today's swallow-and-log |
+| A failed write never updates the local `AdditionalFieldValues` | Test: connector reports failure → stored value unchanged, next pass still attempts the write |
+| The D11 exception does not creep into jitter damping | Test: a genuinely re-simulated percentile still writes — no hysteresis, no threshold |
+| Inbound sync still overrides a locally-persisted value | Test: next refresh overwrites from the tracker, so an apparent-success-that-was-not self-corrects |
+
+### C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — quiet write-back (Epic 5500)
+  Person(admin, "Configuration Administrator", "Owns the connection and the write-back mappings; receives the complaints")
+  Person_Ext(watcher, "Work Item watcher", "Team member subscribed to the Jira issue; never acts here, only receives")
+  System(lighthouse, "Lighthouse", "Forecasts delivery and writes percentiles, size and age back into the tracker")
+  System_Ext(jira, "Jira Cloud", "Work tracking system; emails watchers on every issue edit unless suppression is permitted")
+  System_Ext(ado, "Azure DevOps", "Work tracking system; already suppresses notifications unconditionally")
+
+  Rel(admin, lighthouse, "Configures write-back mappings and reads the suppression status in")
+  Rel(lighthouse, jira, "Writes changed fields to, attempting notification suppression")
+  Rel(lighthouse, jira, "Asks whether suppression is permitted per project of")
+  Rel(lighthouse, ado, "Writes changed fields to, with notifications suppressed")
+  Rel(jira, watcher, "Emails a per-issue digest to, when suppression was refused")
+```
+
+### C4 — Container (L2)
+
+```mermaid
+C4Container
+  title Container Diagram — quiet write-back
+  Person(admin, "Configuration Administrator")
+  System_Ext(jira, "Jira Cloud", "REST v2 / v3")
+  System_Ext(ado, "Azure DevOps", "Work Item Tracking API")
+
+  Container_Boundary(lh, "Lighthouse") {
+    Container(spa, "Frontend SPA", "React 18 + TypeScript", "Settings → Work Tracking Systems; renders the read-only suppression panel")
+    Container(api, "Backend API", "C# .NET 10 ASP.NET Core", "Connection CRUD plus ONE new read-only status route")
+    Container(refresh, "Refresh background services", "UpdateServiceBase + UpdateQueueService", "Runs Team, Portfolio and Forecast updates; owns the single write-back flush")
+    ContainerDb(db, "Lighthouse database", "SQLite or PostgreSQL via EF Core", "Stores connections, mappings and the last-known AdditionalFieldValues the diff compares against")
+  }
+
+  Rel(admin, spa, "Reads write-back suppression status in")
+  Rel(spa, api, "Requests the per-project suppression status from", "HTTPS/JSON")
+  Rel(api, jira, "Probes suppression permission per project in", "GET mypermissions?projectKey")
+  Rel(refresh, db, "Reads mappings and stored field values from")
+  Rel(refresh, jira, "Writes batched changed fields to, suppression attempted", "PUT issue?notifyUsers=false")
+  Rel(refresh, ado, "Writes batched changed fields to, notifications suppressed", "PATCH work item")
+```
+
+### C4 — Component (L3, the write-back flush path)
+
+Rendered because this subsystem carries five collaborating components and two composed degradation paths
+— the part of the feature a reader is most likely to get wrong.
+
+```mermaid
+C4Component
+  title Component Diagram — write-back resolution, staging, flush and degradation
+  Container_Boundary(refresh, "Refresh background services") {
+    Component(updater, "PortfolioUpdater / TeamUpdater / ForecastUpdater", "UpdateServiceBase<T>", "Refreshes data, then resolves and stages write-back intents")
+    Component(base, "UpdateServiceBase", "C# abstract", "Flushes the collector once, in the finally of the enqueued lambda")
+    Component(resolver, "WriteBackTriggerService", "C# — PURE", "Maps mappings x entities to WriteBackFieldUpdate values; performs no I/O")
+    Component(collector, "WriteBackCollector", "C# scoped — NEW", "Stages and dedupes by (connection, item, field); FlushAsync is the only impure member")
+    Component(service, "WriteBackService", "C#", "Indexes items, diffs against stored values, delegates, aggregates the suppression rollup, logs one Warning")
+    Component(jiraConn, "JiraWorkTrackingConnector", "C# driven adapter", "Groups by item; PUT with notifyUsers=false; 403 retries unsuppressed; other failure retries unbatched")
+    Component(adoConn, "AzureDevOpsWorkTrackingConnector", "C# driven adapter", "Groups by item into one JsonPatchDocument; suppressNotifications preserved")
+  }
+  ContainerDb(db, "Lighthouse database", "EF Core")
+  System_Ext(jira, "Jira Cloud")
+  System_Ext(ado, "Azure DevOps")
+
+  Rel(updater, resolver, "Asks for a write-back plan from")
+  Rel(updater, collector, "Stages the plan into")
+  Rel(base, collector, "Flushes exactly once at the end of the execution")
+  Rel(collector, service, "Hands the deduped intent set to")
+  Rel(service, db, "Reads stored field values from, to suppress no-op writes")
+  Rel(service, jiraConn, "Delegates the changed fields to")
+  Rel(service, adoConn, "Delegates the changed fields to")
+  Rel(jiraConn, jira, "Sends one batched suppressed write per item to")
+  Rel(adoConn, ado, "Sends one batched suppressed patch per item to")
+```
+
+### Open items carried into DISTILL
+
+**None outstanding.** All three DESIGN open questions were ratified by the maintainer on 2026-08-08 and
+applied:
+
+1. **OQ-1 — slice 05 discovery: probe on demand (S2).** Nothing stored, no migration, no invalidation.
+   The probe answers *will* it be quiet; the observed 403 answers *was* it — complementary, both ship.
+2. **OQ-2 — scoped exception to D11 granted.** A value just successfully written to the tracker is
+   persisted locally, which makes the stored copy true and removes the residual duplicate pass by
+   construction. D11's bars on hysteresis and write thresholds are untouched.
+3. **OQ-3 — acceptance criteria updated in place**, each marked retired or restated with a one-line
+   reason: AC-04.1 (restated against the real ≈4 figure), AC-02.3 (retired — D4 dropped), AC-01.2 and the
+   Data Center half of the Definition of Done (retired as *release gates*, moved to the existing
+   post-release DC checklist in `slices/slice-03-spike-jira-notification-suppression.md`).
+
+Carried to DISTILL as context rather than as questions: the Data Center behaviour stays unverified until
+after release, and string-typed custom-field write-back is unverified.

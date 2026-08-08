@@ -30,7 +30,14 @@ whole approach needs rethinking.
   query param and record the item's outcome from the retry. A 403 on the suppressed attempt is *not* a
   write-back failure - the retry is what determines success. Any other non-success status keeps today's
   failure semantics.
-- The 403-and-retried condition is recorded on the result so slice 05 can surface it, and is **logged at
+- **The retry's OUTCOME decides the diagnosis, not the 403 itself** (added 2026-08-08, reviewer Finding 1).
+  A Jira PUT also 403s when the credential lacks Edit Issues or cannot see the work item, and calling that
+  a suppression problem would send the admin to grant a permission that was never at fault:
+  - retry **succeeds** -> the 403 *was* about suppression -> record `NotSuppressed`, feed the Warning and
+    slice 05's rollup.
+  - retry **also fails** -> the 403 was *not* about suppression -> record `Unknown`, report a plain write
+    failure, and emit **no** Warning and nothing into the rollup.
+- The `NotSuppressed` condition is recorded on the result so slice 05 can surface it, and is **logged at
   `Warning`** (user decision, 2026-08-08). Until slice 05 ships this is the only signal the admin gets, so
   it must be visible at default production log levels.
   - **Deliberately louder than the surrounding code.** Write-back failures currently log at `LogDebug`
@@ -54,22 +61,34 @@ whole approach needs rethinking.
 
 ## OUT of scope
 
-- Permission pre-check and the connection status surface (slice 02).
-- The Cloud bulk transport (slice 03) - which replaces this call for Cloud connections.
-- Deployment routing (slice 03 introduces it; this slice treats both the same).
+> **Numbering corrected 2026-08-08.** The three bullets below carried the pre-2026-07-17 slice numbers.
+> They now match the filenames and the story table in `feature-delta.md`.
+
+- Permission pre-check and the connection status surface (**slice 05**, #5506).
+- The Cloud bulk transport (**slice 06**, #5507) - **Removed**; SPIKE-03 Q5 disproved its least-privilege
+  premise, so nothing replaces this call for Cloud connections. This slice's PUT is the end state.
+- Deployment routing - **not built at all.** D4 is dropped, not deferred: there is one code path for Cloud
+  and Data Center, and no deployment discriminator exists anywhere in the design.
 
 ## Production-data AC
 
-- Given a Jira DC connection with a write-back mapping and a changed forecast percentile, when a Team
-  update triggers write-back, then the field updates and the issue's watcher receives **no email**, while
-  the change **does** appear in the issue history (D1 - asserted deliberately so the unsuppressible
-  channel is never mistaken for a bug later).
+- ~~Given a Jira DC connection with a write-back mapping and a changed forecast percentile, when a Team
+  update triggers write-back, then the field updates and the issue's watcher receives no email...~~
+  **RETIRED 2026-08-08 as a release gate** - no Data Center instance is obtainable before release, so this
+  cannot be asserted now. It moves to the post-release DC verification checklist that already exists at
+  the end of `slice-03-spike-jira-notification-suppression.md` (Q1/Q2/Q10). The retry fallback is what
+  makes shipping without it safe: no DC customer ends up worse off under any of the three possible
+  behaviours. The history-entry half of the assertion survives on the Cloud AC below (D1).
 - Given the same on Jira Cloud with an admin credential, then no watcher email. **(SPIKE-03 Q3: verified -
   `DUMMY-6` suppressed, control `DUMMY-7` delivered.)**
 - Given a Jira Cloud credential **without** admin or project-admin, when write-back runs, then the first PUT
   returns 403, the retry without the param succeeds, **the field value is written**, and the item is
   reported successful. This is the anti-regression AC - it is the whole reason the slice was revised.
 - Given that same connection, then the inability to suppress is recorded once for slice 05 to surface.
+- Given a Jira credential that cannot edit the work item at all, when write-back runs, then the first PUT
+  403s, the retry **also** fails, the item is reported as a plain write failure with suppression state
+  `Unknown`, and **no** "grant Administer Projects" Warning is emitted. *A 403 that survives the retry is
+  never reported as a suppression problem.*
 - Given an ADO connection, when write-back runs, then behaviour is unchanged.
 - Given `GetChangedFields` yields no changed value, then no Jira HTTP call is made at all.
 
