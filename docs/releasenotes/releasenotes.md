@@ -4,6 +4,29 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.8.8.2
+
+## Order Your Features Yourself
+
+Lighthouse forecasts your Features in the order your work tracking system gives them, and re-reads that order on every refresh. So a rank someone changes in Azure DevOps, Jira or Linear re-sequences your forecast without anyone on your team deciding it — and on connectors with no meaningful rank at all, the sequence was never yours to begin with.
+
+Turn on *Let Lighthouse own the order of your Features* under [System Settings → Configuration](https://docs.lighthouse.letpeople.work/settings/configuration.html#feature-order-premium) and Lighthouse takes ownership instead. Nothing moves when you flip it — Lighthouse records the order you are already looking at, exactly as it stands — but from then on refreshes stop re-sequencing it, and every row grows an action menu: **Move to Top**, **Move Up**, **Move Down**, **Move to Bottom**. A move re-forecasts at once rather than waiting for the next refresh, and the same menu appears in the Feature lists on your Portfolio and Team pages, because there is one order and a move made anywhere is the move everyone sees.
+
+![The Features page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/featuresview.png)
+
+There is also a new **Features** page, sitting between *Overview* and *System Settings*, which lists every Feature across all your Portfolios in the order the forecast actually draws from. Every other list in Lighthouse shows you a slice; this one shows the whole backlog, which is the only view that matches how forecasting works — all Features of all Portfolios are always taken into account. The `#` column is a Feature's place in that instance-wide order, so it tells you where a Feature really sits rather than where it sits on your screen, and its heading reads *Manual* once Lighthouse owns the order.
+
+The Features page and the `#` column are available on every instance. Owning the order is a [Premium](https://docs.lighthouse.letpeople.work/licensing/licensing.html#licensed-features) capability, and turning it back off hands the order straight to your work tracking system again — immediately, and keeping the places you chose in case you turn it on once more.
+
+See [Features](https://docs.lighthouse.letpeople.work/features/features.html) for the full read.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Lorenzo Santoro](https://www.linkedin.com/in/lorenzo-santoro-57172626/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.8.3.8...v26.8.8.2)
+
 # Lighthouse v26.8.3.8
 
 ## Features over Time
