@@ -1283,3 +1283,180 @@ reason as slice 01**: nothing user-visible ships until slice 05's panel. The val
 issue-history reduction — measured at 4:1 on Jira changelog entries in SPIKE-03. **The email claim stays
 out of docs and release notes**: Jira Cloud batches watcher mail per (recipient, issue) over ~10 minutes,
 so batching buys no email reduction.
+
+---
+
+## Wave: DISTILL / [REF] Slice 04 — `notifyUsers=false` on Jira write-back (#5505)
+
+Density lean, Tier-1 only. **No Gherkin** — the executable SSOT is the NUnit fixtures below, per the
+convention slice 01 established (`API/Integration/ManualSorting` precedent).
+
+**Reconciliation gate: passed, 0 contradictions.** DESIGN already reconciled every slice-04 claim that
+SPIKE-03 overturned (CA-1 D3-survives-because-of-the-retry, CA-5 D4 dropped, CA-6 `mypermissions` is
+reporting not gating), and the slice brief carries the same revisions. AC-01.2 (Data Center watcher
+inbox) and AC-02.3 (deployment-correct permission) are struck through upstream, not silently skipped.
+
+### Scope decided here
+
+**Jira only.** Azure DevOps has passed `suppressNotifications: true` since long before this epic
+(`AzureDevOpsWorkTrackingConnector.cs:384`) and slice 02 closed the "no test asserts it" gap. Slice 04's
+only Azure DevOps touch is *reporting* the fact (D-A3), so the rollup means the same thing whichever
+tracker answered. The write path is untouched — AC-01.4 is a parity guard, not work.
+
+### Specifications
+
+**Jira connector, stubbed transport — `Jira/JiraQuietWriteBackTest.cs` (10)**
+
+| # | Specification | Tags | AC / decision | State |
+|---|---|---|---|---|
+| 1 | `WriteFieldsToWorkItems_AnyWrite_AsksJiraNotToNotifyWatchers` | `@driving_port` | AC-01.1 | RED |
+| 2 | `WriteFieldsToWorkItems_JiraAccepted_ReportsTheWriteAsSuppressed` | — | D-A3 | RED |
+| 3 | `WriteFieldsToWorkItems_SuppressionForbidden_RetriesTheSamePayloadWithoutTheParameter` | `@error` | D-A2 | RED |
+| 4 | `WriteFieldsToWorkItems_SuppressionForbidden_StillWritesEveryFieldAndSaysItWasNoisy` | `@error` | anti-regression AC | RED |
+| 5 | `WriteFieldsToWorkItems_ForbiddenEvenWithoutTheParameter_ReportsAPlainFailureAndUnknownSuppression` | `@error` | **D-A2b** | RED |
+| 6 | `WriteFieldsToWorkItems_ForbiddenEvenWithoutTheParameter_RetriesOnlyOnce` | `@error` | D-A2 (no storm) | RED |
+| 7 | `WriteFieldsToWorkItems_RejectedForSomeOtherReason_KeepsAskingForSilenceOnEveryRetry` | `@error` | D-A5 orthogonality | RED |
+| 8 | `WriteFieldsToWorkItems_ForbiddenBatchWhoseRetryIsRejected_StillIsolatesTheGoodFields` | `@error` | D-A5 composition | RED |
+| 9 | `WriteFieldsToWorkItems_OneIssueSilencedAnotherNot_ReportsSuppressionPerItem` | — | D-A9 (per project) | RED |
+| 10 | `WriteFieldsToWorkItems_NothingToWrite_NeverCallsJira` | `@error` | AC-01.5 at the connector | GREEN (guard) |
+
+**Jira live, restricted identity — `Jira/JiraSuppressionRetryIntegrationTest.cs` (1)**
+
+`WriteFieldsToWorkItems_CredentialCannotSuppress_WritesTheValueAnywayAndReportsItNoisy` —
+`@real-io @requires_external`, RED. Creates a scratch Task in `SPIKEPRM`, writes `duedate`, reads it
+back, deletes it.
+
+**Azure DevOps — `AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs` (3)**
+
+| Specification | Outcome asserted | State |
+|---|---|---|
+| `UpdateItem_WriteAccepted_ReportsTheWriteAsSuppressed` | `Suppressed` | RED |
+| `UpdateItem_AzureDevOpsRefusedTheWrite_SaysTheSuppressionOutcomeIsUnknown` | `Unknown` | RED |
+| `UpdateItem_WorkItemIdIsNotANumber_SaysNothingAboutSuppression` | `NotApplicable` | GREEN (guard) |
+
+These three fix the enum's meaning for every connector: **an attempt that landed is `Suppressed`, an
+attempt that failed is `Unknown`, an attempt never made is `NotApplicable`.** Without that rule DELIVER
+could satisfy each connector's tests with a different reading, and the rollup would silently mix them.
+
+**Warning aggregation — `Services/Implementation/WriteBackSuppressionWarningTest.cs` (7)**
+
+| Specification | Decision | State |
+|---|---|---|
+| `..._SomeWritesCouldNotBeSilenced_WarnsOnce` | D-A4 (one per connection per flush) | RED |
+| `..._SomeWritesCouldNotBeSilenced_NamesTheConnectionTheProjectsAndTheRemedy` | D-A4 | RED |
+| `..._TheWritesFailedOutright_DoesNotWarnAboutNotifications` | **D-A2b** | GREEN (vacuous until the Warning exists) |
+| `..._EveryWriteWasSilenced_DoesNotWarn` | D-A4 | GREEN (vacuous until the Warning exists) |
+| `..._OneProjectNoisyOneQuiet_WarnsAboutTheNoisyProjectOnly` | D-A9 | RED |
+| `..._AReferenceThatIsNotAnIssueKey_IsReportedRatherThanDropped` | D-A10, borrowed early | RED |
+| `..._TwoFlushesOnTheSameConnection_WarnsOncePerFlush` | D-A4 (per flush, not per process) | RED |
+
+**Acceptance — `API/Integration/QuietWriteBack/Slice04QuietWriteBack{Scenarios,Specifications}.cs` (5)**
+
+| # | Scenario | Tags | AC | State |
+|---|---|---|---|---|
+| 1 | `A_refresh_whose_writes_could_not_be_silenced_tells_the_administrator_once` | `@walking_skeleton @driving_port @real-io` | AC-01.1 | RED |
+| 2 | `A_refresh_whose_writes_could_not_be_silenced_still_wrote_the_values` | `@driving_port` | anti-regression | GREEN (guard) |
+| 3 | `A_refresh_whose_writes_were_refused_outright_does_not_blame_permissions` | `@error @driving_port` | D-A2b | GREEN (vacuous) |
+| 4 | `A_refresh_that_was_silenced_says_nothing_about_notifications` | `@driving_port` | D-A4 | GREEN (vacuous) |
+| 5 | `An_azure_devops_refresh_never_warns_about_notifications` | `@driving_port` | AC-01.4 | GREEN (guard) |
+
+Error/edge share: 6 of 10 connector specifications, 1 of 5 acceptance scenarios, 1 of 7 warning
+specifications — 8 of 26 overall (31%), and every one of the four `@error` connector paths is a distinct
+Jira failure mode rather than a variation of one.
+
+### Where each claim is asserted, and why there
+
+| Claim | Layer | Why not elsewhere |
+|---|---|---|
+| The PUT carries `?notifyUsers=false` | Jira stub | Below `IWorkTrackingConnector`; no acceptance scenario can see the wire |
+| Jira answers 403 rather than ignoring the parameter | **live only** | A stub asserting it would replay our own assumption — the assumption Atlassian's Cloud docs get wrong |
+| The retry lands the value | live + stub | The stub pins our branch; the live run pins that Jira accepts the unsuppressed PUT from a credential it just refused |
+| The suppression outcome survives the refresh into a Warning | acceptance | The only place the real `WriteBackService`, the real Serilog pipeline and the real refresh meet |
+| One Warning per connection per flush | unit + acceptance | The unit test counts; the acceptance scenario proves the count survives two passes of a real refresh |
+
+### Adapter coverage
+
+| Port | Treatment | Covered by |
+|---|---|---|
+| Jira REST `PUT /rest/api/latest/issue/{key}` | stubbed `HttpMessageHandler` | 10 connector specifications |
+| Jira REST, same call | **real I/O, restricted identity** | `JiraSuppressionRetryIntegrationTest` (`@real-io`) |
+| Azure DevOps SDK `UpdateWorkItemAsync` | Moq'd `WorkItemTrackingHttpClient` | 3 outcome specifications |
+| EF + update queue + `WriteBackService` | real, SQLite via `TestWebApplicationFactory` | 5 acceptance scenarios |
+| `IWorkTrackingConnector` | faked | 5 acceptance scenarios (the suppression fact is the fixture's input there) |
+
+No `NO — MISSING` rows. The `mypermissions` probe is slice 05 and has no adapter here.
+
+### Scaffolds
+
+| File | Scaffold | Marker |
+|---|---|---|
+| `Models/WriteBack/NotificationSuppression.cs` | **new enum** — `NotApplicable` / `Suppressed` / `NotSuppressed` / `Unknown` | — (enum) |
+| `Models/WriteBack/WriteBackItemResult.cs` | `NotificationSuppression` property defaulting to `NotApplicable`; both factories take an optional argument | — |
+
+C# is not Python: a missing type is a compile error, so the type surface has to exist for the tests to be
+RED rather than BROKEN. No behaviour is scaffolded — the default `NotApplicable` is exactly what makes
+16 of the 17 failures assertion failures.
+
+**Shared-contract change, blast radius measured.** `WriteBackItemResult` is consumed by five connectors
+and `WriteBackService`. The property is additive with a default, and the two factory methods gained an
+optional parameter — which broke exactly two call sites, both `updates.Select(WriteBackItemResult.Written)`
+method groups that no longer infer (CS0411). Both are now lambdas. Nothing else in the repository moved,
+and the full suite confirms it.
+
+### Test-infrastructure change
+
+`CapturedLogMessages` gained a `Warnings` collection (level-filtered), and the slice-01 acceptance harness
+gained the Serilog sink, a per-update suppression outcome, and two `TheTracker…` setters. Additive: the
+ten slice-01 scenarios are green unchanged.
+
+Why the level filter: the first draft asserted `ContainsMessageFragment("email")` across the whole log and
+**passed before the feature existed** — some unrelated line matched. A signal defined as "visible at
+default production log levels" has to be asserted at that level, or the assertion is decoration.
+
+### Red classification (pre-DELIVER gate)
+
+Full backend suite, live integrations excluded: **4401 passed, 17 failed, 0 build warnings**. Every
+failure is `MISSING_FUNCTIONALITY` — an assertion on a value the production code does not yet produce.
+Zero `IMPORT_ERROR`, `FIXTURE_BROKEN`, `SETUP_FAILURE` or `WRONG_ASSERTION`.
+
+The live fixture was **run against the real site** rather than assumed runnable: it created the scratch
+Task in `SPIKEPRM`, wrote `duedate`, read it back and deleted the issue — `AllSucceeded` and the read-back
+both passed, and only the `NotSuppressed` assertion failed. So the RED is the feature's absence, not a
+broken fixture, and the credential, the project and the issue type are all verified working.
+
+Eight specifications are **green from DISTILL**: four are parity guards (nothing to write, ADO's
+`NotApplicable`, the value still lands, Azure DevOps never warns), and four are vacuous until the Warning
+exists (the `does not warn` cases at both layers). A criterion whose content is "this must not happen" cannot be RED without breaking something
+first; they ship un-ignored so they fail the moment DELIVER breaks them.
+
+### Upstream issues (back-propagation)
+
+- **D-A4 needs the project-key derivation that ADR-145 (slice 05) defines in D-A10.** The Warning names
+  affected projects, so slice 04 must derive the project key from the `ReferenceId` before slice 05 exists.
+  Not a contradiction — an ordering detail the design did not state. Slice 04 implements the derivation
+  and slice 05 reuses it; `..._AReferenceThatIsNotAnIssueKey_IsReportedRatherThanDropped` pins the
+  unparsable case so the two slices cannot drift.
+- **ADR-143's "on any non-403 failure fall back unbatched" now has its 403 branch.** Slice 02 shipped
+  without it deliberately (there was no suppression to drop). Specifications 7 and 8 pin the composition
+  the two degradations now have to satisfy together — a case neither ADR spells out: batch 403 → drop
+  suppression → the unsuppressed batch is *also* rejected for a bad field → per-field fallback, each field
+  suppressed-first. Cheapest implementation that satisfies all of it is the retry living **inside**
+  `TryWriteFields`, leaving `UpdateIssue`'s batch→per-field logic untouched.
+
+### Pre-requisites
+
+- `JiraLighthouseRestrictedIntegrationTestToken` — API token of an identity **without** admin or
+  project-admin on `SPIKEPRM`. Set locally and in GitHub Actions on 2026-08-09. Absent, the fixture ignores
+  itself (fork PRs).
+- `JiraLighthouseRestrictedIntegrationTestUsername` — optional override; defaults to
+  `benjamin@letpeople.work`.
+- Project `SPIKEPRM` must keep its team-managed permission scheme. Every other project on the test site
+  grants `ADMINISTER_PROJECTS` to any licensed user, so deleting it removes the only way to reach the 403.
+
+### Tier-2 expansion catalog (listed, not rendered — density = lean)
+
+`error-path-rationale`, `edge-case-enumeration`, `fixture-design-discussion`, `pbt-strategy-notes`.
+### Hand-off
+
+26 specifications: **18 RED** (17 offline + the live fixture), **8 green guards**. DELIVER's first move is
+the enum's semantics, not the query parameter — every connector result and the whole rollup depend on it.

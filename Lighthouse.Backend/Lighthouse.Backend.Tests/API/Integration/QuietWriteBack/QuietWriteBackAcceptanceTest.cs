@@ -17,8 +17,11 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 {
@@ -57,7 +60,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         /// </summary>
         protected List<ConnectorWrite> ConnectorWrites = null!;
 
+        /// <summary>
+        /// Every log line the refresh produced, at every level. Slice 04's only signal to an admin is a
+        /// Warning, and a scenario that cannot read the log cannot see the slice.
+        /// </summary>
+        protected CapturedLogMessages CapturedLogs = null!;
+
         private Func<WriteBackFieldUpdate, (bool Success, string? Error)> writeOutcome = null!;
+        private Func<WriteBackFieldUpdate, NotificationSuppression> writeSuppression = null!;
         private Exception? writeFailure;
 
         protected sealed record ConnectorWrite(int ConnectionId, IReadOnlyList<WriteBackFieldUpdate> Updates);
@@ -69,7 +79,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
             ConnectorWrites = [];
             writeOutcome = _ => (true, null);
+            writeSuppression = _ => NotificationSuppression.Suppressed;
             writeFailure = null;
+            CapturedLogs = new CapturedLogMessages();
 
             LicenseServiceMock = new Mock<ILicenseService>();
             LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -97,6 +109,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                                 TargetFieldReference = update.TargetFieldReference,
                                 Success = success,
                                 ErrorMessage = error,
+                                NotificationSuppression = writeSuppression(update),
                             };
                         })],
                     });
@@ -132,6 +145,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
                     services.RemoveAll<ITeamDataService>();
                     services.AddScoped(_ => TeamDataServiceMock.Object);
+
+                    // ADR-137 D72: Serilog is the pipeline, so an ILoggerProvider added here would be
+                    // inert. Replacing the factory is what makes the refresh's own log readable.
+                    services.RemoveAll<ILoggerFactory>();
+                    services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                        new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(CapturedLogs).CreateLogger(),
+                        dispose: true));
                 });
             });
 
@@ -375,6 +395,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         protected void TheTrackerRejects(Func<WriteBackFieldUpdate, bool> predicate, string errorMessage)
         {
             writeOutcome = update => predicate(update) ? (false, errorMessage) : (true, null);
+        }
+
+        /// <summary>
+        /// The tracker writes the value but was not allowed to stay quiet — the SPIKE-03 Q4 shape, after
+        /// ADR-142's retry has done its job.
+        /// </summary>
+        protected void TheTrackerCouldNotSilence(Func<WriteBackFieldUpdate, bool> predicate)
+        {
+            writeSuppression = update => predicate(update) ? NotificationSuppression.NotSuppressed : NotificationSuppression.Suppressed;
+        }
+
+        protected void TheTrackerRefusedTheWriteEntirely(Func<WriteBackFieldUpdate, bool> predicate, string errorMessage)
+        {
+            writeOutcome = update => predicate(update) ? (false, errorMessage) : (true, null);
+            writeSuppression = update => predicate(update) ? NotificationSuppression.Unknown : NotificationSuppression.Suppressed;
         }
 
         protected void TheTrackerThrows(Exception exception)

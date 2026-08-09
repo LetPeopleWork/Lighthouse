@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     public sealed class CapturedLogMessages : ILogEventSink
     {
         private readonly List<string> messages = [];
+        private readonly List<string> warnings = [];
         private readonly Lock gate = new();
 
         public int Count
@@ -24,6 +25,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 }
             }
         }
+
+        /// <summary>
+        /// Positive control for "this was not logged" assertions, phrased as a predicate so the caller
+        /// does not assert on a raw count (NUnit2046).
+        /// </summary>
+        public bool SawAnything => Count > 0;
 
         public void Emit(LogEvent logEvent)
         {
@@ -38,6 +45,26 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             lock (gate)
             {
                 messages.Add(message);
+
+                if (logEvent.Level >= LogEventLevel.Warning)
+                {
+                    warnings.Add(message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Warnings only. A message an operator is meant to act on has to arrive at a level they see at
+        /// default production settings — matching anywhere in the log would pass on a Debug line.
+        /// </summary>
+        public IReadOnlyList<string> Warnings
+        {
+            get
+            {
+                lock (gate)
+                {
+                    return [.. warnings];
+                }
             }
         }
 

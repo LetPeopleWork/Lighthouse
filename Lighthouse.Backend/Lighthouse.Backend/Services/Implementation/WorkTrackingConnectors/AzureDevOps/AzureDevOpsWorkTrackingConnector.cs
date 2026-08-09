@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             if (batch.Succeeded)
             {
-                return [.. updates.Select(WriteBackItemResult.Written)];
+                return [.. updates.Select(update => WriteBackItemResult.Written(update))];
             }
 
             // A single operation is already as isolated as it gets.

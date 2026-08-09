@@ -302,7 +302,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (batch.Succeeded)
             {
-                return [.. updates.Select(WriteBackItemResult.Written)];
+                return [.. updates.Select(update => WriteBackItemResult.Written(update))];
             }
 
             // A single field is already as isolated as it gets; re-sending it would only repeat the failure.
