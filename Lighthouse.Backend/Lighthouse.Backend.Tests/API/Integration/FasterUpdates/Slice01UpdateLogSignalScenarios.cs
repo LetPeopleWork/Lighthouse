@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @AC-1.7 @KPI-5 — the criterion that makes the summary readable at all.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_team_update_writes_no_more_than_two_lines_the_operator_has_to_read()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
@@ -72,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @AC-1.7 @KPI-5 — and the same budget on the portfolio half.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_portfolio_update_writes_no_more_than_two_lines_the_operator_has_to_read()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();

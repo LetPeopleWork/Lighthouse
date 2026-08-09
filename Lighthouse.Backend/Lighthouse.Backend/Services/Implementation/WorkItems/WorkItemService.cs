@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             portfolio.RefreshUpdateTime();
 
-            logger.LogInformation("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
+            logger.LogDebug("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
             return outcome;
         }
@@ -326,7 +326,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task UpdateRemainingWorkForPortfolio(Portfolio portfolio)
         {
-            logger.LogInformation("Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
+            logger.LogDebug("Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
             defaultWorkItemsBasedOnPercentile.Remove(portfolio.Id);
 
             RefreshRemainingWork(portfolio);
@@ -335,7 +335,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await featureRepository.Save();
 
-            logger.LogInformation("Done Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
+            logger.LogDebug("Done Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
         }
 
         private void RefreshRemainingWork(Portfolio project)

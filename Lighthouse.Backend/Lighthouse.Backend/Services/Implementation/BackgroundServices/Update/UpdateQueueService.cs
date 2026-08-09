@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            logger.LogInformation("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
+            logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
             _ = NotifyListeners(updateKey, updateStatus);
 
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             awaiters[updateKey] = tcs;
 
-            logger.LogInformation("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
+            logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
             _ = NotifyListeners(updateKey, updateStatus);
 

@@ -948,7 +948,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected void InvalidateMetrics<TEntity>(TEntity entity, ILogger logger) where TEntity : class, IEntity
         {
-            logger.LogInformation("Invalidating Metrics for Entity Id: {EntityId}", entity.Id);
+            logger.LogDebug("Invalidating Metrics for Entity Id: {EntityId}", entity.Id);
             var entityKeys = MetricsCache.Keys.Where(k => k.StartsWith($"{entity.Id}_")).ToList();
             foreach (var entry in entityKeys)
             {

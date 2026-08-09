@@ -98,8 +98,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     // ADR-137 D72: Serilog is the pipeline, so an ILoggerProvider added here would be
                     // inert. Replacing the factory is what makes the refresh's own log readable.
                     services.RemoveAll<ILoggerFactory>();
+                    // The framework overrides mirror appsettings.json: "operator-visible" has to mean the
+                    // stream the operator actually reads, and EF's SQL never reaches it.
                     services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
-                        new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(CapturedLogs).CreateLogger(),
+                        new LoggerConfiguration()
+                            .MinimumLevel.Verbose()
+                            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                            .WriteTo.Sink(CapturedLogs)
+                            .CreateLogger(),
                         dispose: true));
                 });
             });

@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 await snapshotRepository.Save();
 
                 stopwatch.Stop();
-                logger.LogInformation(
+                logger.LogDebug(
                     "Recorded delivery metric snapshots for Portfolio {PortfolioId}: {SnapshotCount} deliveries in {ElapsedMilliseconds}ms",
                     domainEvent.PortfolioId, deliveries.Count, stopwatch.ElapsedMilliseconds);
             }

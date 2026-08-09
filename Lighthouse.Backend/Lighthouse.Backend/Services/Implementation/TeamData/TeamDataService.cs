@@ -16,14 +16,14 @@ namespace Lighthouse.Backend.Services.Implementation.TeamData
     {
         public async Task<SyncOutcome> UpdateTeamData(Team team)
         {
-            logger.LogInformation("Updating Team Data for {TeamName}", team.Name);
+            logger.LogDebug("Updating Team Data for {TeamName}", team.Name);
 
             var outcome = await workItemService.UpdateWorkItemsForTeam(team);
             await teamMetricsService.UpdateTeamMetrics(team);
 
             await domainEventDispatcher.PublishAsync(new TeamDataRefreshed(team.Id));
 
-            logger.LogInformation("Finished updating Team Data for {TeamName}", team.Name);
+            logger.LogDebug("Finished updating Team Data for {TeamName}", team.Name);
 
             return outcome;
         }
