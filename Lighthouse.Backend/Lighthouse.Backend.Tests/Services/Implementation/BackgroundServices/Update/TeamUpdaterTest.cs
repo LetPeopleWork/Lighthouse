@@ -42,6 +42,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
 
+            // Epic #5687: without this the mock hands back a null outcome and the refresh log write throws.
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(It.IsAny<Team>()))
+                .ReturnsAsync(new SyncOutcome(SyncMode.Full, 0, 0));
+
             SetupRefreshSettings(10, 10);
         }
 

@@ -6,6 +6,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkItems
     {
         Task UpdateFeaturesForPortfolio(Portfolio portfolio);
 
-        Task UpdateWorkItemsForTeam(Team team);
+        Task<SyncOutcome> UpdateWorkItemsForTeam(Team team);
     }
 }

@@ -336,9 +336,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }
             }
 
-            public Task UpdateWorkItemsForTeam(Team team)
+            public Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(new SyncOutcome(SyncMode.Full, 0, 0));
             }
         }
     }

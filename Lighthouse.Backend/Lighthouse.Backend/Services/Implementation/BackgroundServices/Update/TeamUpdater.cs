@@ -44,11 +44,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var stopwatch = Stopwatch.StartNew();
             var success = false;
             var itemCount = 0;
+            var outcome = new SyncOutcome(SyncMode.Full, 0, 0);
 
             try
             {
                 var teamDataService = serviceProvider.GetRequiredService<ITeamDataService>();
-                await teamDataService.UpdateTeamData(team);
+                outcome = await teamDataService.UpdateTeamData(team);
 
                 var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
                 serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
@@ -67,6 +68,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     EntityId = team.Id,
                     EntityName = team.Name,
                     ItemCount = itemCount,
+                    Mode = outcome.Mode,
+                    RecordsScanned = outcome.RecordsScanned,
+                    RecordsFetched = outcome.RecordsFetched,
                     DurationMs = stopwatch.ElapsedMilliseconds,
                     ExecutedAt = DateTime.UtcNow,
                     Success = success

@@ -268,12 +268,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 return Task.CompletedTask;
             }
 
-            public async Task UpdateWorkItemsForTeam(Team team)
+            public async Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
             {
                 if (teamGates.TryGetValue(team.Id, out var gate))
                 {
                     await gate.Task;
                 }
+
+                return new SyncOutcome(SyncMode.Full, 0, 0);
             }
         }
     }

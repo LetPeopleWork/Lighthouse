@@ -44,11 +44,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             logger.LogInformation("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
         }
 
-        public async Task UpdateWorkItemsForTeam(Team team)
+        public async Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            await RefreshWorkItems(team);
+            var outcome = await RefreshWorkItems(team);
 
             foreach (var portfolio in team.Portfolios.ToList())
             {
@@ -56,9 +56,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             logger.LogInformation("Done Updating Work Items for Team {TeamName}", team.Name);
+
+            return outcome;
         }
 
-        private async Task RefreshWorkItems(Team team)
+        private async Task<SyncOutcome> RefreshWorkItems(Team team)
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
@@ -66,7 +68,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
-            var actualWorkItems = DeduplicateByReferenceId(await workItemService.GetWorkItemsForTeam(team), team);
+            var recordsFromTracker = (await workItemService.GetWorkItemsForTeam(team)).ToList();
+            var actualWorkItems = DeduplicateByReferenceId(recordsFromTracker, team);
 
             var itemsWithTransitions = new List<SyncedItem>();
 
@@ -101,6 +104,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await workItemRepository.Save();
 
             await PublishDomainEvents(events);
+
+            // Epic #5687: a full sync downloads the payload of every record it saw, so both counts are
+            // the same fetch. Slice 02 is what makes them diverge.
+            return new SyncOutcome(SyncMode.Full, recordsFromTracker.Count, recordsFromTracker.Count);
         }
 
         // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;

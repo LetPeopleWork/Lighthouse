@@ -4,6 +4,6 @@ namespace Lighthouse.Backend.Services.Interfaces.TeamData
 {
     public interface ITeamDataService
     {
-        Task UpdateTeamData(Team team);
+        Task<SyncOutcome> UpdateTeamData(Team team);
     }
 }

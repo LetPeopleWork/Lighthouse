@@ -115,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @AC-1.8 — the numbers the summary reports are the numbers that get persisted.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_completed_team_update_records_the_mode_and_both_counts()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
