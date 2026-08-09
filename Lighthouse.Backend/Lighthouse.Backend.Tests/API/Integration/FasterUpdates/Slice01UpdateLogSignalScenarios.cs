@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @walking_skeleton @driving_port @real-io @AC-1.1 @AC-1.3
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_completed_team_update_says_what_it_did()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
@@ -128,7 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @error @driving_port @AC-1.9 — a failed update is the one an operator most needs to read.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task An_update_that_failed_still_says_what_it_did()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();

@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models.AppSettings;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -52,6 +53,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 Logger.LogError(exception, "Write-back flush failed for {Entity} with ID {Id}: {Exception}", typeof(TEntity).Name, id, exception.Message);
             }
+        }
+
+        /// <summary>
+        /// The one line an operator reads per completed update (Epic #5687). Every updater emits it from
+        /// its own finally block, so the shape stays identical across both halves of the cycle.
+        /// </summary>
+        protected void LogUpdateSummary(string entityName, SyncOutcome outcome, long durationMs, bool success)
+        {
+            Logger.LogInformation(
+                "Update completed | {EntityType:l} '{EntityName:l}' | mode={Mode} | scanned={RecordsScanned} | fetched={RecordsFetched} | duration={DurationMs}ms | success={Success}",
+                typeof(TEntity).Name, entityName, outcome.Mode, outcome.RecordsScanned, outcome.RecordsFetched, durationMs, success);
         }
 
         protected static T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull

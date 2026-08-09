@@ -75,6 +75,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     ExecutedAt = DateTime.UtcNow,
                     Success = success
                 });
+
+                LogUpdateSummary(team.Name, outcome, stopwatch.ElapsedMilliseconds, success);
             }
         }
 
