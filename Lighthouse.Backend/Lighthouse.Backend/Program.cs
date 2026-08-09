@@ -1040,6 +1040,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService, Lighthouse.Backend.Services.Implementation.WorkItems.BlockedItemService>();
             builder.Services.AddScoped<IWriteBackService, WriteBackService>();
             builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();
+            builder.Services.AddScoped<IWriteBackCollector, WriteBackCollector>();
 
             builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
             builder.Services.AddScoped<IJiraWorkTrackingConnector, JiraWorkTrackingConnector>();

@@ -780,3 +780,237 @@ noisy write-back.
 **Paradigm:** object-oriented, ports-and-adapters, per `CLAUDE.md`.
 **Blocking on the user:** nothing. OQ-1, OQ-2 and OQ-3 were ratified and applied on 2026-08-08. All four
 slices (01, 02, 04, 05) are fully designed.
+
+---
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Slice 01 only (US-04, AC-04.1 … AC-04.7). Density lean, Tier-1 only. **No Gherkin** — this project
+carries none since epic-5427; the executable SSOT is the NUnit partial-class pair, per
+`API/Integration/ManualSorting` and `API/Integration/PercentilesOverTime`.
+
+**Backend acceptance — `Slice01WriteBackCollectionScenarios.cs` (10)**
+
+| # | Scenario | Tags | AC | State |
+|---|---|---|---|---|
+| 1 | `One_scheduled_refresh_of_a_portfolio_reaches_the_tracker_once` | `@walking_skeleton @driving_port @real-io` | AC-04.1a | RED |
+| 2 | `A_value_written_in_one_execution_is_not_written_again_by_the_next` | `@driving_port` | AC-04.1b / D-A7-R | RED |
+| 3 | `A_refresh_in_which_nothing_changed_never_reaches_the_tracker` | `@error @driving_port` | AC-04.3 | RED |
+| 4 | `An_azure_devops_portfolio_flushes_through_the_same_seam` | `@driving_port` | AC-04.4 (seam half) | RED |
+| 5 | `A_flush_that_throws_leaves_the_refresh_round_finished` | `@error @driving_port @parity` | AC-04.6 | GREEN (guard) |
+| 6 | `A_team_refresh_takes_part_in_the_same_collection_and_flush` | `@driving_port @parity` | AC-04.7 | GREEN (guard) |
+| 7 | `A_write_the_tracker_refused_never_updates_the_local_copy` | `@error @driving_port` | D-A7-R bound 1 | RED |
+| 8 | `The_next_inbound_sync_still_overrides_a_locally_persisted_value` | `@driving_port` | D-A7-R bound 3 | RED |
+| 9 | `A_forecast_that_genuinely_moved_is_still_written` | `@driving_port @parity` | D11 stands | GREEN (guard) |
+| 10 | `Resolving_a_portfolios_write_back_plan_never_reaches_the_tracker` | `@driving_port` | ADR-144 D1 | RED |
+
+**Backend seam specifications — `WriteBackCollectorTest.cs` (6, all RED)**
+
+| Scenario | AC |
+|---|---|
+| `Stage_DoesNotWriteAnything` | ADR-144 §2 — the only impure member is `FlushAsync` |
+| `Stage_SameFieldTwice_FlushWritesItOnceCarryingTheLaterValue` | **AC-04.2** |
+| `FlushAsync_NothingStaged_WritesNothing` | AC-04.3 at the seam |
+| `FlushAsync_TwoConnections_WritesOncePerConnection` | ADR-144 §2 |
+| `FlushAsync_ReportsEachItemResultVerbatim` | **AC-04.5** |
+| `FlushAsync_CalledTwice_DoesNotRewriteWhatItAlreadyWrote` | ADR-144 §4 (the flush is terminal) |
+
+**Architecture — `QuietWriteBackSeamArchUnitTest.cs` (2)**
+
+| Rule | State |
+|---|---|
+| `WriteBackTriggerService_DoesNotDependOnTheWriteBackService` (ADR-144 D1) | RED |
+| `WriteBackCollector_HasFlushAsyncAsItsOnlyAsynchronousMember` | GREEN (standing guard, never ignored) |
+
+**Frontend / E2E — none, and deliberately.** Slice 01 changes nothing a user can see: no endpoint, no
+component, no copy. The observable is the number of conversations a background refresh has with the
+tracker, which no browser can watch. Adding an E2E here would be a walking skeleton with nothing to
+walk through.
+
+Error/edge share: 4 of 10 acceptance scenarios (40%), plus 1 of 6 seam specifications.
+
+**Why three scenarios are green from DISTILL rather than ignored.** AC-04.6 and AC-04.7 are *parity*
+criteria — they ask that behaviour which already holds survives the seam — and D11 asks that the
+D-A7-R exception is not widened into jitter damping. A criterion whose whole content is "this must not
+change" cannot be RED without breaking the thing first. They ship un-ignored so they fail the moment
+DELIVER breaks them, which is the only moment they were ever going to be useful.
+
+---
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+Slice 01 adds no driven adapter. Its ports:
+
+| Port | Treatment | Covered by |
+|---|---|---|
+| EF `LighthouseAppContext` + `IRepository<T>` / `IWorkItemRepository` | real adapter, real SQLite via `TestWebApplicationFactory` | all 10 acceptance scenarios (`@real-io`) |
+| `IUpdateQueueService` / `IUpdateStatusStore` | real (in-process) — the queue's own scope is the collector's lifetime, so faking it would delete the thing under test | all 10 |
+| `IWorkTrackingConnector.WriteFieldsToWorkItems` | faked (external/non-deterministic, per `docs/architecture/atdd-infrastructure-policy.md`) and recorded call-by-call | all 10 |
+| `ILicenseService` | faked | premium gate on every scenario |
+| `IWorkItemService` / `IForecastService` / `ITeamDataService` | faked | so every recorded connector call is a write-back and nothing else |
+
+**Not covered at this layer, on purpose** — `suppressNotifications: true` on the Azure DevOps call
+(AC-04.4's second half). The flag lives inside `AzureDevOpsWorkTrackingConnector`, below
+`IWorkTrackingConnector`, so no scenario entering at the refresh can see it. It stays where it is
+already asserted: `AzureDevOpsWriteBackTest`. Scenario 4 covers the half that *is* observable here —
+that an ADO connection flushes through the same seam with the same payload.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+C# is not Python: a missing type is a compile error, which makes the whole test project BROKEN rather
+than RED. The scaffolds below exist so `dotnet build` succeeds at zero warnings and the tests fail on
+their assertions.
+
+| File | Scaffold | Marker |
+|---|---|---|
+| `Services/Interfaces/IWriteBackCollector.cs` | **new port** — `Stage(connection, updates)` / `FlushAsync()` | — (interface) |
+| `Services/Implementation/WriteBackCollector.cs` | both bodies throw `InvalidOperationException("Not yet implemented - RED scaffold (ADR-144)")` | `// __SCAFFOLD__` |
+| `Program.cs` | `AddScoped<IWriteBackCollector, WriteBackCollector>()` beside the other write-back registrations | — |
+
+**Deviation from the skill's Mandate 7, stated not skipped**: the skill asks for an assertion-class
+exception. Production `Lighthouse.Backend` does not (and must not) reference NUnit, so the scaffold
+throws `InvalidOperationException` with the scaffold message. `NotImplementedException` is still
+avoided — see the red-classification below, which confirms the failures classify as RED either way.
+
+**Not scaffolded, on purpose**:
+
+- **`IWriteBackTriggerService`'s return type.** ADR-144 D1 changes all three methods from `Task` to
+  `Task<IReadOnlyList<WriteBackFieldUpdate>>`. No scenario needs it to compile — scenario 10 awaits the
+  call and discards the result, which is legal against both signatures — so making that change here
+  would be writing the feature, not scaffolding it. It stays DELIVER's first move.
+- **The flush call in `UpdateServiceBase`.** Not a compile dependency; its absence is the genuine RED
+  that scenarios 1, 2 and 4 report.
+
+**Shared-contract change, blast radius measured.** The registration is additive and nothing resolves
+`IWriteBackCollector` yet, so the scaffold is inert. The contract change DELIVER *will* make is
+`IWriteBackTriggerService`, and its callers are exactly seven files: `PortfolioUpdater` (two call
+sites), `ForecastUpdater`, `TeamUpdater`, and four test suites — `WriteBackTriggerServiceTest`,
+`PortfolioUpdaterTest`, `TeamUpdaterTest`/`ForecastUpdaterTest` (mock setups), plus
+`BlackoutForecastShiftWriteBackTest` and `RecurringBlackoutRulesWriteBackIntegrationTest`. The last two
+assert write-back content *through a mocked `IWriteBackService`*; once the resolver stops calling it,
+both must read the returned plan instead. That is a re-point, not a deletion — the blackout-shift
+assertions are still the only coverage of the day↔date translation in write-back (ADR-058).
+
+Full backend suite after the scaffold: **0 warnings, 0 regressions**.
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+| Layer | Path | Precedent |
+|---|---|---|
+| Backend acceptance | `Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/{QuietWriteBackAcceptanceTest, Slice01WriteBackCollectionScenarios, Slice01WriteBackCollectionSpecifications}.cs` | `API/Integration/ManualSorting/` — same harness/scenarios/specifications triple, same `public partial class` |
+| Backend seam unit | `Lighthouse.Backend.Tests/Services/Implementation/WriteBackCollectorTest.cs` | co-located with `WriteBackServiceTest.cs` / `WriteBackTriggerServiceTest.cs` |
+| Architecture | `Lighthouse.Backend.Tests/Architecture/QuietWriteBackSeamArchUnitTest.cs` | `BlackoutForecastShiftSeamArchUnitTest.cs` — same `LighthouseArchitecture.Production` model |
+
+The acceptance triple sits under `API/Integration/` although slice 01 has no HTTP surface: that
+directory is where this project keeps its `WebApplicationFactory`-hosted acceptance suites regardless
+of the port they enter through (`ServiceNowTeamSyncAcceptanceTest` is the precedent).
+
+---
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+DESIGN names one driving port for slice 01: *"Scheduled refresh (`UpdateServiceBase` background loop)
+→ Team / Portfolio / Forecast update — EXTENDED (gains a terminal flush)"*. Every scenario enters
+through it, by calling `IPortfolioUpdater` / `IForecastUpdater` / `ITeamUpdater`'s `TriggerUpdate` and
+letting the production `UpdateQueueService` run the work in **its own** scope.
+
+That detail is the whole point rather than a convenience: `UpdateQueueService.ExecuteUpdateTask`
+creates exactly one DI scope per queued update, and that scope is the collector's lifetime (ADR-144
+§2). A scenario that called `PortfolioUpdater.Update(id, serviceProvider)` directly would supply its
+own provider and prove nothing about the seam.
+
+Slice 01 adds no HTTP endpoint, CLI or hook, so there is nothing else to cover.
+`GET /api/v1/worktrackingsystemconnections/{id}/writeback-notification-status` is slice 05.
+
+**Waiting on the refresh.** `TriggerUpdate` admits the key synchronously (`TryAdmit` runs before it
+returns), so the harness can poll `IUpdateStatusStore.HasActiveWork()` straight to idle. The
+"not-enqueued-yet is indistinguishable from done" race that bites callers polling `/update/status`
+over HTTP is unreachable from inside the host.
+
+---
+
+## Wave: DISTILL / [REF] Red classification (pre-DELIVER gate)
+
+Every scenario was run un-ignored once and classified. **14 RED, 4 green guards, 0 wrong-reason
+failures.** Gate passed.
+
+| Scenario | Observed | Class |
+|---|---|---|
+| `One_scheduled_refresh_…_once` | 2 connector calls: `PROJ-1/size=5`, then `PROJ-1/forecast=2026-08-19` | MISSING_FUNCTIONALITY |
+| `An_azure_devops_portfolio_…` | 2 calls, same shape on an ADO connection | MISSING_FUNCTIONALITY |
+| `A_value_written_…_not_written_again` | **3** calls, the last two carrying the *identical* `forecast=2026-08-19` | MISSING_FUNCTIONALITY |
+| `A_refresh_in_which_nothing_changed_…` | 2 calls with **empty payloads** | MISSING_FUNCTIONALITY |
+| `A_write_the_tracker_refused_…` | stored forecast still `1999-01-01` | MISSING_FUNCTIONALITY |
+| `The_next_inbound_sync_…` | stored size still `1` after a successful write | MISSING_FUNCTIONALITY |
+| `Resolving_a_…_plan_never_reaches_the_tracker` | 1 call | MISSING_FUNCTIONALITY |
+| 6 × `WriteBackCollectorTest` | `InvalidOperationException: Not yet implemented - RED scaffold (ADR-144)` | MISSING_FUNCTIONALITY |
+| `WriteBackTriggerService_DoesNotDependOnTheWriteBackService` | ArchUnitNET rule violated | MISSING_FUNCTIONALITY |
+| 4 × parity guards | pass | GREEN by design (see the scenario list) |
+
+**Two wrong-reason failures were found and fixed before this table was written**, and both are worth
+not re-deriving:
+
+1. **The refresh threw before it ever reached write-back** — `ArgumentNullException: Setting with Key
+   {key} not found`, because `TestWebApplicationFactory` runs `EnsureCreated` but no seeders. Every
+   count-based scenario read 0 and *three* of them passed for that reason. The harness now runs
+   `ISeeder` in `[SetUp]`, as `ManualSortingAcceptanceTest` does.
+2. **`UNIQUE constraint failed: PortfolioTeam.PortfoliosId, PortfolioTeam.TeamsId`** when the
+   inbound-sync helper saved a Feature back through `IRepository<Feature>` — the repository's `GetAll`
+   pulls the whole Feature graph and re-inserts the join row. The helper writes through
+   `LighthouseAppContext.Features` instead. Same trap Epic 5375 slice 02 hit; it is a property of the
+   repository, not of either feature.
+
+---
+
+## Wave: DISTILL / [REF] Upstream issues (back-propagation)
+
+| # | Finding | Disposition |
+|---|---|---|
+| UI-1 | **AC-04.2 is not reachable end-to-end.** `WriteBackTriggerService` filters the Features pass and the forecast pass onto **disjoint** value sources, so one mapping can never be resolved by both passes of one execution. "The same field resolved by more than one pass in a cycle" describes a state `PortfolioUpdater` cannot reach today | Kept as written, demoted in level: it is asserted as a **collector specification** (`Stage_SameFieldTwice_…`), not as an acceptance scenario. The dedup key still has to exist — slice 02 groups on it — but no end-to-end scenario can exercise it, and one that pretended to would be staging its own duplicate |
+| UI-2 | **AC-04.3 is unmet today for a different reason than the brief implies.** `WriteBackService.WriteFieldsToWorkItems` early-returns only when the *incoming* list is empty; `GetChangedFields` filters afterwards and **the connector is called anyway** — measured as two calls with empty payloads. The D8 "no-op guard" preserves the payload, never the call | AC-04.3 stands exactly as written ("no connector call is made at all") and is now the scenario that proves the difference. DELIVER must close the call, not just the payload |
+| UI-3 | **The pre-change figure is now measured, not argued.** One portfolio refresh plus one coalesced forecast execution issues **3** connector calls for a single Feature, two of them carrying the identical forecast value. That is CA-4 / ADR-144's ≈4 observed on a two-execution round | Recorded here rather than restating the KPI; `[REF] Outcome KPIs` already carries the corrected figure |
+| UI-4 | **D-A6's `ToLookup` trap already has a green guard**: `WriteBackServiceTest.WriteFieldsToWorkItems_WorkItemAppearsInMultipleTeams_DoesNotThrow`. No new test was written for it | DELIVER must not delete it while rewriting `GetChangedFields`. A `ToDictionary` there turns that test red, which is the point |
+| UI-5 | **DEVOPS was skipped for this epic** (maintainer decision, 2026-08-09): no infrastructure, pipeline, deployment or observability surface changes. Its one handoff item — PactNet consumer-driven contract tests for the Jira write and `mypermissions` — protects two **vendor** behaviours (403-on-suppression, atomic batch rejection) that slice 01 does not touch | Carried forward to slices 02 and 04, where those behaviours first become load-bearing. Not implemented here, not silently dropped |
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **From DESIGN**: the driving port (scheduled refresh), the collector's scoped lifetime, the dedup key
+  `(connectionId, workItemId, targetFieldReference)`, the single flush site in
+  `UpdateServiceBase.TriggerUpdate`'s `finally`, and D-A7-R's three bounds. All present; nothing owed
+  back before DELIVER.
+- **From DEVOPS**: nothing — see UI-5. The default environment matrix applies (SQLite in-process; the
+  suite needs no Docker, no Redis, no Postgres).
+- **Environment**: none beyond the existing backend test stack (NUnit 4.6 + Moq +
+  `WebApplicationFactory` over SQLite). No premium licence file is required — `ILicenseService` is
+  faked.
+
+---
+
+## Wave: DISTILL / [REF] Tier-2 expansion catalog (listed, not rendered — density = lean)
+
+| # | Expansion | Trigger to render |
+|---|---|---|
+| T2-D1 | `edge-case-enumeration` — the full empty/duplicate/concurrent taxonomy for the staging map | A reviewer flags a completeness gap in the seam specifications |
+| T2-D2 | `fixture-design-discussion` — why the three data-refresh services are faked and what that cannot model | DELIVER asks why a scenario cannot observe a real sync |
+| T2-D3 | `error-path-rationale` — per-`@error` scenario, the failure mode it surfaces and the one it deliberately does not | Slice 02's unbatched-retry scenarios enter DISTILL |
+| T2-D4 | `pbt-strategy-notes` — property framings for the dedup key (idempotence of `Stage`, commutativity across connections) | The collector's dedup logic grows beyond last-write-wins |
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To:** nw-software-crafter (DELIVER) — 14 RED scaffolds and 4 green guards, all classified, none
+failing for the wrong reason. First move is ADR-144 D1: change `IWriteBackTriggerService`'s three
+methods to return a plan and re-point the seven callers listed under Scaffolds, including the two
+blackout suites that currently assert through a mocked `IWriteBackService`. Then the collector, then
+the flush in `UpdateServiceBase.TriggerUpdate`'s `finally`, then D-A7-R in `WriteBackService`.
+**Watch**: AC-04.3 needs the connector call suppressed, not just the payload emptied (UI-2), and
+`GetChangedFields` must keep taking the first match on a duplicate `ReferenceId` (UI-4, D-A6).
+**Paradigm:** object-oriented, ports-and-adapters, per `CLAUDE.md`.
+**Blocking on the user:** nothing.
