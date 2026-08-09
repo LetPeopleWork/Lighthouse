@@ -27,6 +27,8 @@ The second and later refreshes of a Jira Cloud team download full issue payloads
 - Mode resolution per D8: full when never swept, when any stored item lacks a timestamp, or when the
   sweep failed. No partial mode, ever.
 - `mode=delta` and the real scanned/fetched counts start flowing into slice 01's summary line.
+- **The opt-in gate (added 2026-08-09 — see "Opt-in gate" below).** An `OptionalFeature` that defaults
+  to off; delta is unreachable until an instance turns it on.
 
 ## OUT of scope
 
@@ -36,6 +38,55 @@ The second and later refreshes of a Jira Cloud team download full issue payloads
   slice 05 is a correctness gate and not an optimisation.
 - ADO, ServiceNow, Linear.
 - Any UI.
+
+## Opt-in gate
+
+**Added 2026-08-09, after slice 01 shipped.** Delta ships dark: present in the build, off until an
+instance asks for it.
+
+**Why.** D2 is the reason, not testing convenience. The removal rule is `removed = stored − sweepIds`,
+so a sweep that loses an id **deletes live work items**. That is data loss with a green pipeline, and it
+is the one failure mode this epic can produce that a user cannot undo. An opt-in means only instances
+that volunteered can be hurt by it, and the named on-prem Data Center instance — whose pagination is
+*already* the known duplicate-id hazard (OQ-1) — opts in deliberately rather than by upgrading.
+
+Secondary benefits: a soft launch, and a real-world A/B where the same instance can toggle back and
+compare two summary lines from slice 01.
+
+**Mechanism.** The `OptionalFeature` machinery already exists — entity, seeder, repository, controller,
+Settings UI, and `IsPreview` / `IsPremium` flags. It is currently **dormant**: all four historical keys
+are deprecated and `OptionalFeatureSeeder.GetOptionalFeatures()` returns an empty list. Note that **no
+backend service reads an optional feature today** — every past use gated UI only. This slice is the
+first backend-gated one, so the read path is new work, not a call into an existing helper.
+
+- New key in `OptionalFeatureKeys`, seeded `Enabled = false`, `IsPreview = true`.
+- Read **per update**, in the update's own scope — never cached at startup — so toggling takes effect on
+  the next cycle with no restart. That property is what makes it usable for a soft launch.
+- The flag is a **parameter into** `SyncModeResolver`, not a dependency of it. DDD-5 keeps that type a
+  pure static; `WorkItemService` resolves the flag and passes the bool.
+- It composes with, and does not replace, `SupportsIncrementalSync(connection)`. Capability stays
+  per-connector; the opt-in is per-instance. A global toggle plus a per-connector probe covers the
+  rollout without a per-connector opt-in matrix.
+- Off is not a special case: it resolves to `SyncMode.Full`, which is D8's existing "ambiguity resolves
+  to a full fetch". One more branch into an outcome the resolver already has.
+
+**Blast radius: this slice only.** Slices 03, 04, 06, 07 and 08 all route their mode decision through the
+same resolver, so they inherit the gate for free and none of their briefs change. Slice 01 is
+deliberately **not** gated — the log signal is the instrument by which anyone judges whether the toggle
+did anything, and gating the instrument alongside the thing it measures leaves nothing to read. Slice 05
+is not gated either; see its own amendment for why it is inert rather than independent.
+
+**Additional acceptance criteria**
+
+- AC-2.10 With the feature off (the default), every update runs `mode=full` and issues no sweep — asserted
+  by a fake connector whose sweep method fails the test if it is called at all.
+- AC-2.11 Turning the feature on takes effect on the next cycle without a restart.
+- AC-2.12 A fresh install has the feature off, and an instance upgrading into this release stays off.
+
+**Removal.** The flag is preview scaffolding with a defined end: once the epic has run against real
+instances and KPI-3 (removal correctness, 20 consecutive delta cycles with zero drift) holds, the flag
+flips to on-by-default and then goes away. Record that decision when it happens rather than leaving a
+permanent branch — a gate nobody ever removes becomes a second code path forever.
 
 ## Learning hypothesis
 
@@ -68,8 +119,10 @@ performance or correctness regressions with every other test still green.
 
 ## Effort
 
-~6h. Migration + `Update(…)` copy ~1h, sweep ~1.5h, comparison + mode resolution ~1.5h, D10 move ~1h,
-tests ~1h.
+~7h. Migration + `Update(…)` copy ~1h, sweep ~1.5h, comparison + mode resolution ~1.5h, D10 move ~1h,
+tests ~1h, opt-in gate ~1h (key + seeder entry + the per-update read + AC-2.10…2.12). The gate is cheap
+*because* it lands on the resolver rather than on each connector — if it starts looking bigger than an
+hour, that is the signal the mode decision has leaked out of `SyncModeResolver`.
 
 ## Production data / dogfood moment
 

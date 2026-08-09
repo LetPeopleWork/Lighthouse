@@ -36,6 +36,75 @@ everything else provokes no remote fetch at all.
   fingerprint is a boolean, deliberately.
 - Any UI.
 
+## Amendment 2026-08-09 — there is already a second answer to this question, and it disagrees
+
+Found while preparing slice 02. Read this before writing the fingerprint: **the "does this edit change
+what gets fetched?" decision already exists in the codebase**, under a different name, with a different
+property list, and only for one of the two entities.
+
+### What is there today
+
+`TeamController.UpdateTeam` (`:178`) calls `team.WorkItemRelatedSettingsChanged(teamSetting)`
+(`API/Helpers/TeamExtensions.cs:65`). On true it runs `workItemRepository.RemoveWorkItemsForTeam(team.Id)`
+— **it deletes every stored work item for the team** — and the next scheduled cycle refetches from
+nothing. On false, nothing is deleted and nothing is fetched.
+
+So the promise this slice is named after — *a setting costs a refetch only when it changes what is
+fetched* — is **already half-kept**. Editing wait states, blocked rules, staleness thresholds, the SLE or
+cycle-time definitions on a team is genuinely free today. That is worth knowing before writing a brief
+that implies none of it exists.
+
+### Three defects in what is there
+
+1. **Portfolio has no equivalent at all.** `PortfolioController.UpdatePortfolio` (`:96`) syncs and saves;
+   there is no change detection and no purge. Its Features are reconciled only by the fetch's own
+   removal rule on the next cycle. Two entities, two different answers to one question.
+
+2. **The team path is destructive, and possibly redundantly so.** It answers "the query changed" by
+   deleting stored work items *and their history*, then refetching. But `removed = stored − fetched`
+   already reconciles exactly that on any full cycle — which is precisely how the portfolio side copes
+   without a purge. The purge looks like belt-and-braces bought with transition history. **Verify before
+   removing it**: the plausible reason it exists is a case the removal rule does not cover, and the fact
+   that nobody wrote that reason down is not evidence there isn't one.
+
+3. **The property lists differ, and `DoneItemsCutoffDays` is a live gap.**
+
+   | Property | `WorkItemRelatedSettingsChanged` | this slice's fingerprint |
+   |---|---|---|
+   | `DataRetrievalValue`, connection id, `WorkItemTypes`, all states | ✅ | ✅ |
+   | `StateMappings` | ✅ | ❌ |
+   | `DoneItemsCutoffDays` | ❌ | ✅ |
+   | additional field definitions | ❌ | ✅ |
+   | parent-override field | ❌ | ✅ |
+
+   `DoneItemsCutoffDays` is part of the remote query's resolved-cutoff clause — it demonstrably shapes
+   the result set — and changing it triggers no purge today.
+
+### What this slice must therefore do
+
+**One property set, two consumers.** The fingerprint and the save-time decision are the same question
+asked twice; they must not ship as two lists. Fold `WorkItemRelatedSettingsChanged` onto the fingerprint's
+property set, and extend the guard test (already an acceptance criterion here) to cover **both** call
+sites rather than the fingerprint alone.
+
+This is the difference between the slice's stated hypothesis holding and quietly failing. As briefed, the
+guard test protects the fingerprint from drift while an older, shorter list sits in a file the guard does
+not look at — which is the very drift the test exists to prevent, reintroduced one directory away.
+
+While doing it, resolve the portfolio asymmetry: whatever the answer is, both entities give it.
+
+### Two things this amendment is not
+
+- **Not gated by the opt-in flag** (slice 02's amendment). This is true whether the next cycle is full or
+  delta, so it ships plain.
+- **Not blocked on delta either — but not independent of it.** With delta off, the fingerprint's only
+  output ("the next cycle is `mode=full`") is what already happens, so it is *inert*, not inactive: the
+  column fills, the guard test runs, and no behaviour changes until someone opts in. That makes it safe
+  to ship early and cheap to ship ungated, and it is why this slice needs no flag of its own.
+
+Whether the `DoneItemsCutoffDays` gap is severe enough to pull forward as its own bug ahead of this slice
+is open, and is the maintainer's call.
+
 ## Learning hypothesis
 
 **Disproves "the fetch-shaping property set can be enumerated in one place."** If it cannot — if a

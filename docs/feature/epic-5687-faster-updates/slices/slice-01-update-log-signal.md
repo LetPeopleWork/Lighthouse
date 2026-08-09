@@ -130,6 +130,6 @@ The 153 / 416 baselines in this brief are **wrong and superseded**. They were me
 logger missing production's `MinimumLevel.Override` block, so ~95 % of what they counted was EF Core
 `Executed DbCommand` SQL that no operator sees. The honest before-figures are 8 and 10.
 
-**Still open**: the production-data dogfood read on `:5169` — one full refresh cycle against real
-recorded history, legible in under ten seconds. That is this slice's own acceptance and it has not been
-done. Until it is, the verdict covers the mechanism, not the readability.
+**Dogfood read: passed** (2026-08-09, manual verification by the maintainer). The cycle is legible, which
+was the slice's own bar. Both halves of the hypothesis are therefore answered — the mechanism reports
+its own scope, and the result is readable by the person the log is for.

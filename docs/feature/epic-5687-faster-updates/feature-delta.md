@@ -1615,3 +1615,70 @@ Three things not to re-derive:
 - The `RefreshLog` migration shipped at DISTILL. The next model change (`LastChangedRemote`, `FetchFingerprint`) needs its own, in the same commit — EF fails 55 host-booting tests otherwise.
 - `SyncOutcome.FullSync(n)` is the one seam that encodes "a full sync fetches everything it scanned". That is the rule slice 02 inverts; there is exactly one place to change.
 - The two updaters were deliberately NOT collapsed into a shared `RecordCompletedUpdate` helper. The candidate signature is 8 parameters (an S107 violation), `RefreshType` is not `UpdateType`, and the surrounding blocks genuinely differ. What was shareable — the line renderer — is already on `UpdateServiceBase`.
+
+---
+
+## Wave: DELIVER / [REF] Post-slice-01 Amendments
+
+Two decisions taken after slice 01 shipped and was verified on real data (2026-08-09). Both change
+downstream slice briefs; neither changes a DISCUSS decision or an existing acceptance criterion.
+
+### A1 — Delta ships behind an opt-in `OptionalFeature` (slice 02, inherited by 03/04/06/07/08)
+
+Recorded in `slices/slice-02-jira-cloud-team-delta.md` → "Opt-in gate", with AC-2.10 … AC-2.12.
+
+The driver is **D2**, not testability. `removed = stored − sweepIds` means a sweep that loses an id
+deletes live work items — data loss behind a green pipeline, and the only failure mode in this epic a
+user cannot undo. An opt-in confines that risk to instances that volunteered, and lets the named on-prem
+Data Center instance (already the known duplicate-id hazard, OQ-1) opt in deliberately rather than by
+upgrading.
+
+Design notes that matter downstream:
+- The flag is a **parameter into** `SyncModeResolver`, never a dependency of it — DDD-5 keeps that type
+  a pure static, and `WorkItemService` does the resolving.
+- Off resolves to `SyncMode.Full`, which is D8's existing "ambiguity resolves to a full fetch". It is one
+  more branch into an outcome the resolver already has, not a new mechanism.
+- It composes with `SupportsIncrementalSync(connection)` rather than replacing it: capability stays
+  per-connector, opt-in is per-instance. No per-connector opt-in matrix.
+- Read per update, in the update's own scope — a toggle takes effect on the next cycle, no restart.
+- **Slice 01 is deliberately not gated.** The log signal is how anyone judges whether the toggle did
+  anything; gating the instrument together with what it measures leaves nothing to read.
+
+The `OptionalFeature` machinery already exists but is **dormant** (all four historical keys deprecated,
+`GetOptionalFeatures()` returns empty) and **has never been read by backend code** — every prior use
+gated UI only. Slice 02 is the first backend-gated optional feature, so the read path is new work.
+
+The flag has a defined end: once KPI-3 holds on real instances, it flips to on-by-default and is removed.
+A gate nobody removes becomes a permanent second code path.
+
+### A2 — The fetch-shaping property set already exists twice, and the two copies disagree (slice 05)
+
+Recorded in `slices/slice-05-fetch-fingerprint.md` → "Amendment 2026-08-09".
+
+Found while preparing A1. `TeamController.UpdateTeam:178` already answers "did this edit change what gets
+fetched?" via `WorkItemRelatedSettingsChanged` (`API/Helpers/TeamExtensions.cs:65`), and on true **deletes
+every stored work item for the team**. So slice 05's headline promise is already half-kept: a wait-state,
+blocked-rule, staleness, SLE or cycle-time edit on a **team** costs zero remote calls today.
+
+Three defects, all inherited by slice 05:
+1. **Portfolio has no equivalent** — `PortfolioController.UpdatePortfolio:96` has no change detection and
+   no purge; its Features are reconciled only by the removal rule.
+2. **The team purge is destructive and possibly redundant** — it deletes transition history to achieve
+   what `removed = stored − fetched` already does on a full cycle, which is how the portfolio side copes
+   without one. Verify before removing: an undocumented reason is not an absent one.
+3. **The property lists differ.** `WorkItemRelatedSettingsChanged` has `StateMappings` and lacks
+   `DoneItemsCutoffDays`, additional field definitions and the parent-override field. `DoneItemsCutoffDays`
+   is part of the remote query's resolved-cutoff clause, so **changing it today shapes the result set and
+   triggers no purge** — a live gap, independent of this epic.
+
+Slice 05 must therefore ship **one property set with two consumers** (the save-time decision and the mode
+decision), with its guard test covering both call sites. As briefed it would have protected the new
+fingerprint from drift while an older, shorter list sat one directory away — reintroducing the exact drift
+the test exists to prevent.
+
+A2 is **not** gated by A1: it holds whether the next cycle is full or delta. Slice 05 needs no flag of its
+own because, with delta off, the fingerprint's only output is what already happens — it is inert, not
+independent.
+
+**Open, maintainer's call**: whether the `DoneItemsCutoffDays` gap is pulled forward as its own bug ahead
+of slice 05.
