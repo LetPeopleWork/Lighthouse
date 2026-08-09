@@ -59,6 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var stopwatch = Stopwatch.StartNew();
             var success = false;
             var itemCount = 0;
+            var outcome = new SyncOutcome(SyncMode.Full, 0, 0);
 
             try
             {
@@ -69,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
                     var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
 
-                    await workItemService.UpdateFeaturesForPortfolio(project);
+                    outcome = await workItemService.UpdateFeaturesForPortfolio(project);
                     await domainEventDispatcher.PublishAsync(new PortfolioFeaturesRefreshed(project.Id));
 
                     var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
@@ -105,10 +106,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         EntityId = project.Id,
                         EntityName = project.Name,
                         ItemCount = itemCount,
+                        Mode = outcome.Mode,
+                        RecordsScanned = outcome.RecordsScanned,
+                        RecordsFetched = outcome.RecordsFetched,
                         DurationMs = stopwatch.ElapsedMilliseconds,
                         ExecutedAt = DateTime.UtcNow,
                         Success = success
                     });
+
+                    LogUpdateSummary(project.Name, outcome, stopwatch.ElapsedMilliseconds, success);
                 }
             }
             finally

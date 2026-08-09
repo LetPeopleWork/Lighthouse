@@ -263,9 +263,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }
             }
 
-            public Task UpdateFeaturesForPortfolio(Portfolio portfolio)
+            public Task<SyncOutcome> UpdateFeaturesForPortfolio(Portfolio portfolio)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(new SyncOutcome(SyncMode.Full, 0, 0));
             }
 
             public async Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)

@@ -30,11 +30,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     {
         private readonly Dictionary<int, int> defaultWorkItemsBasedOnPercentile = new();
 
-        public async Task UpdateFeaturesForPortfolio(Portfolio portfolio)
+        public async Task<SyncOutcome> UpdateFeaturesForPortfolio(Portfolio portfolio)
         {
             logger.LogInformation("Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
-            await RefreshFeatures(portfolio);
+            var outcome = await RefreshFeatures(portfolio);
             await RefreshParentFeatures(portfolio);
 
             await UpdateRemainingWorkForPortfolio(portfolio);
@@ -42,6 +42,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             portfolio.RefreshUpdateTime();
 
             logger.LogInformation("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
+
+            return outcome;
         }
 
         public async Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
@@ -509,7 +511,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return buckets;
         }
 
-        private async Task RefreshFeatures(Portfolio portfolio)
+        private async Task<SyncOutcome> RefreshFeatures(Portfolio portfolio)
         {
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
@@ -517,7 +519,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
             var syncedFeatures = new List<SyncedFeature>();
 
-            foreach (var feature in await workItemService.GetFeaturesForProject(portfolio))
+            var recordsFromTracker = (await workItemService.GetFeaturesForProject(portfolio)).ToList();
+
+            foreach (var feature in recordsFromTracker)
             {
                 // Read the PRE-UPDATE per-portfolio blocked verdict BEFORE AddOrUpdateFeature mutates the
                 // persisted feature in place (ADR-104 seam hoist) — otherwise the prior state is destroyed
@@ -563,6 +567,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await PublishDomainEvents(events);
 
             await SweepDepartedFeatureSpells(portfolio, features);
+
+            // Epic #5687: same reasoning as RefreshWorkItems — a full sync fetches everything it scanned.
+            return new SyncOutcome(SyncMode.Full, recordsFromTracker.Count, recordsFromTracker.Count);
         }
 
         private List<IDomainEvent> CollectFeatureBlockedEvents(Portfolio portfolio, SyncedFeature syncedFeature)

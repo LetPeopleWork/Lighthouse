@@ -42,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @real-io @AC-1.2 — the same line shape from the other half of the cycle.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_completed_portfolio_update_says_the_same_thing_in_the_same_shape()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();

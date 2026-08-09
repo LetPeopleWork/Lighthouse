@@ -40,6 +40,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = new Mock<IForecastService>();
             workItemServiceMock = new Mock<IWorkItemService>();
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
+                .ReturnsAsync(new SyncOutcome(SyncMode.Full, 0, 0));
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             domainEventDispatcherMock
                 .Setup(x => x.PublishAsync(It.IsAny<PortfolioFeaturesRefreshed>(), It.IsAny<CancellationToken>()))

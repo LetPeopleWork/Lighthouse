@@ -122,6 +122,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ForecastServiceMock = new Mock<IForecastService>();
             TeamDataServiceMock = new Mock<ITeamDataService>();
 
+            // Epic #5687: an unstubbed sync hands back a null outcome, which the updater then dereferences
+            // while writing its RefreshLog row - losing the row instead of failing the test.
+            WorkItemServiceMock
+                .Setup(s => s.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
+                .ReturnsAsync(new SyncOutcome(SyncMode.Full, 0, 0));
+            TeamDataServiceMock
+                .Setup(s => s.UpdateTeamData(It.IsAny<Team>()))
+                .ReturnsAsync(new SyncOutcome(SyncMode.Full, 0, 0));
+
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))

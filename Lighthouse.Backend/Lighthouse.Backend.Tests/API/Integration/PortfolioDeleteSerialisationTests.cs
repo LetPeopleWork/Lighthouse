@@ -328,12 +328,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }
             }
 
-            public async Task UpdateFeaturesForPortfolio(Portfolio portfolio)
+            public async Task<SyncOutcome> UpdateFeaturesForPortfolio(Portfolio portfolio)
             {
                 if (gates.TryGetValue(portfolio.Id, out var gate))
                 {
                     await gate.Task;
                 }
+
+                return new SyncOutcome(SyncMode.Full, 0, 0);
             }
 
             public Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
