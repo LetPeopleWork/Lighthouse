@@ -43,6 +43,26 @@ is luck, not process: the gate job starts as soon as the backend job finishes.
 (refactor → review → four Stryker rounds) is exactly when this step gets skipped, because the tree has
 been green locally for an hour by then — and none of those gates surface INFO diagnostics.
 
+**Recurrence: 3 — 2026-08-09, Epic 5500 slice 02. The filter above is wrong for new files.**
+`sonar-gates` failed on `main` with `new_violations = 7` (NUnit2045 ×2, NUnit2056 ×3, CA1861, CA2016),
+**all seven in a single brand-new test file**, after the mandatory command had been run and reported
+clean. The command was fine; the filter was not:
+
+```bash
+git diff --name-only <base>..HEAD > /tmp/touched.txt     # ← lists TRACKED changes only
+```
+
+`git diff` never lists **untracked** files, so a new file is invisible to the filter and its findings sit
+unread in the log. A slice that adds a test file — which is most slices — is exactly the case this misses,
+and it misses it silently, reporting "clean". Use both halves:
+
+```bash
+{ git diff --name-only <base>; git status --porcelain | awk '{print $2}'; } | grep '\.cs$' | sort -u
+```
+
+**Rule going forward: any filter over "files I touched" must union `git diff` with `git status --porcelain`,
+or it will report clean for a change made entirely of new files.**
+
 ---
 
 Each entry follows:

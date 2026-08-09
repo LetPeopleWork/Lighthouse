@@ -33,6 +33,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static int connectionIdSeed = 7000;
 
+        private static readonly string[] BothIssues = ["PROJ-1", "PROJ-2"];
+
+        private static readonly string[] AllThreeFields = [AgeField, DateField, "description"];
+
         private List<RecordedPut> recordedPuts = null!;
 
         private sealed record RecordedPut(string IssueKey, Dictionary<string, JsonElement> Fields, string RawBody);
@@ -58,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(recordedPuts, Has.Count.EqualTo(1),
                 "Three changed fields on one issue are one conversation with Jira, not three. Recorded: "
                 + string.Join(" | ", recordedPuts.Select(p => $"{p.IssueKey}=>[{p.RawBody}]")));
-            Assert.That(recordedPuts[0].Fields.Keys, Is.EquivalentTo(new[] { AgeField, DateField, "description" }));
+            Assert.That(recordedPuts[0].Fields.Keys, Is.EquivalentTo(AllThreeFields));
         }
 
         // AC-05.5 — parity: the single-field case must not grow a second call or lose its result.
@@ -69,9 +73,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.WriteFieldsToWorkItems(CreateConnection(), [Update("PROJ-1", AgeField, "5")]);
 
-            Assert.That(recordedPuts, Has.Count.EqualTo(1));
-            Assert.That(result.ItemResults, Has.Count.EqualTo(1));
-            Assert.That(result.AllSucceeded, Is.True);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedPuts, Has.Count.EqualTo(1));
+                Assert.That(result.ItemResults, Has.Count.EqualTo(1));
+                Assert.That(result.AllSucceeded, Is.True);
+            }
         }
 
         [Test]
@@ -85,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Update("PROJ-1", DateField, "2026-08-20"),
             ]);
 
-            Assert.That(recordedPuts.Select(p => p.IssueKey), Is.EquivalentTo(new[] { "PROJ-1", "PROJ-2" }),
+            Assert.That(recordedPuts.Select(p => p.IssueKey), Is.EquivalentTo(BothIssues),
                 "Grouping is per issue — two issues are two calls however the flat list was ordered.");
         }
 
@@ -101,12 +108,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ]);
 
             var fields = recordedPuts.Single().Fields;
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(fields[AgeField].ValueKind, Is.EqualTo(JsonValueKind.Number),
                     "A value that parses as a number goes over the wire as a number, batched or not.");
                 Assert.That(fields[DateField].ValueKind, Is.EqualTo(JsonValueKind.String));
-            });
+            }
         }
 
         // AC-05.8 — the regression batching would otherwise introduce.
@@ -125,12 +132,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "One batch that was rejected, then one call per field: 1 + N, and only on the failure path.");
 
             var byField = result.ItemResults.ToDictionary(r => r.TargetFieldReference, r => r.Success);
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(byField[AgeField], Is.True, "A valid field must not be lost to a sibling's mistake.");
                 Assert.That(byField[DateField], Is.True);
                 Assert.That(byField["customfield_99999"], Is.False, "The offending field fails alone.");
-            });
+            }
         }
 
         [Test]
@@ -171,9 +178,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.WriteFieldsToWorkItems(CreateConnection(), [Update("PROJ-1", AgeField, "5")]);
 
-            Assert.That(recordedPuts, Has.Count.EqualTo(1),
-                "There is nothing to isolate a single field from, so the retry would only cost a second call.");
-            Assert.That(result.ItemResults.Single().Success, Is.False);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedPuts, Has.Count.EqualTo(1),
+                    "There is nothing to isolate a single field from, so the retry would only cost a second call.");
+                Assert.That(result.ItemResults.Single().Success, Is.False);
+            }
         }
 
         [Test]
@@ -194,11 +204,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var result = await subject.WriteFieldsToWorkItems(CreateConnection(), [Update("PROJ-1", AgeField, "5")]);
 
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(result.ItemResults.Single().Success, Is.False);
                 Assert.That(result.ItemResults.Single().ErrorMessage, Does.Contain("unreachable"));
-            });
+            }
         }
 
         // --- Transport stubs ---
@@ -256,7 +266,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "SendAsync",
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+                .Returns<HttpRequestMessage, CancellationToken>((request, cancellationToken) =>
                 {
                     if (request.Method != HttpMethod.Put)
                     {
@@ -265,7 +275,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                     var segments = request.RequestUri!.AbsolutePath.Split('/');
                     var issueKey = segments[^1];
-                    var rawBody = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult() ?? string.Empty;
+                    var rawBody = request.Content?.ReadAsStringAsync(cancellationToken).GetAwaiter().GetResult() ?? string.Empty;
                     recordedPuts.Add(new RecordedPut(issueKey, ReadFields(request), rawBody));
 
                     return Task.FromResult(respond(request));
