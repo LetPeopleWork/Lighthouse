@@ -71,7 +71,7 @@ A change is **not done** until every gate below passes locally. CI enforces them
 ### Backend (`Lighthouse.Backend/`)
 
 - `dotnet build` — must succeed with zero warnings (`TreatWarningsAsErrors` makes any warning a failure, but verify locally before pushing).
-- `dotnet test` — all xUnit suites green.
+- `dotnet test` — all NUnit suites green.
 
 ### SonarQube Cloud (both stacks)
 
