@@ -7,7 +7,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 namespace Lighthouse.Backend.Services.Implementation
 {
     public class WriteBackTriggerService(
-        IWriteBackService writeBackService,
         ILicenseService licenseService,
         IWorkItemRepository workItemRepository,
         IBlackoutPeriodService blackoutPeriodService,
@@ -23,63 +22,58 @@ namespace Lighthouse.Backend.Services.Implementation
             WriteBackValueSource.ForecastPercentile95,
         ];
 
-        public async Task TriggerWriteBackForTeam(Team team)
+        public IReadOnlyList<WriteBackFieldUpdate> ResolveWriteBackForTeam(Team team)
         {
             try
             {
-                var connection = team.WorkTrackingSystemConnection;
-
-                var mappings = connection.WriteBackMappingDefinitions
+                var mappings = team.WorkTrackingSystemConnection.WriteBackMappingDefinitions
                     .Where(m => m.AppliesTo == WriteBackAppliesTo.Team)
                     .ToList();
 
                 if (mappings.Count == 0 || !licenseService.CanUsePremiumFeatures())
                 {
-                    return;
+                    return [];
                 }
 
                 logger.LogInformation(
-                    "Triggering write-back for team {TeamId} ({TeamName}), {MappingCount} mapping(s)",
+                    "Resolving write-back for team {TeamId} ({TeamName}), {MappingCount} mapping(s)",
                     team.Id, team.Name, mappings.Count);
 
                 var workItems = workItemRepository
                     .GetAllByPredicate(wi => wi.TeamId == team.Id)
                     .ToList();
 
-                var updates = ResolveTeamUpdates(mappings, workItems);
-
-                if (updates.Count == 0)
-                {
-                    return;
-                }
-
-                await writeBackService.WriteFieldsToWorkItems(connection, updates);
+                return ResolveTeamUpdates(mappings, workItems);
             }
+            // Resolution reads repositories and the blackout calendar, so it can still fail. Swallowing
+            // here keeps a broken mapping from cutting short the rest of the update execution, which is
+            // what the four separate try/catches did before ADR-144 collapsed them into one flush.
+#pragma warning disable CA1031
             catch (Exception ex)
+#pragma warning restore CA1031
             {
                 logger.LogError(ex,
-                    "Write-back failed for team {TeamId} ({TeamName}): {ErrorMessage}",
+                    "Write-back resolution failed for team {TeamId} ({TeamName}): {ErrorMessage}",
                     team.Id, team.Name, ex.Message);
+                return [];
             }
         }
 
-        public async Task TriggerForecastWriteBackForPortfolio(Portfolio portfolio)
+        public IReadOnlyList<WriteBackFieldUpdate> ResolveForecastWriteBackForPortfolio(Portfolio portfolio)
         {
-            await TriggerPortfolioWriteBack(portfolio, isForecast: true);
+            return ResolvePortfolioWriteBack(portfolio, isForecast: true);
         }
 
-        public async Task TriggerFeatureWriteBackForPortfolio(Portfolio portfolio)
+        public IReadOnlyList<WriteBackFieldUpdate> ResolveFeatureWriteBackForPortfolio(Portfolio portfolio)
         {
-            await TriggerPortfolioWriteBack(portfolio, isForecast: false);
+            return ResolvePortfolioWriteBack(portfolio, isForecast: false);
         }
 
-        private async Task TriggerPortfolioWriteBack(Portfolio portfolio, bool isForecast)
+        private IReadOnlyList<WriteBackFieldUpdate> ResolvePortfolioWriteBack(Portfolio portfolio, bool isForecast)
         {
             try
             {
-                var connection = portfolio.WorkTrackingSystemConnection;
-
-                var mappings = connection.WriteBackMappingDefinitions
+                var mappings = portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions
                     .Where(m => m.AppliesTo == WriteBackAppliesTo.Portfolio)
                     .Where(m => isForecast
                         ? ForecastSources.Contains(m.ValueSource)
@@ -88,27 +82,23 @@ namespace Lighthouse.Backend.Services.Implementation
 
                 if (mappings.Count == 0 || !licenseService.CanUsePremiumFeatures())
                 {
-                    return;
+                    return [];
                 }
 
                 logger.LogInformation(
-                    "Triggering {WriteBackType} write-back for portfolio {PortfolioId} ({PortfolioName}), {MappingCount} mapping(s)",
+                    "Resolving {WriteBackType} write-back for portfolio {PortfolioId} ({PortfolioName}), {MappingCount} mapping(s)",
                     isForecast ? "forecast" : "feature", portfolio.Id, portfolio.Name, mappings.Count);
 
-                var updates = ResolvePortfolioUpdates(mappings, portfolio.Features);
-
-                if (updates.Count == 0)
-                {
-                    return;
-                }
-
-                await writeBackService.WriteFieldsToWorkItems(connection, updates);
+                return ResolvePortfolioUpdates(mappings, portfolio.Features);
             }
+#pragma warning disable CA1031
             catch (Exception ex)
+#pragma warning restore CA1031
             {
                 logger.LogError(ex,
-                    "Write-back failed for portfolio {PortfolioId} ({PortfolioName}): {ErrorMessage}",
+                    "Write-back resolution failed for portfolio {PortfolioId} ({PortfolioName}): {ErrorMessage}",
                     portfolio.Id, portfolio.Name, ex.Message);
+                return [];
             }
         }
 
@@ -123,9 +113,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var fieldReference = mapping.AdditionalFieldDefinition?.Reference;
                 if (string.IsNullOrEmpty(fieldReference))
                 {
-                    logger.LogWarning(
-                        "Skipping write-back mapping {MappingId}: AdditionalFieldDefinition is not resolved (Id: {FieldId})",
-                        mapping.Id, mapping.AdditionalFieldDefinitionId);
+                    LogUnresolvedMapping(mapping);
                     continue;
                 }
 
@@ -158,9 +146,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var fieldReference = mapping.AdditionalFieldDefinition?.Reference;
                 if (string.IsNullOrEmpty(fieldReference))
                 {
-                    logger.LogWarning(
-                        "Skipping write-back mapping {MappingId}: AdditionalFieldDefinition is not resolved (Id: {FieldId})",
-                        mapping.Id, mapping.AdditionalFieldDefinitionId);
+                    LogUnresolvedMapping(mapping);
                     continue;
                 }
 
@@ -180,6 +166,13 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return updates;
+        }
+
+        private void LogUnresolvedMapping(WriteBackMappingDefinition mapping)
+        {
+            logger.LogWarning(
+                "Skipping write-back mapping {MappingId}: AdditionalFieldDefinition is not resolved (Id: {FieldId})",
+                mapping.Id, mapping.AdditionalFieldDefinitionId);
         }
 
         private string? ResolveWorkItemValue(WriteBackValueSource source, WorkItemBase workItem)

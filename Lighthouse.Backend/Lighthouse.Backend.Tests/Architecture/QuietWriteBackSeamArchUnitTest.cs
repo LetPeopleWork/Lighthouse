@@ -8,12 +8,10 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class QuietWriteBackSeamArchUnitTest
     {
-        private const string RedScaffold = "RED - Epic 5500 slice 01 (write-back collection seam) not implemented";
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
-        [Ignore(RedScaffold)]
         public void WriteBackTriggerService_DoesNotDependOnTheWriteBackService()
         {
             Classes().That().HaveFullName("Lighthouse.Backend.Services.Implementation.WriteBackTriggerService")

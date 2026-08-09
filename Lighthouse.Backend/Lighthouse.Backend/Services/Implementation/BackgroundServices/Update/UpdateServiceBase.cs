@@ -27,7 +27,31 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 {
                     Logger.LogError(exception, "An exception occurred while updating {Entity} with ID {Id}: {Exception}", typeof(TEntity).Name, id, exception.Message);
                 }
+                finally
+                {
+                    await FlushWriteBack(id, serviceProvider);
+                }
             });
+        }
+
+        /// <summary>
+        /// The one place write-back reaches the tracker (ADR-144 §4). Every update type inherits it, so
+        /// no updater can forget it and the ordering contract stays in the updater's own method body.
+        /// </summary>
+        private async Task FlushWriteBack(int id, IServiceProvider serviceProvider)
+        {
+            try
+            {
+                await serviceProvider.GetRequiredService<IWriteBackCollector>().FlushAsync();
+            }
+            // Parity with the swallow-and-log write-back has always had: a flush failure must not fail
+            // the refresh round it rode in on.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                Logger.LogError(exception, "Write-back flush failed for {Entity} with ID {Id}: {Exception}", typeof(TEntity).Name, id, exception.Message);
+            }
         }
 
         protected static T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull

@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -29,7 +30,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 {
                     updateTask(serviceProviderMock.Object).Wait();
                 });
+
+            // Every enqueued update now ends in a write-back flush (ADR-144 §4). Registering the
+            // collector here means an updater test exercises that terminal call instead of silently
+            // hitting the resolution failure the flush's own catch would swallow.
+            WriteBackCollectorMock = new Mock<IWriteBackCollector>();
+            WriteBackCollectorMock.Setup(c => c.FlushAsync()).ReturnsAsync([]);
+            SetupServiceProviderMock(WriteBackCollectorMock.Object);
         }
+
+        protected Mock<IWriteBackCollector> WriteBackCollectorMock { get; }
 
         protected IServiceScopeFactory ServiceScopeFactory { get; }
 

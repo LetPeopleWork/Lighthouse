@@ -41,7 +41,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-            await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(portfolio);
+            serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
+                portfolio.WorkTrackingSystemConnection,
+                writeBackTriggerService.ResolveForecastWriteBackForPortfolio(portfolio));
 
             await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
         }

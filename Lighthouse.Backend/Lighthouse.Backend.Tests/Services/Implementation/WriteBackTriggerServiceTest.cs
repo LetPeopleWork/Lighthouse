@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
@@ -13,7 +14,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     public class WriteBackTriggerServiceTest
     {
-        private Mock<IWriteBackService> writeBackServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [SetUp]
         public void Setup()
         {
-            writeBackServiceMock = new Mock<IWriteBackService>();
             licenseServiceMock = new Mock<ILicenseService>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
@@ -39,28 +38,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
-
-            writeBackServiceMock
-                .Setup(w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .ReturnsAsync(new WriteBackResult());
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_NoMappings_DoesNotCallWriteBackService()
+        public void ResolveWriteBackForTeam_NoMappings_ResolvesNothing()
         {
             var team = CreateTeamWithWorkItems();
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_NoTeamLevelMappings_DoesNotCallWriteBackService()
+        public void ResolveWriteBackForTeam_NoTeamLevelMappings_ResolvesNothing()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -68,15 +61,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_NotPremiumLicense_DoesNotCallWriteBackService()
+        public void ResolveWriteBackForTeam_NotPremiumLicense_ResolvesNothing()
         {
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
@@ -84,17 +75,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Team, "Custom.Age"));
 
+            // Seeded on purpose: without an item the plan is empty whether the licence gate fires or
+            // not, and the assertion below would hold for a build that had no gate at all.
+            SetupWorkItemsForTeam(team.Id, [CreateWorkItem("101", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-5))]);
+
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_WorkItemAgeCycleTime_WritesAgeForDoingItems()
+        public void ResolveWriteBackForTeam_WorkItemAgeCycleTime_WritesAgeForDoingItems()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -107,21 +100,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    team.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "101" &&
                         updates[0].TargetFieldReference == "Custom.Age" &&
-                        updates[0].Value == "6")),
-                Times.Once);
+                        updates[0].Value == "6");
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_WorkItemAgeCycleTime_StaysTodayAnchoredAfterTheAsOfDateFix()
+        public void ResolveWriteBackForTeam_WorkItemAgeCycleTime_StaysTodayAnchoredAfterTheAsOfDateFix()
         {
             // Story 5508 CI5: slice 03 makes every Work-Item-Age *dashboard* surface a function of the
             // selected date. Write-back must NOT follow — it keeps emitting the age as of today.
@@ -137,19 +126,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    team.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
-                        updates[0].Value == "6")),
-                Times.Once);
+                        updates[0].Value == "6");
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_WorKItemAgeCycleTime_WritesCycleTimeForDoneItems()
+        public void ResolveWriteBackForTeam_WorKItemAgeCycleTime_WritesCycleTimeForDoneItems()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -162,21 +147,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    team.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "202" &&
                         updates[0].TargetFieldReference == "Custom.CycleTime" &&
-                        updates[0].Value == doneItem.CycleTime(TestToday.Zone).ToString())),
-                Times.Once);
+                        updates[0].Value == doneItem.CycleTime(TestToday.Zone).ToString());
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_NoMatchingWorkItems_DoesNotCallWriteBackService()
+        public void ResolveWriteBackForTeam_NoMatchingWorkItems_ResolvesNothing()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -187,15 +168,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public void TriggerWriteBackForTeam_ExceptionOccurs_DoesNotThrow()
+        public void ResolveWriteBackForTeam_ExceptionOccurs_DoesNotThrow()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -204,17 +183,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var doingItem = CreateWorkItem("501", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-3));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
 
-            writeBackServiceMock
-                .Setup(w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .ThrowsAsync(new InvalidOperationException("Connection failed"));
+            // Resolution no longer performs I/O of its own, so the failure has to come from something it
+            // still reads. The promise is unchanged: a broken read must not take the refresh down with it.
+            workItemRepositoryMock
+                .Setup(r => r.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Throws(new InvalidOperationException("Repository unavailable"));
 
             var subject = CreateSubject();
 
-            Assert.DoesNotThrowAsync(async () => await subject.TriggerWriteBackForTeam(team));
+            Assert.DoesNotThrow(() => subject.ResolveWriteBackForTeam(team));
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_ExceptionOccurs_LogsError()
+        public void ResolveWriteBackForTeam_ExceptionOccurs_LogsError()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -223,51 +204,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var doingItem = CreateWorkItem("601", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-3));
             SetupWorkItemsForTeam(team.Id, [doingItem]);
 
-            writeBackServiceMock
-                .Setup(w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .ThrowsAsync(new InvalidOperationException("Connection failed"));
+            // Resolution no longer performs I/O of its own, so the failure has to come from something it
+            // still reads. The promise is unchanged: a broken read must not take the refresh down with it.
+            workItemRepositoryMock
+                .Setup(r => r.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
+                .Throws(new InvalidOperationException("Repository unavailable"));
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
-            var errorInvocations = loggerMock.Invocations
-                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
-                .ToList();
-
-            Assert.That(errorInvocations, Has.Count.EqualTo(1));
+            AssertSingleErrorLoggedContaining("Write-back resolution failed for team");
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_NoMappings_DoesNotCallWriteBackService()
+        public void ResolveForecastWriteBackForPortfolio_NoMappings_ResolvesNothing()
         {
             var portfolio = CreatePortfolioWithFeatures();
 
             var subject = CreateSubject();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_NoMappings_DoesNotCallWriteBackService()
+        public void ResolveFeatureWriteBackForPortfolio_NoMappings_ResolvesNothing()
         {
             var portfolio = CreatePortfolioWithFeatures();
 
             var subject = CreateSubject();
 
-            await subject.TriggerFeatureWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_NoPortfolioLevelMappings_DoesNotCallWriteBackService()
+        public void ResolveFeatureWriteBackForPortfolio_NoPortfolioLevelMappings_ResolvesNothing()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -275,15 +250,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerFeatureWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_NotPremiumLicense_DoesNotCallWriteBackService()
+        public void ResolveFeatureWriteBackForPortfolio_NotPremiumLicense_ResolvesNothing()
         {
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
@@ -291,17 +264,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
 
+            // See the team case: an empty Portfolio makes this assertion true for the wrong reason.
+            portfolio.Features.Add(CreateFeature("F-1", StateCategories.Doing, new Team { Id = 1, Name = "Team 1" }, remainingItems: 5, totalItems: 10));
+
             var subject = CreateSubject();
 
-            await subject.TriggerFeatureWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_NotPremiumLicense_DoesNotCallWriteBackService()
+        public void ResolveForecastWriteBackForPortfolio_NotPremiumLicense_ResolvesNothing()
         {
             licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
 
@@ -309,17 +283,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
                 CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
 
+            // See the team case: an empty Portfolio makes this assertion true for the wrong reason.
+            portfolio.Features.Add(CreateFeatureWithForecast("F-1", StateCategories.Doing, new Team { Id = 1, Name = "Team 1" }, daysAt85: 20));
+
             var subject = CreateSubject();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_FeatureSize_WritesAllFeatures()
+        public void ResolveFeatureWriteBackForPortfolio_FeatureSize_WritesAllFeatures()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -333,20 +308,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerFeatureWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    portfolio.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 2 &&
                         updates.Any(u => u.WorkItemId == "F-1" && u.Value == "10") &&
-                        updates.Any(u => u.WorkItemId == "F-2" && u.Value == "8"))),
-                Times.Once);
+                        updates.Any(u => u.WorkItemId == "F-2" && u.Value == "8"));
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_ForecastPercentile_WritesDateForOpenFeatures()
+        public void ResolveForecastWriteBackForPortfolio_ForecastPercentile_WritesDateForOpenFeatures()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -360,23 +331,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
             const string expectedDate = "2026-03-24";
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    portfolio.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "F-10" &&
                         updates[0].TargetFieldReference == "Custom.Forecast85" &&
-                        updates[0].Value == expectedDate)),
-                Times.Once);
+                        updates[0].Value == expectedDate);
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_ForecastAsFormattedText_UsesDateFormat()
+        public void ResolveForecastWriteBackForPortfolio_ForecastAsFormattedText_UsesDateFormat()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -388,21 +355,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
             const string expectedDate = "03/20/2026";
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    portfolio.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
-                        updates[0].Value == expectedDate)),
-                Times.Once);
+                        updates[0].Value == expectedDate);
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_ForecastNotAvailable_SkipsFeature()
+        public void ResolveForecastWriteBackForPortfolio_ForecastNotAvailable_SkipsFeature()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -414,15 +377,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
-                Times.Never);
+            Assert.That(plan, Is.Empty);
         }
 
         [Test]
-        public void TriggerFeatureWriteBackForPortfolio_ExceptionOccurs_DoesNotThrow()
+        public void ResolveFeatureWriteBackForPortfolio_ExceptionOccurs_DoesNotThrow()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -432,17 +393,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var feature = CreateFeature("F-40", StateCategories.Doing, team, remainingItems: 3, totalItems: 7);
             portfolio.Features.Add(feature);
 
-            writeBackServiceMock
-                .Setup(w => w.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .ThrowsAsync(new InvalidOperationException("Connection failed"));
+            // Resolution no longer performs I/O of its own, so the failure has to come from something it
+            // still reads. The promise is unchanged: a broken read must not take the refresh down with it.
+            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Throws(new InvalidOperationException("Licence check unavailable"));
 
             var subject = CreateSubject();
 
-            Assert.DoesNotThrowAsync(async () => await subject.TriggerFeatureWriteBackForPortfolio(portfolio));
+            Assert.DoesNotThrow(() => subject.ResolveFeatureWriteBackForPortfolio(portfolio));
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_OnlyWritesNonForecastMappings()
+        public void ResolveFeatureWriteBackForPortfolio_OnlyWritesNonForecastMappings()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -456,20 +417,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerFeatureWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    portfolio.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
                         updates[0].TargetFieldReference == "Custom.Size" &&
-                        updates[0].Value == "12")),
-                Times.Once);
+                        updates[0].Value == "12");
         }
 
         [Test]
-        public async Task TriggerForecastWriteBackForPortfolio_OnlyWritesForecastMappings()
+        public void ResolveForecastWriteBackForPortfolio_OnlyWritesForecastMappings()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -483,19 +440,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    portfolio.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
-                        updates[0].TargetFieldReference == "Custom.Forecast85")),
-                Times.Once);
+                        updates[0].TargetFieldReference == "Custom.Forecast85");
         }
 
         [Test]
-        public void TriggerWriteBackForTeam_NullConnection_DoesNotThrow()
+        public void ResolveWriteBackForTeam_NullConnection_DoesNotThrow()
         {
             var team = new Team
             {
@@ -506,11 +459,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            Assert.DoesNotThrowAsync(async () => await subject.TriggerWriteBackForTeam(team));
+            Assert.DoesNotThrow(() => subject.ResolveWriteBackForTeam(team));
         }
 
         [Test]
-        public void TriggerFeatureWriteBackForPortfolio_NullConnection_DoesNotThrow()
+        public void ResolveFeatureWriteBackForPortfolio_NullConnection_DoesNotThrow()
         {
             var portfolio = new Portfolio
             {
@@ -521,11 +474,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            Assert.DoesNotThrowAsync(async () => await subject.TriggerFeatureWriteBackForPortfolio(portfolio));
+            Assert.DoesNotThrow(() => subject.ResolveFeatureWriteBackForPortfolio(portfolio));
         }
 
         [Test]
-        public void TriggerForecastWriteBackForPortfolio_NullConnection_DoesNotThrow()
+        public void ResolveForecastWriteBackForPortfolio_NullConnection_DoesNotThrow()
         {
             var portfolio = new Portfolio
             {
@@ -536,11 +489,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            Assert.DoesNotThrowAsync(async () => await subject.TriggerForecastWriteBackForPortfolio(portfolio));
+            Assert.DoesNotThrow(() => subject.ResolveForecastWriteBackForPortfolio(portfolio));
         }
 
         [Test]
-        public async Task TriggerFeatureWriteBackForPortfolio_WorkItemAge_WritesForDoingFeatures()
+        public void ResolveFeatureWriteBackForPortfolio_WorkItemAge_WritesForDoingFeatures()
         {
             var portfolio = CreatePortfolioWithFeatures();
             portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -555,20 +508,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerFeatureWriteBackForPortfolio(portfolio);
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
 
-            writeBackServiceMock.Verify(
-                w => w.WriteFieldsToWorkItems(
-                    portfolio.WorkTrackingSystemConnection,
-                    It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates =>
+            AssertPlanned(plan, updates =>
                         updates.Count == 1 &&
                         updates[0].WorkItemId == "F-60" &&
-                        updates[0].Value == "9")),
-                Times.Once);
+                        updates[0].Value == "9");
         }
 
         [Test]
-        public async Task TriggerWriteBackForTeam_LogsStartAndCompletion()
+        public void ResolveWriteBackForTeam_LogsStartAndCompletion()
         {
             var team = CreateTeamWithWorkItems();
             team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
@@ -579,7 +528,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var subject = CreateSubject();
 
-            await subject.TriggerWriteBackForTeam(team);
+            var plan = subject.ResolveWriteBackForTeam(team);
 
             var infoInvocations = loggerMock.Invocations
                 .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
@@ -588,10 +537,212 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(infoInvocations, Has.Count.GreaterThanOrEqualTo(1));
         }
 
+        [Test]
+        public void ResolveWriteBackForTeam_MappingWhoseFieldNeverResolved_IsSkippedWithAWarning()
+        {
+            var team = CreateTeamWithWorkItems();
+            team.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(UnresolvedMapping(WriteBackAppliesTo.Team));
+
+            SetupWorkItemsForTeam(team.Id, [CreateWorkItem("101", StateCategories.Doing, team, startedDate: FixedNowUtc.AddDays(-5))]);
+
+            var plan = CreateSubject().ResolveWriteBackForTeam(team);
+
+            Assert.That(plan, Is.Empty,
+                "A mapping whose field the connection no longer defines has nowhere to write; skipping it beats guessing.");
+            AssertWarningLoggedContaining("AdditionalFieldDefinition is not resolved");
+        }
+
+        [Test]
+        public void ResolveFeatureWriteBackForPortfolio_MappingWhoseFieldNeverResolved_IsSkippedWithAWarning()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(UnresolvedMapping(WriteBackAppliesTo.Portfolio));
+            portfolio.Features.Add(CreateFeature("F-90", StateCategories.Doing, new Team { Id = 1, Name = "Team 1" }, remainingItems: 5, totalItems: 10));
+
+            var plan = CreateSubject().ResolveFeatureWriteBackForPortfolio(portfolio);
+
+            Assert.That(plan, Is.Empty);
+            AssertWarningLoggedContaining("AdditionalFieldDefinition is not resolved");
+        }
+
+        /// <summary>
+        /// A mapping that outlived the field it pointed at — the shape left behind when an additional
+        /// field is removed from the connection but the mapping row is not.
+        /// </summary>
+        private static WriteBackMappingDefinition UnresolvedMapping(WriteBackAppliesTo appliesTo) => new()
+        {
+            ValueSource = appliesTo == WriteBackAppliesTo.Team
+                ? WriteBackValueSource.WorkItemAgeCycleTime
+                : WriteBackValueSource.FeatureSize,
+            AppliesTo = appliesTo,
+            AdditionalFieldDefinitionId = 4242,
+            AdditionalFieldDefinition = null,
+            TargetValueType = WriteBackTargetValueType.Date,
+        };
+
+        private void AssertWarningLoggedContaining(string expected)
+        {
+            var warnings = loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Warning)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
+
+            Assert.That(warnings, Has.One.Contains(expected));
+        }
+
+        [Test]
+        public void ResolveFeatureWriteBackForPortfolio_SaysWhichPassItRan()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
+
+            CreateSubject().ResolveFeatureWriteBackForPortfolio(portfolio);
+
+            // A Portfolio refresh runs two passes over the same items. The log is where an operator
+            // tells them apart, so naming the wrong one is a real defect rather than a typo.
+            AssertInformationLoggedContaining("feature write-back for portfolio");
+        }
+
+        [Test]
+        public void ResolveForecastWriteBackForPortfolio_SaysWhichPassItRan()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85", WriteBackTargetValueType.Date));
+
+            CreateSubject().ResolveForecastWriteBackForPortfolio(portfolio);
+
+            AssertInformationLoggedContaining("forecast write-back for portfolio");
+        }
+
+        private void AssertInformationLoggedContaining(string expected)
+        {
+            var messages = loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
+
+            Assert.That(messages, Has.One.Contains(expected));
+        }
+
+        [Test]
+        public void ResolveWriteBackForTeam_NoMappings_NeverAsksTheRepositoryForWorkItems()
+        {
+            var team = CreateTeamWithWorkItems();
+
+            var subject = CreateSubject();
+
+            subject.ResolveWriteBackForTeam(team);
+
+            workItemRepositoryMock.Verify(
+                r => r.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()),
+                Times.Never,
+                "A connection with no team-level mapping has nothing to write back, so it must not cost a query.");
+        }
+
+        [Test]
+        public void ResolveFeatureWriteBackForPortfolio_WorkItemAgeCycleTime_WritesCycleTimeForDoneFeatures()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.WorkItemAgeCycleTime, WriteBackAppliesTo.Portfolio, "Custom.CycleTime"));
+
+            var team = new Team { Id = 1, Name = "Team 1" };
+            var doneFeature = CreateFeature("F-70", StateCategories.Done, team, remainingItems: 0, totalItems: 5,
+                startedDate: FixedNowUtc.AddDays(-6), closedDate: FixedNowUtc);
+            portfolio.Features.Add(doneFeature);
+
+            var subject = CreateSubject();
+
+            var plan = subject.ResolveFeatureWriteBackForPortfolio(portfolio);
+
+            AssertPlanned(plan, updates =>
+                updates.Count == 1 &&
+                updates[0].WorkItemId == "F-70" &&
+                updates[0].Value == doneFeature.CycleTime(TestToday.Zone).ToString());
+        }
+
+        [Test]
+        public void ResolveForecastWriteBackForPortfolio_DateTargetCarryingAFormat_StillWritesTheIsoDate()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            // A Date mapping that also carries a format: only FormattedText may honour it, so a build
+            // that reads either half of that condition on its own writes the wrong string.
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85",
+                    WriteBackTargetValueType.Date, dateFormat: "dd/MM/yyyy"));
+
+            var team = new Team { Id = 1, Name = "Team 1" };
+            portfolio.Features.Add(CreateFeatureWithForecast("F-80", StateCategories.Doing, team, daysAt85: 20));
+
+            var subject = CreateSubject();
+
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
+
+            AssertPlanned(plan, updates =>
+                updates.Count == 1 &&
+                updates[0].Value == FixedNowUtc.Date.AddDays(20).ToString("yyyy-MM-dd"));
+        }
+
+        [Test]
+        public void ResolveForecastWriteBackForPortfolio_FormattedTextCarryingAFormat_WritesThatFormat()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.ForecastPercentile85, WriteBackAppliesTo.Portfolio, "Custom.Forecast85",
+                    WriteBackTargetValueType.FormattedText, dateFormat: "dd/MM/yyyy"));
+
+            var team = new Team { Id = 1, Name = "Team 1" };
+            portfolio.Features.Add(CreateFeatureWithForecast("F-81", StateCategories.Doing, team, daysAt85: 20));
+
+            var subject = CreateSubject();
+
+            var plan = subject.ResolveForecastWriteBackForPortfolio(portfolio);
+
+            AssertPlanned(plan, updates =>
+                updates.Count == 1 &&
+                updates[0].Value == FixedNowUtc.Date.AddDays(20).ToString("dd/MM/yyyy"));
+        }
+
+        [Test]
+        public void ResolveFeatureWriteBackForPortfolio_ExceptionOccurs_LogsWhichPortfolioFailed()
+        {
+            var portfolio = CreatePortfolioWithFeatures();
+            portfolio.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(
+                CreateMapping(WriteBackValueSource.FeatureSize, WriteBackAppliesTo.Portfolio, "Custom.Size"));
+
+            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Throws(new InvalidOperationException("Licence check unavailable"));
+
+            var subject = CreateSubject();
+
+            subject.ResolveFeatureWriteBackForPortfolio(portfolio);
+
+            AssertSingleErrorLoggedContaining("Write-back resolution failed for portfolio");
+        }
+
+        /// <summary>
+        /// The swallowed failure leaves no trace but this line, so the line is the contract.
+        /// </summary>
+        private void AssertSingleErrorLoggedContaining(string expected)
+        {
+            var errorInvocations = loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
+                .ToList();
+
+            Assert.That(errorInvocations, Has.Count.EqualTo(1));
+            Assert.That(errorInvocations[0].Arguments[2]?.ToString(), Does.Contain(expected));
+        }
+
+        private static void AssertPlanned(
+            IReadOnlyList<WriteBackFieldUpdate> plan,
+            Func<IReadOnlyList<WriteBackFieldUpdate>, bool> expectation)
+        {
+            Assert.That(expectation(plan), Is.True,
+                $"Resolved plan did not match: [{string.Join(", ", plan.Select(u => $"{u.WorkItemId}/{u.TargetFieldReference}={u.Value}"))}]");
+        }
+
         private WriteBackTriggerService CreateSubject()
         {
             return new WriteBackTriggerService(
-                writeBackServiceMock.Object,
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,

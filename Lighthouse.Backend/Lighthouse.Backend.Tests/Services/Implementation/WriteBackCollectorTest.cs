@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     /// </summary>
     public class WriteBackCollectorTest
     {
-        private const string RedScaffold = "RED - Epic 5500 slice 01 (write-back collection seam) not implemented";
         private const string FieldReference = "customfield_10042";
 
         private Mock<IWriteBackService> writeBackServiceMock;
@@ -41,7 +40,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore(RedScaffold)]
         public void Stage_DoesNotWriteAnything()
         {
             var subject = CreateSubject();
@@ -56,7 +54,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // AC-04.2 - the same field resolved by more than one pass produces exactly one write.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task Stage_SameFieldTwice_FlushWritesItOnceCarryingTheLaterValue()
         {
             var connection = Connection(1);
@@ -76,7 +73,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // AC-04.3 at the seam: an execution that staged nothing costs a dictionary-count check.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task FlushAsync_NothingStaged_WritesNothing()
         {
             var subject = CreateSubject();
@@ -90,7 +86,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore(RedScaffold)]
         public async Task FlushAsync_TwoConnections_WritesOncePerConnection()
         {
             var first = Connection(1);
@@ -108,7 +103,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         // AC-04.5 - per-item semantics reach the caller unchanged.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task FlushAsync_ReportsEachItemResultVerbatim()
         {
             var connection = Connection(1);
@@ -137,7 +131,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore(RedScaffold)]
         public async Task FlushAsync_CalledTwice_DoesNotRewriteWhatItAlreadyWrote()
         {
             var connection = Connection(1);

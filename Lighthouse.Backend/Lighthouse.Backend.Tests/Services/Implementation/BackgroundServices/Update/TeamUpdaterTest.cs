@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
+        private Mock<ILogger<TeamUpdater>> loggerMock;
 
         private int idCounter = 0;
 
@@ -32,6 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             teamDataServiceMock = new Mock<ITeamDataService>();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
+            loggerMock = new Mock<ILogger<TeamUpdater>>();
 
             SetupServiceProviderMock(teamRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
@@ -130,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await subject.StartAsync(CancellationToken.None);
 
-            await WaitUntilVerified(() => writeBackTriggerServiceMock.Verify(x => x.TriggerWriteBackForTeam(team), Times.Once));
+            await WaitUntilVerified(() => writeBackTriggerServiceMock.Verify(x => x.ResolveWriteBackForTeam(team), Times.Once));
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)
@@ -163,9 +165,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             };
         }
 
+        [Test]
+        public void TriggerUpdate_TheWriteBackFlushThrows_LogsItAndStillFinishes()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+
+            WriteBackCollectorMock
+                .Setup(c => c.FlushAsync())
+                .ThrowsAsync(new InvalidOperationException("The tracker is unreachable"));
+
+            var subject = CreateSubject();
+
+            Assert.DoesNotThrow(() => subject.TriggerUpdate(team.Id));
+
+            var errors = loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
+
+            Assert.That(errors, Has.One.Contains("Write-back flush failed"),
+                "The flush is the last thing an update does; a failure there must be visible and must not fail the round.");
+        }
+
         private TeamUpdater CreateSubject()
         {
-            return new TeamUpdater(Mock.Of<ILogger<TeamUpdater>>(), ServiceScopeFactory, UpdateQueueService);
+            return new TeamUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService);
         }
     }
 }

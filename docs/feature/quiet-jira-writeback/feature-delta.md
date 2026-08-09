@@ -1044,3 +1044,125 @@ the flush in `UpdateServiceBase.TriggerUpdate`'s `finally`, then D-A7-R in `Writ
 `GetChangedFields` must keep taking the first match on a duplicate `ReferenceId` (UI-4, D-A6).
 **Paradigm:** object-oriented, ports-and-adapters, per `CLAUDE.md`.
 **Blocking on the user:** nothing.
+
+---
+
+## Wave: DELIVER / [REF] Implementation summary
+
+Slice 01 (US-04, #5502). Write-back stopped being something four call sites do and became something
+one update execution does once. `IWriteBackTriggerService` resolves a plan and performs no I/O — its
+three methods return `IReadOnlyList<WriteBackFieldUpdate>` and, having nothing left to await, are now
+synchronous. A scoped `IWriteBackCollector` stages those plans, deduplicating on
+`(connectionId, workItemId, targetFieldReference)` with the later stage winning, and
+`UpdateServiceBase.TriggerUpdate` flushes once in a `finally` — one site, inherited by every update
+type. `WriteBackService` gained three things: `ToLookup` item resolution (D-A6), an early return that
+skips the connector entirely when nothing changed (AC-04.3), and D-A7-R — a value the tracker accepted
+is written into the item's local `AdditionalFieldValues`, so the existing inequality guard sees the
+truth on the next pass and the cross-execution duplicate disappears by construction.
+
+Measured before and after on the same scenario (one Portfolio, one Feature, two mapped fields,
+followed by a coalesced forecast execution): **3 connector calls → 1**.
+
+---
+
+## Wave: DELIVER / [REF] Files modified
+
+**Production**
+
+| File | Change |
+|---|---|
+| `Services/Interfaces/IWriteBackTriggerService.cs` | Three methods return a plan, synchronously (ADR-144 D1) |
+| `Services/Implementation/WriteBackTriggerService.cs` | Resolver: no `IWriteBackService` dependency, no I/O |
+| `Services/Interfaces/IWriteBackCollector.cs` | New port — `Stage` / `FlushAsync` |
+| `Services/Implementation/WriteBackCollector.cs` | New: staging, dedup, one write per connection, terminal flush |
+| `Services/Implementation/WriteBackService.cs` | `ToLookup`; no connector call when nothing changed; D-A7-R persistence |
+| `.../BackgroundServices/Update/UpdateServiceBase.cs` | The single flush site, in `TriggerUpdate`'s `finally` |
+| `.../BackgroundServices/Update/{Portfolio,Forecast,Team}Updater.cs` | Stage instead of writing; explicit ordering preserved |
+| `Program.cs` | `AddScoped<IWriteBackCollector, WriteBackCollector>()` |
+
+**Tests** — the seven files DISTILL predicted, plus one it did not: `TestHelpers/UpdateServiceTestBase.cs`
+now registers a collector, so every updater test exercises the terminal flush instead of silently
+hitting the resolution failure the flush's own catch would swallow.
+
+---
+
+## Wave: DELIVER / [REF] Scenarios green
+
+All 20 DISTILL specifications green. Zero `__SCAFFOLD__` markers remain in production, and the four
+inline write call sites are **gone**, not deprecated alongside the new path.
+
+Full backend suite: **4625 passed, 0 failed, 0 skipped**.
+
+**Two assertions added beyond the DISTILL set**, both closing gaps DISTILL could not see:
+
+- **D-A7-R through the team path.** Work Items and Features are different tables behind one scoped
+  context. A persistence step that saved through one repository only would leave the team path
+  silently stale, and no DISTILL scenario would have noticed.
+- **The inbound-sync scenario was vacuous as written.** It asserted the tracker's value wins without
+  first establishing that write-back had persisted anything, so it passed before D-A7-R existed. It
+  now asserts the local copy was brought up to date first.
+
+Mutation testing then added fourteen more — see `mutation/results.md`.
+
+---
+
+## Wave: DELIVER / [REF] DoD check
+
+| Item | Status |
+|---|---|
+| `dotnet build` zero warnings | PASS (`TreatWarningsAsErrors`) |
+| `dotnet test` all green | PASS — 4625 / 0 / 0 |
+| Frontend gates | **N/A, because** slice 01 changes no frontend file |
+| Mutation ≥ 80 % backend | PASS — **81.62 %** (`mutation/results.md`) |
+| Mutation frontend | **N/A, because** no frontend file changed |
+| Docs + screenshots | **N/A, because** slice 01 has no user-visible surface: no endpoint, no component, no copy. The epic's first is slice 05's panel |
+| E2E | **N/A, because** the observable is how many times a background refresh talks to the tracker, which no browser can watch |
+| Terminology | **N/A, because** no user-facing string was added |
+| RBAC impact | **None** — no new endpoint, no new permission |
+| Lighthouse-Clients (CLI / MCP) | **None** — no API contract change |
+| Website marketing surface | **N/A, because** nothing user-visible shipped |
+
+---
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Outcome |
+|---|---|
+| Refactor (L1-L6) | Applied: item resolution computed once and carried as a `PendingWrite` instead of resolved twice; field map derived once per flush; redundant `Distinct()` after `Union` removed |
+| Adversarial review (`nw-software-crafter-reviewer`) | **Approved** — 0 blockers, 0 high, 1 medium, applied |
+| Mutation (`per-feature`) | **81.62 %**, gate is 80 % |
+| Design compliance | No file created outside the DESIGN Component Decomposition table |
+| Wave completion | Zero `__SCAFFOLD__` markers; no superseded path left coexisting |
+
+**Reviewer finding (medium), applied.** `FlushAsync` grouped staged intents by connection id but took
+the connection object from `group.First()` — an arbitrary pick if two instances ever shared an id. The
+reviewer proposed throwing on that case; that trades a benign situation for a crash. The applied fix
+makes the choice deterministic under the rule the collector already uses everywhere else: a
+`connectionsById` map where the last stage wins, exactly as the update itself does.
+
+**What mutation testing was actually worth here.** Two of its findings were latent defects in the
+*tests*, not gaps in the score. All three premium-licence tests asserted an empty plan against a Team
+or Portfolio with nothing seeded, so they passed whether or not the gate fired — the licence gate for
+write-back was effectively untested, and had been since it was written. And `ResolveFeatureValue`'s
+cycle-time arm had no test at all; only its Team twin did. Neither would have been found by reading
+the diff.
+
+---
+
+## Wave: DELIVER / [REF] Deviations from DESIGN
+
+**The resolver kept a try/catch.** ADR-144 D1 says resolution has "nothing to swallow". True of the
+I/O it performs — it performs none — but it still *reads* repositories and the blackout calendar, and
+today a failing Features pass does not stop the forecast pass from running. Removing the guard would
+have changed that quietly. The guard stays, returns an empty plan, and logs; the two exception tests
+now throw from a dependency the resolver actually uses. Recorded rather than treated as an
+implementation detail, because it is the one place the code says something the ADR does not.
+
+---
+
+## Wave: DELIVER / [REF] Pre-requisites
+
+- DISTILL's 20 specifications and their red-classification (all MISSING_FUNCTIONALITY, no wrong-reason
+  failures) — the contract this wave made green.
+- DESIGN's Component Decomposition and ADR-144 — implemented as written apart from the deviation above.
+- Nothing from DEVOPS: the wave was skipped for this epic (UI-5).

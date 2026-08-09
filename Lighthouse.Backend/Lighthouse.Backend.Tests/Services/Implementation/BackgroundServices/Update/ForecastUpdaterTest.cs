@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(portfolio), Times.Once);
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(portfolio), Times.Once);
         }
 
         [Test]
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(1);
 
-            writeBackTriggerServiceMock.Verify(x => x.TriggerForecastWriteBackForPortfolio(It.IsAny<Portfolio>()), Times.Never);
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(It.IsAny<Portfolio>()), Times.Never);
         }
 
         [Test]
@@ -125,9 +125,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             var dispatchSequence = new List<string>();
             writeBackTriggerServiceMock
-                .Setup(x => x.TriggerForecastWriteBackForPortfolio(portfolio))
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
                 .Callback(() => dispatchSequence.Add("forecastWriteBack"))
-                .Returns(Task.CompletedTask);
+                .Returns([]);
             domainEventDispatcherMock
                 .Setup(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == portfolio.Id), It.IsAny<CancellationToken>()))
                 .Callback(() => dispatchSequence.Add("forecastsUpdatedEvent"))

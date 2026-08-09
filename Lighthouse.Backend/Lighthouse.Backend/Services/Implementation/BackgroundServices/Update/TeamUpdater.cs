@@ -51,7 +51,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 await teamDataService.UpdateTeamData(team);
 
                 var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-                await writeBackTriggerService.TriggerWriteBackForTeam(team);
+                serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
+                    team.WorkTrackingSystemConnection,
+                    writeBackTriggerService.ResolveWriteBackForTeam(team));
 
                 itemCount = team.WorkItems.Count;
                 success = true;

@@ -83,18 +83,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             => TheInboundSyncReports(referenceId, TheMappedFields().SizeFieldId, size);
 
         /// <summary>
-        /// Calls the resolver on its own, outside any update execution. After ADR-144 it returns a plan;
-        /// the promise this asserts - that resolving performs no I/O - is the same either way, which is
-        /// why the scenario does not name the return type.
+        /// Calls the resolver on its own, outside any update execution: resolving is not writing.
         /// </summary>
-        private async Task WhenTheWriteBackPlanForThePortfolioIsResolved(SeededPortfolio portfolio)
+        private void WhenTheWriteBackPlanForThePortfolioIsResolved(SeededPortfolio portfolio)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
 
             var entity = sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolio.Id)!;
 
-            await sp.GetRequiredService<IWriteBackTriggerService>().TriggerFeatureWriteBackForPortfolio(entity);
+            sp.GetRequiredService<IWriteBackTriggerService>().ResolveFeatureWriteBackForPortfolio(entity);
         }
 
         // --- Then ---
@@ -144,6 +142,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             => Assert.That(TheStoredValueOf(referenceId, TheMappedFields().SizeFieldId), Is.EqualTo(size),
                 "Without this the next assertion is vacuous: the tracker only gets the last word over a value write-back actually persisted (D-A7-R).");
 
+        /// <summary>
+        /// D-A7-R reaches Work Items, not only Features - the two live in different tables behind the
+        /// same context, and a persistence step that saved through one repository only would quietly
+        /// leave the team path stale.
+        /// </summary>
+        private void ThenTheStoredValueOfMatchesWhatWasWritten(string referenceId)
+        {
+            var written = ConnectorWrites.Single().Updates.Single(u => u.WorkItemId == referenceId);
+            var fieldId = TheMappedFieldNamed(FieldReference);
+
+            Assert.That(TheStoredValueOf(referenceId, fieldId), Is.EqualTo(written.Value));
+        }
+
         private void ThenTheStoredSizeOfIs(string referenceId, string size)
             => Assert.That(TheStoredValueOf(referenceId, TheMappedFields().SizeFieldId), Is.EqualTo(size));
 
@@ -155,17 +166,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         /// on that navigation would fail on a null reference instead of on its own assertion.
         /// </summary>
         private (int SizeFieldId, int ForecastFieldId) TheMappedFields()
+            => (TheMappedFieldNamed(FieldReference), TheMappedFieldNamed(ForecastFieldReference));
+
+        private int TheMappedFieldNamed(string reference)
         {
             using var scope = Factory.Services.CreateScope();
 
-            var fields = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>()
+            return scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>()
                 .GetAll()
                 .SelectMany(connection => connection.AdditionalFieldDefinitions)
-                .ToList();
-
-            return (
-                fields.First(f => f.Reference == FieldReference).Id,
-                fields.First(f => f.Reference == ForecastFieldReference).Id);
+                .First(field => field.Reference == reference)
+                .Id;
         }
 
         private string ForecastDateAfter(int workingDays)

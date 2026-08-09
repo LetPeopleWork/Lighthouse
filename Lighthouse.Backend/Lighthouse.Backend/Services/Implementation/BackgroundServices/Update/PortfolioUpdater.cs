@@ -76,12 +76,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
                     await deliveryRepository.Save();
 
+                    // Both passes stage into the same collector and reach the tracker once, in the flush
+                    // UpdateServiceBase runs at the end of this execution (ADR-144).
                     var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-                    await writeBackTriggerService.TriggerFeatureWriteBackForPortfolio(project);
+                    var writeBackCollector = serviceProvider.GetRequiredService<IWriteBackCollector>();
+
+                    writeBackCollector.Stage(
+                        project.WorkTrackingSystemConnection,
+                        writeBackTriggerService.ResolveFeatureWriteBackForPortfolio(project));
 
                     await forecastUpdateService.UpdateForecastsForPortfolio(project);
 
-                    await writeBackTriggerService.TriggerForecastWriteBackForPortfolio(project);
+                    writeBackCollector.Stage(
+                        project.WorkTrackingSystemConnection,
+                        writeBackTriggerService.ResolveForecastWriteBackForPortfolio(project));
 
                     await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(project.Id));
 

@@ -171,6 +171,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
 
             connectorMock.Verify(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()), Times.Never);
+            AssertInformationLoggedContaining("with 0 updates");
         }
 
         [Test]
@@ -419,6 +420,145 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             await service.WriteFieldsToWorkItems(connection, updates);
 
             connectorMock.Verify(c => c.WriteFieldsToWorkItems(connection, It.Is<IReadOnlyList<WriteBackFieldUpdate>>(u => u.Count == 1 && u[0].WorkItemId == "FWUP-3")), Times.Once);
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_TwoItemsShareAReference_WarnsNamingTheReference()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+
+            var update = CreateBackFieldUpdate("FWUP-9", "Custom.Age", "5", "3", connection);
+            AddItem("FWUP-9", connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id, "3");
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult { ItemResults = [] });
+
+            await CreateService().WriteFieldsToWorkItems(connection, [update]);
+
+            AssertWarningLoggedContaining("FWUP-9");
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_ReferenceIsUnique_DoesNotWarn()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var update = CreateBackFieldUpdate("FWUP-10", "Custom.Age", "5", "3", connection);
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult { ItemResults = [] });
+
+            await CreateService().WriteFieldsToWorkItems(connection, [update]);
+
+            Assert.That(WarningInvocations(), Is.Empty,
+                "Only a genuinely duplicated reference is worth a warning; one per write would be noise.");
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_NothingChanged_NeverReachesTheConnector()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            // Stored value equals the one the resolver produced, so there is nothing to say.
+            var update = CreateBackFieldUpdate("42", "Custom.Age", "5", "5", connection);
+
+            var result = await CreateService().WriteFieldsToWorkItems(connection, [update]);
+
+            connectorMock.Verify(
+                c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
+                Times.Never,
+                "AC-04.3: a cycle in which no mapped value changed makes no connector call at all - not an empty one.");
+            Assert.That(result.ItemResults, Is.Empty);
+
+            // The silence is the feature, so the log line is the only way an operator can tell it apart
+            // from a write-back that is broken.
+            AssertInformationLoggedContaining("No mapped value changed");
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_TheTrackerAcceptedTheWrite_StoresTheWrittenValueLocally()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var update = CreateBackFieldUpdate("42", "Custom.Age", "5", "3", connection);
+            var fieldId = connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id;
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult
+                {
+                    ItemResults = [new WriteBackItemResult { WorkItemId = "42", TargetFieldReference = "Custom.Age", Success = true }]
+                });
+
+            await CreateService().WriteFieldsToWorkItems(connection, [update]);
+
+            Assert.That(workItems.Single().AdditionalFieldValues[fieldId], Is.EqualTo("5"));
+            workItemRepositoryMock.Verify(r => r.Save(), Times.Never);
+            featureRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_TheTrackerRefusedEveryField_SavesNothing()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            var update = CreateBackFieldUpdate("42", "Custom.Age", "5", "3", connection);
+            var fieldId = connection.AdditionalFieldDefinitions.Single(f => f.Reference == "Custom.Age").Id;
+
+            connectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(connection, It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult
+                {
+                    ItemResults = [new WriteBackItemResult { WorkItemId = "42", TargetFieldReference = "Custom.Age", Success = false, ErrorMessage = "Field is not on the screen" }]
+                });
+
+            await CreateService().WriteFieldsToWorkItems(connection, [update]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems.Single().AdditionalFieldValues[fieldId], Is.EqualTo("3"),
+                    "The local copy may lag the tracker; it may never lead it.");
+                Assert.That(featureRepositoryMock.Invocations.Count(i => i.Method.Name == nameof(IRepository<Feature>.Save)), Is.Zero,
+                    "Nothing was accepted, so there is nothing to write down - and no reason to touch the database.");
+            }
+        }
+
+        [Test]
+        public async Task WriteFieldsToWorkItems_UpdateNamesAnItemLighthouseDoesNotHold_NeverReachesTheConnector()
+        {
+            var connection = CreateConnection(WorkTrackingSystems.AzureDevOps);
+            AddAdditionalField(connection, "Custom.Age");
+
+            // No AddItem: the plan names a reference that has since left the instance, which is what a
+            // refresh that removed an item mid-cycle leaves behind.
+            var update = new WriteBackFieldUpdate { WorkItemId = "GONE-1", TargetFieldReference = "Custom.Age", Value = "5" };
+
+            var result = await CreateService().WriteFieldsToWorkItems(connection, [update]);
+
+            connectorMock.Verify(
+                c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
+                Times.Never);
+            Assert.That(result.ItemResults, Is.Empty);
+        }
+
+        private void AssertInformationLoggedContaining(string expected)
+        {
+            var messages = loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty);
+
+            Assert.That(messages, Has.One.Contains(expected));
+        }
+
+        private List<string> WarningInvocations()
+            => [.. loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Warning)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)];
+
+        private void AssertWarningLoggedContaining(string expected)
+        {
+            var warnings = WarningInvocations();
+
+            Assert.That(warnings, Has.Count.EqualTo(1));
+            Assert.That(warnings[0], Does.Contain(expected));
         }
 
         private WriteBackFieldUpdate CreateBackFieldUpdate(string workItemReference, string targetFieldReference, string? newValue, string? oldValue, WorkTrackingSystemConnection connection, bool isFeature = false)

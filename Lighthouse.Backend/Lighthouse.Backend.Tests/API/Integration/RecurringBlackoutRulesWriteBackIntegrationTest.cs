@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient client = null!;
-        private Mock<IWriteBackService> writeBackServiceMock = null!;
         private Mock<ILicenseService> licenseServiceMock = null!;
         private List<WriteBackFieldUpdate> capturedUpdates = null!;
 
@@ -40,11 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rootFactory = new TestWebApplicationFactory<Program>();
 
             capturedUpdates = [];
-            writeBackServiceMock = new Mock<IWriteBackService>();
-            writeBackServiceMock
-                .Setup(s => s.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .Callback((WorkTrackingSystemConnection _, IReadOnlyList<WriteBackFieldUpdate> updates) => capturedUpdates.AddRange(updates))
-                .ReturnsAsync(new WriteBackResult());
 
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -54,8 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 {
                     builder.ConfigureServices(services =>
                     {
-                        services.RemoveAll<IWriteBackService>();
-                        services.AddScoped(_ => writeBackServiceMock.Object);
                         services.RemoveAll<ITeamMetricsService>();
                         services.AddScoped(_ => Mock.Of<ITeamMetricsService>());
                         services.RemoveAll<IPortfolioMetricsService>();
@@ -94,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             await ConfigureRecurringRuleCovering(firstBlackoutDay, secondBlackoutDay);
 
             var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
-            await TriggerWriteBack(portfolio);
+            ResolveWriteBack(portfolio);
 
             var written = capturedUpdates.Single().Value;
             Assert.That(written, Is.EqualTo(Today.AddDays(12).ToString("yyyy-MM-dd")));
@@ -107,13 +99,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var secondBlackoutDay = DateOnly.FromDateTime(Today.AddDays(4));
 
             ConfigureOneOffBlackoutPeriod(firstBlackoutDay, secondBlackoutDay);
-            await TriggerWriteBack(PortfolioWithForecastedFeature(WorkingDaysToCompletion));
+            ResolveWriteBack(PortfolioWithForecastedFeature(WorkingDaysToCompletion));
             var oneOffWritten = capturedUpdates.Single().Value;
 
             capturedUpdates.Clear();
             RemoveAllOneOffPeriods();
             await ConfigureRecurringRuleCovering(firstBlackoutDay, secondBlackoutDay);
-            await TriggerWriteBack(PortfolioWithForecastedFeature(WorkingDaysToCompletion));
+            ResolveWriteBack(PortfolioWithForecastedFeature(WorkingDaysToCompletion));
             var recurringWritten = capturedUpdates.Single().Value;
 
             Assert.That(recurringWritten, Is.EqualTo(oneOffWritten),
@@ -123,17 +115,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task TriggerForecastWriteBack_NoRecurringRulesAndNoOneOffPeriods_WritesTheUnchangedDate()
         {
-            await TriggerWriteBack(PortfolioWithForecastedFeature(WorkingDaysToCompletion));
+            ResolveWriteBack(PortfolioWithForecastedFeature(WorkingDaysToCompletion));
 
             var written = capturedUpdates.Single().Value;
             Assert.That(written, Is.EqualTo(Today.AddDays(WorkingDaysToCompletion).ToString("yyyy-MM-dd")));
         }
 
-        private async Task TriggerWriteBack(Portfolio portfolio)
+        private void ResolveWriteBack(Portfolio portfolio)
         {
             using var scope = factory.Services.CreateScope();
             var subject = scope.ServiceProvider.GetRequiredService<IWriteBackTriggerService>();
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            capturedUpdates.AddRange(subject.ResolveForecastWriteBackForPortfolio(portfolio));
         }
 
         private async Task ConfigureRecurringRuleCovering(DateOnly firstDay, DateOnly secondDay)

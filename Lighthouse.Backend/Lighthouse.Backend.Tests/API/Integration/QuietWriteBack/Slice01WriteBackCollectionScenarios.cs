@@ -14,12 +14,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
     [Category("slice-01")]
     public partial class Slice01WriteBackCollectionTest
     {
-        private const string RedScaffold = "RED - Epic 5500 slice 01 (write-back collection seam) not implemented";
 
         // @walking_skeleton @driving_port @real-io @AC-04.1a
         // Today this refresh talks to the tracker twice - once after features, once after forecasts.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task One_scheduled_refresh_of_a_portfolio_reaches_the_tracker_once()
         {
             var portfolio = GivenAPortfolioWhoseSizeAndForecastAreWrittenBack();
@@ -34,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
         // @driving_port @AC-04.1b - the residue ADR-144 closes by making the stored copy true
         [Test]
-        [Ignore(RedScaffold)]
         public async Task A_value_written_in_one_execution_is_not_written_again_by_the_next()
         {
             var portfolio = GivenAPortfolioWhoseSizeAndForecastAreWrittenBack();
@@ -49,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
         // @error @driving_port @AC-04.3 - the D8 no-op guard, preserved
         [Test]
-        [Ignore(RedScaffold)]
         public async Task A_refresh_in_which_nothing_changed_never_reaches_the_tracker()
         {
             var portfolio = GivenAPortfolioWhoseSizeAndForecastAreWrittenBack();
@@ -65,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         // construction. That the Azure DevOps adapter still asks for silence is asserted where the flag
         // is observable: AzureDevOpsWriteBackTest.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task An_azure_devops_portfolio_flushes_through_the_same_seam()
         {
             var portfolio = GivenAnAzureDevOpsPortfolioWhoseSizeAndForecastAreWrittenBack();
@@ -105,12 +100,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             await WhenTheScheduledTeamRefreshRuns(team);
 
             ThenTheTrackerWasWrittenTo(times: 1);
+            ThenTheStoredValueOfMatchesWhatWasWritten("STORY-1");
         }
 
         // @error @driving_port - the first bound on the D11 exception: the local copy may lag reality,
         // it may never lead it.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task A_write_the_tracker_refused_never_updates_the_local_copy()
         {
             var portfolio = GivenAPortfolioWhoseSizeAndForecastAreWrittenBack();
@@ -127,7 +122,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         // @driving_port - the third bound: inbound sync still wins, so an apparent success that did not
         // take effect self-corrects within one cycle.
         [Test]
-        [Ignore(RedScaffold)]
         public async Task The_next_inbound_sync_still_overrides_a_locally_persisted_value()
         {
             var portfolio = GivenAPortfolioWhoseSizeAndForecastAreWrittenBack();
@@ -160,13 +154,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
         // @driving_port - ADR-144's first decision, asserted from the outside: resolving is not writing.
         [Test]
-        [Ignore(RedScaffold)]
-        public async Task Resolving_a_portfolios_write_back_plan_never_reaches_the_tracker()
+        public void Resolving_a_portfolios_write_back_plan_never_reaches_the_tracker()
         {
             var portfolio = GivenAPortfolioWhoseSizeAndForecastAreWrittenBack();
             GivenAFeatureWhoseStoredSizeAndForecastAreBothOutOfDate(portfolio, "PROJ-1", size: 5);
 
-            await WhenTheWriteBackPlanForThePortfolioIsResolved(portfolio);
+            WhenTheWriteBackPlanForThePortfolioIsResolved(portfolio);
 
             ThenTheTrackerWasNeverWrittenTo();
         }

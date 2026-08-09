@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private const int WorkingDaysToCompletion = 10;
         private const string FieldReference = "customfield_forecast";
 
-        private Mock<IWriteBackService> writeBackServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
@@ -35,7 +34,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [SetUp]
         public void SetUp()
         {
-            writeBackServiceMock = new Mock<IWriteBackService>();
             licenseServiceMock = new Mock<ILicenseService>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
@@ -46,13 +44,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 .Returns([]);
 
             capturedUpdates = [];
-            writeBackServiceMock
-                .Setup(s => s.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .Callback((WorkTrackingSystemConnection _, IReadOnlyList<WriteBackFieldUpdate> updates) => capturedUpdates.AddRange(updates))
-                .ReturnsAsync(new WriteBackResult());
 
             subject = new WriteBackTriggerService(
-                writeBackServiceMock.Object,
                 licenseServiceMock.Object,
                 workItemRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
@@ -68,48 +61,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task TriggerForecastWriteBack_FeatureWithFutureBlackoutDays_WritesTheShiftedDate()
+        public void ForecastWriteBackPlan_FeatureWithFutureBlackoutDays_WritesTheShiftedDate()
         {
             ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(3)), DateOnly.FromDateTime(Today.AddDays(4)));
             var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            capturedUpdates = [.. subject.ResolveForecastWriteBackForPortfolio(portfolio)];
 
             var written = capturedUpdates.Single().Value;
             Assert.That(written, Is.EqualTo("2026-03-22"));
         }
 
         [Test]
-        public async Task TriggerForecastWriteBack_FeatureWithNoBlackoutPeriods_WritesTheUnchangedDate()
+        public void ForecastWriteBackPlan_FeatureWithNoBlackoutPeriods_WritesTheUnchangedDate()
         {
             var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            capturedUpdates = [.. subject.ResolveForecastWriteBackForPortfolio(portfolio)];
 
             var written = capturedUpdates.Single().Value;
             Assert.That(written, Is.EqualTo("2026-03-20"));
         }
 
         [Test]
-        public async Task TriggerForecastWriteBack_ForecastCompletesInZeroDays_WritesTodayDespiteFutureBlackout()
+        public void ForecastWriteBackPlan_ForecastCompletesInZeroDays_WritesTodayDespiteFutureBlackout()
         {
             ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(1)), DateOnly.FromDateTime(Today.AddDays(2)));
             var portfolio = PortfolioWithForecastedFeature(0);
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            capturedUpdates = [.. subject.ResolveForecastWriteBackForPortfolio(portfolio)];
 
             var written = capturedUpdates.Single().Value;
             Assert.That(written, Is.EqualTo("2026-03-10"));
         }
 
         [Test]
-        public async Task TriggerForecastWriteBack_HistoricalAndFutureBlackoutBothConfigured_DaysValueUnchangedAndDateShiftedExactlyOnce()
+        public void ForecastWriteBackPlan_HistoricalAndFutureBlackoutBothConfigured_DaysValueUnchangedAndDateShiftedExactlyOnce()
         {
             ConfigureBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(3)), DateOnly.FromDateTime(Today.AddDays(4)));
             var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
             var feature = portfolio.Features.Single();
 
-            await subject.TriggerForecastWriteBackForPortfolio(portfolio);
+            capturedUpdates = [.. subject.ResolveForecastWriteBackForPortfolio(portfolio)];
 
             var written = capturedUpdates.Single().Value;
             using (Assert.EnterMultipleScope())
