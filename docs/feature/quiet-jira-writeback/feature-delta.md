@@ -1166,3 +1166,84 @@ implementation detail, because it is the one place the code says something the A
   failures) — the contract this wave made green.
 - DESIGN's Component Decomposition and ADR-144 — implemented as written apart from the deviation above.
 - Nothing from DEVOPS: the wave was skipped for this epic (UI-5).
+
+---
+
+## Wave: DISTILL+DELIVER / [REF] Slice 02 — batch write-back fields per issue (#5503)
+
+DISTILL and DELIVER are recorded together for this slice: the specifications were written RED, classified,
+and made green in one pass, and separating the two narratives would duplicate every line.
+
+### What shipped
+
+Both write-back-capable connectors now group by `WorkItemId` and issue **one call per work item** —
+Jira a multi-key `fields` object, Azure DevOps a multi-operation `JsonPatchDocument`. When the provider
+rejects the batch, that item's fields are re-sent **one at a time**, so the valid ones land and the
+offending one fails alone (AC-05.8). The port signature is unchanged: grouping lives in each adapter,
+per ADR-143 §1.
+
+`GetChangedFields`'s O(updates × items) scan, listed under slice 02's IN scope, was already closed by
+slice 01's `ToLookup`. Nothing further was needed.
+
+### Specifications
+
+| Layer | File | Count |
+|---|---|---|
+| Jira unit (stubbed transport) | `Jira/JiraBatchedWriteBackTest.cs` | 10 |
+| Jira live | `Jira/JiraWriteBackTest.cs` (+1) | 17 green |
+| Azure DevOps live | `AzureDevOps/AzureDevOpsWriteBackTest.cs` (+2) | 19 green |
+
+**Why the split is not laziness.** ADR-143 rests on one claim — both providers reject a mixed-validity
+batch **atomically** — and that is a fact about the providers, not about our code. A stub asserting it
+would replay our own assumption back to us, and the intuitive assumption ("the valid parts apply") is
+precisely the one SPIKE-03 measured and disproved. So batching *shape* is pinned at unit level, where it
+is fast and mutation-friendly, and *atomicity plus fallback* is pinned live, with read-back confirming
+the valid field actually stored.
+
+Azure DevOps has no unit-level option regardless: it reaches the API through the concrete SDK types
+`VssConnection` → `WorkItemTrackingHttpClient`, with no transport seam. The Jira connector has one (an
+optional `HttpMessageHandler` ctor argument, precedent `JiraIssuesPerRequestTest`).
+
+### Red classification
+
+5 RED, 2 green parity guards, 0 wrong-reason failures. The RED failures were all "one call per field":
+three fields on one issue produced 3 PUTs where 1 was expected; a rejected batch produced 3 where 1 + 3
+was expected. The two green guards are AC-05.5 (a single field behaves exactly as before) and the
+all-fields-refused case, both of which must not change.
+
+### A latent bug the stub found
+
+`GetCustomFieldMappings` adds an entry for **every** requested field, using an **empty string** when it
+cannot resolve one. `ResolveFieldReference` returned that empty string verbatim, so an unresolved mapping
+was written to Jira as `{"fields":{"": value}}` — silently, per field, on the pre-slice-02 code too.
+Batching turned it from a bad write into a `ToDictionary` key collision, which is how it surfaced at all.
+Fixed by falling back to the reference we were given.
+
+### Deviation from ADR-143, deliberate
+
+The ADR says "on any **non-403** failure, drop the batch and keep the suppression". That carve-out exists
+only because [ADR-142](../../product/architecture/adr-142-writeback-suppression-optimistic-retry.md) adds
+`notifyUsers=false` in slice 04, where a 403 means "drop suppression, keep the batch". **There is no
+suppression yet**, so slice 02 treats a 403 as any other failure and falls back unbatched. Implementing
+the carve-out now would mean a 403 silently loses every field on the item until slice 04 lands.
+**Slice 04 must insert the 403 branch ahead of this fallback.**
+
+### Quality gates
+
+| Gate | Outcome |
+|---|---|
+| `dotnet build` zero warnings | PASS |
+| `dotnet test` | PASS — 4638 / 0 / 0 (the live fixtures run here, since both integration tokens are set) |
+| Live Jira fixture | PASS — 17/17 against `letpeoplework.atlassian.net` |
+| Live Azure DevOps fixture | PASS — 19/19 against `dev.azure.com/huserben` |
+| `dotnet format analyzers --severity info` | PASS, run **before** push this time (caught one NUnit2045) |
+| Mutation, scoped to the rewritten methods | **86.96 %** — see `mutation/results-5503.md` |
+| Mutation, whole connector file | 11.14 %, and meaningless for this slice — the file is 1440 lines, 288 mutants are `NoCoverage` in untouched sync/board/changelog code, and Stryker.NET cannot scope to a line range |
+
+### DoD
+
+Frontend, E2E, docs, screenshots, terminology, RBAC and Lighthouse-Clients are all **N/A for the same
+reason as slice 01**: nothing user-visible ships until slice 05's panel. The value here is API-call and
+issue-history reduction — measured at 4:1 on Jira changelog entries in SPIKE-03. **The email claim stays
+out of docs and release notes**: Jira Cloud batches watcher mail per (recipient, issue) over ~10 minutes,
+so batching buys no email reduction.

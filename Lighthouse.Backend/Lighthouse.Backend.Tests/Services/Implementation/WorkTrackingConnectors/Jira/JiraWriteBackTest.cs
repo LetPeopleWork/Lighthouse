@@ -423,6 +423,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // --- Epic 5500 slice 02 (ADR-143). Live on purpose: the claim under test is that Jira rejects a
+        // mixed-validity `fields` object *whole*, which is a fact about Jira. A stub asserting it would
+        // only repeat our own assumption back to us — and that assumption is exactly what SPIKE-03 had to
+        // measure because the intuitive answer ("the valid parts apply") is wrong.
+
+        // AC-05.8 — the regression batching would have introduced.
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_OneFieldInvalidOnTheSameIssue_TheValidOnesStillLand()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var result = await subject.WriteFieldsToWorkItems(connection, [
+                new() { WorkItemId = EpicId, TargetFieldReference = DeliveryDateField, Value = "2026-09-15" },
+                new() { WorkItemId = EpicId, TargetFieldReference = "customfield_99999", Value = "nonsense" },
+                new() { WorkItemId = EpicId, TargetFieldReference = DescriptionField, Value = "survived the bad neighbour" },
+            ]);
+
+            var byField = result.ItemResults.ToDictionary(r => r.TargetFieldReference, r => r.Success);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(byField[DeliveryDateField], Is.True,
+                    "Jira rejects the whole fields object, so without the unbatched retry this field would be lost to its neighbour.");
+                Assert.That(byField[DescriptionField], Is.True);
+                Assert.That(byField["customfield_99999"], Is.False);
+            }
+
+            var dateReadBack = await ReadBackEpicAdditionalField(subject, connection, EpicId, DeliveryDateField, 111);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dateReadBack, Is.Not.Null.And.Not.Empty,
+                    "The valid field has to have actually landed, not just been reported as landed.");
+                Assert.That(DateTime.Parse(dateReadBack!, CultureInfo.InvariantCulture).Date,
+                    Is.EqualTo(new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc).Date));
+            }
+        }
+
         private async Task<string> CreateScratchIssue(HttpClient client, string issueType)
         {
             var summary = $"Lighthouse WriteBack scratch {issueType} {DateTime.UtcNow:O}";

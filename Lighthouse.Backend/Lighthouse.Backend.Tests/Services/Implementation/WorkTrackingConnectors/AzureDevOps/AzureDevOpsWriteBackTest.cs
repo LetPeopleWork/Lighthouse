@@ -469,6 +469,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // --- Epic 5500 slice 02 (ADR-143): batching per work item, and the fallback that keeps one bad
+        // mapping from taking the whole item down. These run against the real instance on purpose — the
+        // claim being tested is that Azure DevOps rejects a mixed-validity patch document *whole*, which
+        // is a fact about the provider, not about our code. A stub asserting it would only be repeating
+        // the assumption back to us.
+
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_TwoFieldsOnOneWorkItem_BothLand()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var result = await subject.WriteFieldsToWorkItems(connection, [
+                new() { WorkItemId = storyId, TargetFieldReference = AgeField, Value = "33" },
+                new() { WorkItemId = storyId, TargetFieldReference = AdditionalInfoField, Value = "batched write" },
+            ]);
+
+            Assert.That(result.AllSucceeded, Is.True,
+                () => string.Join("; ", result.ItemResults.Where(r => !r.Success).Select(r => $"{r.TargetFieldReference}: {r.ErrorMessage}")));
+
+            var ageReadBack = await ReadBackStoryAdditionalField(subject, connection, storyId, AgeField, 130);
+            Assert.That(ageReadBack, Does.Contain("33"));
+        }
+
+        // AC-05.8 — the regression batching would have introduced.
+        [Test]
+        [Category("Integration")]
+        public async Task WriteFieldsToWorkItems_OneFieldInvalidOnTheSameWorkItem_TheValidOneStillLands()
+        {
+            var subject = CreateSubject();
+            var connection = CreateWorkTrackingSystemConnection();
+
+            var result = await subject.WriteFieldsToWorkItems(connection, [
+                new() { WorkItemId = storyId, TargetFieldReference = AgeField, Value = "44" },
+                new() { WorkItemId = storyId, TargetFieldReference = "NonExistent.FieldThatDoesNotExist", Value = "nonsense" },
+            ]);
+
+            var byField = result.ItemResults.ToDictionary(r => r.TargetFieldReference, r => r.Success);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(byField[AgeField], Is.True,
+                    "Azure DevOps rejects the whole patch document, so without the unbatched retry this valid field would be lost to its neighbour.");
+                Assert.That(byField["NonExistent.FieldThatDoesNotExist"], Is.False);
+            }
+
+            var ageReadBack = await ReadBackStoryAdditionalField(subject, connection, storyId, AgeField, 131);
+            Assert.That(ageReadBack, Does.Contain("44"), "The valid field has to have actually landed, not just been reported as landed.");
+        }
+
         private static async Task<string?> ReadBackFeatureAdditionalField(
             AzureDevOpsWorkTrackingConnector subject,
             WorkTrackingSystemConnection connection,

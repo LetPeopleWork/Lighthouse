@@ -317,64 +317,95 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var results = new List<WriteBackItemResult>();
 
-            foreach (var batch in updates.Chunk(MaxChunkSize))
+            // Grouped by work item first: one patch document per item carries every changed field on it
+            // (ADR-143). Chunking and the throttle still bound how many items are in flight at once.
+            foreach (var batch in updates.GroupBy(update => update.WorkItemId).Chunk(MaxChunkSize))
             {
-                var batchTasks = batch.Select(async update => await UpdateItems(url, witClient, update));
+                var batchTasks = batch.Select(async itemUpdates => await UpdateItem(url, witClient, itemUpdates.Key, [.. itemUpdates]));
 
-                results.AddRange(await Task.WhenAll(batchTasks));
+                results.AddRange((await Task.WhenAll(batchTasks)).SelectMany(itemResults => itemResults));
             }
 
             return results;
         }
 
-        private async Task<WriteBackItemResult> UpdateItems(string url, WorkItemTrackingHttpClient witClient, WriteBackFieldUpdate update)
+        /// <summary>
+        /// Azure DevOps rejects a mixed-validity patch document whole — including on permission failures,
+        /// which was measured rather than assumed — so a rejected batch is re-sent one operation at a
+        /// time. The valid fields land and the offending one fails alone.
+        /// </summary>
+        private async Task<List<WriteBackItemResult>> UpdateItem(string url, WorkItemTrackingHttpClient witClient,
+            string workItemReference, IReadOnlyList<WriteBackFieldUpdate> updates)
         {
-            if (!int.TryParse(update.WorkItemId, out var workItemId))
+            if (!int.TryParse(workItemReference, out var workItemId))
             {
-                return new WriteBackItemResult
-                {
-                    WorkItemId = update.WorkItemId,
-                    TargetFieldReference = update.TargetFieldReference,
-                    Success = false,
-                    ErrorMessage = $"Work item ID '{update.WorkItemId}' is not a valid integer for Azure DevOps."
-                };
+                return [.. updates.Select(update => Refused(update,
+                    $"Work item ID '{update.WorkItemId}' is not a valid integer for Azure DevOps."))];
             }
 
+            var batch = await TryPatch(url, witClient, workItemId, updates);
+
+            if (batch.Succeeded)
+            {
+                return [.. updates.Select(Written)];
+            }
+
+            // A single operation is already as isolated as it gets.
+            if (updates.Count == 1)
+            {
+                return [Refused(updates[0], batch.ErrorMessage)];
+            }
+
+            var results = new List<WriteBackItemResult>();
+
+            foreach (var update in updates)
+            {
+                var single = await TryPatch(url, witClient, workItemId, [update]);
+                results.Add(single.Succeeded ? Written(update) : Refused(update, single.ErrorMessage));
+            }
+
+            return results;
+        }
+
+        private async Task<(bool Succeeded, string ErrorMessage)> TryPatch(string url, WorkItemTrackingHttpClient witClient,
+            int workItemId, IReadOnlyList<WriteBackFieldUpdate> updates)
+        {
             try
             {
-                var patchDocument = new JsonPatchDocument
-                        {
-                            new JsonPatchOperation
-                            {
-                                Operation = Operation.Replace,
-                                Path = $"/fields/{update.TargetFieldReference}",
-                                Value = update.Value
-                            }
-                        };
+                var patchDocument = new JsonPatchDocument();
+                patchDocument.AddRange(updates.Select(update => new JsonPatchOperation
+                {
+                    Operation = Operation.Replace,
+                    Path = $"/fields/{update.TargetFieldReference}",
+                    Value = update.Value,
+                }));
 
                 await ExecuteWithThrottle(url, () =>
                     witClient.UpdateWorkItemAsync(patchDocument, workItemId, suppressNotifications: true));
 
-                return new WriteBackItemResult
-                {
-                    WorkItemId = update.WorkItemId,
-                    TargetFieldReference = update.TargetFieldReference,
-                    Success = true
-                };
+                return (true, string.Empty);
             }
             catch (Exception ex)
             {
-                logger.LogDebug(ex, "Failed to write field {FieldReference} to work item {WorkItemId}", update.TargetFieldReference, update.WorkItemId);
-
-                return new WriteBackItemResult
-                {
-                    WorkItemId = update.WorkItemId,
-                    TargetFieldReference = update.TargetFieldReference,
-                    Success = false,
-                    ErrorMessage = ex.Message
-                };
+                logger.LogDebug(ex, "Failed to write {FieldCount} field(s) to work item {WorkItemId}", updates.Count, workItemId);
+                return (false, ex.Message);
             }
         }
+
+        private static WriteBackItemResult Written(WriteBackFieldUpdate update) => new()
+        {
+            WorkItemId = update.WorkItemId,
+            TargetFieldReference = update.TargetFieldReference,
+            Success = true,
+        };
+
+        private static WriteBackItemResult Refused(WriteBackFieldUpdate update, string errorMessage) => new()
+        {
+            WorkItemId = update.WorkItemId,
+            TargetFieldReference = update.TargetFieldReference,
+            Success = false,
+            ErrorMessage = errorMessage,
+        };
 
         private static string ExtractTeamIdFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
         {

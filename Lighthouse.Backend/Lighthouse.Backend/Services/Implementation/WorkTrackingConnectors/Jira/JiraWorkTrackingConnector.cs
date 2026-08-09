@@ -281,73 +281,109 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 [JiraFieldNames.NamePropertyName, JiraFieldNames.IdPropertyName, JiraFieldNames.KeyPropertyName],
                 updates.Select(f => f.TargetFieldReference));
 
-            foreach (var update in updates)
+            foreach (var issueUpdates in updates.GroupBy(update => update.WorkItemId))
             {
-                try
-                {
-                    await UpdateItem(client, update, additionalFieldReferences, results);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogDebug(ex, "Failed to write field {FieldReference} to issue {IssueKey}", update.TargetFieldReference, update.WorkItemId);
-
-                    results.Add(new WriteBackItemResult
-                    {
-                        WorkItemId = update.WorkItemId,
-                        TargetFieldReference = update.TargetFieldReference,
-                        Success = false,
-                        ErrorMessage = ex.Message
-                    });
-                }
+                results.AddRange(await UpdateIssue(client, issueUpdates.Key, [.. issueUpdates], additionalFieldReferences));
             }
 
             return results;
         }
 
-        private async Task UpdateItem(HttpClient client, WriteBackFieldUpdate update, Dictionary<string, string> additionalFieldReferences,
-            List<WriteBackItemResult> results)
+        /// <summary>
+        /// One PUT carrying every changed field on the issue (ADR-143). Jira rejects a mixed-validity
+        /// `fields` object whole — measured, not assumed — so a rejected batch is re-sent field by field:
+        /// the valid ones land and the offending one fails alone, which is the isolation the per-field
+        /// calls used to give for free.
+        /// </summary>
+        private async Task<List<WriteBackItemResult>> UpdateIssue(HttpClient client, string issueKey,
+            IReadOnlyList<WriteBackFieldUpdate> updates, Dictionary<string, string> additionalFieldReferences)
         {
-            object fieldValue = double.TryParse(update.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var numericValue)
+            var batch = await TryWriteFields(client, issueKey, updates, additionalFieldReferences);
+
+            if (batch.Succeeded)
+            {
+                return [.. updates.Select(update => Written(update))];
+            }
+
+            // A single field is already as isolated as it gets; re-sending it would only repeat the failure.
+            if (updates.Count == 1)
+            {
+                return [Refused(updates[0], batch.ErrorMessage)];
+            }
+
+            var results = new List<WriteBackItemResult>();
+
+            foreach (var update in updates)
+            {
+                var single = await TryWriteFields(client, issueKey, [update], additionalFieldReferences);
+                results.Add(single.Succeeded ? Written(update) : Refused(update, single.ErrorMessage));
+            }
+
+            return results;
+        }
+
+        private async Task<(bool Succeeded, string ErrorMessage)> TryWriteFields(HttpClient client, string issueKey,
+            IReadOnlyList<WriteBackFieldUpdate> updates, Dictionary<string, string> additionalFieldReferences)
+        {
+            try
+            {
+                var fields = new Dictionary<string, object>();
+                foreach (var update in updates)
+                {
+                    fields[ResolveFieldReference(update, additionalFieldReferences)] = CoerceFieldValue(update);
+                }
+
+                var payload = JsonSerializer.Serialize(new { fields });
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                var response = await client.PutAsync($"rest/api/latest/issue/{issueKey}", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return (true, string.Empty);
+                }
+
+                var errorBody = await response.Content.ReadAsStringAsync();
+                logger.LogDebug("Jira write-back failed for {IssueKey}, {FieldCount} field(s): {StatusCode} - {ErrorBody}",
+                    issueKey, updates.Count, response.StatusCode, errorBody);
+
+                return (false, $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Failed to write {FieldCount} field(s) to issue {IssueKey}", updates.Count, issueKey);
+                return (false, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// GetCustomFieldMappings always adds an entry, using an empty string for a field it could not
+        /// resolve — so an unresolved mapping used to be written as `{"fields":{"": value}}`. Fall back to
+        /// the reference we were given, which is what a field already stored by reference needs anyway.
+        /// </summary>
+        private static string ResolveFieldReference(WriteBackFieldUpdate update, Dictionary<string, string> additionalFieldReferences)
+            => additionalFieldReferences.TryGetValue(update.TargetFieldReference, out var reference) && !string.IsNullOrEmpty(reference)
+                ? reference
+                : update.TargetFieldReference;
+
+        private static object CoerceFieldValue(WriteBackFieldUpdate update)
+            => double.TryParse(update.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var numericValue)
                 ? numericValue
                 : update.Value;
 
-            var fieldReference =
-                additionalFieldReferences.TryGetValue(update.TargetFieldReference, out var reference)
-                    ? reference
-                    : update.TargetFieldReference;
+        private static WriteBackItemResult Written(WriteBackFieldUpdate update) => new()
+        {
+            WorkItemId = update.WorkItemId,
+            TargetFieldReference = update.TargetFieldReference,
+            Success = true,
+        };
 
-            var payload = JsonSerializer.Serialize(new
-            {
-                fields = new Dictionary<string, object> { [fieldReference] = fieldValue }
-            });
-
-            var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await client.PutAsync($"rest/api/latest/issue/{update.WorkItemId}", content);
-
-            if (response.IsSuccessStatusCode)
-            {
-                results.Add(new WriteBackItemResult
-                {
-                    WorkItemId = update.WorkItemId,
-                    TargetFieldReference = update.TargetFieldReference,
-                    Success = true
-                });
-            }
-            else
-            {
-                var errorBody = await response.Content.ReadAsStringAsync();
-                logger.LogDebug("Jira write-back failed for {IssueKey}, field {FieldReference}: {StatusCode} - {ErrorBody}",
-                    update.WorkItemId, update.TargetFieldReference, response.StatusCode, errorBody);
-
-                results.Add(new WriteBackItemResult
-                {
-                    WorkItemId = update.WorkItemId,
-                    TargetFieldReference = update.TargetFieldReference,
-                    Success = false,
-                    ErrorMessage = $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}"
-                });
-            }
-        }
+        private static WriteBackItemResult Refused(WriteBackFieldUpdate update, string errorMessage) => new()
+        {
+            WorkItemId = update.WorkItemId,
+            TargetFieldReference = update.TargetFieldReference,
+            Success = false,
+            ErrorMessage = errorMessage,
+        };
 
 
         private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
