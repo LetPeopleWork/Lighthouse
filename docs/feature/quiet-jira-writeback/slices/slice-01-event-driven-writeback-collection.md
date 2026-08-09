@@ -58,8 +58,15 @@ refresh topology.
   then (a) each update execution issues **at most one** write-back flush, and (b) across the round, each
   `(work item, field)` whose value did not change is written **at most once** - the D11 exception
   (D-A7-R) makes the second pass find no change rather than needing to be coordinated away.
-- AC-04.2: Given the same field on the same issue is resolved by more than one pass in a cycle, when the
-  flush runs, then exactly one write is issued for that issue+field.
+- AC-04.2: **AMENDED 2026-08-09 (DISTILL) - the execution-level version describes an unreachable state.**
+  `WriteBackTriggerService` filters the Features pass and the forecast pass onto **disjoint** value
+  sources, so no mapping can be resolved by both passes of one execution; "the same field resolved by
+  more than one pass in a cycle" cannot happen through `PortfolioUpdater` as it stands. Restated as the
+  collector invariant it really is: given the same `(connection, work item, target field)` staged more
+  than once within one execution, when the flush runs, then exactly one write is issued for it, carrying
+  the value staged last. Asserted at the seam (`WriteBackCollectorTest`), not end to end. The invariant
+  still has to hold - slice 02 groups on that key - and it becomes reachable through a driving port the
+  moment a second pass resolves an overlapping source.
 - AC-04.3: Given a cycle where no mapped value changed, when the flush runs, then no connector call is
   made at all (preserves the D8 no-op guard).
 - AC-04.4: Given the ADO connector, when write-back runs via the new collection path, then

@@ -812,7 +812,7 @@ carries none since epic-5427; the executable SSOT is the NUnit partial-class pai
 | `Stage_SameFieldTwice_FlushWritesItOnceCarryingTheLaterValue` | **AC-04.2** |
 | `FlushAsync_NothingStaged_WritesNothing` | AC-04.3 at the seam |
 | `FlushAsync_TwoConnections_WritesOncePerConnection` | ADR-144 §2 |
-| `FlushAsync_ReportsEachItemResultVerbatim` | **AC-04.5** |
+| `FlushAsync_ReportsEachItemResultVerbatim` | **AC-04.5** (shape; the *behaviour* is scenario 7 — see below) |
 | `FlushAsync_CalledTwice_DoesNotRewriteWhatItAlreadyWrote` | ADR-144 §4 (the flush is terminal) |
 
 **Architecture — `QuietWriteBackSeamArchUnitTest.cs` (2)**
@@ -828,6 +828,13 @@ tracker, which no browser can watch. Adding an E2E here would be a walking skele
 walk through.
 
 Error/edge share: 4 of 10 acceptance scenarios (40%), plus 1 of 6 seam specifications.
+
+**Where AC-04.5 really lives.** The seam specification asserts the *shape* — that `FlushAsync` hands
+back each item's success, failure and error message verbatim. The *behaviour* is scenario 7, which
+drives a genuinely mixed write end to end (the tracker accepts the forecast field and refuses the size
+field on the same item) and asserts the two outcomes are honoured independently. There is no
+end-to-end assertion on the result object itself, and there cannot be: today's only caller discards
+it, so a scenario claiming to observe it would be observing its own fixture.
 
 **Why three scenarios are green from DISTILL rather than ignored.** AC-04.6 and AC-04.7 are *parity*
 criteria — they ask that behaviour which already holds survives the seam — and D11 asks that the
@@ -970,7 +977,7 @@ not re-deriving:
 
 | # | Finding | Disposition |
 |---|---|---|
-| UI-1 | **AC-04.2 is not reachable end-to-end.** `WriteBackTriggerService` filters the Features pass and the forecast pass onto **disjoint** value sources, so one mapping can never be resolved by both passes of one execution. "The same field resolved by more than one pass in a cycle" describes a state `PortfolioUpdater` cannot reach today | Kept as written, demoted in level: it is asserted as a **collector specification** (`Stage_SameFieldTwice_…`), not as an acceptance scenario. The dedup key still has to exist — slice 02 groups on it — but no end-to-end scenario can exercise it, and one that pretended to would be staging its own duplicate |
+| UI-1 | **AC-04.2 is not reachable end-to-end.** `WriteBackTriggerService` filters the Features pass and the forecast pass onto **disjoint** value sources, so one mapping can never be resolved by both passes of one execution. "The same field resolved by more than one pass in a cycle" describes a state `PortfolioUpdater` cannot reach today | **AC-04.2 rewritten in `slices/slice-01-*.md`, marked and dated**, from an execution-level promise to the collector invariant it really is: the same `(connection, item, field)` staged twice within one execution flushes once, carrying the later value. Asserted at the seam (`Stage_SameFieldTwice_…`), not end to end. Annotating it in place and leaving the brief unchanged was the first attempt and was wrong — a criterion nobody can exercise has to say so where it is read, not only where it is tested (reviewer blocker 1, 2026-08-09) |
 | UI-2 | **AC-04.3 is unmet today for a different reason than the brief implies.** `WriteBackService.WriteFieldsToWorkItems` early-returns only when the *incoming* list is empty; `GetChangedFields` filters afterwards and **the connector is called anyway** — measured as two calls with empty payloads. The D8 "no-op guard" preserves the payload, never the call | AC-04.3 stands exactly as written ("no connector call is made at all") and is now the scenario that proves the difference. DELIVER must close the call, not just the payload |
 | UI-3 | **The pre-change figure is now measured, not argued.** One portfolio refresh plus one coalesced forecast execution issues **3** connector calls for a single Feature, two of them carrying the identical forecast value. That is CA-4 / ADR-144's ≈4 observed on a two-execution round | Recorded here rather than restating the KPI; `[REF] Outcome KPIs` already carries the corrected figure |
 | UI-4 | **D-A6's `ToLookup` trap already has a green guard**: `WriteBackServiceTest.WriteFieldsToWorkItems_WorkItemAppearsInMultipleTeams_DoesNotThrow`. No new test was written for it | DELIVER must not delete it while rewriting `GetChangedFields`. A `ToDictionary` there turns that test red, which is the point |
@@ -1000,6 +1007,29 @@ not re-deriving:
 | T2-D2 | `fixture-design-discussion` — why the three data-refresh services are faked and what that cannot model | DELIVER asks why a scenario cannot observe a real sync |
 | T2-D3 | `error-path-rationale` — per-`@error` scenario, the failure mode it surfaces and the one it deliberately does not | Slice 02's unbatched-retry scenarios enter DISTILL |
 | T2-D4 | `pbt-strategy-notes` — property framings for the dedup key (idempotence of `Stage`, commutativity across connections) | The collector's dedup logic grows beyond last-write-wins |
+
+---
+
+## Wave: DISTILL / [REF] Reviewer gate
+
+`nw-acceptance-designer-reviewer` (Sentinel — the structural-correctness reviewer, which never skips),
+run 2026-08-09. Verdict **rejected pending revisions**: 2 blockers, 2 high. Two applied, two rejected
+with reasons.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | **Blocker — AC-04.2 is listed in the slice brief but is not end-to-end testable.** Documenting the demotion only in the delta leaves the brief claiming something no scenario exercises | **APPLIED.** AC-04.2 rewritten in `slices/slice-01-*.md`, marked and dated, as the collector invariant it is. The reviewer's alternative — delete it — is wrong: slice 02 groups on that key, and the criterion becomes reachable the moment a second pass resolves an overlapping source |
+| 2 | **High — AC-04.5 has no end-to-end scenario, only a seam specification** | **APPLIED, in part.** The mixed success/failure *behaviour* was already covered end to end by scenario 7; what was missing was the delta saying so. Now stated, with why an end-to-end assertion on the result object itself is impossible: today's only caller discards it |
+| 3 | **Blocker — UI-1 and UI-2 are design issues deferred to DELIVER without a DESIGN revisit** | **REJECTED for UI-2, folded into finding 1 for UI-1.** AC-04.3 is not ambiguous — "no connector call is made at all" says exactly what it means, and DELIVER implements it. UI-2 is a discovery about how the *current* code falls short of that criterion, not a gap in the criterion. Reopening DESIGN over it would re-ratify a decision nobody disputes |
+| 4 | **High — verify during DELIVER that the connector call is suppressed, not just the payload** | **NO ACTION — already the disposition recorded under UI-2** and repeated in the handoff. Restating an agreement is not a finding |
+
+The reviewer also flagged the `AddScoped<IWriteBackCollector, WriteBackCollector>()` registration as
+"mentioned but not verified". It is present at `Program.cs:1043`; the finding is unfounded and no
+change was made.
+
+Three scenario-level judgements the reviewer confirmed rather than challenged: the hexagonal boundary
+(real driving port, only policy-classified external ports faked), scaffold integrity (RED not BROKEN),
+and each of the four green parity guards individually — none vacuous.
 
 ---
 
