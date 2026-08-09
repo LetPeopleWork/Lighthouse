@@ -44,6 +44,27 @@ Log levels describe the level of detail that should end up in the log. The more 
 {: .recommendation}
 For normal operations, we recommend to keep the log level at *Warning* or *Information*. *Debug* and *Verbose* should only be used selectively to analyze errors, as otherwise the log will grow a lot, and most likely you'll have too much information in there for it to be truly useful.
 
+## What an Update Writes
+
+At *Information*, every completed update writes a single summary line that says what it did:
+
+```
+Update completed | Team 'Zenith' | mode=full | scanned=4013 | fetched=4013 | duration=291043ms | success=True
+```
+
+| Field | Meaning |
+|-------|---------|
+| `mode` | How much had to be fetched. Currently always `full` |
+| `scanned` | How many records the work tracking system returned |
+| `fetched` | How many of those were downloaded in full |
+| `duration` | How long the update took, in milliseconds |
+| `success` | Whether it completed. A failed update still writes this line, followed by the error |
+
+This is the line to read if you want to know whether your refresh interval is affordable, or which Team or Portfolio is the expensive one.
+
+{: .note}
+The detail of *what* an update touched — every Work Item added, updated or removed, every Feature it extrapolated — is written at *Debug*, not *Information*. Nothing was removed; if you are chasing a specific Work Item through an update, switch to *Debug* and you will find it. An update that is skipped because it is not due yet writes nothing at *Information* at all.
+
 ## View Logs
 You can check the *Live Logs* in the built-in Log View. This also supports a *Search* with syntax highlighting, for example if you want to find a specific feature by name or ID.
 
