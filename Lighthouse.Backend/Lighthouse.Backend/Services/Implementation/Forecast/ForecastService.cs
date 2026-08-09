@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             var features = featureRepository.GetAll().Where(f => f.Teams.Any(teams.Contains)).ToList();
 
-            logger.LogInformation("Features with involved of those team are: {Features}", string.Join(",", features.Select(f => f.Name)));
+            logger.LogDebug("Features that are being forecasted: {Features}", string.Join(",", features.Select(f => f.Name)));
 
             await ForecastFeatures(features);
 
