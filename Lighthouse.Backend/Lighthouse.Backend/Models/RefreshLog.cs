@@ -20,6 +20,12 @@ namespace Lighthouse.Backend.Models
 
         public int ItemCount { get; set; }
 
+        public SyncMode Mode { get; set; }
+
+        public int RecordsScanned { get; set; }
+
+        public int RecordsFetched { get; set; }
+
         public long DurationMs { get; set; }
 
         public DateTime ExecutedAt { get; set; }

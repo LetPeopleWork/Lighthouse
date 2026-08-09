@@ -898,6 +898,8 @@ context, so a cold dispatch would have re-derived it)
 | `WorkItemBase` | `Models/WorkItemBase.cs` | **EXTEND** — `DateTime? LastChangedRemote`, copied explicitly in `Update(…)` (D6) |
 | `WorkTrackingSystemOptionsOwner` | `Models/WorkTrackingSystemOptionsOwner.cs` | **EXTEND** — `string? FetchFingerprint`, alongside the existing sync-owned `UpdateTime` |
 | `RefreshLog` | `Models/RefreshLog.cs` | **EXTEND** — `Mode`, `RecordsScanned`, `RecordsFetched` |
+| `SyncOutcome` | `Models/` (new, `sealed record`) | **CREATE NEW** — `(SyncMode Mode, int RecordsScanned, int RecordsFetched)`; what a sync reports about itself. No behaviour, no equivalent type exists |
+| `SyncMode` | `Models/` (new, enum) | **CREATE NEW** — `Full` \| `Delta`. Slice 01 writes only `Full` |
 | `ITeamDataService` / `TeamDataService` | `Services/…/TeamData/` | **EXTEND** — returns a `SyncOutcome` instead of `Task` (DDD-7) |
 | `TeamUpdater` / `PortfolioUpdater` | `…/BackgroundServices/Update/` | **EXTEND** — write the new `RefreshLog` fields; emit the one summary line |
 | `UpdateServiceBase` | `…/BackgroundServices/Update/UpdateServiceBase.cs` | **EXTEND** — per-entity "checking last update" line demoted to Debug (US-01) |
@@ -1132,3 +1134,321 @@ DISTILL's acceptance surface is unusually shaped and worth flagging: three of th
 that something does **not** change (AC-2.3 removal, AC-2.4 byte-identical unchanged items, AC-2.5
 staleness still fires). Those are the tests that catch the failure mode this design is built around —
 wrong data behind a green pipeline — and they need to be written as such, not as smoke tests.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+**DISTILL run**: 2026-08-09 · **Scope**: slice 01 only (Story #5724) · **Policy**: `inherit`
+
+- ✓ This file's DISCUSS wave (US-01, AC-1.1 … AC-1.9) and DESIGN wave (DDD-1 … DDD-8, component
+  decomposition, driving/driven ports)
+- ✓ `docs/feature/epic-5687-faster-updates/slices/slice-01-update-log-signal.md`
+- ✓ `docs/architecture/atdd-infrastructure-policy.md` — every port slice 01 touches was already in the
+  policy; no row had to be appended
+- ⊘ `docs/feature/epic-5687-faster-updates/devops/` — no DEVOPS wave ran. Graceful degradation: WARN,
+  project-default infrastructure applied. DESIGN's handoff already states DEVOPS has no work here (no
+  new substrate, dependency or deployment-topology change); its one open question — whether the summary
+  line's field names match the hosted fleet's log pipeline — is answered below by naming them
+  explicitly in the scenarios.
+- ⊘ `spike/` — none ran; slice 01's brief records "no unknown mechanism".
+
+**Wave-decision reconciliation**: passed — 0 contradictions. DESIGN reverses no DISCUSS decision, and
+slice 01 introduces none of its own.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List
+
+Nine scenarios across two fixtures. Every one is example-based: the observable is a log stream and a
+persisted row, and the C#/NUnit row of the polyglot matrix governs (no PBT, no state-delta Universe —
+the ATDD policy records why the Python-pilot artifacts do not apply to this repo).
+
+| # | Scenario | Tags | AC |
+|---|---|---|---|
+| 1 | `A_completed_team_update_says_what_it_did` | `@walking_skeleton` `@driving_port` `@real-io` | AC-1.1, AC-1.3 |
+| 2 | `A_completed_portfolio_update_says_the_same_thing_in_the_same_shape` | `@driving_port` `@real-io` | AC-1.2 |
+| 3 | `A_team_update_writes_no_more_than_two_lines_the_operator_has_to_read` | `@driving_port` `@kpi` | AC-1.7 (KPI-5) |
+| 4 | `A_portfolio_update_writes_no_more_than_two_lines_the_operator_has_to_read` | `@driving_port` `@kpi` | AC-1.7 (KPI-5) |
+| 5 | `A_team_update_announces_itself_once` | `@driving_port` | AC-1.5 |
+| 6 | `An_update_keeps_its_per_record_chatter_out_of_the_operators_log` | `@driving_port` | AC-1.6 |
+| 7 | `A_completed_team_update_records_the_mode_and_both_counts` | `@driving_port` | AC-1.8 |
+| 8 | `An_update_that_failed_still_says_what_it_did` | `@error` `@driving_port` | AC-1.9 |
+| 9 | `A_cycle_that_skips_a_team_says_nothing_to_the_operator_about_that_team` + `The_skipped_check_is_still_available_to_whoever_asks_for_it` | `@background_loop` | AC-1.4 |
+
+Error/edge share: scenarios 8 and 9 plus the demoted-not-deleted half of 6 — three of nine assert that
+something is *absent* or *failed*, which is where this slice's regressions would live.
+
+**The walking skeleton is scenario 1**: an operator triggers a scheduled refresh and reads one line that
+tells them what it cost. A non-technical stakeholder can confirm that is the thing being bought.
+
+---
+
+## Wave: DISTILL / [REF] The Summary-Line Contract
+
+The scenarios assert the fields individually rather than one rendered sentence, so the prose can improve
+without reding a test — and so a log pipeline has something stable to grep. This answers DESIGN's one
+DEVOPS question by fixing the field names now:
+
+```
+Update completed | <Team|Portfolio> '<name>' | mode=<full|delta> | scanned=<n> | fetched=<n> | duration=<n>ms | success=<true|false>
+```
+
+`mode`, `scanned`, `fetched`, `duration`, `success` are the asserted tokens. Entity type and entity name
+are asserted as substrings. Everything else in the line is free.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+| Artifact | Path |
+|---|---|
+| Harness | `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs` |
+| Scenarios | `…/FasterUpdates/Slice01UpdateLogSignalScenarios.cs` |
+| Specifications (step methods) | `…/FasterUpdates/Slice01UpdateLogSignalSpecifications.cs` |
+| Background-loop fixture (AC-1.4) | `Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs` |
+
+Precedent: the `QuietWriteBack`, `PercentilesOverTime`, `BlockedItems` and `ManualSorting` folders all
+use the same `<Feature>AcceptanceTest` + `SliceNNScenarios` / `SliceNNSpecifications` triple. Categories
+`acceptance` / `epic-5687-faster-updates` / `slice-01` follow the same convention.
+
+AC-1.4 sits in a second fixture because it is the one slice-01 promise about the **background loop**,
+and `TestWebApplicationFactory` removes every `IHostedService` — the integration host cannot run the
+loop at all. It is driven through `StartAsync` on the `UpdateServiceTestBase` harness the other updater
+tests already use.
+
+---
+
+## Wave: DISTILL / [REF] Architecture of Reference — applied
+
+Per `docs/architecture/atdd-infrastructure-policy.md`; no row had to be added.
+
+| Port | Class | Treatment in these scenarios |
+|---|---|---|
+| Scheduled refresh (`ITeamUpdater` / `IPortfolioUpdater` → `IUpdateQueueService`) | Driving | **Real** — triggered, then the production queue runs it in its own DI scope |
+| Background timer loop (`UpdateServiceBase.ExecuteAsync`) | Driving | **Real** — started via `StartAsync` in the second fixture |
+| EF `LighthouseAppContext` + repositories, `IRefreshLogService` | Driven internal | **Real** — SQLite via the test factory, `EnsureDeleted` + `EnsureCreated` per `[SetUp]` |
+| `IWorkTrackingConnector` | Driven external | **Fake** — `Mock<IWorkTrackingConnector>` |
+| `IForecastService` | Driven external / non-deterministic | **Fake** |
+| `ILicenseService` | Driven external | **Fake** — premium true |
+| `ILoggerFactory` | Observation seam | Replaced with a Serilog factory writing to `CapturedLogMessages` (ADR-137 D72 — an `ILoggerProvider` would be inert) |
+
+**Deliberately not faked**: `ITeamDataService` and `IWorkItemService`. The Quiet-write-back harness fakes
+both; doing so here would make AC-1.5/1.6/1.7 vacuous, because those two services are the loudest voices
+on the update path and the criteria are promises about exactly them.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| EF repositories (`IRepository<Team>`, `IRepository<Portfolio>`, `IWorkItemRepository`, `IRepository<Feature>`) | YES | Every scenario — real SQLite through the production composition root |
+| `RefreshLogService` / `RefreshLogRepository` | YES | Scenario 7 reads the persisted row back through `IRefreshLogService` |
+| `IUpdateQueueService` / `IUpdateStatusStore` | YES | Every scenario — the refresh is admitted and run by the real queue |
+| `IDomainEventDispatcher` | YES (indirect) | Real dispatcher runs inside every team/portfolio refresh |
+| `IWorkTrackingConnector` (Jira / ADO / ServiceNow / Linear / CSV) | NO — faked by policy | Slice 01 changes nothing below this port. The connectors' own `@real-io` coverage is unchanged and untouched by this slice |
+
+Zero `NO — MISSING` rows: the only faked driven port is the one the project policy names as
+external/non-deterministic, and slice 01 asserts nothing about it.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+DESIGN declares **no new inbound surface** (D4). Scanned for entry points anyway:
+
+| Entry point in DESIGN | Covered |
+|---|---|
+| Background timer loop (`UpdateServiceBase.ExecuteAsync`) | Scenario 9, via `StartAsync` |
+| `POST api/v1\|latest/teams/{id}` / `portfolios/{id}` manual trigger | Same code path as scenarios 1-8 — they enter at `TriggerUpdate`, which is exactly what the controller calls. No new HTTP behaviour to assert; the controller is unchanged by this slice |
+| `GET api/v1\|latest/update/status` | Untouched this epic (Epic #5511 owns it) — no scenario, by design |
+| Container log stream | The observable of scenarios 1-8 |
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+The C# rows of the polyglot matrix govern: `[Ignore]` is the skip marker and there is no
+`__SCAFFOLD__` convention in this repo. What DISTILL added so the scenarios compile and reach their
+assertions:
+
+| Scaffold | Path | Note |
+|---|---|---|
+| `SyncMode` enum (`Full` / `Delta`) | `Lighthouse.Backend/Models/SyncMode.cs` | New |
+| `RefreshLog.Mode`, `.RecordsScanned`, `.RecordsFetched` | `Lighthouse.Backend/Models/RefreshLog.cs` | Additive only; nothing renamed or dropped |
+| `CapturedLogMessages.At(level)`, `.AtOrAbove(level)`, `.Clear()` | `Lighthouse.Backend.Tests/TestHelpers/CapturedLogMessages.cs` | The helper stored rendered text only; the level is half of every assertion in this slice |
+
+**The migration was generated here, not deferred** — `20260809124444_AddRefreshLogModeAndRecordCounts`
+(SQLite) and `20260809124454_…` (Postgres), three additive `int` columns, no rename, no drop.
+
+It was going to be deferred to DELIVER. That was wrong, and the suite said so: EF raises
+`PendingModelChangesWarning` as an error inside `Database.Migrate()`, so **55 tests** — every container,
+health, startup and migration test that boots a real host — went red the moment `RefreshLog` gained three
+model properties with no migration behind them. The DISTILL scenarios themselves stay green either way,
+because the acceptance harness builds its schema with `EnsureCreated`; it is the rest of the suite that
+catches it. Worth knowing before the next slice adds `LastChangedRemote` and `FetchFingerprint`: a model
+change and its migration are one commit in this repo, never two.
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate)
+
+`dotnet test --filter "TestCategory=slice-01&TestCategory=epic-5687-faster-updates"` — **10 failed, 0
+passed**, every one on an assertion, none on setup, import or fixture error.
+
+| Scenario | Observed failure | Class |
+|---|---|---|
+| 1 `…says_what_it_did` | 0 summary lines | MISSING_FUNCTIONALITY |
+| 2 `…same_shape` | 0 summary lines | MISSING_FUNCTIONALITY |
+| 3 `…team…two_lines` | 153 operator-visible lines | MISSING_FUNCTIONALITY |
+| 4 `…portfolio…two_lines` | 416 operator-visible lines | MISSING_FUNCTIONALITY |
+| 5 `…announces_itself_once` | 3 announcements | MISSING_FUNCTIONALITY |
+| 6 `…per_record_chatter…` | per-Feature narration at Information | MISSING_FUNCTIONALITY |
+| 7 `…mode_and_both_counts` | `RecordsScanned` 0, `RecordsFetched` 0 | MISSING_FUNCTIONALITY |
+| 8 `…failed_still_says…` | 0 summary lines | MISSING_FUNCTIONALITY |
+| 9a `…skips_a_team…` | 2 Information lines about the skipped team | MISSING_FUNCTIONALITY |
+| 9b `…still_available…` | no Debug record of the check | MISSING_FUNCTIONALITY |
+
+Gate: **PASSED** — zero scenarios in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `WRONG_ASSERTION` classes.
+
+Two scenarios were reshaped during the gate rather than being handed to DELIVER red for the wrong
+reason, and both are worth recording:
+
+1. Scenario 6 first drove the **team** refresh. Its positive control fired: no per-Feature narration
+   appeared at any level, because `team.Portfolios` is empty on the entity the updater loads, so the
+   extrapolation pass never ran. The negative assertion was passing for free. Moved to the portfolio
+   refresh, where the narration demonstrably fires.
+2. Scenario 9's wait originally polled for the check *at Debug* — the very thing under test — so a
+   correct RED read as a 10-second fixture timeout. The wait is now level-agnostic and the level is
+   asserted separately.
+
+**One known vacuous assertion, accepted**: `RefreshLog.Mode` is asserted `EqualTo(SyncMode.Full)` in
+scenario 7 and currently passes on the enum's default value. It is not split out, because the two counts
+in the same multiple-assert scope are non-vacuous and the log-side `mode=full` assertion (scenario 1) is
+genuinely red. DELIVER should not read that one assertion as evidence.
+
+The 153 and 416 line counts are the slice's baseline measurement and belong in the slice verdict.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues
+
+1. **AC-1.7 is wider than slice 01's enumerated demotion list.** The brief names six log sites to demote.
+   The ≤ 2-lines-per-entity criterion requires demoting substantially more: `WorkItemService`'s
+   "Updating / Done Updating Features for Portfolio", "Updating / Done Updating Remaining Work for
+   Portfolio", "Owning Team for Portfolio…", "Feature Owner Field…", "Found following teams…", "Added
+   {n} Items for Feature {x} to Team {y}", "Using Percentile…", "Features had following number of child
+   items", "{Percentile} Percentile Based on…", plus `TeamDataService`'s "Updating / Finished updating
+   Team Data". Measured: 153 Information-and-above lines for a 25-item team refresh, 416 for a 25-Feature
+   portfolio refresh. The criterion stands as written — it is the right promise — but the ~1.5h "log-level
+   pass" estimate in the brief was scoped against the shorter list. No decision changes; DELIVER should
+   expect the pass to be broader than the brief's bullet list, which is what the tests enforce.
+2. **The connector's copy of "Updating Work Items for Team" is not observable through these scenarios.**
+   AC-1.5 names three copies; two are in `WorkItemService` and the third is in each connector, below the
+   faked port. The scenario measures 3 announcements today (two from `WorkItemService` plus one more on
+   the team path) and requires ≤ 1. The connector-side copy is covered by the code change and by the
+   connectors' own tests, not by this AT. Recorded so it is not mistaken for coverage.
+3. **OQ-D3 is answered — nothing else consumes `ITeamDataService.UpdateTeamData`.** Production callers:
+   `TeamUpdater` only. Blast radius of DDD-7's signature change, measured: `ITeamDataService` (1
+   implementation, 1 caller); `IWorkItemService.UpdateFeaturesForPortfolio` has one production caller
+   (`PortfolioUpdater`) plus two hand-written test fakes —
+   `API/Integration/PortfolioDeleteSerialisationTests` and `API/Integration/TeamDeleteSerialisationTests`
+   — which must be updated in the same commit as the interface.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN's driving ports: unchanged inbound surface (D4) — satisfied, nothing to provision.
+- DEVOPS environment matrix: none produced; project defaults apply. No Docker, no Testcontainers, no
+  external service. The whole slice-01 suite runs on SQLite in-process.
+- Terminology: scenarios and log fragments use the seeded defaults (`Team`, `Portfolio`, `Feature`,
+  `Work Item`) per `TerminologySeeder`.
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions Summary
+
+| ID | Decision |
+|---|---|
+| DT-1 | Summary-line field names fixed as `mode` / `scanned` / `fetched` / `duration` / `success`, asserted individually — answers DESIGN's open DEVOPS question |
+| DT-2 | `ITeamDataService` and `IWorkItemService` stay real in the harness; only the connector, the forecast service and the licence service are faked |
+| DT-3 | AC-1.4 is driven through the real background loop in a second fixture, because the integration host removes every hosted service |
+| DT-4 | AC-1.6 is driven from the portfolio refresh, where the per-record narration demonstrably fires |
+| DT-5 | The `RefreshLog` columns ship with their expand-only migration in the same commit — EF fails 55 host-booting tests otherwise, so it cannot be deferred to DELIVER |
+| DT-6 | Scenarios ship `[Ignore]`d so the tree stays green; DELIVER un-ignores them one at a time as the RED entry gate |
+
+---
+
+## Wave: DISTILL / Handoff
+
+**To**: `nw-software-crafter` (DELIVER).
+
+Ten scenarios, all red on assertions, all `[Ignore]`d. Un-ignore one at a time; each is one TDD cycle.
+Suggested order — scenario 7 (the persisted counts) and scenario 1 (the line) first, because everything
+else is a demotion pass that is easier to verify once there is a line to keep.
+
+Three things not to re-derive: the blast radius of the `ITeamDataService` signature change is measured
+above (three call sites, two of them test fakes); the demotion pass is wider than the slice brief's
+bullet list; and the `RefreshLog` migration is already generated and green — the next model change in
+this epic needs its own, in the same commit.
+
+---
+
+## Wave: DISTILL / [REF] Final Wave Review Gate
+
+Four reviewers, dispatched in parallel over the whole four-wave chain, 2026-08-09.
+
+| Reviewer | Scope | Verdict | Blockers |
+|---|---|---|---|
+| Sentinel (`nw-acceptance-designer-reviewer`) | DISTILL sections + the executable specifications + scaffolds | **approved** | 0 |
+| Eclipse (`nw-product-owner-reviewer`) | DISCUSS sections | **conditionally approved** | 0 (1 high, 2 medium) |
+| Architect (`nw-solution-architect-reviewer`) | DESIGN sections | **conditionally approved** | 0 design defects |
+| Forge (`nw-platform-architect-reviewer`) | DEVOPS dimension (no DEVOPS wave ran) | **conditionally approved** | 0 |
+
+**Cross-wave consistency**: no contradictions. Eclipse and Architect independently landed on the same
+finding from opposite directions — the slice brief's demotion list is narrower than AC-1.7 requires — which
+DISTILL had already measured. That is the only cross-wave issue, and it is a brief defect, not a
+DISCUSS or DESIGN one: the criterion is right as written.
+
+**Applied before handoff**:
+
+- Slice-01 brief now carries the measured 153/416 baseline, the full demotion list, the AC-1.5 coverage
+  boundary, the shared-contract blast radius with both test fakes named, an effort estimate moved from
+  ~4h to ~5h, and the migration written as a done-gate rather than a line item. The brief now stands
+  alone; a crafter reading only it is not missing anything DISTILL learned.
+- `SyncOutcome` and `SyncMode` added to the DESIGN component-decomposition table. DDD-7 named the type
+  in prose but never listed it, which is what let Architect read it as unspecified.
+
+**Not applied, with reasons** (no silent N/A):
+
+- *Architect's three "critical" items — `SyncOutcome` unwired, no summary line emitted, counts
+  unpopulated.* These are the slice, not defects in it. DISTILL hands DELIVER ten failing tests on
+  purpose; every one of the three is the RED that a scenario is currently asserting. No action.
+- *The `RefreshLog.Mode` assertion that passes on the enum default.* Already declared in the RED
+  classification. An enum cannot be de-vacuumed from the test side without a sentinel member, and adding
+  `Unknown` to a two-state domain concept to satisfy a test is the wrong trade. Sentinel judged the
+  declared mitigation adequate; the log-side `mode=full` assertion is genuinely red and covers it.
+- *Forge: `RefreshLog` growth and retention.* Fair, and worth stating plainly — slice 01 adds three
+  columns to a table whose retention this epic does not touch. Three `int`/`long` columns per row change
+  the growth *rate* negligibly; the row count is unchanged, because slice 01 writes exactly the rows that
+  were already being written. The retention policy is explicitly OUT of scope in the slice brief and stays
+  there. Recorded, not actioned.
+- *Forge: validate the summary line against the hosted fleet's log pipeline before shipping.* Lighthouse
+  is overwhelmingly self-hosted and the operator's pipeline is `docker logs` or `journalctl` — there is no
+  fleet-wide parser to break. The format is greppable and stable across the epic (only `mode`'s value
+  changes at slice 02). Worth one look on Tenant Zero at the dogfood moment the slice brief already
+  schedules; not a pre-DELIVER gate.
+- *Forge: multi-replica summary lines are per-execution.* Correct and worth knowing: on a multi-replica
+  instance each replica logs its own line for its own execution. That is not new — `RefreshLog` rows have
+  always been per-execution, and ADR-076's admission lock already guarantees one active lifecycle per
+  `UpdateKey`, so two replicas do not run the same entity concurrently. No instance identifier is added;
+  the log stream is already per-container.
+- *Forge: define the KPI dashboard now.* KPI-1/KPI-2 are not measurable until slice 02 ships delta, and
+  the epic's own D5 makes slice 01 the instrument rather than the measurement. Deferred to the slice that
+  first has two numbers to compare.
+- *Eclipse: OQ-2 (typical instance size) unquantified.* DISCUSS already recorded that it does not block
+  slice 01 and only informs the KPI-5 target. Unchanged.
+
+Handoff to DELIVER is unblocked: zero blockers, zero unresolved high findings.

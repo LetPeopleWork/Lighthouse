@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     {
         private readonly List<string> messages = [];
         private readonly List<string> warnings = [];
+        private readonly List<(LogEventLevel Level, string Message)> entries = [];
         private readonly Lock gate = new();
 
         public int Count
@@ -45,11 +46,51 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             lock (gate)
             {
                 messages.Add(message);
+                entries.Add((logEvent.Level, message));
 
                 if (logEvent.Level >= LogEventLevel.Warning)
                 {
                     warnings.Add(message);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Forgets everything captured so far. A test that counts lines has to start counting at the
+        /// action under test — host startup and fixture seeding log through the same sink.
+        /// </summary>
+        public void Clear()
+        {
+            lock (gate)
+            {
+                messages.Clear();
+                warnings.Clear();
+                entries.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Every message logged at or above <paramref name="level"/>. The level matters as much as the
+        /// text when the promise being asserted is about what an operator sees at default production
+        /// settings — a line demoted to Debug is still in <see cref="ContainsMessageFragment"/>.
+        /// </summary>
+        public IReadOnlyList<string> AtOrAbove(LogEventLevel level)
+        {
+            lock (gate)
+            {
+                return [.. entries.Where(entry => entry.Level >= level).Select(entry => entry.Message)];
+            }
+        }
+
+        /// <summary>
+        /// Every message logged at exactly <paramref name="level"/> — the form needed to assert that a
+        /// line was demoted rather than deleted.
+        /// </summary>
+        public IReadOnlyList<string> At(LogEventLevel level)
+        {
+            lock (gate)
+            {
+                return [.. entries.Where(entry => entry.Level == level).Select(entry => entry.Message)];
             }
         }
 

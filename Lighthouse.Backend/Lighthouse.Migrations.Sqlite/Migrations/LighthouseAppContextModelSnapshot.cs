@@ -1031,6 +1031,15 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("ItemCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Mode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RecordsFetched")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RecordsScanned")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("Success")
                         .HasColumnType("INTEGER");
 

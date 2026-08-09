@@ -19,7 +19,10 @@ that currently buries it.
   completes, success or failure.
 - `mode` is hard-coded `full` in this slice. The field exists before delta does, so later slices change
   the data, not the format — and slice 02's acceptance criteria have something to read.
-- Log-level surgery on the update path:
+- Log-level surgery on the update path. **Measured baseline (DISTILL, 2026-08-09): 153 Information-level
+  lines for a 25-item team refresh, 416 for a 25-Feature portfolio refresh.** The list below is where to
+  start, not the whole of it — AC-1.7's ≤ 2 lines per entity is the boundary, and the acceptance tests
+  are what enforce it:
   - `UpdateServiceBase.UpdateAll` "Checking last update for {Entity}" → Debug.
   - `TeamUpdater.ShouldUpdateEntity` / `PortfolioUpdater` "Last Refresh of … was N minutes ago" → Debug.
   - The three copies of "Updating Work Items for Team {X}" (`WorkItemService.UpdateWorkItemsForTeam`,
@@ -27,8 +30,31 @@ that currently buries it.
     collapse to one, at the top of the update.
   - Per-item and per-feature lines (`Added/Updated/Removed Work Item`, `Feature … Extrapolating`,
     "Added N Items to Feature") → Debug.
+  - The rest of `WorkItemService`: "Updating / Done Updating Features for Portfolio", "Updating / Done
+    Updating Remaining Work for Portfolio", "Owning Team for Portfolio …", "Feature Owner Field …",
+    "Found following teams …", "Added {n} Items for Feature {x} to Team {y}", "Using Percentile …",
+    "Features had following number of child items", "{Percentile} Percentile Based on …" → Debug.
+  - `TeamDataService`: "Updating / Finished updating Team Data for {TeamName}" → Debug.
   - Errors and warnings untouched. Nothing is deleted; noise is demoted, never dropped.
 - A logger-capturing test asserting ≤2 Information lines per entity per update, and 0 for a skipped one.
+
+### Coverage boundary on AC-1.5
+
+The acceptance tests fake `IWorkTrackingConnector`, so they observe only the two copies of "Updating Work
+Items for Team" that live in `WorkItemService`. Each connector's own copy is below the faked port — it is
+covered by the code change and by the connectors' existing tests, not by the AT. Do not read a green AT
+as proof the connector copy is gone.
+
+### Shared-contract blast radius (measured)
+
+DDD-7 changes `ITeamDataService.UpdateTeamData` to return a sync outcome instead of `Task`. Every call
+site, counted:
+
+- `ITeamDataService.UpdateTeamData` — one production caller, `TeamUpdater`.
+- `IWorkItemService.UpdateFeaturesForPortfolio` — one production caller, `PortfolioUpdater`, plus two
+  hand-written test fakes that implement the interface and must change in the same commit:
+  `Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs` and
+  `…/TeamDeleteSerialisationTests.cs`.
 
 ## OUT of scope
 
@@ -63,7 +89,15 @@ None. This slice is unblocked and blocks nothing but the *measurement* of slices
 
 ## Effort
 
-~4h. Migration ~0.5h, summary line ~1h, log-level pass ~1.5h, tests ~1h.
+~4.5h left. Migration **done** in DISTILL (`AddRefreshLogModeAndRecordCounts`, both providers,
+expand-only), tests **done** in DISTILL. Remaining: summary line + outcome plumbing ~1.5h, log-level pass
+~2.5h. The log-level pass was originally estimated at ~1.5h against the shorter demotion list above; the
+measured 153/416 baseline is what moved it.
+
+The migration could not be deferred: EF treats `PendingModelChangesWarning` as an error inside
+`Database.Migrate()`, so the three `RefreshLog` columns red 55 host-booting tests until the migration
+exists. The acceptance tests themselves would not have caught it — they build their schema with
+`EnsureCreated`. Any further model change in this epic needs its migration in the same commit.
 
 ## Production data / dogfood moment
 
