@@ -107,9 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await PublishDomainEvents(events);
 
-            // Epic #5687: a full sync downloads the payload of every record it saw, so both counts are
-            // the same fetch. Slice 02 is what makes them diverge.
-            return new SyncOutcome(SyncMode.Full, recordsFromTracker.Count, recordsFromTracker.Count);
+            return SyncOutcome.FullSync(recordsFromTracker.Count);
         }
 
         // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;
@@ -568,8 +566,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await SweepDepartedFeatureSpells(portfolio, features);
 
-            // Epic #5687: same reasoning as RefreshWorkItems — a full sync fetches everything it scanned.
-            return new SyncOutcome(SyncMode.Full, recordsFromTracker.Count, recordsFromTracker.Count);
+            return SyncOutcome.FullSync(recordsFromTracker.Count);
         }
 
         private List<IDomainEvent> CollectFeatureBlockedEvents(Portfolio portfolio, SyncedFeature syncedFeature)

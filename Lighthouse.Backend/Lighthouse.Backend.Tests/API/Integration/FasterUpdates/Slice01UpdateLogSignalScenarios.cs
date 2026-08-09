@@ -17,12 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-01")]
     public partial class Slice01UpdateLogSignalTest
     {
-        /// <summary>
-        /// DISTILL hands these over failing on their assertions. DELIVER removes one <c>[Ignore]</c> at a
-        /// time — that is the RED entry gate for each cycle.
-        /// </summary>
-        private const string RedUntilDelivered = "DISTILL RED (Epic 5687 slice 01) — un-ignore one at a time in DELIVER";
-
         // @walking_skeleton @driving_port @real-io @AC-1.1 @AC-1.3
         [Test]
         public async Task A_completed_team_update_says_what_it_did()

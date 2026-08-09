@@ -55,10 +55,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
-        /// <summary>
-        /// The one line an operator reads per completed update (Epic #5687). Every updater emits it from
-        /// its own finally block, so the shape stays identical across both halves of the cycle.
-        /// </summary>
+        /// <summary>The one line an operator reads per completed update (Epic #5687).</summary>
         protected void LogUpdateSummary(string entityName, SyncOutcome outcome, long durationMs, bool success)
         {
             Logger.LogInformation(
@@ -122,7 +119,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             foreach (var entity in repository.GetAll().ToList())
             {
-                // Per-entity, per-cycle: an operator reading Information sees the cycle, not every entity in it (Epic #5687).
                 Logger.LogDebug("Checking last update for {Entity}", entity.Id);
                 if (ShouldUpdateEntity(entity, refreshSettings))
                 {

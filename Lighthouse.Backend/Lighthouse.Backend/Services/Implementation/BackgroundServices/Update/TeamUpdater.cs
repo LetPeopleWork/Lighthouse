@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var stopwatch = Stopwatch.StartNew();
             var success = false;
             var itemCount = 0;
-            var outcome = new SyncOutcome(SyncMode.Full, 0, 0);
+            var outcome = SyncOutcome.None;
 
             try
             {

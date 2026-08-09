@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             // Epic #5687: without this the mock hands back a null outcome and the refresh log write throws.
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(It.IsAny<Team>()))
-                .ReturnsAsync(new SyncOutcome(SyncMode.Full, 0, 0));
+                .ReturnsAsync(SyncOutcome.None);
 
             SetupRefreshSettings(10, 10);
         }

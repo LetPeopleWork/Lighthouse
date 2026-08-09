@@ -335,12 +335,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     await gate.Task;
                 }
 
-                return new SyncOutcome(SyncMode.Full, 0, 0);
+                return SyncOutcome.None;
             }
 
             public Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
             {
-                return Task.FromResult(new SyncOutcome(SyncMode.Full, 0, 0));
+                return Task.FromResult(SyncOutcome.None);
             }
         }
     }

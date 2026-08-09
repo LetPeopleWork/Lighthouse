@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             workItemServiceMock = new Mock<IWorkItemService>();
             workItemServiceMock
                 .Setup(x => x.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
-                .ReturnsAsync(new SyncOutcome(SyncMode.Full, 0, 0));
+                .ReturnsAsync(SyncOutcome.None);
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             domainEventDispatcherMock
                 .Setup(x => x.PublishAsync(It.IsAny<PortfolioFeaturesRefreshed>(), It.IsAny<CancellationToken>()))

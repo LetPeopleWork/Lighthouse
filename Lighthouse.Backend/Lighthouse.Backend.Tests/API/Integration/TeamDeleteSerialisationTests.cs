@@ -265,7 +265,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             public Task<SyncOutcome> UpdateFeaturesForPortfolio(Portfolio portfolio)
             {
-                return Task.FromResult(new SyncOutcome(SyncMode.Full, 0, 0));
+                return Task.FromResult(SyncOutcome.None);
             }
 
             public async Task<SyncOutcome> UpdateWorkItemsForTeam(Team team)
@@ -275,7 +275,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     await gate.Task;
                 }
 
-                return new SyncOutcome(SyncMode.Full, 0, 0);
+                return SyncOutcome.None;
             }
         }
     }
