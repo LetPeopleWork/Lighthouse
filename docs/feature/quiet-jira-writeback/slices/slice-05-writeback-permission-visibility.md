@@ -1,6 +1,24 @@
 # Slice 05 - Write-back notification-suppression visibility
 
-**Type:** vertical | **Est:** ~1 day | **Stories:** US-02 (#5506)
+**Type:** vertical | **Est:** ~1 day | **Stories:** US-02 (#5506) | **Status: REMOVED, not built**
+
+> **REMOVED 2026-08-09 (user decision).** #5506 is `Removed`; the intent moves to Epic #5511 (Task
+> Manager). This slice was the most machinery in the epic for the least behaviour - a capability
+> interface, a dedicated endpoint, a per-project fan-out with a latency budget and a concurrency cap,
+> and a degraded "could not check" state - to answer a question slice 04's Warning already answers.
+>
+> The one thing it added was a **pre-flight** answer, and that gap is covered twice: this epic exists
+> because complaints reach the administrator, so a silent suppression failure fires the very signal that
+> started it; and the docs now carry the manual `mypermissions` check
+> (`docs/concepts/worktrackingsystems/jira.md`), which is this probe run by hand, for a connection that
+> is configured once. ADR-142's retry means the value always lands either way, so late discovery costs
+> emails, not data.
+>
+> The parts with behaviour already shipped in slice 04: the verdict's unit is the Jira project, the
+> project-key derivation with its honest fallback, and the `NotSuppressed` / `Unknown` distinction.
+> Rationale and what Epic #5511 must carry: ADR-145, section *Superseded*.
+>
+> Everything below is the original brief, kept for the reasoning.
 
 > **REVISED 2026-08-08 after SPIKE-03 and DESIGN.** Retitled twice over: the heading still carried the
 > pre-2026-07-17 numbering ("Slice 02"), and "deployment-aware" is now wrong because D4 is dropped - there

@@ -1,11 +1,46 @@
 # ADR-145: Write-back suppression capability is reported per Jira project, probed on demand, and never stored
 
-**Status**: **Accepted** (2026-08-08 — discovery shape ratified by the user: option S2, probe-on-demand)
+**Status**: **Superseded** (2026-08-09 — never implemented; see *Superseded* below). Previously Accepted
+2026-08-08 with the discovery shape ratified by the user as option S2, probe-on-demand.
 **Date**: 2026-08-08
 **Feature**: `quiet-jira-writeback` (ADO Epic #5500 "Quiet write-back", slice 05 / Story #5506)
 **Decider**: Morgan (Solution Architect), DESIGN application layer, interaction mode = PROPOSE
 **Evidence**: SPIKE-03 Q6 and "Requirements for a silent write-back",
 `docs/feature/quiet-jira-writeback/slices/slice-03-spike-jira-notification-suppression.md`
+
+---
+
+## Superseded — 2026-08-09 (user decision)
+
+**Nothing in this ADR was built.** US 5506 is `Removed`; the intent moves to Epic #5511 (Task Manager),
+where the condition becomes a task rather than a settings panel.
+
+Why: this ADR is the most machinery in the epic for the least behaviour — a capability interface, a
+dedicated endpoint, a per-project fan-out with a latency budget and a concurrency cap, and a degraded
+"could not check" state, all so a page can answer a question the log already answers. The one thing it
+adds over slice 04's warning is a *pre-flight* answer — "will it be quiet?" before any write happens —
+and that gap is covered twice: the epic exists because complaints reach the administrator, so a silent
+suppression failure fires the very signal that started it; and the docs now carry the manual
+`mypermissions` check, which is this probe run by hand, for a connection that is configured once.
+
+The failure mode is benign either way — ADR-142's retry means the value always lands — so late discovery
+costs emails, not data.
+
+**What survives, and where.** The reasoning here was not wasted; the parts with behaviour already shipped
+inside slice 04:
+
+| Decision | Where it lives now |
+|---|---|
+| §1 the verdict's unit is the Jira **project**, not the connection | `WriteBackService.WarnAboutWatchersWeCouldNotSpare` — the warning names projects |
+| §2 project key from the reference id, with an honest fallback | `WriteBackService.ProjectOf` — an unreadable reference is reported as it stands, never dropped or folded |
+| the `NotSuppressed` / `Unknown` distinction (ADR-142 §3) | reported per item by both connectors |
+
+**What Epic #5511 has to carry.** Recorded there as a comment, repeated here so this ADR is
+self-contained: deduplicate by connection (the warning fires once per connection per *flush*, which on a
+noisy portfolio is every refresh cycle — fine in a log, wrong in a task list), and keep `NotSuppressed`
+apart from `Unknown`, or the task tells someone to grant a permission that was never at fault.
+
+Everything below is the original ADR, kept for the reasoning rather than as a plan of record.
 
 ---
 

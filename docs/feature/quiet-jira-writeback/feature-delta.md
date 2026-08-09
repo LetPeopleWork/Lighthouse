@@ -472,8 +472,8 @@ where Op 6 parks the Epic once children merge but before release, so the umbrell
 | 02 | Batch write-back fields per issue | ~0.5-1d | Jira + ADO | US-05 |
 | 03 | SPIKE - suppression + permission failure mode + Q9 multi-field | ~0.5d | - | knowledge only, no ship |
 | 04 | `notifyUsers=false` on both deployments -> ADO parity | ~0.5d | Jira | US-01 |
-| 05 | Deployment-aware permission pre-check + connection status | ~1d | Jira | US-02 |
-| 06 | Cloud -> bulk edit API `sendBulkNotification:false` (async) | ~1d | Jira | US-03 |
+| ~~05~~ | ~~Deployment-aware permission pre-check + connection status~~ | ~~1d~~ | Jira | ~~US-02~~ - **REMOVED 2026-08-09**, folded into Epic #5511 (Task Manager); ADR-145 superseded |
+| ~~06~~ | ~~Cloud -> bulk edit API `sendBulkNotification:false` (async)~~ | ~~1d~~ | Jira | ~~US-03~~ - **REMOVED 2026-08-08**, least-privilege premise disproved by SPIKE-03 Q5 |
 
 **Order = architectural seam first (user decision, 2026-07-17).** 01 establishes the collection seam that
 02-06 all sit on, so grouping is written once against the final shape rather than per-pass and reworked.
@@ -1543,3 +1543,35 @@ pass was **vacuous**, asserting `Is.All.EqualTo(...)` over a list the mutant had
 Slice 02 recorded that Azure DevOps "cannot usefully be mutated" for want of a transport seam. That is now
 wrong: `UpdateItem` takes the `WorkItemTrackingHttpClient` as a parameter, so a Moq'd client reaches the
 whole fallback path. Its mutants are killed here, not waived.
+
+---
+
+## Wave: DELIVER / [REF] Slice 05 removed — the epic ends at slice 04
+
+**User decision, 2026-08-09.** US-02 / #5506 is `Removed`. ADR-145 is **Superseded, never implemented**;
+the intent moves to Epic #5511 (Task Manager), recorded there as a comment.
+
+The question US-02 asked — *"will Lighthouse actually be quiet with the credential I gave it?"* — is
+answered three ways now, none of which needed a settings panel:
+
+1. **After the fact, by Lighthouse**: slice 04's Warning names the affected projects and the remedy, once
+   per connection per flush.
+2. **Before the fact, by the administrator**: the `mypermissions` check in
+   `docs/concepts/worktrackingsystems/jira.md`, which is ADR-145's probe run by hand — for a connection
+   that is configured once.
+3. **By the team, as before**: this epic exists because complaints reach the administrator. A suppression
+   failure fires the same signal that started it, and now there is a log line and a docs page waiting.
+
+What tipped it: ADR-142's retry makes the failure **benign** — the value always lands — so late discovery
+costs emails, not data. A capability interface, a dedicated endpoint, a per-project fan-out with a latency
+budget and a concurrency cap, and a degraded "could not check" state is a large amount of machinery to buy
+earlier notice of a benign condition.
+
+Two constraints handed to #5511 so nothing is lost: **deduplicate by connection** (once per flush is fine
+in a log and wrong in a task list), and **keep `NotSuppressed` apart from `Unknown`** (a write that failed
+outright says nothing about permissions — surfacing it as one sends the administrator to grant a
+permission that was never at fault).
+
+Second slice this epic has killed on evidence rather than built: #5507 went the same way when SPIKE-03 Q5
+disproved its least-privilege premise. Both were removed because a measurement changed the answer, which
+is the spike and the slice discipline doing their job.
