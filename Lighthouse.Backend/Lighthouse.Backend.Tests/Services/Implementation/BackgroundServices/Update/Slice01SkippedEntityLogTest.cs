@@ -47,6 +47,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             appSettingServiceMock = new Mock<IAppSettingService>();
             licenseServiceMock = new Mock<ILicenseService>();
             teamDataServiceMock = new Mock<ITeamDataService>();
+            teamDataServiceMock.Setup(x => x.UpdateTeamData(It.IsAny<Team>())).ReturnsAsync(SyncOutcome.None);
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             loggerMock = new Mock<ILogger<TeamUpdater>>();
