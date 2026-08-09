@@ -33,23 +33,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
 
         /// <summary>
-        /// The one project on this site whose permission scheme does NOT grant ADMINISTER_PROJECTS to
-        /// every licensed user. Deleting it deletes this test's reason to exist (SPIKE-03, incidental
-        /// finding).
+        /// One fixed issue, reused, deliberately — the create-and-delete shape every other Jira fixture
+        /// uses is wrong here on both ends. The restricted credential has no Delete Issues in
+        /// <c>SPIKEPRM</c> (measured: <c>DELETE_ISSUES=false</c>), so teardown would leak an issue per
+        /// run; and this credential cannot suppress notifications *by definition*, so every create would
+        /// mail the project lead. Reusing one issue that the acting identity also owns and is assigned to
+        /// leaves the actor as the only notification recipient — and Jira does not mail you your own
+        /// changes.
         /// </summary>
-        private const string RestrictedProjectKey = "SPIKEPRM";
+        private const string DefaultProbeIssueKey = "SPIKEPRM-4";
 
         private const string DueDateField = "duedate";
 
         private const string TokenEnvironmentVariable = "JiraLighthouseRestrictedIntegrationTestToken";
         private const string UsernameEnvironmentVariable = "JiraLighthouseRestrictedIntegrationTestUsername";
+        private const string IssueEnvironmentVariable = "JiraLighthouseRestrictedIntegrationTestIssue";
         private const string DefaultRestrictedUsername = "benjamin@letpeople.work";
 
-        private string issueKey = string.Empty;
         private string? apiToken;
+        private string? accountId;
 
         [OneTimeSetUp]
-        public async Task CreateScratchIssue()
+        public async Task EnsureTheProbeIssueIsOwnedByTheActingIdentity()
         {
             apiToken = Environment.GetEnvironmentVariable(TokenEnvironmentVariable);
             if (string.IsNullOrEmpty(apiToken))
@@ -59,48 +64,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using var client = CreateRawClient(apiToken);
 
-            var payload = JsonSerializer.Serialize(new
-            {
-                fields = new
-                {
-                    project = new { key = RestrictedProjectKey },
-                    summary = $"Lighthouse write-back suppression probe {Guid.NewGuid():N}",
-                    issuetype = new { name = "Task" },
-                },
-            });
+            accountId = await ReadOwnAccountId(client);
 
+            // Idempotent, and the reason the fixture is quiet: assignee, reporter and the only watcher
+            // are all the acting identity, so no notification has anyone else to reach. A run that finds
+            // the issue reassigned puts it back rather than mailing whoever it was handed to.
+            var payload = JsonSerializer.Serialize(new { accountId });
             using var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            using var response = await client.PostAsync("rest/api/2/issue", content);
-            response.EnsureSuccessStatusCode();
+            using var response = await client.PutAsync($"rest/api/2/issue/{ProbeIssueKey}/assignee", content);
 
-            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            issueKey = document.RootElement.GetProperty("key").GetString()!;
-        }
-
-        [OneTimeTearDown]
-        public async Task DeleteScratchIssue()
-        {
-            if (string.IsNullOrEmpty(issueKey) || string.IsNullOrEmpty(apiToken))
+            if (!response.IsSuccessStatusCode)
             {
-                return;
+                TestContext.Progress.WriteLine(
+                    $"Could not self-assign {ProbeIssueKey}: HTTP {(int)response.StatusCode}. The write below may notify.");
             }
-
-            using var client = CreateRawClient(apiToken);
-
-            try
-            {
-                using var response = await client.DeleteAsync($"rest/api/2/issue/{issueKey}?deleteSubtasks=true");
-                if (!response.IsSuccessStatusCode)
-                {
-                    TestContext.Progress.WriteLine($"Failed to delete scratch issue {issueKey}: HTTP {(int)response.StatusCode}");
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                TestContext.Progress.WriteLine($"Failed to delete scratch issue {issueKey}: {ex.Message}");
-            }
-
-            issueKey = string.Empty;
         }
 
         /// <summary>
@@ -113,10 +90,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             SkipWithoutRestrictedCredential();
 
-            var dueDate = DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd");
+            var dueDate = await ADueDateDifferentFromTheStoredOne();
 
             var result = await CreateSubject().WriteFieldsToWorkItems(CreateRestrictedConnection(), [
-                new WriteBackFieldUpdate { WorkItemId = issueKey, TargetFieldReference = DueDateField, Value = dueDate },
+                new WriteBackFieldUpdate { WorkItemId = ProbeIssueKey, TargetFieldReference = DueDateField, Value = dueDate },
             ]);
 
             var written = await ReadDueDate();
@@ -135,14 +112,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.Ignore($"{TokenEnvironmentVariable} is not set — the under-permissioned identity is what this fixture is for.");
             }
+        }
 
-            Assert.That(issueKey, Is.Not.Empty, "The scratch issue was not created; the restricted credential cannot write to " + RestrictedProjectKey + ".");
+        /// <summary>
+        /// A value the issue does not already hold: writing what is already there would make the
+        /// read-back assertion pass without Jira having accepted anything.
+        /// </summary>
+        private async Task<string> ADueDateDifferentFromTheStoredOne()
+        {
+            var stored = await ReadDueDate();
+
+            var candidate = DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd");
+
+            return candidate == stored
+                ? DateTime.UtcNow.AddDays(31).ToString("yyyy-MM-dd")
+                : candidate;
         }
 
         private async Task<string?> ReadDueDate()
         {
             using var client = CreateRawClient(apiToken!);
-            using var response = await client.GetAsync($"rest/api/2/issue/{issueKey}?fields={DueDateField}");
+            using var response = await client.GetAsync($"rest/api/2/issue/{ProbeIssueKey}?fields={DueDateField}");
             response.EnsureSuccessStatusCode();
 
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -150,6 +140,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             return value.ValueKind == JsonValueKind.Null ? null : value.GetString();
         }
+
+        private static async Task<string> ReadOwnAccountId(HttpClient client)
+        {
+            using var response = await client.GetAsync("rest/api/2/myself");
+            response.EnsureSuccessStatusCode();
+
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            return document.RootElement.GetProperty("accountId").GetString()!;
+        }
+
+        private static string ProbeIssueKey
+            => Environment.GetEnvironmentVariable(IssueEnvironmentVariable) ?? DefaultProbeIssueKey;
 
         private static string RestrictedUsername
             => Environment.GetEnvironmentVariable(UsernameEnvironmentVariable) ?? DefaultRestrictedUsername;
