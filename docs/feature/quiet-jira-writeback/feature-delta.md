@@ -1323,8 +1323,16 @@ tracker answered. The write path is untouched — AC-01.4 is a parity guard, not
 **Jira live, restricted identity — `Jira/JiraSuppressionRetryIntegrationTest.cs` (1)**
 
 `WriteFieldsToWorkItems_CredentialCannotSuppress_WritesTheValueAnywayAndReportsItNoisy` —
-`@real-io @requires_external`, RED. Creates a scratch Task in `SPIKEPRM`, writes `duedate`, reads it
-back, deletes it.
+`@real-io @requires_external`, RED. Writes `duedate` to the fixed probe issue `SPIKEPRM-4` and reads it
+back.
+
+**Why it reuses an issue instead of creating one, against the house pattern.** Both ends of
+create-and-delete are wrong for this credential, and the first draft learned it the expensive way — one
+leaked issue and one real email. It has no Delete Issues in `SPIKEPRM` (`DELETE_ISSUES=false`), so
+teardown failed silently; and the project auto-assigns to its lead, so every create notified somebody
+else — which this credential cannot suppress, that being the entire reason it exists. Setup re-asserts
+self-assignment, leaving actor == assignee == reporter == sole watcher, and Jira does not mail you your
+own changes.
 
 **Azure DevOps — `AzureDevOps/AzureDevOpsSuppressionOutcomeTest.cs` (3)**
 
@@ -1452,6 +1460,9 @@ first; they ship un-ignored so they fail the moment DELIVER breaks them.
   `benjamin@letpeople.work`.
 - Project `SPIKEPRM` must keep its team-managed permission scheme. Every other project on the test site
   grants `ADMINISTER_PROJECTS` to any licensed user, so deleting it removes the only way to reach the 403.
+- Issue `SPIKEPRM-4` is the fixture's fixed target and must stay assigned to the restricted identity —
+  reassigning it turns every run into an email. Override with
+  `JiraLighthouseRestrictedIntegrationTestIssue` if it ever has to move.
 
 ### Tier-2 expansion catalog (listed, not rendered — density = lean)
 
