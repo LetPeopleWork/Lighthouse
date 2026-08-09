@@ -41,6 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             portfolio.RefreshUpdateTime();
 
+            // Stryker disable once all: what an update completed is now said by the one "Update completed" summary line (Epic #5687), whose text UpdateServiceBase pins; this is Debug trace.
             logger.LogDebug("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
             return outcome;
@@ -57,6 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 await UpdateRemainingWorkForPortfolio(portfolio);
             }
 
+            // Stryker disable once all: the team half of the same trace — the summary line, not this one, is what an operator reads.
             logger.LogDebug("Done Updating Work Items for Team {TeamName}", team.Name);
 
             return outcome;
@@ -64,6 +66,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task<SyncOutcome> RefreshWorkItems(Team team)
         {
+            // Stryker disable once all: one of the three copies of this announcement AC-1.5 caps at one; the scenario counts it by level, not by wording.
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var syncTime = DateTime.UtcNow;
@@ -324,6 +327,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task UpdateRemainingWorkForPortfolio(Portfolio portfolio)
         {
+            // Stryker disable once all: entry trace of the remaining-work pass; the pass itself is the statements below, which Stryker mutates on their own.
             logger.LogDebug("Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
             defaultWorkItemsBasedOnPercentile.Remove(portfolio.Id);
 
@@ -333,6 +337,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await featureRepository.Save();
 
+            // Stryker disable once all: exit trace of that same pass; nothing branches on it and no caller reads it.
             logger.LogDebug("Done Updating Remaining Work for Portfolio {PortfolioName}", portfolio.Name);
         }
 
@@ -379,10 +384,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 }
             }
 
+            // Stryker disable once all: per-record narration. AC-1.6's control asserts the set is present at Debug by fragment, so emptying one line deliberately leaves the others.
             logger.LogDebug("Extrapolating Not Broken Down Features for Portfolio {PortfolioName}", portfolio.Name);
 
             foreach (var feature in portfolio.GetFeaturesToExtrapolate())
             {
+                // Stryker disable once all: same set — the extrapolation decision it narrates is the assignment below, whose own mutant is killed.
                 logger.LogDebug("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
 
@@ -390,6 +397,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 AssignExtrapolatedWorkToTeams(portfolio, feature, remainingWork);
 
+                // Stryker disable once all: same set — the work it reports was assigned by AssignExtrapolatedWorkToTeams above, whose mutants are killed.
                 logger.LogDebug("Added {RemainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
             }
         }
@@ -404,6 +412,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (portfolio.OwningTeam != null)
             {
+                // Stryker disable once all: trace of the owning-team branch; the null guard it sits under is mutated on its own and killed.
                 logger.LogDebug("Owning Team for Portfolio is {TeamName} - using this for Default Work Assignment", portfolio.OwningTeam.Name);
                 owningTeams = [portfolio.OwningTeam];
             }
@@ -413,10 +422,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (!string.IsNullOrEmpty(featureOwnerValue))
             {
+                // Stryker disable once all: trace of the feature-owner branch; the IsNullOrEmpty guard it sits under is mutated on its own and killed.
                 logger.LogDebug("Feature Owner Field for Project is configured - Getting value for Feature {FeatureName}: {OwnerValue}", feature.Name, featureOwnerValue);
 
                 var featureOwners = teamRepository.GetAll().Where(t => featureOwnerValue.Contains(t.Name)).ToList();
 
+                // Stryker disable once all: covers the join separator too — the joined string is built for this message and read nowhere else.
                 logger.LogDebug("Found following teams defined in Feature Owner field: {Owners}", string.Join(",", featureOwners.Select(t => t.Name)));
                 if (featureOwners.Count > 0)
                 {
@@ -438,6 +449,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var totalWork = buckets[index];
                 feature.AddOrUpdateWorkForTeam(team, totalWork, totalWork);
 
+                // Stryker disable once all: narrates the AddOrUpdateWorkForTeam call above, whose removal is killed.
                 logger.LogDebug("Added {TotalWork} Items for Feature {FeatureName} to Team {TeamName}", totalWork, feature.Name, team.Name);
             }
         }
@@ -463,6 +475,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (project.UsePercentileToCalculateDefaultAmountOfWorkItems)
             {
+                // Stryker disable once all: trace of the percentile branch; the UsePercentileToCalculateDefaultAmountOfWorkItems guard above is mutated on its own and killed.
                 logger.LogDebug("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
 
                 /* Use ProjectMetricsService to Get Values */
@@ -476,12 +489,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 var historicalFeatureSize = closedFeatures.Where(f => f.Size > 0).Select(f => f.Size);
 
+                // Stryker disable once all: covers the join separator too — the joined sample exists for this message; the percentile is computed from the sequence, not the string.
                 logger.LogDebug("Features had following number of child items: {ChildItems}", string.Join(",", historicalFeatureSize));
 
                 if (historicalFeatureSize.Any())
                 {
                     defaultItems = PercentileCalculator.CalculatePercentile(historicalFeatureSize.ToList(), project.DefaultWorkItemPercentile);
 
+                    // Stryker disable once all: reports the value CalculatePercentile just returned; the value is what the caller uses, the sentence is not.
                     logger.LogDebug("{Percentile} Percentile Based on Last {Days} days is {DefaultItems}", project.DefaultWorkItemPercentile, project.PercentileHistoryInDays, defaultItems);
                 }
             }

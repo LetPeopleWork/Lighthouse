@@ -1,0 +1,22 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Models/SyncOutcome.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/Services/Implementation/TeamData/TeamDataService.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~FasterUpdates|FullyQualifiedName~TeamUpdaterTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~Slice01SkippedEntityLogTest|FullyQualifiedName~TeamDataServiceTest|FullyQualifiedName~WorkItemService|FullyQualifiedName~UpdateQueueServiceTests|FullyQualifiedName~QuietWriteBack",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
