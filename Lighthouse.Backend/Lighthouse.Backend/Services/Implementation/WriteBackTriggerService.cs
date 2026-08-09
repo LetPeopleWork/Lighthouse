@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return ResolvePortfolioWriteBack(portfolio, isForecast: false);
         }
 
-        private IReadOnlyList<WriteBackFieldUpdate> ResolvePortfolioWriteBack(Portfolio portfolio, bool isForecast)
+        private List<WriteBackFieldUpdate> ResolvePortfolioWriteBack(Portfolio portfolio, bool isForecast)
         {
             try
             {

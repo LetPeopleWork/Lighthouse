@@ -123,11 +123,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var results = await subject.FlushAsync();
 
             var itemResults = results.Single().ItemResults;
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(itemResults.Single(r => r.WorkItemId == "PROJ-1").Success, Is.True);
                 Assert.That(itemResults.Single(r => r.WorkItemId == "PROJ-2").ErrorMessage, Is.EqualTo("Field not found"));
-            });
+            }
         }
 
         [Test]

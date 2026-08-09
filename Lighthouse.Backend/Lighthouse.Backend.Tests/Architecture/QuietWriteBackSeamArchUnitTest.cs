@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
+        private static readonly string[] TheOnlyAsynchronousMember = ["FlushAsync"];
+
         [Test]
         public void WriteBackTriggerService_DoesNotDependOnTheWriteBackService()
         {
@@ -35,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Select(method => method.Name)
                 .ToList();
 
-            Assert.That(asynchronousMembers, Is.EquivalentTo(new[] { "FlushAsync" }));
+            Assert.That(asynchronousMembers, Is.EquivalentTo(TheOnlyAsynchronousMember));
         }
     }
 }
