@@ -381,18 +381,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 }
             }
 
-            logger.LogInformation("Extrapolating Not Broken Down Features for Portfolio {PortfolioName}", portfolio.Name);
+            logger.LogDebug("Extrapolating Not Broken Down Features for Portfolio {PortfolioName}", portfolio.Name);
 
             foreach (var feature in portfolio.GetFeaturesToExtrapolate())
             {
-                logger.LogInformation("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
+                logger.LogDebug("Feature {FeatureName} has no Work - Extrapolating", feature.Name);
                 feature.IsUsingDefaultFeatureSize = true;
 
                 var remainingWork = GetExtrapolatedRemainingWork(portfolio, feature);
 
                 AssignExtrapolatedWorkToTeams(portfolio, feature, remainingWork);
 
-                logger.LogInformation("Added {RemainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
+                logger.LogDebug("Added {RemainingWork} Items to Feature {FeatureName}", remainingWork, feature.Name);
             }
         }
 
@@ -406,7 +406,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (portfolio.OwningTeam != null)
             {
-                logger.LogInformation("Owning Team for Portfolio is {TeamName} - using this for Default Work Assignment", portfolio.OwningTeam.Name);
+                logger.LogDebug("Owning Team for Portfolio is {TeamName} - using this for Default Work Assignment", portfolio.OwningTeam.Name);
                 owningTeams = [portfolio.OwningTeam];
             }
 
@@ -415,11 +415,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (!string.IsNullOrEmpty(featureOwnerValue))
             {
-                logger.LogInformation("Feature Owner Field for Project is configured - Getting value for Feature {FeatureName}: {OwnerValue}", feature.Name, featureOwnerValue);
+                logger.LogDebug("Feature Owner Field for Project is configured - Getting value for Feature {FeatureName}: {OwnerValue}", feature.Name, featureOwnerValue);
 
                 var featureOwners = teamRepository.GetAll().Where(t => featureOwnerValue.Contains(t.Name)).ToList();
 
-                logger.LogInformation("Found following teams defined in Feature Owner field: {Owners}", string.Join(",", featureOwners.Select(t => t.Name)));
+                logger.LogDebug("Found following teams defined in Feature Owner field: {Owners}", string.Join(",", featureOwners.Select(t => t.Name)));
                 if (featureOwners.Count > 0)
                 {
                     owningTeams = featureOwners;
@@ -440,7 +440,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var totalWork = buckets[index];
                 feature.AddOrUpdateWorkForTeam(team, totalWork, totalWork);
 
-                logger.LogInformation("Added {TotalWork} Items for Feature {FeatureName} to Team {TeamName}", totalWork, feature.Name, team.Name);
+                logger.LogDebug("Added {TotalWork} Items for Feature {FeatureName} to Team {TeamName}", totalWork, feature.Name, team.Name);
             }
         }
 
@@ -465,7 +465,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (project.UsePercentileToCalculateDefaultAmountOfWorkItems)
             {
-                logger.LogInformation("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
+                logger.LogDebug("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
 
                 /* Use ProjectMetricsService to Get Values */
                 // Bug #5567 decision 4: both stay UTC. A history window is an instant offset, not a
@@ -478,13 +478,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 var historicalFeatureSize = closedFeatures.Where(f => f.Size > 0).Select(f => f.Size);
 
-                logger.LogInformation("Features had following number of child items: {ChildItems}", string.Join(",", historicalFeatureSize));
+                logger.LogDebug("Features had following number of child items: {ChildItems}", string.Join(",", historicalFeatureSize));
 
                 if (historicalFeatureSize.Any())
                 {
                     defaultItems = PercentileCalculator.CalculatePercentile(historicalFeatureSize.ToList(), project.DefaultWorkItemPercentile);
 
-                    logger.LogInformation("{Percentile} Percentile Based on Last {Days} days is {DefaultItems}", project.DefaultWorkItemPercentile, project.PercentileHistoryInDays, defaultItems);
+                    logger.LogDebug("{Percentile} Percentile Based on Last {Days} days is {DefaultItems}", project.DefaultWorkItemPercentile, project.PercentileHistoryInDays, defaultItems);
                 }
             }
 

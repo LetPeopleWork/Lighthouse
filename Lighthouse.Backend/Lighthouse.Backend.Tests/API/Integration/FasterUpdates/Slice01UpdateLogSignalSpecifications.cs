@@ -203,7 +203,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 Assert.That(recorded!.EntityName, Is.EqualTo(team.Name));
                 Assert.That(recorded.ItemCount, Is.EqualTo(itemCount));
                 Assert.That(recorded.Success, Is.True);
-                Assert.That(recorded.ExecutedAt, Is.Not.EqualTo(default(DateTime)));
+                Assert.That(recorded.ExecutedAt, Is.Not.Default);
             }
         }
 

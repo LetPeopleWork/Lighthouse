@@ -98,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @AC-1.6 — demoted, never deleted: the per-record stream stays available at Debug.
         // Driven from the portfolio half, which is where the per-Feature narration is emitted.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task An_update_keeps_its_per_record_chatter_out_of_the_operators_log()
         {
             var portfolio = GivenAPortfolioThatIsRefreshedOnSchedule();
