@@ -42,6 +42,7 @@ jobs:
     env:
       AzureDevOpsLighthouseIntegrationTestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEINTEGRATIONTESTTOKEN }}
       JiraLighthouseIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSEINTEGRATIONTESTTOKEN }}
+      JiraLighthouseRestrictedIntegrationTestToken: ${{ secrets.JIRALIGHTHOUSERESTRICTEDINTEGRATIONTESTTOKEN }}
       JiraScopedTokenIntegrationTestToken: ${{ secrets.JIRASCOPEDTOKENINTEGRATIONTESTTOKEN }}
       AzureDevOpsLighthouseE2ETestToken: ${{ secrets.AZUREDEVOPSLIGHTHOUSEE2ETESTTOKEN }}
       LinearAPIKey: ${{ secrets.LINEARAPIKEY }}

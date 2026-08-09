@@ -85,10 +85,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
         private void ThenTheAdministratorIsNotWarnedAboutNotifications()
         {
-            Assert.That(CapturedLogs.SawAnything, Is.True,
-                "positive control: the capture saw no log at all, so the assertion below cannot fail");
-            Assert.That(TheSuppressionWarnings(), Is.Empty,
-                "Only a refused suppression is a permission problem worth warning about.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CapturedLogs.SawAnything, Is.True,
+                    "positive control: the capture saw no log at all, so the assertion below cannot fail");
+                Assert.That(TheSuppressionWarnings(), Is.Empty,
+                    "Only a refused suppression is a permission problem worth warning about.");
+            }
         }
 
         /// <summary>
