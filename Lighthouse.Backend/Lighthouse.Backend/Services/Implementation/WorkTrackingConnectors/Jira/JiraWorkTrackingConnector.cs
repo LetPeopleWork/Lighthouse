@@ -302,13 +302,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (batch.Succeeded)
             {
-                return [.. updates.Select(update => Written(update))];
+                return [.. updates.Select(WriteBackItemResult.Written)];
             }
 
             // A single field is already as isolated as it gets; re-sending it would only repeat the failure.
             if (updates.Count == 1)
             {
-                return [Refused(updates[0], batch.ErrorMessage)];
+                return [WriteBackItemResult.Refused(updates[0], batch.ErrorMessage)];
             }
 
             var results = new List<WriteBackItemResult>();
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var update in updates)
             {
                 var single = await TryWriteFields(client, issueKey, [update], additionalFieldReferences);
-                results.Add(single.Succeeded ? Written(update) : Refused(update, single.ErrorMessage));
+                results.Add(single.Succeeded ? WriteBackItemResult.Written(update) : WriteBackItemResult.Refused(update, single.ErrorMessage));
             }
 
             return results;
@@ -330,7 +330,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var fields = new Dictionary<string, object>();
                 foreach (var update in updates)
                 {
-                    fields[ResolveFieldReference(update, additionalFieldReferences)] = CoerceFieldValue(update);
+                    var fieldReference = ResolveFieldReference(update, additionalFieldReferences);
+
+                    // Two mappings can name the same Jira field by different routes - one by display name,
+                    // one by reference - and dedup upstream keys on the target as configured, not as
+                    // resolved. Silently keeping the last would report both as written.
+                    if (fields.ContainsKey(fieldReference))
+                    {
+                        logger.LogWarning(
+                            "Two write-back mappings resolve to the same Jira field {FieldReference} on issue {IssueKey}; keeping the last value staged.",
+                            fieldReference, issueKey);
+                    }
+
+                    fields[fieldReference] = CoerceFieldValue(update);
                 }
 
                 var payload = JsonSerializer.Serialize(new { fields });
@@ -347,6 +359,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     issueKey, updates.Count, response.StatusCode, errorBody);
 
                 return (false, $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}");
+            }
+            // Cancellation is how shutdown reaches us; reporting it as a write failure would both lose the
+            // signal and blame the tracker for a decision we made.
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -369,22 +387,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => double.TryParse(update.Value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var numericValue)
                 ? numericValue
                 : update.Value;
-
-        private static WriteBackItemResult Written(WriteBackFieldUpdate update) => new()
-        {
-            WorkItemId = update.WorkItemId,
-            TargetFieldReference = update.TargetFieldReference,
-            Success = true,
-        };
-
-        private static WriteBackItemResult Refused(WriteBackFieldUpdate update, string errorMessage) => new()
-        {
-            WorkItemId = update.WorkItemId,
-            TargetFieldReference = update.TargetFieldReference,
-            Success = false,
-            ErrorMessage = errorMessage,
-        };
-
 
         private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
         {

@@ -334,12 +334,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// which was measured rather than assumed — so a rejected batch is re-sent one operation at a
         /// time. The valid fields land and the offending one fails alone.
         /// </summary>
-        private async Task<List<WriteBackItemResult>> UpdateItem(string url, WorkItemTrackingHttpClient witClient,
+        internal async Task<List<WriteBackItemResult>> UpdateItem(string url, WorkItemTrackingHttpClient witClient,
             string workItemReference, IReadOnlyList<WriteBackFieldUpdate> updates)
         {
             if (!int.TryParse(workItemReference, out var workItemId))
             {
-                return [.. updates.Select(update => Refused(update,
+                return [.. updates.Select(update => WriteBackItemResult.Refused(update,
                     $"Work item ID '{update.WorkItemId}' is not a valid integer for Azure DevOps."))];
             }
 
@@ -347,13 +347,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             if (batch.Succeeded)
             {
-                return [.. updates.Select(Written)];
+                return [.. updates.Select(WriteBackItemResult.Written)];
             }
 
             // A single operation is already as isolated as it gets.
             if (updates.Count == 1)
             {
-                return [Refused(updates[0], batch.ErrorMessage)];
+                return [WriteBackItemResult.Refused(updates[0], batch.ErrorMessage)];
             }
 
             var results = new List<WriteBackItemResult>();
@@ -361,7 +361,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             foreach (var update in updates)
             {
                 var single = await TryPatch(url, witClient, workItemId, [update]);
-                results.Add(single.Succeeded ? Written(update) : Refused(update, single.ErrorMessage));
+                results.Add(single.Succeeded ? WriteBackItemResult.Written(update) : WriteBackItemResult.Refused(update, single.ErrorMessage));
             }
 
             return results;
@@ -385,27 +385,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 return (true, string.Empty);
             }
+            // Cancellation is how shutdown reaches us; reporting it as a write failure would both lose the
+            // signal and blame the tracker for a decision we made.
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 logger.LogDebug(ex, "Failed to write {FieldCount} field(s) to work item {WorkItemId}", updates.Count, workItemId);
                 return (false, ex.Message);
             }
         }
-
-        private static WriteBackItemResult Written(WriteBackFieldUpdate update) => new()
-        {
-            WorkItemId = update.WorkItemId,
-            TargetFieldReference = update.TargetFieldReference,
-            Success = true,
-        };
-
-        private static WriteBackItemResult Refused(WriteBackFieldUpdate update, string errorMessage) => new()
-        {
-            WorkItemId = update.WorkItemId,
-            TargetFieldReference = update.TargetFieldReference,
-            Success = false,
-            ErrorMessage = errorMessage,
-        };
 
         private static string ExtractTeamIdFromBoard(Microsoft.TeamFoundation.Work.WebApi.Board board)
         {

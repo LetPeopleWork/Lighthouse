@@ -856,11 +856,19 @@ Slice 01 adds no driven adapter. Its ports:
 | `ILicenseService` | faked | premium gate on every scenario |
 | `IWorkItemService` / `IForecastService` / `ITeamDataService` | faked | so every recorded connector call is a write-back and nothing else |
 
-**Not covered at this layer, on purpose** — `suppressNotifications: true` on the Azure DevOps call
-(AC-04.4's second half). The flag lives inside `AzureDevOpsWorkTrackingConnector`, below
-`IWorkTrackingConnector`, so no scenario entering at the refresh can see it. It stays where it is
-already asserted: `AzureDevOpsWriteBackTest`. Scenario 4 covers the half that *is* observable here —
-that an ADO connection flushes through the same seam with the same payload.
+**Not covered at this layer** — `suppressNotifications: true` on the Azure DevOps call (AC-04.4's
+second half). The flag lives inside `AzureDevOpsWorkTrackingConnector`, below `IWorkTrackingConnector`,
+so no scenario entering at the refresh can see it. Scenario 4 covers the half that *is* observable
+here — that an ADO connection flushes through the same seam with the same payload.
+
+> **CORRECTION, 2026-08-09.** This section originally said the flag "stays where it is already
+> asserted: `AzureDevOpsWriteBackTest`". **That was false.** `suppressNotifications` appears in exactly
+> two places in the repository: the production call site, and the *teardown* helper of that same
+> fixture. **No test asserts it, and none ever did.** AC-04.4's flag half and AC-05.6 are both
+> unasserted. The blocker is structural — `AzureDevOpsWorkTrackingConnector` reaches the API through
+> the concrete SDK type `WorkItemTrackingHttpClient` with no seam to intercept, and the live fixture
+> cannot observe a notification without a second ADO identity, which the environment does not have.
+> Recorded as an open gap rather than left as a false claim; see the slice-02 section for disposition.
 
 ---
 
@@ -1239,6 +1247,34 @@ the carve-out now would mean a 403 silently loses every field on the item until 
 | `dotnet format analyzers --severity info` | PASS, run **before** push this time (caught one NUnit2045) |
 | Mutation, scoped to the rewritten methods | **86.96 %** — see `mutation/results-5503.md` |
 | Mutation, whole connector file | 11.14 %, and meaningless for this slice — the file is 1440 lines, 288 mutants are `NoCoverage` in untouched sync/board/changelog code, and Stryker.NET cannot scope to a line range |
+
+### Reviewer gates
+
+Both were **run late** — after the slice was already pushed — because I skipped them and the maintainer
+caught it. Recorded as a process failure, not a footnote: the refactor pass and both review gates are
+part of the wave, and "the tests are green" is not a substitute for either.
+
+**`nw-acceptance-designer-reviewer` (DISTILL): conditionally approved**, 0 blockers, 1 high, 2 low.
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | **AC-05.6 (`suppressNotifications: true` on the batched ADO call) is implemented but asserted nowhere.** The suite would pass if the flag were removed | **APPLIED.** Independently confirmed before the review landed: `suppressNotifications` appeared in exactly two places in the repo — the production call site and the fixture's own *teardown*. New `AzureDevOpsBatchedWriteBackTest` intercepts the SDK client and asserts it, following the `GetAllStateTransitionsThrottled` precedent (`internal` + `InternalsVisibleTo`). This also closes slice 01's AC-04.4, whose delta wrongly claimed the flag was already asserted — corrected in place above |
+| 2 | Earned-Trust probe 4 (grouping is order-independent) untested | **APPLIED** — `WriteFieldsToWorkItems_FieldOrderWithinTheBatch_DoesNotChangeWhatIsSent`, parameterised both ways |
+| 3 | Earned-Trust probe 2 (permission failures are atomic too) untested | **DEFERRED, with reason.** It needs a credential that can reach the item but not write one field. Jira has `SPIKEPRM` for exactly this; Azure DevOps has no second identity in this environment. Raising it in slice 04, which is where permission failures become the subject rather than a side case |
+
+**`nw-software-crafter-reviewer` (DELIVER): rejected**, 3 blockers claimed. Two of the three do not
+survive checking, which is worth recording so the next reader does not re-derive them:
+
+| # | Finding | Disposition |
+|---|---|---|
+| D2 | `catch (Exception)` swallows `OperationCanceledException`, so shutdown is reported as a write failure | **APPLIED** — both connectors rethrow `OperationCanceledException` ahead of the general catch. Correct and cheap |
+| D5 | Two mappings resolving to the **same** Jira field silently overwrite, and both are reported written | **APPLIED** (warning). Reachable: one mapping stored by display name, another by reference, both resolving to the same id — dedup upstream keys on the target *as configured*, not *as resolved* |
+| D1 | "No unit tests exist for the orchestration; only integration tests" | **REJECTED — factually wrong.** `JiraBatchedWriteBackTest` already carried 10 unit specs over a stubbed transport covering batch success, single-field failure without retry, `1 + N` retry, transport throw and all-refused. The reviewer also reported `actual_tests: 0` |
+| D3 | Uncapped `1 + N` retry is a "resource leak" | **REJECTED as a blocker.** Today's cost is `N` calls per cycle; after the change it is `1 + N` only when a batch fails — one extra call, not unbounded growth. ADR-143 already records this under "Negative / accepted", and the proposed fix needs cross-cycle memory, which ADR-144 explicitly rejected |
+| D4 | ADO chunking now bounds items rather than fields, so operation count is unbounded | **REJECTED as stated.** Concurrency is unchanged — `MaxChunkSize` still caps calls in flight at 200; each call now carries more fields and there are *fewer* calls overall. The reviewer conflated operations with concurrent requests |
+| D6 | The empty-reference fallback masks misconfiguration; fail instead | **REJECTED.** A field stored *by reference* legitimately never appears in the name→id map, and that is the common case. Failing it would break working configurations to catch a rarer one |
+| D7 | Bare `catch` will fail SonarQube S1193 | **REJECTED — empirically false.** `sonar-gates` passed on this exact code |
+| D8, D9 | Defensive result-count check; extract the retry into a shared helper | **REJECTED.** D8 is unreachable (`GroupBy` over a non-empty list always yields groups). D9 is the shared abstraction ADR-143 explicitly considered and rejected |
 
 ### DoD
 

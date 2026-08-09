@@ -37,6 +37,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] AllThreeFields = [AgeField, DateField, "description"];
 
+        private static readonly string[] BothFields = [AgeField, DateField];
+
         private List<RecordedPut> recordedPuts = null!;
 
         private sealed record RecordedPut(string IssueKey, Dictionary<string, JsonElement> Fields, string RawBody);
@@ -208,6 +210,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(result.ItemResults.Single().Success, Is.False);
                 Assert.That(result.ItemResults.Single().ErrorMessage, Does.Contain("unreachable"));
+            }
+        }
+
+        // ADR-143's fourth Earned-Trust probe: grouping must not depend on the order the flat plan
+        // happened to arrive in.
+        [TestCase(false)]
+        [TestCase(true)]
+        public async Task WriteFieldsToWorkItems_FieldOrderWithinTheBatch_DoesNotChangeWhatIsSent(bool reversed)
+        {
+            var subject = CreateSubject(AcceptEverything());
+
+            WriteBackFieldUpdate[] plan = reversed
+                ? [Update("PROJ-1", DateField, "2026-08-20"), Update("PROJ-1", AgeField, "5")]
+                : [Update("PROJ-1", AgeField, "5"), Update("PROJ-1", DateField, "2026-08-20")];
+
+            var result = await subject.WriteFieldsToWorkItems(CreateConnection(), plan);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedPuts, Has.Count.EqualTo(1));
+                Assert.That(recordedPuts[0].Fields.Keys, Is.EquivalentTo(BothFields));
+                Assert.That(result.ItemResults.Select(r => r.TargetFieldReference), Is.EquivalentTo(BothFields));
             }
         }
 
