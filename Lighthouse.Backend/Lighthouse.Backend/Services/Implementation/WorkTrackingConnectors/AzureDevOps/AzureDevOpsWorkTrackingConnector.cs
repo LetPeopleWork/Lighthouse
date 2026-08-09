@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team)
         {
-            logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
+            logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
 

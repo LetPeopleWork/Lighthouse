@@ -85,7 +85,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @AC-1.5 — three copies of the same announcement is the loudest single offender.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_team_update_announces_itself_once()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();

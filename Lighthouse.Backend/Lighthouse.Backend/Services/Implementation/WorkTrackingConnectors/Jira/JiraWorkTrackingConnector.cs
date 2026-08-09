@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var workItems = new List<WorkItem>();
 
-            logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
+            logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
             var issues = await GetIssuesByQuery(team, query);

@@ -57,14 +57,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 await UpdateRemainingWorkForPortfolio(portfolio);
             }
 
-            logger.LogInformation("Done Updating Work Items for Team {TeamName}", team.Name);
+            logger.LogDebug("Done Updating Work Items for Team {TeamName}", team.Name);
 
             return outcome;
         }
 
         private async Task<SyncOutcome> RefreshWorkItems(Team team)
         {
-            logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
+            logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var syncTime = DateTime.UtcNow;
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
