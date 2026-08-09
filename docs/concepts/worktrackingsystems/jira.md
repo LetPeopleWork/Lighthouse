@@ -151,11 +151,6 @@ If the check says `false`, someone with Jira administrator rights can fix it in 
   permission). This covers every project at once, but it is a broad right; prefer the per-project grant
   unless you sync into many projects.
 
-{: .note}
-On the **Jira Free** plan, permission schemes cannot be edited at all. Whether Data Sync is quiet is then
-decided by the project type: most projects grant *Administer Projects* to every licensed user, and a
-newly created team-managed project does not.
-
 ## What "quiet" does not mean
 
 Suppression covers **email notifications only**. Regardless of permission, every write still:
@@ -163,11 +158,6 @@ Suppression covers **email notifications only**. Regardless of permission, every
 - appears in the work item's **history / changelog**,
 - bumps the work item's **Updated** timestamp,
 - fires **webhooks**, listeners and automation rules.
-
-{: .note}
-Verified against Jira Cloud. Data Center is documented by Atlassian to require the same permission and is
-expected to behave identically, but Lighthouse has not verified it on a Data Center instance. The
-fallback protects you either way: if Data Center behaves differently, the value is still written.
 
 # Additional Fields
 
