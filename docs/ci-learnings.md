@@ -34,6 +34,15 @@ observed to miss CA1861 twice, and it cannot see a rule that a *different* fix a
 Frontend equivalent is already enforced: `pnpm build` runs Biome via `prebuild`, so a clean build
 implies a clean lint.
 
+**Recurrence: 2 — 2026-08-09, Epic 5500 slice 01.** Same three rule families again (CA1859 on a private
+method returning `IReadOnlyList<>`, CA1861 on a constant array argument, NUnit2056 on `Assert.Multiple`),
+and this time the command above was run — **after** the push instead of before it. It caught all three
+in one pass, and a follow-up commit landed before `sonar-gates` evaluated, so the gate went green. That
+is luck, not process: the gate job starts as soon as the backend job finishes.
+**Run it before `git push`, not before `git commit` and not after.** A long local gauntlet
+(refactor → review → four Stryker rounds) is exactly when this step gets skipped, because the tree has
+been green locally for an hour by then — and none of those gates surface INFO diagnostics.
+
 ---
 
 Each entry follows:
