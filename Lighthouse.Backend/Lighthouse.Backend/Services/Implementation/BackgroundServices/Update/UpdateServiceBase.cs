@@ -122,7 +122,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             foreach (var entity in repository.GetAll().ToList())
             {
-                Logger.LogInformation("Checking last update for {Entity}", entity.Id);
+                // Per-entity, per-cycle: an operator reading Information sees the cycle, not every entity in it (Epic #5687).
+                Logger.LogDebug("Checking last update for {Entity}", entity.Id);
                 if (ShouldUpdateEntity(entity, refreshSettings))
                 {
                     TriggerUpdate(entity.Id);

@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
 
-            Logger.LogInformation("Last Refresh of Work Items for Project {ProjectName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
+            Logger.LogDebug("Last Refresh of Work Items for Project {ProjectName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
         }

@@ -28,12 +28,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
     [Category("slice-01")]
     public class Slice01SkippedEntityLogTest : UpdateServiceTestBase
     {
-        /// <summary>
-        /// DISTILL hands these over failing on their assertions. DELIVER removes one <c>[Ignore]</c> at a
-        /// time — that is the RED entry gate for each cycle.
-        /// </summary>
-        private const string RedUntilDelivered = "DISTILL RED (Epic 5687 slice 01) — un-ignore one at a time in DELIVER";
-
         private const string TeamName = "Zenith";
 
         private const string LastUpdateCheck = "Checking last update";
@@ -67,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         // @AC-1.4 — a cycle over ten teams that updates none of them should read as one cycle, not ten.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task A_cycle_that_skips_a_team_says_nothing_to_the_operator_about_that_team()
         {
             GivenATeamThatWasJustRefreshed();
@@ -82,7 +75,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         // @AC-1.4 — demoted, never dropped: the check is still there for whoever is debugging a stuck cycle.
         [Test]
-        [Ignore(RedUntilDelivered)]
         public async Task The_skipped_check_is_still_available_to_whoever_asks_for_it()
         {
             GivenATeamThatWasJustRefreshed();
