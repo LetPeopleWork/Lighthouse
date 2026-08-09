@@ -24,6 +24,11 @@ everything else provokes no remote fetch at all.
 - **A guard test** that enumerates the properties reachable from `PrepareQuery` and the connector call
   sites and fails when one is neither in the fingerprint nor on an explicit, commented exclusion list.
 - An instance upgrading into this feature has no stored fingerprint, so its first cycle is full (D8).
+- **One property set, two consumers (added 2026-08-09 — see the amendment below).** The fingerprint and
+  the existing save-time decision `WorkItemRelatedSettingsChanged` are folded onto a single list, and the
+  guard test covers **both** call sites. This closes the live `DoneItemsCutoffDays` gap — it shapes the
+  remote query today but triggers no purge — and resolves the team/portfolio asymmetry, both as
+  acceptance criteria of this slice rather than as separate work items.
 
 ## OUT of scope
 
@@ -102,8 +107,11 @@ While doing it, resolve the portfolio asymmetry: whatever the answer is, both en
   column fills, the guard test runs, and no behaviour changes until someone opts in. That makes it safe
   to ship early and cheap to ship ungated, and it is why this slice needs no flag of its own.
 
-Whether the `DoneItemsCutoffDays` gap is severe enough to pull forward as its own bug ahead of this slice
-is open, and is the maintainer's call.
+**Decided 2026-08-09 (maintainer): the `DoneItemsCutoffDays` gap is fixed here, not pulled forward as its
+own bug.** It is the same defect as the rest of this amendment — one property set, asked twice, with the
+two copies disagreeing — so splitting it out would mean touching the same list in two changes and
+carrying a bug that closes the moment this slice lands. It becomes an acceptance criterion of this slice
+rather than a separate work item.
 
 ## Learning hypothesis
 

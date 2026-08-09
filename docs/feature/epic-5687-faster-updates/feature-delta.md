@@ -1696,5 +1696,7 @@ A2 is **not** gated by A1: it holds whether the next cycle is full or delta. Sli
 own because, with delta off, the fingerprint's only output is what already happens — it is inert, not
 independent.
 
-**Open, maintainer's call**: whether the `DoneItemsCutoffDays` gap is pulled forward as its own bug ahead
-of slice 05.
+**Decided 2026-08-09 (maintainer)**: the `DoneItemsCutoffDays` gap is handled **as part of slice 05**, not
+pulled forward as its own bug. It is the same defect as the rest of A2 — one property set asked twice —
+so a separate work item would touch the same list twice and carry a bug that closes when slice 05 lands.
+No open questions remain on A2.
