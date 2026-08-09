@@ -97,6 +97,78 @@ A *Personal Access Token* will not require you to specify a username, as it's pa
 
 {: .important}
 The API/Access Tokens shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+
+# Quiet Data Sync (Notifications)
+
+When [Data Sync Mappings](../../settings/worktrackingsystems.html#data-sync-mappings) write a forecast or
+a metric into Jira, Lighthouse asks Jira **not** to notify anyone. Whether Jira honours that depends on
+one permission, and Jira grants it per project.
+
+The account Lighthouse connects with needs, **for every project it writes into**, either:
+
+- **Administer Jira** — the global permission, covers every project at once, or
+- **Administer Projects** — the project permission, granted per project.
+
+Without it, Jira refuses the request to stay quiet. Lighthouse then writes the value anyway — **your Data
+Sync never stops working because of this** — but everyone watching that work item receives an email, and
+Lighthouse logs a warning naming the affected projects.
+
+Because the permission is per project, one connection can be silent in one project and noisy in another.
+
+## Check whether your account can suppress notifications
+
+Ask Jira directly. Open this in a browser where you are signed in **as the account Lighthouse uses**,
+replacing `your-site` and `PROJ` with your site and the project key:
+
+```
+https://your-site.atlassian.net/rest/api/2/mypermissions?projectKey=PROJ&permissions=ADMINISTER,ADMINISTER_PROJECTS
+```
+
+On Data Center, use your base URL instead: `https://jira.example.com/rest/api/2/mypermissions?...`.
+
+In the response, look at `havePermission` for each entry. If **either** `ADMINISTER` or
+`ADMINISTER_PROJECTS` is `true`, Data Sync into that project is silent. If both are `false`, it is not.
+
+{: .important}
+The `projectKey` is not optional. Called without it, Jira answers `"havePermission": true` with HTTP 200 —
+it does not report an error — so a check that leaves it out will tell you everything is fine when it is
+not. Run it once per project you sync into.
+
+The other way to check is empirical: have a colleague watch one of the work items Lighthouse writes to,
+then trigger a team or portfolio update. If no email arrives, suppression is working. Watch it with a
+second account, not your own — Jira does not email you about your own changes, so testing with the
+Lighthouse account's own inbox always looks quiet.
+
+## Grant the permission
+
+If the check says `false`, someone with Jira administrator rights can fix it in either of two places:
+
+- **Per project** — *Project settings* → *Permissions* → grant **Administer Projects** to the Lighthouse
+  account (or to a group or project role it belongs to). Repeat for each project you sync into. On a
+  company-managed project this edits the project's permission scheme, which may be shared with other
+  projects — check what else uses it before changing it.
+- **Site-wide** — grant the Lighthouse account **Jira Administrator** (the global *Administer Jira*
+  permission). This covers every project at once, but it is a broad right; prefer the per-project grant
+  unless you sync into many projects.
+
+{: .note}
+On the **Jira Free** plan, permission schemes cannot be edited at all. Whether Data Sync is quiet is then
+decided by the project type: most projects grant *Administer Projects* to every licensed user, and a
+newly created team-managed project does not.
+
+## What "quiet" does not mean
+
+Suppression covers **email notifications only**. Regardless of permission, every write still:
+
+- appears in the work item's **history / changelog**,
+- bumps the work item's **Updated** timestamp,
+- fires **webhooks**, listeners and automation rules.
+
+{: .note}
+Verified against Jira Cloud. Data Center is documented by Atlassian to require the same permission and is
+expected to behave identically, but Lighthouse has not verified it on a Data Center instance. The
+fallback protects you either way: if Data Center behaves differently, the value is still written.
+
 # Additional Fields
 
 Lighthouse allows you to configure **Additional Fields** for Jira connections. These fields let you retrieve and display extra information from your Jira issues, including custom fields and built-in properties.

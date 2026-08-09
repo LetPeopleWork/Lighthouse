@@ -82,5 +82,26 @@ For each connection you can configure one or more *Mappings*. Each mapping defin
 4. Save the connection.
 
 
+### Notifications
+
+Lighthouse asks your work tracking system to keep quiet about the values it writes. A forecast Lighthouse
+recalculated is not news anyone needs mailed, and without suppression a portfolio-wide refresh reaches
+every watcher of every item it touches.
+
+**Azure DevOps** suppresses notifications on every write, and needs no extra permission for it.
+
+**Jira** only allows it if the account Lighthouse connects with has **Administer Jira** globally, or
+**Administer Projects** on the project the work item lives in — and because that second one is granted
+*per project*, the same connection can be silent in one project and noisy in another.
+
+If the account does not have it, Lighthouse still writes the value — the write is never dropped — but the
+watchers of that work item are emailed, and a warning naming the affected projects appears in the
+[logs](systeminfo.html#view-logs). See
+[Quiet Data Sync on Jira](../concepts/worktrackingsystems/jira.html#quiet-data-sync-notifications) for how
+to check whether your account has the permission and how to grant it.
+
 {: .important}
-If you are using Jira, and people have subscribed to updates on an Issue, they will get an email every time Lighthouse will write this value. At the moment, there is no way to not send the notification. Please be aware when you set this up.
+Suppression covers **email notifications only**. Every write still appears in the work item's history,
+still bumps its *Updated* timestamp, and still triggers webhooks and automation rules. If an automation
+rule of yours reacts to field changes, it will react to Lighthouse's writes whether notifications are
+suppressed or not.
