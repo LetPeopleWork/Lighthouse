@@ -1575,9 +1575,25 @@ KPI-1 and KPI-2 remain unmeasurable until slice 02 gives them a delta cycle to c
 | 4 | Mutation ≥ 80 % on the changed backend surface | ⚠️ 100 % on changed lines, 63.28 % whole-file. Justified in `mutation/results.md`; the gate as literally written is not met |
 | 5 | SonarCloud no new issues | ⏳ pending push |
 | 6 | EF migration via `CreateMigration`, additive only | ✅ shipped at DISTILL |
-| 7 | Docs updated per-feature | ⏳ **not started** — held pending your verification on the dev instance |
-| 8 | ADO story transitioned; pushed only after CI green | ⏳ **held at your instruction** |
-| 9 | Learning hypothesis has an explicit verdict | ⏳ pending the dogfood read (below) |
+| 7 | Docs updated per-feature | ✅ see the per-feature checklist below |
+| 8 | ADO story transitioned; pushed only after CI green | ✅ pushed 2026-08-09; Story #5724 Resolved, Closed on CI green. Epic #5687 stays Active — it has seven slices left |
+| 9 | Learning hypothesis has an explicit verdict | ✅ confirmed, incl. the dogfood read (maintainer, 2026-08-09) |
+
+---
+
+## Wave: DELIVER / [REF] Per-Feature Checklist (slice 01)
+
+Every item answered explicitly — no silent N/A.
+
+| Item | Verdict |
+|---|---|
+| **Docs prose** | ✅ `docs/settings/systeminfo.md` gains "What an Update Writes" — the summary line, a field table, and the note that per-record detail moved to Debug rather than disappearing. That page already owned Log Level, so the change landed where a reader is already looking |
+| **Per-feature screenshots** | ✅ **N/A, because** slice 01 changes no UI. The two images on that page (`systeminfo.png`, `RefreshHistory.png`) stay accurate: the three new `RefreshLog` columns are persisted but deliberately **not** exposed through `/api/v1\|latest/update/status` (D4 — Epic #5511 owns the richer view), so the Refresh History table renders exactly as before |
+| **Demo data** | ✅ **N/A, because** the log signal is emitted by whatever update runs; it needs no seeded surface of its own and adds no entity a demo dataset would have to carry |
+| **Website marketing surface** | ✅ **N/A, because** there is no user-visible feature here — this is operator observability, and `mode` still reads `full` everywhere. The "faster updates" marketing beat belongs at epic close, once delta actually makes something faster |
+| **Lighthouse-Clients (CLI / MCP) versioning** | ✅ **N/A, because** no API contract changed. No endpoint added, removed or altered; no DTO touched. `git diff` over `API/` for this slice is empty |
+| **Root `ARCHITECTURE.md`** | ✅ §3 "Background refresh" now records that the sync reports its own scope back as a `SyncOutcome` and that the updater emits one Information line per update |
+| **Evolution doc / workspace archive** | ⏸️ **deliberately deferred.** `/nw-finalize`'s Phase A and B are a post-mortem for a *completed* feature. This is slice 1 of 8; slices 02-08 read `feature-delta.md` and the slice briefs daily. Archive at epic close, not now |
 
 ---
 
