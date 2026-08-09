@@ -111,4 +111,25 @@ Not needed. No unknown mechanism.
 
 ## Verdict
 
-_(recorded at slice close — confirmed / disproved, with the numbers)_
+**Confirmed on the code, open on the dogfood read.**
+
+The hypothesis was *"an update knows what it fetched"*. It does. Both counts are sourced from what the
+connector returned, inside the method that fetched it, and travel back to the updater as a `SyncOutcome`
+— no restructuring of `WorkItemService` was needed, and neither failure mode fired:
+
+1. *The counts are not available where the log is written.* They were. `RefreshWorkItems` and
+   `RefreshFeatures` each materialise the connector's return once and hand back
+   `SyncOutcome.FullSync(recordsFromTracker.Count)`. Nothing reads `team.WorkItems.Count` after the fact.
+2. *The noise is load-bearing.* It was not. Every demoted line still exists at Debug, and two of them are
+   pinned there by acceptance tests as positive controls. Nothing was deleted.
+
+**KPI-5, measured** (25-item team refresh / 25-Feature portfolio refresh / skipped cycle): **8 → 2**,
+**10 → 2**, **2 → 0**. Target ≤ 2, and 0 for a skipped entity — met on all three.
+
+The 153 / 416 baselines in this brief are **wrong and superseded**. They were measured through a capture
+logger missing production's `MinimumLevel.Override` block, so ~95 % of what they counted was EF Core
+`Executed DbCommand` SQL that no operator sees. The honest before-figures are 8 and 10.
+
+**Still open**: the production-data dogfood read on `:5169` — one full refresh cycle against real
+recorded history, legible in under ten seconds. That is this slice's own acceptance and it has not been
+done. Until it is, the verdict covers the mechanism, not the readability.

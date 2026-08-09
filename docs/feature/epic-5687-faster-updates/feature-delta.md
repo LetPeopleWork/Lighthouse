@@ -1452,3 +1452,166 @@ DISCUSS or DESIGN one: the criterion is right as written.
   slice 01 and only informs the KPI-5 target. Unchanged.
 
 Handoff to DELIVER is unblocked: zero blockers, zero unresolved high findings.
+
+---
+
+## Wave: DELIVER / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `docs/feature/epic-5687-faster-updates/feature-delta.md` — DISCUSS (US-01 + AC-1.1…AC-1.9, Outcome KPIs, DoD), DESIGN (DDD list, component decomposition, reuse analysis, decisions table, open questions), DISTILL (scenario list, summary-line contract, test placement, architecture of reference, scaffolds, RED classification, upstream issues, handoff)
+- ✓ `docs/feature/epic-5687-faster-updates/slices/slice-01-update-log-signal.md`
+- ✓ `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs` + `Slice01UpdateLogSignalScenarios.cs` + `Slice01UpdateLogSignalSpecifications.cs`
+- ✓ `Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs`
+- ⊘ `docs/product/architecture/brief.md` — not read in full (5113 lines). The DESIGN sections of `feature-delta.md` carry this feature's component decomposition and reuse analysis, and slice 01 introduces no new component boundary. Recorded rather than claimed.
+- ⊘ DEVOPS sections — none produced; DESIGN's handoff says so explicitly. Project defaults apply; the whole slice-01 suite runs on SQLite in-process.
+
+No contradictions found between waves. DISTILL's three "do not re-derive" items all held.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary
+
+Every completed update now emits exactly one Information line — `Update completed | <Team|Portfolio> '<name>' | mode=full | scanned=<n> | fetched=<n> | duration=<n>ms | success=<bool>` — rendered by a single `UpdateServiceBase.LogUpdateSummary` shared by both updaters. The same three facts are persisted on the update's `RefreshLog` row. Everything the update iterated over moved from Information to Debug, bringing an entity's operator-visible cost to two lines, and to zero when the cycle skips it.
+
+The counts come off the real fetch. `WorkItemService.RefreshWorkItems` / `RefreshFeatures` materialise what the connector returned and hand back `SyncOutcome.FullSync(recordsFromTracker.Count)`, which bubbles through `ITeamDataService` / `IWorkItemService` to the updater that writes the row (DDD-7). Nothing reads `team.WorkItems.Count` after the fact — which is what makes the learning hypothesis answerable rather than assumed.
+
+`mode` is hard-coded `full`. Slice 02 changes the data behind the field, not the shape of the line.
+
+---
+
+## Wave: DELIVER / [REF] Files Modified
+
+**Production (new)**
+- `Lighthouse.Backend/Models/SyncOutcome.cs` — `sealed record (SyncMode, int RecordsScanned, int RecordsFetched)` with `None` and `FullSync(recordCount)` factories
+
+**Production (extended)**
+- `Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs` — `LogUpdateSummary` renderer; `Checking last update` → Debug
+- `…/Update/TeamUpdater.cs` — writes the three `RefreshLog` fields, emits the summary; `Last Refresh of team …` → Debug
+- `…/Update/PortfolioUpdater.cs` — same, mirrored; `Last Refresh of Work Items for Project …` → Debug
+- `…/Update/UpdateQueueService.cs` — `Queuing Update for …` → Debug (2 sites)
+- `Services/Implementation/TeamData/TeamDataService.cs` — returns `SyncOutcome`; both phase lines → Debug
+- `Services/Implementation/WorkItems/WorkItemService.cs` — returns `SyncOutcome` from both refresh paths; 15 per-record and phase lines → Debug
+- `Services/Implementation/BaseMetricsService.cs` — `Invalidating Metrics for Entity Id` → Debug
+- `Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs` — snapshot line → Debug
+- `…/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs`, `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` — their copy of the team announcement → Debug
+- `Services/Interfaces/TeamData/ITeamDataService.cs`, `Services/Interfaces/WorkItems/IWorkItemService.cs` — return types
+
+**Tests**
+- The two slice-01 fixtures (ten `[Ignore]`s removed, one at a time, as the RED entry gate)
+- `FasterUpdatesAcceptanceTest.cs` — production's `MinimumLevel.Override` block added to the capture logger (see Upstream Issues)
+- `PortfolioDeleteSerialisationTests.cs`, `TeamDeleteSerialisationTests.cs` — the two hand-written `IWorkItemService` fakes
+- `QuietWriteBackAcceptanceTest.cs`, `TeamUpdaterTest.cs`, `PortfolioUpdaterTest.cs`, `Slice01SkippedEntityLogTest.cs` — Moq setups for the new return type
+
+**Docs / evidence**
+- `docs/feature/epic-5687-faster-updates/deliver/roadmap.json`, `execution-log.json`
+- `docs/feature/epic-5687-faster-updates/mutation/stryker.5724.backend.json`, `results.md`
+
+---
+
+## Wave: DELIVER / [REF] Scenarios Green
+
+**10 of 10**, zero skipped, 2026-08-09.
+
+`dotnet test --filter "TestCategory=epic-5687-faster-updates"` → `Failed: 0, Passed: 10, Skipped: 0`.
+Full suite: `Failed: 0, Passed: 4690, Skipped: 0, Total: 4690`.
+
+| # | Scenario | AC |
+|---|---|---|
+| 1 | `A_completed_team_update_says_what_it_did` | AC-1.1, AC-1.3 |
+| 2 | `A_completed_portfolio_update_says_the_same_thing_in_the_same_shape` | AC-1.2 |
+| 3 | `A_team_update_writes_no_more_than_two_lines_the_operator_has_to_read` | AC-1.7 |
+| 4 | `A_portfolio_update_writes_no_more_than_two_lines_the_operator_has_to_read` | AC-1.7 |
+| 5 | `A_team_update_announces_itself_once` | AC-1.5 |
+| 6 | `An_update_keeps_its_per_record_chatter_out_of_the_operators_log` | AC-1.6 |
+| 7 | `A_completed_team_update_records_the_mode_and_both_counts` | AC-1.8 |
+| 8 | `An_update_that_failed_still_says_what_it_did` | AC-1.9 |
+| 9a | `A_cycle_that_skips_a_team_says_nothing_to_the_operator_about_that_team` | AC-1.4 |
+| 9b | `The_skipped_check_is_still_available_to_whoever_asks_for_it` | AC-1.4 |
+
+---
+
+## Wave: DELIVER / [REF] KPI-5 Measurement
+
+The slice's own outcome number, measured through the corrected instrument (see Upstream Issues):
+
+| Path | Operator-visible lines before | After | Target |
+|---|---|---|---|
+| 25-item team refresh | 8 | **2** | ≤ 2 |
+| 25-Feature portfolio refresh | 10 | **2** | ≤ 2 |
+| Cycle that skips a team | 2 | **0** | 0 |
+
+The 153 / 416 figures recorded at DISTILL are **superseded**. They were measured through a capture logger that lacked production's `MinimumLevel.Override` block, so 144 of 152 team lines and 331 of 341 portfolio lines were EF Core `Executed DbCommand` SQL that no operator ever sees.
+
+KPI-1 and KPI-2 remain unmeasurable until slice 02 gives them a delta cycle to compare against — as DISCUSS predicted (D5).
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates
+
+| Gate | Outcome |
+|---|---|
+| Roadmap review (`nw-acceptance-designer-reviewer`) | **approved**, 0 findings at every severity |
+| 7 TDD steps, 3-phase canon | all RED → GREEN → COMMIT, DES-logged |
+| DES integrity verification | **exit 0** — all 7 steps have complete traces |
+| L1-L6 refactor | `SyncOutcome.None` / `.FullSync()` extracted (L4); L2/L3/L5/L6 nothing applicable |
+| Adversarial review (`nw-software-crafter-reviewer`) | **approved**, 1 LOW (fixed: unstubbed mock in the skipped-entity fixture) |
+| `dotnet build` | 0 warnings, 0 errors |
+| `dotnet test` | 4690 passed, 0 failed, 0 skipped |
+| `dotnet format analyzers --severity info` | 0 findings in any touched file (35 pre-existing, all generated EF migrations) |
+| Mutation — changed surface | **10 / 10 = 100 %** |
+| Mutation — whole-file scope | **63.28 %** — gate NOT met, see `mutation/results.md` |
+| Frontend gates | **N/A** — zero frontend files changed |
+| EF migration | shipped in the DISTILL commit, expand-only, both providers |
+| SonarCloud | not yet run — nothing pushed |
+
+---
+
+## Wave: DELIVER / [REF] DoD Check
+
+| # | Item | Verdict |
+|---|---|---|
+| 1 | All slice ACs pass as automated tests | ✅ 10 of 10 |
+| 2 | `dotnet build` zero warnings, `dotnet test` green | ✅ |
+| 3 | Frontend gates | ✅ N/A, because slice 01 changes zero frontend files |
+| 4 | Mutation ≥ 80 % on the changed backend surface | ⚠️ 100 % on changed lines, 63.28 % whole-file. Justified in `mutation/results.md`; the gate as literally written is not met |
+| 5 | SonarCloud no new issues | ⏳ pending push |
+| 6 | EF migration via `CreateMigration`, additive only | ✅ shipped at DISTILL |
+| 7 | Docs updated per-feature | ⏳ **not started** — held pending your verification on the dev instance |
+| 8 | ADO story transitioned; pushed only after CI green | ⏳ **held at your instruction** |
+| 9 | Learning hypothesis has an explicit verdict | ⏳ pending the dogfood read (below) |
+
+---
+
+## Wave: DELIVER / [REF] Demo Evidence
+
+US-01's Elevator Pitch demo is `docker logs -f lighthouse` → the operator reads one line. That command cannot be executed as a subprocess gate from here: it needs a running container against a real tracker, which is the slice brief's own "production data / dogfood moment" and is yours to run.
+
+What was executed instead, and what it proves: the acceptance scenarios drive the **real** scheduled refresh through the production update queue and read the **real** log stream through a replaced `ILoggerFactory`. Scenario 1 asserts the rendered line carries every field of the DT-1 contract. That is the demo, minus a real tracker and a human reading it.
+
+**Outstanding**: restore a real backup onto the `:5169` dev instance, let one full refresh cycle run, and read the log. The slice brief sets the bar — *"if the cycle is not legible in under ten seconds of reading, the slice is not done"*. That read has not happened, and the verdict below stays open until it does.
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+1. **The DISTILL harness was measuring the wrong stream, and the epic's headline before-figure was wrong because of it.** `FasterUpdatesAcceptanceTest` built its capture logger as a bare `MinimumLevel.Verbose()`, dropping the `MinimumLevel.Override` block that `appsettings.json` applies in production (`Microsoft.EntityFrameworkCore: Warning`, `Microsoft.AspNetCore: Warning`). It therefore counted EF `Executed DbCommand` SQL as operator-visible. Corrected in DELIVER by adding the two overrides. This is an instrument fix, not a weakened test: the budget scenarios still failed at 8 and 10 after the override and before any demotion, so the discriminating power over Lighthouse's own logging was untouched. **DISTILL's 153 / 416 baselines are superseded by 8 / 10.** Any future slice quoting them is quoting EF noise.
+
+2. **A green build was not proof the shared-contract blast radius was covered.** DISTILL measured it as one production caller plus two hand-written fakes — correct for *compilation*. Two further Moq-based harnesses compiled clean and broke at runtime: an unstubbed mock returns a null `Task<SyncOutcome>`, which NREs *inside the `finally` while constructing the `RefreshLog`*, so the row is never written — and `UpdateServiceBase.TriggerUpdate` catches and logs the NRE, making a broken updater look like a passing test. Fixed at four setups. For the next signature change in this epic, grep for mocks of the method, not just for callers.
+
+3. **AC-1.5's connector half is not observable through the acceptance tests** (DISTILL's own upstream issue 2, confirmed empirically). At RED the scenario counted 3 announcements, none of them the connector's — the faked port means that copy never reaches the capture sink. It was demoted by code change and verified by reading, not by a green test.
+
+4. **Mutation testing cannot express this slice.** Stryker.NET has no mutator for a log *level*, so a demotion is invisible to it; what it mutates instead is the message template of the line that was edited. All 40 survivors on changed lines were exactly that. Meanwhile the one genuinely behavioural change — `SyncOutcome.FullSync(recordsFromTracker.Count)` — has no viable mutant at all (`Count()`→`Sum()` is a compile error in both places). The 80 % gate as written does not describe a log-signal slice. Full triage in `mutation/results.md`.
+
+5. **Four pre-existing mutation survivors are real gaps in code slice 02 will touch**, recorded here so slice 02 inherits them rather than rediscovering them: deleting `await teamMetricsService.UpdateTeamMetrics(team)` survives; deleting `await SweepDepartedFeatureSpells(…)` survives; and the `>= RefreshAfter` boundary is untested on both updaters.
+
+---
+
+## Wave: DELIVER / [REF] Handoff
+
+**To**: slice 02 (`#5725`, Jira Cloud team delta) — the walking skeleton of the epic.
+
+The instrument exists. `mode`, `scanned` and `fetched` are on the line and on the row, and both counts are sourced from the fetch rather than from what was stored afterwards — which is precisely what slice 02 needs in order to make them diverge.
+
+Three things not to re-derive:
+- The `RefreshLog` migration shipped at DISTILL. The next model change (`LastChangedRemote`, `FetchFingerprint`) needs its own, in the same commit — EF fails 55 host-booting tests otherwise.
+- `SyncOutcome.FullSync(n)` is the one seam that encodes "a full sync fetches everything it scanned". That is the rule slice 02 inverts; there is exactly one place to change.
+- The two updaters were deliberately NOT collapsed into a shared `RecordCompletedUpdate` helper. The candidate signature is 8 parameters (an S107 violation), `RefreshType` is not `UpdateType`, and the surrounding blocks genuinely differ. What was shareable — the line renderer — is already on `UpdateServiceBase`.

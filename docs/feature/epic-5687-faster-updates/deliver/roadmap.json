@@ -1,0 +1,190 @@
+{
+  "roadmap": {
+    "project_id": "epic-5687-faster-updates",
+    "created_at": "2026-08-09",
+    "total_steps": 7,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-01-update-log-signal",
+    "ado": "Epic #5687 / Story #5724",
+    "goal": "Every completed update writes one Information line saying which entity, in which mode, how many records it saw, how many it fetched and how long it took - and stops writing the per-entity, per-item stream that currently buries it. mode is hard-coded full in this slice so later slices change the data, not the format."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-08-09",
+    "notes": "Approved with zero findings at every severity. All 10 [Test] methods claimed across 7 steps with no orphans (three steps deliberately un-ignore a sibling pair in one cycle, matching DISTILL's pairing). Walking skeleton (scenario 1) lands in Phase 01. Dependency chain and ordering match DISTILL's handoff: counts (01-01) then the line (01-02) then the demotion pass. Criteria checked against the actual assertions, not the test names - no contradictions. Shared-contract blast radius fully claimed, including both hand-written test fakes."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5687-faster-updates/feature-delta.md",
+    "slice_brief": "docs/feature/epic-5687-faster-updates/slices/slice-01-update-log-signal.md",
+    "scenarios": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs"
+    ]
+  },
+  "out_of_scope": [
+    "Any change to what is fetched - not one remote call moves in this slice",
+    "Any UI; /api/v1|latest/update/status is untouched (Epic #5511 owns the view)",
+    "Structured-logging framework changes, log sinks, correlation ids, OpenTelemetry",
+    "The RefreshLog retention policy"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The line and the numbers",
+      "description": "An update reports what it did: a SyncOutcome carrying mode and both counts, persisted on RefreshLog and rendered as one Information line.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A team sync reports its mode and both counts",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+          "scenario_name": "A_completed_team_update_records_the_mode_and_both_counts",
+          "criteria": [
+            "SyncOutcome record carries Mode, RecordsScanned, RecordsFetched",
+            "ITeamDataService.UpdateTeamData returns Task<SyncOutcome>",
+            "TeamUpdater writes Mode, RecordsScanned, RecordsFetched onto RefreshLog",
+            "Existing RefreshLog fields EntityName, ItemCount, Success, ExecutedAt unchanged",
+            "Mode is Full; scanned equals fetched in this slice"
+          ],
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/TeamData/ITeamDataService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamData/TeamDataService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkItems/IWorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs"
+          ],
+          "implementation_notes": "DDD-7. Blast radius measured in DISTILL: ITeamDataService has one production caller (TeamUpdater); IWorkItemService.UpdateFeaturesForPortfolio has one production caller (PortfolioUpdater) plus two hand-written test fakes in API/Integration/PortfolioDeleteSerialisationTests.cs and TeamDeleteSerialisationTests.cs which must change in the same commit. Counts originate where the fetch happens: RecordsScanned = records the connector returned, RecordsFetched = records whose payload was downloaded (equal in slice 01). Existing Moq setups of UpdateTeamData across the suite now return a null Task<SyncOutcome> unless set up - guard or update the setups. No model change, so no migration; the RefreshLog migration already shipped in DISTILL."
+        },
+        {
+          "id": "01-02",
+          "name": "A completed team update says what it did",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+          "scenario_name": "A_completed_team_update_says_what_it_did",
+          "criteria": [
+            "One Information line per completed team update, marker 'Update completed'",
+            "Line carries entity type, entity name, mode, scanned, fetched, duration, success",
+            "A failed update emits the same line with success=false",
+            "The error is still logged at Error level with its exception"
+          ],
+          "deps": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs"
+          ],
+          "implementation_notes": "Un-ignore A_completed_team_update_says_what_it_did and An_update_that_failed_still_says_what_it_did together - the failure path is the same emit site in the finally block. Contract fixed by DISTILL DT-1: 'Update completed | <Team|Portfolio> <name> | mode=<full|delta> | scanned=<n> | fetched=<n> | duration=<n>ms | success=<true|false>'. mode/scanned/fetched/duration/success are asserted tokens; the rest of the prose is free. Structured logging: message template placeholders, never string interpolation."
+        },
+        {
+          "id": "01-03",
+          "name": "A portfolio update says the same thing",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+          "scenario_name": "A_completed_portfolio_update_says_the_same_thing_in_the_same_shape",
+          "criteria": [
+            "IWorkItemService.UpdateFeaturesForPortfolio returns Task<SyncOutcome>",
+            "PortfolioUpdater writes the same three fields onto RefreshLog",
+            "PortfolioUpdater emits the same line shape naming Portfolio and its name",
+            "The two hand-written test fakes implementing IWorkItemService are updated"
+          ],
+          "deps": ["01-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioDeleteSerialisationTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamDeleteSerialisationTests.cs"
+          ],
+          "implementation_notes": "The line shape must be one rendering routine shared by both updaters, not two copies - the criteria assert an identical shape and slices 02-08 change the data behind it. Natural home is UpdateServiceBase or a small helper it owns."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The demotion pass",
+      "description": "Everything the update iterated over moves to Debug. Nothing is deleted. Baseline measured in DISTILL: 153 operator-visible lines for a 25-item team refresh, 416 for a 25-Feature portfolio refresh.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": ["01"],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A team update announces itself once",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+          "scenario_name": "A_team_update_announces_itself_once",
+          "criteria": [
+            "'Updating Work Items for Team' appears at most once per update at Information",
+            "The connector-side copies are demoted in the same change",
+            "The connectors' own tests stay green"
+          ],
+          "deps": ["01-03"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs"
+          ],
+          "implementation_notes": "DISTILL upstream issue 2: the connector copy sits below the faked port, so the AT cannot observe it. A green AT is not proof the connector copy is gone - verify it by reading the code. Three copies exist today: WorkItemService.UpdateWorkItemsForTeam, WorkItemService.RefreshWorkItems, and one per connector."
+        },
+        {
+          "id": "02-02",
+          "name": "Per-record chatter leaves the operator's log",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+          "scenario_name": "An_update_keeps_its_per_record_chatter_out_of_the_operators_log",
+          "criteria": [
+            "Per-item and per-Feature narration is Debug or lower",
+            "The same narration is still emitted at Debug, never deleted",
+            "Warnings and errors are untouched"
+          ],
+          "deps": ["02-01"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs"
+          ],
+          "implementation_notes": "Fragments the scenario greps for: 'Extrapolating' and 'Items to Feature', both from the extrapolation pass a portfolio update runs. The scenario's second assertion is a positive control - the narration must still appear at Debug, otherwise the negative assertion passed for free."
+        },
+        {
+          "id": "02-03",
+          "name": "An update costs the operator two lines",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs",
+          "scenario_name": "A_team_update_writes_no_more_than_two_lines_the_operator_has_to_read",
+          "criteria": [
+            "At most two Information-or-above lines per entity per update",
+            "Holds for a 25-item team refresh and a 25-Feature portfolio refresh",
+            "Every demoted line still exists at Debug",
+            "Errors and warnings untouched"
+          ],
+          "deps": ["02-02"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamData/TeamDataService.cs"
+          ],
+          "implementation_notes": "Un-ignore both budget scenarios (team and portfolio) together - they are one criterion measured on two paths. DISTILL upstream issue 1: the demotion list in the slice brief is shorter than what this criterion requires. The test is the boundary, not the bullet list. Known additional sites: 'Updating / Done Updating Features for Portfolio', 'Updating / Done Updating Remaining Work for Portfolio', 'Owning Team for Portfolio', 'Feature Owner Field', 'Found following teams', 'Added {n} Items for Feature {x} to Team {y}', 'Using Percentile', 'Features had following number of child items', '{Percentile} Percentile Based on', and TeamDataService's 'Updating / Finished updating Team Data'."
+        },
+        {
+          "id": "02-04",
+          "name": "A skipped entity says nothing to the operator",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/Slice01SkippedEntityLogTest.cs",
+          "scenario_name": "A_cycle_that_skips_a_team_says_nothing_to_the_operator_about_that_team",
+          "criteria": [
+            "A cycle that skips an entity emits no Information line naming it",
+            "'Checking last update' is emitted at Debug",
+            "The per-entity 'Last Refresh of ... was N minutes ago' line is Debug"
+          ],
+          "deps": ["02-03"],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs"
+          ],
+          "implementation_notes": "Both scenarios in this fixture un-ignore together - one demotion, asserted from both sides. Sites: UpdateServiceBase.UpdateAll 'Checking last update for {Entity}', TeamUpdater.ShouldUpdateEntity 'Last Refresh of team ...', PortfolioUpdater.ShouldUpdateEntity 'Last Refresh of Work Items for Project ...'. The loop's own lifecycle lines ('Starting Update for {UpdateType}', 'Done Updating {UpdateType}') are outside the per-entity budget and stay at Information."
+        }
+      ]
+    }
+  ]
+}
