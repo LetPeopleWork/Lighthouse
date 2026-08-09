@@ -199,6 +199,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task WriteFieldsToWorkItems_SuppressionForbidden_RetriesAgainstTheSameIssue()
+        {
+            var subject = CreateSubject(ForbidSilence());
+
+            await subject.WriteFieldsToWorkItems(CreateConnection(), [Update("PROJ-1", AgeField, "5")]);
+
+            Assert.That(recordedPuts.Select(p => p.IssueKey), Is.All.EqualTo("PROJ-1"),
+                "Dropping the parameter must not drop the issue with it — a retry aimed anywhere else writes to the wrong item or nowhere.");
+        }
+
+        // Shutdown reaches the connector as a cancellation. Reporting it as a write failure would both
+        // lose the signal and blame Jira for a decision Lighthouse made.
+        [Test]
+        public void WriteFieldsToWorkItems_Cancelled_PropagatesRatherThanReportingAWriteFailure()
+        {
+            var subject = CreateSubject(_ => throw new OperationCanceledException());
+
+            Assert.That(async () => await subject.WriteFieldsToWorkItems(CreateConnection(), [Update("PROJ-1", AgeField, "5")]),
+                Throws.InstanceOf<OperationCanceledException>());
+        }
+
+        [Test]
         public async Task WriteFieldsToWorkItems_NothingToWrite_NeverCallsJira()
         {
             var subject = CreateSubject(AcceptEverything());

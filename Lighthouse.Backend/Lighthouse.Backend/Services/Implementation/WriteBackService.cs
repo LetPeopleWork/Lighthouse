@@ -47,11 +47,13 @@ namespace Lighthouse.Backend.Services.Implementation
             }
             catch (Exception ex)
             {
+                // Stryker disable all: the elapsed time and the wording are diagnostics; the result below is the behaviour
                 stopwatch.Stop();
 
                 logger.LogError(ex,
                     "Write-back failed for connection {ConnectionId} ({ConnectionName}) after {ElapsedMs}ms with unhandled exception",
                     connection.Id, connection.Name, stopwatch.ElapsedMilliseconds);
+                // Stryker restore all
 
                 return new WriteBackResult
                 {
@@ -91,6 +93,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Where(itemResult => itemResult.NotificationSuppression == NotificationSuppression.NotSuppressed)
                 .Select(itemResult => ProjectOf(itemResult.WorkItemId))
                 .Distinct()
+                // Stryker disable once Linq: descending is an equally canonical order and names the same projects
                 .Order()
                 .ToList();
 

@@ -1471,3 +1471,75 @@ first; they ship un-ignored so they fail the moment DELIVER breaks them.
 
 26 specifications: **18 RED** (17 offline + the live fixture), **8 green guards**. DELIVER's first move is
 the enum's semantics, not the query parameter — every connector result and the whole rollup depend on it.
+
+---
+
+## Wave: DELIVER / [REF] Slice 04 — `notifyUsers=false` on Jira write-back (#5505)
+
+### Implementation summary
+
+Every Jira write-back PUT now carries `?notifyUsers=false`. A credential without `Administer Jira` or
+`Administer Projects` answers 403 and, before this, **lost the whole update** — so the same payload is
+re-sent once without the parameter and the value still lands. Write-back cannot regress; it can only get
+quieter.
+
+**The retry sits inside `TryWriteFields`, not `UpdateIssue`.** That is what makes D-A5's two degradations
+compose without either knowing about the other: a 403 drops the suppression and keeps the batch, any
+other rejection drops the batch and keeps the suppression, and a batch that hits both still isolates its
+good fields — because each per-field re-send is itself a fresh attempt that asks for silence first.
+
+`WriteBackService` emits one Warning per connection per flush, naming the affected projects and the
+remedy, aggregating `NotSuppressed` only. `NotificationSuppression` is reported by both connectors on the
+same rule: an attempt that landed is `Suppressed`, one that failed is `Unknown`, one never made is
+`NotApplicable`.
+
+### Files modified
+
+| File | Change |
+|---|---|
+| `Jira/JiraWorkTrackingConnector.cs` | `TryWriteFields` returns a `WriteAttempt` (outcome + suppression); new `Put` helper carries or omits the parameter; 403 → one unsuppressed retry |
+| `AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | Results report `Suppressed` / `Unknown`. Write path untouched |
+| `WriteBackService.cs` | `WarnAboutWatchersWeCouldNotSpare` + the project-key derivation D-A9/D-A10 need |
+| `Models/WriteBack/NotificationSuppression.cs`, `WriteBackItemResult.cs` | The DISTILL scaffolds, now load-bearing |
+
+No migration, no settings, no DTO, no UI — D3 and D-A15 hold.
+
+### Scenarios green
+
+All 26 slice-04 specifications pass, including the live restricted-identity fixture. Full offline suite
+**4418 passed, 0 failed, 0 build warnings**. Live: **98 Jira** and **104 Azure DevOps** integration tests
+green — so the ADO write path is confirmed unchanged against the real service, not just in a mock.
+
+The live Jira run is the evidence AC-01.1's stub cannot give: the admin credential's PUTs now carry the
+parameter and still succeed, and the restricted credential 403s, retries and lands the value.
+
+### Deviations from DESIGN
+
+None. ADR-142's `mypermissions` probe stays out of the write path (it is slice 05), and the 403 branch
+ADR-143 anticipated is now in front of the unbatched fallback, exactly as slice 02's note said it must be.
+
+### Reviewer gate
+
+`@nw-software-crafter-reviewer` — **APPROVED, zero blockers.** It independently reached the conclusion
+this slice needed most: the visibly parallel `UpdateIssue` / `UpdateItem` shapes must **not** be extracted.
+The structure repeats; the knowledge does not. Jira's suppression outcome is *discovered* by a retry,
+Azure DevOps's is *known in advance* — a shared orchestrator would have to parameterise exactly that
+difference, which is the project's DRY rule inverted.
+
+No L1-L3 refactor was applied: the review found none worth making, and inventing one to have a refactor
+commit would be ceremony.
+
+### Mutation testing
+
+**98.39 % on the methods slice 04 wrote** (61 killed, 1 accepted survivor, 0 uncovered) — gate is 80 %.
+Full report: `mutation/results-5505.md`, config `mutation/stryker.5505.backend.json`.
+
+Three passes, 59.21 % → 95.16 % → 98.39 %, and both jumps were real. The first exposed a project-key
+derivation that was barely tested — the warning named "PROJ" whether or not the derivation worked,
+because `unknown project (item PROJ-1)` contains "PROJ" too — and an Azure DevOps per-field fallback with
+no unit coverage at all. The second caught the sharper one: the Azure DevOps test *added* in the first
+pass was **vacuous**, asserting `Is.All.EqualTo(...)` over a list the mutant had emptied.
+
+Slice 02 recorded that Azure DevOps "cannot usefully be mutated" for want of a transport seam. That is now
+wrong: `UpdateItem` takes the `WorkItemTrackingHttpClient` as a parameter, so a Moq'd client reaches the
+whole fallback path. Its mutants are killed here, not waived.

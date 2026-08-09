@@ -83,8 +83,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(warning, Does.Contain(connection.Name), "An admin with six connections needs to know which one.");
-                Assert.That(warning, Does.Contain("PROJ"), "The permission is project-scoped, so the projects are the actionable part.");
-                Assert.That(warning, Does.Contain("OTHER"));
+                Assert.That(warning, Does.Contain("OTHER, PROJ").Or.Contain("PROJ, OTHER"),
+                    "The permission is project-scoped, so the projects are the actionable part — and a run-together list is not a list.");
                 Assert.That(warning, Does.Contain("Administer Projects"), "A warning without the remedy is a complaint.");
             }
         }
@@ -130,20 +130,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
-        // D-A10, borrowed early: a reference that is not a Jira key is reported as unknown, never dropped
-        // and never folded into a neighbour.
-        [Test]
-        public async Task WriteFieldsToWorkItems_AReferenceThatIsNotAnIssueKey_IsReportedRatherThanDropped()
+        // D-A10, borrowed early. Two failure modes to keep apart: naming the wrong project sends the
+        // administrator to grant a permission somewhere it changes nothing, and dropping an unreadable
+        // reference hides an item their team was emailed about.
+        [TestCase("PROJ-1", "PROJ", TestName = "An issue key names its project")]
+        [TestCase("LGHTHSDMO-1042", "LGHTHSDMO", TestName = "A long project key survives intact")]
+        [TestCase("PROJ-12-7", "PROJ-12", TestName = "Only the last separator divides key from number")]
+        public async Task WriteFieldsToWorkItems_AJiraIssueKey_NamesItsProjectExactly(string referenceId, string expectedProject)
         {
             var connection = GivenAJiraConnection();
-            GivenTheTrackerAnswers(Noisy("12345", SizeField));
+            GivenTheTrackerAnswers(Noisy(referenceId, SizeField));
 
-            await WhenWriteBackRunsFor(connection, "12345");
+            await WhenWriteBackRunsFor(connection, referenceId);
 
             var warning = TheWarning();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(warning, Does.Contain("12345").IgnoreCase.Or.Contain("unknown").IgnoreCase);
+                Assert.That(warning, Does.Contain($"in {expectedProject} "),
+                    "The project is what the permission is granted on, so it has to be named as it stands.");
+                Assert.That(warning, Does.Not.Contain("unknown"),
+                    "A reference Lighthouse can read must not be reported as unreadable.");
+            }
+        }
+
+        [TestCase("12345", TestName = "A bare number is not an issue key")]
+        [TestCase("PROJ-", TestName = "A key with no issue number is not an issue key")]
+        [TestCase("PROJ-1a", TestName = "A key whose number is not a number is not an issue key")]
+        [TestCase("-1", TestName = "A reference with no project part is not an issue key")]
+        public async Task WriteFieldsToWorkItems_AReferenceThatIsNotAnIssueKey_IsReportedRatherThanDropped(string referenceId)
+        {
+            var connection = GivenAJiraConnection();
+            GivenTheTrackerAnswers(Noisy(referenceId, SizeField));
+
+            await WhenWriteBackRunsFor(connection, referenceId);
+
+            var warning = TheWarning();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(warning, Does.Contain($"unknown project (item {referenceId})"),
+                    "An item nobody can place is still an item somebody was emailed about — it is reported as it stands, never dropped and never folded into a neighbour.");
                 Assert.That(warning, Does.Contain("Administer Projects"));
             }
         }

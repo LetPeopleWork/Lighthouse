@@ -343,12 +343,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     // Two mappings can name the same Jira field by different routes - one by display name,
                     // one by reference - and dedup upstream keys on the target as configured, not as
                     // resolved. Silently keeping the last would report both as written.
+                    // Stryker disable all: diagnostic log text is not behaviour — the staged value below is
                     if (fields.ContainsKey(fieldReference))
                     {
                         logger.LogWarning(
                             "Two write-back mappings resolve to the same Jira field {FieldReference} on issue {IssueKey}; keeping the last value staged.",
                             fieldReference, issueKey);
                     }
+                    // Stryker restore all
 
                     fields[fieldReference] = CoerceFieldValue(update);
                 }
@@ -359,6 +361,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (suppressed.Succeeded)
                 {
+                    // Stryker disable once String: an ErrorMessage on a success path is never read — Written() does not carry one
                     return new WriteAttempt(true, string.Empty, NotificationSuppression.Suppressed);
                 }
 
@@ -372,6 +375,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 // apart (ADR-142 §3), so nothing is reported as a suppression problem until it comes back.
                 var audible = await Put(client, issueKey, payload, updates.Count, silently: false);
 
+                // Stryker disable once String: an ErrorMessage on a success path is never read — Written() does not carry one
                 return audible.Succeeded
                     ? new WriteAttempt(true, string.Empty, NotificationSuppression.NotSuppressed)
                     : new WriteAttempt(false, audible.ErrorMessage, NotificationSuppression.Unknown);
@@ -404,12 +408,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (response.IsSuccessStatusCode)
             {
+                // Stryker disable once String: an ErrorMessage on a success path is never read
                 return new PutOutcome(true, response.StatusCode, string.Empty);
             }
 
             var errorBody = await response.Content.ReadAsStringAsync();
+
+            // Stryker disable all: diagnostic log text is not behaviour — the returned message below is
             logger.LogDebug("Jira write-back failed for {IssueKey}, {FieldCount} field(s), notifications {Notifications}: {StatusCode} - {ErrorBody}",
                 issueKey, fieldCount, silently ? "suppressed" : "allowed", response.StatusCode, errorBody);
+            // Stryker restore all
 
             return new PutOutcome(false, response.StatusCode,
                 $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}");
