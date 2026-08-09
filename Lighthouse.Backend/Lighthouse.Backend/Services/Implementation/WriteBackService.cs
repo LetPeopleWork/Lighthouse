@@ -41,6 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     connection.Id, connection.Name, stopwatch.ElapsedMilliseconds, result.SuccessCount, result.FailureCount);
 
                 LogFailedUpdates(connection, result);
+                WarnAboutWatchersWeCouldNotSpare(connection, result);
 
                 return result;
             }
@@ -73,6 +74,69 @@ namespace Lighthouse.Backend.Services.Implementation
                     "Write-back failed for work item {WorkItemId}, field {TargetFieldReference} on connection {ConnectionId}: {ErrorMessage}",
                     failure.WorkItemId, failure.TargetFieldReference, connection.Id, failure.ErrorMessage);
             }
+        }
+
+        /// <summary>
+        /// One line per connection per flush, naming the projects and the remedy (ADR-142 §6). Deliberately
+        /// louder than the <see cref="LogFailedUpdates"/> beside it: until the connection surface ships this
+        /// is the only way an administrator learns their write-backs are mailing the team, and a Debug line
+        /// is invisible at production log levels.
+        ///
+        /// Only <c>NotSuppressed</c> counts. A write that failed outright says nothing about permissions,
+        /// and naming its project would send the administrator to grant one that was never at fault.
+        /// </summary>
+        private void WarnAboutWatchersWeCouldNotSpare(WorkTrackingSystemConnection connection, WriteBackResult result)
+        {
+            var affectedProjects = result.ItemResults
+                .Where(itemResult => itemResult.NotificationSuppression == NotificationSuppression.NotSuppressed)
+                .Select(itemResult => ProjectOf(itemResult.WorkItemId))
+                .Distinct()
+                .Order()
+                .ToList();
+
+            if (affectedProjects.Count == 0)
+            {
+                return;
+            }
+
+            logger.LogWarning(
+                "Write-back on connection {ConnectionId} ({ConnectionName}) emailed the watchers of every item it touched in {Projects} — Lighthouse's credential is not allowed to discard notifications there. Grant it \"Administer Jira\" globally, or \"Administer Projects\" on those projects.",
+                connection.Id, connection.Name, string.Join(", ", affectedProjects));
+        }
+
+        /// <summary>
+        /// The permission is granted per project, so the project is what the warning has to name. A Jira
+        /// reference is its issue key; anything else is reported as it stands rather than dropped or folded
+        /// into a neighbour, because an item nobody can name is still an item somebody was emailed about.
+        /// </summary>
+        private static string ProjectOf(string workItemId)
+        {
+            var separator = workItemId.LastIndexOf('-');
+
+            if (separator > 0 && IsIssueNumber(workItemId.AsSpan(separator + 1)))
+            {
+                return workItemId[..separator];
+            }
+
+            return $"unknown project (item {workItemId})";
+        }
+
+        private static bool IsIssueNumber(ReadOnlySpan<char> candidate)
+        {
+            if (candidate.IsEmpty)
+            {
+                return false;
+            }
+
+            foreach (var character in candidate)
+            {
+                if (!char.IsAsciiDigit(character))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private async Task<WriteBackResult> WriteUpdates(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)

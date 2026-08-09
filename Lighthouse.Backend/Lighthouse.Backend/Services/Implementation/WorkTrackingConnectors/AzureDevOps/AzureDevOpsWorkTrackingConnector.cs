@@ -347,13 +347,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             if (batch.Succeeded)
             {
-                return [.. updates.Select(update => WriteBackItemResult.Written(update))];
+                return [.. updates.Select(update => WriteBackItemResult.Written(update, NotificationSuppression.Suppressed))];
             }
 
             // A single operation is already as isolated as it gets.
             if (updates.Count == 1)
             {
-                return [WriteBackItemResult.Refused(updates[0], batch.ErrorMessage)];
+                return [WriteBackItemResult.Refused(updates[0], batch.ErrorMessage, NotificationSuppression.Unknown)];
             }
 
             var results = new List<WriteBackItemResult>();
@@ -361,7 +361,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             foreach (var update in updates)
             {
                 var single = await TryPatch(url, witClient, workItemId, [update]);
-                results.Add(single.Succeeded ? WriteBackItemResult.Written(update) : WriteBackItemResult.Refused(update, single.ErrorMessage));
+                results.Add(single.Succeeded
+                    ? WriteBackItemResult.Written(update, NotificationSuppression.Suppressed)
+                    : WriteBackItemResult.Refused(update, single.ErrorMessage, NotificationSuppression.Unknown));
             }
 
             return results;

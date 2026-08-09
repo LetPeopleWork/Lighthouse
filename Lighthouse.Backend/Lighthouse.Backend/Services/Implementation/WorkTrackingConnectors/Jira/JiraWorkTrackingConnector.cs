@@ -302,13 +302,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (batch.Succeeded)
             {
-                return [.. updates.Select(update => WriteBackItemResult.Written(update))];
+                return [.. updates.Select(update => WriteBackItemResult.Written(update, batch.Suppression))];
             }
 
             // A single field is already as isolated as it gets; re-sending it would only repeat the failure.
             if (updates.Count == 1)
             {
-                return [WriteBackItemResult.Refused(updates[0], batch.ErrorMessage)];
+                return [WriteBackItemResult.Refused(updates[0], batch.ErrorMessage, batch.Suppression)];
             }
 
             var results = new List<WriteBackItemResult>();
@@ -316,13 +316,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var update in updates)
             {
                 var single = await TryWriteFields(client, issueKey, [update], additionalFieldReferences);
-                results.Add(single.Succeeded ? WriteBackItemResult.Written(update) : WriteBackItemResult.Refused(update, single.ErrorMessage));
+                results.Add(single.Succeeded
+                    ? WriteBackItemResult.Written(update, single.Suppression)
+                    : WriteBackItemResult.Refused(update, single.ErrorMessage, single.Suppression));
             }
 
             return results;
         }
 
-        private async Task<(bool Succeeded, string ErrorMessage)> TryWriteFields(HttpClient client, string issueKey,
+        /// <summary>
+        /// One attempt to write a set of fields, plus what it learned about staying quiet. The 403 retry
+        /// lives here rather than in <see cref="UpdateIssue"/> so the two degradations compose: dropping
+        /// suppression keeps the batch, and dropping the batch keeps the suppression request (ADR-142,
+        /// ADR-143 §2).
+        /// </summary>
+        private async Task<WriteAttempt> TryWriteFields(HttpClient client, string issueKey,
             IReadOnlyList<WriteBackFieldUpdate> updates, Dictionary<string, string> additionalFieldReferences)
         {
             try
@@ -346,19 +354,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
 
                 var payload = JsonSerializer.Serialize(new { fields });
-                var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                var response = await client.PutAsync($"rest/api/latest/issue/{issueKey}", content);
 
-                if (response.IsSuccessStatusCode)
+                var suppressed = await Put(client, issueKey, payload, updates.Count, silently: true);
+
+                if (suppressed.Succeeded)
                 {
-                    return (true, string.Empty);
+                    return new WriteAttempt(true, string.Empty, NotificationSuppression.Suppressed);
                 }
 
-                var errorBody = await response.Content.ReadAsStringAsync();
-                logger.LogDebug("Jira write-back failed for {IssueKey}, {FieldCount} field(s): {StatusCode} - {ErrorBody}",
-                    issueKey, updates.Count, response.StatusCode, errorBody);
+                if (suppressed.StatusCode != HttpStatusCode.Forbidden)
+                {
+                    return new WriteAttempt(false, suppressed.ErrorMessage, NotificationSuppression.Unknown);
+                }
 
-                return (false, $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}");
+                // A 403 on the suppressed attempt is not yet a diagnosis: Jira answers the same way when
+                // the credential cannot edit the issue at all. The retry's outcome is what tells the two
+                // apart (ADR-142 §3), so nothing is reported as a suppression problem until it comes back.
+                var audible = await Put(client, issueKey, payload, updates.Count, silently: false);
+
+                return audible.Succeeded
+                    ? new WriteAttempt(true, string.Empty, NotificationSuppression.NotSuppressed)
+                    : new WriteAttempt(false, audible.ErrorMessage, NotificationSuppression.Unknown);
             }
             // Cancellation is how shutdown reaches us; reporting it as a write failure would both lose the
             // signal and blame the tracker for a decision we made.
@@ -369,9 +385,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             catch (Exception ex)
             {
                 logger.LogDebug(ex, "Failed to write {FieldCount} field(s) to issue {IssueKey}", updates.Count, issueKey);
-                return (false, ex.Message);
+                return new WriteAttempt(false, ex.Message, NotificationSuppression.Unknown);
             }
         }
+
+        private async Task<PutOutcome> Put(HttpClient client, string issueKey, string payload, int fieldCount, bool silently)
+        {
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            // Mirrors what Azure DevOps has always done (`suppressNotifications: true`): a value Lighthouse
+            // recalculated is not news anyone needs mailed. Needs Administer Jira, or Administer Projects
+            // on that project — hence the caller's retry.
+            var url = silently
+                ? $"rest/api/latest/issue/{issueKey}?notifyUsers=false"
+                : $"rest/api/latest/issue/{issueKey}";
+
+            var response = await client.PutAsync(url, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return new PutOutcome(true, response.StatusCode, string.Empty);
+            }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            logger.LogDebug("Jira write-back failed for {IssueKey}, {FieldCount} field(s), notifications {Notifications}: {StatusCode} - {ErrorBody}",
+                issueKey, fieldCount, silently ? "suppressed" : "allowed", response.StatusCode, errorBody);
+
+            return new PutOutcome(false, response.StatusCode,
+                $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}: {errorBody}");
+        }
+
+        private sealed record WriteAttempt(bool Succeeded, string ErrorMessage, NotificationSuppression Suppression);
+
+        private sealed record PutOutcome(bool Succeeded, HttpStatusCode StatusCode, string ErrorMessage);
 
         /// <summary>
         /// GetCustomFieldMappings always adds an entry, using an empty string for a field it could not
