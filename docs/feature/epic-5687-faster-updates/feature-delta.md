@@ -2022,17 +2022,31 @@ which it starts guarding something.
 Twelve specifications, eleven red on assertions, one declared guard, all `[Ignore]`d. Un-ignore one at a
 time; each is one TDD cycle.
 
-Suggested order:
+Suggested order — **superseded at DELIVER, 2026-08-10. The roadmap order below is the one that shipped;
+this paragraph is kept so the change is visible rather than silent.**
+
+The order DISTILL suggested put the gate (10 → 9 → 8) *before* the delta path. Its own note that "8 only
+starts guarding once 9 is green" is the argument against it: with nothing sweeping yet, scenario 8's
+"no sweep was issued" is true for the trivial reason, so the gate would be written against a guard that
+was green from start to finish and proved nothing. `roadmap.json` therefore ships the delta path
+**ungated** first, which makes scenario 8 genuinely fail, and adds the gate after.
+
+One correction to the same reasoning, traced through the harness at roadmap time: **scenario 9 does not
+flip.** `GivenNobodyAskedForTheCheaperRefresh` only asserts, it disables nothing, so with ungated delta
+cycle 1 is full (no stored stamps) and cycle 2 sweeps and fetches zero — 9 passes either way. Scenario 8
+is the only one that turns from vacuous green to real red, and it alone carries the ordering argument.
+
+The order that shipped:
 
 1. **11a and 11b** (`Models/Slice02RemoteChangeStampSurvivesUpdateTest`) — the US-08 precursor commit.
    One line in `WorkItemBase.Update(…)`; the migration is already generated and green.
 2. **Scenario 1** — the full path stores the stamp. Everything else needs it.
-3. **Scenario 10**, then **9**, then **8** — the gate, cheapest first: the seeder entry makes 10 green,
-   the per-update read makes 9 green, and 8 only starts guarding once 9 is green.
-4. **Scenario 2** — the walking skeleton: probe, sweep, per-item comparison, phase-2 fetch, counts into
+3. **Scenario 2** — the walking skeleton: probe, sweep, per-item comparison, phase-2 fetch, counts into
    the summary line.
-5. **Scenarios 3, 4, 6** — removal under delta, the untouched-issue comparison, the scan-failure
-   fallback.
+4. **Scenarios 3, 4, 6** — removal under delta, the untouched-issue comparison, the scan-failure
+   fallback. Then the Jira Cloud adapter itself, which no acceptance test can see (the connector is
+   faked by policy) and without which the delta path never engages on a real instance.
+5. **Scenario 10**, then **9**, then **8** — the gate, now against a real sweep.
 6. **Scenario 5** — the D10/DDD-4 move of `AddStalenessEventIfThresholdCrossed` off the fetch loop.
 7. **Scenario 7** — verify nothing downstream regressed.
 
