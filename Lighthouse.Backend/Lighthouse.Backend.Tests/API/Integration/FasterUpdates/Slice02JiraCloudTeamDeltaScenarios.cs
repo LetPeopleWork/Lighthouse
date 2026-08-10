@@ -26,16 +26,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-2.1 @contract-shape:bounded-change
         // The upgrade case: items exist, none of them carries a stamp yet.
         [Test]
-        [Ignore("BLOCKED on a harness defect, not on production code: GivenTheTeamsIssuesWereStoredBeforeThisRelease "
-            + "seeds against TheTeamUnderRefresh.Id, which is only assigned by WhenTheScheduledRefreshRuns - so the "
-            + "Given runs with team id 0 and throws. Verified: with the id passed in, this scenario passes. "
-            + "Routed to nw-acceptance-designer (step 01-02).")]
         public async Task The_first_refresh_after_an_upgrade_downloads_everything_and_remembers_when_each_issue_last_changed()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
             GivenTheOperatorAskedForTheCheaperRefresh();
             GivenTheTrackerHoldsThreeIssues();
-            GivenTheTeamsIssuesWereStoredBeforeThisRelease("ITEM-1", "ITEM-2");
+            GivenTheTeamsIssuesWereStoredBeforeThisRelease(team, "ITEM-1", "ITEM-2");
 
             await WhenTheScheduledRefreshRuns(team);
 
@@ -154,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             await WhenTheScheduledRefreshRuns(team);
 
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 2, fetched: 0);
-            ThenTheFeatureReportsTheWorkThatIsLeft(remainingItems: 2);
+            ThenTheFeatureReportsTheWorkThatIsLeft(team, remainingItems: 2);
             ThenTheTeamsDataWasAnnouncedAsRefreshed(team);
         }
 

@@ -104,9 +104,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// The upgrade case (D8): the team's work is already stored, and none of it carries a remote
         /// change stamp, because the release that records one is the one being installed.
         /// </summary>
-        private void GivenTheTeamsIssuesWereStoredBeforeThisRelease(params string[] referenceIds)
+        private void GivenTheTeamsIssuesWereStoredBeforeThisRelease(SeededTeam team, params string[] referenceIds)
             => SeedStoredWorkItems(
-                TheTeamUnderRefresh.Id,
+                team.Id,
                 [.. referenceIds.Select(referenceId => new RemoteRecord(referenceId, AWhileAgo) { StoredStamp = null })]);
 
         private void GivenThatIssueWasAlreadyStoredWithTheDayItEnteredItsState(SeededTeam team)
@@ -143,13 +143,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // --- When ---
 
-        private SeededTeam TheTeamUnderRefresh { get; set; }
-
-        private Task WhenTheScheduledRefreshRuns(SeededTeam team)
-        {
-            TheTeamUnderRefresh = team;
-            return TheTeamRefreshRuns(team.Id);
-        }
+        /// <summary>
+        /// The team is a parameter of every step that needs it, never a field one step writes and another
+        /// reads: a Given that reads what a When assigns runs before the assignment and sees nothing.
+        /// </summary>
+        private Task WhenTheScheduledRefreshRuns(SeededTeam team) => TheTeamRefreshRuns(team.Id);
 
         private void WhenTheInstanceIsUpgradedAgain() => TheInstanceIsUpgradedAgain();
 
@@ -297,7 +295,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             }
         }
 
-        private void ThenTheFeatureReportsTheWorkThatIsLeft(int remainingItems)
+        private void ThenTheFeatureReportsTheWorkThatIsLeft(SeededTeam team, int remainingItems)
         {
             var feature = TheStoredFeature(DeliveredFeature);
 
@@ -306,7 +304,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 "The rollup depends on the whole stored set, not on what this cycle happened to download (D9). Work entries: "
                 + string.Join(" | ", feature.FeatureWork.Select(work => $"team={work.TeamId} remaining={work.RemainingWorkItems} total={work.TotalWorkItems}"))
                 + " ; stored issues: "
-                + string.Join(",", TheStoredWorkItemsFor(TheTeamUnderRefresh.Id).ConvertAll(issue => $"{issue.ReferenceId}->{issue.ParentReferenceId}")));
+                + string.Join(",", TheStoredWorkItemsFor(team.Id).ConvertAll(issue => $"{issue.ReferenceId}->{issue.ParentReferenceId}")));
         }
 
         private void ThenTheTeamsDataWasAnnouncedAsRefreshed(SeededTeam team)

@@ -1904,6 +1904,56 @@ overload.
 
 ## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate) — slice 02
 
+> **CORRECTED 2026-08-10 — the gate below reported PASSED on a table it could not have observed.**
+> Row 1 was recorded as a business failure. It was a `NullReferenceException` in the *Given*: the
+> harness step `GivenTheTeamsIssuesWereStoredBeforeThisRelease` seeded against `TheTeamUnderRefresh`,
+> a field only assigned by `WhenTheScheduledRefreshRuns`, so during a Given it held `default(SeededTeam)`
+> — team id 0, `GetById(0)` null, and `WorkItem..ctor` threw before the refresh ever ran. That is the
+> `FIXTURE_BROKEN` class, which the gate is defined to BLOCK on. **A harness step that reads state a
+> later step assigns is the exact failure this gate exists to catch, and it got through** — the table was
+> written from what the scenarios were *expected* to say rather than from what the run printed. The
+> original table is preserved below the correction so the change is visible rather than silent.
+
+**Corrected classification (2026-08-10, after the harness repair, against current `HEAD`).** The team is
+now a parameter of every step that needs it; the mutable `TheTeamUnderRefresh` field is deleted, so the
+defect class is structurally absent rather than fixed one call site at a time. Re-run with the
+`[Ignore]`s temporarily lifted — **8 failed on business assertions, 2 passed, 0 setup failures**:
+
+| # | Scenario | Recorded at DISTILL | Actually observed then | Observed now (HEAD) | Corrected class |
+|---|---|---|---|---|---|
+| 1 | `…remembers_when_each_issue_last_changed` | `LastChangedRemote` null after a full refresh | **`NullReferenceException` in `WorkItem..ctor` via the Given** — never reached an assertion | **passes** | was `FIXTURE_BROKEN` (misrecorded as MISSING_FUNCTIONALITY) → now **GREEN off shipped code** (01-01 `Update(…)` copies the stamp; 01-02 maps Jira's `updated`) |
+| 2 | `…only_the_issues_that_moved` | scans 0 (expected 1); whole-query downloads 1 (expected 0) | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 3 | `…gone_from_the_team_on_the_very_next_cycle` | mode `Full` (expected `Delta`); fetched 2 (expected 0) | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 4 | `…left_exactly_as_it_was` | mode `Full` (expected `Delta`); fetched 3 (expected 1) | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 5 | `…still_goes_stale` | no `WorkItemBecameStale` raised | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 6 | `…downloads_everything_rather_than_half` | no Warning-or-above line naming the scan's refusal | as recorded | same | MISSING_FUNCTIONALITY ✅ (three of its four assertions still partially vacuous — see below) |
+| 7 | `…rolls_up_remaining_work_and_still_asks_for_a_new_forecast` | mode `Full` (expected `Delta`); fetched 2 (expected 0) | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 8 | `…never_scans_unless_an_operator_asked_for_it` | **passes** | as recorded | **passes** | GUARD_NOT_YET_FALSIFIABLE (declared) ✅ |
+| 9 | `…takes_effect_on_the_very_next_cycle` | scans 0 (expected 1); whole-query downloads 1 (expected 0) | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 10 | `…does_not_get_it` | the optional feature row does not exist | as recorded | same | MISSING_FUNCTIONALITY ✅ |
+| 11a | `…keeps_the_day_the_tracker_says_it_last_changed` | `Update(…)` never copies the stamp | as recorded | **green** (shipped by 01-01) | MISSING_FUNCTIONALITY ✅ |
+| 11b | `…copied_from_what_the_tracker_returned…` | stamp null after the copy constructor | as recorded | **green** (shipped by 01-01) | MISSING_FUNCTIONALITY ✅ |
+
+Gate: **PASSED** — eleven of twelve rows were classified correctly the first time; row 1 was not, and its
+misclassification is now the entry to read first. The blast radius was bounded because the crafter caught
+it at DELIVER step 01-02 rather than shipping a false GREEN: step 01-02's production change
+(`IssueFactory` maps Jira's `updated`) went in with its AT still `[Ignore]`d and a precise note, instead
+of the AT being "fixed" into green by repairing the setup. **Scenario 1 is left `[Ignore]`d** even though
+it now passes — DELIVER un-ignores it in its own step so the transition is recorded in one commit.
+
+**Rule going forward for this harness: no step method may read a field another step method assigns.**
+Anything a later step needs is a parameter. Slice 01's specifications already worked this way
+(`SeededTeam` / `SeededPortfolio` threaded through every step); slice 02 introduced the field and the
+defect together in `853ea6d03`. Both slices now hold the same shape, and the only mutable state left in
+the harness is the base class's observation counters (`ScansIssued`, `FullDownloadsIssued`,
+`PayloadDownloads`, `CapturedLogs`, `CapturedEvents`), which are written by the setup and the connector
+double and read only by `Then` steps.
+
+---
+
+<details>
+<summary>Original (superseded) gate table, as written at DISTILL</summary>
+
 `dotnet test --filter "TestCategory=slice-02&TestCategory=epic-5687-faster-updates"` with the `[Ignore]`s
 temporarily lifted — **11 failed, 1 passed**, every failure on an assertion, none on setup, import or
 fixture error.
@@ -1924,6 +1974,8 @@ fixture error.
 | 11b | `…copied_from_what_the_tracker_returned…` | stamp null after the copy constructor | MISSING_FUNCTIONALITY |
 
 Gate: **PASSED** — zero scenarios in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `WRONG_ASSERTION` classes.
+
+</details>
 
 Three things were reshaped during the gate rather than handed to DELIVER red for the wrong reason:
 
@@ -2012,6 +2064,7 @@ which it starts guarding something.
 | DT2-10 | AC-2.10's "the sweep must never be called" is asserted from a call counter on the test thread, not `Assert.Fail` inside the mock callback — the callback runs on the queue's thread, where an assertion exception is swallowed into a failed refresh |
 | DT2-11 | AC-2.8 is recorded as a dogfood pre-requisite, not automated |
 | DT2-12 | Scenarios ship `[Ignore]`d so the tree stays green; DELIVER un-ignores them one at a time as the RED entry gate |
+| DT2-13 | **Added 2026-08-10, harness repair.** No step method reads a field another step method assigns. The team is a parameter of `GivenTheTeamsIssuesWereStoredBeforeThisRelease`, `WhenTheScheduledRefreshRuns` and `ThenTheFeatureReportsTheWorkThatIsLeft`; the mutable `TheTeamUnderRefresh` property is deleted, so the defect is structurally absent rather than patched per call site. Slice 01 already held this shape |
 
 ---
 
@@ -2021,6 +2074,12 @@ which it starts guarding something.
 
 Twelve specifications, eleven red on assertions, one declared guard, all `[Ignore]`d. Un-ignore one at a
 time; each is one TDD cycle.
+
+**Amended 2026-08-10.** Scenario 1 was never red at DISTILL — it threw in its own Given (see the
+corrected RED classification above). After the harness repair it **passes** against current `HEAD`,
+because DELIVER steps 01-01 and 01-02 already shipped what it asks for. It is still `[Ignore]`d: DELIVER
+un-ignores it in its own step so the green transition is recorded in one commit rather than arriving
+silently with a test-infrastructure change.
 
 Suggested order — **superseded at DELIVER, 2026-08-10. The roadmap order below is the one that shipped;
 this paragraph is kept so the change is visible rather than silent.**
@@ -2114,3 +2173,9 @@ the honesty of the three RED declarations (scenario 8's guard and the two partia
 sets), including that scenario 8 is correctly sequenced after scenario 9 in the handoff order.
 
 Handoff to DELIVER is unblocked: zero blockers, zero high findings.
+
+**What the review did not catch, recorded 2026-08-10.** Sentinel graded the *honesty of the RED
+declarations* against this document and against the production files — it did not have the run output,
+so it could not see that row 1's recorded observation was unattainable (the Given throws before the
+refresh). Reviewing a RED table is not the same as reading the run that produced it. For the next slice:
+the gate's evidence is the failure output itself, per scenario, and the reviewer should be handed it.
