@@ -389,4 +389,35 @@ describe("SnackbarErrorHandler", () => {
 			removeEventListenerSpy.mockRestore();
 		});
 	});
+
+	// Bug #5732: the Snackbar used to live inside the boundary, so the error it reported
+	// unmounted the very element meant to report it — leaving a silent blank area.
+	describe("when a child throws during render", () => {
+		it("still shows the error in the snackbar", async () => {
+			render(
+				<SnackbarErrorHandler>
+					<TestComponent throwError={true} />
+				</SnackbarErrorHandler>,
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Test component error")).toBeInTheDocument();
+			});
+		});
+
+		it("replaces the failed subtree with a visible notice rather than nothing", async () => {
+			render(
+				<SnackbarErrorHandler>
+					<TestComponent throwError={true} />
+				</SnackbarErrorHandler>,
+			);
+
+			await waitFor(() => {
+				expect(screen.queryByTestId("test-content")).not.toBeInTheDocument();
+				expect(
+					screen.getByText(/this section could not be displayed/i),
+				).toBeInTheDocument();
+			});
+		});
+	});
 });

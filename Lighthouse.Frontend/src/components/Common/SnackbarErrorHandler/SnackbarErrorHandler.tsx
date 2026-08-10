@@ -47,7 +47,14 @@ class ErrorBoundary extends React.Component<
 	}
 
 	render() {
-		if (this.state.hasError) return null;
+		if (this.state.hasError) {
+			return (
+				<Alert severity="error" sx={{ m: 2 }}>
+					This section could not be displayed.
+				</Alert>
+			);
+		}
+
 		return this.props.children ?? null;
 	}
 }
@@ -112,20 +119,19 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 
 	return (
 		<ErrorSnackbarContext.Provider value={contextValue}>
-			<ErrorBoundary onError={(m) => showError(m)}>
-				{children}
+			<ErrorBoundary onError={(m) => showError(m)}>{children}</ErrorBoundary>
 
-				<Snackbar
-					open={open}
-					autoHideDuration={6000}
-					onClose={handleClose}
-					anchorOrigin={{ vertical: "top", horizontal: "center" }}
-				>
-					<Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
-						{message ?? ""}
-					</Alert>
-				</Snackbar>
-			</ErrorBoundary>
+			{/* Bug #5732: kept outside the boundary, or the error unmounts its own report. */}
+			<Snackbar
+				open={open}
+				autoHideDuration={6000}
+				onClose={handleClose}
+				anchorOrigin={{ vertical: "top", horizontal: "center" }}
+			>
+				<Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
+					{message ?? ""}
+				</Alert>
+			</Snackbar>
 		</ErrorSnackbarContext.Provider>
 	);
 };

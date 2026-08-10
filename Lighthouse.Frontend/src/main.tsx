@@ -6,6 +6,7 @@ import {
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
+import AppErrorBoundary from "./components/Common/ErrorBoundary/AppErrorBoundary";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { appColors } from "./utils/theme/colors";
 import { extendTheme } from "./utils/theme/themeExtensions";
@@ -196,7 +197,9 @@ const AppWithTheme: React.FC = () => {
 	return (
 		<ThemeProvider>
 			<MuiThemeWrapper>
-				<App />
+				<AppErrorBoundary>
+					<App />
+				</AppErrorBoundary>
 			</MuiThemeWrapper>
 		</ThemeProvider>
 	);
