@@ -8,5 +8,8 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>A full sync downloads the payload of every record it scanned; slice 02 is what makes the two counts diverge.</summary>
         public static SyncOutcome FullSync(int recordCount) => new(SyncMode.Full, recordCount, recordCount);
+
+        /// <summary>A delta sync still enumerates the whole query (D2) and downloads only what moved (D12) - the two counts diverge.</summary>
+        public static SyncOutcome DeltaSync(int recordsScanned, int recordsFetched) => new(SyncMode.Delta, recordsScanned, recordsFetched);
     }
 }

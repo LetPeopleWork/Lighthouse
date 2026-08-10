@@ -43,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @walking_skeleton @driving_port @real-io @AC-2.2 @contract-shape:bounded-change
         // The thing the epic is buying.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_later_refresh_downloads_only_the_issues_that_moved()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();

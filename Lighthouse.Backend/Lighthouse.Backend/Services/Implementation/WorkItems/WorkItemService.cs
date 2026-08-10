@@ -70,27 +70,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var syncTime = DateTime.UtcNow;
-            var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var connector = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
-            var recordsFromTracker = (await workItemService.GetWorkItemsForTeam(team)).ToList();
-            var actualWorkItems = DeduplicateByReferenceId(recordsFromTracker, team);
+
+            var scan = await ScanRemoteIdentities(connector, team);
+            var mode = SyncModeResolver.Resolve(scan.TrackerCanBeScanned, storedWorkItems, scan.Succeeded, fetchShapeChanged: false);
+
+            var fetch = mode == SyncMode.Delta
+                ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
+                : await FetchEverything(connector, team);
 
             var itemsWithTransitions = new List<SyncedItem>();
 
-            foreach (var item in actualWorkItems)
+            foreach (var item in fetch.WorkItems)
             {
                 var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
                 var priorState = existingItem?.State;
                 var wasBlocked = WasBlocked(team, existingItem);
                 var persistedItem = SyncWorkItem(item, existingItem);
-                storedWorkItems.RemoveAll(wi => wi.ReferenceId == item.ReferenceId);
 
-                var syncedTransitions = WithSyncDeltaTransition(workItemService, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
+                var syncedTransitions = WithSyncDeltaTransition(connector, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
                 itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, wasBlocked));
             }
 
-            foreach (var itemToRemove in storedWorkItems)
+            foreach (var itemToRemove in storedWorkItems.FindAll(stored => !fetch.StillOnTheTracker.Contains(stored.ReferenceId)))
             {
                 workItemRepository.Remove(itemToRemove.Id);
                 logger.LogDebug("Removed Work Item {WorkItemId}", itemToRemove.ReferenceId);
@@ -110,14 +114,90 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await PublishDomainEvents(events);
 
-            return SyncOutcome.FullSync(recordsFromTracker.Count);
+            return fetch.Outcome;
+        }
+
+        /// <summary>
+        /// What one refresh has to work with: the payloads it downloaded, every reference id the query
+        /// still returns - removal is a set difference against the whole query, never against what was
+        /// downloaded (D2) - and what to report to the operator.
+        /// </summary>
+        private sealed record RemoteFetch(List<WorkItem> WorkItems, HashSet<string> StillOnTheTracker, SyncOutcome Outcome);
+
+        private sealed record IdentityScan(bool TrackerCanBeScanned, bool Succeeded, List<RemoteRecordStamp> Stamps);
+
+        /// <summary>Phase 1 of the two-phase fetch (D1): the same query, asking only for identity plus the remote change stamp.</summary>
+        private async Task<IdentityScan> ScanRemoteIdentities(IWorkTrackingConnector connector, Team team)
+        {
+            if (!connector.SupportsIncrementalSync(team.WorkTrackingSystemConnection))
+            {
+                return new IdentityScan(false, false, []);
+            }
+
+            try
+            {
+                return new IdentityScan(true, true, [.. await connector.SweepWorkItemsForTeam(team)]);
+            }
+            // D8: a half-scanned query is the one answer never allowed, so any scan failure falls back to
+            // the whole query - loudly, or nobody learns the cheap path stopped working.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogWarning(
+                    exception,
+                    "Identity scan failed for Team {TeamName} - downloading the whole query instead: {Reason}",
+                    team.Name,
+                    exception.Message);
+
+                return new IdentityScan(true, false, []);
+            }
+        }
+
+        private async Task<RemoteFetch> FetchEverything(IWorkTrackingConnector connector, Team team)
+        {
+            var recordsFromTracker = (await connector.GetWorkItemsForTeam(team)).ToList();
+            var actualWorkItems = DeduplicateByReferenceId(recordsFromTracker, team, workItem => workItem.ReferenceId);
+
+            return new RemoteFetch(
+                actualWorkItems,
+                [.. actualWorkItems.Select(workItem => workItem.ReferenceId)],
+                SyncOutcome.FullSync(recordsFromTracker.Count));
+        }
+
+        /// <summary>Phase 2 of the two-phase fetch (DDD-2): full payloads for the records whose stamp moved, and for nothing else.</summary>
+        private async Task<RemoteFetch> FetchOnlyWhatMoved(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, List<RemoteRecordStamp> sweptRecords)
+        {
+            var sweptOnce = DeduplicateByReferenceId(sweptRecords, team, record => record.ReferenceId);
+            var movedReferenceIds = sweptOnce
+                .FindAll(record => HasMoved(record, storedWorkItems))
+                .ConvertAll(record => record.ReferenceId);
+
+            List<WorkItem> downloaded = movedReferenceIds.Count == 0
+                ? []
+                : DeduplicateByReferenceId((await connector.GetWorkItemsForTeam(team, movedReferenceIds)).ToList(), team, workItem => workItem.ReferenceId);
+
+            return new RemoteFetch(
+                downloaded,
+                [.. sweptOnce.Select(record => record.ReferenceId)],
+                SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count));
+        }
+
+        // D12: compared per item against the stored stamp. No global watermark, so clock skew and
+        // server-time drift stay out of the design. A record nobody stored yet has always moved.
+        private static bool HasMoved(RemoteRecordStamp record, List<WorkItem> storedWorkItems)
+        {
+            var stored = storedWorkItems.Find(workItem => workItem.ReferenceId == record.ReferenceId);
+
+            return stored?.LastChangedRemote != record.ChangedAt;
         }
 
         // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;
         // persisting both breaks the SingleOrDefault above on every later sync (docs/ci-learnings.md 2026-05-25).
-        private List<WorkItem> DeduplicateByReferenceId(IEnumerable<WorkItem> fetchedWorkItems, Team team)
+        // The identity sweep enumerates the very same query, so it collapses under the very same rule.
+        private List<T> DeduplicateByReferenceId<T>(List<T> fetchedRecords, Team team, Func<T, string> referenceIdOf)
         {
-            var groupedByReferenceId = fetchedWorkItems.GroupBy(workItem => workItem.ReferenceId).ToList();
+            var groupedByReferenceId = fetchedRecords.GroupBy(referenceIdOf).ToList();
             var duplicatedGroups = groupedByReferenceId.Where(group => group.Count() > 1).ToList();
 
             if (duplicatedGroups.Count > 0)
