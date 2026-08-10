@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                     Id = 0,
                     Key = OptionalFeatureKeys.DeltaSyncKey,
                     Name = "Faster Updates",
-                    Description = "Fetch only the items that changed since the last update instead of the whole query. Preview - see Epic #5687.",
+                    Description = "Fetch only the work items that changed since the last update instead of the whole query.",
                     Enabled = false,
                     IsPreview = true,
                 },
