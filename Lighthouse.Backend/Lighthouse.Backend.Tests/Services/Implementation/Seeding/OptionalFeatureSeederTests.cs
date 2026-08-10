@@ -155,9 +155,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             // Assert
             var deltaSync = DatabaseContext.OptionalFeatures.Single(f => f.Key == OptionalFeatureKeys.DeltaSyncKey);
 
-            Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
-            Assert.That(deltaSync.Description, Does.Not.Contain("older description"));
-            Assert.That(deltaSync.Enabled, Is.True, "An upgrade must not switch off something the operator turned on.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
+                Assert.That(deltaSync.Description, Does.Not.Contain("older description"));
+                Assert.That(deltaSync.Enabled, Is.True, "An upgrade must not switch off something the operator turned on.");
+            }
         }
 
         private OptionalFeatureSeeder CreateSubject()
