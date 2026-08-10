@@ -115,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @error @driving_port @real-io @AC-2.6 @D8 @contract-shape:bounded-change
         // No partial results, ever.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_refresh_whose_scan_fails_downloads_everything_rather_than_half()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
