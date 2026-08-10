@@ -32,7 +32,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
+        /// <summary>Epic #5687 slice 08 turns this on for Linear; until then the sweep is unreachable.</summary>
+        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+            => throw new NotSupportedException("Linear does not sweep yet - Epic #5687 slice 08 implements it.");
+
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
+
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("Linear does not fetch by reference id yet - Epic #5687 slice 08 implements it.");
 
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {

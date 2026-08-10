@@ -113,6 +113,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             return observedAvailability == ServiceNowHistoryAvailability.Available;
         }
 
+        /// <summary>Epic #5687 slice 07 turns this on for ServiceNow; until then the sweep is unreachable.</summary>
+        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+            => throw new NotSupportedException("ServiceNow does not sweep yet - Epic #5687 slice 07 implements it.");
+
         // ADR-125. A stock instance's Visual Task Boards already carry the two things a Lighthouse
         // team needs — the table its work sits in and the filter that scopes it to this team.
         public async Task<IEnumerable<Board>> GetBoards(WorkTrackingSystemConnection workTrackingSystemConnection)
@@ -243,6 +249,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                 return UnreachableInstance(exception, instanceUrl);
             }
         }
+
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("ServiceNow does not fetch by reference id yet - Epic #5687 slice 07 implements it.");
 
         // AC1. The query the flow coach wrote is the query that gets asked, and a team that has not
         // written one reads nothing rather than everything: asking the Table API with no query at

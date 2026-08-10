@@ -35,6 +35,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
+        /// <summary>Epic #5687 slice 06 turns this on for Azure DevOps; until then the sweep is unreachable.</summary>
+        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+            => throw new NotSupportedException("Azure DevOps does not sweep yet - Epic #5687 slice 06 implements it.");
+
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
         private static readonly ConcurrentDictionary<string, VssConnection> ConnectionCache = new();
@@ -65,6 +71,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             return workItems.Select(workItem => new LighthouseWorkItem(workItem, team));
         }
+
+        public Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("Azure DevOps does not fetch by reference id on this port yet - Epic #5687 slice 06 names it.");
 
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {

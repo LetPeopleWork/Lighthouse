@@ -1700,3 +1700,403 @@ independent.
 pulled forward as its own bug. It is the same defect as the rest of A2 — one property set asked twice —
 so a separate work item would touch the same list twice and carry a bug that closes when slice 05 lands.
 No open questions remain on A2.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 02
+
+**DISTILL run**: 2026-08-10 · **Scope**: slice 02 only (Story #5725, US-02 + the US-08 precursor) ·
+**Policy**: `inherit` · **Deliverable type**: `application` (`.nwave/des-config.json` carries no
+`deliverable_type` key → safe default; no plugin or skill reviewer applies)
+
+- ✓ This file's DISCUSS wave (D1 … D12, OQ-1/OQ-2, US-02 AC-2.1 … AC-2.9, US-08) and DESIGN wave
+  (DDD-1 … DDD-8, component decomposition, driving/driven ports, reuse analysis, C4 component)
+- ✓ `docs/feature/epic-5687-faster-updates/slices/slice-02-jira-cloud-team-delta.md`, including the
+  2026-08-09 "Opt-in gate" section (AC-2.10 … AC-2.12)
+- ✓ The DELIVER wave's Post-slice-01 Amendments A1 (governs this slice) and A2 (slice 05, context only)
+- ✓ The whole slice-01 DISTILL section — this slice mirrors its shape and reuses its harness
+- ✓ `docs/architecture/atdd-infrastructure-policy.md`
+- ✓ `docs/ci-learnings.md` — pre-applied; the analyzer sweep at the head of that file was run over the
+  new files before handoff
+- ⊘ `docs/feature/epic-5687-faster-updates/devops/` — no DEVOPS wave ran. Graceful degradation: WARN,
+  project defaults apply. Slice 02 adds no substrate, no dependency and no deployment change; the whole
+  suite still runs on SQLite in-process.
+- ⊘ `spike/` — none ran; the slice brief records "no unknown mechanism" (Jira Cloud's `fields`
+  parameter and `updated` semantics are documented and already exercised).
+
+**Wave-decision reconciliation**: passed — 0 contradictions. Two apparent tensions were checked and are
+not contradictions:
+
+1. **D8 (no partial mode; ambiguity resolves to full) vs A1 (the opt-in gate).** Off resolves to
+   `SyncMode.Full`, which is D8's own rule. The gate adds a branch into an outcome the resolver already
+   has, it does not add a mode.
+2. **DDD-5 (`SyncModeResolver` is a pure static, not an injected collaborator) vs A1 (the flag is read
+   per update).** The flag is a **parameter into** the resolver, not a dependency of it; `WorkItemService`
+   resolves it in the update's own scope and passes a bool. DDD-5 survives intact.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List — slice 02
+
+Ten acceptance scenarios in one fixture plus a two-case specification on the model. Every one is
+example-based: the C#/NUnit row of the polyglot matrix governs (no PBT, no state-delta Universe — the
+ATDD policy records why the Python-pilot artifacts do not apply to this repo).
+
+| # | Scenario | Tags | Contract shape | AC |
+|---|---|---|---|---|
+| 1 | `The_first_refresh_after_an_upgrade_downloads_everything_and_remembers_when_each_issue_last_changed` | `@driving_port` `@real-io` | bounded-change | AC-2.1 |
+| 2 | `A_later_refresh_downloads_only_the_issues_that_moved` | `@walking_skeleton` `@driving_port` `@real-io` | bounded-change | AC-2.2 (+ the summary line) |
+| 3 | `An_issue_that_left_the_query_is_gone_from_the_team_on_the_very_next_cycle` | `@error` `@driving_port` `@real-io` | bounded-change | AC-2.3 (D2) |
+| 4 | `An_issue_that_did_not_move_is_left_exactly_as_it_was` | `@driving_port` `@real-io` | unbounded-preservation | AC-2.4 |
+| 5 | `An_issue_that_stopped_moving_still_goes_stale` | `@driving_port` `@real-io` | bounded-change | AC-2.5 (D10) |
+| 6 | `A_refresh_whose_scan_fails_downloads_everything_rather_than_half` | `@error` `@driving_port` `@real-io` | bounded-change | AC-2.6 (D8) |
+| 7 | `A_cheaper_refresh_still_rolls_up_remaining_work_and_still_asks_for_a_new_forecast` | `@driving_port` `@real-io` | bounded-change | AC-2.9 (D9) |
+| 8 | `A_refresh_never_scans_unless_an_operator_asked_for_it` | `@driving_port` `@real-io` | unbounded-preservation | AC-2.10 (A1) |
+| 9 | `Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle` | `@driving_port` `@real-io` | bounded-change | AC-2.11 (A1) |
+| 10 | `An_instance_that_never_asked_for_the_cheaper_refresh_does_not_get_it` | `@A1` | unbounded-preservation | AC-2.12 |
+| 11a | `An_issue_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed` | `@unit` | bounded-change | AC-2.7 (D6) |
+| 11b | `An_issue_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed` | `@unit` | pure-function | AC-2.7 (D6) |
+
+Every scenario carries its `@contract-shape:` tag in the source, next to the other tags. Two are
+**unbounded-preservation** because their defining claim is an absence: scenario 4 says nothing about the
+untouched issue changed, and scenario 8 says no scan was issued at all. Scenario 10 is the same shape
+across an upgrade. The rest name a specific, bounded outcome (a mode, two counts, a removed issue, an
+event), and 11b is a pure transformation - the copy constructor's output for one input.
+
+**The walking skeleton is scenario 2**: a routine cycle scans the whole query and downloads one issue,
+and the operator reads `mode=delta | scanned=3 | fetched=1`. That line is the thing the epic is buying,
+and a non-technical stakeholder can confirm it.
+
+Error/edge share: scenarios 3, 6, 8 and 10 assert that something is absent, removed, failed or refused —
+four of ten, plus scenario 5, which is a silent-regression guard. Above the 40% bar.
+
+**AC-2.8 is deliberately not automated.** It is a dogfood measurement (see Pre-requisites), not a test.
+
+**Pillar 2 (chained narrative)** is live: scenarios 2, 3, 4, 6, 7, 8 and 9 all open with
+`GivenTheTeamHasAlreadyBeenRefreshed(team)`, which is literally `WhenTheScheduledRefreshRuns(team)` — the
+previous cycle run through the same driving port with the same step method, never a hand-built row that
+happens to look like its result.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 02
+
+| Artifact | Path |
+|---|---|
+| Harness (shared, EXTENDED) | `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs` |
+| Scenarios | `…/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs` |
+| Specifications (step methods) | `…/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs` |
+| AC-2.7 specification | `Lighthouse.Backend.Tests/Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs` |
+| Domain-event capture (new helper) | `Lighthouse.Backend.Tests/TestHelpers/CapturedDomainEvents.cs` |
+
+Same `<Feature>AcceptanceTest` + `SliceNNScenarios` / `SliceNNSpecifications` triple as slice 01 and as
+the `QuietWriteBack` / `PercentilesOverTime` / `BlockedItems` / `ManualSorting` folders. Categories
+`acceptance` / `epic-5687-faster-updates` / `slice-02`.
+
+AC-2.7 sits in `Models/` beside `WorkItemBaseTest` because it is a promise about the copy path itself,
+not about a refresh. Asserting it end-to-end would hide it: the copy path's failure mode is a silent
+degradation to "always refetch", which every other test tolerates.
+
+---
+
+## Wave: DISTILL / [REF] Architecture of Reference — applied (slice 02)
+
+Per `docs/architecture/atdd-infrastructure-policy.md`. **No row had to be added**: both of this slice's
+new seams are already covered by an existing row. The connector sweep is a new method on
+`IWorkTrackingConnector`, which the policy already names as driven-external/fake
+(`Mock<IWorkTrackingConnector>`); the `OptionalFeature` read is EF through
+`IRepository<OptionalFeature>`, which the policy already names as driven-internal/real.
+
+| Port | Class | Treatment in these scenarios |
+|---|---|---|
+| Scheduled refresh (`ITeamUpdater` → `IUpdateQueueService`) | Driving | **Real** — triggered, then the production queue runs it in its own DI scope |
+| EF `LighthouseAppContext` + repositories, `IRefreshLogService`, `IRepository<OptionalFeature>` | Driven internal | **Real** — SQLite via the test factory, `EnsureDeleted` + `EnsureCreated` per `[SetUp]`, seeders run |
+| `IWorkTrackingConnector` (incl. the new probe, sweep and by-reference-id fetch) | Driven external | **Fake** — `Mock<IWorkTrackingConnector>`, programmed from one coherent picture of the tracker |
+| `IForecastService` | Driven external / non-deterministic | **Fake** |
+| `ILicenseService` | Driven external | **Fake** — premium true |
+| `ILoggerFactory` | Observation seam | Serilog factory writing to `CapturedLogMessages` (unchanged from slice 01) |
+| `IDomainEventDispatcher` | Observation seam | **Real dispatcher**; a recording `IDomainEventHandler<T>` is registered **alongside** the production handlers, never in place of one |
+
+**Deliberately not faked**: `ITeamDataService`, `IWorkItemService`, `IUpdateQueueService`,
+`IDomainEventDispatcher`. The whole slice lives inside `WorkItemService`; faking it would make every
+criterion vacuous.
+
+**Why the connector double sets `LastChangedRemote` after construction.** `AsWorkItems` builds a
+`WorkItem` through the copy constructor and then assigns the stamp with an object initialiser. That is
+deliberate: the copy constructor is exactly what AC-2.7 is about, and a double that inherits the defect
+under test cannot measure it. The port's contract is "the connector hands back an item that already
+carries its stamp"; mapping it out of a Jira payload is the connector's own business and is covered by
+DELIVER's connector tests, not by these ATs.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage — slice 02
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| EF repositories (`IWorkItemRepository`, `IWorkItemStateTransitionRepository`, `IRepository<Team>`, `IRepository<Feature>`, `IRepository<Portfolio>`) | YES | Every scenario — real SQLite through the production composition root |
+| `IRepository<OptionalFeature>` / `OptionalFeatureRepository` | YES | Scenarios 8, 9, 10 — the first backend read of an optional feature in this codebase |
+| `OptionalFeatureSeeder` (`ISeeder`) | YES | Scenario 10 runs the real seeders, then re-runs them to stand for an upgrade |
+| `RefreshLogService` / `RefreshLogRepository` | YES | Scenarios 1-4, 6-9 read the persisted row back through `IRefreshLogService` |
+| `IUpdateQueueService` / `IUpdateStatusStore` | YES | Every scenario — the refresh is admitted and run by the real queue |
+| `IDomainEventDispatcher` | YES | Scenarios 5 and 7 observe the real dispatcher's output |
+| `IWorkTrackingConnector` (Jira / ADO / ServiceNow / Linear / CSV) | NO — faked by policy | The port is extended in this slice; the Jira Cloud **implementation** of the sweep is DELIVER's, covered by the connector's own tests. Recorded so the fake is not mistaken for coverage of the JQL |
+
+Zero `NO — MISSING` rows. The one faked driven port is the one the project policy names as
+external/non-deterministic.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 02
+
+DESIGN declares **no new inbound surface** (D4), and slice 02 adds none. Scanned anyway:
+
+| Entry point in DESIGN | Covered |
+|---|---|
+| Background timer loop (`UpdateServiceBase.ExecuteAsync`) | Unchanged by this slice; slice 01's second fixture already drives it |
+| `POST api/v1\|latest/teams/{id}` manual trigger | Same code path as every scenario here — they enter at `TriggerUpdate`, which is what the controller calls. A manual trigger runs whichever mode D8 resolves, which is exactly what scenarios 8 and 9 assert |
+| `GET api/v1\|latest/update/status` | Untouched this epic (Epic #5511 owns it) — no scenario, by design |
+| Settings → Optional Features (`OptionalFeaturesController`) | The **write** side is unchanged and already covered by `OptionalFeaturesControllerTest`. Scenarios 8-10 exercise the **read** side, which is new: no backend service has ever read an optional feature before |
+| Container log stream | The observable of scenario 2 |
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds — slice 02
+
+The C# rows of the polyglot matrix govern: `[Ignore]` is the skip marker and there is no
+`__SCAFFOLD__` convention in this repo. What DISTILL added so the scenarios compile and reach their
+assertions:
+
+| Scaffold | Path | Note |
+|---|---|---|
+| `RemoteRecordStamp` (`sealed record (string ReferenceId, DateTime ChangedAt)`) | `Lighthouse.Backend/Models/RemoteRecordStamp.cs` | New. The sweep's return element |
+| `IWorkTrackingConnector.SupportsIncrementalSync(connection)` | `Services/Interfaces/WorkTrackingConnectors/` | New port member (DDD-1) |
+| `IWorkTrackingConnector.SweepWorkItemsForTeam(team)` | same | New port member — phase 1 (D1) |
+| `IWorkTrackingConnector.GetWorkItemsForTeam(team, referenceIds)` | same | New port member — phase 2 (DDD-2) |
+| The three members on Jira, ADO, ServiceNow, Linear and CSV | `…/WorkTrackingConnectors/*` | Probe returns `false` everywhere; both fetches throw `NotSupportedException`. Unreachable while the probe is false, permanent for CSV (D11) |
+| `WorkItemBase.LastChangedRemote` (`DateTime?`) | `Lighthouse.Backend/Models/WorkItemBase.cs` | Added; **deliberately NOT copied in `Update(…)`** — that one line is AC-2.7's RED |
+| `OptionalFeatureKeys.DeltaSyncKey` | `Models/OptionalFeatures/OptionalFeatureKeys.cs` | Key only; **the seeder entry is DELIVER's**, which is what makes AC-2.12 red |
+| `CapturedDomainEvents` + `CapturingDomainEventHandler<T>` | `Lighthouse.Backend.Tests/TestHelpers/` | New. Staleness has no handler that persists anything, so the bus is the only place AC-2.5 is observable |
+| Harness extensions | `…/FasterUpdates/FasterUpdatesAcceptanceTest.cs` | `RemoteRecord`, `TheTrackerHolds`, `TheTrackerCanBeScanned`, `TheScanFails`, `OnTheTrackerTheIssue{Changes,IsGone}`, call counters, `SeedStoredWorkItems`, `SeedFeature`, `TheStored{WorkItemsFor,TransitionsFor,Feature}`, `TheLastRefreshLogFor`, `TheCheaperRefreshOption`, `TheOperatorAsksForTheCheaperRefresh`, `TheInstanceIsUpgradedAgain` |
+
+**The migration was generated here, not deferred** — `20260810061716_AddLastChangedRemoteToWorkItems`
+(SQLite) and `20260810061726_…` (Postgres), one additive nullable column on `WorkItems` and one on
+`Features`, no rename, no drop. Generated with the existing `Create-Migration.ps1` script across both
+providers, as slice 01's DT-5 requires: EF raises `PendingModelChangesWarning` as an error inside
+`Database.Migrate()`, so a model property without its migration reds every host-booting test.
+
+**Two deliberate non-scaffolds**, recorded so DELIVER does not read them as oversights:
+
+- **`SyncModeResolver` was not created.** No AT references it — the scenarios enter at the driving port,
+  and its six branches are DELIVER's inner-loop unit tests (DDD-5). A pure static that always answers
+  `Full` and that nothing calls is dead code, not a scaffold.
+- **Only the TEAM half of the port was added.** DDD-1 names two sweeps and two by-id fetches;
+  `SweepFeaturesForPortfolio` and the Feature-side overload belong to slice 03. Adding them now would
+  put dead surface on five connectors.
+
+**S4136 (overloads must be adjacent) is a new ledger candidate.** Adding
+`GetWorkItemsForTeam(team, referenceIds)` anywhere other than immediately beside the existing
+`GetWorkItemsForTeam(team)` fails the build in all six files at once — the analyzer is error-severity
+here, so it surfaces locally rather than in CI. Slice 03 will hit it again when it adds the Feature-side
+overload.
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate) — slice 02
+
+`dotnet test --filter "TestCategory=slice-02&TestCategory=epic-5687-faster-updates"` with the `[Ignore]`s
+temporarily lifted — **11 failed, 1 passed**, every failure on an assertion, none on setup, import or
+fixture error.
+
+| # | Scenario | Observed failure | Class |
+|---|---|---|---|
+| 1 | `…remembers_when_each_issue_last_changed` | `ITEM-1.LastChangedRemote` null after a full refresh of a pre-existing item | MISSING_FUNCTIONALITY |
+| 2 | `…only_the_issues_that_moved` | scans issued 0 (expected 1); whole-query downloads 1 (expected 0) | MISSING_FUNCTIONALITY |
+| 3 | `…gone_from_the_team_on_the_very_next_cycle` | mode `Full` (expected `Delta`); fetched 2 (expected 0) | MISSING_FUNCTIONALITY |
+| 4 | `…left_exactly_as_it_was` | mode `Full` (expected `Delta`); fetched 3 (expected 1) | MISSING_FUNCTIONALITY |
+| 5 | `…still_goes_stale` | no `WorkItemBecameStale` raised for the stored item | MISSING_FUNCTIONALITY |
+| 6 | `…downloads_everything_rather_than_half` | no Warning-or-above line naming the scan's refusal | MISSING_FUNCTIONALITY |
+| 7 | `…rolls_up_remaining_work_and_still_asks_for_a_new_forecast` | mode `Full` (expected `Delta`); fetched 2 (expected 0) | MISSING_FUNCTIONALITY |
+| 8 | `…never_scans_unless_an_operator_asked_for_it` | **passes** | GUARD_NOT_YET_FALSIFIABLE (declared below) |
+| 9 | `…takes_effect_on_the_very_next_cycle` | scans issued 0 (expected 1); whole-query downloads 1 (expected 0) | MISSING_FUNCTIONALITY |
+| 10 | `…does_not_get_it` | the optional feature row does not exist | MISSING_FUNCTIONALITY |
+| 11a | `…keeps_the_day_the_tracker_says_it_last_changed` | stamp still the pre-refresh value — `Update(…)` never copies it | MISSING_FUNCTIONALITY |
+| 11b | `…copied_from_what_the_tracker_returned…` | stamp null after the copy constructor | MISSING_FUNCTIONALITY |
+
+Gate: **PASSED** — zero scenarios in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `WRONG_ASSERTION` classes.
+
+Three things were reshaped during the gate rather than handed to DELIVER red for the wrong reason:
+
+1. **`TheRefreshLogFor` uses `SingleOrDefault`.** Every chained scenario runs two cycles and therefore
+   writes two `RefreshLog` rows, so three scenarios failed with
+   `Sequence contains more than one matching element` — a harness bug, not a RED. Added
+   `TheLastRefreshLogFor`, which reads the most recent row. Slice 01's helper is untouched.
+2. **`team.Portfolios` is empty for a seeded team, so scenario 7's rollup never ran.** Slice 01 already
+   met this from the other direction (DT-4). The cause is now named:
+   `Portfolio.Teams` is a **computed** property (`=> GetTeams()`, derived from feature work), so EF
+   reconciles the `PortfolioTeam` join away for a portfolio that has no feature work. A team belongs to a
+   portfolio in this codebase *through feature work*, not through a seeded join row. `SeedFeature` now
+   takes the delivering team and the work the previous cycle counted, which is both the production
+   precondition and what makes the link materialise.
+3. **Scenario 7 originally asserted only the rollup and the forecast signal**, both of which a full cycle
+   already satisfies — it passed. AC-2.9's promise is about a *delta* cycle, so the scenario now asserts
+   the cycle was one. Same for scenario 4, whose byte-identical comparison only means something under
+   delta.
+
+**One declared guard, scenario 8 (AC-2.10).** It forbids behaviour that does not yet exist, so it cannot
+be falsified before delta ships: with the feature off, `mode=full` and zero scans are true today for the
+trivial reason that nothing scans at all. It is not manufactured red. Its positive control is
+**scenario 9**, which is genuinely red: the two together pin "off means no scan, on means scan on the
+very next cycle". DELIVER must re-run scenario 8 **after** scenario 9 is green — that is the point at
+which it starts guarding something.
+
+**Two partially-vacuous assertion sets, accepted and declared:**
+
+- Scenario 6's first three assertions (whole query downloaded, mode full, nothing lost) hold today
+  because no scan is attempted. Only the fourth — the operator is told the scan failed — is red. They
+  become meaningful together once the scan exists.
+- Scenario 1's "every stored issue remembers when it last changed" is red only for the **pre-existing**
+  items; a brand-new item is persisted whole and keeps its stamp already. That is why the scenario is
+  framed as the upgrade case and seeds two of its three issues as stored-before-this-release.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 02
+
+1. **`Portfolio.Teams` is a computed property behind a real many-to-many mapping.**
+   `LighthouseAppContext` maps `Team.Portfolios` ↔ `Portfolio.Teams` as a skip navigation over a
+   `PortfolioTeam` join table, but `Portfolio.Teams` is `=> GetTeams()`, derived from `FeatureWork`. A
+   portfolio with no feature work therefore reports no teams, and saving it removes join rows that were
+   explicitly added. Nothing in this epic depends on changing that, and nothing here is broken by it —
+   but it is a live footgun for any test or migration that tries to link a team to a portfolio directly,
+   and it cost slice 01 one reshaped scenario and slice 02 one. Recorded, not actioned.
+2. **AC-2.1's wording says "the first update of a team"; its teeth are in the upgrade case.** For a
+   brand-new item the stamp survives today, because a new item is persisted whole. The criterion is right
+   as written, and the scenario reads it the way that can fail: an instance whose work is already stored
+   without stamps. No decision changes.
+3. **`OptionalFeature.Id` is `required`.** Seeding a new row means writing `Id = 0` explicitly. Harmless,
+   but it will read as odd in the seeder diff; DELIVER should not "fix" it to an omitted property.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 02
+
+- DESIGN's driving ports: unchanged inbound surface (D4) — nothing to provision.
+- DEVOPS environment matrix: none produced; project defaults apply. No Docker, no Testcontainers, no
+  external service for the acceptance suite. **Docker is required once**, to generate the Postgres half
+  of the migration with `Create-Migration.ps1` — already done in this wave.
+- Terminology: scenarios and log fragments use the seeded defaults (`Team`, `Work Item`, `Feature`) per
+  `TerminologySeeder`.
+- **AC-2.8 is a dogfood measurement, not a test.** It needs a real Jira Cloud project with **≥1000
+  issues in one team query and ≤5% churn**. Procedure: point a team at it, let one full cycle run, let a
+  delta cycle run the same day, and read the two summary lines side by side; KPI-2 holds if the delta
+  cycle issued ≤10% of the full cycle's remote requests. Synthetic issue counts prove the plumbing and
+  not the premise, which is why no automated proxy was written. The slice cannot be called confirmed
+  without this measurement, and the verdict section of the slice brief is where the two lines go.
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions Summary — slice 02
+
+| ID | Decision |
+|---|---|
+| DT2-1 | The port gains only the TEAM sweep and the TEAM by-reference-id fetch. The Feature-side pair is slice 03's; adding it now would put dead surface on five connectors |
+| DT2-2 | Every connector's probe returns `false` and both new fetches throw `NotSupportedException`. Unreachable while the probe is false; permanent for CSV (D11). DELIVER flips Jira Cloud only |
+| DT2-3 | `LastChangedRemote` ships with its expand-only migration in this wave (both providers, `Create-Migration.ps1`). Slice 01's DT-5 rule: a model change and its migration are one commit in this repo |
+| DT2-4 | `WorkItemBase.Update(…)` does **not** copy the stamp yet. That one line is AC-2.7's RED, and it is the whole point of asserting it directly |
+| DT2-5 | `OptionalFeatureKeys.DeltaSyncKey` is added; the **seeder entry is not**, which is what makes AC-2.12 red |
+| DT2-6 | `SyncModeResolver` is not scaffolded. No AT references it; its six branches are DELIVER's unit tests (DDD-5) |
+| DT2-7 | The connector double sets `LastChangedRemote` after construction, so the double does not inherit the defect AC-2.7 measures |
+| DT2-8 | AC-2.5 and AC-2.9 are observed on the domain-event bus through a recording handler registered **alongside** the production handlers. `WorkItemBecameStale` has no handler that persists anything, so the bus is the only port-exposed place it exists |
+| DT2-9 | AC-2.4 compares the whole persisted property surface by reflection plus the ordered transitions, not two named fields. The reflection is a **deny-list** (`Team`, `SyncedTransitions`) rather than a type filter, so a property added to the work item later joins the comparison on its own - including a reference type, which an `IsValueType` filter would have dropped silently |
+| DT2-10 | AC-2.10's "the sweep must never be called" is asserted from a call counter on the test thread, not `Assert.Fail` inside the mock callback — the callback runs on the queue's thread, where an assertion exception is swallowed into a failed refresh |
+| DT2-11 | AC-2.8 is recorded as a dogfood pre-requisite, not automated |
+| DT2-12 | Scenarios ship `[Ignore]`d so the tree stays green; DELIVER un-ignores them one at a time as the RED entry gate |
+
+---
+
+## Wave: DISTILL / Handoff — slice 02
+
+**To**: `nw-software-crafter` (DELIVER).
+
+Twelve specifications, eleven red on assertions, one declared guard, all `[Ignore]`d. Un-ignore one at a
+time; each is one TDD cycle.
+
+Suggested order:
+
+1. **11a and 11b** (`Models/Slice02RemoteChangeStampSurvivesUpdateTest`) — the US-08 precursor commit.
+   One line in `WorkItemBase.Update(…)`; the migration is already generated and green.
+2. **Scenario 1** — the full path stores the stamp. Everything else needs it.
+3. **Scenario 10**, then **9**, then **8** — the gate, cheapest first: the seeder entry makes 10 green,
+   the per-update read makes 9 green, and 8 only starts guarding once 9 is green.
+4. **Scenario 2** — the walking skeleton: probe, sweep, per-item comparison, phase-2 fetch, counts into
+   the summary line.
+5. **Scenarios 3, 4, 6** — removal under delta, the untouched-issue comparison, the scan-failure
+   fallback.
+6. **Scenario 5** — the D10/DDD-4 move of `AddStalenessEventIfThresholdCrossed` off the fetch loop.
+7. **Scenario 7** — verify nothing downstream regressed.
+
+Five things not to re-derive:
+
+- The migration for `LastChangedRemote` is generated for both providers and the suite is green with it.
+- `Portfolio.Teams` is computed from feature work; a team is linked to a portfolio through
+  `FeatureWork`, and seeding the join row directly does not survive a save.
+- `TheRefreshLogFor` throws on a chained scenario; use `TheLastRefreshLogFor`.
+- S4136 fails the build if the new by-reference-id overload is not adjacent to
+  `GetWorkItemsForTeam(team)`.
+- No backend service has ever read an optional feature. The read path is new work, and A1 requires it
+  per update, in the update's own scope — not cached at startup.
+
+---
+
+## Wave: DISTILL / [REF] Final Wave Review Gate — slice 02
+
+Scoped to **Sentinel only** (`nw-acceptance-designer-reviewer`), 2026-08-10. Eclipse, Architect and Forge
+ran at slice 01 over DISCUSS / DESIGN / DEVOPS and those sections are unchanged; Sentinel is the
+structural-correctness reviewer and never skips.
+
+| Reviewer | Scope | First verdict | After fixes |
+|---|---|---|---|
+| Sentinel (`nw-acceptance-designer-reviewer`) | DISTILL slice-02 sections + the executable specifications + scaffolds | **rejected** — 2 blockers, 0 high, 1 medium, 2 low | **all blockers and the medium applied** |
+
+**Blockers, both applied:**
+
+1. **No `@contract-shape:` tag on any slice-02 specification.** The convention is already live in this
+   repository — `Lighthouse.Backend.Tests/API/Integration/BlockedItems/` carries it on every scenario, and
+   a project-wide grep returned 20 hits there and zero in `FasterUpdates/`. Fixed: all twelve
+   specifications now carry `@contract-shape:<bounded-change|unbounded-preservation|pure-function>`
+   beside their other tags, and the Scenario List above gained a Contract shape column. **Slice 01 is
+   untagged too** — a pre-existing gap in the same folder, recorded here and left alone rather than
+   retro-tagged in a slice-02 commit.
+2. **The AC-2.7 specifications carried no tag comment at all**, while the wave-delta table described them
+   as `@unit`. Fixed: both now carry `// @unit @AC-2.7 @D6 @contract-shape:…` and the table matches what
+   ships.
+
+**Medium, applied:** DT2-9 claimed a future column joins AC-2.4's comparison automatically, but the
+reflection filtered on `type == string || type.IsValueType`, with `Tags` and `AdditionalFieldValues`
+hand-appended afterwards. A future **reference-type** property would therefore have dropped out silently —
+exactly the class of gap AC-2.4 exists to catch. Fixed by inverting it: the filter is now a deny-list
+(`Team`, `SyncedTransitions`, both justified in the code) and `Render` handles dictionaries and
+sequences structurally, so every readable property joins the comparison whatever its type. DT2-9 reworded
+to say so.
+
+**Lows, not applied, with reasons** (no silent N/A):
+
+- *`GivenNobodyAskedForTheCheaperRefresh` asserts inside a Given.* Sentinel graded it a style smell and
+  recommended leaving it. It is a positive control on the default, not the scenario's expected outcome,
+  and it is deliberately null-tolerant (`?.Enabled`) because the option row does not exist until DELIVER
+  adds the seeder entry. Tightening it now would turn AC-2.12's RED into a setup failure in three other
+  scenarios. Revisit once scenario 10 is green.
+- *`SeedFeature(..., workAlreadyCounted: 3)`* — Sentinel verified against
+  `WorkItemService.UpdateWorkItemsForTeam` that the seeded count is fully overwritten by a real recompute
+  during the chained first cycle, before scenario 7's own cycle runs, and recorded it as verified-clean
+  rather than a finding. No action.
+
+Sentinel confirmed clean, with evidence read from the production files rather than from this document:
+hexagonal boundary (CM-A), business language (CM-B), user-journey completeness (CM-C), traceability of
+AC-2.1 … AC-2.7 and AC-2.9 … AC-2.12, the justification for AC-2.8's non-automation, the adapter and
+driving-adapter coverage tables, the scaffold-versus-code accuracy of DT2-2 / DT2-4 / DT2-5 / DT2-6, and
+the honesty of the three RED declarations (scenario 8's guard and the two partially-vacuous assertion
+sets), including that scenario 8 is correctly sequenced after scenario 9 in the handoff order.
+
+Handoff to DELIVER is unblocked: zero blockers, zero high findings.

@@ -1,9 +1,12 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -54,11 +57,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// </summary>
         protected CapturedLogMessages CapturedLogs = null!;
 
+        /// <summary>
+        /// Every domain event the refresh raised. Staleness (AC-2.5) has no handler that persists
+        /// anything, so the bus is the only place the promise is observable.
+        /// </summary>
+        protected CapturedDomainEvents CapturedEvents = null!;
+
         [SetUp]
         public void Init()
         {
             RootFactory = new TestWebApplicationFactory<Program>();
             CapturedLogs = new CapturedLogMessages();
+            CapturedEvents = new CapturedDomainEvents();
+            ResetTrackerObservations();
 
             LicenseServiceMock = new Mock<ILicenseService>();
             LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -67,6 +78,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ConnectorMock.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
             ConnectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
             ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>())).ReturnsAsync([]);
+
+            // Epic #5687 slice 02: a connector that cannot scan is the default, so nothing in slice 01
+            // changes shape. A scenario that wants the two-phase path says so explicitly.
+            ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
             ConnectorMock
@@ -94,6 +111,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
                     services.RemoveAll<IForecastService>();
                     services.AddScoped(_ => ForecastServiceMock.Object);
+
+                    // Added alongside the production handlers, never in place of one.
+                    services.AddScoped<IDomainEventHandler<WorkItemBecameStale>>(_ => new CapturingDomainEventHandler<WorkItemBecameStale>(CapturedEvents));
+                    services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(_ => new CapturingDomainEventHandler<TeamDataRefreshed>(CapturedEvents));
 
                     // ADR-137 D72: Serilog is the pipeline, so an ILoggerProvider added here would be
                     // inert. Replacing the factory is what makes the refresh's own log readable.
@@ -173,7 +194,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return portfolio.Id;
         }
 
-        protected int SeedTeam(int connectionId, string name, int? portfolioId = null)
+        protected int SeedTeam(int connectionId, string name, int? portfolioId = null, int stalenessThresholdDays = 0)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -189,6 +210,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
                 ThroughputHistory = 30,
+                StalenessThresholdDays = stalenessThresholdDays,
                 UpdateTime = DateTime.UtcNow,
             };
 
@@ -262,8 +284,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
 
             // Host startup and fixture seeding log through the same sink; the line budget is a promise
-            // about one update, so counting starts here.
+            // about one update, so counting starts here. The same applies to what the tracker was asked
+            // for and to the signals raised (Epic #5687 slice 02, where scenarios chain two refreshes).
             CapturedLogs.Clear();
+            CapturedEvents.Clear();
+            ForgetWhatTheTrackerWasAsked();
 
             trigger(Factory.Services);
 
@@ -289,6 +314,309 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 .SingleOrDefault(log => log.Type == type && log.EntityId == entityId);
         }
 
+        /// <summary>
+        /// What the MOST RECENT refresh of this entity recorded. A chained scenario runs more than one
+        /// cycle, and each cycle writes its own row.
+        /// </summary>
+        protected RefreshLog? TheLastRefreshLogFor(RefreshType type, int entityId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRefreshLogService>()
+                .GetRefreshLogs()
+                .Where(log => log.Type == type && log.EntityId == entityId)
+                .OrderByDescending(log => log.Id)
+                .FirstOrDefault();
+        }
+
         protected IReadOnlyList<string> TheOperatorVisibleLines => CapturedLogs.AtOrAbove(LogEventLevel.Information);
+
+        // --- The tracker as the two-phase fetch sees it (Epic #5687 slice 02) ---
+
+        /// <summary>
+        /// One record as the tracker holds it right now. <see cref="ChangedAt"/> is what the identity
+        /// sweep reports; <see cref="StoredStamp"/> and <see cref="StateEnteredAt"/> only apply when the
+        /// record is seeded straight into storage to stand for an instance that upgraded into this
+        /// release.
+        /// </summary>
+        protected sealed record RemoteRecord(string ReferenceId, DateTime ChangedAt)
+        {
+            public string Name { get; init; } = string.Empty;
+
+            public string State { get; init; } = "In Progress";
+
+            public StateCategories StateCategory { get; init; } = StateCategories.Doing;
+
+            public string ParentReferenceId { get; init; } = string.Empty;
+
+            public DateTime? StartedDate { get; init; }
+
+            public DateTime? StateEnteredAt { get; init; }
+
+            public DateTime? StoredStamp { get; init; }
+        }
+
+        private readonly List<RemoteRecord> remoteRecords = [];
+
+        /// <summary>How many identity sweeps the refresh issued.</summary>
+        protected int ScansIssued { get; private set; }
+
+        /// <summary>How many whole-query payload downloads the refresh issued.</summary>
+        protected int FullDownloadsIssued { get; private set; }
+
+        /// <summary>The reference ids of each by-reference-id payload download, in order.</summary>
+        protected List<List<string>> PayloadDownloads { get; } = [];
+
+        private void ResetTrackerObservations()
+        {
+            ForgetWhatTheTrackerWasAsked();
+            remoteRecords.Clear();
+        }
+
+        /// <summary>
+        /// Forgets the calls, not the records. Every assertion in this epic is about what ONE refresh
+        /// asked for, and a chained scenario runs more than one.
+        /// </summary>
+        private void ForgetWhatTheTrackerWasAsked()
+        {
+            ScansIssued = 0;
+            FullDownloadsIssued = 0;
+            PayloadDownloads.Clear();
+        }
+
+        /// <summary>When the tracker says the named record last changed.</summary>
+        protected DateTime TheTrackersChangeStampFor(string referenceId)
+        {
+            var record = remoteRecords.Find(candidate => candidate.ReferenceId == referenceId);
+            Assert.That(record, Is.Not.Null, $"The tracker does not hold '{referenceId}'.");
+
+            return record!.ChangedAt;
+        }
+
+        /// <summary>
+        /// Programs the connector from one coherent picture of the tracker: the whole-query download, the
+        /// identity sweep and the by-reference-id download all read the same records. Every setup reads
+        /// the list lazily, so a scenario can move an issue between two refreshes.
+        /// </summary>
+        protected void TheTrackerHolds(params RemoteRecord[] records)
+        {
+            remoteRecords.Clear();
+            remoteRecords.AddRange(records);
+
+            ConnectorMock
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>()))
+                .ReturnsAsync((Team team) =>
+                {
+                    FullDownloadsIssued++;
+                    return AsWorkItems(remoteRecords, team);
+                });
+
+            ConnectorMock
+                .Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>()))
+                .ReturnsAsync(() =>
+                {
+                    ScansIssued++;
+                    return remoteRecords.ConvertAll(record => new RemoteRecordStamp(record.ReferenceId, record.ChangedAt));
+                });
+
+            ConnectorMock
+                .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync((Team team, IReadOnlyCollection<string> referenceIds) =>
+                {
+                    PayloadDownloads.Add([.. referenceIds]);
+                    return AsWorkItems(remoteRecords.Where(record => referenceIds.Contains(record.ReferenceId)), team);
+                });
+        }
+
+        protected void TheTrackerCanBeScanned()
+            => ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
+
+        protected void TheScanFails(Exception failure)
+            => ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>())).ThrowsAsync(failure);
+
+        protected void OnTheTrackerTheIssueChanges(string referenceId, DateTime changedAt, string? state = null)
+        {
+            var index = remoteRecords.FindIndex(record => record.ReferenceId == referenceId);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), $"The tracker does not hold '{referenceId}'.");
+
+            var record = remoteRecords[index];
+            remoteRecords[index] = record with { ChangedAt = changedAt, State = state ?? record.State };
+        }
+
+        protected void OnTheTrackerTheIssueIsGone(string referenceId)
+            => remoteRecords.RemoveAll(record => record.ReferenceId == referenceId);
+
+        /// <summary>
+        /// The connector hands back an item that already carries its remote change stamp - that is the
+        /// port's contract, and mapping it out of a Jira payload is the connector's own business. Setting
+        /// it after construction on purpose: the copy constructor is exactly what AC-2.7 is about, and a
+        /// double that inherits the defect under test cannot measure it.
+        /// </summary>
+        private static List<WorkItem> AsWorkItems(IEnumerable<RemoteRecord> records, Team team)
+            => [.. records.Select(record => new WorkItem(new WorkItemBase
+            {
+                ReferenceId = record.ReferenceId,
+                Name = string.IsNullOrEmpty(record.Name) ? record.ReferenceId : record.Name,
+                Type = "Story",
+                State = record.State,
+                StateCategory = record.StateCategory,
+                Order = "1",
+                ParentReferenceId = record.ParentReferenceId,
+                StartedDate = record.StartedDate,
+            }, team)
+            {
+                LastChangedRemote = record.ChangedAt,
+            })];
+
+        // --- Storage as it was before this refresh ---
+
+        /// <summary>
+        /// Puts work items straight into storage. Stands for an instance that upgraded into this release:
+        /// its items exist, and none of them carries a remote change stamp yet (D8).
+        /// </summary>
+        protected void SeedStoredWorkItems(int teamId, params RemoteRecord[] records)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var team = sp.GetRequiredService<IRepository<Team>>().GetById(teamId)!;
+            var repository = sp.GetRequiredService<IWorkItemRepository>();
+
+            foreach (var record in records)
+            {
+                repository.Add(new WorkItem(new WorkItemBase
+                {
+                    ReferenceId = record.ReferenceId,
+                    Name = string.IsNullOrEmpty(record.Name) ? record.ReferenceId : record.Name,
+                    Type = "Story",
+                    State = record.State,
+                    StateCategory = record.StateCategory,
+                    Order = "1",
+                    ParentReferenceId = record.ParentReferenceId,
+                    StartedDate = record.StartedDate,
+                }, team)
+                {
+                    CurrentStateEnteredAt = record.StateEnteredAt,
+                    LastChangedRemote = record.StoredStamp,
+                });
+            }
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// A feature a team is already delivering. <paramref name="teamId"/> and
+        /// <paramref name="workAlreadyCounted"/> stand for what the previous cycle rolled up - and they
+        /// are also what makes the team belong to the portfolio at all, because <c>Portfolio.Teams</c> is
+        /// derived from feature work rather than stored.
+        /// </summary>
+        protected int SeedFeature(int portfolioId, string referenceId, string name, int? teamId = null, int workAlreadyCounted = 0)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var portfolio = sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
+            var feature = new Feature(new WorkItemBase
+            {
+                ReferenceId = referenceId,
+                Name = name,
+                Type = "Epic",
+                State = "In Progress",
+                StateCategory = StateCategories.Doing,
+                Order = "1",
+                ParentReferenceId = string.Empty,
+            });
+
+            portfolio.Features.Add(feature);
+            feature.Portfolios.Add(portfolio);
+
+            if (teamId.HasValue)
+            {
+                var team = sp.GetRequiredService<IRepository<Team>>().GetById(teamId.Value)!;
+                feature.AddOrUpdateWorkForTeam(team, workAlreadyCounted, workAlreadyCounted);
+            }
+
+            var repository = sp.GetRequiredService<IRepository<Feature>>();
+            repository.Add(feature);
+            repository.Save().GetAwaiter().GetResult();
+
+            return feature.Id;
+        }
+
+        // --- Storage as it is now (always through a fresh context) ---
+
+        protected List<WorkItem> TheStoredWorkItemsFor(int teamId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return [.. scope.ServiceProvider.GetRequiredService<IWorkItemRepository>()
+                .GetAllByPredicate(workItem => workItem.TeamId == teamId)
+                .OrderBy(workItem => workItem.ReferenceId)];
+        }
+
+        protected List<WorkItemStateTransition> TheStoredTransitionsFor(int workItemId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return [.. scope.ServiceProvider.GetRequiredService<IWorkItemStateTransitionRepository>()
+                .GetAllByPredicate(transition => transition.WorkItemId == workItemId)
+                .OrderBy(transition => transition.TransitionedAt)
+                .ThenBy(transition => transition.ToState)];
+        }
+
+        protected Feature? TheStoredFeature(string referenceId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRepository<Feature>>()
+                .GetByPredicate(feature => feature.ReferenceId == referenceId);
+        }
+
+        // --- The opt-in gate (Epic #5687 A1) ---
+
+        protected OptionalFeature? TheCheaperRefreshOption()
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>()
+                .GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
+        }
+
+        /// <summary>
+        /// Turns the option on the way the Settings screen does - through the repository, against a
+        /// running host. Nothing is restarted, which is the whole point of AC-2.11.
+        /// </summary>
+        protected void TheOperatorAsksForTheCheaperRefresh()
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
+
+            var option = repository.GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
+
+            if (option == null)
+            {
+                repository.Add(new OptionalFeature
+                {
+                    Id = 0,
+                    Key = OptionalFeatureKeys.DeltaSyncKey,
+                    Name = "Faster Updates",
+                    Description = "Download only the records that changed.",
+                    Enabled = true,
+                    IsPreview = true,
+                });
+            }
+            else
+            {
+                option.Enabled = true;
+                repository.Update(option);
+            }
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>Re-runs the seeders, the way starting a newer build against an existing database does.</summary>
+        protected void TheInstanceIsUpgradedAgain()
+        {
+            using var scope = Factory.Services.CreateScope();
+            foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
+        }
     }
 }

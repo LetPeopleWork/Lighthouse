@@ -43,6 +43,13 @@ namespace Lighthouse.Backend.Models
 
         public DateTime? CurrentStateEnteredAt { get; set; }
 
+        /// <summary>
+        /// When the work tracking system says this record last changed (Epic #5687, D6). Null means never
+        /// swept, which resolves the next update to a full fetch (D8). Compared per item against the
+        /// sweep's stamp - there is no global watermark (D12).
+        /// </summary>
+        public DateTime? LastChangedRemote { get; set; }
+
         public Dictionary<int, string?> AdditionalFieldValues { get; set; } = new();
 
         [NotMapped]

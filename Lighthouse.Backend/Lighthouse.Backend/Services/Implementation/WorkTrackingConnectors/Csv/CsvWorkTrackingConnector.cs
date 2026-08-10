@@ -19,6 +19,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return !string.IsNullOrWhiteSpace(GetStateEnteredDateColumn(connection));
         }
 
+        /// <summary>
+        /// Permanently false (Epic #5687, D11). A CSV fetch is a file the user already uploaded; there is
+        /// no remote call for an identity sweep to save.
+        /// </summary>
+        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+            => throw new NotSupportedException("A CSV upload is not swept - it has no remote query to sweep (Epic #5687, D11).");
+
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
@@ -43,6 +52,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             return Task.FromResult(workItems.AsEnumerable());
         }
+
+        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
 
         public Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {

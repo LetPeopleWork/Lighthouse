@@ -496,6 +496,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<bool>("IsUsingDefaultFeatureSize")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("LastChangedRemote")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("ManualRank")
                         .HasColumnType("INTEGER");
 
@@ -1221,6 +1224,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("CurrentStateEnteredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastChangedRemote")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
