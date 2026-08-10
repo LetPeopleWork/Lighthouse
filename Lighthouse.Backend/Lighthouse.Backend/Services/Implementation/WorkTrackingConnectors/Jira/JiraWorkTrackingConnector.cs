@@ -32,6 +32,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string BoardsEndpoint = "rest/agile/latest/board";
 
+        private const string AllFields = "*all";
+
+        // Phase 1 reads identity and the change stamp and nothing else - the changelog alone is the bulk of an issue.
+        private const string SweepFields = "key,updated";
+
+        private const int MaxCloudSearchPages = 100;
+
+        private const int ReferenceIdsPerQuery = 200;
+
         private static readonly SocketsHttpHandler SharedHandler = new()
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
@@ -51,14 +60,73 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         /// <summary>
-        /// Epic #5687 slice 02 turns this on for Jira Cloud; Data Center answers after slice 04 resolves
-        /// OQ-1 (whether its offset pagination returns a stable id set). Until then the sweep below is
-        /// unreachable, which is what makes throwing the honest answer.
+        /// On for Jira Cloud; Data Center answers only once slice 04 resolves OQ-1 (whether its offset
+        /// pagination returns a stable id set - an unstable one turns "removed = stored - swept" into a
+        /// deletion of live items). The port member cannot block on a round trip, so an instance Lighthouse
+        /// has not reached yet answers no, and that cycle resolves to a full download (D8).
         /// </summary>
-        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
+        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection)
+            => TryResolveKnownDeployment(connection, out var deployment) && deployment == JiraDeployment.Cloud;
 
-        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
-            => throw new NotSupportedException("Jira does not sweep yet - Epic #5687 slice 02 implements it for Cloud.");
+        /// <summary>
+        /// Phase 1 of the two-phase fetch (D1): the very query <see cref="GetWorkItemsForTeam(Team)"/> issues,
+        /// narrowed to identity plus the change stamp. Removal is "stored minus swept" (D2), so reporting a
+        /// half-walked query would delete whatever the missing pages held - a rejected page throws instead,
+        /// and the caller falls back to the whole query.
+        /// </summary>
+        public async Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        {
+            if (!SupportsIncrementalSync(team.WorkTrackingSystemConnection))
+            {
+                throw new NotSupportedException("Only Jira Cloud sweeps - Epic #5687 slice 04 settles Data Center.");
+            }
+
+            var jql = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
+            var client = await GetJiraRestClientAsync(team.WorkTrackingSystemConnection);
+
+            var stamps = new List<RemoteRecordStamp>();
+            var request = new CloudSearchRequest(
+                jql,
+                SweepFields,
+                ExpandChangelog: false,
+                ResolveIssuesPerRequest(team.WorkTrackingSystemConnection),
+                SinglePage: false);
+
+            var walkedEveryPage = await WalkCloudSearchPages(client, request, jsonIssue =>
+            {
+                stamps.Add(ReadStamp(jsonIssue));
+                return Task.CompletedTask;
+            });
+
+            if (!walkedEveryPage)
+            {
+                throw new InvalidOperationException($"Jira rejected a page of the identity sweep for Team {team.Name}.");
+            }
+
+            return stamps;
+        }
+
+        /// <summary>
+        /// Parsed exactly the way <see cref="IssueFactory"/> parses it (D6) - two different parses of the same
+        /// string would make D12's per-item comparison report every record as moved, forever. A record the
+        /// tracker gave no readable stamp for still belongs in the sweep: leaving it out would place it in
+        /// "stored minus swept" and delete it, where an unmatchable stamp merely re-downloads it (D8).
+        /// </summary>
+        private static RemoteRecordStamp ReadStamp(JsonElement jsonIssue)
+        {
+            var referenceId = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
+
+            if (!jsonIssue.TryGetProperty(JiraFieldNames.FieldsFieldName, out var fields))
+            {
+                return new RemoteRecordStamp(referenceId, default);
+            }
+
+            var updated = fields.GetFieldValue(JiraFieldNames.UpdatedFieldName);
+
+            return DateTimeOffset.TryParse(updated, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var changedAt)
+                ? new RemoteRecordStamp(referenceId, changedAt.UtcDateTime)
+                : new RemoteRecordStamp(referenceId, default);
+        }
 
         // Jira contributes exactly one system-owned (predefined) additional field: the flagged/impediment
         // field. Its Reference is resolved WITHOUT a live Jira call — from the connection's already-discovered
@@ -126,6 +194,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
             var issues = await GetIssuesByQuery(team, query);
 
+            workItems.AddRange(await CreateWorkItemsFromIssues(team, issues));
+
+            return workItems;
+        }
+
+        /// <summary>
+        /// Phase 2 of the two-phase fetch (DDD-2): full payloads for the named records and for nothing else.
+        /// The team's own filter is deliberately not re-applied - the sweep already decided what belongs to
+        /// the query, and a second cutoff evaluation could drop an item the sweep just reported as changed.
+        /// </summary>
+        public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        {
+            if (referenceIds.Count == 0)
+            {
+                return [];
+            }
+
+            logger.LogDebug("Updating {Count} Work Item(s) by reference id for Team {TeamName}", referenceIds.Count, team.Name);
+
+            var issues = new List<Issue>();
+
+            // A changed set can run to thousands of keys, and every key is another OR clause in a URL that has
+            // to survive whatever proxy sits in front of Jira - chunked the way the Azure DevOps connector
+            // chunks its id list.
+            foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
+            {
+                issues.AddRange(await GetIssuesByQuery(team, PrepareIssueKeyQuery(chunk)));
+            }
+
+            return await CreateWorkItemsFromIssues(team, issues);
+        }
+
+        private async Task<List<WorkItem>> CreateWorkItemsFromIssues(Team team, IEnumerable<Issue> issues)
+        {
             // The Jira flag flows into a work item ONLY through the predefined additional field (ADR-071).
             // GetWorkItemsForTeam does not pass through the controller, so the predefined field must be
             // registered on the connection here — after GetIssuesByQuery has resolved the flagged field key
@@ -135,6 +237,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
             var epicLinkFieldName = !team.ParentOverrideAdditionalFieldDefinitionId.HasValue ? FieldNames[team.WorkTrackingSystemConnectionId][JiraFieldNames.EpicLinkFieldName] : string.Empty;
+
+            var workItems = new List<WorkItem>();
 
             foreach (var issue in issues)
             {
@@ -147,9 +251,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return workItems;
         }
-
-        public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
-            => throw new NotSupportedException("Jira does not fetch by reference id yet - Epic #5687 slice 02 implements it for Cloud.");
 
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
@@ -164,8 +265,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", parentFeatureIds));
 
-            var query = string.Join(" OR ", parentFeatureIds.Select(id => $"key = \"{id}\""));
-            var issues = await GetIssuesByQuery(project, query);
+            var issues = await GetIssuesByQuery(project, PrepareIssueKeyQuery(parentFeatureIds));
             return await CreateFeaturesFromIssues(project, issues);
         }
 
@@ -1274,69 +1374,100 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride)
         {
             var issues = new List<Issue>();
+            var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
+
+            var request = new CloudSearchRequest(
+                jqlQuery,
+                AllFields,
+                ExpandChangelog: true,
+                maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection),
+                SinglePage: maxResultsOverride.HasValue);
+
+            var walkedEveryPage = await WalkCloudSearchPages(client, request, async jsonIssue =>
+                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName)));
+
+            if (!walkedEveryPage)
+            {
+                return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, maxResultsOverride);
+            }
+
+            return issues;
+        }
+
+        private async Task<Issue> CreateIssueWithCompleteChangelog(HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName)
+        {
+            var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
+            var issueToProcess = jsonIssue;
+
+            if (ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs))
+            {
+                var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey);
+                issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, allChangelogHistories);
+                logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, allChangelogHistories.Count);
+            }
+            else
+            {
+                logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
+            }
+
+            return issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName);
+        }
+
+        private sealed record CloudSearchRequest(string Jql, string Fields, bool ExpandChangelog, int PageLimit, bool SinglePage);
+
+        /// <summary>
+        /// The one token-paged walk over Jira Cloud's search endpoint. Both the whole-query download and the
+        /// identity sweep go through it, which is what keeps the two enumerating the same result set (D2).
+        /// Answers false when Jira rejects a page, leaving the caller to decide between falling back and failing.
+        /// </summary>
+        private static async Task<bool> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue)
+        {
             string? nextPageToken = null;
-            var pageLimit = maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
             var pageCount = 0;
 
             do
             {
-                var query = new StringBuilder("rest/api/3/search/jql?");
-                query.Append("jql=").Append(Uri.EscapeDataString(jqlQuery));
-                query.Append("&fields=").Append(Uri.EscapeDataString("*all"));
-                query.Append("&expand=changelog");
-                query.Append("&maxResults=").Append(pageLimit);
+                var url = new StringBuilder("rest/api/3/search/jql?");
+                url.Append("jql=").Append(Uri.EscapeDataString(request.Jql));
+                url.Append("&fields=").Append(Uri.EscapeDataString(request.Fields));
+
+                if (request.ExpandChangelog)
+                {
+                    url.Append("&expand=changelog");
+                }
+
+                url.Append("&maxResults=").Append(request.PageLimit);
 
                 if (!string.IsNullOrEmpty(nextPageToken))
                 {
-                    query.Append("&nextPageToken=").Append(Uri.EscapeDataString(nextPageToken));
+                    url.Append("&nextPageToken=").Append(Uri.EscapeDataString(nextPageToken));
                 }
 
-                var response = await client.GetAsync(query.ToString());
+                var response = await client.GetAsync(url.ToString());
                 if (!response.IsSuccessStatusCode)
                 {
-                    return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, maxResultsOverride);
+                    return false;
                 }
 
                 var body = await response.Content.ReadAsStringAsync();
                 using var json = JsonDocument.Parse(body);
 
-                var issuesArray = json.RootElement.GetProperty("issues");
-
-                var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
-
-                foreach (var jsonIssue in issuesArray.EnumerateArray())
+                foreach (var jsonIssue in json.RootElement.GetProperty("issues").EnumerateArray())
                 {
-                    var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
-                    var needsFullChangelog = ShouldFetchFullChangelog(jsonIssue, issueKey, out var totalChangelogs);
-
-                    JsonElement issueToProcess;
-                    if (needsFullChangelog)
-                    {
-                        // Fetch complete changelog for this issue
-                        var allChangelogHistories = await GetAllChangelogEntriesForIssue(client, issueKey);
-
-                        // Merge complete changelog into the issue JSON
-                        issueToProcess = MergeChangelogIntoIssueJson(jsonIssue, allChangelogHistories);
-                        logger.LogDebug("Found Issue {Key} with {ChangelogCount} complete changelog entries", issueKey, allChangelogHistories.Count);
-                    }
-                    else
-                    {
-                        // Use changelog as-is from initial query
-                        issueToProcess = jsonIssue;
-                        logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
-                    }
-
-                    var issue = issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName);
-                    issues.Add(issue);
+                    await onIssue(jsonIssue);
                 }
 
                 nextPageToken = json.RootElement.TryGetProperty("nextPageToken", out var tokenEl) ? tokenEl.GetString() : null;
                 pageCount++;
             }
-            while (!maxResultsOverride.HasValue && !string.IsNullOrEmpty(nextPageToken) && pageCount < 100);
+            while (!request.SinglePage && !string.IsNullOrEmpty(nextPageToken) && pageCount < MaxCloudSearchPages);
 
-            return issues;
+            return true;
         }
+
+        /// <summary>Names issues by key and nothing else - shared by the parent lookup and by phase 2 of the two-phase fetch.</summary>
+        private static string PrepareIssueKeyQuery(IEnumerable<string> referenceIds)
+            => string.Join(" OR ", referenceIds.Select(id => $"key = \"{id}\""));
 
         private static string PrepareQuery(IEnumerable<string> includedWorkItemTypes, IEnumerable<string> includedStates, string query, int cutOffDays)
         {
@@ -1466,22 +1597,35 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             client.DefaultRequestHeaders.Authorization = probeRequest.Headers.Authorization;
         }
 
-        private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
+        /// <summary>
+        /// The deployment as far as it is known without calling Jira: the Atlassian gateway can only be Cloud,
+        /// and anything else has to have been discovered by an earlier <see cref="GetDeploymentType"/>. This is
+        /// what lets the synchronous capability probe answer at all.
+        /// </summary>
+        private static bool TryResolveKnownDeployment(WorkTrackingSystemConnection connection, out JiraDeployment deployment)
         {
             if (RoutesViaAtlassianCloudGateway(connection.AuthenticationMethodKey))
             {
-                return JiraDeployment.Cloud;
+                deployment = JiraDeployment.Cloud;
+                return true;
+            }
+
+            var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+
+            return DeploymentCache.TryGetValue(baseUrl, out deployment);
+        }
+
+        private async Task<JiraDeployment> GetDeploymentType(HttpClient client, WorkTrackingSystemConnection connection)
+        {
+            if (TryResolveKnownDeployment(connection, out var known))
+            {
+                logger.LogDebug("Deployment Type already known - {DeploymentType}", known);
+                return known;
             }
 
             var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
 
             logger.LogDebug("Getting Deployment Type of Jira Instance for {Url}", baseUrl);
-
-            if (DeploymentCache.TryGetValue(baseUrl, out var cached))
-            {
-                logger.LogDebug("Found Deployment Type in cache - {DeploymentType}", cached);
-                return cached;
-            }
 
             try
             {
