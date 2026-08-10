@@ -1,251 +1,123 @@
-# Mutation testing — Epic #5687 (Faster Updates), slice 01: the update log signal
+# Mutation testing — 5725 (Faster updates: a Jira Cloud team refresh fetches only the issues that moved)
 
-Run 2026-08-09 against `main` @ `0fcde79c8`. Gate is 80 % kill rate.
+Run 2026-08-10 against `main` @ `bc33f59f1`. Gate is 80 % kill rate.
 
-| stack | score | tested | killed | survived | no coverage | timeout | wall clock |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Backend (Stryker.NET 4.16.0) | **63.28 %** | 289 | 193 | 96 | 16 | 0 | 10 m 30 s |
-| Frontend (StrykerJS) | **N/A** | — | — | — | — | — | — |
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0), whole files | 49.84 % | 455 | 300 | 152 | 3 | 12 m 40 s |
+| **Backend, slice-02 changed lines only** | **80.00 %** | **90** | **72** | 15 | 3 | — |
+| Frontend (StrykerJS) | **N/A** | — | — | — | — | — |
 
-Frontend is N/A because slice 01 changed **zero** frontend files: the whole slice is a backend log
-signal plus three persisted columns. `git diff --name-only 7f371a278..HEAD` lists nothing under
-`Lighthouse.Frontend/`. Recorded rather than omitted, so the next reader does not have to re-derive it.
+Config: `stryker.5725.backend.json`. **Frontend is N/A, not skipped**: slice 02 changed zero files under
+`Lighthouse.Frontend/`. The epic is backend-only by decision D4 (no UI this epic — the observable surface
+is the log; a task-manager view belongs to Epic #5511).
 
-Config: `stryker.5724.backend.json`, run from `Lighthouse.Backend.Tests/`.
+## Which number is the gate
 
-Score denominator is 305, not 289: Stryker.NET counts the 16 `NoCoverage` mutants against the score
-but reports "tested" as killed + survived. `193 / (193 + 96 + 16) = 63.28 %`.
+**80.00 %, on the lines slice 02 changed.** The two whole-file numbers are in the table for honesty, not
+as the verdict, and the gap between them is entirely an artefact of how Stryker.NET scopes.
 
-**The 80 % gate is not met on the whole-file score, and this report does not argue that it should be
-waived on the strength of the headline.** The number that describes slice 01 is the one below.
+Stryker.NET **ignores line ranges** in `mutate` — only whole-file globs work (frontend StrykerJS supports
+ranges; .NET does not). Slice 02 changed 200 lines of a 1660-line connector and 186 of an 876-line
+service, so mutating those files whole buries the slice's own score under code it never touched. The
+per-changed-line figure is recovered from `mutation-report.json` by intersecting each mutant's location
+with `git diff -U0 39009086f..HEAD`.
 
-## The number that describes this slice
+Two runs were made:
 
-Cross-referencing every mutant's line against `git diff -U0 7f371a278` (production files only):
+- **Run A** — every mutator, whole files: **38.31 %** (583 tested, 328 killed). Changed lines only: 47.37 %.
+- **Run B** — `ignore-mutations: ["string"]` plus `ignore-methods: ["*Log*", "Console.*"]`: **49.84 %**
+  whole-file, **80.00 %** on changed lines.
 
-| surface | mutants | killed | survived | score |
-| --- | --- | --- | --- | --- |
-| Lines slice 01 changed | 10 | 10 | 0 | **100 %** |
-| Lines slice 01 did not change | 295 | 183 | 96 | 62.0 % |
+The narrowing between A and B removes exactly one category: mutations of log message templates and
+display strings. Those are unkillable without asserting on prose, and asserting on prose is how a suite
+becomes hostile to its own refactoring. Everything with behaviour behind it is still measured.
 
-Every one of the 96 survivors is in code this slice did not write. That is not a claim that the
-slice is well tested by virtue of being small — it is a claim that the two numbers measure different
-things, and that mixing them is what produces 63.28 %.
+## Backend
 
-Before triage the changed surface was 48 mutants, 8 killed, 40 survived. All 40 survivors were the
-same shape: a `logger.LogDebug` line whose only change in this slice was the word `LogInformation`
-becoming `LogDebug`. Stryker has no mutator for a log **level**; what it mutated was the
-**pre-existing message text**, which entered new-code scope only because the line was edited. Those
-40 are now annotated (below) and the changed surface reads 10 / 10.
-
-## Backend, per file
-
-| file | tested | killed | survived | no coverage | score |
+| file | killed | survived | no coverage | ignored | score |
 | --- | --- | --- | --- | --- | --- |
-| WorkItemService.cs | 213 | 143 | 70 | 9 | 64.4 % |
-| UpdateServiceBase.cs | 34 | 19 | 15 | 0 | 55.9 % |
-| PortfolioUpdater.cs | 25 | 18 | 7 | 3 | 64.3 % |
-| TeamUpdater.cs | 15 | 12 | 3 | 4 | 63.2 % |
-| TeamDataService.cs | 2 | 1 | 1 | 0 | 50.0 % |
-| SyncOutcome.cs | 0 | — | — | — | n/a |
+| `IssueFactory.cs` | 3 | 0 | 0 | 1 | 100 % |
+| `OptionalFeatureSeeder.cs` | 2 | 0 | 0 | 3 | 100 % |
+| `SyncModeResolver.cs` | 13 | 0 | 0 | 3 | 100 % |
+| `JiraWorkTrackingConnector.cs` | 29 | 6 | 3 | 55 | 76.3 % |
+| `WorkItemService.cs` | 25 | 9 | 0 | 19 | 73.5 % |
 
-`Program.cs` appears in the report with 726 ignored and 16 compile-error mutants and no tested ones.
-That is the known top-level-statements leak, not a scope failure — see the configuration note below.
+`SyncModeResolver` at 100 % is the one that matters most: it is the whole mode decision (D8), it is a pure
+static by DDD-5, and every one of its branches has a named unit test.
 
-### `SyncOutcome.cs` produces no mutants at all
+### Closed by this pass
 
-The slice's one genuinely behavioural change is `return SyncOutcome.FullSync(recordsFromTracker.Count)`
-at `WorkItemService.cs:113` and `:584`. Stryker generates exactly one mutant at each — `Count()` →
-`Sum()` — and both are **CompileError**. `SyncOutcome.cs` itself is a record with two
-expression-bodied members and generates **zero** mutants: Stryker.NET has no numeric-literal mutator,
-so `FullSync(0)` is untouched, and an expression-bodied member has no block to remove.
+Three survivors produced new tests (`bc33f59f1`).
 
-That surface is therefore **unmutable, not untested**. What pins it is the acceptance suite:
-`scanned=2 / fetched=2` on the team path, `scanned=3 / fetched=3` on the portfolio path, and the
-persisted `RefreshLog` row asserted through a fresh read
-(`ThenTheRecordedUpdateReportsAFullUpdateOf`). Mutation testing has nothing to say here, in either
-direction, and a reader should not read the absence of mutants as an absence of coverage.
+- **`IssueFactory.cs:228` and `JiraWorkTrackingConnector.cs:126` — `DateTimeStyles.AssumeUniversal |
+  AdjustToUniversal` mutated to `&`.** `&` of two distinct flags is `None`, so a timestamp Jira returns
+  **without a zone** would be read as the host's local time and stored as though it were UTC. Every
+  later comparison would then be off by the host's offset — on a per-item diff (D12) where being off by
+  an hour means refetching everything or nothing.
 
-## Closed by this pass
+  The existing test used an offset-bearing stamp, which both variants agree on. The new tests
+  (`…ReadsAStampWithNoZoneAsUtcRatherThanAsTheHostsLocalTime`, one per parse site) use a zone-less one,
+  which is the only input the flag changes. Note `AdjustToUniversal` is a **no-op** at both sites —
+  both end in `.UtcDateTime`, which normalises already — so a `Kind == Utc` assertion cannot
+  discriminate, and one already existed while the mutant survived.
 
-No tests were written. Two mutants were nonetheless converted from unmeasured to killed, as a
-second-order effect of the annotations:
+  **Host-dependent kill, recorded deliberately**: on a UTC-configured machine `DateTimeStyles.None` and
+  `AssumeUniversal|AdjustToUniversal` are the same function on every input, so this mutant is provably
+  equivalent there and no test can kill it. It dies on a Europe/Zurich dev box. A Stryker run on a UTC CI
+  runner will report it surviving — that is equivalence under that configuration, not a missing test. The
+  only timezone-independent alternative is setting `TZ` plus `TimeZoneInfo.ClearCachedData()`, which is
+  global mutable state and racy under a parallel suite; rejected.
 
-- **`WorkItemService.cs:414`** — block removal of `if (portfolio.OwningTeam != null) { … }`
-- **`WorkItemService.cs:496`** — block removal of `if (historicalFeatureSize.Any()) { … }`
+- **`WorkItemService.cs:231` — the zero-moved-ids branch.** Forcing the condition false survived: a delta
+  cycle with nothing to fetch still called the tracker with an empty key list. `fetched` was 0 either way,
+  so AC-2.3's count assertion could not see the wasted round trip — on precisely the cycle this epic
+  exists to make cheap. `ThenTheIssueWasNeverDownloaded` now asserts no by-reference-id request is issued
+  at all, not that it returned nothing.
 
-Both were `Ignored` in the first run with the reason *"Removed by block already covered filter"*:
-Stryker suppresses a block-removal mutant when every statement inside the block already carries its
-own mutant. Disabling the log statement's mutants broke that redundancy, so each block-removal mutant
-became live — and the existing suite killed both. Removing the owning-team assignment and removing
-the percentile computation are both real behaviour changes, and both were previously invisible to the
-score. Net effect of the triage on kills: **+2** (191 → 193), which is the reason the totals do not
-simply drop by 40.
+Also added, for coverage rather than for the score: a scenario driving **opt-in on with a connector that
+refuses to sweep**. AC-2.2's fifth criterion said so and only the resolver's unit tests covered it; there
+was no end-to-end path.
 
-This is worth carrying forward: **annotating a diagnostic line can unmask a behavioural mutant that
-the "block already covered" filter was hiding.** The filter is a de-duplication heuristic, not a
-judgement about behaviour.
+### Accepted survivors
 
-## Accepted survivors
+- **`WorkItemService.cs:115`, `:188` (×2 each), `:208` — booleans on
+  `IdentityScan(TrackerCanBeScanned:…, Succeeded:…)`.** Equivalent, verified by applying each mutation and
+  running the fixture. At `:115` the resolver's first guard short-circuits on the opt-in flag before those
+  fields are read. At `:188` the opt-in guard does *not* fire (the operator has opted in), but guards 2 and
+  3 absorb both flips. Every route lands on `SyncMode.Full`, which is the answer either way — this is D8's
+  "ambiguity resolves to a full fetch" behaving as designed, and defence in depth showing up as
+  unkillability.
+- **`WorkItemService.cs:327` — `!survivors.Contains(persistedItem)` negated.** Admits duplicates into the
+  staleness pass. Cannot double-raise: `AddStalenessEventIfThresholdCrossed` flips `WasStaleAtLastSync` on
+  the first visit, so the second finds nothing to report.
+- **`WorkItemService.cs:95`, `:96`, `:325` — statement removals on the two `Save()` calls and an
+  `AddRange`.** The acceptance harness reads back through the same EF context that holds the tracked
+  entities, so a dropped `Save()` is invisible to it. Killing these needs a test that reopens the context,
+  which is a different test shape than these scenarios are, and the transition suites already cover
+  persistence directly.
+- **`JiraWorkTrackingConnector.cs:1463` — `pageCount < MaxCloudSearchPages` → `<=`.** Off-by-one on a
+  defensive page cap that exists so a pathological result set cannot loop forever. The boundary is
+  arbitrary; asserting it would pin an implementation detail.
+- **`JiraWorkTrackingConnector.cs:120`, `:210`, `:1383`, `:1390`, `:1399`, `:1439`, `:1443`, `:1610`.**
+  Deployment-cache and changelog-paging paths reachable only from the live-Jira fixtures, which are
+  excluded from the test filter on purpose — Stryker reruns the suite hundreds of times and would hammer
+  Atlassian and trip rate limits (ledger, 2026-06-16 / 2026-05-25).
 
-### On lines slice 01 changed — 40, all annotated in code
+### Not mutated
 
-Each is a `// Stryker disable once all:` on the line above, carrying its own reason. The shared
-premise is stated once here and not repeated 19 times: the mutation targets a **pre-existing message
-template** on a line whose only change was its log level, and Stryker cannot mutate a level. The
-per-line reasons say what specifically makes *that* line's text non-load-bearing.
+- **Log message templates and display strings**, via `ignore-mutations: ["string"]` and
+  `ignore-methods: ["*Log*", "Console.*"]`. Killing them means asserting on prose. One exception is worth
+  noting: AC-2.6 *does* assert the scan-failure warning is emitted exactly once at Warning-or-above — the
+  behaviour is pinned, the wording is not.
+- **The other four connectors** (Azure DevOps, ServiceNow, Linear, CSV). Slice 02 changed only their
+  method signatures — probe returns false, both new methods throw. Nothing behavioural to mutate.
+- **`Models/SyncOutcome.cs`, `Models/RemoteRecordStamp.cs`, `Jira/Issue.cs`** produced no mutants on
+  changed lines: records and a factory method with no branching.
 
-| file:line (post-annotation) | what the reason records |
-| --- | --- |
-| `WorkItemService.cs:45` | completion is now said by the `Update completed` summary line, whose text *is* pinned |
-| `WorkItemService.cs:62` | the team half of the same trace |
-| `WorkItemService.cs:70` | one of the three copies of the announcement AC-1.5 caps at one; counted by level, not wording |
-| `WorkItemService.cs:331`, `:341` | entry / exit trace of the remaining-work pass; the pass's own statements are mutated separately and killed |
-| `WorkItemService.cs:388`, `:393`, `:401` | the per-record narration AC-1.6 is about — see below |
-| `WorkItemService.cs:416`, `:426` | traces of the owning-team and feature-owner branches; both guards are mutated on their own and killed |
-| `WorkItemService.cs:431`, `:493` | includes the `string.Join` separator: the joined string is built for the message and read nowhere else |
-| `WorkItemService.cs:453` | narrates `AddOrUpdateWorkForTeam`, whose removal is killed |
-| `WorkItemService.cs:479`, `:500` | the percentile trace; the guard above and the computed value are pinned elsewhere |
-| `PortfolioUpdater.cs:35`, `TeamUpdater.cs:88` | AC-1.4's skip trace — pinned by level (`Slice01SkippedEntityLogTest`), never by wording |
-| `TeamDataService.cs:20`, `:28` | entry / exit trace; what the pass reports is the `SyncOutcome` it returns |
+## Test filter
 
-Block form (`// Stryker disable all` … `// Stryker restore all`) was considered and rejected: **no
-two of these lines are contiguous.** Every candidate span encloses real behaviour — `:394`
-(`IsUsingDefaultFeatureSize = true`), `:428` (`featureOwners = …`), the statements between the
-remaining-work entry and exit traces. A block would have silenced those too, which is the difference
-between accepting a survivor and hiding one. Nineteen single-line disables is the honest form here.
-
-Two reason strings (`PortfolioUpdater.cs:34`, `TeamUpdater.cs:87` — the comment lines themselves) were reworded after the run — the
-first draft credited `Slice01SkippedEntityLogTest` with pinning the portfolio half, which it does not:
-it drives `TeamUpdater` only. Reason text is metadata; the mutant set and the score are unaffected.
-
-### The AC-1.6 positive control is correctly scoped — verdict, with the evidence
-
-`ThenThePerRecordDetailIsStillAvailableToWhoeverAsksForIt` matches
-`PerRecordNarration = ["Extrapolating", "Items to Feature"]` with `.Any(…)`. Because it is an OR
-across fragments, emptying any single template leaves the others, so `:388`, `:393` and `:401` all
-survive. **This is not a weakness worth closing**, for three reasons:
-
-1. **AC-1.6's subject is a category, not a sentence.** The criterion is "per-record chatter is demoted,
-   never dropped". Pinning each of the three messages verbatim would convert a control into a prose
-   assertion — precisely what the specification file's own header disclaims ("the prose around them is
-   free to improve without redding a scenario") and what this repo's
-   `// Stryker disable … diagnostic log text is not behaviour` convention exists to reject.
-2. **The control demonstrably observes real per-record output, not the pass-entry line.** The concern
-   worth checking was that `"Extrapolating"` also matches `:388`, which fires unconditionally *outside*
-   `foreach (var feature in portfolio.GetFeaturesToExtrapolate())` — so the control could in principle
-   be satisfied with zero records narrated. The mutation data settles it: the `:388` template mutant
-   **survived**, meaning scenario 6 still found narration at Debug with that line emptied. Only the
-   loop-interior lines can have supplied it. The control is exercising the loop.
-3. **Contrast with the AC-1.4 control, which is single-fragment and does kill.**
-   `ThenTheCheckIsStillRecordedAtDebug` asserts one fragment, `"Checking last update"`, emitted by one
-   line once — so both its mutants die and `UpdateServiceBase.cs:122` needed no annotation. That is the
-   right shape *there*, because AC-1.4 is a promise about that specific line. The shapes differ because
-   the criteria differ, not because one control was written less carefully.
-
-If a future run wants one of the three killed, changing `.Any(…)` to require every fragment would kill
-`:401` only — `"Items to Feature"` is unique to it, while `"Extrapolating"` appears on two lines that
-cover for each other. That buys one mutant in exchange for a scenario that reds on a reword. Recorded
-as an option, not recommended; and in any case it is `nw-acceptance-designer`'s call, not the
-crafter's.
-
-### On lines slice 01 did not change — 96, not annotated, not tested
-
-Deliberately left standing. They exist because Stryker.NET takes **whole-file** `mutate` globs and
-silently ignores line ranges (`Foo.cs{72..94}` matches nothing and warns about nothing), so scoping to
-a changed region is impossible on this stack. Writing tests for them would be scope creep into code
-five prior epics wrote; annotating them would be manufacturing a score.
-
-| file | survivors not on changed lines |
-| --- | --- |
-| WorkItemService.cs | 70 |
-| UpdateServiceBase.cs | 15 |
-| PortfolioUpdater.cs | 7 |
-| TeamUpdater.cs | 3 |
-| TeamDataService.cs | 1 |
-
-Four are worth naming, because they are real gaps rather than log text, and a later slice in this epic
-will be working next to all four:
-
-- **`TeamDataService.cs:23`** — deleting `await teamMetricsService.UpdateTeamMetrics(team);` survives.
-  A team refresh that never recomputes its metrics is indistinguishable to the suite.
-- **`WorkItemService.cs:582`** — deleting `await SweepDepartedFeatureSpells(portfolio, features);`
-  survives. Blocked-spell sweeping on departed features has no test that fails without it.
-- **`PortfolioUpdater.cs:37` / `TeamUpdater.cs:90`** — `minutesSinceLastUpdate >= RefreshAfter` mutated
-  to `>` survives on both halves. The "due exactly now" boundary is untested, on the very comparison
-  slice 01 demoted the log line of.
-- **`UpdateServiceBase.cs`** — 15 survivors across the untouched parts of the base class, the largest
-  single concentration outside `WorkItemService`.
-
-None of these is slice 01's to fix. They are recorded here so that the slice which next touches
-`UpdateServiceBase` or `TeamDataService` — slice 02 changes both — inherits the list rather than
-rediscovering it.
-
-## Not mutated
-
-**Six production files slice 01 changed are absent from `mutate`, each deliberately.**
-
-| file | change | why not mutated |
-| --- | --- | --- |
-| `UpdateQueueService.cs` | 2 × `LogInformation` → `LogDebug` | would add whole-file mutants of untouched queueing code to buy 4 log-text mutants that would be annotated on arrival |
-| `BaseMetricsService.cs` | 1 × log demotion | same, over a 950-line file |
-| `DeliveryMetricSnapshotRecordingHandler.cs` | 1 × log demotion | same |
-| `AzureDevOpsWorkTrackingConnector.cs` | 1 × log demotion | same |
-| `JiraWorkTrackingConnector.cs` | 1 × log demotion | same |
-| `ITeamDataService.cs`, `IWorkItemService.cs` | return type `Task` → `Task<SyncOutcome>` | interface declarations generate no mutants |
-
-The log-level demotions are not unpinned by their absence: AC-1.7's "at most two operator-visible
-lines" fails if any of them regresses to `Information`, and no Stryker mutator can change a log level
-in the first place.
-
-**`RefreshLog.cs` and `SyncMode.cs` are also absent, and are additionally outside the diff base.**
-Both landed in `7f371a278` — the DISTILL commit that is the base for every changed-line figure in this
-report — alongside the two `AddRefreshLogModeAndRecordCounts` migrations. So the three persisted
-fields and the `SyncMode` enum are production code of this slice that the changed-surface analysis
-does not see. They are auto-properties and an enum: zero mutants either way, and pinned by
-`ThenTheRecordedUpdateReportsAFullUpdateOf` reading the row back. Recorded because the base commit is
-not the clean pre-implementation line it looks like.
-
-## Configuration: `WorkItemService.cs` stays in
-
-`WorkItemService.cs` is 711 lines (696 before this pass), 24 of which slice 01 changed, and it contributed 252 of the first
-run's 343 mutants — it dominates the score by an order of magnitude. Excluding it would lift the
-headline to roughly 78 % without a single test being written. **Recommendation: do not exclude it.**
-
-1. **It holds 15 of the 19 lines under triage.** Excluding the file to improve the score would remove
-   from view the exact lines the triage is about. The report would then describe everything except the
-   subject.
-2. **Its 70 remaining survivors are information.** They are correctly labelled pre-existing above, and
-   two of them (`:582`, and the `Ignored`-turned-`Killed` blocks) only became visible because the file
-   was in scope.
-3. **Slices 02–08 all change this file** — the entire epic is about how `recordsFromTracker` is
-   fetched. A baseline established now is the thing later runs are read against; establishing it by
-   omission would mean re-establishing it later.
-4. **Excluding the dominant file to reach a threshold is the failure mode this document exists to
-   avoid.** An honest 63 % with a written changed-surface figure of 100 % is worth more than a
-   manufactured 78 %.
-
-The config is committed unchanged at `stryker.5724.backend.json`.
-
-## Configuration notes
-
-- **`14119 total mutants are skipped` / `289 total mutants will be tested`** is the line that proves
-  scope. The created-count printed earlier covers the whole project — Stryker.NET injects everywhere,
-  *then* filters, *then* compiles — so `Program.cs`'s 726 ignored mutants and the compile-error
-  warnings on unrelated files are normal output of a working run, not a broken filter. Confirm scope
-  from `reports/mutation-report.json`, never from the created-count.
-- **Line-span `mutate` entries do not work on Stryker.NET** and fail silently. Whole-file entries plus
-  line-by-line triage of the report is the only reliable method here. (StrykerJS does honour spans;
-  this run has no frontend half.)
-- **`test-case-filter` is load-bearing.** Without it the initial run executes the whole suite under
-  `perTestInIsolation` — roughly 11 minutes before the first mutant. The filter in this config admits
-  the slice-01 fixtures plus the updater, `TeamDataService`, `WorkItemService`, `UpdateQueueService`
-  and `QuietWriteBack` suites.
-
-## Verification after the run
-
-- `dotnet build Lighthouse.sln` — succeeded, **0 warnings**, 0 errors.
-- `dotnet test Lighthouse.sln` — **4690 passed, 0 failed, 0 skipped**.
-- `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes` — exit 2 with 35
-  findings, **none in any file this pass touched**; all 35 are the known pre-existing CA1861 hits in
-  generated EF migration files.
+`TestCategory!=JiraIntegration` is load-bearing. `JiraWorkTrackingConnectorTest` and `JiraWriteBackTest`
+hit `letpeoplework.atlassian.net` for real; under Stryker they would run hundreds of times. Their
+exclusion is why several connector paths report as uncovered above. `JiraIncrementalSyncTest` carries no
+category — it drives a recording `HttpMessageHandler` — and is included.

@@ -1,0 +1,30 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Models/RemoteRecordStamp.cs",
+      "**/Models/SyncOutcome.cs",
+      "**/Models/WorkItemBase.cs",
+      "**/Factories/IssueFactory.cs",
+      "**/Services/Implementation/Seeding/OptionalFeatureSeeder.cs",
+      "**/Services/Implementation/WorkItems/SyncModeResolver.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/Issue.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs"
+    ],
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "ignore-mutations": ["string"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~FasterUpdates|FullyQualifiedName~SyncModeResolver|FullyQualifiedName~WorkItemService|FullyQualifiedName~WorkItemDomainEventsGold|FullyQualifiedName~OptionalFeatureSeeder|FullyQualifiedName~JiraIncrementalSync|FullyQualifiedName~Slice02RemoteChangeStamp|FullyQualifiedName~IssueFactory|FullyQualifiedName~DemoDataStateEnteredSeam)&TestCategory!=JiraIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
