@@ -62,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @error @driving_port @real-io @AC-2.3 @D2 @contract-shape:bounded-change
         // The rule whose failure deletes live work items: removed is an exact set difference.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task An_issue_that_left_the_query_is_gone_from_the_team_on_the_very_next_cycle()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
