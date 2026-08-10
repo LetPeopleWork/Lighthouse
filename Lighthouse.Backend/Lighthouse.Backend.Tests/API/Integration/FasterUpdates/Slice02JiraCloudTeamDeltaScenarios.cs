@@ -133,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-2.9 @D9 @contract-shape:bounded-change
         // Everything downstream of the fetch keeps happening.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_cheaper_refresh_still_rolls_up_remaining_work_and_still_asks_for_a_new_forecast()
         {
             var team = GivenATeamDeliveringOneFeature();
