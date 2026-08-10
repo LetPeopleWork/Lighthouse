@@ -1136,6 +1136,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ParentReferenceId = issue.ParentKey,
                 Name = issue.Title,
                 CreatedDate = issue.CreatedDate,
+                LastChangedRemote = issue.Updated,
                 ClosedDate = issue.ClosedDate,
                 StartedDate = issue.StartedDate,
                 Order = issue.Rank,

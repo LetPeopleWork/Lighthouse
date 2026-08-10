@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Factories
             var key = GetKeyFromJson(json);
             var title = GetTitleFromFields(fields);
             var createdDate = GetCreatedDateFromFields(fields);
+            var updated = GetUpdatedDateFromFields(fields);
             var parentKey = GetParentFromFields(fields);
             var labels = GetLabelsFromFields(fields);
             var rank = GetRankFromFields(fields, rankField);
@@ -38,6 +39,7 @@ namespace Lighthouse.Backend.Factories
                 Key = key,
                 Title = title,
                 CreatedDate = createdDate,
+                Updated = updated,
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
                 ParentKey = parentKey,
@@ -215,6 +217,20 @@ namespace Lighthouse.Backend.Factories
 
             var createdDate = DateTime.Parse(createdDateAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
             return DateTime.SpecifyKind(createdDate, DateTimeKind.Utc);
+        }
+
+        // Epic #5687 D6: an instant, kept as UTC. Missing or unreadable stays null - a sentinel would claim
+        // knowledge the tracker never gave, and a null resolves the next update to a full fetch (D8).
+        private static DateTime? GetUpdatedDateFromFields(JsonElement fields)
+        {
+            var updatedAsString = fields.GetFieldValue(JiraFieldNames.UpdatedFieldName);
+
+            if (!DateTimeOffset.TryParse(updatedAsString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var updated))
+            {
+                return null;
+            }
+
+            return updated.UtcDateTime;
         }
 
         private static string GetTitleFromFields(JsonElement fields)

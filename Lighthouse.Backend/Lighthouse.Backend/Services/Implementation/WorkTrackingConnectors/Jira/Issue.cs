@@ -9,6 +9,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public DateTime? CreatedDate { get; set;}
 
+        /// <summary>When Jira says the issue last changed (Epic #5687, D6). Null when the tracker did not report it.</summary>
+        public DateTime? Updated { get; set; }
+
         public DateTime? ClosedDate { get; set;}
 
         public DateTime? StartedDate { get; set;}
