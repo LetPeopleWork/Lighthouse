@@ -76,9 +76,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
 
-            var scan = await ScanRemoteIdentities(connector, team);
+            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
+
+            // AC-2.10: off terminates the decision before the tracker is approached at all. A connector
+            // that could be swept is still not asked to - an unasked-for sweep is exactly the data-loss
+            // exposure (D2) the opt-in exists to confine.
+            var scan = operatorAskedForTheCheaperRefresh
+                ? await ScanRemoteIdentities(connector, team)
+                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+
             var mode = SyncModeResolver.Resolve(
-                TheOperatorAskedForTheCheaperRefresh(),
+                operatorAskedForTheCheaperRefresh,
                 scan.TrackerCanBeScanned,
                 storedWorkItems,
                 scan.Succeeded,

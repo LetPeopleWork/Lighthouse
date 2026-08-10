@@ -153,7 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-2.10 @A1 @contract-shape:unbounded-preservation
         // Off is the default, and off means nothing is scanned - the defining claim is an absence.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_refresh_never_scans_unless_an_operator_asked_for_it()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
