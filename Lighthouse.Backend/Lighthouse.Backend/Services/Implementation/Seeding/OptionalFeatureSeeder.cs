@@ -46,8 +46,19 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
 
         private static List<OptionalFeature> GetOptionalFeatures()
         {
-            // Add new features here as needed. For now, we have no new features to add.
-            return new List<OptionalFeature>();
+            return
+            [
+                new OptionalFeature
+                {
+                    // Id is required on the entity; 0 lets EF assign the key.
+                    Id = 0,
+                    Key = OptionalFeatureKeys.DeltaSyncKey,
+                    Name = "Faster Updates",
+                    Description = "Fetch only the items that changed since the last update instead of the whole query. Preview - see Epic #5687.",
+                    Enabled = false,
+                    IsPreview = true,
+                },
+            ];
         }
 
         private async Task AddOrUpdateCurrentFeatures(List<OptionalFeature> features)

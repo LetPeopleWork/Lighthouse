@@ -51,7 +51,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             // Assert
             var features = DatabaseContext.OptionalFeatures.ToList();
-            Assert.That(features, Has.Count.EqualTo(0));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Has.Count.EqualTo(1));
+                Assert.That(features[0].Key, Is.EqualTo(OptionalFeatureKeys.DeltaSyncKey));
+            }
+        }
+
+        [Test]
+        public async Task SeedAsync_AddsDeltaSync_DisabledAndInPreview()
+        {
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deltaSync.Enabled, Is.False);
+                Assert.That(deltaSync.IsPreview, Is.True);
+                Assert.That(deltaSync.IsPremium, Is.False);
+            }
+        }
+
+        [Test]
+        public async Task SeedAsync_DeltaSyncEnabledByOperator_StaysEnabled()
+        {
+            var subject = CreateSubject();
+            await subject.Seed();
+
+            DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey).Enabled = true;
+            await DatabaseContext.SaveChangesAsync();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
+            Assert.That(deltaSync.Enabled, Is.True);
         }
 
         [Test]

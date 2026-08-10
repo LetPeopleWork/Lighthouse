@@ -189,7 +189,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @AC-2.12 @A1 @contract-shape:unbounded-preservation
         // A fresh install, and an instance upgrading into this release, both stay off.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public void An_instance_that_never_asked_for_the_cheaper_refresh_does_not_get_it()
         {
             ThenTheCheaperRefreshIsOfferedButSwitchedOff();
