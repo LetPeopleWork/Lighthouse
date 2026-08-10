@@ -41,9 +41,16 @@ export function TerminologyProvider({
 		refetch();
 	}, [queryClient, refetch]);
 
+	// Bug #5732: the `= []` default above only fires for undefined. A resolved-but-wrong
+	// payload (an HTML string, once) reached `.find` during render and blanked the app.
+	const terms = useMemo(
+		() => (Array.isArray(terminologyData) ? terminologyData : []),
+		[terminologyData],
+	);
+
 	const getTerm = useCallback(
 		(key: string): string => {
-			const term = terminologyData.find((t) => t.key === key);
+			const term = terms.find((t) => t.key === key);
 
 			if (!term) {
 				return key;
@@ -51,7 +58,7 @@ export function TerminologyProvider({
 
 			return term.value || term.defaultValue || key;
 		},
-		[terminologyData],
+		[terms],
 	);
 
 	const contextValue = useMemo(

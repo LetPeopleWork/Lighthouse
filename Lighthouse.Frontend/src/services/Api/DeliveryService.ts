@@ -53,7 +53,10 @@ export class DeliveryService
 			const response = await this.apiService.get<IDelivery[]>(
 				`/deliveries/portfolio/${portfolioId}`,
 			);
-			return response.data.map((data) => Delivery.fromBackend(data));
+			return BaseApiService.asArray(
+				response.data,
+				`/deliveries/portfolio/${portfolioId}`,
+			).map((data) => Delivery.fromBackend(data));
 		});
 	}
 

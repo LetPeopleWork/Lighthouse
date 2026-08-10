@@ -39,7 +39,10 @@ export class WorkTrackingSystemService
 				IWorkTrackingSystemConnection[]
 			>("/worktrackingsystemconnections/supported");
 
-			return response.data.map((connection) =>
+			return BaseApiService.asArray(
+				response.data,
+				"/worktrackingsystemconnections/supported",
+			).map((connection) =>
 				this.deserializeWorkTrackingSystemConnection(connection),
 			);
 		});
@@ -68,7 +71,10 @@ export class WorkTrackingSystemService
 				IWorkTrackingSystemConnection[]
 			>("/worktrackingsystemconnections");
 
-			return response.data.map((connection) =>
+			return BaseApiService.asArray(
+				response.data,
+				"/worktrackingsystemconnections",
+			).map((connection) =>
 				this.deserializeWorkTrackingSystemConnection(connection),
 			);
 		});

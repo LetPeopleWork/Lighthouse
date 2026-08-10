@@ -34,7 +34,9 @@ export class VersionService extends BaseApiService {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<ILighthouseRelease[]>("/version/new");
-			return response.data.map(this.deserializeRelease);
+			return BaseApiService.asArray(response.data, "/version/new").map(
+				this.deserializeRelease,
+			);
 		});
 	}
 

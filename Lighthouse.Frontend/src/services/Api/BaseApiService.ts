@@ -5,6 +5,7 @@ import { Portfolio, PortfolioSchema } from "../../models/Portfolio/Portfolio";
 import { Team, TeamSchema } from "../../models/Team/Team";
 import { getBackendReadyPromise, getBackendUrl } from "../../utils/backendUrl";
 import { ApiError } from "./ApiError";
+import { assertNotHtmlResponse } from "./htmlResponseGuard";
 
 export class BaseApiService {
 	protected apiService: AxiosInstance;
@@ -13,6 +14,8 @@ export class BaseApiService {
 		this.apiService = axios.create({
 			baseURL: `${getBackendUrl()}/latest`,
 		});
+
+		this.apiService.interceptors?.response.use(assertNotHtmlResponse);
 
 		// Once the backend URL is definitively known, update the base URL
 		getBackendReadyPromise().then(() => {
@@ -148,6 +151,22 @@ export class BaseApiService {
 			);
 		}
 		return result.data;
+	}
+
+	// Bug #5732: HTTP success is not contract success. When the SPA fallback answered an API
+	// call with index.html, `response.data` was a raw HTML string and `.map` threw a bare
+	// TypeError that no caller handled. Fail as an ApiError instead, on the path callers
+	// already understand.
+	protected static asArray<T>(data: T[], endpoint: string): T[] {
+		if (!Array.isArray(data)) {
+			throw new ApiError(
+				"INVALID_RESPONSE",
+				"Received an unexpected response from the server.",
+				`Expected a list from ${endpoint} but received ${typeof data}.`,
+			);
+		}
+
+		return data;
 	}
 
 	protected static deserializeTeam(item: unknown): Team | null {

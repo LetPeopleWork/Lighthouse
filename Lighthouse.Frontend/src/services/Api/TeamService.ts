@@ -23,7 +23,7 @@ export class TeamService extends BaseApiService implements ITeamService {
 	async getTeams(): Promise<Team[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ITeam[]>("/teams");
-			return response.data
+			return BaseApiService.asArray(response.data, "/teams")
 				.map((element) => BaseApiService.deserializeTeam(element))
 				.filter((team): team is Team => team !== null);
 		});

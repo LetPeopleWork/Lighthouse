@@ -1,6 +1,7 @@
 import type { IForecastInputCandidates } from "../../models/Forecasts/ForecastInputCandidates";
 import type { IFeaturesWorkedOnInfo } from "../../models/Metrics/InfoWidgetData";
 import type { IWorkItem } from "../../models/WorkItem";
+import { BaseApiService } from "./BaseApiService";
 import { BaseMetricsService, type ITeamMetricsService } from "./MetricsService";
 
 export class TeamMetricsService
@@ -25,7 +26,10 @@ export class TeamMetricsService
 				`/teams/${teamId}/metrics/featuresInProgress?asOfDate=${formattedDate}`,
 			);
 
-			const workItems = response.data.map((workItem) => {
+			const workItems = BaseApiService.asArray(
+				response.data,
+				`/teams/${teamId}/metrics/featuresInProgress`,
+			).map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
 				return workItem;

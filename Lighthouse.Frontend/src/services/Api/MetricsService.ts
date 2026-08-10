@@ -357,7 +357,10 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				`/${this.api}/${id}/metrics/wip?asOfDate=${formatLocalDate(asOfDate)}`,
 			);
 
-			const workItems = response.data.map((workItem) => {
+			const workItems = BaseApiService.asArray(
+				response.data,
+				`/${this.api}/${id}/metrics/wip`,
+			).map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
 				workItem.currentStateEnteredAt = workItem.currentStateEnteredAt
@@ -533,7 +536,10 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				`/${this.api}/${id}/metrics/cycleTimeData?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
-			const items = response.data.map((workItem) => {
+			const items = BaseApiService.asArray(
+				response.data,
+				`/${this.api}/${id}/metrics/cycleTimeData`,
+			).map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
 				const parsedNamedCycleTimes =
@@ -817,7 +823,10 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 				`/${this.api}/${id}/metrics/blockedItemsAtDate?date=${formattedDate}`,
 			);
 
-			const workItems = response.data.map((workItem) => {
+			const workItems = BaseApiService.asArray(
+				response.data,
+				`/${this.api}/${id}/metrics/blockedItemsAtDate`,
+			).map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
 				workItem.currentStateEnteredAt = workItem.currentStateEnteredAt

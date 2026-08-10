@@ -3,6 +3,7 @@ import type { IFeatureSizeEstimationResponse } from "../../models/Metrics/Featur
 import type { IFeatureSizePercentilesInfo } from "../../models/Metrics/InfoWidgetData";
 import type { ProcessBehaviourChartData } from "../../models/Metrics/ProcessBehaviourChartData";
 import type { IPercentileValue } from "../../models/PercentileValue";
+import { BaseApiService } from "./BaseApiService";
 import {
 	BaseMetricsService,
 	type IProjectMetricsService,
@@ -40,7 +41,10 @@ export class ProjectMetricsService
 				`/portfolios/${projectId}/metrics/allFeaturesForSizeChart?${this.getDateFormatString(startDate, endDate)}`,
 			);
 
-			const features = response.data.map((feature) => {
+			const features = BaseApiService.asArray(
+				response.data,
+				`/portfolios/${projectId}/metrics/allFeaturesForSizeChart`,
+			).map((feature) => {
 				feature.startedDate = new Date(feature.startedDate);
 				feature.closedDate = new Date(feature.closedDate);
 				return feature;

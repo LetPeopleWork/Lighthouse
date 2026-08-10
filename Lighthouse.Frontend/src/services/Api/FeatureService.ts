@@ -72,7 +72,10 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 				`/features/${featureId}/workitems`,
 			);
 
-			return response.data.map((workItem) => {
+			return BaseApiService.asArray(
+				response.data,
+				`/features/${featureId}/workitems`,
+			).map((workItem) => {
 				workItem.startedDate = new Date(workItem.startedDate);
 				workItem.closedDate = new Date(workItem.closedDate);
 				return workItem;

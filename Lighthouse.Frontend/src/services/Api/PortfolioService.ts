@@ -30,7 +30,9 @@ export class PortfolioService
 	async getPortfolios(): Promise<Portfolio[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IPortfolio[]>("/portfolios");
-			return response.data.map(BaseApiService.deserializePortfolio);
+			return BaseApiService.asArray(response.data, "/portfolios").map(
+				BaseApiService.deserializePortfolio,
+			);
 		});
 	}
 
