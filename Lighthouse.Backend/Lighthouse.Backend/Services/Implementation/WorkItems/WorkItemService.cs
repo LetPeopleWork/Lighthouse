@@ -83,6 +83,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var itemsWithTransitions = new List<SyncedItem>();
 
+            // AC-2.4: downloaded payloads only. SyncWorkItem, WithSyncDeltaTransition and
+            // SyncStateTransitions all write, so an item whose stamp did not move must not be in here.
             foreach (var item in fetch.WorkItems)
             {
                 var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);

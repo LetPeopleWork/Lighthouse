@@ -80,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-2.4 @contract-shape:unbounded-preservation
         // Hypothesis 2: "updated is not trustworthy". Whole-surface, not a spot check of two fields.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task An_issue_that_did_not_move_is_left_exactly_as_it_was()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
