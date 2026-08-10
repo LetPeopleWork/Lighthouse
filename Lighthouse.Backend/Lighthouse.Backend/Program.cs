@@ -181,20 +181,25 @@ namespace Lighthouse.Backend
                 c.RoutePrefix = "api/docs";
             });
 
-            app.UseDefaultFiles();
-            app.UseStaticFiles(new StaticFileOptions
+            // Bug #5732: the same options must serve index.html on both the static-file and
+            // the SPA fallback path, or deep links hand out a cacheable shell.
+            var staticFileOptions = new StaticFileOptions
             {
                 // Don't cache index.html to ensure users always get the latest version, but allow caching for other static assets
                 OnPrepareResponse = ctx =>
                 {
-                    if (ctx.File.Name == "index.html")
+                    // sw.js is the Bug #5732 tombstone: a cached copy would delay the uninstall.
+                    if (ctx.File.Name == "index.html" || ctx.File.Name == "sw.js")
                     {
                         ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
                         ctx.Context.Response.Headers.Pragma = "no-cache";
                         ctx.Context.Response.Headers.Expires = "0";
                     }
                 }
-            });
+            };
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles(staticFileOptions);
 
             app.UseRouting();
 
@@ -235,11 +240,41 @@ namespace Lighthouse.Backend
                 await context.Response.SendFileAsync(filePath);
             });
 
+            app.Use(async (context, next) =>
+            {
+                if (context.GetEndpoint() is null && ShouldNotFallBackToSpaShell(context.Request.Path))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
+
+                await next();
+            });
+
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "wwwroot";
                 spa.Options.DefaultPage = "/index.html";
+                spa.Options.DefaultPageStaticFileOptions = staticFileOptions;
             });
+        }
+
+        // Bug #5732: a request that matched no endpoint must not receive the SPA shell with a 200.
+        // A stale client then parses HTML as JSON, and a removed service worker script can never
+        // be replaced because its update fetch is answered with a page instead of a script.
+        private static readonly string[] NonSpaFileExtensions = [".js", ".mjs", ".css", ".json", ".webmanifest", ".map"];
+
+        private static bool ShouldNotFallBackToSpaShell(PathString path)
+        {
+            if (path.StartsWithSegments("/api"))
+            {
+                return true;
+            }
+
+            var value = path.Value;
+
+            return value is not null
+                   && NonSpaFileExtensions.Any(extension => value.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
         }
 
         private const string RedisIdentifier = "Redis";
