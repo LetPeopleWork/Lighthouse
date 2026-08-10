@@ -9,6 +9,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     /// </summary>
     public static class SyncModeResolver
     {
+        /// <param name="operatorAskedForTheCheaperRefresh">
+        /// Whether this instance volunteered (A1). A parameter rather than a dependency: the resolver is a
+        /// total function of what the refresh already holds, and reading the option is the caller's job so
+        /// that it happens once per update inside that update's own scope. Composes with
+        /// <paramref name="trackerCanBeScanned"/> rather than replacing it - the capability is per
+        /// connector, the opt-in is per instance.
+        /// </param>
         /// <param name="storedWorkItems">
         /// What the team already has. There is no per-entity "was this ever swept" column, so "never
         /// swept" is exactly "nothing stored, or something stored without a remote change stamp" - with
@@ -19,11 +26,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// fetch has to re-download records whose timestamps did not move.
         /// </param>
         public static SyncMode Resolve(
+            bool operatorAskedForTheCheaperRefresh,
             bool trackerCanBeScanned,
             IReadOnlyCollection<WorkItem> storedWorkItems,
             bool scanSucceeded,
             bool fetchShapeChanged)
         {
+            if (!operatorAskedForTheCheaperRefresh)
+            {
+                return SyncMode.Full;
+            }
+
             if (!trackerCanBeScanned)
             {
                 return SyncMode.Full;

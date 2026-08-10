@@ -171,7 +171,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-2.11 @A1 @contract-shape:bounded-change
         // A soft launch is only usable if the toggle bites today.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();

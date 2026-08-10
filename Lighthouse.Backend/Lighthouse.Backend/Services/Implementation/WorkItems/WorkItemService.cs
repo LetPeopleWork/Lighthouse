@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -24,7 +25,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IDomainEventDispatcher domainEventDispatcher,
         IBlockedItemService blockedItemService,
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
-        IFeatureOrdering featureOrdering)
+        IFeatureOrdering featureOrdering,
+        IRepository<OptionalFeature> optionalFeatureRepository)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -75,7 +77,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
 
             var scan = await ScanRemoteIdentities(connector, team);
-            var mode = SyncModeResolver.Resolve(scan.TrackerCanBeScanned, storedWorkItems, scan.Succeeded, fetchShapeChanged: false);
+            var mode = SyncModeResolver.Resolve(
+                TheOperatorAskedForTheCheaperRefresh(),
+                scan.TrackerCanBeScanned,
+                storedWorkItems,
+                scan.Succeeded,
+                fetchShapeChanged: false);
 
             var fetch = mode == SyncMode.Delta
                 ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
@@ -127,6 +134,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private sealed record RemoteFetch(List<WorkItem> WorkItems, HashSet<string> StillOnTheTracker, SyncOutcome Outcome);
 
         private sealed record IdentityScan(bool TrackerCanBeScanned, bool Succeeded, List<RemoteRecordStamp> Stamps);
+
+        /// <summary>
+        /// Read per update, inside that update's own scope (Epic #5687 A1) - never cached in a field or at
+        /// startup, so turning the option on takes effect on the next cycle without a restart. No row means
+        /// nobody volunteered, which is the same answer as off.
+        /// </summary>
+        private bool TheOperatorAskedForTheCheaperRefresh()
+            => optionalFeatureRepository
+                .GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey)?.Enabled == true;
 
         /// <summary>Phase 1 of the two-phase fetch (D1): the same query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteIdentities(IWorkTrackingConnector connector, Team team)

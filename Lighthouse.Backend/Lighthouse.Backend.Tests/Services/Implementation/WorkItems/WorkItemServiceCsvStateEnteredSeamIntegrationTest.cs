@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -133,7 +134,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>(),
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
                 Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()),
-                FeatureOrderingTestHelper.FollowingTheTracker());
+                FeatureOrderingTestHelper.FollowingTheTracker(),
+                Mock.Of<IRepository<OptionalFeature>>());
         }
     }
 }
