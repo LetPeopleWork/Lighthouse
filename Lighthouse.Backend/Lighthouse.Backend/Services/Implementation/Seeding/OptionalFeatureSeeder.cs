@@ -75,7 +75,10 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 }
                 else
                 {
-                    // Update flags if it changed
+                    // How a feature presents itself is ours and is refreshed on every upgrade; whether it
+                    // is on is the operator's and is never overwritten.
+                    existing.Name = feature.Name;
+                    existing.Description = feature.Description;
                     existing.IsPreview = feature.IsPreview;
                     existing.IsPremium = feature.IsPremium;
                     logger.LogDebug("Updating OptionalFeature: {Key}", feature.Key);

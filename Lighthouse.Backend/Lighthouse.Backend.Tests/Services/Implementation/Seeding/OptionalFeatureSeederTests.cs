@@ -132,6 +132,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             Assert.That(remainingDeprecated, Is.Empty);
         }
 
+        [Test]
+        public async Task SeedAsync_FeatureWasRenamedOrRedescribed_RefreshesTheTextWithoutTouchingTheOperatorsChoice()
+        {
+            // Arrange - an instance that already carries the row from an earlier release, switched on.
+            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
+            {
+                Id = 0,
+                Key = OptionalFeatureKeys.DeltaSyncKey,
+                Name = "An older name",
+                Description = "An older description that named an internal work item.",
+                Enabled = true,
+                IsPreview = true
+            });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var deltaSync = DatabaseContext.OptionalFeatures.Single(f => f.Key == OptionalFeatureKeys.DeltaSyncKey);
+
+            Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
+            Assert.That(deltaSync.Description, Does.Not.Contain("older description"));
+            Assert.That(deltaSync.Enabled, Is.True, "An upgrade must not switch off something the operator turned on.");
+        }
+
         private OptionalFeatureSeeder CreateSubject()
         {
             return new OptionalFeatureSeeder(DatabaseContext, Mock.Of<ILogger<OptionalFeatureSeeder>>());
