@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.Models
 
         // @unit @AC-2.7 @D6 @contract-shape:bounded-change
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this specification when it implements it.")]
         public void An_issue_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed()
         {
             var team = ATeam();
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.Models
 
         // @unit @AC-2.7 @D6 @contract-shape:pure-function
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this specification when it implements it.")]
         public void An_issue_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed()
         {
             var fromTheTracker = AnIssue();

@@ -151,6 +151,7 @@ namespace Lighthouse.Backend.Models
             StartedDate = workItemBase.StartedDate;
             ClosedDate = workItemBase.ClosedDate;
             Tags = workItemBase.Tags;
+            LastChangedRemote = workItemBase.LastChangedRemote;
 
             // Copy additional field values
             AdditionalFieldValues.Clear();
