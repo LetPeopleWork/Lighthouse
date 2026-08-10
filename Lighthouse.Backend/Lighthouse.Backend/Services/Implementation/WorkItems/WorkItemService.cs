@@ -76,47 +76,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
 
-            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
+            var fetch = await ResolveRemoteFetch(connector, team, storedWorkItems);
 
-            // AC-2.10: off terminates the decision before the tracker is approached at all. A connector
-            // that could be swept is still not asked to - an unasked-for sweep is exactly the data-loss
-            // exposure (D2) the opt-in exists to confine.
-            var scan = operatorAskedForTheCheaperRefresh
-                ? await ScanRemoteIdentities(connector, team)
-                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
-
-            var mode = SyncModeResolver.Resolve(
-                operatorAskedForTheCheaperRefresh,
-                scan.TrackerCanBeScanned,
-                storedWorkItems,
-                scan.Succeeded,
-                fetchShapeChanged: false);
-
-            var fetch = mode == SyncMode.Delta
-                ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
-                : await FetchEverything(connector, team);
-
-            var itemsWithTransitions = new List<SyncedItem>();
-
-            // AC-2.4: downloaded payloads only. SyncWorkItem, WithSyncDeltaTransition and
-            // SyncStateTransitions all write, so an item whose stamp did not move must not be in here.
-            foreach (var item in fetch.WorkItems)
-            {
-                var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
-                var priorState = existingItem?.State;
-                var wasBlocked = WasBlocked(team, existingItem);
-                var persistedItem = SyncWorkItem(item, existingItem);
-
-                var syncedTransitions = WithSyncDeltaTransition(connector, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
-                itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, wasBlocked));
-            }
-
-            var itemsRemovedThisCycle = storedWorkItems.FindAll(stored => !fetch.StillOnTheTracker.Contains(stored.ReferenceId));
-            foreach (var itemToRemove in itemsRemovedThisCycle)
-            {
-                workItemRepository.Remove(itemToRemove.Id);
-                logger.LogDebug("Removed Work Item {WorkItemId}", itemToRemove.ReferenceId);
-            }
+            var itemsWithTransitions = SyncDownloadedItems(connector, team, storedWorkItems, fetch.WorkItems, syncTime);
+            var itemsRemovedThisCycle = RemoveItemsThatLeftTheQuery(storedWorkItems, fetch.StillOnTheTracker);
 
             await workItemRepository.Save();
 
@@ -135,6 +98,68 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await PublishDomainEvents(events);
 
             return fetch.Outcome;
+        }
+
+        /// <summary>
+        /// How much this cycle downloads, and the download itself (D8). The opt-in gates the scan as well as
+        /// the resolver: AC-2.10 terminates the decision before the tracker is approached at all, because a
+        /// connector that could be swept but was not volunteered is exactly the data-loss exposure (D2) the
+        /// opt-in exists to confine.
+        /// </summary>
+        private async Task<RemoteFetch> ResolveRemoteFetch(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems)
+        {
+            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
+
+            var scan = operatorAskedForTheCheaperRefresh
+                ? await ScanRemoteIdentities(connector, team)
+                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+
+            var mode = SyncModeResolver.Resolve(
+                operatorAskedForTheCheaperRefresh,
+                scan.TrackerCanBeScanned,
+                storedWorkItems,
+                scan.Succeeded,
+                fetchShapeChanged: false);
+
+            return mode == SyncMode.Delta
+                ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
+                : await FetchEverything(connector, team);
+        }
+
+        /// <summary>
+        /// AC-2.4: downloaded payloads only. SyncWorkItem, WithSyncDeltaTransition and SyncStateTransitions
+        /// all write, so an item whose stamp did not move must never reach this loop.
+        /// </summary>
+        private List<SyncedItem> SyncDownloadedItems(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, List<WorkItem> downloaded, DateTime syncTime)
+        {
+            var itemsWithTransitions = new List<SyncedItem>();
+
+            foreach (var item in downloaded)
+            {
+                var existingItem = storedWorkItems.SingleOrDefault(wi => wi.ReferenceId == item.ReferenceId);
+                var priorState = existingItem?.State;
+                var wasBlocked = WasBlocked(team, existingItem);
+                var persistedItem = SyncWorkItem(item, existingItem);
+
+                var syncedTransitions = WithSyncDeltaTransition(connector, team.WorkTrackingSystemConnection, persistedItem, item.SyncedTransitions, priorState, syncTime);
+                itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, wasBlocked));
+            }
+
+            return itemsWithTransitions;
+        }
+
+        /// <summary>Removal is a set difference against the whole query, never against what was downloaded (D2).</summary>
+        private List<WorkItem> RemoveItemsThatLeftTheQuery(List<WorkItem> storedWorkItems, HashSet<string> stillOnTheTracker)
+        {
+            var itemsRemovedThisCycle = storedWorkItems.FindAll(stored => !stillOnTheTracker.Contains(stored.ReferenceId));
+
+            foreach (var itemToRemove in itemsRemovedThisCycle)
+            {
+                workItemRepository.Remove(itemToRemove.Id);
+                logger.LogDebug("Removed Work Item {WorkItemId}", itemToRemove.ReferenceId);
+            }
+
+            return itemsRemovedThisCycle;
         }
 
         /// <summary>
@@ -160,12 +185,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             if (!connector.SupportsIncrementalSync(team.WorkTrackingSystemConnection))
             {
-                return new IdentityScan(false, false, []);
+                return new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
             }
 
             try
             {
-                return new IdentityScan(true, true, [.. await connector.SweepWorkItemsForTeam(team)]);
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepWorkItemsForTeam(team)]);
             }
             // D8: a half-scanned query is the one answer never allowed, so any scan failure falls back to
             // the whole query - loudly, or nobody learns the cheap path stopped working.
@@ -173,13 +198,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             catch (Exception exception)
 #pragma warning restore CA1031
             {
+                // The sink renders the exception as ':: <Type>: <Message>', so interpolating exception.Message
+                // into the template as well would print the failure text twice on the operator's one line.
                 logger.LogWarning(
                     exception,
-                    "Identity scan failed for Team {TeamName} - downloading the whole query instead: {Reason}",
-                    team.Name,
-                    exception.Message);
+                    "Identity scan failed for Team {TeamName} - downloading the whole query instead.",
+                    team.Name);
 
-                return new IdentityScan(true, false, []);
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: false, Stamps: []);
             }
         }
 

@@ -1425,10 +1425,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private WorkItemService CreateSubject()
         {
-            var workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(workTrackingConnectorMock.Object);
-
-            return new WorkItemService(Mock.Of<ILogger<WorkItemService>>(), workTrackingConnectorFactoryMock.Object, featureRepositoryMock.Object, workItemRepositoryMock.Object, projectMetricsServiceMock.Object, teamRepositoryMock.Object, stateTransitionRepositoryMock.Object, featureStateTransitionRepositoryMock.Object, domainEventDispatcherMock.Object, new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()), Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()), FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<IRepository<OptionalFeature>>());
+            return new WorkItemServiceTestBuilder()
+                .WithConnector(workTrackingConnectorMock.Object)
+                .WithFeatureRepository(featureRepositoryMock.Object)
+                .WithWorkItemRepository(workItemRepositoryMock.Object)
+                .WithPortfolioMetricsService(projectMetricsServiceMock.Object)
+                .WithTeamRepository(teamRepositoryMock.Object)
+                .WithStateTransitionRepository(stateTransitionRepositoryMock.Object)
+                .WithFeatureStateTransitionRepository(featureStateTransitionRepositoryMock.Object)
+                .WithDomainEventDispatcher(domainEventDispatcherMock.Object)
+                .Build();
         }
     }
 }

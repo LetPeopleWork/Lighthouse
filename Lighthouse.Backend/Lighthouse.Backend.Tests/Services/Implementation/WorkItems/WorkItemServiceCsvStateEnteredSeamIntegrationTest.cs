@@ -116,26 +116,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var realConnector = ServiceProvider.GetService<IWorkTrackingConnectorFactory>()!
                 .GetWorkTrackingConnector(WorkTrackingSystems.Csv);
 
-            var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(realConnector);
-
-            var workItemRepository = new WorkItemRepository(DatabaseContext, Mock.Of<ILogger<WorkItemRepository>>());
-            var transitionRepository = new WorkItemStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<WorkItemStateTransitionRepository>>());
-
-            return new WorkItemService(
-                Mock.Of<ILogger<WorkItemService>>(),
-                connectorFactoryMock.Object,
-                Mock.Of<IRepository<Feature>>(),
-                workItemRepository,
-                Mock.Of<IPortfolioMetricsService>(),
-                Mock.Of<IRepository<Team>>(),
-                transitionRepository,
-                Mock.Of<IFeatureStateTransitionRepository>(),
-                Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>(),
-                new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
-                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()),
-                FeatureOrderingTestHelper.FollowingTheTracker(),
-                Mock.Of<IRepository<OptionalFeature>>());
+            return new WorkItemServiceTestBuilder()
+                .WithConnector(realConnector)
+                .WithWorkItemRepository(new WorkItemRepository(DatabaseContext, Mock.Of<ILogger<WorkItemRepository>>()))
+                .WithStateTransitionRepository(new WorkItemStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<WorkItemStateTransitionRepository>>()))
+                .Build();
         }
     }
 }

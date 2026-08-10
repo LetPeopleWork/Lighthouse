@@ -151,28 +151,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             connectorMock.Setup(x => x.GetFeaturesForProject(portfolio)).ReturnsAsync(incomingFeatures.ToList());
             connectorMock.Setup(x => x.GetParentFeaturesDetails(portfolio, It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
 
-            var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>())).Returns(connectorMock.Object);
-
-            var featureRepository = new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>());
-            var workItemRepository = new WorkItemRepository(DatabaseContext, Mock.Of<ILogger<WorkItemRepository>>());
-            var transitionRepository = new WorkItemStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<WorkItemStateTransitionRepository>>());
-            var featureTransitionRepository = new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>());
-
-            return new WorkItemService(
-                Mock.Of<ILogger<WorkItemService>>(),
-                connectorFactoryMock.Object,
-                featureRepository,
-                workItemRepository,
-                Mock.Of<IPortfolioMetricsService>(),
-                Mock.Of<IRepository<Team>>(),
-                transitionRepository,
-                featureTransitionRepository,
-                Mock.Of<Backend.Services.Interfaces.DomainEvents.IDomainEventDispatcher>(),
-                new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
-                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IFeatureBlockedTransitionRepository>(r => r.GetOpenSpellsForPortfolio(It.IsAny<int>()) == new Dictionary<int, Lighthouse.Backend.Models.FeatureBlockedTransition>()),
-                FeatureOrderingTestHelper.FollowingTheTracker(),
-                Mock.Of<IRepository<OptionalFeature>>());
+            return new WorkItemServiceTestBuilder()
+                .WithConnector(connectorMock.Object)
+                .WithFeatureRepository(new FeatureRepository(DatabaseContext, FeatureOrderingTestHelper.FollowingTheTracker(), Mock.Of<ILogger<FeatureRepository>>()))
+                .WithWorkItemRepository(new WorkItemRepository(DatabaseContext, Mock.Of<ILogger<WorkItemRepository>>()))
+                .WithStateTransitionRepository(new WorkItemStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<WorkItemStateTransitionRepository>>()))
+                .WithFeatureStateTransitionRepository(new FeatureStateTransitionRepository(DatabaseContext, Mock.Of<ILogger<FeatureStateTransitionRepository>>()))
+                .Build();
         }
     }
 }
