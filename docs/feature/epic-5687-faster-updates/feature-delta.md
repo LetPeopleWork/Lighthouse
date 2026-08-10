@@ -1788,6 +1788,7 @@ happens to look like its result.
 | Specifications (step methods) | `…/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs` |
 | AC-2.7 specification | `Lighthouse.Backend.Tests/Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs` |
 | Domain-event capture (new helper) | `Lighthouse.Backend.Tests/TestHelpers/CapturedDomainEvents.cs` |
+| Write-path capture (new helper, added 2026-08-10) | `Lighthouse.Backend.Tests/TestHelpers/CapturedWorkItemWrites.cs` |
 
 Same `<Feature>AcceptanceTest` + `SliceNNScenarios` / `SliceNNSpecifications` triple as slice 01 and as
 the `QuietWriteBack` / `PercentilesOverTime` / `BlockedItems` / `ManualSorting` folders. Categories
@@ -1816,6 +1817,7 @@ new seams are already covered by an existing row. The connector sweep is a new m
 | `ILicenseService` | Driven external | **Fake** — premium true |
 | `ILoggerFactory` | Observation seam | Serilog factory writing to `CapturedLogMessages` (unchanged from slice 01) |
 | `IDomainEventDispatcher` | Observation seam | **Real dispatcher**; a recording `IDomainEventHandler<T>` is registered **alongside** the production handlers, never in place of one |
+| `IWorkItemRepository` | Driven internal + observation seam | **Real** EF repository, **wrapped** by `WriteRecordingWorkItemRepository`, which records the reference id of every add/update and delegates the write. Added 2026-08-10 for AC-2.4 (DT2-14) — a seam, not a fake |
 
 **Deliberately not faked**: `ITeamDataService`, `IWorkItemService`, `IUpdateQueueService`,
 `IDomainEventDispatcher`. The whole slice lives inside `WorkItemService`; faking it would make every
@@ -2013,6 +2015,94 @@ which it starts guarding something.
 
 ---
 
+## Wave: DISTILL / [REF] AC-2.4 write-path observation — slice 02
+
+**Added 2026-08-10, after slice 02 shipped green.** Two test-quality repairs, no production change.
+
+### AC-2.4 was blind to the trap it names
+
+`An_issue_that_did_not_move_is_left_exactly_as_it_was` is the guard against hypothesis 2 — "the
+tracker's `updated` is not trustworthy, so an unmoved issue gets rewritten during a delta cycle". It
+compared the untouched issue's whole stored property surface plus its ordered transitions, before and
+after the cycle. DELIVER step 02-03 proved by probe that **the comparison cannot see the trap**:
+
+- Probe: let unmoved stored items back into the fetched write loop
+  (`fetch.WorkItems.Concat(unmovedStored)` in `WorkItemService.RefreshWorkItems`) — the exact mistake
+  DESIGN names as most dangerous. **All twelve FasterUpdates specifications stayed green.**
+- Why: for an unmoved issue every write on that path is idempotent. `Update(self)` is field-for-field
+  identity, `AdditionalFieldValues` is empty, `priorState == State` so `WithSyncDeltaTransition` adds
+  no synthetic transition, and `CurrentStateEnteredAt` re-derives `null → null`. The stored truth and
+  the re-applied payload are the same bytes.
+- The scenario only went red when the probe was *combined* with dropping the `priorState == State`
+  guard — a second-order consequence, visible only because that fixture made it visible.
+
+**"Never written" and "rewritten with what it already said" are value-identical.** No comparison of
+stored values can separate them. The difference exists only at the write path.
+
+### What was added, and why this seam rather than the others
+
+`ThenNothingElseWasWrittenToStorage("ITEM-2")` asserts the reference ids the cycle handed to
+`IWorkItemRepository` to be added or updated. The recording is a decorator
+(`WriteRecordingWorkItemRepository`) that wraps the real repository and delegates every call including
+the write, so the adapter under test is still EF over SQLite — an observation seam on a driven port, not
+a fake, exactly like the recording `IDomainEventHandler<T>` registered alongside the production handlers
+(DT2-8). It records ids rather than a call count, so batching or restructuring the write path does not
+move the assertion; only *which issues were written* does.
+
+Two alternatives were weighed and rejected:
+
+- **Counting EF `Executed DbCommand` entries** (the evidence step 04-01 obtained by raising the
+  harness's EF log override to `Information`). It is coupled to EF internals, it needs the harness's
+  deliberate `Microsoft.EntityFrameworkCore → Warning` override lifted, and `CapturedLogMessages` keeps
+  only the rendered line. More importantly it is **blind to the same probe**: EF change tracking emits
+  no `UPDATE` for an entity written with its own values, so an unmoved issue entering the write path
+  still produces exactly one command. It proves the *outcome* (no row was rewritten), which the value
+  comparison already proved; it does not prove the *path*.
+- **A counter on the connector double.** The connector already answers "which payloads were downloaded"
+  (`ThenOnlyTheIssuesThatMovedWereDownloaded`). It cannot answer what the service did with them — the
+  probe adds stored items to the loop without downloading anything.
+
+**Residual limitation, recorded rather than papered over.** The seam observes calls through the
+repository port. `AddStalenessEventIfThresholdCrossed` mutates `WasStaleAtLastSync` and
+`SyncStateTransitions` assigns `CurrentStateEnteredAt` directly on EF-tracked entities without a
+repository call, so a defect confined to those two assignments would not raise the write count. Both are
+covered from the other side: the untouched issue's value comparison sees the resulting state, and AC-2.5
+asserts the staleness signal itself. What the new assertion adds is the one thing neither could see —
+that the issue entered the loop at all.
+
+### Discrimination evidence (falsification probe, re-run 2026-08-10)
+
+| Production code | AC-2.4 assertions | Result |
+|---|---|---|
+| clean `HEAD` | value comparison + write-path | **green** (60/60 slice-02) |
+| probe applied (`Concat(unmovedStored)`) | value comparison **only** | **green** — the blindness, reproduced |
+| probe applied | value comparison + write-path | **red**: `…must not reach the write path at all… Written: ITEM-2,ITEM-1,ITEM-3` |
+
+The middle row is the point: with the trap in the code and the new assertion removed, AC-2.4 passes.
+(Under this probe shape scenario 5 also reds, on its staleness promise — a different criterion noticing
+by accident is not AC-2.4 doing its job.) Production code was restored byte-identical after the probe.
+
+### AC-2.10 / AC-2.11's positive control was vacuous (Sentinel's deferred low)
+
+`GivenNobodyAskedForTheCheaperRefresh` read `TheCheaperRefreshOption()?.Enabled, Is.Not.True`. The
+null-tolerance was correct at DISTILL — the `OptionalFeature` row did not exist until DELIVER step 03-01
+landed the seeder entry. With the row shipped, the assertion passed both for "the row is off" and for
+"the row is missing", and a refresh answers the same to both. It now asserts the row is **present** and
+`Enabled == false`.
+
+| Seeder | `GivenNobodyAsked…` form | Failing scenarios |
+|---|---|---|
+| entry present (`HEAD`) | either | none |
+| `DeltaSync` entry deleted | `?.Enabled Is.Not.True` | **10 only** — 8 and 9 stayed green against an option that does not exist |
+| `DeltaSync` entry deleted | present + off | **8, 9 and 10** |
+
+`TheCheaperRefreshOption()` has one other caller,
+`ThenTheCheaperRefreshIsOfferedButSwitchedOff` (AC-2.12), which already asserted `Is.Not.Null` first —
+nothing shared depended on the null-tolerance. `TheOperatorAsksForTheCheaperRefresh` keeps its
+create-if-absent branch: it is a precondition setter, not a control.
+
+---
+
 ## Wave: DISTILL / [REF] Upstream Issues — slice 02
 
 1. **`Portfolio.Teams` is a computed property behind a real many-to-many mapping.**
@@ -2065,6 +2155,8 @@ which it starts guarding something.
 | DT2-11 | AC-2.8 is recorded as a dogfood pre-requisite, not automated |
 | DT2-12 | Scenarios ship `[Ignore]`d so the tree stays green; DELIVER un-ignores them one at a time as the RED entry gate |
 | DT2-13 | **Added 2026-08-10, harness repair.** No step method reads a field another step method assigns. The team is a parameter of `GivenTheTeamsIssuesWereStoredBeforeThisRelease`, `WhenTheScheduledRefreshRuns` and `ThenTheFeatureReportsTheWorkThatIsLeft`; the mutable `TheTeamUnderRefresh` property is deleted, so the defect is structurally absent rather than patched per call site. Slice 01 already held this shape |
+| DT2-14 | **Added 2026-08-10, post-DELIVER test strengthening.** AC-2.4 asserts the untouched issue **never reached the write path**, observed at `IWorkItemRepository` through a recording decorator that wraps the real repository. The stored-value comparison alone is blind to the trap the criterion names: for an issue that did not move, every write on the refresh path re-applies the stored truth, so "never written" and "rewritten with what it already said" are value-identical. See the AC-2.4 section below for the falsification evidence |
+| DT2-15 | **Added 2026-08-10, post-DELIVER test strengthening.** `GivenNobodyAskedForTheCheaperRefresh` asserts the `DeltaSync` row is **present** and `Enabled == false`, no longer `?.Enabled Is.Not.True`. The null-tolerant form was correct only while the seeder entry did not exist (Sentinel's deferred low, "revisit once scenario 10 is green"); with the row shipped it made scenarios 8 and 9 vacuous — a dropped seeder entry left both green |
 
 ---
 
@@ -2160,6 +2252,9 @@ to say so.
   and it is deliberately null-tolerant (`?.Enabled`) because the option row does not exist until DELIVER
   adds the seeder entry. Tightening it now would turn AC-2.12's RED into a setup failure in three other
   scenarios. Revisit once scenario 10 is green.
+  **Resolved 2026-08-10 (DT2-15).** Scenario 10 is green and step 03-01 landed the seeder entry, so the
+  deferral condition is met: the Given now asserts the row is present and off. Evidence in the AC-2.4
+  write-path section above — with the entry deleted, the old form left scenarios 8 and 9 green.
 - *`SeedFeature(..., workAlreadyCounted: 3)`* — Sentinel verified against
   `WorkItemService.UpdateWorkItemsForTeam` that the seeded count is fully overwritten by a real recompute
   during the chained first cycle, before scenario 7's own cycle runs, and recorded it as verified-clean

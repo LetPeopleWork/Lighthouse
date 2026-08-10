@@ -92,6 +92,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             await WhenTheScheduledRefreshRuns(team);
 
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 1);
+            ThenNothingElseWasWrittenToStorage("ITEM-2");
             ThenTheUntouchedIssueIsIdenticalTo(before, team, "ITEM-1");
         }
 

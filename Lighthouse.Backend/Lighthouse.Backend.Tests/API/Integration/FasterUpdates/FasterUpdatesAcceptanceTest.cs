@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -63,12 +64,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// </summary>
         protected CapturedDomainEvents CapturedEvents = null!;
 
+        /// <summary>
+        /// Which work items the refresh handed to storage to be written. An issue that did not move is
+        /// written with exactly what it already said, so comparing its stored values cannot tell a write
+        /// from no write at all (AC-2.4) - the write path itself is where the two differ.
+        /// </summary>
+        protected CapturedWorkItemWrites CapturedWorkItemWrites = null!;
+
         [SetUp]
         public void Init()
         {
             RootFactory = new TestWebApplicationFactory<Program>();
             CapturedLogs = new CapturedLogMessages();
             CapturedEvents = new CapturedDomainEvents();
+            CapturedWorkItemWrites = new CapturedWorkItemWrites();
             ResetTrackerObservations();
 
             LicenseServiceMock = new Mock<ILicenseService>();
@@ -115,6 +124,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     // Added alongside the production handlers, never in place of one.
                     services.AddScoped<IDomainEventHandler<WorkItemBecameStale>>(_ => new CapturingDomainEventHandler<WorkItemBecameStale>(CapturedEvents));
                     services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(_ => new CapturingDomainEventHandler<TeamDataRefreshed>(CapturedEvents));
+
+                    // Wraps the real repository rather than replacing it: the adapter under test is still
+                    // EF over SQLite, and only the calls are recorded on the way through.
+                    services.RemoveAll<IWorkItemRepository>();
+                    services.AddScoped<WorkItemRepository>();
+                    services.AddScoped<IWorkItemRepository>(sp =>
+                        new WriteRecordingWorkItemRepository(sp.GetRequiredService<WorkItemRepository>(), CapturedWorkItemWrites));
 
                     // ADR-137 D72: Serilog is the pipeline, so an ILoggerProvider added here would be
                     // inert. Replacing the factory is what makes the refresh's own log readable.
@@ -288,6 +304,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             // for and to the signals raised (Epic #5687 slice 02, where scenarios chain two refreshes).
             CapturedLogs.Clear();
             CapturedEvents.Clear();
+            CapturedWorkItemWrites.Clear();
             ForgetWhatTheTrackerWasAsked();
 
             trigger(Factory.Services);
@@ -329,6 +346,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         protected IReadOnlyList<string> TheOperatorVisibleLines => CapturedLogs.AtOrAbove(LogEventLevel.Information);
+
+        /// <summary>
+        /// The reference ids this refresh handed to storage to be written, in order. Seeding writes
+        /// through the same port, so the recording is reset at the start of every cycle.
+        /// </summary>
+        protected List<string> TheIssuesWrittenToStorage => CapturedWorkItemWrites.ReferenceIds;
 
         // --- The tracker as the two-phase fetch sees it (Epic #5687 slice 02) ---
 

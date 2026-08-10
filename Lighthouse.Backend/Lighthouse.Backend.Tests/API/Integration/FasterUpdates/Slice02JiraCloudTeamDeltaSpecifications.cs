@@ -134,9 +134,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
 
+        /// <summary>
+        /// The positive control three scenarios lean on. It asserts the option is OFFERED as well as off:
+        /// "no row" and "a row that is off" answer the same to a refresh, so a null-tolerant check would
+        /// let the seeder entry disappear without a single scenario turning red.
+        /// </summary>
         private void GivenNobodyAskedForTheCheaperRefresh()
-            => Assert.That(TheCheaperRefreshOption()?.Enabled, Is.Not.True,
+        {
+            var option = TheCheaperRefreshOption();
+
+            Assert.That(option, Is.Not.Null,
+                "The cheaper refresh is not offered at all, so 'nobody asked for it' is not the default being tested - it is an absent option.");
+            Assert.That(option!.Enabled, Is.False,
                 "The default has to be off, or the scenario is not testing the default.");
+        }
 
         private StoredIssue GivenHowTheUntouchedIssueLooksNow(SeededTeam team, string referenceId)
             => TheStoredIssue(team, referenceId);
@@ -189,6 +200,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 "Downloading an issue whose timestamp did not move is the cost this slice exists to remove. Requested: "
                 + RenderPayloadDownloads());
         }
+
+        /// <summary>
+        /// AC-2.4's other half. Comparing the untouched issue's stored values before and after the cycle
+        /// cannot see it being rewritten with what it already said - for an issue that did not move, every
+        /// write on the refresh path re-applies the stored truth, so the comparison holds either way. What
+        /// distinguishes them is whether the issue reached the write path at all, and that is observable
+        /// at the repository port.
+        /// </summary>
+        private void ThenNothingElseWasWrittenToStorage(params string[] referenceIds)
+            => Assert.That(TheIssuesWrittenToStorage, Is.EquivalentTo(referenceIds),
+                "An issue whose stamp did not move must not reach the write path at all - letting it in is invisible in its own "
+                + "stored values and is exactly the mistake AC-2.4 exists to catch. Written: "
+                + string.Join(",", TheIssuesWrittenToStorage));
 
         private void ThenTheIssueWasNeverDownloaded()
         {
