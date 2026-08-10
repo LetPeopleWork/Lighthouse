@@ -28,6 +28,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] BothPages = ["PROJ-1", "PROJ-2"];
         private static readonly string[] TheOnlyRecord = ["PROJ-1"];
 
+        private const string StampWithNoZone = "2026-08-05T14:30:00.000";
+        private static readonly DateTime TheInstantThatStampNames = new(2026, 8, 5, 14, 30, 0, DateTimeKind.Utc);
+
         [TestCase(Cloud)]
         [TestCase(DataCenter)]
         public async Task GetWorkItemsForTeam_RemembersWhenTheIssueLastChangedRemotely(string deploymentType)
@@ -61,6 +64,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(workItem.LastChangedRemote, Is.Null,
                 "An unreadable stamp is no knowledge at all - falling back to a full fetch is the safe resolution (D8).");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ReadsAStampWithNoZoneAsUtcRatherThanAsTheHostsLocalTime()
+        {
+            var workItem = await TheSingleWorkItemFetchedFrom(Cloud, updated: StampWithNoZone);
+
+            Assert.That(workItem.LastChangedRemote, Is.EqualTo(TheInstantThatStampNames),
+                "A stamp the tracker gave no zone for is an instant, and which instant it is may not depend on where "
+                + "Lighthouse happens to run. Reading it as host-local time makes the same payload mean a different "
+                + "instant on every deployment, and D12's per-item comparison then reports every record as moved.");
         }
 
         [Test]
@@ -135,6 +149,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
                 "A sweep that stops at page one under-reports the query, and D2 deletes everything it missed.");
+        }
+
+        [Test]
+        public async Task SweepWorkItemsForTeam_ReadsAStampWithNoZoneAsUtcRatherThanAsTheHostsLocalTime()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", StampWithNoZone), nextPageToken: null);
+
+            var stamps = await subject.SweepWorkItemsForTeam(team);
+
+            Assert.That(stamps.Single().ChangedAt, Is.EqualTo(TheInstantThatStampNames),
+                "The sweep reads the stamp exactly the way the full fetch reads it. A zone the sweep assumes and the "
+                + "full fetch does not is the one disagreement D12 cannot absorb: every record would look moved forever.");
         }
 
         [Test]

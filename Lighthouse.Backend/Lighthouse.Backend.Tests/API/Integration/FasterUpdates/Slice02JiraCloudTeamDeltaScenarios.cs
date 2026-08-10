@@ -59,6 +59,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 1);
         }
 
+        // @driving_port @real-io @AC-2.2 @D2 @D8 @contract-shape:unbounded-preservation
+        // The capability is the connector's to declare and the opt-in is the instance's to give. Volunteering
+        // cannot talk a connector into a sweep it cannot enumerate reliably.
+        [Test]
+        public async Task A_tracker_that_says_it_cannot_be_swept_is_not_scanned_even_after_an_operator_asked()
+        {
+            var team = GivenATeamWhoseTrackerCannotBeScanned();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsThreeIssues();
+            await GivenTheTeamHasAlreadyBeenRefreshed(team);
+
+            await WhenTheScheduledRefreshRuns(team);
+
+            ThenTheTrackerWasNotScannedEvenThoughTheOperatorAsked();
+            ThenTheWholeQueryWasDownloaded();
+            ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
+        }
+
         // @error @driving_port @real-io @AC-2.3 @D2 @contract-shape:bounded-change
         // The rule whose failure deletes live work items: removed is an exact set difference.
         [Test]

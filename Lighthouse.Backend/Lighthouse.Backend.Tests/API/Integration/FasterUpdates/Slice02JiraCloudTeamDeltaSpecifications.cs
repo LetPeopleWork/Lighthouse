@@ -56,6 +56,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return team;
         }
 
+        /// <summary>
+        /// The default connector: <c>SupportsIncrementalSync</c> answers false, the way Jira Data Center
+        /// and every connector that has not shipped a sweep yet answers it.
+        /// </summary>
+        private SeededTeam GivenATeamWhoseTrackerCannotBeScanned() => SeedATeam();
+
         private SeededTeam GivenATeamThatCallsWorkStaleAfterFiveDays()
         {
             var team = SeedATeam(stalenessThresholdDays: 5);
@@ -191,6 +197,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 "Nobody asked for the cheaper refresh, so the tracker must not be scanned at all - "
                 + "the removal rule this epic relies on is what makes an unasked-for scan a data-loss risk.");
 
+        private void ThenTheTrackerWasNotScannedEvenThoughTheOperatorAsked()
+            => Assert.That(ScansIssued, Is.Zero,
+                "The per-connection probe is the connector's own answer about whether its query can be enumerated "
+                + "reliably, and no amount of volunteering overrides it - a sweep that loses an id turns "
+                + "'removed = stored - swept' into a deletion of live work (D2).");
+
         private void ThenOnlyTheIssuesThatMovedWereDownloaded(params string[] referenceIds)
         {
             Assert.That(PayloadDownloads, Has.Count.EqualTo(1),
@@ -220,9 +232,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             {
                 Assert.That(FullDownloadsIssued, Is.Zero,
                     "Nothing moved, so nothing had to be downloaded.");
-                Assert.That(PayloadDownloads.SelectMany(request => request), Is.Empty,
+                Assert.That(PayloadDownloads, Is.Empty,
                     "An issue that stopped changing is exactly the issue that stops being fetched - "
-                    + "which is why staleness cannot be evaluated off the fetch loop (D10).");
+                    + "which is why staleness cannot be evaluated off the fetch loop (D10). A cycle where nothing "
+                    + "moved must not reach the tracker at all: a request for an empty set of reference ids comes "
+                    + "back empty, so it is invisible in the fetched count and still costs a remote round trip on "
+                    + "every quiet cycle - which is the cost this epic exists to remove. Requested: "
+                    + RenderPayloadDownloads());
             }
         }
 
