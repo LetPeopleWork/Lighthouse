@@ -111,7 +111,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 itemsWithTransitions.Add(new SyncedItem(persistedItem, syncedTransitions, wasBlocked));
             }
 
-            foreach (var itemToRemove in storedWorkItems.FindAll(stored => !fetch.StillOnTheTracker.Contains(stored.ReferenceId)))
+            var itemsRemovedThisCycle = storedWorkItems.FindAll(stored => !fetch.StillOnTheTracker.Contains(stored.ReferenceId));
+            foreach (var itemToRemove in itemsRemovedThisCycle)
             {
                 workItemRepository.Remove(itemToRemove.Id);
                 logger.LogDebug("Removed Work Item {WorkItemId}", itemToRemove.ReferenceId);
@@ -123,8 +124,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             foreach (var syncedItem in itemsWithTransitions)
             {
                 var newTransitions = SyncStateTransitions(syncedItem.PersistedItem, syncedItem.SyncedTransitions);
-                events.AddRange(CollectDomainEvents(team, syncedItem, newTransitions, syncTime));
+                events.AddRange(CollectDomainEvents(team, syncedItem, newTransitions));
             }
+
+            events.AddRange(CollectStalenessEvents(team, EverythingTheTeamStillHas(storedWorkItems, itemsWithTransitions, itemsRemovedThisCycle), syncTime));
 
             await stateTransitionRepository.Save();
             await workItemRepository.Save();
@@ -248,7 +251,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return blockedItemService.IsBlocked(existingItem, team);
         }
 
-        private List<IDomainEvent> CollectDomainEvents(Team team, SyncedItem syncedItem, IReadOnlyList<WorkItemStateTransition> newTransitions, DateTime syncTime)
+        private List<IDomainEvent> CollectDomainEvents(Team team, SyncedItem syncedItem, IReadOnlyList<WorkItemStateTransition> newTransitions)
         {
             var workItem = syncedItem.PersistedItem;
 
@@ -265,9 +268,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 events.Add(new WorkItemUnblocked(workItem.Id));
             }
 
-            AddStalenessEventIfThresholdCrossed(team, workItem, syncTime, events);
+            return events;
+        }
+
+        /// <summary>
+        /// Staleness is time-driven, so it is derived for everything the team still has rather than for
+        /// what this cycle happened to download (D10, Epic #5687). An item that stopped changing is
+        /// exactly the item a delta cycle stops fetching, and exactly the item that goes stale.
+        /// </summary>
+        private static List<IDomainEvent> CollectStalenessEvents(Team team, List<WorkItem> workItems, DateTime syncTime)
+        {
+            var events = new List<IDomainEvent>();
+
+            foreach (var workItem in workItems)
+            {
+                AddStalenessEventIfThresholdCrossed(team, workItem, syncTime, events);
+            }
 
             return events;
+        }
+
+        /// <summary>
+        /// Everything stored for the team as this cycle leaves it: what was already there, minus what the
+        /// tracker no longer returns - raising staleness for a just-deleted item would name a dead id -
+        /// plus whatever this cycle added.
+        /// </summary>
+        private static List<WorkItem> EverythingTheTeamStillHas(List<WorkItem> storedWorkItems, List<SyncedItem> syncedItems, List<WorkItem> itemsRemovedThisCycle)
+        {
+            var survivors = storedWorkItems.FindAll(stored => !itemsRemovedThisCycle.Contains(stored));
+            survivors.AddRange(syncedItems
+                .ConvertAll(syncedItem => syncedItem.PersistedItem)
+                .FindAll(persistedItem => !survivors.Contains(persistedItem)));
+
+            return survivors;
         }
 
         private static void AddStalenessEventIfThresholdCrossed(Team team, WorkItem workItem, DateTime syncTime, List<IDomainEvent> events)

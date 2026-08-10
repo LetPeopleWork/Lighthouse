@@ -98,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-2.5 @D10 @contract-shape:bounded-change
         // The regression that leaves every other test green.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task An_issue_that_stopped_moving_still_goes_stale()
         {
             var team = GivenATeamThatCallsWorkStaleAfterFiveDays();
