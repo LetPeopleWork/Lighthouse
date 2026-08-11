@@ -691,15 +691,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task<SyncOutcome> RefreshFeatures(Portfolio portfolio)
         {
-            var workItemService = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
+            var connector = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
-            var features = new List<Feature>();
+            var downloadedFeatures = new List<Feature>();
             var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
             var syncedFeatures = new List<SyncedFeature>();
 
-            var recordsFromTracker = (await workItemService.GetFeaturesForProject(portfolio)).ToList();
+            var fetch = await FetchEveryFeature(connector, portfolio);
 
-            foreach (var feature in recordsFromTracker)
+            foreach (var feature in fetch.Features)
             {
                 // Read the PRE-UPDATE per-portfolio blocked verdict BEFORE AddOrUpdateFeature mutates the
                 // persisted feature in place (ADR-104 seam hoist) — otherwise the prior state is destroyed
@@ -710,8 +710,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
                 var featureFromDatabase = AddOrUpdateFeature(feature, existingFeature);
 
-                AddProjectToFeature(featureFromDatabase, portfolio);
-                features.Add(featureFromDatabase);
+                downloadedFeatures.Add(featureFromDatabase);
                 featuresWithTransitions.Add((featureFromDatabase, feature.SyncedTransitions));
 
                 // Parent features are captured through RefreshParentFeatures and never emit blocked spells
@@ -722,7 +721,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 }
             }
 
-            portfolio.UpdateFeatures(featureOrdering.Order(features));
+            var featuresTheQueryStillReturns = TheFeaturesTheQueryStillReturns(fetch.StillOnTheTracker, downloadedFeatures);
+
+            // Claiming runs over the whole surviving set, not over the downloads: a Feature nobody had to
+            // download this cycle is still one this portfolio holds, and a Feature with no portfolio claim
+            // left is deleted outright by the orphaned-Feature cleanup the updater runs.
+            featuresTheQueryStillReturns.ForEach(feature => AddProjectToFeature(feature, portfolio));
+
+            portfolio.UpdateFeatures(featureOrdering.Order(featuresTheQueryStillReturns));
 
             await featureRepository.Save();
 
@@ -744,9 +750,61 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             await PublishDomainEvents(events);
 
-            await SweepDepartedFeatureSpells(portfolio, features);
+            await SweepDepartedFeatureSpells(portfolio, featuresTheQueryStillReturns);
 
-            return SyncOutcome.FullSync(recordsFromTracker.Count);
+            return fetch.Outcome;
+        }
+
+        /// <summary>
+        /// What one portfolio refresh has to work with: the Feature payloads it downloaded, every reference
+        /// id the query still returns, and what to report to the operator. The second is the one the
+        /// portfolio's membership is rebuilt from - never the first (D2). Ordered rather than a set, because
+        /// Features tied on their order value fall back to arrival order until the save gives them an id.
+        /// </summary>
+        private sealed record RemoteFeatureFetch(List<Feature> Features, List<string> StillOnTheTracker, SyncOutcome Outcome);
+
+        private static async Task<RemoteFeatureFetch> FetchEveryFeature(IWorkTrackingConnector connector, Portfolio portfolio)
+        {
+            var recordsFromTracker = (await connector.GetFeaturesForProject(portfolio)).ToList();
+
+            return new RemoteFeatureFetch(
+                recordsFromTracker,
+                recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
+                SyncOutcome.FullSync(recordsFromTracker.Count));
+        }
+
+        /// <summary>
+        /// The portfolio's Feature set, resolved against storage from the reference ids the query still
+        /// returns. A cycle that downloads only what moved still holds everything the query answers with,
+        /// and UpdateFeatures is Clear + AddRange - so handing it the downloads would drop every quiet
+        /// Feature's claim and let the orphaned-Feature cleanup delete the row. Resolution goes through the
+        /// repository rather than through the portfolio's own collection, because a Feature another
+        /// portfolio's cycle already stored is stored and still new to this one.
+        /// </summary>
+        private List<Feature> TheFeaturesTheQueryStillReturns(List<string> stillOnTheTracker, List<Feature> downloadedFeatures)
+        {
+            var downloadedByReferenceId = new Dictionary<string, Feature>();
+            foreach (var downloaded in downloadedFeatures)
+            {
+                downloadedByReferenceId.TryAdd(downloaded.ReferenceId, downloaded);
+            }
+
+            var survivors = new List<Feature>();
+            foreach (var referenceId in stillOnTheTracker)
+            {
+                // Just downloaded wins over a lookup: until the save below, a Feature this cycle added is
+                // tracked but not yet answerable by a query.
+                var survivor = downloadedByReferenceId.TryGetValue(referenceId, out var justDownloaded)
+                    ? justDownloaded
+                    : featureRepository.GetByPredicate(stored => stored.ReferenceId == referenceId);
+
+                if (survivor != null)
+                {
+                    survivors.Add(survivor);
+                }
+            }
+
+            return survivors;
         }
 
         private List<IDomainEvent> CollectFeatureBlockedEvents(Portfolio portfolio, SyncedFeature syncedFeature)

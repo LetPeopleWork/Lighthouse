@@ -41,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-3.1 @D6 @contract-shape:bounded-change
         // The upgrade case: the portfolio's Features exist, none of them carries a stamp yet.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task The_first_portfolio_refresh_downloads_every_feature_and_remembers_when_each_one_last_changed()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
