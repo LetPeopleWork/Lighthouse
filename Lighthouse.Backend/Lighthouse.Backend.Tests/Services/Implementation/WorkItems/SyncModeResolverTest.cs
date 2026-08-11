@@ -70,13 +70,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
+        /// DDD-5: one mode decision, so a portfolio's stored Features get the same answer as a team's
+        /// stored work items - <see cref="Feature"/> is a sibling of <see cref="WorkItem"/>, not a subtype,
+        /// and only the shared base carries the stamp the decision reads.
+        /// </summary>
+        [Test]
+        public void Resolve_EveryStoredFeatureHasARemoteChangeStamp_ResolvesToDelta()
+        {
+            var mode = Resolve(storedWorkItems: StoredFeatures(AWhileAgo, AWhileAgo));
+
+            Assert.That(mode, Is.EqualTo(SyncMode.Delta));
+        }
+
+        [Test]
+        public void Resolve_NoFeaturesStoredYet_ResolvesToFull()
+        {
+            var mode = Resolve(storedWorkItems: StoredFeatures());
+
+            Assert.That(mode, Is.EqualTo(SyncMode.Full));
+        }
+
+        [Test]
+        public void Resolve_OneStoredFeatureHasNoRemoteChangeStamp_ResolvesToFull()
+        {
+            var mode = Resolve(storedWorkItems: StoredFeatures(AWhileAgo, null));
+
+            Assert.That(mode, Is.EqualTo(SyncMode.Full));
+        }
+
+        /// <summary>
         /// Defaults are the one combination that resolves to Delta, so each test names only the single
         /// input it is about - five bools at a call site say nothing about which one the test is asserting.
         /// </summary>
         private static SyncMode Resolve(
             bool operatorAskedForTheCheaperRefresh = true,
             bool trackerCanBeScanned = true,
-            List<WorkItem>? storedWorkItems = null,
+            IReadOnlyCollection<WorkItemBase>? storedWorkItems = null,
             bool scanSucceeded = true,
             bool fetchShapeChanged = false)
             => SyncModeResolver.Resolve(
@@ -88,5 +117,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private static List<WorkItem> Stored(params DateTime?[] remoteChangeStamps)
             => [.. remoteChangeStamps.Select(stamp => new WorkItem { LastChangedRemote = stamp })];
+
+        private static List<Feature> StoredFeatures(params DateTime?[] remoteChangeStamps)
+            => [.. remoteChangeStamps.Select(stamp => new Feature { LastChangedRemote = stamp })];
     }
 }

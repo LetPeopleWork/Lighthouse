@@ -17,9 +17,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// connector, the opt-in is per instance.
         /// </param>
         /// <param name="storedWorkItems">
-        /// What the team already has. There is no per-entity "was this ever swept" column, so "never
-        /// swept" is exactly "nothing stored, or something stored without a remote change stamp" - with
-        /// nothing to compare against, a delta would silently skip records.
+        /// What the team or the portfolio already has. Typed as the shared base so a portfolio's stored
+        /// Features reach the same decision - <see cref="Feature"/> is a sibling of <see cref="WorkItem"/>,
+        /// and the stamp this reads lives on the base. There is no per-entity "was this ever swept"
+        /// column, so "never swept" is exactly "nothing stored, or something stored without a remote
+        /// change stamp" - with nothing to compare against, a delta would silently skip records.
         /// </param>
         /// <param name="fetchShapeChanged">
         /// Whether what the query asks the tracker for changed since the last cycle (slice 05). A wider
@@ -28,7 +30,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         public static SyncMode Resolve(
             bool operatorAskedForTheCheaperRefresh,
             bool trackerCanBeScanned,
-            IReadOnlyCollection<WorkItem> storedWorkItems,
+            IReadOnlyCollection<WorkItemBase> storedWorkItems,
             bool scanSucceeded,
             bool fetchShapeChanged)
         {
