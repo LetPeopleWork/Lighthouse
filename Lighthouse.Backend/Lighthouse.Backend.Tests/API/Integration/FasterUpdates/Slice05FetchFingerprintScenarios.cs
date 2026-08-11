@@ -212,7 +212,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // KPI-4, and the half of the epic that is easiest to lose: "any settings save invalidates" is a
         // safe answer that spends the entire win. Every one of these is a local derivation.
         [Test]
-        [Ignore(Pending)]
         [TestCaseSource(nameof(EveryTeamSettingThatChangesNothingAboutWhatIsFetched))]
         public async Task An_edit_that_changes_nothing_about_what_is_fetched_costs_no_download(TeamEdit edit)
         {
@@ -232,7 +231,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @real-io @AC-5.3 @kpi @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         [TestCaseSource(nameof(EveryPortfolioSettingThatChangesNothingAboutWhatIsFetched))]
         public async Task A_portfolio_edit_that_changes_nothing_about_what_is_fetched_costs_no_download(PortfolioEdit edit)
         {
