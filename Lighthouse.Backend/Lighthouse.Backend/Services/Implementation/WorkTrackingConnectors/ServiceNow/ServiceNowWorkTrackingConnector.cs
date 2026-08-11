@@ -753,10 +753,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
 
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException(WorkItemReadingUnavailableMessage);
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+            => throw new NotSupportedException("ServiceNow does not sweep Features yet - Epic #5687 names it in a later slice.");
+
         public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             throw new NotSupportedException(WorkItemReadingUnavailableMessage);
         }
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+            => throw new NotSupportedException("ServiceNow does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         // Two pre-flight rules the instance is never asked about, then everything that needs it.
         public async Task<ConnectionValidationResult> ValidateTeamSettings(Team team)

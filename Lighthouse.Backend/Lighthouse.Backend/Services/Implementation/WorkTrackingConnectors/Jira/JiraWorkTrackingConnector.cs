@@ -261,6 +261,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await CreateFeaturesFromIssues(project, issues);
         }
 
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("Jira does not fetch Features by reference id on this port yet - Epic #5687 slice 03 implements it.");
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+            => throw new NotSupportedException("Jira does not sweep Features yet - Epic #5687 slice 03 implements it.");
+
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             logger.LogInformation("Getting Parent Features Details for Project {ProjectName} with Feature IDs {FeatureIds}", project.Name, string.Join(", ", parentFeatureIds));
@@ -268,6 +274,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var issues = await GetIssuesByQuery(project, PrepareIssueKeyQuery(parentFeatureIds));
             return await CreateFeaturesFromIssues(project, issues);
         }
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+            => throw new NotSupportedException("Jira does not sweep parent Features yet - Epic #5687 slice 03 implements it.");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {

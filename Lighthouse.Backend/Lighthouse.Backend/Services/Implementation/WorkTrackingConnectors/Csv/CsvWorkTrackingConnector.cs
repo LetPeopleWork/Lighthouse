@@ -89,10 +89,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             return Task.FromResult(features);
         }
 
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("A CSV upload is read whole - there is no by-reference-id fetch (Epic #5687, D11).");
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+            => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
+
         public Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             return Task.FromResult(new List<Feature>());
         }
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+            => throw new NotSupportedException("A CSV upload carries no remote change stamp to sweep (Epic #5687, D11).");
 
         public Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {

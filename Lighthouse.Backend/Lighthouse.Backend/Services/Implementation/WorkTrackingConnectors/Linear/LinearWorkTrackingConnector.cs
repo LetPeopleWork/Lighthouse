@@ -157,6 +157,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             }
         }
 
+        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+            => throw new NotSupportedException("Linear does not fetch Features by reference id on this port yet - Epic #5687 names it in a later slice.");
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
+            => throw new NotSupportedException("Linear does not sweep Features yet - Epic #5687 names it in a later slice.");
+
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             logger.LogInformation("Getting Parent Features (initiatives) for Linear portfolio {ProjectName}", project.Name);
@@ -211,6 +217,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
 
             return parentFeatures;
         }
+
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
+            => throw new NotSupportedException("Linear does not sweep parent Features yet - Epic #5687 names it in a later slice.");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {

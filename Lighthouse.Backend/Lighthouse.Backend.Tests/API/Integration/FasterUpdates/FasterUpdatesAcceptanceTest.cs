@@ -95,6 +95,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
+
+            // Epic #5687 slice 03: the portfolio half of the same default. A portfolio whose scenario says
+            // nothing about the two-phase path behaves exactly as it did in slices 01 and 02.
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
             ConnectorMock
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult());
@@ -124,6 +130,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     // Added alongside the production handlers, never in place of one.
                     services.AddScoped<IDomainEventHandler<WorkItemBecameStale>>(_ => new CapturingDomainEventHandler<WorkItemBecameStale>(CapturedEvents));
                     services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(_ => new CapturingDomainEventHandler<TeamDataRefreshed>(CapturedEvents));
+
+                    // Epic #5687 slice 03. FeatureUnblocked is the one that matters: the departed-spell
+                    // sweep closes a spell for every Feature missing from the refreshed list, so a delta
+                    // cycle that hands it only the Features that moved closes the rest silently.
+                    services.AddScoped<IDomainEventHandler<FeatureUnblocked>>(_ => new CapturingDomainEventHandler<FeatureUnblocked>(CapturedEvents));
+                    services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(_ => new CapturingDomainEventHandler<PortfolioFeaturesRefreshed>(CapturedEvents));
+                    services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>>(_ => new CapturingDomainEventHandler<PortfolioForecastsUpdated>(CapturedEvents));
 
                     // Wraps the real repository rather than replacing it: the adapter under test is still
                     // EF over SQLite, and only the calls are recorded on the way through.
@@ -389,10 +402,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// <summary>The reference ids of each by-reference-id payload download, in order.</summary>
         protected List<List<string>> PayloadDownloads { get; } = [];
 
+        /// <summary>How many identity sweeps over the portfolio's Feature query the refresh issued.</summary>
+        protected int FeatureScansIssued { get; private set; }
+
+        /// <summary>How many whole-query Feature payload downloads the refresh issued.</summary>
+        protected int FullFeatureDownloadsIssued { get; private set; }
+
+        /// <summary>The reference ids of each by-reference-id Feature download, in order.</summary>
+        protected List<List<string>> FeaturePayloadDownloads { get; } = [];
+
+        /// <summary>The keys of each parent-Feature identity sweep, in order.</summary>
+        protected List<List<string>> ParentFeatureScans { get; } = [];
+
+        /// <summary>The keys of each parent-Feature payload download, in order.</summary>
+        protected List<List<string>> ParentFeatureDownloads { get; } = [];
+
         private void ResetTrackerObservations()
         {
             ForgetWhatTheTrackerWasAsked();
             remoteRecords.Clear();
+            remoteFeatures.Clear();
+            remoteParentFeatures.Clear();
         }
 
         /// <summary>
@@ -404,6 +434,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ScansIssued = 0;
             FullDownloadsIssued = 0;
             PayloadDownloads.Clear();
+
+            FeatureScansIssued = 0;
+            FullFeatureDownloadsIssued = 0;
+            FeaturePayloadDownloads.Clear();
+            ParentFeatureScans.Clear();
+            ParentFeatureDownloads.Clear();
         }
 
         /// <summary>When the tracker says the named record last changed.</summary>
@@ -467,6 +503,125 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         protected void OnTheTrackerTheIssueIsGone(string referenceId)
             => remoteRecords.RemoveAll(record => record.ReferenceId == referenceId);
+
+        // --- The tracker's Features, as the two-phase portfolio fetch sees them (Epic #5687 slice 03) ---
+
+        private readonly List<RemoteRecord> remoteFeatures = [];
+
+        private readonly List<RemoteRecord> remoteParentFeatures = [];
+
+        /// <summary>When the tracker says the named Feature last changed.</summary>
+        protected DateTime TheTrackersChangeStampForFeature(string referenceId)
+        {
+            var record = remoteFeatures.Find(candidate => candidate.ReferenceId == referenceId)
+                ?? remoteParentFeatures.Find(candidate => candidate.ReferenceId == referenceId);
+            Assert.That(record, Is.Not.Null, $"The tracker does not hold Feature '{referenceId}'.");
+
+            return record!.ChangedAt;
+        }
+
+        /// <summary>
+        /// Programs the portfolio's Feature query from one coherent picture of the tracker: the whole-query
+        /// download, the identity sweep and the by-reference-id download all read the same records. Every
+        /// setup reads the list lazily, so a scenario can move a Feature between two refreshes.
+        /// </summary>
+        protected void TheTrackerHoldsFeatures(params RemoteRecord[] records)
+        {
+            remoteFeatures.Clear();
+            remoteFeatures.AddRange(records);
+
+            ConnectorMock
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
+                .ReturnsAsync(() =>
+                {
+                    FullFeatureDownloadsIssued++;
+                    return AsFeatures(remoteFeatures);
+                });
+
+            ConnectorMock
+                .Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>()))
+                .ReturnsAsync(() =>
+                {
+                    FeatureScansIssued++;
+                    return remoteFeatures.ConvertAll(record => new RemoteRecordStamp(record.ReferenceId, record.ChangedAt));
+                });
+
+            ConnectorMock
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync((Portfolio _, IReadOnlyCollection<string> referenceIds) =>
+                {
+                    FeaturePayloadDownloads.Add([.. referenceIds]);
+                    return AsFeatures(remoteFeatures.Where(record => referenceIds.Contains(record.ReferenceId)));
+                });
+        }
+
+        /// <summary>
+        /// The parent-Feature half. Both phases are keyed queries, so both record which keys they were
+        /// asked for - which is the observation that catches a parent key list derived from what this
+        /// cycle fetched rather than from what is stored.
+        /// </summary>
+        protected void TheTrackerHoldsParentFeatures(params RemoteRecord[] records)
+        {
+            remoteParentFeatures.Clear();
+            remoteParentFeatures.AddRange(records);
+
+            ConnectorMock
+                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync((Portfolio _, IEnumerable<string> parentFeatureIds) =>
+                {
+                    var requested = parentFeatureIds.ToList();
+                    ParentFeatureDownloads.Add(requested);
+                    return AsFeatures(remoteParentFeatures.Where(record => requested.Contains(record.ReferenceId)));
+                });
+
+            ConnectorMock
+                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
+                .ReturnsAsync((Portfolio _, IEnumerable<string> parentFeatureIds) =>
+                {
+                    var requested = parentFeatureIds.ToList();
+                    ParentFeatureScans.Add(requested);
+                    return remoteParentFeatures
+                        .FindAll(record => requested.Contains(record.ReferenceId))
+                        .ConvertAll(record => new RemoteRecordStamp(record.ReferenceId, record.ChangedAt));
+                });
+        }
+
+        protected void TheFeatureScanFails(Exception failure)
+            => ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>())).ThrowsAsync(failure);
+
+        protected void OnTheTrackerTheFeatureChanges(string referenceId, DateTime changedAt, string? state = null)
+        {
+            var index = remoteFeatures.FindIndex(record => record.ReferenceId == referenceId);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), $"The tracker does not hold Feature '{referenceId}'.");
+
+            var record = remoteFeatures[index];
+            remoteFeatures[index] = record with { ChangedAt = changedAt, State = state ?? record.State };
+        }
+
+        protected void OnTheTrackerTheFeatureIsGone(string referenceId)
+            => remoteFeatures.RemoveAll(record => record.ReferenceId == referenceId);
+
+        /// <summary>
+        /// The connector hands back a Feature that already carries its remote change stamp - the same
+        /// port contract the work-item side holds, and set after construction for the same reason: the
+        /// copy path is what the stamp-survives specification measures, so a double that inherits its
+        /// defect could not measure it.
+        /// </summary>
+        private static List<Feature> AsFeatures(IEnumerable<RemoteRecord> records)
+            => [.. records.Select(record => new Feature(new WorkItemBase
+            {
+                ReferenceId = record.ReferenceId,
+                Name = string.IsNullOrEmpty(record.Name) ? record.ReferenceId : record.Name,
+                Type = "Epic",
+                State = record.State,
+                StateCategory = record.StateCategory,
+                Order = "1",
+                ParentReferenceId = record.ParentReferenceId,
+                StartedDate = record.StartedDate,
+            })
+            {
+                LastChangedRemote = record.ChangedAt,
+            })];
 
         /// <summary>
         /// The connector hands back an item that already carries its remote change stamp - that is the
@@ -589,6 +744,96 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             using var scope = Factory.Services.CreateScope();
             return scope.ServiceProvider.GetRequiredService<IRepository<Feature>>()
                 .GetByPredicate(feature => feature.ReferenceId == referenceId);
+        }
+
+        // --- The portfolio as storage holds it (Epic #5687 slice 03) ---
+
+        /// <summary>
+        /// Puts Features straight into storage and claims them for the portfolio. Stands for an instance
+        /// that upgraded into this release: its Features exist, and unless the record says otherwise none
+        /// of them carries a remote change stamp yet (D8).
+        /// </summary>
+        protected void SeedStoredFeatures(int portfolioId, params RemoteRecord[] records)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var portfolio = sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)!;
+            var repository = sp.GetRequiredService<IRepository<Feature>>();
+
+            foreach (var record in records)
+            {
+                var feature = new Feature(new WorkItemBase
+                {
+                    ReferenceId = record.ReferenceId,
+                    Name = string.IsNullOrEmpty(record.Name) ? record.ReferenceId : record.Name,
+                    Type = "Epic",
+                    State = record.State,
+                    StateCategory = record.StateCategory,
+                    Order = "1",
+                    ParentReferenceId = record.ParentReferenceId,
+                    StartedDate = record.StartedDate,
+                })
+                {
+                    CurrentStateEnteredAt = record.StateEnteredAt,
+                    LastChangedRemote = record.StoredStamp,
+                };
+
+                portfolio.Features.Add(feature);
+                feature.Portfolios.Add(portfolio);
+                repository.Add(feature);
+            }
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Which Features the portfolio still claims. This is the observable the portfolio half of the
+        /// delta contract turns on: a Feature that drops out of this collection loses its last portfolio
+        /// claim and is then deleted outright by the orphaned-Feature cleanup the updater runs.
+        /// </summary>
+        protected List<Feature> TheFeaturesInThePortfolio(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId);
+
+            return portfolio == null ? [] : [.. portfolio.Features.OrderBy(feature => feature.ReferenceId, StringComparer.Ordinal)];
+        }
+
+        protected List<FeatureStateTransition> TheStoredTransitionsForFeature(int featureId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return [.. scope.ServiceProvider.GetRequiredService<IFeatureStateTransitionRepository>()
+                .GetAllByPredicate(transition => transition.FeatureId == featureId)
+                .OrderBy(transition => transition.TransitionedAt)
+                .ThenBy(transition => transition.ToState)];
+        }
+
+        /// <summary>
+        /// Opens a blocked spell for a Feature in a portfolio, the way the capture handler does. A spell
+        /// is what the departed-spell sweep closes, so a Feature with one open is the only way to observe
+        /// a cycle closing spells for Features it simply did not refetch.
+        /// </summary>
+        protected void AFeatureIsAlreadyBlockedInThePortfolio(int portfolioId, int featureId, DateTime since)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IFeatureBlockedTransitionRepository>();
+
+            repository.Add(new FeatureBlockedTransition
+            {
+                FeatureId = featureId,
+                PortfolioId = portfolioId,
+                EnteredAt = since,
+            });
+
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        protected Dictionary<int, FeatureBlockedTransition> TheOpenBlockedSpellsInThePortfolio(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IFeatureBlockedTransitionRepository>()
+                .GetOpenSpellsForPortfolio(portfolioId);
         }
 
         // --- The opt-in gate (Epic #5687 A1) ---
