@@ -260,7 +260,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // is stamped" branch cannot be what makes this cycle full - the ONLY thing missing is the
         // fingerprint, which is what makes the scenario capable of failing for the reason it names.
         [Test]
-        [Ignore(Pending)]
         public async Task An_instance_that_upgraded_into_this_release_downloads_everything_on_its_first_refresh()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
