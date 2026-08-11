@@ -43,20 +43,39 @@ for an administrator mid-edit. That instinct is wrong here, and checking it is w
 
 **Store a fetch fingerprint on `WorkTrackingSystemOptionsOwner`, beside `UpdateTime`.**
 
-The fingerprint is a hash over exactly the properties that shape the remote query:
+The fingerprint is a hash over exactly the properties that shape **what the query asks the tracker for,
+UNION how the answer is read into the stored record**. Both halves matter because delta skips an
+unchanged record's *whole* derivation, not only its download: an unchanged record is not re-fetched, not
+re-mapped and not re-derived, so anything that changes the reading is as fetch-shaping as anything that
+changes the request.
 
 | Property | Why it shapes the fetch |
 |---|---|
 | `DataRetrievalValue` | the query text itself |
 | `WorkItemTypes` | `PrepareQuery` argument |
-| `AllStates` | `PrepareQuery` argument |
+| `ToDoStates`, `DoingStates`, `DoneStates` | jointly the `PrepareQuery` state argument — **and separately** the state category stored against every record |
 | `DoneItemsCutoffDays` | `PrepareQuery` argument |
-| Additional field definitions | change the requested field set |
+| `StateMappings` | decide the `State` and `StateCategory` stored against every record |
 | Parent-override field | changes the parent resolution query |
 | `WorkTrackingSystemConnectionId` | changes which system is asked |
+| Connection: additional field definitions | change the requested field set **and** what is stored in `AdditionalFieldValues` |
+| Connection: work tracking system | decides which connector answers at all |
+| Portfolio: feature-owner field reference | read at sync time, stored as `Feature.OwningTeam` |
+| Portfolio: size-estimate field reference | read at sync time, stored as `Feature.EstimatedSize` |
 
 Collections hash order-insensitively, so re-saving the same states in a different sequence is not a
 change.
+
+**The three state columns are registered separately, not as `AllStates`.** `AllStates` is a `Union` over
+the three, so moving a state from Doing to Done leaves it — and therefore the query — identical while
+changing the state category of every stored record in that state. A fingerprint over the union cannot
+see that edit.
+
+**`StateMappings` is in the set for re-assignment, not for renaming.** `GetRawStatesForCategory`
+resolves a mapping by *name from the category list*, so a rename that does not also rename the category
+entry makes the list fall through to the literal and changes `AllStates` anyway. The edit no other
+property can see is redistributing the same raw states across different mappings: the raw state set is
+identical, the mapped name and state category of a record are not.
 
 **A mismatch makes the next cycle `full`, and the summary log line names configuration as the reason.**
 Everything outside the set leaves the fingerprint untouched and provokes no remote fetch at all.
@@ -65,10 +84,17 @@ Everything outside the set leaves the fingerprint untouched and provokes no remo
 function of data already in hand, and `WorkItemService` already carries twelve constructor dependencies
 with `#pragma S107` suppressed — a thirteenth for a pure function would not earn its place.
 
-**Completeness is enforced by a reflection test.** A test enumerates the properties reachable from
-`PrepareQuery` and the connector call sites and fails when one is neither in the fingerprint nor on an
-explicit, commented exclusion list. ArchUnitNET constrains types and dependencies, not property
-membership, so this is a reflection assertion rather than an architecture rule.
+**Completeness is enforced by a reflection test.** A test enumerates every property an operator can
+change on a query owner or on the connection it points at, and fails when one is neither in the
+fingerprint nor on an explicit, commented exclusion list. A second test pins `FetchFingerprint`'s own
+registry to that list, so the fingerprint and the save-time settings-change decision cannot drift into
+two lists. ArchUnitNET constrains types and dependencies, not property membership, so both are
+reflection assertions rather than architecture rules.
+
+Enumerating *the operator-editable surface* rather than *what `PrepareQuery` is handed* is deliberate
+and is the whole reason the guard can catch the interpretation half: `PrepareQuery` takes four
+arguments, and none of the four can see a state mapping, a connection field definition or a portfolio's
+owner/size reference.
 
 **An instance upgrading into the feature has no stored fingerprint**, so its first cycle is full —
 consistent with ADR-138's rule that ambiguity always resolves to the expensive answer.
@@ -94,6 +120,26 @@ consistent with ADR-138's rule that ambiguity always resolves to the expensive a
   write makes it very slightly more frequent.
 - The fingerprint is a boolean answer to a nuanced question. Narrowing a state list could in principle
   be served incrementally; it is not, and that is deliberate.
+- **The two consumers of the one property set do not have the same reach.** The fingerprint is computed
+  at sync time from the entity *and the connection it points at*. The save-time settings-change decision
+  compares an entity against an incoming settings DTO, and that DTO structurally cannot carry the
+  connection's field definitions or its work tracking system. The three connection-scoped rows are
+  therefore permanently invisible to the save-time consumer. Accepted rather than mitigated: it is a
+  property of where each consumer runs, not a drift risk, and the guard names those rows explicitly so
+  the asymmetry is read rather than discovered.
+- **A connection change fans out.** Editing a connection's additional field definitions invalidates the
+  fingerprint of *every* Team and Portfolio on that connection. The invalidation is passive — each
+  entity notices at its own next cycle, when it recomputes its own fingerprint — rather than an
+  N-entity write at connection-save time. Deliberate at this product's scale: an instance has tens of
+  entities per connection, not thousands, and the passive form keeps the connection-save path free of a
+  fan-out write and of the partial-failure question that comes with one.
+- **Re-pointing a connection at a different instance is an accepted residual.** `WorkTrackingSystemConnection.Options`
+  is excluded, because it is mostly credentials and hashing them would make every token rotation cost a
+  full re-download for every entity on the connection. It also carries the instance URL, so changing
+  *that* is the same hazard as moving an entity to a different connection — the same reference id, a
+  different system. **Accepted as-is**: the fix is connection *identity* (a connection whose instance
+  URL changed is arguably a new connection), not a wider hash, and treating it as a hash problem would
+  buy the URL case at the price of the credential case. Recorded here so it is not re-opened as a bug.
 
 **Neutral**
 

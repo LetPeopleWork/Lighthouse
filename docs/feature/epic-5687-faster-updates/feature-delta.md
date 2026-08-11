@@ -427,21 +427,39 @@ After: change the query in Team settings, save, and the next cycle logs `mode=fu
 reason=configuration-changed`; add a wait state instead, save, and the next cycle logs `mode=delta |
 scanned=4013 | fetched=0`.
 Decision enabled: the admin can tune wait states, blocked rules and staleness thresholds freely, and
-knows that a query edit really did take effect rather than hoping it did.
+knows that a query edit really did take effect rather than hoping it did. The other side of that line is
+wider than the query: re-mapping a tracker state, moving a state between the To Do / Doing / Done
+columns, or adding a field to the connection each cost a full re-download too, because each one changes
+what Lighthouse stores about every record it already has.
 
 **Acceptance criteria**
-- AC-5.1 A stored fetch fingerprint covers exactly: `DataRetrievalValue`, `WorkItemTypes`, `AllStates`,
+- AC-5.1 A stored fetch fingerprint covers exactly: `DataRetrievalValue`, `WorkItemTypes`, `ToDoStates`,
+  `DoingStates`, `DoneStates`, `StateMappings`, `DoneItemsCutoffDays`, the parent-override field,
+  `WorkTrackingSystemConnectionId`, the connection's additional field definitions, the connection's
+  work tracking system, and — on a Portfolio — the feature-owner and size-estimate field references.
+  Collections hash order-insensitively.
+  **Widened during DISTILL on 2026-08-11** from `DataRetrievalValue`, `WorkItemTypes`, `AllStates`,
   `DoneItemsCutoffDays`, additional field definitions, parent-override field,
-  `WorkTrackingSystemConnectionId`.
+  `WorkTrackingSystemConnectionId` — because delta skips an unchanged record's whole derivation, not
+  only its download, so the set is **what the query asks for ∪ how the answer is read into the stored
+  record**; in particular `AllStates` is a union and cannot see a state moving between the three
+  columns, and a state mapping, a connection field definition or a portfolio's owner/size field
+  reference each change every stored record while leaving the request byte-identical.
 - AC-5.2 Changing any one of them makes the next cycle `mode=full`, and the summary line names
   configuration as the reason.
 - AC-5.3 Changing a wait state, blocked rule, staleness threshold, named cycle time, ordering policy or
   terminology leaves the next cycle at `mode=delta` and issues **zero** payload fetches when nothing
   moved remotely (KPI-4).
-- AC-5.4 A guard test enumerates the fetch-shaping properties reachable from `PrepareQuery` and the
-  connector call sites and fails when one is neither in the fingerprint nor on an explicit, commented
-  exclusion list. Without this, the fingerprint drifts silently and delta serves stale data — the failure
-  mode is wrong numbers with green tests.
+- AC-5.4 A guard test enumerates every property an operator can change on a query owner or on the
+  connection it points at, and fails when one is neither in the fingerprint nor on an explicit,
+  commented exclusion list. A second guard pins the fingerprint's own registry to that list, so the
+  save-time decision and the mode decision cannot drift into two lists (A2). Without this, the
+  fingerprint drifts silently and delta serves stale data — the failure mode is wrong numbers with
+  green tests.
+  **Widened during DISTILL on 2026-08-11** from "the fetch-shaping properties reachable from
+  `PrepareQuery` and the connector call sites" — for AC-5.1's reason: `PrepareQuery` is handed four
+  arguments on both connectors, and the properties that shape the *stored record* are not reachable
+  from it at all, so a guard scoped that way could not see the three edits AC-5.1 was widened for.
 - AC-5.5 An instance upgrading into this feature has no stored fingerprint, so its first cycle is
   `mode=full` (D8).
 - AC-5.6 The fingerprint is stored per Team and per Portfolio independently.
@@ -3084,3 +3102,544 @@ repeatable**, and `total` never moved mid-walk. The duplicate-`ReferenceId` haza
 - One instance, one version. `SupportsIncrementalSync` stays per connection (ADR-139), so this evidence
   licenses DC in general only as far as the next instance behaves like this one — which is why the whole
   thing ships behind the opt-in.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 05
+
+**DISTILL run**: 2026-08-11 · **Scope**: slice 05 only (Story #5728, US-05 + the US-08 precursor) ·
+**Policy**: `inherit` · **Deliverable type**: `application` (`.nwave/des-config.json` carries no
+`deliverable_type` key → safe default; no plugin or skill reviewer applies)
+
+- ✓ This file's DISCUSS wave (D1 … D12, US-05 AC-5.1 … AC-5.6, US-08) and DESIGN wave (DDD-3, DDD-5,
+  DDD-8, ADR-140, the decisions table and the changed-assumptions note that puts the fingerprint on
+  `WorkTrackingSystemOptionsOwner` rather than on Team and Portfolio separately)
+- ✓ `docs/feature/epic-5687-faster-updates/slices/slice-05-fetch-fingerprint.md`, **including its
+  2026-08-09 amendment**, which is the substance of the slice
+- ✓ `## Wave: DELIVER / [REF] Post-slice-01 Amendments` → **A2**, and `## Wave: DISTILL / [REF] The
+  Summary-Line Contract`
+- ✓ Every `## Wave: DISTILL … — slice 03` section, as the format and rigour precedent (DT3-1 … DT3-13),
+  and every `## Wave: DELIVER … — slice 02` section
+- ✓ `docs/architecture/atdd-infrastructure-policy.md` — **no row had to be added.** The Settings-screen
+  save endpoint is the policy's existing `HTTP API (backend)` row (`WebApplicationFactory<Program>`);
+  everything else this slice touches was already covered by slices 01-03
+- ✓ `docs/ci-learnings.md` — pre-applied; see *Pre-requisites* below for what it bought and what it cost
+- ⊘ `docs/feature/epic-5687-faster-updates/devops/` — no DEVOPS wave ran, deliberately (recorded in
+  slice 01: nothing to deploy). Graceful degradation: WARN, project defaults apply. Slice 05 adds a
+  nullable column and no substrate, dependency or deployment change
+- ⊘ `spike/` — none ran; the slice brief records "Pre-slice SPIKE: not needed — the uncertainty is
+  enumerability, and the guard test answers it inside the slice"
+
+**Wave-decision reconciliation**: this feature keeps every wave's decisions in *this file* under
+`## Wave: <NAME>` headings rather than in `discuss/ design/ devops/wave-decisions.md`, so the gate was
+run against those sections. **Passed — 0 contradictions.** Two apparent tensions were checked and are
+not contradictions but *corrections*, recorded under Upstream Issues:
+
+1. AC-5.1 enumerates seven properties; the maintainer's 2026-08-11 decision widens the set. That is a
+   correction to an acceptance criterion made by the person who owns it, not a cross-wave conflict.
+2. A2 says the team purge is "possibly redundant" and asks for verification before removal; the
+   verification result narrows it to a connection change. Again a resolution of a question the
+   amendment explicitly left open, not a reversal.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List — slice 05
+
+Seventeen scenario methods over four fixtures' worth of behaviour, expanding to **47 acceptance cases**
+(four are table-driven), plus **2 guard tests**. Every one is example-based: the C#/NUnit row of the
+polyglot matrix governs (no PBT, no state-delta Universe — the ATDD policy records why the Python-pilot
+artefacts do not apply to this repo).
+
+| # | Scenario | Tags | Contract shape | AC |
+|---|---|---|---|---|
+| 1 | `A_query_edit_makes_the_next_refresh_download_everything_again` | `@walking_skeleton` `@driving_port` `@real-io` | bounded-change | AC-5.1, AC-5.2 |
+| 2 | `The_operator_is_told_that_a_configuration_change_is_why_everything_was_downloaded` | `@driving_port` `@real-io` | bounded-change | AC-5.2 |
+| 3 | `An_edit_to_a_fetch_shaping_team_setting_makes_the_next_refresh_download_everything` **(8 cases)** | `@driving_port` `@real-io` | bounded-change | AC-5.1, AC-5.2 |
+| 4 | `An_edit_to_a_fetch_shaping_portfolio_setting_makes_the_next_refresh_download_every_feature` **(10 cases)** | `@driving_port` `@real-io` | bounded-change | AC-5.1, AC-5.2, AC-5.6 |
+| 5 | `Reading_a_tracker_state_as_a_different_state_makes_the_next_refresh_download_everything_even_though_the_query_is_unchanged` | `@driving_port` `@real-io` | bounded-change | AC-5.1 (widened) |
+| 6 | `Moving_a_state_to_a_different_column_makes_the_next_refresh_download_everything_even_though_the_query_is_unchanged` | `@driving_port` `@real-io` | bounded-change | AC-5.1 (widened) |
+| 7 | `Adding_a_field_to_the_connection_makes_the_next_refresh_download_everything_for_the_teams_that_use_it` | `@driving_port` `@real-io` | bounded-change | AC-5.1 (widened) |
+| 8 | `Re_saving_the_same_states_in_a_different_order_costs_no_download` | `@driving_port` `@real-io` | unbounded-preservation | AC-5.1 (order) |
+| 9 | `An_edit_that_changes_nothing_about_what_is_fetched_costs_no_download` **(10 cases)** | `@driving_port` `@real-io` `@kpi` | unbounded-preservation | AC-5.3 (KPI-4) |
+| 10 | `A_portfolio_edit_that_changes_nothing_about_what_is_fetched_costs_no_download` **(6 cases)** | `@driving_port` `@real-io` `@kpi` | unbounded-preservation | AC-5.3 (KPI-4) |
+| 11 | `An_instance_that_upgraded_into_this_release_downloads_everything_on_its_first_refresh` | `@driving_port` `@real-io` | bounded-change | AC-5.5 (D8) |
+| 12 | `A_team_edit_does_not_cost_its_portfolio_a_full_download` | `@driving_port` `@real-io` | unbounded-preservation | AC-5.6 |
+| 13 | `A_portfolio_edit_does_not_cost_its_team_a_full_download` | `@driving_port` `@real-io` | unbounded-preservation | AC-5.6 |
+| 14 | `A_team_that_moves_to_a_different_connection_starts_from_nothing` | `@error` `@driving_port` `@real-io` | bounded-change | A2 |
+| 15 | `A_team_whose_query_changed_keeps_the_history_it_already_recorded` | `@driving_port` `@real-io` | unbounded-preservation | A2 |
+| 16 | `A_portfolio_that_moves_to_a_different_connection_starts_from_nothing` | `@error` `@driving_port` `@real-io` | bounded-change | A2 |
+| 17 | `A_portfolio_whose_query_changed_keeps_the_features_it_already_stored` | `@driving_port` `@real-io` | unbounded-preservation | A2 |
+| G1 | `EveryPropertyThatShapesAFetchIsEitherInTheFingerprintOrExplicitlyExcluded` | `@guard` `@unit` | pure-function | AC-5.4 |
+| G2 | `TheSaveTimeDecisionAndTheFingerprintReadTheSamePropertySet` | `@guard` `@unit` | pure-function | AC-5.4, A2 |
+
+Every scenario carries its `@contract-shape:` tag in the source, beside its other tags. Seven are
+**unbounded-preservation** because their defining claim is an absence: 8, 9, 10, 12 and 13 say nothing
+was downloaded, and 15 and 17 say nothing stored was thrown away.
+
+**The walking skeleton is scenario 1**: an admin edits a Team's query, saves, and the next cycle really
+does go and get the new answer — and says so. A non-technical stakeholder can confirm that is the thing
+being bought, and it is the first half of the slice brief's dogfood moment on `:5169`.
+
+Error/edge share: scenarios 8, 9, 10, 12, 13, 14, 15, 16 and 17 all assert that something was refused,
+discarded or *not* done — nine of seventeen methods, and 32 of 47 cases. Well above the 40 % bar.
+
+**The three scenarios that carry the wave's substantive finding.** 5, 6 and 7 each make an edit that
+leaves the request the tracker receives **byte-identical** and changes what is stored anyway. Each one
+asserts the request is unchanged *first* — a positive control without which the scenario is a claim
+about nothing — and only then that the cycle downloaded everything. A fingerprint built from AC-5.1's
+seven properties passes 1-4 and fails all three.
+
+**Pillar 2 (chained narrative)** is live: every scenario except 11 opens with
+`GivenTheTeamHasAlreadyBeenRefreshed(team)` / `GivenThePortfolioHasAlreadyBeenRefreshed(portfolio)`,
+which is literally `WhenTheScheduledRefreshRuns(...)` — the previous cycle run through the same driving
+port with the same step method, never a hand-built row that happens to look like its result. Scenario 11
+is the exception on purpose: it is the upgrade case, so its precondition is storage as an *older release*
+left it.
+
+**Slice-02's harness rule holds (DT2-13): no step method reads a field another step method assigns.**
+`SeededTeam` and `SeededPortfolio` are threaded through every step as parameters, and so are the
+`RecordedHistory` and `TheQuery` snapshots taken before an edit.
+
+---
+
+## Wave: DISTILL / [REF] The Summary-Line Contract — amended for slice 05
+
+Slice 01 fixed the field names; slice 05 adds one. The rendered line becomes:
+
+```
+Update completed | <Team|Portfolio> '<name>' | mode=<full|delta> | reason=<...> | scanned=<n> | fetched=<n> | duration=<n>ms | success=<true|false>
+```
+
+`mode`, `scanned`, `fetched`, `duration`, `success` are slice 01's asserted tokens; **`reason` is new**.
+The scenarios assert the token `reason=configuration-changed`, never the rendered sentence, so the prose
+can improve without reding a test and a log pipeline has something stable to grep. Field ORDER is not
+asserted — `Does.Contain` on each token — so DELIVER may place `reason=` wherever it reads best.
+
+`configuration-changed` is the only value slice 05 requires. AC-5.2 is a promise that the operator can
+tell a configuration-forced full download apart from a tracker-forced one, which needs exactly one named
+reason plus the absence of it in every other case — and scenario 11 asserts that absence directly, so a
+`reason=` printed unconditionally whenever the mode is full does not satisfy the contract.
+
+`RefreshLog` deliberately gains **no** `Reason` column. AC-5.2 is a promise about the operator's log
+line, the persisted row is read by nothing that needs it, and a second migration to carry a token nobody
+queries is schema for its own sake.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 05
+
+| Artifact | Path |
+|---|---|
+| Harness (shared, EXTENDED) | `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs` |
+| Scenarios | `…/FasterUpdates/Slice05FetchFingerprintScenarios.cs` |
+| Specifications (step methods) | `…/FasterUpdates/Slice05FetchFingerprintSpecifications.cs` |
+| Guard test (AC-5.4) | `Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs` |
+| Historical-schema helper (collateral, see Upstream Issues 4) | `Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs` |
+
+Same `<Feature>AcceptanceTest` + `SliceNNScenarios` / `SliceNNSpecifications` triple as slices 01-03.
+Categories `acceptance` / `epic-5687-faster-updates` / `slice-05`.
+
+**Why the guard lives in `Architecture/` and not beside the scenarios.** It is not a scenario: it has no
+driving port, no user and no observable outcome. It is the same kind of artefact as the twenty ArchUnit
+seam tests already in that folder — a structural invariant over the production type surface, whose
+failure message is an instruction to a future maintainer rather than a report about a user. Its
+categories are `epic-5687-faster-updates` / `slice-05` (not `acceptance`), so the slice filter picks it
+up while the acceptance filter does not. DDD-8 already predicted the shape and the reason ArchUnitNET
+cannot express it: ArchUnit constrains types and dependencies, not property membership.
+
+---
+
+## Wave: DISTILL / [REF] Architecture of Reference — applied (slice 05)
+
+Per `docs/architecture/atdd-infrastructure-policy.md`. **No row had to be added.**
+
+| Port | Class | Treatment in these scenarios |
+|---|---|---|
+| Settings save (`PUT /api/latest/teams/{id}`, `PUT /api/latest/portfolios/{id}`) | Driving | **Real** — over the factory's `HttpClient`, through the real controller |
+| Settings read (`GET …/settings`) | Driving | **Real** — the edit round-trips the DTO the GET returned |
+| Scheduled refresh (`ITeamUpdater` / `IPortfolioUpdater` → `IUpdateQueueService`) | Driving | **Real** — triggered, then the production queue runs it in its own DI scope |
+| EF `LighthouseAppContext` + repositories, `IRefreshLogService`, `IRepository<OptionalFeature>`, `IWorkItemStateTransitionRepository` | Driven internal | **Real** — SQLite via the test factory, `EnsureDeleted` + `EnsureCreated` per `[SetUp]`, seeders run |
+| `IWorkTrackingConnector` | Driven external | **Fake** — `Mock<IWorkTrackingConnector>`, programmed from one coherent picture of the tracker |
+| `IForecastService` | Driven external / non-deterministic | **Fake** |
+| `ILicenseService` | Driven external | **Fake** — premium true (the settings PUT is behind `LicenseGuard`) |
+| `ILoggerFactory` | Observation seam | Serilog factory writing to `CapturedLogMessages` (unchanged) |
+
+**Why the save goes over HTTP and not through the repository.** Half of what slice 05 decides lives in
+`TeamController.UpdateTeam:178` — `WorkItemRelatedSettingsChanged` and the purge it triggers. A Given or
+When that mutated the entity through `IRepository<Team>` would bypass that decision entirely and leave
+every scenario measuring the fingerprint alone, which is precisely the "one property set, two consumers"
+split A2 says must not ship as two lists. This is the first slice in the epic to enter through a second
+driving port, and it is the reason the harness grew one.
+
+**Observed and recorded, because a reader will wonder**: the FasterUpdates harness does **not** apply
+`TestWebApplicationFactory.WithTestAuthentication`, so the host it builds runs with
+`Authentication: Disabled` / `Authorization: Disabled` (confirmed in the run's own startup banner). The
+`AsSystemAdmin()` the steps apply is therefore **inert** in this fixture — it is written for intent and
+for the day the harness gains authentication, not because it is what admits the request. RBAC on these
+endpoints is covered by `TeamsControllerAuthorizationTests` / `ProjectsControllerAuthorizationTests`,
+which is where it belongs; asserting it again here would be a second, weaker copy.
+
+**Deliberately not faked**: `ITeamDataService`, `IWorkItemService`, `IUpdateQueueService`,
+`IBlockedItemService`, `IOrphanedFeatureCleanupService`, `IWorkItemRepository` (wrapped, not replaced).
+The whole slice lives across `TeamController` → `WorkItemRepository` and `WorkItemService` →
+`SyncModeResolver`; faking any of them would make a criterion vacuous.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage — slice 05
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| EF repositories (`IRepository<Team>`, `IRepository<Portfolio>`, `IWorkItemRepository`, `IRepository<Feature>`, `IRepository<WorkTrackingSystemConnection>`) | YES | Every scenario — real SQLite through the production composition root |
+| `IWorkItemStateTransitionRepository` | YES | Scenarios 5, 6, 14, 15 — the recorded history read before and after a save |
+| `RefreshLogService` / `RefreshLogRepository` | YES | Every scenario reads the persisted row back through `IRefreshLogService` |
+| `IUpdateQueueService` / `IUpdateStatusStore` | YES | Every scenario — the refresh is admitted and run by the real queue |
+| `IRepository<OptionalFeature>` / `OptionalFeatureRepository` | YES | Every scenario's opt-in Given |
+| `TeamController` / `PortfolioController` over HTTP | YES | Every scenario except 11 — the settings save is a real request against a real host |
+| `IWorkTrackingConnector` (Jira / ADO / ServiceNow / Linear / CSV) | NO — faked by policy | Slice 05 changes nothing below this port: the fingerprint is computed from configuration Lighthouse already holds, never from anything the tracker says. Recorded so the fake is not mistaken for missing coverage |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 05
+
+DESIGN declares **no new inbound surface** (D4). Slice 05 adds none either — but it is the first slice
+to *exercise* one DESIGN listed and earlier slices never entered:
+
+| Entry point in DESIGN | Covered |
+|---|---|
+| `PUT api/v1\|latest/teams/{id}` (Settings save) | Scenarios 1-3, 5-9, 12, 14, 15 — real HTTP request, success status asserted |
+| `PUT api/v1\|latest/portfolios/{id}` (Settings save) | Scenarios 4, 10, 13, 16, 17 — same |
+| `GET api/v1\|latest/{teams,portfolios}/{id}/settings` | Every edit round-trips the DTO this returns, which is also what stops a hand-built payload missing a `[JsonRequired]` field (ci-learnings 2026-07-07) |
+| Background timer loop (`UpdateServiceBase.ExecuteAsync`) | Unchanged by this slice; slice 01's second fixture drives it |
+| `POST api/v1\|latest/{teams,portfolios}/{id}/refresh` manual trigger | Same code path as every scenario here — they enter at `ITeamUpdater`/`IPortfolioUpdater.TriggerUpdate`, which is what the controller calls |
+| Container log stream | The observable of scenarios 1, 2, 9 and 11 |
+| Settings → Optional Features | Unchanged: slice 05 adds no gate of its own (A2 is not gated by A1) |
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds — slice 05
+
+The C# rows of the polyglot matrix govern: `[Ignore]` is the skip marker and there is no `__SCAFFOLD__`
+convention in this repo.
+
+| Scaffold | Path | Note |
+|---|---|---|
+| `WorkTrackingSystemOptionsOwner.FetchFingerprint` (`string?`) | `Models/WorkTrackingSystemOptionsOwner.cs` | **US-08 precursor, not a scaffold** — real production code. One column definition on the shared base, inherited by Team and Portfolio (DDD-3, DESIGN changed-assumption 2), beside the existing sync-owned `UpdateTime` |
+| `AddFetchFingerprintToQueryOwners` | `Lighthouse.Migrations.{Sqlite,Postgres}/Migrations/2026081113{0742,0752}_…` | Additive, expand-only, both providers, generated with `Create-Migration.ps1`. `Up` adds a nullable column to `Teams` and `Portfolios`; `Down` drops them. **Same commit as the property** |
+| `FetchFingerprint` (static) | `Services/Implementation/WorkItems/FetchFingerprint.cs` | New type per DESIGN's component decomposition. Ships with `RegisteredProperties` and `PropertiesThatAlsoCostAFreshStart` **empty** and `For(...)` throwing `NotSupportedException` — which is what makes guard G2 a real red rather than a table agreeing with itself |
+| Harness extensions | `…/FasterUpdates/FasterUpdatesAcceptanceTest.cs` | `TheSettingsScreen`, `The{Teams,Portfolios}CurrentSettings`, `TheOperatorSavesThe{Teams,Portfolios}Settings`, `TheStoredFetchFingerprintFor{Team,Portfolio}`, `SeedAdditionalFieldDefinition`, `SeedStoredTransition` |
+| `HistoricalSchemaPatch` | `Lighthouse.Backend.Tests/TestHelpers/` | Collateral, not slice content — see Upstream Issues 4 |
+
+**Three deliberate non-scaffolds**, recorded so DELIVER does not read them as oversights:
+
+- **`SyncModeResolver` was not touched.** Its `fetchShapeChanged` parameter already exists and already
+  returns `SyncMode.Full` when true. The seam is complete; DELIVER's job is to fill it, in the three
+  places it is hard-coded `false`: `WorkItemService.ResolveRemoteFetch:122`,
+  `ResolveRemoteFeatureFetch:799`, `ResolveRemoteParentFeatureFetch:1022` (verified — the brief's
+  "`:1008`+" is the method declaration, the literal is at `:1022`).
+- **`TeamExtensions.WorkItemRelatedSettingsChanged` was not touched.** Narrowing it to a connection
+  change is a behaviour change with a data consequence, and it belongs in a DELIVER step with scenarios
+  15 and 17 as its red.
+- **`UpdateServiceBase.LogUpdateSummary` was not touched.** The `reason=` token is production work.
+
+**S4136 was not reached.** Slice 05 adds no overload to `IWorkTrackingConnector` and no overload to any
+widely-implemented interface. The two `GivenTheConnectionDefinesAField` overloads in the specifications
+and the four `ThenTheRefreshReported*Of` overloads are adjacent to their siblings by construction, and
+the mandatory `dotnet format analyzers` sweep returned **zero findings in any new or modified file**
+(35 pre-existing hits repo-wide, all the documented EF-migration noise).
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate) — slice 05
+
+`dotnet test Lighthouse.sln --filter "TestCategory=slice-05&TestCategory=epic-5687-faster-updates"` with
+the `[Ignore]`s temporarily lifted — **29 failed, 20 passed, 0 setup failures, 49 total**. Every failure
+is on an assertion; none is an import error, a fixture error or a setup error. Every "Observed failure"
+below is copied from the run.
+
+| # | Scenario (cases) | Observed failure (verbatim from the run) | Class |
+|---|---|---|---|
+| 1 | `A_query_edit_makes_the_next_refresh_download_everything_again` | `TheStoredFetchFingerprintForTeam(team.Id)` → `Expected: not null and not <empty> But was: null` | MISSING_FUNCTIONALITY ✅ |
+| 2 | `The_operator_is_told_that_a_configuration_change…` | `Does.Contain("reason=configuration-changed")` → `But was: "Update completed \| Team '…' \| mode=Full \| scanned=3 \| fetched=3 \| duration=73ms \| success=True"` | MISSING_FUNCTIONALITY ✅ |
+| 3 | fetch-shaping team edits (8/8 fail) | 6 of 8 on `Does.Contain("reason=configuration-changed")`; the cutoff and parent-field cases on `FullDownloadsIssued` → `Expected: 1 But was: 0` | MISSING_FUNCTIONALITY ✅ |
+| 4 | fetch-shaping portfolio edits (10/10 fail) | all on `FullFeatureDownloadsIssued` → `Expected: 1 But was: 0` | MISSING_FUNCTIONALITY ✅ |
+| 5 | `Reading_a_tracker_state_as_a_different_state…` | `TheHistoryOf(history.WorkItemId)` → `Expected: "New->In Progress@…" But was: <string.Empty>` | MISSING_FUNCTIONALITY ✅ |
+| 6 | `Moving_a_state_to_a_different_column…` | same | MISSING_FUNCTIONALITY ✅ |
+| 7 | `Adding_a_field_to_the_connection…` | `FullDownloadsIssued` → `Expected: 1 But was: 0` | MISSING_FUNCTIONALITY ✅ |
+| 8 | `Re_saving_the_same_states_in_a_different_order…` | `Assert.That(before, Is.Not.Null.And.Not.Empty)` → positive control: nothing was recorded to compare | MISSING_FUNCTIONALITY ✅ |
+| 9 | free team edits (10/10 **pass**) | — | GUARD_NOT_YET_FALSIFIABLE (declared below) |
+| 10 | free portfolio edits (6/6 **pass**) | — | GUARD_NOT_YET_FALSIFIABLE (declared below) |
+| 11 | `An_instance_that_upgraded_into_this_release…` | `FullDownloadsIssued` → `Expected: 1 But was: 0` | MISSING_FUNCTIONALITY ✅ |
+| 12 | `A_team_edit_does_not_cost_its_portfolio_a_full_download` | **passes** | GUARD_NOT_YET_FALSIFIABLE (declared below) |
+| 13 | `A_portfolio_edit_does_not_cost_its_team_a_full_download` | **passes** | GUARD_NOT_YET_FALSIFIABLE (declared below) |
+| 14 | `A_team_that_moves_to_a_different_connection_starts_from_nothing` | **passes** | GREEN off shipped code (declared below) |
+| 15 | `A_team_whose_query_changed_keeps_the_history_it_already_recorded` | `TheHistoryOf(history.WorkItemId)` → `Expected: "New->In Progress@2026-07-29T09:00:00.0000000Z" But was: <string.Empty>` | MISSING_FUNCTIONALITY ✅ |
+| 16 | `A_portfolio_that_moves_to_a_different_connection_starts_from_nothing` | `TheFeaturesInThePortfolio(portfolio.Id)` → `Expected: <empty> But was: < Feature, Feature, Feature >` | MISSING_FUNCTIONALITY ✅ |
+| 17 | `A_portfolio_whose_query_changed_keeps_the_features_it_already_stored` | `TheStoredFetchFingerprintForPortfolio(portfolio.Id)` → `Expected: not null and not <empty> But was: null` | MISSING_FUNCTIONALITY ✅ |
+| G1 | `EveryPropertyThatShapesAFetchIsEitherInTheFingerprintOrExplicitlyExcluded` | **passes** | GUARD, complete on arrival (declared below) |
+| G2 | `TheSaveTimeDecisionAndTheFingerprintReadTheSamePropertySet` | `FetchFingerprint.RegisteredProperties` → `Expected: equivalent to < "DataRetrievalValue", "WorkItemTypes", … > But was: <empty>`; `PropertiesThatAlsoCostAFreshStart` → `Expected: equivalent to < "WorkTrackingSystemConnectionId" > But was: <empty>` | MISSING_FUNCTIONALITY ✅ |
+
+Gate: **PASSED** — zero scenarios in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `SETUP_FAILURE` /
+`WRONG_ASSERTION` classes.
+
+### The blindness check the fail-fast would otherwise have hidden (DT3-12)
+
+A second, diagnostic run was made with **every slice-05-specific assertion removed**
+(`ThenTheWholeQueryWasDownloaded`, `ThenTheWholeFeatureQueryWasDownloaded`,
+`ThenTheOperatorIsToldConfigurationIsWhy`, `ThenTheTeamKeptTheHistoryItRecorded`,
+`ThenThePortfolioStartedFromNothing`, `ThenThe{Team,Portfolio}RemembersWhatItAskedFor`,
+`ThenTheTeamsFingerprintIsUnchangedBy`, `ThenTheOperatorSeesAFullUpdate`,
+`ThenTheRefreshReportedAFullUpdateOf`, and G2's two assertions) and everything else left in place:
+
+```
+Passed!  - Failed: 0, Passed: 45, Skipped: 4, Total: 49
+```
+
+The four skips are the three scenarios whose assertions are **entirely** slice-05-specific (1, 2 and 16
+— removing their assertions leaves an empty test, which `S2699` rejects at error severity) plus G2. So
+every non-slice-05 assertion in every other scenario holds against current `HEAD`, and no assertion is
+silently broken behind NUnit's fail-fast. The diagnostic edit was reverted and the shipped file
+diff-verified against the copy taken before it.
+
+### Two wrong-reason greens found by the gate and fixed (this is what the gate is for)
+
+The first gate run had scenarios 5 and 6 **passing outright**, and they were passing for the wrong
+reason: a state or state-mapping edit trips `WorkItemRelatedSettingsChanged` today, so every stored work
+item is deleted at save time, so the next cycle has nothing to compare and is full. The scenarios' claim
+— *the fingerprint noticed a change the query did not show* — was never exercised. Both now assert
+`ThenTheTeamKeptTheHistoryItRecorded` **before** the refresh, which is red today (the purge) and stays
+meaningful afterwards (Decision 2 narrows the purge to a connection change). They now fail on exactly
+the claim they are named after.
+
+Scenario 8 had a **vacuous** assertion of the same family: with no fingerprint stored, "the fingerprint
+did not change" compared `null` to `null` and passed. A positive control was added inside
+`ThenTheTeamsFingerprintIsUnchangedBy`, and it is what the scenario now reds on.
+
+### Absence-assertion audit — every `Then` whose only claim is that something is not there
+
+Run after the review gate flagged scenario 11. The rule applied: **an absence assertion is vacuous
+unless something in the same scenario, before it, proves the surface it reads is populated.** Two more
+were found; both fixed.
+
+| Assertion | Backed by | Verdict |
+|---|---|---|
+| `ThenTheOperatorIsNotToldConfigurationIsWhy` (scenario 11) | nothing — `TheSummaryLine()` proves the line exists, but not that it carries anything | **FIXED**: `ThenTheOperatorSeesAFullUpdate(3, 3)` added before it, so the absence is read against a line already proven to carry mode, scanned and fetched |
+| `ThenThePortfolioStartedFromNothing` (scenario 16) | nothing — a portfolio that never stored a Feature is "empty" before the edit as well as after it, and the later `scanned: 3` is read after a *second* refresh, so it could not catch it | **FIXED**: `GivenThePortfolioAlreadyStoresItsFeatures` snapshots the claim before the edit with its own `Is.Not.Empty` control, and renders what was lost in the failure message. This one the reviewer missed |
+| `ThenNothingWasDownloaded` (8, 9 ×10, 13) | `ThenTheRefreshReported…(scanned: 3, …)` in the same scenario — `scanned: 3` is only true if the tracker fake is wired and holds three records | OK — the scenario cannot go green with a dead surface |
+| `ThenNoFeatureWasDownloaded` (10 ×6, 12) | same, portfolio side | OK |
+| `PayloadDownloads Is.Empty` inside `ThenTheWholeQueryWasDownloaded` / `…FeatureQuery…` | `FullDownloadsIssued Is.EqualTo(1)` in the same helper, immediately before | OK — self-backed |
+| `ThenTheTeamStartedFromNothing` (scenario 14) | `GivenTheTeamRecordedHowItsWorkMoved`, which carries `Is.Not.Null` on the item and `Is.Not.Empty` on the rendered history | OK — this is the pattern the two fixes above were made to match |
+| `ThenNothingWasDownloaded`'s twin claim in scenario 12/13 (cross-entity) | the *other* entity's `scanned: 3` | OK |
+
+Nothing else in the fixture asserts an absence. `ThenThePortfolioStillHas`,
+`ThenWhatTheTrackerIsAskedForIsUnchanged` and `ThenTheTeamKeptTheHistoryItRecorded` are equalities
+against non-empty captured values, not absences.
+
+### Declared non-reds (no manufactured red)
+
+- **Scenario 14 is GREEN off shipped code.** `TeamController.UpdateTeam:178` already purges on a
+  connection change, and the cascade on `WorkItemStateTransition.WorkItemId` already takes the history
+  with it. It ships as a **regression guard on the one behaviour Decision 2 keeps** — the risk in this
+  slice is that narrowing the purge narrows it too far. Positive control: **scenario 15**, which is red.
+- **Scenarios 9 (×10), 10 (×6), 12 and 13 are guards that cannot yet be falsified.** They forbid
+  behaviour that does not exist: with no fingerprint at all, "this edit invalidated nothing" is true for
+  the trivial reason. Their positive controls are **scenarios 3 and 4**, which are genuinely red.
+  DELIVER must re-run them **after** the fingerprint exists — that is the point at which they start
+  guarding something, and they are the ones that catch the safe-but-wasteful implementation ("any
+  settings save invalidates") the slice brief names as the failure mode that keeps the product honest
+  and spends the whole win. Same shape as slice 02's scenario 8 and slice 03's scenario 10.
+- **Guard G1 passes on arrival and is meant to.** It walks the query-owner property surface and finds
+  every property already decided, because DISTILL is what decided them. It guards the *next* connector
+  option somebody adds, which is what AC-5.4 asks for in as many words. Its falsification probe is
+  recorded below.
+
+### Falsification probe for G1 (a guard nobody has seen fail is a guard on nothing)
+
+`WorkTrackingSystemOptionsOwner` was given a throwaway `public string? ProbeOnlyDelete { get; set; }`
+and the suite re-run: G1 failed with `Undecided properties: ProbeOnlyDelete`, and **nothing else in the
+slice-05 filter changed** (29 → 30 failed). The property was removed and the run repeated to confirm the
+tree returned to 29. So G1 discriminates on exactly the event it exists for — a new property on the
+query-owner surface — and on nothing else.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 05
+
+1. **AC-5.1's property list is too narrow, and AC-5.4's wording is why.** AC-5.4 scopes the guard to
+   "the properties reachable from `PrepareQuery` and the connector call sites". `PrepareQuery` is handed
+   exactly four things on both connectors (`WorkItemTypes`, `AllStates`, `DataRetrievalValue`,
+   `DoneItemsCutoffDays` — `Jira…:82,211,276`, `AzureDevOps…:58,82,196,231`), and delta skips far more
+   than the request: an unchanged record is not re-downloaded, not re-mapped and not re-derived. The set
+   the fingerprint has to cover is **request shape ∪ response interpretation**. Widened set, with the
+   evidence:
+
+   | Property | Evidence | What a change does that AC-5.1 cannot see |
+   |---|---|---|
+   | `StateMappings` | `JiraWorkTrackingConnector.CreateWorkItemFromJiraIssue:1313,1316` stores `MapRawStateToMappedName(issue.State)` and `MapStateToStateCategory(issue.State)`; both walk `WorkTrackingSystemOptionsOwner.GetRawStatesForCategory` | Moving a raw state from one mapping to another can leave `AllStates` **identical** and change the stored `State` and `StateCategory` of every record in it (scenario 5) |
+   | `ToDoStates` / `DoingStates` / `DoneStates` **separately** | `WorkTrackingSystemOptionsOwner.AllStates` is a `Union` of the three | Moving a state between columns leaves the union — and therefore the query — identical and re-categorises every stored record in it (scenario 6). **AC-5.1 names `AllStates`, which cannot see this** |
+   | connection `AdditionalFieldDefinitions` | `JiraWorkTrackingConnector:1300,1320,1361`; `AzureDevOpsWorkTrackingConnector:577,609` | Adding a definition changes what is requested *and* what is stored in `AdditionalFieldValues`, for every entity on the connection, while `WorkTrackingSystemConnectionId` never moves (scenario 7) |
+   | `Portfolio.FeatureOwnerAdditionalFieldDefinitionId` | read at sync time by `JiraWorkTrackingConnector.GetOwningTeam:1020-1022` and `AzureDevOps…:940-942`, landing on the stored `Feature.OwningTeam` (`Jira…:1006,1011`) | Under delta the unchanged Feature is never re-derived, so the old owner survives the edit |
+   | `Portfolio.SizeEstimateAdditionalFieldDefinitionId` | `JiraWorkTrackingConnector.GetEstimatedSize:1027-1029`, `AzureDevOps…:947-950`, stored as `Feature.EstimatedSize` (`Jira…:1005,1010`) | Same mechanism |
+   | connection `WorkTrackingSystem` | decides which connector answers at all | The whole shape of what comes back |
+
+   **A correction to the decision's stated mechanism, which does not change its conclusion.** The
+   2026-08-11 decision says "a mapping *rename* leaves the raw state set — and therefore `AllStates` —
+   identical". Code read falsifies that specific mechanism: `GetRawStatesForCategory` looks a mapping up
+   **by name from the category list**, so renaming a mapping without renaming its entry in the category
+   list makes the category list fall through to the literal name and `AllStates` **does** change; and
+   renaming both in one save changes the category list, which the widened set already registers. The
+   genuinely invisible edit is a **re-assignment** — the same raw states redistributed across mappings —
+   which is what scenario 5 does and what the guard's `StateMappings` row now records. `StateMappings`
+   belongs in the fingerprint; the reason is one step over from the one written down.
+
+2. **Two consumers, but they do not see the same things — and A2's "one property set" hides it.** The
+   fingerprint is computed at **sync time** from the entity *and the connection it points at*. The
+   save-time decision compares an entity against an **incoming settings DTO**, which carries no field
+   definitions and no connection options. So the three connection-scoped rows above are structurally
+   invisible to `WorkItemRelatedSettingsChanged`, and always will be. "One property set, two consumers"
+   holds for the *set*; the two consumers have different *reach*. Guard G2 asserts the set, and the
+   guard table marks the connection-scoped rows so the asymmetry is written down rather than discovered.
+   No decision changes.
+
+3. **`WorkTrackingSystemConnection.Options` is on the exclusion list, and it is the one exclusion that
+   deserves a second opinion.** It is mostly credentials, and hashing credentials would make every token
+   rotation cost a full re-download of every entity on the connection — which is why it is excluded. But
+   it also carries the **instance URL**, and re-pointing a connection at a different Jira is the same
+   hazard as re-pointing an entity at a different connection: the same reference id, a different system,
+   merged in place. Slice 05 does not fix it, because the fix is connection *identity* (a connection
+   whose instance URL changed is arguably a new connection), not a hash — and no acceptance criterion in
+   this epic names it. Recorded for the maintainer.
+
+4. **Blocked rules under delta: AC-5.3's promise is only honest if the derivation pass exists.** The
+   slice brief's secondary hypothesis asks whether blocked rules belong in the fingerprint. Answer: **no,
+   by the brief's own criterion** — `blockedItemService.IsBlocked(workItem, team)`
+   (`WorkItemService.cs:290,293`) reads the **stored** item, so re-deriving needs no remote call. But the
+   delta loop only visits *downloaded* items, so after a blocked-rule edit a quiet item's spell is never
+   re-opened or closed until it next moves. The read path recomputes `IsBlocked` per request, so the UI
+   is right; the `FeatureBlockedTransition` / `WorkItemBlockedTransition` history is not. **The gap is
+   real, and its home is the ADR-141 / DDD-4 derivation pass that already moved staleness over the
+   stored set — not the fingerprint.** Paying a full remote download to fix a local derivation is the
+   wrong instrument. Proposed as an AC for whichever slice owns the derivation pass; not actioned here.
+
+5. **Collateral: a new column on `Teams` or `Portfolios` reds six migration tests that have nothing to do
+   with it.** `DeliveryMetricSnapshotDayKeyMigrationTests` and `BlockedRuleSetMigrationTests` roll a
+   database back to a pinned historical migration and then seed it **through the current EF model** —
+   so `FetchFingerprint` produced `SQLite Error 1: 'table Portfolios has no column named
+   FetchFingerprint'` in six tests across two fixtures and two providers. This is not slice-05 breakage;
+   it is a standing trap that any column on those two tables would have sprung, and
+   `BlockedRuleSetMigrationTests.EnsureLegacyColumnsHaveWorkingDefaultAsync` already solves the mirror
+   case (a column the model has *stopped* declaring). Fixed with `TestHelpers/HistoricalSchemaPatch`,
+   which adds the later columns for the duration of the seed and drops them again before migrating
+   forward — gated on the adding migration still being pending, so a fixture pinned after it is left
+   alone. **It still needs a row per future column**, which is the price of seeding a historical schema
+   through the current model; the durable fix is raw-SQL seeding in both fixtures, and it is a bigger
+   change than this slice should carry. Worth a `docs/ci-learnings.md` entry — deliberately not written
+   here, since that file is `/clean-ci`'s to maintain.
+
+6. **`fetchShapeChanged` is hard-coded in three places, and the third is at `:1022`, not `:1008`.** The
+   slice brief says "`:1008`+ — verify the exact line". `ResolveRemoteParentFeatureFetch` is declared at
+   `WorkItemService.cs:1008`; the literal is at `:1022`. The other two are at `:122` and `:799` as
+   briefed.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 05
+
+- DESIGN's driving ports: no new inbound surface (D4). The two settings-save endpoints already exist.
+- DEVOPS environment matrix: none produced; project defaults apply. No Docker and no Testcontainers for
+  the slice-05 acceptance suite itself — **but `Create-Migration.ps1` starts a Postgres container**, so
+  the migration half of this wave needed Docker (available; the run is recorded above). The two
+  migration fixtures the precursor touched are `Integration/Containers/*` and do need Docker to run.
+- Terminology: scenarios and log fragments use the seeded defaults (`Team`, `Portfolio`, `Feature`,
+  `Work Item`) per `TerminologySeeder`.
+- **The dogfood measurement the slice brief asks for is not automated.** "On `:5169` with real recorded
+  history: change a team's query, watch the next cycle log `mode=full | reason=configuration-changed`;
+  then add a wait state, watch the next cycle log `mode=delta | fetched=0`." Two log lines, same day —
+  and they are the acceptance for KPI-4. It belongs in the slice verdict, alongside slice 02's still-owed
+  AC-2.8 reading and slice 03's rollup premise check.
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions Summary — slice 05
+
+| ID | Decision |
+|---|---|
+| DT5-1 | **The fingerprint set is "request shape ∪ response interpretation", not "reachable from `PrepareQuery`".** AC-5.1's seven become thirteen: the seven, plus the three state columns separately (`AllStates` is a union and cannot see a re-categorisation), plus `StateMappings`, plus the connection's `AdditionalFieldDefinitions` and `WorkTrackingSystem`, plus the portfolio's owner and size field references. Scenarios 5, 6 and 7 are the three edits that leave the request byte-identical and prove it. **Mechanism correction, inline because this row is where it will be read**: the invisible state-mapping edit is a **re-assignment** — the same raw states redistributed across mappings — not a *rename*. `GetRawStatesForCategory` resolves a mapping **by name from the category list**, so renaming a mapping alone makes the category list fall through to the literal name and `AllStates` *does* change, and renaming both in one save changes the category list, which is already registered. `StateMappings` belongs in the set; the reason is one step over from the one the 2026-08-11 decision wrote down |
+| DT5-2 | **The purge is narrowed to a connection change.** A query, type, state, cutoff or field edit is reconciled by `removed = stored − fetched` on the next full cycle — which is how the portfolio side has always coped without a purge. A connection change is not: the same reference id on a different tracker is a different item and `SyncWorkItem` merges it in place. Fingerprint mismatch → `mode=full`; connection change → additionally a fresh start. Both entities, same rule |
+| DT5-3 | The precursor property lands on `WorkTrackingSystemOptionsOwner`, not on Team and Portfolio separately (DDD-3, DESIGN changed-assumption 2), with its migration in the **same commit**. A model change without its migration reds ~55 tests via `PendingModelChangesWarning` inside `Database.Migrate()`, and the acceptance tests cannot catch it because they use `EnsureCreated` |
+| DT5-4 | The settings save enters through the **HTTP driving port**, not the repository. `WorkItemRelatedSettingsChanged` lives in the controller, and it is half of what this slice decides |
+| DT5-5 | `FetchFingerprint` ships as a type with **empty** registries and a throwing `For(...)`. An empty registry is what makes guard G2 a genuine red; a pre-filled one would be a table agreeing with itself |
+| DT5-6 | The guard is **two** tests, not one: G1 walks the property surface (nothing undecided), G2 pins the fingerprint's own registry to the decision table (the two consumers read one set). G1 alone would let the registry drift from the table it is documented by |
+| DT5-7 | The guard lives in `Architecture/`, with the twenty ArchUnit seam tests, and is categorised `slice-05` but **not** `acceptance`. It has no driving port, no user and no observable outcome — it is a structural invariant, which is exactly what DDD-8 called it |
+| DT5-8 | `RefreshLog` gains no `Reason` column. AC-5.2 is a promise about the operator's log line; a second migration to persist a token nothing queries is schema for its own sake |
+| DT5-9 | `WorkTrackingSystemConnectionId` is deliberately **absent** from the fetch-shaping table-driven scenario. It also purges, so "nothing is stored" would be a second, independent reason for the next cycle to be full — the row would stop discriminating. It has its own scenario (14) instead |
+| DT5-10 | AC-5.5's scenario seeds work that **already carries remote change stamps**, so slice 02's "nothing is stamped" branch cannot be what makes the cycle full. Without that, AC-5.5 is indistinguishable from a branch that already ships |
+| DT5-11 | Every scenario asserts its headline claim **before** the mode (DT3-11). Scenarios 5, 6, 14, 15, 16 and 17 assert theirs before the refresh even runs, because the purge decision is made at save time |
+| DT5-12 | The gate's evidence is the run output per scenario, plus a diagnostic run with the slice-05 assertions removed (DT3-12). It caught **two wrong-reason greens and one vacuous assertion**, all three fixed — which is the whole argument for running it rather than tabulating expectations. The review gate then found a fourth (scenario 11) and the audit it triggered found a fifth (scenario 16); five in one slice is the calibration data point, not the exception |
+| DT5-13 | Guard G1 passes on arrival and carries a recorded falsification probe (a throwaway property reds it and nothing else). A guard nobody has seen fail is a guard on nothing |
+| DT5-14 | `AsSystemAdmin()` on the settings client is **inert** in this fixture (the harness host runs with authorization disabled) and is recorded as such rather than passed off as RBAC coverage. RBAC on these endpoints is `TeamsControllerAuthorizationTests`' job |
+| DT5-15 | Scenarios ship `[Ignore]`d so the tree stays green; DELIVER un-ignores them one at a time as the RED entry gate |
+| DT5-16 | **An absence assertion is vacuous unless something earlier in the same scenario proves the surface it reads is populated.** Applied as a sweep over every `Then` in the fixture (table under RED Classification): two needed a positive control added, five were already backed by an affirmative claim in the same scenario, and nothing else in the fixture asserts an absence. Seven of this slice's seventeen scenarios are `unbounded-preservation`, so the rule is load-bearing here rather than incidental |
+
+---
+
+## Wave: DISTILL / Handoff — slice 05
+
+**To**: `nw-software-crafter` (DELIVER).
+
+49 specifications — 29 red on assertions, 20 declared guards — all `[Ignore]`d. Un-ignore one at a time;
+each is one TDD cycle.
+
+Suggested order:
+
+1. **`FetchFingerprint.RegisteredProperties` + `PropertiesThatAlsoCostAFreshStart`, then guard G2.** Fill
+   the two registries from the guard's decision table. This is the SSOT the rest of the slice hangs off,
+   and doing it first means every later step has one place to point at.
+2. **`FetchFingerprint.For(queryOwner)` + storing it** — hash the registered set order-insensitively for
+   every collection, write it at the end of a successful cycle. **Scenario 8** is the order test and
+   **scenario 11** the upgrade case; both are red until this lands.
+3. **Scenario 1** — the walking skeleton: compare stored against computed, feed the answer into
+   `SyncModeResolver`'s existing `fetchShapeChanged` parameter at `WorkItemService.cs:122`.
+4. **Scenario 2 and the `reason=` token** — `SyncOutcome` has to carry it (or the updater has to derive
+   it), and `UpdateServiceBase.LogUpdateSummary` has to print it. Scenario 11's
+   `ThenTheOperatorIsNotToldConfigurationIsWhy` is what stops it being printed unconditionally.
+5. **Scenario 3 (8 cases), then 5, 6, 7** — the widened set, one property group at a time. 5, 6 and 7 are
+   the ones that fail if the fingerprint is built from what `PrepareQuery` is handed.
+6. **Scenarios 15 and 17, then 14 and 16** — narrow `WorkItemRelatedSettingsChanged` to a connection
+   change and give `PortfolioController.UpdatePortfolio` the equivalent it has never had. Do 15 and 17
+   (the *don't* purge half) before 14 and 16 (the *do* purge half): 14 passes today, so taking it first
+   would mean writing the narrowing against a test that cannot see it.
+7. **Scenarios 4 (10 cases), then 12 and 13** — the portfolio half of the fingerprint, then the
+   per-entity independence guards, which only guard once both halves exist.
+8. **Scenarios 9 (10 cases) and 10 (6 cases), last** — AC-5.3's free list, now against a fingerprint that
+   really could invalidate. Re-run them and read the result; they are vacuous until this point.
+9. **Guard G1** — un-ignore. It passes today; taking it in its own step records the transition in one
+   commit rather than letting it arrive silently.
+
+**Owed at slice close: a release-note line.** Narrowing the purge is a user-visible behaviour change —
+today a team query edit deletes that team's stored work items and their transition history, after this
+slice it does not. Recorded in `slices/slice-05-fetch-fingerprint.md` → *Behaviour change this slice
+ships*. The note itself belongs to whoever cuts the release; this is the flag that it is owed.
+
+Seven things not to re-derive:
+
+- **`SyncModeResolver` already has the parameter.** `Resolve(..., bool fetchShapeChanged)` already
+  returns `SyncMode.Full` when true. Fill the three call sites: `WorkItemService.cs:122`, `:799`, `:1022`.
+- **The precursor property and its migration already exist**, in both providers, additive and
+  expand-only. Do not generate a second one.
+- **`AllStates` is a `Union`.** A fingerprint built on it cannot see a state moving between columns.
+  Register the three columns separately; scenario 6 is what fails if you do not.
+- **`GetRawStatesForCategory` resolves a mapping by NAME from the category list.** That is why a mapping
+  rename is visible through the category list and a mapping *re-assignment* is not. Scenario 5 is the
+  re-assignment.
+- **The connection's `AdditionalFieldDefinitions` are invisible to the save-time consumer** — a settings
+  DTO carries none. Only the sync-time fingerprint can see that edit; do not try to detect it in the
+  controller.
+- **A connection change already purges on the team side** (`TeamController.UpdateTeam:178` →
+  `RemoveWorkItemsForTeam`, with a cascade on `WorkItemStateTransition.WorkItemId`). The work is to stop
+  it firing for the other four cases, and to give the portfolio the equivalent it has never had.
+- **`Create-Migration.ps1` needs Docker** (it starts a Postgres container), and any new column on `Teams`
+  or `Portfolios` needs a row in `TestHelpers/HistoricalSchemaPatch` or six migration tests go red for a
+  reason that has nothing to do with the change.

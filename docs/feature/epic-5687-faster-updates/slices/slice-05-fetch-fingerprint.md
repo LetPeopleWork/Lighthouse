@@ -41,6 +41,44 @@ everything else provokes no remote fetch at all.
   fingerprint is a boolean, deliberately.
 - Any UI.
 
+## Known limitation this slice does not close (found in DISTILL, 2026-08-11)
+
+**A blocked-rule edit does not re-open or close spells for records that did not move.** The slice's
+secondary learning hypothesis asked whether blocked rules belong in the fingerprint. By the hypothesis's
+own criterion they do not: `blockedItemService.IsBlocked(workItem, team)` reads the **stored** item, so
+re-deriving after a rule change needs no remote call at all — and AC-5.3 is right to leave the edit
+free.
+
+But the delta loop only visits *downloaded* items, so after a rule edit a quiet item's blocked spell is
+never re-evaluated until it next moves. The read path recomputes `IsBlocked` per request, so the UI is
+correct immediately; the `WorkItemBlockedTransition` / `FeatureBlockedTransition` history is not.
+
+**Its home is the ADR-141 / DDD-4 derivation pass** — the second pass over the stored set that already
+took staleness out of the fetch loop — **not the fingerprint.** Putting the rule in the fingerprint
+would buy a local derivation with a full remote download, which is the wrong instrument and would spend
+exactly the win AC-5.3 exists to protect. Recorded here so a reader of this brief does not have to find
+it in the feature-delta's upstream issues.
+
+## Behaviour change this slice ships (found in DISTILL, 2026-08-11)
+
+**Today, editing a Team's query, work item types, states or state mappings deletes every stored work
+item for that team and its whole transition history** (`TeamController.UpdateTeam:178` →
+`RemoveWorkItemsForTeam`, with a cascade on `WorkItemStateTransition.WorkItemId`). **After this slice it
+does not** — only a connection change does.
+
+This is user-visible and nobody wrote the current behaviour down, so nobody will notice it changed. What
+an admin gains: editing a query no longer costs the team's recorded flow history, so cycle-time and
+time-in-state numbers survive a settings correction that today silently resets them. What replaces the
+purge: `removed = stored − fetched` on the next full cycle, which is how the portfolio side has always
+reconciled the same edit without a purge.
+
+A connection change keeps the purge, and gains one on the portfolio side it never had — because the same
+reference id on a different tracker is a different item, and that is the one case set difference cannot
+reconcile.
+
+**Wants a release-note line at slice close.** Not written here: the note belongs to whoever cuts the
+release, and this is the flag that it is owed.
+
 ## Amendment 2026-08-09 — there is already a second answer to this question, and it disagrees
 
 Found while preparing slice 02. Read this before writing the fingerprint: **the "does this edit change
