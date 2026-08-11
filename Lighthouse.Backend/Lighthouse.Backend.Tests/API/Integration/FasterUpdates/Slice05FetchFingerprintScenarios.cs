@@ -101,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // The portfolio carries three fetch-shaping settings the team does not, and today it carries no
         // change detection at all - the asymmetry A2 says this slice resolves.
         [Test]
-        [Ignore(Pending)]
         [TestCaseSource(nameof(EveryPortfolioSettingThatChangesWhatIsFetched))]
         public async Task An_edit_to_a_fetch_shaping_portfolio_setting_makes_the_next_refresh_download_every_feature(PortfolioEdit edit)
         {
