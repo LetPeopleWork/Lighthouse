@@ -2274,3 +2274,199 @@ declarations* against this document and against the production files — it did 
 so it could not see that row 1's recorded observation was unattainable (the Given throws before the
 refresh). Reviewing a RED table is not the same as reading the run that produced it. For the next slice:
 the gate's evidence is the failure output itself, per scenario, and the reviewer should be handed it.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary — slice 02
+
+A Jira Cloud team refresh now runs in two phases. `WorkItemService.ResolveRemoteFetch` reads the
+`DeltaSync` optional feature **per update, in that update's own scope**, and — only if the operator
+volunteered — asks the connector to sweep. The sweep is the very JQL the full fetch issues, narrowed to
+`fields=updated` with `ExpandChangelog: false`, returning a `RemoteRecordStamp(ReferenceId, ChangedAt)`
+per record. `SyncModeResolver.Resolve` then decides the mode as a pure static of five inputs, and
+anything ambiguous — nobody opted in, the connector cannot be swept, the sweep threw, a stored record
+without a stamp, an empty store — returns `SyncMode.Full`. There is no partial mode.
+
+Under `SyncMode.Delta`, `FetchOnlyWhatMoved` compares each swept stamp against the stored
+`LastChangedRemote` (D12 — per record, no watermark) and downloads payloads through the new
+`GetWorkItemsForTeam(team, referenceIds)` overload for the moved set only, skipping the call entirely
+when that set is empty. `removed = stored − swept` is computed against the **swept** ids, never against
+the downloaded ones, so the delete rule (D2) is bit-for-bit what it was. The summary line slice 01
+shipped now carries real values: `mode=delta | scanned=3 | fetched=1`.
+
+Two things moved off the fetch loop, because the record that stops being fetched is exactly the record
+these care about (D10/D9): staleness is evaluated over `EverythingTheTeamStillHas(stored, synced,
+removed)`, and the rollup / forecast trigger fire on every cycle regardless of mode.
+
+`SupportsIncrementalSync(connection)` is per connection, not per class (ADR-139): Jira Cloud answers
+true, Data Center false, from one `JiraWorkTrackingConnector` that resolves deployment at runtime. The
+other four connectors answer false and throw from both new methods — signature-only changes until their
+own slices.
+
+---
+
+## Wave: DELIVER / [REF] Files Modified — slice 02
+
+**Production (new)**
+- `Models/RemoteRecordStamp.cs` — `sealed record (string ReferenceId, DateTime ChangedAt)`
+- `Services/Implementation/WorkItems/SyncModeResolver.cs` — the whole mode decision, pure static (DDD-5)
+
+**Production (extended)**
+- `Services/Implementation/WorkItems/WorkItemService.cs` — `ResolveRemoteFetch`, `ScanRemoteIdentities`,
+  `FetchEverything`, `FetchOnlyWhatMoved`, `RemoveItemsThatLeftTheQuery`, `CollectStalenessEvents` over
+  the stored set; the per-update optional-feature read
+- `…/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs` — `SupportsIncrementalSync`,
+  `SweepWorkItemsForTeam`, the by-reference-id `GetWorkItemsForTeam` overload, `SweepFields`,
+  `MaxCloudSearchPages` page cap
+- `Services/Interfaces/WorkTrackingConnectors/IWorkTrackingConnector.cs` — the three new members
+- `…/AzureDevOps/…`, `…/ServiceNow/…`, `…/Linear/…`, `…/Csv/CsvWorkTrackingConnector.cs` — probe returns
+  false, both new methods throw (S4136 forces the overload adjacent to its sibling — see Upstream Issues)
+- `Models/WorkItemBase.cs` — `LastChangedRemote`, copied explicitly in `Update(…)`
+- `Models/SyncOutcome.cs` — `DeltaSync(scanned, fetched)` factory
+- `Models/OptionalFeatures/OptionalFeatureKeys.cs` — `DeltaSyncKey`
+- `Services/Implementation/Seeding/OptionalFeatureSeeder.cs` — the first non-empty entry since all four
+  historical keys were deprecated: *Faster Updates*, `Enabled = false`, `IsPreview = true`
+- `Factories/IssueFactory.cs`, `…/Jira/Issue.cs` — read `updated` off the Jira payload as UTC
+
+**Migrations** — `AddLastChangedRemoteToWorkItems`, both providers, additive, generated via
+`CreateMigration` and shipped in the DISTILL commit (see DISTILL upstream issue: a model change without
+its migration reds 55 host-booting tests, and the acceptance tests do not catch it).
+
+**Tests (new)**
+- `API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs` + `…Specifications.cs` — 11 scenarios
+- `Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs` — AC-2.7, 2 tests
+- `Services/Implementation/WorkItems/SyncModeResolverTest.cs` — every branch of the resolver
+- `…/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs` — 17 tests over a recording
+  `HttpMessageHandler`: what the sweep asks Jira for and what the by-key fetch asks for
+- `TestHelpers/CapturedDomainEvents.cs`, `CapturedWorkItemWrites.cs`, `JiraConnectorTestSetup.cs`,
+  `WorkItemServiceTestBuilder.cs`
+
+**Docs / evidence**
+- `deliver/roadmap.json` (slice 01's archived as `roadmap-slice-01.json`), `deliver/execution-log.json`
+- `mutation/stryker.5725.backend.json`, `mutation/results.md`
+- `docs/settings/configuration.md` — the *Faster Updates* toggle, under Optional Features
+- `ARCHITECTURE.md` §3 — two-phase refresh, the per-connection probe, and what stays mode-independent
+
+---
+
+## Wave: DELIVER / [REF] Scenarios Green — slice 02
+
+**12 of 12** (11 driving-port scenarios + the AC-2.7 pair), zero skipped. Re-verified 2026-08-11:
+
+- `dotnet test --filter "TestCategory=epic-5687-faster-updates"` → `Failed: 0, Passed: 23, Skipped: 0`
+  (slice 01 + slice 02)
+- `dotnet test --filter "TestCategory=slice-02"` → `Failed: 0, Passed: 61, Skipped: 0` (scenarios plus the
+  resolver and Jira-transport unit tests)
+- Full suite → `Failed: 0, Passed: 4747, Skipped: 0, Total: 4747` in 2 m 53 s
+
+| # | Scenario | AC |
+|---|---|---|
+| 1 | `The_first_refresh_after_an_upgrade_downloads_everything_and_remembers_when_each_issue_last_changed` | AC-2.1 |
+| 2 | `A_later_refresh_downloads_only_the_issues_that_moved` | AC-2.2 (walking skeleton) |
+| 3 | `A_tracker_that_says_it_cannot_be_swept_is_not_scanned_even_after_an_operator_asked` | AC-2.2, D8 |
+| 4 | `An_issue_that_left_the_query_is_gone_from_the_team_on_the_very_next_cycle` | AC-2.3, D2 |
+| 5 | `An_issue_that_did_not_move_is_left_exactly_as_it_was` | AC-2.4 |
+| 6 | `An_issue_that_stopped_moving_still_goes_stale` | AC-2.5, D10 |
+| 7 | `A_refresh_whose_scan_fails_downloads_everything_rather_than_half` | AC-2.6, D8 |
+| 8 | `A_cheaper_refresh_still_rolls_up_remaining_work_and_still_asks_for_a_new_forecast` | AC-2.9, D9 |
+| 9 | `A_refresh_never_scans_unless_an_operator_asked_for_it` | AC-2.10, A1 |
+| 10 | `Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle` | AC-2.11, A1 |
+| 11 | `An_instance_that_never_asked_for_the_cheaper_refresh_does_not_get_it` | AC-2.12, A1 |
+| 12 | `Slice02RemoteChangeStampSurvivesUpdateTest` (×2) | AC-2.7, D6 |
+
+**AC-2.10 was re-run after AC-2.11 went green**, as DISTILL demanded: the roadmap ordered the gate
+(phase 03) *after* the ungated delta path (phase 02) precisely so that "no sweep was issued" stops being
+vacuously true. Step 03-03 is that re-run, and it entered RED.
+
+**AC-2.8 is not automated and is not measured** — the ≤10 %-of-requests target is a dogfood read against
+a real ≥1000-issue Jira Cloud project. See the slice verdict; it is the one thing still owed.
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates — slice 02
+
+| Gate | Outcome |
+|---|---|
+| 12 TDD steps across 4 phases, 3-phase canon | all RED → GREEN → COMMIT, 36 DES events logged in `deliver/execution-log.json` |
+| `dotnet build` | 0 warnings, 0 errors (`TreatWarningsAsErrors`) |
+| `dotnet test` | 4747 passed, 0 failed, 0 skipped (2026-08-11) |
+| Mutation — slice-02 changed lines | **80.00 %** (90 tested, 72 killed) — gate met |
+| Mutation — whole-file scope | 49.84 %, a Stryker.NET scoping artefact, not the verdict. Full triage in `mutation/results.md` |
+| Frontend gates | **N/A, because** slice 02 changes zero files under `Lighthouse.Frontend/` |
+| EF migration | `AddLastChangedRemoteToWorkItems`, expand-only, both providers, via `CreateMigration` |
+| SonarCloud | **no verdict recorded.** Checked 2026-08-11: the "Build And Deploy Lighthouse" runs covering the slice-02 commits sit in `waiting` (environment approval), so no gate result exists to read. `main` has taken six further commits since with no failure attributable to this slice, which is weaker evidence than a green gate and is recorded as such |
+| Adversarial DELIVER review | **not run.** The last recorded reviewer gate is Sentinel at DISTILL. Recorded rather than implied — no silent N/A |
+| ADO | Story #5725 **Closed**; Epic #5687 stays **Active**, six slices left |
+
+---
+
+## Wave: DELIVER / [REF] DoD Check — slice 02
+
+| # | Item | Verdict |
+|---|---|---|
+| 1 | All slice ACs pass as automated tests | ⚠️ 11 of 12. **AC-2.8 is deliberately manual** and still unmeasured |
+| 2 | `dotnet build` zero warnings, `dotnet test` green | ✅ |
+| 3 | Frontend gates | ✅ N/A, because zero frontend files changed |
+| 4 | Mutation ≥ 80 % on the changed backend surface | ✅ 80.00 % |
+| 5 | SonarCloud no new issues | ⏳ **unverified** — the covering CI runs are still `waiting`. See Quality Gates |
+| 6 | EF migration via `CreateMigration`, additive only | ✅ |
+| 7 | Docs updated per-feature | ✅ prose done; one screenshot outstanding — see the checklist below |
+| 8 | ADO story transitioned; pushed only after CI green | ⚠️ #5725 Closed and everything pushed, but the CI green it was closed against is not readable today (see item 5) |
+| 9 | Learning hypothesis has an explicit verdict | ⚠️ recorded in the slice brief: **confirmed in mechanism, premise measurement owed** (AC-2.8) |
+
+---
+
+## Wave: DELIVER / [REF] Per-Feature Checklist (slice 02)
+
+Every item answered explicitly — no silent N/A.
+
+| Item | Verdict |
+|---|---|
+| **Docs prose** | ✅ `docs/settings/configuration.md` gains *Faster Updates* under Optional Features: the two-phase behaviour in the operator's words, that removal is unchanged, that it is Jira Cloud today, that the toggle applies on the next update, and how to read `mode` / `scanned` / `fetched` off the log to see what it saved. It landed on the page that already owns Optional Features |
+| **Per-feature screenshots** | ⚠️ **outstanding.** `assets/settings/optionalfeatures.png` is now stale — until this slice the seeder returned an *empty* list (all four historical keys deprecated), so the screenshot shows a state no current instance has. It needs an `@screenshot` regeneration run; not done here because that run wipes the database and needs a premium licence seeded first |
+| **Demo data** | ✅ **N/A, because** the toggle is instance configuration seeded off, and delta changes only how a refresh fetches — no entity a demo dataset would have to carry, no seeded surface of its own |
+| **Website marketing surface** | ✅ **N/A, because** the feature ships dark: off by default, preview-flagged, Jira Cloud only, and its headline number (AC-2.8) is not measured yet. The marketing beat belongs at epic close, once delta is on by default |
+| **Lighthouse-Clients (CLI / MCP) versioning** | ✅ **N/A, because** no API contract changed. `git diff` over `API/` for the whole slice range is empty — the optional feature is a *row* read through the endpoints that already exist, not a new endpoint or DTO |
+| **Root `ARCHITECTURE.md`** | ✅ §3 now records the two-phase fetch, `SyncModeResolver` (ADR-138), the per-connection probe (ADR-139), that removal is a set difference against the swept set, and that time-driven derivations run over the stored set every cycle (ADR-141) |
+| **Evolution doc / workspace archive** | ⏸️ **deliberately deferred**, same reason as slice 01: this is slice 2 of 8 and slices 03-08 read these documents daily. Archive at epic close |
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues — slice 02
+
+1. **S4136 makes an overload's *position* a build error, across six files at once.** Adding
+   `GetWorkItemsForTeam(team, referenceIds)` anywhere other than immediately beside
+   `GetWorkItemsForTeam(team)` reds the interface and all five connectors simultaneously. Slice 03 adds
+   the Feature-side overloads and will hit it again — place them adjacent from the first edit.
+2. **A model change without its migration reds 55 tests, not zero.** Carried in from DISTILL and worth
+   repeating here because it cost a cycle: `Database.Migrate()` raises `PendingModelChangesWarning` as an
+   error, so every host-booting test fails while the acceptance suite (`EnsureCreated`) stays green.
+3. **The zero-moved-ids branch was invisible to the count assertions.** A delta cycle with nothing to
+   fetch still called the tracker with an empty key list; `fetched` was 0 either way, so AC-2.3 could not
+   see the wasted round trip — on precisely the cycle this epic exists to make cheap. Found by mutation,
+   fixed in `bc33f59f1`, and the lesson generalises: assert *no request was issued*, not that it came
+   back empty.
+4. **`DateTimeStyles.AssumeUniversal | AdjustToUniversal` is only killable off UTC.** Both stamp parse
+   sites end in `.UtcDateTime`, so on a UTC-configured CI runner the mutant is provably equivalent and no
+   test can kill it. Recorded in `mutation/results.md` rather than chased.
+
+---
+
+## Wave: DELIVER / [REF] Handoff — slice 02 → slice 03
+
+**To**: slice 03 (`#5726`, Jira Cloud portfolio delta).
+
+The contract exists and is proven on the team half. What slice 03 inherits, and what it must not assume:
+
+- `SyncModeResolver` is the single mode decision and is already gated. Slice 03 routes through it and adds
+  **no** new opt-in — the flag composes with the per-connector probe and nothing else.
+- `SweepWorkItemsForTeam` / `GetWorkItemsForTeam(team, ids)` are the team-side shape to copy for
+  `GetFeaturesForProject` and `GetParentFeaturesDetails`. The parent path is already a keyed query, so its
+  sweep is the same query with `fields=updated`.
+- **`fetchShapeChanged: false` is hard-coded** in `ResolveRemoteFetch`. That is slice 05's seam, and until
+  it lands a query edit is knowingly unprotected.
+- The Feature is not a leaf. `LastChangedRemote` on a Feature says the *Feature record* did not move
+  remotely — it says nothing about its children's rollup, which D9 requires to recompute every cycle
+  anyway. AC-3.5 is the assertion that catches confusing the two.
+- The parent key list must be derived from the **stored** set, not from what this cycle fetched, or delta
+  shrinks it and parents silently drop out.

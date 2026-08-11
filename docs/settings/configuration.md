@@ -69,6 +69,20 @@ Eventually, the Features in preview will be integrated into the regular function
 {: .recommendation}
 While preview features should be relatively stable, it can be that they will not work perfectly yet. If you enable them and encounter issues, please let us know about it. We're looking forward to your feedback!
 
+### Faster Updates
+
+Every update asks your work tracking system for the full details of every Work Item it finds, including the ones nobody has touched in weeks. On a large query that is most of the time an update spends, and most of the load Lighthouse puts on your tracker.
+
+Turn *Faster Updates* on and an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved.
+
+- **Nothing about your data changes.** The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update, exactly as before.
+- **It applies to Jira Cloud today.** Other connectors keep running the update they always have, whether the toggle is on or not — support is being added connector by connector.
+- **The toggle takes effect on the next update.** No restart.
+- **What each update did is in the log**: `Update completed | Team 'X' | mode=delta | scanned=250 | fetched=3 | …`. `scanned` is how much of the query was read, `fetched` how much was actually downloaded. Turn the toggle off and the same line reads `mode=full` with the two numbers equal — which is how you see for yourself what it is saving you.
+
+{: .note}
+This is preview scaffolding with a defined end. Once it has run against enough real instances it becomes the normal behaviour and the toggle goes away.
+
 If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
 
 ## Feature Order (Premium)

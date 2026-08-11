@@ -137,4 +137,34 @@ by `GetIssuesByQueryFromCloud`.
 
 ## Verdict
 
-_(recorded at slice close — confirmed / disproved, with the two summary lines)_
+**Confirmed in mechanism, with the premise measurement still owed.** Recorded 2026-08-11 at slice close.
+
+The contract holds: the two counts on the summary line diverge, and they diverge for the designed reason.
+A second cycle over three issues of which one moved reports `mode=delta | scanned=3 | fetched=1`, and the
+payload request carries exactly that one key. A cycle where nothing moved issues no payload request at
+all — not an empty one. `removed = stored − swept` is untouched: an issue that leaves the query is gone on
+the very next cycle (`scanned=2 | fetched=0`), delta or not. Slices 03/04/06/07/08 are applications of
+this contract, not redesigns.
+
+Against the three ways it could have failed:
+
+1. **"The scan is the cost" — not answered here.** Structurally the sweep is the same JQL with
+   `fields=updated` and `ExpandChangelog: false`, against a payload fetch that pages the changelog per
+   issue, so the shapes are not comparable in kind. But the epic's premise is a *ratio*, and a ratio is
+   read off a real project, not off a recording handler. **AC-2.8 remains unmeasured** — see below.
+2. **"`updated` is not trustworthy" — held, within reach of the harness.** AC-2.4 compares the whole
+   stored property surface plus the ordered transitions of an untouched issue, and additionally asserts
+   that such an issue never reaches the write path. Both green. What the harness cannot see is a Jira
+   change that moves the changelog without moving `updated`; if that class exists, it shows up as a
+   metric that stops moving on a real instance, which is the dogfood read's second job.
+3. **"Staleness cannot leave the fetch loop cheaply" — disproven, and cheaply.** `CollectStalenessEvents`
+   now runs over `EverythingTheTeamStillHas(stored, synced, removed)`. One phase-04 step, no new
+   repository query, no new index. D10 cost less than the slice budgeted for it.
+
+**Outstanding — AC-2.8, the dogfood read.** Point a team at the real Jira Cloud project (≥1000 issues),
+let one full cycle and one delta cycle run, and paste both slice-01 summary lines here. Until that
+number exists, the epic's headline claim rests on the shape of the requests rather than on their count.
+
+**Cost**: ~7h estimated, 12 TDD steps across 4 phases, all RED→GREEN→COMMIT (`deliver/execution-log.json`).
+The opt-in gate came in at its budgeted hour and on the resolver, exactly where the brief said it had to
+land to stay cheap.
