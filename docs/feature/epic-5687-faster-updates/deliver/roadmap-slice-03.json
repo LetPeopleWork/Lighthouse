@@ -1,0 +1,378 @@
+{
+  "roadmap": {
+    "project_id": "epic-5687-faster-updates",
+    "created_at": "2026-08-11",
+    "total_steps": 13,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-03-jira-cloud-portfolio-delta",
+    "ado": "Epic #5687 / Story #5726",
+    "goal": "A portfolio refresh enumerates the whole Feature query for identity plus the tracker's `updated` stamp and downloads full Feature payloads - and parent-Feature payloads - only for the Features whose stamp moved, so the saving slice 02 won on the team half is not handed straight back on the portfolio half. Removal keeps today's meaning, a Feature that did not move keeps its portfolio claim, its history and its blocked spell, and everything downstream of the fetch still recomputes every cycle (D9). Behind the same opt-in the team half already has - slice 03 adds no second gate."
+  },
+  "validation": {
+    "status": "self-checked - pending reviewer",
+    "reviewer": "orchestrator mechanical gate (self-applied); no reviewer dispatch has run against this file yet",
+    "reviewed_at": "2026-08-11",
+    "notes": "Mechanical gate: 12 steps, all ids match NN-NN, every step carries a test_file, a scenario_name and a non-empty files_to_modify, the dependency chain is strictly linear 01-01 -> 04-02, and no criterion names a private method. Decomposition: 12 steps over 10 distinct files = 1.20 (ceiling 2.5). Coverage - the slice-03 specifications are TWELVE, not fourteen (10 acceptance scenarios in Slice03JiraCloudPortfolioDeltaScenarios.cs, verified by counting [Test] attributes, plus the 2-case Slice03FeatureRemoteChangeStampSurvivesUpdateTest; DISTILL's own handoff says 'Twelve specifications'). Each is claimed exactly once: 11a+11b by 01-01, scenario 1 by 01-03, 2 by 02-01, 3 and 4 by 02-02, 5 by 02-03, 7 by 03-01, 6 by 03-02, 9 by 03-03, 8 by 04-01, 10 by 04-02. Ten scenario-claiming steps; two steps deliberately claim none - 01-02 (widening SyncModeResolver to WorkItemBase, DISTILL upstream issue 2, a production change with its own unit tests and no AT that can see it) and 03-04 (the Jira Cloud adapter, which DISTILL's Adapter Coverage records as faked by policy, so a green AT suite is not evidence it works). AC-3.5's dogfood read is in out_of_scope, never a step. Two sequencing arguments are load-bearing and both diverge from DISTILL's suggested order on purpose. (1) The `Portfolio.UpdateFeatures` hazard: `RefreshFeatures` rebuilds the portfolio from what the tracker returned, `UpdateFeatures` is Clear+AddRange, and the updater's own finally runs `IOrphanedFeatureCleanupService.CleanupAsync` which hard-DELETEs `!IsParentFeature && !Portfolios.Any()`, with `SweepDepartedFeatureSpells` closing the open blocked spells on the way. DISTILL suggested shipping the skeleton (scenario 2) first and scenarios 3/4 'immediately after'; that still leaves one commit in which delta is live for the portfolio and the guards are not asserted. This roadmap instead lands 01-03 - the portfolio's Feature set rebuilt from the ids the query still returns, resolved against storage - while every cycle is STILL mode=full, where the change is behaviour-preserving by construction. After 01-03 there is no code path left that can hand `UpdateFeatures` the downloaded list, so no commit exists in which the delete is representable. Scenario 1 is that step's full-path regression net; 02-02 then supplies the falsification. (2) Scenario 10 is un-ignored LAST (04-02): DISTILL classified it GUARD_NOT_YET_FALSIFIABLE - with nothing scanning at all, 'no Feature scan was issued' is true for the trivial reason - and named scenario 2 as its positive control, exactly as slice 02 sequenced AC-2.10 after AC-2.11. Note on the test-paradigm mandate: none is emitted. Per DISTILL's slice-03 Scenario List the C#/NUnit row of the polyglot matrix governs (example-based, no Hypothesis, no state-delta Universe), which is also why slice 02's roadmap carries none."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5687-faster-updates/feature-delta.md",
+    "slice_brief": "docs/feature/epic-5687-faster-updates/slices/slice-03-jira-cloud-portfolio-delta.md",
+    "amendments": "docs/feature/epic-5687-faster-updates/feature-delta.md - Wave: DELIVER / Post-slice-01 Amendments (A1 governs this slice, A2 is slice 05 context) and Wave: DELIVER / Handoff - slice 02 -> slice 03",
+    "prior_slice_roadmap": "docs/feature/epic-5687-faster-updates/deliver/roadmap-slice-02.json",
+    "ci_ledger": "docs/ci-learnings.md",
+    "scenarios": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Slice03FeatureRemoteChangeStampSurvivesUpdateTest.cs"
+    ]
+  },
+  "out_of_scope": [
+    "Any new EF migration (DT3-1). `Feature : WorkItemBase`, and slice 02's `20260810061716_AddLastChangedRemoteToWorkItems` (SQLite) and its Postgres twin already added `LastChangedRemote` to BOTH the `WorkItems` and the `Features` tables in the same `Up`. The slice brief's IN-scope line 'LastChangedRemote on the Feature (additive, expand-only, same migration pattern as slice 02)' and its ~0.5h effort line are already satisfied and are the one thing in the brief that is wrong. Do NOT run `Create-Migration.ps1` in this slice - if a step thinks it needs a model change, STOP and flag it rather than adding one quietly",
+    "Any new opt-in, any new seeder entry, any new gate (DT3-5). `OptionalFeatureKeys.DeltaSyncKey` is seeded and read already; the portfolio half composes with the same option and the same per-connection probe. The Settings write side and the Optional Features screen are untouched",
+    "A fourth port member (DT3-2). The port gains three: `SweepFeaturesForPortfolio`, `GetFeaturesForProject(Portfolio, referenceIds)` and `SweepParentFeatures`. The parent path's phase 2 is the EXISTING `GetParentFeaturesDetails` called with a shorter key list - a second overload would be dead surface on five connectors",
+    "The fetch fingerprint (slice 05). `fetchShapeChanged: false` stays hard-coded on the portfolio path exactly as it is on the team path; a query edit is knowingly unprotected until slice 05 lands. Do not invent the property set here - A2 records that it already exists twice and the two copies disagree",
+    "Jira Data Center (slice 04). `SupportsIncrementalSync` stays false for DC until OQ-1 is settled (whether DC offset pagination returns a STABLE id set, not merely a duplicated one - an unstable one turns `removed = stored - swept` into a deletion of live Features)",
+    "ADO, ServiceNow and Linear connectors (slices 06-08). Their probes stay false and all three new members keep throwing `NotSupportedException`",
+    "CSV - permanently out of scope (D11). Its probe returns false forever and there is no remote call to save",
+    "Any UI (D4). The observable surface is the portfolio's one summary line; Epic #5511 owns the richer view",
+    "A write-recording decorator on the Feature side (DT3-8). Slice 02 needed `WriteRecordingWorkItemRepository` because for an unmoved work item 'never written' and 'rewritten with what it already said' are value-identical. The portfolio-side hazard is a dropped claim followed by a delete, which `TheFeaturesInThePortfolio(...)` and `TheStoredFeature(...)` see directly. Recorded so the asymmetry is not read as an oversight",
+    "AC-3.5's dogfood measurement is NOT automated and is NOT a step. 'Run a portfolio over the real Jira Cloud project through one full cycle and one delta cycle, then confirm the portfolio's forecast dates are identical across the two. Same day.' That is the premise check for D9 and it needs a real project with real child work - a portfolio whose Features are all synthetic proves the plumbing and none of the rollup risk. It goes in the Verdict section of the slice brief, alongside slice 02's still-owed AC-2.8 reading (<=10% of a full cycle's remote requests). Post-delivery pre-requisite, owned by the maintainer",
+    "Extracting the team-half and portfolio-half two-phase fetches into one shared routine. They are structurally similar over two sibling types under `WorkItemBase`, and merging them inside the destructive slice would put a refactor of the shipped team path in the same commit as the new portfolio path. Recorded as a candidate for a follow-up refactor commit once slice 03 is green, not as work in it"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Before the portfolio may be told to fetch less",
+      "description": "Three preconditions, all landed while every cycle is still `mode=full`. The middle one is the reason this phase exists rather than being folded into the skeleton. `RefreshFeatures` rebuilds the portfolio from what the tracker returned - `portfolio.UpdateFeatures(featureOrdering.Order(features))`, and `Portfolio.UpdateFeatures` is `Features.Clear()` + `AddRange`. Under delta that list holds ONLY the Features that moved, so every unchanged Feature loses its portfolio claim; `IOrphanedFeatureCleanupService.CleanupAsync`, which the updater runs in its own `finally`, then hard-DELETEs `!IsParentFeature && !Portfolios.Any()`, and `SweepDepartedFeatureSpells` closes its open blocked spells on the way. That is data loss on a green sync. So the portfolio's Feature set stops depending on what was downloaded FIRST (01-03), while delta is still off and the change is behaviour-preserving by construction - and only then is delta switched on (phase 02). There is deliberately no commit in this roadmap in which delta is live for the portfolio and the claim still comes from the download: the hazard is sequenced out of existence rather than tested around.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The Feature keeps the stamp through its own copy path",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Slice03FeatureRemoteChangeStampSurvivesUpdateTest.cs",
+          "scenario_name": "A_feature_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed + A_feature_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed",
+          "criteria": [
+            "`stored.Update(incoming)` leaves the stored Feature carrying the incoming remote change stamp",
+            "A Feature constructed from what the tracker returned carries the stamp into the copy",
+            "Both specifications run un-ignored in the tree, in the same commit",
+            "No production change is made unless one of them is red, and no model change - therefore no migration"
+          ],
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Slice03FeatureRemoteChangeStampSurvivesUpdateTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs"
+          ],
+          "implementation_notes": "AC-3.1 / D6 / DT3-10. These are GUARDS, not reds, and DISTILL recorded them as such rather than passing them off: `Feature.Update(...)` calls `base.Update(feature)` (`Models/Feature.cs:200`) and slice 02's one line lives in `WorkItemBase.Update` (`Models/WorkItemBase.cs:154`), so the Feature side inherited the behaviour. Expect both to pass on the first run. They still ship, and they ship FIRST, because `Feature.Update` is its own method - it adds `EstimatedSize` and `OwningTeam` on top of the base call - and a future edit that stops delegating would degrade every later portfolio cycle to a full download with every other test in the suite still green. `Models/Feature.cs` is listed as where a fix would land, not as a promise of an edit. Do not 'improve' `Feature.Update` while you are in there: `CurrentStateEnteredAt` is deliberately not copied (it is re-derived from transitions in `SyncFeatureStateTransitions`) and copying it would break the transition tests. Do NOT run `Create-Migration.ps1` - `LastChangedRemote` is already on the `Features` table in both providers from slice 02's `AddLastChangedRemoteToWorkItems`. Record the run in the commit message so the green-off-shipped-code transition is visible rather than arriving silently with a later test-infrastructure change. Preflight (mandatory block at the head of docs/ci-learnings.md): `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` before pushing, and union `git diff --name-only` with `git status --porcelain` when filtering the log - a brand-new file is invisible to `git diff` and its findings sit unread."
+        },
+        {
+          "id": "01-02",
+          "name": "The one mode decision can be asked about Features",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/SyncModeResolverTest.cs",
+          "scenario_name": "SyncModeResolver answers for stored Features as well as stored work items (no acceptance scenario - no AT can see the resolver, DISTILL upstream issue 2)",
+          "criteria": [
+            "`SyncModeResolver.Resolve` accepts a collection of stored `WorkItemBase`, so a portfolio's stored Features reach the single mode decision (DDD-5)",
+            "Every branch answers identically for stored Features as for stored work items: nothing stored resolves to Full, any stored record without a remote change stamp resolves to Full, otherwise Delta",
+            "The resolver stays a pure static with no constructor and no dependency, and its parameter list does not grow",
+            "The team path's existing call site compiles unchanged and every existing resolver test stays green untouched"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/SyncModeResolverTest.cs"
+          ],
+          "implementation_notes": "DISTILL upstream issue 2, and DISTILL deliberately did NOT scaffold it: `Resolve(..., IReadOnlyCollection<WorkItem> storedWorkItems, ...)` cannot be handed a list of stored Features, because `Feature : WorkItemBase` is a SIBLING of `WorkItem`, not a subtype of it. Widen the parameter to `IReadOnlyCollection<WorkItemBase>` - the only property the resolver reads, `LastChangedRemote`, lives on the base. One correction to DISTILL's framing, which called this 'a production change with a behaviour consequence': `IReadOnlyCollection<out T>` is covariant, so `List<WorkItem>` still binds and `WorkItemService.ResolveRemoteFetch` needs no edit at all. The consequence is nil; the content of this step is the new Feature-shaped cases, which is exactly why it gets a step of its own rather than being smuggled into the skeleton. Do NOT add a Feature-specific overload or a second resolver - DDD-5 is that there is ONE mode decision, and two would be two. Do not add branches either: the fingerprint branch stays slice 05's stub that never fires, and `fetchShapeChanged: false` stays hard-coded at both call sites. Add the Feature cases to `SyncModeResolverTest.cs` alongside the six branches slice 02 wrote there. Remember what 'never swept' collapses to in this epic - there is no per-entity 'has this ever been swept' column and there will not be one before slice 05, so it is exactly 'nothing stored, or any stored record has a null stamp'; that rule is what makes scenario 1 (an upgraded instance whose Features are stored without stamps) resolve to Full. Preflight the analyzer sweep as in 01-01; a signature change on a static is a classic CA1859/CA1002 trigger surface."
+        },
+        {
+          "id": "01-03",
+          "name": "The portfolio's Feature set stops being whatever the cycle downloaded",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "The_first_portfolio_refresh_downloads_every_feature_and_remembers_when_each_one_last_changed",
+          "criteria": [
+            "The portfolio's Feature set is rebuilt from the reference ids the query still returns, resolved against storage - never from the list of payloads this cycle downloaded",
+            "The departed-blocked-spell sweep is handed that same set",
+            "A first full refresh still downloads the whole Feature query once, stores all three Features, stamps each one with what the tracker says, and reports mode Full with 3 scanned / 3 fetched",
+            "A Feature that left the query still loses its claim and is still deleted by the cleanup pass - the existing portfolio suite stays green",
+            "`portfolio.UpdateFeatures(...)` keeps its single production call site, and `Portfolio.UpdateFeatures` itself is unchanged"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "THE structural step of this slice - DT3-6 and DISTILL upstream issue 1, which correct the slice brief. The brief treats removal-by-set-difference as the portfolio-side risk; it is not. Removal already works and needs no new mechanism, because `RefreshFeatures` never deletes anything - a Feature leaves by dropping out of `portfolio.Features`. The hazard is the same line seen from the other side: `portfolio.UpdateFeatures(featureOrdering.Order(features))` at WorkItemService.cs:725 is fed the list built from what the tracker returned, `UpdateFeatures` is `Features.Clear()` + `AddRange`, `IOrphanedFeatureCleanupService.CleanupAsync` is `db.Features.Where(f => !f.IsParentFeature && !f.Portfolios.Any()).ExecuteDeleteAsync(...)` and runs in the updater's own `finally`, and `SweepDepartedFeatureSpells(portfolio, features)` closes the open spells of every Feature missing from that same list. Under delta that is a hard delete of every quiet Feature plus a rewritten blocked-time history. Copy the shape the team path already proved: `RemoteFetch(List<WorkItem> WorkItems, HashSet<string> StillOnTheTracker, SyncOutcome Outcome)` at WorkItemService.cs:170. Introduce the Feature-side equivalent now, with ONLY the full-mode producer implemented - in full mode 'still on the tracker' is exactly the set of downloaded ids, so the survivor list is element-for-element what it is today and nothing observable changes. Be honest about what that means: NO full-mode test can falsify this step. Its value is structural - after it there is no expression left that hands `UpdateFeatures` the download - and its falsification lives at 02-02, where scenarios 3 and 4 go red the moment the fetched list is fed back in. Two details the delta step depends on, both cheaper to get right here. (a) Resolve survivors by reference id through `featureRepository`, NOT out of `portfolio.Features`: a Feature can be stored and stamped by ANOTHER portfolio's cycle and still be new to this one, and a lookup scoped to the current portfolio would never claim it (see 03-02 - no scenario covers that case). (b) The path that adds the portfolio to a Feature must run for survivors as well as for downloaded payloads, or a survivor is in the list and still not claimed. Do NOT build a new orchestrator (DDD-6): extend `RefreshFeatures` in place, the same way slice 02 extended `RefreshWorkItems`. Do NOT change `Portfolio.UpdateFeatures` - Clear+AddRange is correct for a collection that is being told its whole membership; what was wrong was the argument. Scenario 1 is GREEN off shipped code (declared in the RED classification) and passes before and after: it is the full-path regression net for this restructure, and framing it as the upgrade case - two of the three Features seeded already stored WITHOUT a stamp - is what makes it capable of failing at all. Preflight the analyzer sweep."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The two-phase Feature fetch",
+      "description": "Delta for the portfolio's own Feature query, landing on top of 01-03's survivor plumbing. Unlike slice 02 there is nothing to ship ungated first: DT3-5 says slice 03 adds NO second opt-in, so the portfolio path consults the same `DeltaSync` option and the same per-connection probe from its first line - `TheOperatorAskedForTheCheaperRefresh()` already exists in `WorkItemService` and is read per update inside that update's own scope. The removal rule (scenario 5) lands immediately after the skeleton and BEFORE the real Jira sweep exists (03-04), so the destructive rule is proven against a deterministic double first - the same reasoning slice 02 used, for the same reason: it is the one failure in this epic a user cannot undo.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "01"
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A later portfolio refresh downloads only the Features that moved",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_later_portfolio_refresh_downloads_only_the_features_that_moved",
+          "criteria": [
+            "A cycle whose stored Features are complete and stamped issues exactly one Feature sweep and zero whole-query downloads",
+            "Exactly one by-reference-id request is issued, naming only the Features whose swept stamp differs from the stored one (D12, per Feature, no watermark)",
+            "The refresh records mode Delta with 3 scanned / 1 fetched, and the operator's summary line reads `mode=delta | scanned=3 | fetched=1`",
+            "The mode is decided by the one resolver from the Features the portfolio already stores, and the opt-in is consulted before the tracker is approached at all",
+            "Nothing is scanned when the connector's per-connection probe says this connection cannot be swept"
+          ],
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.1 / AC-3.6, the walking skeleton and the second half of what the epic is buying. Mirror `ResolveRemoteFetch` (WorkItemService.cs:109-127) for the portfolio: read the option, probe the connection, sweep, resolve, then either fetch the moved payloads or fetch everything. Do NOT merge the team and portfolio versions into one generic routine in this commit - `WorkItem` and `Feature` are sibling types and the team path is shipped and proven; a premature merge would put a refactor of live code in the destructive slice's first commit. It is recorded in out_of_scope as a follow-up. Resolver input is the portfolio's STORED Features, read BEFORE `UpdateFeatures` clears them - `portfolio.Features` is the collection, and the resolver's rule ('nothing stored, or any stored record without a stamp, resolves to Full') is what makes the upgrade case in scenario 1 behave. Counts: `SyncOutcome.DeltaSync(recordsScanned, recordsFetched)` already exists (Models/SyncOutcome.cs) - scanned is the size of the deduplicated sweep result, fetched is the number of payloads actually downloaded; do not construct the record inline. Reuse the collapse rule rather than writing a second one: `DeduplicateByReferenceId` exists BECAUSE of the Jira DC duplicate hazard (ci-learnings 2026-05-25) and currently takes a `Team` only to name its warning - widen the label, keep one collapse rule and one warning format. Only downloaded payloads may enter the per-Feature loop: `AddOrUpdateFeature`, `SyncFeatureStateTransitions` and the pre-sync blocked verdict read all write or re-derive, and an unmoved Feature that enters that loop is exactly what scenarios 3 and 4 forbid. When the moved set is empty, do not call the by-reference-id fetch at all - the harness records EVERY call (`FeaturePayloadDownloads`), and scenario 6 asserts zero. `fetchShapeChanged: false` stays hard-coded (slice 05's seam). Structured logging only - message-template placeholders, never interpolation. The connector stays faked here; the real Jira sweep is 03-04, so a green run of this scenario is not yet evidence that a real instance would take the cheap path."
+        },
+        {
+          "id": "02-02",
+          "name": "A Feature that did not move keeps its place, its history and its blocked spell",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_feature_that_did_not_move_is_still_part_of_the_portfolio_after_a_cheaper_refresh + A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was",
+          "criteria": [
+            "After a delta cycle the portfolio still holds all three Features, and the untouched one is still stored - not deleted by the cleanup pass the updater runs",
+            "The untouched Feature's ordered transition history is identical to what it was before the cycle",
+            "No Feature is declared unblocked merely because it was not refetched, and the Feature that was already blocked still has an open spell in the portfolio",
+            "Both are measured across a cycle that genuinely ran delta (mode Delta, 3 scanned, 1 fetched)"
+          ],
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.2 / AC-3.3, contract shape `unbounded-preservation` - this is the pair that fails if `UpdateFeatures` and `SweepDepartedFeatureSpells` are fed the fetched list, which is the natural first implementation and the one failure in this slice a user cannot undo. If 01-03 and 02-01 are right these are GREEN when un-ignored, and that is the intended outcome of sequencing the survivor plumbing first, not a sign the step is empty. Run them; if green, record the run in the commit message rather than inventing work - but PROVE the guard can fail before you do: temporarily pass the downloaded list to the portfolio rebuild, confirm scenario 3 goes red on membership and scenario 4 goes red on the unblocked event, restore, confirm green. `if (false)` is not available as a probe - `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error (ledger). If they are red, the two likeliest shapes are (a) the survivor set is being intersected with what was downloaded somewhere downstream, or (b) the departed-spell sweep is still receiving the per-cycle fetched list. `IOrphanedFeatureCleanupService` is deliberately NOT faked in these scenarios (DT3-7): it is what turns 'dropped from the portfolio' into 'deleted from the database', so `ThenTheUntouchedFeatureIsStillStored` is a claim about the user's data and not about an in-memory collection. `FeatureUnblocked` is observed on the real dispatcher through a recording handler registered ALONGSIDE the production handler (which persists the close), and scenario 4 asserts both the event and the spell on purpose - a future refactor could move the close off the bus and the spell assertion would still hold the line. Second, independent witness of the same defect (DISTILL upstream issue 3): `RefreshLog.ItemCount` for a portfolio update is `project.Features.Count`, read by `PortfolioUpdater` after the update returns, so under a naive delta it collapses to the moved count too. No scenario asserts it - expect it to move if the defect is present."
+        },
+        {
+          "id": "02-03",
+          "name": "A Feature that left the query is gone from the portfolio on the very next cycle",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_feature_that_left_the_query_is_gone_from_the_portfolio_on_the_very_next_cycle",
+          "criteria": [
+            "Under delta a Feature leaves the portfolio when its reference id is absent from the SWEPT set - an exact set difference over what the scan enumerated, never over what was downloaded",
+            "The departed Feature is gone from the portfolio and the two that remain survive the same cycle",
+            "The cycle reports mode Delta, 2 scanned, 0 fetched - a cycle that removes something downloads nothing",
+            "The difference is taken over the deduplicated sweep result, so a duplicated id cannot look like an absent one"
+          ],
+          "deps": [
+            "02-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.2 / D2 - the rule whose failure is irreversible, and the reason the whole epic chose the two-phase design over the cheaper `updated >= lastSync` alternatives. On the portfolio side 'removed' is not a call to a remove method: it is the absence of a claim in the rebuilt set, plus `IOrphanedFeatureCleanupService` deleting what no portfolio claims any more. That is the correction DISTILL made to the brief (upstream issue 1), and it means this step is really an assertion about the SAME survivor expression 01-03 introduced - the departed id simply is not in the swept set. Land it here, before 03-04 gives Jira Cloud a real sweep, so the destructive rule is proven against a deterministic double first: a real sweep that loses a page would otherwise delete live Features on someone's instance. Note the count assertion - 2 scanned / 0 fetched: a cycle that removes an item downloads nothing, which is only true if the diff is computed from stamps and not from payloads. Mutation testing will come for the set operator; keep the difference in ONE expression so a survivor mutant is obvious. Do not add a parent-side removal rule: parent Features are excluded from the cleanup (`!f.IsParentFeature`) and `RefreshParentFeatures` removes nothing - see 03-01, where an id missing from the parent sweep means the opposite of what it means here."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "The parent path, the shared Feature, the failed scan, and the real tracker",
+      "description": "Everything else the portfolio half owes before the two closing guards. The parent path is the slice brief's second named failure mode - `RefreshParentFeatures` derives its key list from `project.Features`, the STORED set, which is the safe source and is safe ONLY while phase 01's survivor plumbing holds; scenario 7 asserts the mitigation directly. The Jira Cloud adapter lands last in this phase because no acceptance test can see it: the port is faked by policy, so a fully green AT suite proves the service and says nothing about whether a real instance ever takes the cheap path.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "02"
+      ],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The parent Features survive a cycle in which no child Feature moved",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "The_parent_features_survive_a_cycle_in_which_no_child_feature_moved",
+          "criteria": [
+            "A quiet cycle issues exactly one parent scan, over the parent keys the portfolio STORES",
+            "No parent payload is downloaded when no parent moved - the keyed phase-2 query is not issued at all, not issued with an empty key list",
+            "The parent stays stored, still marked as a parent, and still carries the stamp the tracker reports for it",
+            "The parent sweep contributes nothing to the refresh's counts - 2 scanned / 0 fetched are the child Feature numbers",
+            "A parent key the scan did not answer for is downloaded rather than skipped"
+          ],
+          "deps": [
+            "02-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.1, the parent half, and the slice brief's failure mode 2. DT3-2: phase 2 here is the EXISTING `GetParentFeaturesDetails(portfolio, parentFeatureIds)` called with a shorter key list - do NOT add a fourth port member, it would be dead surface on five connectors. The key list comes from `project.Features` (WorkItemService.cs:841), the stored set, which is the safe source and is safe only because phase 01 keeps that collection whole; derived from what this cycle fetched it shrinks to nothing on a quiet cycle and the parents drop out with nothing else noticing. The parent mode routes through the same resolver (DDD-5), over the STORED PARENTS resolved by reference id - parents are not members of `portfolio.Features`, so do not reuse the child collection as the resolver input. One asymmetry to write a comment about at the seam, because it inverts 02-03's rule: the parent path removes nothing (parents are excluded from the orphan cleanup by `!f.IsParentFeature`), so a stored parent whose id the sweep did not answer for must be DOWNLOADED, never treated as departed. Counts: the summary line is one line per update and its numbers are the Feature half's; scenario 7 asserts 2 scanned / 0 fetched with a parent scan in flight, so the parent sweep must not be added into `SyncOutcome`. Gate and probe first, exactly as the Feature half does - a cycle nobody volunteered for must not sweep parents either, even though scenario 10 only counts Feature scans. The harness records the keys of BOTH parent phases (`ParentFeatureScans`, `ParentFeatureDownloads`), which is what catches a key list built from the wrong source. Assertion order is deliberate (DT3-11): scenario 7's headline red is 'ParentFeatureScans is empty', not 'mode Full' - do not reorder it."
+        },
+        {
+          "id": "03-02",
+          "name": "A Feature shared by two portfolios is downloaded once and shown in both",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both",
+          "criteria": [
+            "A Feature two portfolios claim is one stored record carrying one stamp: the second portfolio's cycle finds it current and issues zero by-reference-id requests",
+            "The second portfolio still holds all three Features after its cheaper cycle",
+            "Both portfolios show the Feature in the state the tracker now reports",
+            "The second cycle reports mode Delta, 3 scanned, 0 fetched"
+          ],
+          "deps": [
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.4, the cross-portfolio proof. Nothing new should be needed if 01-03 and 02-01 are right - the stamp lives on the shared Feature row, so the first portfolio's cycle updates it and the second portfolio's sweep correctly finds nothing to download. The scenario runs two refreshes back to back and the harness resets the call counters per update (`ForgetWhatTheTrackerWasAsked` runs inside the trigger), so every assertion is about the SECOND cycle. Files are listed as where a fix would land, not as a promise of edits. The gap this scenario does NOT cover, and the reason 01-03 insists survivors are resolved by reference id through the Feature repository rather than out of `portfolio.Features`: a Feature already stored AND stamped by another portfolio that enters THIS portfolio's query without its stamp moving would never be downloaded, and a portfolio-scoped survivor lookup would never claim it - the Feature would be silently missing from the second portfolio until it next changed remotely. Every scenario in this fixture would still pass, because both portfolios here are pre-refreshed over the same three Features. Slice 05's fetch fingerprint covers the sub-case where the portfolio's own query text changed; it does not cover the case where the tracker moves a Feature into an unchanged query without touching `updated`. Resolving survivors by reference id and running the claim-adding path for them closes it at zero cost - keep it that way and do not 'simplify' the lookup to the current portfolio's collection."
+        },
+        {
+          "id": "03-03",
+          "name": "A portfolio refresh whose scan fails downloads every Feature rather than half",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_portfolio_refresh_whose_scan_fails_downloads_every_feature_rather_than_half",
+          "criteria": [
+            "A Feature sweep that throws falls back to one whole-query download in the same cycle - never a partial result, never a skipped cycle",
+            "The cycle reports mode Full with 3 scanned / 3 fetched, and Success is true - resolving one's own ambiguity is a successful refresh, not a failed one",
+            "Nothing is removed: all three Features survive",
+            "Exactly one Warning-or-above line carries the underlying failure's message"
+          ],
+          "deps": [
+            "03-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.1 / D8 - there is no partial mode; anything ambiguous resolves to full, because the expensive answer is always the safe one. Mirror `ScanRemoteIdentities` (WorkItemService.cs:184-210): scope the catch to the SWEEP call only. A failure in the by-reference-id fetch is a different animal and keeps today's behaviour (the update fails and slice 01's summary line reports success=false). DISTILL declared this assertion set partially vacuous and accepted it: the first three assertions hold today only because nothing scans, and they become meaningful the moment 02-01 has landed - the genuinely red one is the fourth. `ThenTheOperatorIsToldTheScanFailed` matches with `Has.One.Contains(...)` over `CapturedLogs.AtOrAbove(Warning)` - EXACTLY ONE line, so log the failure once. `CapturedLogMessages.Emit` appends `:: <ExceptionType>: <Message>` to the rendered message when an exception is attached, so `logger.LogWarning(exception, template)` puts the text in reach without interpolating it into the template and printing it twice. Do not also rethrow-and-log higher up: S2139 is in the ledger and a second line would fail `Has.One` regardless of Sonar. The fallback must re-issue the WHOLE query and must NOT merge whatever the sweep managed to return before it threw - a half-enumerated sweep feeding the removal rule is exactly the data-loss path 02-03 exists to prevent. Context from DISTILL upstream issue 4, so nobody tightens the wrong thing: every scenario in this fixture except the D9 one seeds a portfolio with no team, and `AssignExtrapolatedWorkToTeams` logs 'No teams available for extrapolation of feature {X} in portfolio {Y}' at Warning once per Feature - so the operator-visible Warning stream on a portfolio cycle already carries three lines. The assertion selects by fragment, not by count; do not convert it into a line-budget assertion the way AC-1.7 does over a team cycle."
+        },
+        {
+          "id": "03-04",
+          "name": "Jira Cloud actually sweeps Features and actually fetches them by key",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs",
+          "scenario_name": "The Jira Cloud adapter implements the Feature sweep, the by-reference-id Feature fetch and the parent sweep (no acceptance scenario - the port is faked by policy)",
+          "criteria": [
+            "`SweepFeaturesForPortfolio` issues the same JQL the whole Feature query issues, asks for identity plus the change stamp only, and pages the entire result set - a rejected page throws rather than returning a short answer",
+            "`GetFeaturesForProject(portfolio, referenceIds)` fetches full payloads - fields and changelog - for the named keys only, chunked the way the by-key work-item fetch is",
+            "`SweepParentFeatures` sweeps the same keyed query the parent detail fetch issues, chunked the same way",
+            "All three answer only for a Jira Cloud connection; a Data Center connection still refuses",
+            "The other four connectors are untouched: probe false, all three members still throw"
+          ],
+          "deps": [
+            "03-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs"
+          ],
+          "implementation_notes": "DT3-3: DISTILL made all five connectors throw from all three new members, Jira included; DELIVER flips JIRA CLOUD ONLY. DC stays refused until slice 04 settles OQ-1 - DC offset pagination over an unordered JQL is the documented source of duplicate ReferenceIds, and an UNSTABLE id set (not merely a duplicated one) turns `removed = stored - swept` into a deletion of live Features. Everything needed already exists from slice 02 - reuse it, do not write a second copy: `SweepFields` (`\"key,updated\"`, line 38), `CloudSearchRequest` (line 1425), `WalkCloudSearchPages` (line 1432), `ReadStamp` (line 115), `PrepareIssueKeyQuery` (line 1478), `ReferenceIdsPerQuery` (200, line 42), and `SupportsIncrementalSync` (line 68, resolved from the deployment already cached on the connection so the non-async port member never blocks on a round trip). The Feature-side query is `PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays)` - verbatim, the same expression `GetFeaturesForProject(Portfolio)` uses at line 259, or D2 stops holding. Do NOT route a sweep through `GetIssuesByQuery`: that asks for `*all` plus `expand=changelog`, which is precisely the download this slice exists to avoid. Nothing to map on the payload side - `CreateWorkItemFromJiraIssue` already sets `LastChangedRemote = issue.Updated` (line 1248) and `CreateFeaturesFromIssues` goes through it (line 942), so both phase-2 Feature paths stamp what they return; VERIFY that in the test rather than re-adding the mapping. Parse the sweep's stamp with the existing `ReadStamp` - two different parses of the same string would make D12's per-item comparison report every Feature as moved forever, and a record whose stamp is unreadable must still appear in the sweep result (leaving it out places it in `stored - swept` and deletes it, where an unmatchable stamp merely re-downloads it). S4136 is error-severity here and reds the interface and all five connectors at once (ci-learnings 2026-08-10, the ledger entry slice 02 wrote FOR this slice): the by-reference-id overload already sits immediately beside `GetFeaturesForProject(Portfolio)` in all six files - the hazard in this step is MOVING or re-ordering it while filling in the body. This step claims no acceptance scenario on purpose: DISTILL's Adapter Coverage records `IWorkTrackingConnector` as faked by policy with the Jira Cloud implementation left to DELIVER's connector tests, so a green AT suite is NOT evidence this step works - and WITHOUT it the delta path never engages on a real instance even though every scenario in the fixture is green. Extend `JiraIncrementalSyncTest.cs` (slice 02's file), modelled on `JiraIssuesPerRequestTest.cs` - recording `HttpMessageHandler` plus canned JSON. Keep it out of the live path-scoped Jira integration tests (rate limits, ci-learnings 2026-06-16 / 2026-05-25)."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "What must keep happening, and what must not happen at all",
+      "description": "The two closing guards. D9 first: delta changes what is fetched and nothing else, and the Feature is not a leaf - its rollup depends on the delivering team's own refresh, on wall clock and on other teams' throughput, so a Feature whose record did not move can still owe a different number. Then the gate, last, for the reason DISTILL gave: scenario 10 forbids behaviour that did not exist at DISTILL time, its positive control is scenario 2, and it only starts guarding something once a sweep can actually be issued. That is the same ordering slice 02 used for AC-2.10 after AC-2.11.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "03"
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "A cheaper portfolio refresh still counts the work that is left and still asks for a new forecast",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left_and_still_asks_for_a_new_forecast",
+          "criteria": [
+            "A delta cycle still rolls up remaining work: a Feature whose own record never moved reports the two items its delivering team has left",
+            "The Feature stops being sized by the default once real child work exists, on a cycle that downloaded nothing",
+            "The portfolio's forecasts are requested again on a delta cycle",
+            "The assertions are made on a cycle that genuinely ran delta (mode Delta, 1 scanned, 0 fetched)"
+          ],
+          "deps": [
+            "03-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-3.5 / D9 - the slice brief's learning-hypothesis failure mode 1, and the assertion that separates 'the Feature RECORD did not move remotely' from 'the Feature's ROLLUP did not change'. Only the remote fetch is deltaed: remaining-work rollup, extrapolation, the percentile default size and the forecast trigger recompute EVERY cycle regardless of mode, because they depend on wall clock and on other teams' throughput. A step that makes any of them conditional on the mode is wrong even if its test passes. Expect this to be largely a regression check: `UpdateFeaturesForPortfolio` (WorkItemService.cs:35-50) already calls `RefreshFeatures`, then `RefreshParentFeatures`, then `UpdateRemainingWorkForPortfolio`, unconditionally. If it is red, the likely cause is a delta short-circuit that returned early past the post-fetch work - a tempting shape when 'nothing changed' is in hand. There is no early return in D9's world: a delta cycle with zero fetched Features still runs everything after the fetch. Files are listed as where a fix would land, not as a promise of edits. DT3-9 explains why the guard is chained rather than asserted in isolation: the delivering team stores three work items BETWEEN the two portfolio cycles, so the rollup must change on a cycle in which the Feature's own record did not - asserting the rollup over an unchanged input would pass under an implementation that skipped the recompute entirely. Do not re-derive `Portfolio.Teams`: it is a COMPUTED property (`=> GetTeams()`, derived from `FeatureWork`) sitting on top of a real many-to-many mapping, so a portfolio with no feature work reports no teams - that footgun cost slices 01 and 02 a reshaped scenario each, and it is why this scenario seeds the team against the portfolio rather than relying on a join row. It is also why every OTHER scenario in this fixture logs a Warning per Feature from `AssignExtrapolatedWorkToTeams`. After this step re-run scenario 3: the rollup writes into the stored Feature, and scenario 3's claim is about what survived a cycle."
+        },
+        {
+          "id": "04-02",
+          "name": "A portfolio refresh never scans unless an operator asked for it",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_portfolio_refresh_never_scans_unless_an_operator_asked_for_it",
+          "criteria": [
+            "With the option off, zero Feature scans are issued - the sweep is never called at all, not called and its answer ignored",
+            "The off answer terminates the decision before any remote call, so a connection that could be swept is still not asked to",
+            "The cycle behaves exactly as it did before this slice: one whole-query download, mode Full, 3 scanned / 3 fetched",
+            "Slice 03 ships no second opt-in and no new seeder entry - the option the team half already has is the one that covers the portfolio half"
+          ],
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
+          ],
+          "implementation_notes": "A1 / DT3-5, contract shape `unbounded-preservation`. This step may well require NO production change - and that is the point of running it last rather than first. DISTILL declared it GUARD_NOT_YET_FALSIFIABLE: at DISTILL time it PASSED, because with nothing scanning at all 'no Feature scan was issued' was true for the trivial reason. It is not a manufactured red. Its positive control is scenario 2, and DELIVER was told explicitly to re-run it AFTER scenario 2 is green - that is the moment it starts guarding something, and it is exactly how slice 02 sequenced AC-2.10 after AC-2.11. Sequence check before you touch anything: un-ignore it and RUN it. If green, the gate is correctly ordered and this step is a verification checkpoint - record the run in the commit message rather than inventing work. If red, the option is being consulted AFTER the sweep has already gone out (an easy shape: probe -> sweep -> then decide), and the fix is to make the off answer terminate the decision before any remote call, the way `ResolveRemoteFetch` does on the team side. Either way, prove the guard can fail: temporarily force the opt-in to true at the decision point, confirm this scenario goes red, restore, confirm green. `if (false)` does not work for this in C# - `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error (ledger). `GivenNobodyAskedForTheCheaperRefresh` already asserts the row EXISTS and is off - slice 02 tightened it from a null-tolerant check once its own gate scenario went green, and it is a positive control on the seeded default, so a missing or flipped seeder entry fails loudly here. Do not loosen it, and do not flip the default to on 'for convenience while testing'. Nothing in this slice adds an optional-feature row: `OptionalFeatureKeys.DeltaSyncKey` is seeded and read already, and `WorkItemService` reads it per update inside that update's own scope so the toggle bites on the next cycle without a restart. This is the last step of the slice: after it, run the whole fixture un-ignored (12 specifications), then `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` with the file filter that unions `git diff --name-only` and `git status --porcelain`, before pushing."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "The two boundaries of the shared Feature (AC-3.4 amendment)",
+      "description": "Added after the slice was green, by DISTILL back-propagation. A falsification probe run during DELIVER scoped the survivor lookup in `WorkItemService.TheFeaturesTheQueryStillReturns` to the portfolio's own `storedFeatures` collection instead of resolving by reference id through `featureRepository`, and the ENTIRE FasterUpdates fixture stayed green - 26 passed, 3 skipped, 0 failed. The cause is AC-3.4 being under-specified at DISTILL: scenario 6 proves 'shared between two portfolios' only for two portfolios that were both pre-refreshed over the same three Features, so no scenario ever sent a Feature into a portfolio's query for the FIRST time while another portfolio already stored it stamped, nor took a Feature out of ONE portfolio's query while another still claimed it. This phase adds those two boundaries. Slice 05's fetch fingerprint does not cover either: it covers this portfolio's own query TEXT changing, not the tracker moving a Feature into or out of an unchanged query. Read `feature-delta.md` - Wave: DISTILL / [WHY] AC-3.4 amendment - slice 03 before starting; it carries the full probe evidence and one correction to the DELIVER note's stated failure mode.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "04"
+      ],
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "A Feature joining one portfolio and leaving another",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it + A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it",
+          "criteria": [
+            "A Feature another portfolio already stored and stamped is claimed by this portfolio the first time this portfolio's query returns it, and both portfolios then hold it",
+            "That first sight costs exactly one by-reference-id download - `fetched: 1` - because what THIS portfolio has stored is the only thing its own cycle compares against",
+            "A Feature that leaves ONE portfolio's query loses that portfolio's claim and nothing else: the row survives, and the portfolio that still claims it still holds it",
+            "Both scenarios run un-ignored in the tree, in the same commit, and the whole slice-03 fixture is 14 specifications green",
+            "No production change is made unless one of them is red"
+          ],
+          "deps": [
+            "04-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs"
+          ],
+          "implementation_notes": "AC-3.4 amendment, contract shape `bounded-change` on both. **NO PRODUCTION CHANGE IS EXPECTED.** Both scenarios PASS on arrival - they were run un-ignored once at authoring time and both were green. `WorkItemService.cs` is listed as where a fix would land, not as a promise of an edit; if you find yourself editing it, stop and re-read the amendment section first. These are GUARDS, in the same sense as scenarios 1, 10, 11a and 11b, and they ship for the same reason: the failure mode they forbid is silent. **Do not trust the green run - re-prove both.** A guard whose probe has not been re-run in the tree it ships into is a guard on nothing, and this phase exists precisely because a probe was run and found nothing. Two probes, one per scenario, each of which must red that scenario AND NOTHING ELSE in the fixture (13 passed / 1 failed): (P2, for the joining scenario) in `FetchOnlyTheFeaturesThatMoved`, widen `HasMoved`'s comparison set from the portfolio's own `storedFeatures` to anything stored - resolve each swept reference id through `featureRepository` and union it in. Expect `Assert.That(recorded.RecordsFetched, Is.EqualTo(fetched)) Expected: 1 But was: 0`. (P4, for the departing scenario) after the `AddProjectToFeature` sweep in `RefreshFeatures`, clear `Portfolios` on every stored Feature that is not in `featuresTheQueryStillReturns` - the over-eager 'detach on removal' shape. Expect `'FEAT-3' left ONE portfolio's query... Expected: not null But was: null`. Revert each probe and verify `WorkItemService.cs` is byte-identical to HEAD before committing (`git checkout --` then `git status --porcelain` must show no production file). Note that C# `if (false)` cannot be used to disable a probe - `TreatWarningsAsErrors` turns CS0162 into a build error (ledger). **One thing not to re-derive, and it contradicts the DELIVER note that triggered this phase.** The note reasoned that a Feature stored by another portfolio would be swept but NOT downloaded because 'its stamp did not move'. It IS downloaded. `HasMoved(record, storedFeatures)` compares against `portfolio.Features.ToList()`, so a Feature this portfolio has never stored resolves to `null` and has, by definition, always moved. That is why the original probe (P1: survivor lookup scoped to `storedFeatures`) leaves all 14 green - it was re-run at authoring time and did. The repository-wide survivor lookup is not dead weight, it is headroom: the moment someone widens `HasMoved` to storage - the natural next saving - it becomes the only thing keeping the Feature in the portfolio, which is what P3 (P1+P2 together) demonstrates. `fetched: 1` in the joining scenario is the tripwire for that day. Do not 'optimise' it away while you are in there. Preflight the mandatory analyzer sweep as in every other step: `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, unioning `git diff --name-only` with `git status --porcelain` when filtering the log."
+        }
+      ]
+    }
+  ]
+}
