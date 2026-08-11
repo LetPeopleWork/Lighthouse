@@ -170,7 +170,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // never held has always moved as far as it is concerned - and the claim it takes out is what
         // keeps the row alive when the other portfolio later lets go.
         [Test]
-        [Ignore("DISTILL scaffold (AC-3.4 amendment) - DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
@@ -192,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // leaves one portfolio's query loses that portfolio's claim and nothing else, because the
         // orphaned-Feature cleanup deletes only what no portfolio claims at all.
         [Test]
-        [Ignore("DISTILL scaffold (AC-3.4 amendment) - DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
