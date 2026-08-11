@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
@@ -115,8 +116,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 team.Id,
                 [.. referenceIds.Select(referenceId => new RemoteRecord(referenceId, AWhileAgo) { StoredStamp = null })]);
 
+        /// <summary>
+        /// A team already cycled under THIS release: its work is stored and its fingerprint is recorded.
+        /// Without the fingerprint the team is an upgrading instance, which AC-5.5 defines as a full
+        /// cycle - so the delta path this scenario needs would never be reached.
+        /// </summary>
         private void GivenThatIssueWasAlreadyStoredWithTheDayItEnteredItsState(SeededTeam team)
-            => SeedStoredWorkItems(
+        {
+            SeedStoredWorkItems(
                 team.Id,
                 new RemoteRecord("ITEM-1", AWhileAgo.AddDays(-30))
                 {
@@ -124,6 +131,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     StateEnteredAt = DateTime.UtcNow.AddDays(-30),
                     StartedDate = DateTime.UtcNow.AddDays(-30),
                 });
+
+            // Recorded rather than earned by a real first cycle: a real cycle re-derives the day the issue
+            // entered its state and would destroy the 30-days-ago anchor the staleness claim rests on.
+            TheTeamAlreadyRecordedWhatItAsksFor(team);
+        }
+
+        private void TheTeamAlreadyRecordedWhatItAsksFor(SeededTeam team)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            var stored = repository.GetById(team.Id)!;
+            stored.FetchFingerprint = FetchFingerprint.For(stored);
+
+            repository.Update(stored);
+            repository.Save().GetAwaiter().GetResult();
+        }
 
         /// <summary>
         /// Pillar 2: the second cycle's precondition is the first cycle, run through the same driving

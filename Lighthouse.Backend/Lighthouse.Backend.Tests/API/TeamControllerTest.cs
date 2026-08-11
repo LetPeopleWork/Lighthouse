@@ -308,10 +308,14 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        /// <summary>
+        /// A2: a query edit no longer costs the team its stored work. removed = stored - fetched
+        /// reconciles it on the next full cycle, so purging only spends transition history.
+        /// </summary>
         [Test]
-        [TestCase("New Query", true)]
-        [TestCase("Existing Query", false)]
-        public async Task UpdateTeam_GivenNewQuery_DeletesExistingWorkItems(string workItemQuery, bool shouldDelete)
+        [TestCase("New Query")]
+        [TestCase("Existing Query")]
+        public async Task UpdateTeam_GivenNewQuery_KeepsExistingWorkItems(string workItemQuery)
         {
             var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
@@ -336,17 +340,18 @@ namespace Lighthouse.Backend.Tests.API
 
             _ = await subject.UpdateTeam(132, updatedTeamSettings);
 
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), Times.Never);
         }
 
+        /// <summary>A2: which kinds of work count is reconciled by the next full cycle, not by a purge.</summary>
         [Test]
-        [TestCase(new[] { "User Story", "Bug" }, false)]
-        [TestCase(new[] { "Bug", "User Story" }, false)]
-        [TestCase(new[] { "Story", "Bug" }, true)]
-        [TestCase(new[] { "User Story" }, true)]
-        [TestCase(new[] { "All New Type" }, true)]
-        [TestCase(new[] { "User Story", "Bug", "Task" }, true)]
-        public async Task UpdateTeam_GivenWorkItemTypes_DeletesExistingWorkItems(string[] workItemTypes, bool shouldDelete)
+        [TestCase("User Story", "Bug")]
+        [TestCase("Bug", "User Story")]
+        [TestCase("Story", "Bug")]
+        [TestCase("User Story")]
+        [TestCase("All New Type")]
+        [TestCase("User Story", "Bug", "Task")]
+        public async Task UpdateTeam_GivenWorkItemTypes_KeepsExistingWorkItems(params string[] workItemTypes)
         {
             var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
@@ -371,18 +376,19 @@ namespace Lighthouse.Backend.Tests.API
 
             _ = await subject.UpdateTeam(132, updatedTeamSettings);
 
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), Times.Never);
         }
 
+        /// <summary>A2: a state edit re-derives on the next full cycle; the recorded history it would cost is not recoverable.</summary>
         [Test]
-        [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Done" }, false)]
-        [TestCase(new[] { "ToDo" }, new[] { "Doing" }, new[] { "Done" }, true)]
-        [TestCase(new[] { "To Do" }, new[] { "Boing" }, new[] { "Done" }, true)]
-        [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Donny" }, true)]
-        [TestCase(new[] { "To Do", "New" }, new[] { "Doing" }, new[] { "Done" }, true)]
-        [TestCase(new[] { "To Do" }, new[] { "Doing", "In Progress" }, new[] { "Done" }, true)]
-        [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Done", "Closed" }, true)]
-        public async Task UpdateTeam_GivenChangedStates_DeletesExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates, bool shouldDelete)
+        [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Done" })]
+        [TestCase(new[] { "ToDo" }, new[] { "Doing" }, new[] { "Done" })]
+        [TestCase(new[] { "To Do" }, new[] { "Boing" }, new[] { "Done" })]
+        [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Donny" })]
+        [TestCase(new[] { "To Do", "New" }, new[] { "Doing" }, new[] { "Done" })]
+        [TestCase(new[] { "To Do" }, new[] { "Doing", "In Progress" }, new[] { "Done" })]
+        [TestCase(new[] { "To Do" }, new[] { "Doing" }, new[] { "Done", "Closed" })]
+        public async Task UpdateTeam_GivenChangedStates_KeepsExistingWorkItems(string[] toDoStates, string[] doingStates, string[] doneStates)
         {
             var existingTeam = new Team { Id = 132, DataRetrievalValue = "Existing Query", ToDoStates = ["To Do"], DoingStates = ["Doing"], DoneStates = ["Done"], WorkItemTypes = ["User Story", "Bug"], WorkTrackingSystemConnectionId = 2, UpdateTime = DateTime.UtcNow };
 
@@ -407,9 +413,13 @@ namespace Lighthouse.Backend.Tests.API
 
             _ = await subject.UpdateTeam(132, updatedTeamSettings);
 
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), Times.Never);
         }
 
+        /// <summary>
+        /// The one purge A2 keeps, and the only unit coverage of it: the same reference id on a different
+        /// tracker is a different item, and SyncWorkItem would merge it into the stored copy in place.
+        /// </summary>
         [Test]
         [TestCase(2, false)]
         [TestCase(1, true)]
@@ -438,7 +448,11 @@ namespace Lighthouse.Backend.Tests.API
 
             _ = await subject.UpdateTeam(132, updatedTeamSettings);
 
-            workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+            using (Assert.EnterMultipleScope())
+            {
+                workItemRepoMock.Verify(x => x.RemoveWorkItemsForTeam(existingTeam.Id), shouldDelete ? Times.Once : Times.Never);
+                workItemRepoMock.Verify(x => x.Save(), shouldDelete ? Times.Once : Times.Never);
+            }
         }
 
         [Test]

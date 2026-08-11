@@ -42,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // The promise the slice is named after, in the one shape an operator recognises: edit the query,
         // save, and the next cycle really does go and get the new answer.
         [Test]
-        [Ignore(Pending)]
         public async Task A_query_edit_makes_the_next_refresh_download_everything_again()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
@@ -345,7 +344,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // reconciles it on the very next full cycle, which is exactly how the portfolio side has always
         // coped without a purge. Paying for it in transition history is a cost with nothing bought.
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_whose_query_changed_keeps_the_history_it_already_recorded()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
@@ -384,7 +382,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @real-io @A2 @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_portfolio_whose_query_changed_keeps_the_features_it_already_stored()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();

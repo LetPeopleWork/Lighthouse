@@ -49,8 +49,9 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(team.StateMappings, Is.Empty);
         }
 
+        /// <summary>A2: re-reading a raw state under a different name costs no purge - the next full cycle re-derives it.</summary>
         [Test]
-        public void WorkItemRelatedSettingsChanged_StateMappingsChanged_ReturnsTrue()
+        public void WorkItemRelatedSettingsChanged_StateMappingsChanged_ReturnsFalse()
         {
             var team = new Team
             {
@@ -76,7 +77,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             var result = team.WorkItemRelatedSettingsChanged(dto);
 
-            Assert.That(result, Is.True);
+            Assert.That(result, Is.False);
         }
 
         [Test]
@@ -109,8 +110,9 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             Assert.That(result, Is.False);
         }
 
+        /// <summary>A2: adding the first mapping costs no purge either - the shape of the edit does not change the answer.</summary>
         [Test]
-        public void WorkItemRelatedSettingsChanged_StateMappingsAddedWhenNone_ReturnsTrue()
+        public void WorkItemRelatedSettingsChanged_StateMappingsAddedWhenNone_ReturnsFalse()
         {
             var team = new Team
             {
@@ -126,6 +128,40 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 DataRetrievalValue = "project = X",
                 WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Closed"],
+                StateMappings = [new StateMappingDto { Name = "A", States = ["X"] }]
+            };
+
+            var result = team.WorkItemRelatedSettingsChanged(dto);
+
+            Assert.That(result, Is.False);
+        }
+
+        /// <summary>
+        /// The positive control the three cases above need: without it they agree only because the method
+        /// can no longer say true at all, and an accidentally-empty registry would read as green.
+        /// </summary>
+        [Test]
+        public void WorkItemRelatedSettingsChanged_ConnectionChanged_ReturnsTrue()
+        {
+            var team = new Team
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 1,
+                WorkItemTypes = ["Bug"],
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Closed"]
+            };
+            team.StateMappings.Add(new StateMapping { Name = "A", States = ["X"] });
+
+            var dto = new TeamSettingDto
+            {
+                DataRetrievalValue = "project = X",
+                WorkTrackingSystemConnectionId = 2,
                 WorkItemTypes = ["Bug"],
                 ToDoStates = ["New"],
                 DoingStates = ["Active"],

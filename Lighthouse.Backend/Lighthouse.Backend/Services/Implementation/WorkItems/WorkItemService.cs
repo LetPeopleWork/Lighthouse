@@ -37,9 +37,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             logger.LogInformation("Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
             var whatThisCycleAsksFor = FetchFingerprint.For(portfolio);
+            var fetchShapeChanged = TheFetchShapeChanged(portfolio, whatThisCycleAsksFor);
 
-            var outcome = await RefreshFeatures(portfolio);
-            await RefreshParentFeatures(portfolio);
+            var outcome = await RefreshFeatures(portfolio, fetchShapeChanged);
+            await RefreshParentFeatures(portfolio, fetchShapeChanged);
 
             await UpdateRemainingWorkForPortfolio(portfolio);
 
@@ -59,8 +60,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
             var whatThisCycleAsksFor = FetchFingerprint.For(team);
+            var fetchShapeChanged = TheFetchShapeChanged(team, whatThisCycleAsksFor);
 
-            var outcome = await RefreshWorkItems(team);
+            var outcome = await RefreshWorkItems(team, fetchShapeChanged);
 
             foreach (var portfolio in team.Portfolios.ToList())
             {
@@ -77,7 +79,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return outcome;
         }
 
-        private async Task<SyncOutcome> RefreshWorkItems(Team team)
+        /// <summary>
+        /// AC-5.1: what the last completed cycle asked for against what this one would, asked of the base
+        /// both entities share so there is one comparison rather than two. Nothing recorded reads as
+        /// changed, which is what gives an instance upgrading into this release one full cycle (D8).
+        /// </summary>
+        private static bool TheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
+            => queryOwner.FetchFingerprint != whatThisCycleAsksFor;
+
+        private async Task<SyncOutcome> RefreshWorkItems(Team team, bool fetchShapeChanged)
         {
             // Stryker disable once all: one of the three copies of this announcement AC-1.5 caps at one; the scenario counts it by level, not by wording.
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
@@ -87,7 +97,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
 
-            var fetch = await ResolveRemoteFetch(connector, team, storedWorkItems);
+            var fetch = await ResolveRemoteFetch(connector, team, storedWorkItems, fetchShapeChanged);
 
             var itemsWithTransitions = SyncDownloadedItems(connector, team, storedWorkItems, fetch.WorkItems, syncTime);
             var itemsRemovedThisCycle = RemoveItemsThatLeftTheQuery(storedWorkItems, fetch.StillOnTheTracker);
@@ -117,7 +127,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// connector that could be swept but was not volunteered is exactly the data-loss exposure (D2) the
         /// opt-in exists to confine.
         /// </summary>
-        private async Task<RemoteFetch> ResolveRemoteFetch(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems)
+        private async Task<RemoteFetch> ResolveRemoteFetch(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, bool fetchShapeChanged)
         {
             var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
 
@@ -130,7 +140,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 scan.TrackerCanBeScanned,
                 storedWorkItems,
                 scan.Succeeded,
-                fetchShapeChanged: false);
+                fetchShapeChanged);
 
             return mode == SyncMode.Delta
                 ? await FetchOnlyWhatMoved(connector, team, storedWorkItems, scan.Stamps)
@@ -701,7 +711,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return buckets;
         }
 
-        private async Task<SyncOutcome> RefreshFeatures(Portfolio portfolio)
+        private async Task<SyncOutcome> RefreshFeatures(Portfolio portfolio, bool fetchShapeChanged)
         {
             var connector = GetWorkItemServiceForWorkTrackingSystem(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
@@ -714,7 +724,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             // path (D8).
             var storedFeatures = portfolio.Features.ToList();
 
-            var fetch = await ResolveRemoteFeatureFetch(connector, portfolio, storedFeatures);
+            var fetch = await ResolveRemoteFeatureFetch(connector, portfolio, storedFeatures, fetchShapeChanged);
 
             foreach (var feature in fetch.Features)
             {
@@ -794,7 +804,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// inside the slice that changes portfolio behaviour. The opt-in gates the scan as well as the
         /// resolver, so a connector nobody volunteered is never approached at all (AC-2.10).
         /// </summary>
-        private async Task<RemoteFeatureFetch> ResolveRemoteFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures)
+        private async Task<RemoteFeatureFetch> ResolveRemoteFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures, bool fetchShapeChanged)
         {
             var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
 
@@ -807,7 +817,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 scan.TrackerCanBeScanned,
                 storedFeatures,
                 scan.Succeeded,
-                fetchShapeChanged: false);
+                fetchShapeChanged);
 
             return mode == SyncMode.Delta
                 ? await FetchOnlyTheFeaturesThatMoved(connector, portfolio, storedFeatures, scan.Stamps)
@@ -985,7 +995,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return featureFromDatabase;
         }
 
-        private async Task RefreshParentFeatures(Portfolio project)
+        private async Task RefreshParentFeatures(Portfolio project, bool fetchShapeChanged)
         {
             var workItemService = GetWorkItemServiceForWorkTrackingSystem(project.WorkTrackingSystemConnection.WorkTrackingSystem);
             var parentFeatureIds = project.Features.Where(f => !string.IsNullOrEmpty(f.ParentReferenceId)).Select(f => f.ParentReferenceId).Distinct().ToList();
@@ -996,7 +1006,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
-            var parentFeatures = await ResolveRemoteParentFeatureFetch(workItemService, project, parentFeatureIds);
+            var parentFeatures = await ResolveRemoteParentFeatureFetch(workItemService, project, parentFeatureIds, fetchShapeChanged);
 
             foreach (var parentFeature in parentFeatures)
             {
@@ -1014,9 +1024,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// <c>GetParentFeaturesDetails</c> asked for a shorter key list, and the mode decision goes through
         /// the same resolver (DDD-5) - over the stored PARENTS, which are not members of
         /// <c>portfolio.Features</c> and so are resolved from storage by reference id. The parent sweep
-        /// stays out of <see cref="SyncOutcome"/>: the summary line's counts are the Feature half's.
+        /// stays out of <see cref="SyncOutcome"/>: the summary line's counts are the Feature half's. The
+        /// fetch shape is the PORTFOLIO's own answer, passed down rather than compared a second time (AC-5.1).
         /// </summary>
-        private async Task<List<Feature>> ResolveRemoteParentFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds)
+        private async Task<List<Feature>> ResolveRemoteParentFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds, bool fetchShapeChanged)
         {
             var storedParentFeatures = TheStoredParentFeatures(parentFeatureIds);
             var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
@@ -1030,7 +1041,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 scan.TrackerCanBeScanned,
                 storedParentFeatures,
                 scan.Succeeded,
-                fetchShapeChanged: false);
+                fetchShapeChanged);
 
             return mode == SyncMode.Delta
                 ? await FetchOnlyTheParentFeaturesThatMoved(connector, portfolio, parentFeatureIds, storedParentFeatures, scan.Stamps)

@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkItems;
 
 namespace Lighthouse.Backend.API.Helpers
 {
@@ -62,20 +63,22 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncCycleTimeDefinitions(team, teamSetting);
             }
 
+            /// <summary>
+            /// Whether this edit costs the team a fresh start (A2). Driven by
+            /// <see cref="FetchFingerprint.PropertiesThatAlsoCostAFreshStart"/> so the save path and the
+            /// fingerprint read one list rather than two that drift.
+            /// </summary>
             public bool WorkItemRelatedSettingsChanged(TeamSettingDto teamSetting)
-            {
-                var queryChanged = team.DataRetrievalValue != teamSetting.DataRetrievalValue;
-                var connectionChanged = team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId;
-                var workItemTypesChanged = !team.WorkItemTypes.OrderBy(x => x).SequenceEqual(teamSetting.WorkItemTypes.OrderBy(x => x));
-                var statesChanged =
-                    !team.ToDoStates.OrderBy(x => x).SequenceEqual(teamSetting.ToDoStates.OrderBy(x => x)) ||
-                    !team.DoingStates.OrderBy(x => x).SequenceEqual(teamSetting.DoingStates.OrderBy(x => x)) ||
-                    !team.DoneStates.OrderBy(x => x).SequenceEqual(teamSetting.DoneStates.OrderBy(x => x));
-                var stateMappingsChanged = StateMappingsChanged(team.StateMappings, teamSetting.StateMappings);
-
-                return queryChanged || connectionChanged || workItemTypesChanged || statesChanged || stateMappingsChanged;
-            }
+                => FetchFingerprint.PropertiesThatAlsoCostAFreshStart.Any(property => TheEditChanges(team, property, teamSetting));
         }
+
+        /// <summary>D8: an unregistered property purges, because the expensive answer is the safe one.</summary>
+        private static bool TheEditChanges(Team team, string property, TeamSettingDto teamSetting) => property switch
+        {
+            nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId)
+                => team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId,
+            _ => true,
+        };
 
         private static void SyncStates(Team team, TeamSettingDto teamSetting)
         {
@@ -125,29 +128,6 @@ namespace Lighthouse.Backend.API.Helpers
                     EndState = dto.EndState.Trim(),
                 })
                 .ToList();
-        }
-
-        private static bool StateMappingsChanged(List<StateMapping> current, List<StateMappingDto> incoming)
-        {
-            if (current.Count != incoming.Count)
-            {
-                return true;
-            }
-
-            for (var i = 0; i < current.Count; i++)
-            {
-                if (!string.Equals(current[i].Name, incoming[i].Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                if (!current[i].States.OrderBy(x => x).SequenceEqual(incoming[i].States.OrderBy(x => x)))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static List<string> TrimListEntries(List<string> list)
