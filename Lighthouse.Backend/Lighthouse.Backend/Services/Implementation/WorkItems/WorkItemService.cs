@@ -38,8 +38,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var whatThisCycleAsksFor = FetchFingerprint.For(portfolio);
             var fetchShapeChanged = TheFetchShapeChanged(portfolio, whatThisCycleAsksFor);
+            var reason = WhyTheFetchShapeChanged(portfolio, whatThisCycleAsksFor);
 
-            var outcome = await RefreshFeatures(portfolio, fetchShapeChanged);
+            var outcome = (await RefreshFeatures(portfolio, fetchShapeChanged)) with { Reason = reason };
             await RefreshParentFeatures(portfolio, fetchShapeChanged);
 
             await UpdateRemainingWorkForPortfolio(portfolio);
@@ -61,8 +62,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var whatThisCycleAsksFor = FetchFingerprint.For(team);
             var fetchShapeChanged = TheFetchShapeChanged(team, whatThisCycleAsksFor);
+            var reason = WhyTheFetchShapeChanged(team, whatThisCycleAsksFor);
 
-            var outcome = await RefreshWorkItems(team, fetchShapeChanged);
+            var outcome = (await RefreshWorkItems(team, fetchShapeChanged)) with { Reason = reason };
 
             foreach (var portfolio in team.Portfolios.ToList())
             {
@@ -86,6 +88,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// </summary>
         private static bool TheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
             => queryOwner.FetchFingerprint != whatThisCycleAsksFor;
+
+        /// <summary>
+        /// AC-5.2: what to tell the operator, which is not what decided the mode. An instance that never
+        /// recorded a fingerprint and one whose fingerprint moved both take the expensive path (D8), but only
+        /// the second has a cause anybody caused - naming configuration on the first would name the wrong one.
+        /// </summary>
+        private static string? WhyTheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
+            => queryOwner.FetchFingerprint != null && TheFetchShapeChanged(queryOwner, whatThisCycleAsksFor)
+                ? SyncOutcome.ConfigurationChanged
+                : null;
 
         private async Task<SyncOutcome> RefreshWorkItems(Team team, bool fetchShapeChanged)
         {

@@ -62,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // Without the reason, a configuration-forced full download and a tracker-forced one are the same
         // line, and the admin is left hoping the edit took effect rather than reading that it did.
         [Test]
-        [Ignore(Pending)]
         public async Task The_operator_is_told_that_a_configuration_change_is_why_everything_was_downloaded()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();

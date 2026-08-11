@@ -55,12 +55,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
-        /// <summary>The one line an operator reads per completed update (Epic #5687).</summary>
+        /// <summary>
+        /// The one line an operator reads per completed update (Epic #5687). The reason rides as a whole
+        /// token or not at all (AC-5.2): a cycle with nothing to explain would otherwise carry a bare
+        /// <c>reason=</c> on every line, on the very line slice 01 existed to clean up.
+        /// </summary>
         protected void LogUpdateSummary(string entityName, SyncOutcome outcome, long durationMs, bool success)
         {
+            var reason = outcome.Reason == null ? string.Empty : $" | reason={outcome.Reason}";
+
             Logger.LogInformation(
-                "Update completed | {EntityType:l} '{EntityName:l}' | mode={Mode} | scanned={RecordsScanned} | fetched={RecordsFetched} | duration={DurationMs}ms | success={Success}",
-                typeof(TEntity).Name, entityName, outcome.Mode, outcome.RecordsScanned, outcome.RecordsFetched, durationMs, success);
+                "Update completed | {EntityType:l} '{EntityName:l}' | mode={Mode} | scanned={RecordsScanned} | fetched={RecordsFetched} | duration={DurationMs}ms | success={Success}{Reason:l}",
+                typeof(TEntity).Name, entityName, outcome.Mode, outcome.RecordsScanned, outcome.RecordsFetched, durationMs, success, reason);
         }
 
         protected static T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull
