@@ -137,7 +137,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // A Feature two portfolios both claim is one stored record with one stamp, so the second
         // portfolio's own cycle finds it already current — and must still show it.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both()
         {
             var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
