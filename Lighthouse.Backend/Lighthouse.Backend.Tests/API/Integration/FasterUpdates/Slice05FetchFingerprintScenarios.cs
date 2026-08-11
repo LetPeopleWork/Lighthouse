@@ -125,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // - and the state category - stored against every record in it. Under delta those records are
         // never re-derived, so the portfolio quietly shows a state the tracker stopped agreeing with.
         [Test]
-        [Ignore(Pending)]
         public async Task Reading_a_tracker_state_as_a_different_state_makes_the_next_refresh_download_everything_even_though_the_query_is_unchanged()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
@@ -150,7 +149,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // three columns leaves it identical while changing the state category of every stored record in
         // that state. A fingerprint built on AllStates - which is what AC-5.1 names - cannot see this.
         [Test]
-        [Ignore(Pending)]
         public async Task Moving_a_state_to_a_different_column_makes_the_next_refresh_download_everything_even_though_the_query_is_unchanged()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
@@ -175,7 +173,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // the CONNECTION. Nothing about the team changed, and every record the team stores now carries a
         // value it did not carry before - for every team on that connection.
         [Test]
-        [Ignore(Pending)]
         public async Task Adding_a_field_to_the_connection_makes_the_next_refresh_download_everything_for_the_teams_that_use_it()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
