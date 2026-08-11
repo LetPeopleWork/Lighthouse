@@ -121,3 +121,117 @@ was no end-to-end path.
 hit `letpeoplework.atlassian.net` for real; under Stryker they would run hundreds of times. Their
 exclusion is why several connector paths report as uncovered above. `JiraIncrementalSyncTest` carries no
 category — it drives a recording `HttpMessageHandler` — and is included.
+
+---
+
+# Mutation testing — 5726 (Faster updates: a Jira Cloud portfolio refresh fetches only the Features that moved)
+
+Run 2026-08-11 against `main` @ `1c5d1f9c1`. Gate is 80 % kill rate.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0), whole files | 54.63 % | 426 | — | — | — | 30 m 26 s |
+| **Backend, slice-03 changed lines** | **78.69 %** | **61** | **48** | 13 | 0 | — |
+| Frontend (StrykerJS) | **N/A** | — | — | — | — | — |
+
+Config: `stryker.5726.backend.json`. **Frontend is N/A, not skipped**: slice 03 changed zero files under
+`Lighthouse.Frontend/` — the epic is backend-only by decision D4.
+
+## The gate as written is not met, and this is what stands behind the number
+
+**78.69 % on the changed lines — 1.64 points, one mutant, short of 80 %.** Recorded rather than closed,
+because every one of the 13 survivors was verified equivalent by applying the mutation and running the
+fixture. On the mutants that are not equivalent the pass is **48 of 48**.
+
+The arithmetic is worth stating, because it is why an honest triage cannot move this number: killing a
+survivor raises the numerator, but the six mutants that were `NoCoverage` in the first run moved to
+`Survived` in the second — both count as not-killed. Closing that coverage gap, which was worth doing on
+its own merits, was worth exactly zero points.
+
+Two runs were made:
+
+- **Run A** — before triage: **53.38 %** whole-file, **70.49 %** on changed lines (61 tested, 43 killed,
+  12 survived, 6 no-coverage).
+- **Run B** — after the triage commit `1c5d1f9c1` added six scenarios and strengthened one connector
+  assertion: **54.63 %** whole-file, **78.69 %** on changed lines.
+
+The whole-file figures are in the table for honesty, not as the verdict. Stryker.NET **ignores line
+ranges** in `mutate` (frontend StrykerJS supports them; .NET does not), so mutating `WorkItemService.cs`
+whole buries 279 changed lines under 1117. The per-changed-line figure is recovered from
+`mutation-report.json` by intersecting each mutant's location with `git diff -U0 0c4e129c6..HEAD`.
+
+## Backend
+
+| file | tested | killed | survived | score |
+| --- | --- | --- | --- | --- |
+| `JiraWorkTrackingConnector.cs` | 11 | 11 | 0 | **100 %** |
+| `WorkItemService.cs` | 50 | 37 | 13 | 74.0 % |
+
+### Closed by this pass
+
+Five survivors produced tests (`1c5d1f9c1`). Each was proven by hand-applying the mutation, watching the
+new test go red, reverting, and watching it go green.
+
+- **`:759` — deleting `SweepDepartedFeatureSpells`.** A Feature blocked when it left the query kept
+  accruing blocked time forever. This survivor is inherited: slice 01 recorded it as a known gap on the
+  portfolio path and slice 02 carried it forward. Now killed by
+  `A_feature_that_was_blocked_when_it_left_the_query_stops_accruing_blocked_time`.
+- **`:1015` — forcing the parent scan's opt-in branch true.** A cycle nobody volunteered for swept the
+  parent keys anyway. The Feature half had this assertion (AC-3.4 / A1); the parent half did not.
+- **`:1088` and `:1100` — the parent download rule.** `keysToDownload.Count == 0` forced true, and
+  `swept == null || HasMoved(…)` mutated to `&&`. Both mean parents are never downloaded under delta,
+  and both are killed by the two scenarios that exercise the inversion: a parent that moved, and a
+  parent the sweep did not answer for. This is the parent half's whole reason to differ from the child
+  half — that it went untested until mutation asked is the most useful thing this run produced.
+- **`JiraWorkTrackingConnector.cs:295` — removing the empty-key-set guard.** The assertion counted
+  `SearchRequests`, so it never saw that `CreateFeaturesFromIssues` still GETs `rest/api/latest/field`
+  through `GetCustomFieldReferences`. It now counts every request, which is what the test's name already
+  claimed.
+
+### Accepted survivors
+
+All 13 verified by applying the mutation and running the fixture green.
+
+- **`:735` — deleting the claim sweep `featuresTheQueryStillReturns.ForEach(f => AddProjectToFeature(f, portfolio))`.**
+  Equivalent, and the statement appears to be redundant: `HasMany(f => f.Portfolios).WithMany(p => p.Features)`
+  (`LighthouseAppContext.cs:224-225`) is one relationship with both navigations as inverses, and
+  `portfolio.UpdateFeatures` is handed the identical list — `FeatureOrdering.Order` sorts, it never
+  filters — so both ends write the same join row. Removed by hand: 103 tests green. **Deleting it is a
+  production change and was deliberately not made during a mutation pass; it is flagged for a decision.**
+  The line also documents intent at the exact place the delete hazard lives, which is an argument for
+  keeping it whatever the mutation score says.
+- **`:794` ×2, `:1017` ×2 — the opt-in-off `IdentityScan(TrackerCanBeScanned:…, Succeeded:…)`.** The
+  resolver's first guard returns `Full` on the opt-in flag before either field is read. Identical to the
+  team path's accepted `:115` in the 5725 run.
+- **`:813` ×2, `:1053` ×2 — the scan-refused returns.** Guards 2 and 3 both answer `Full`, so flipping
+  either flag only changes which guard fires.
+- **`:833`, `:1072` ×2 — the scan-failed returns.** Same absorption. `:1072`'s `Succeeded: false → true`
+  is the interesting one and is still equivalent: it routes the parent path to `Delta` with an EMPTY
+  stamp list, so `TheSweepDidNotVouchForThisParent` is true for every key and `GetParentFeaturesDetails`
+  is called with the identical list. Delta-with-no-stamps degenerates exactly onto Full — which is D8
+  behaving as designed, and defence in depth showing up as unkillability.
+- **`:1026` — forcing the parent `mode == SyncMode.Delta` branch true.** The branches differ only when the
+  sweep vouches for a stored parent while the mode is `Full`, which is reachable only through the
+  resolver's "nothing stored" or "a stored record without a stamp" guards. A test that kills it would
+  assert that the cycle deliberately re-downloads a parent whose stamp says it did not move — pinning
+  D8's "ambiguity resolves to a full fetch" as an observable cost rather than as a safety rule. The
+  mutant is arguably the better program: same stored state, one fewer round trip. Killing it would fight
+  the next person who tries to make this cheaper, so it is accepted rather than tested.
+
+### Not mutated
+
+- **Log message templates and display strings**, via `ignore-mutations: ["string"]` and
+  `ignore-methods: ["*Log*", "Console.*"]`. One exception is pinned behaviourally rather than by wording:
+  a failed sweep must emit exactly one Warning-or-above line.
+- **The four non-Jira connectors** and `IWorkTrackingConnector`. Slice 03 added three members that return
+  false or throw on all of them — no behaviour to mutate.
+- **`SyncModeResolver.cs`**: the only slice-03 change was widening a parameter type to `WorkItemBase`,
+  which produces no mutants on changed lines. Its branches were covered at 100 % in the 5725 run and
+  their tests still run.
+
+## Test filter
+
+`TestCategory!=JiraIntegration` is load-bearing: `JiraWorkTrackingConnectorTest` and `JiraWriteBackTest`
+hit `letpeoplework.atlassian.net` for real and Stryker reruns the suite hundreds of times.
+`JiraIncrementalSyncTest` carries no category — it drives a recording `HttpMessageHandler` — and is
+included, which is why the connector scores 100 % here.
