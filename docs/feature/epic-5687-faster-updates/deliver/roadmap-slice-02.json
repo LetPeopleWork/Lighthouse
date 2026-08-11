@@ -1,0 +1,359 @@
+{
+  "roadmap": {
+    "project_id": "epic-5687-faster-updates",
+    "created_at": "2026-08-10",
+    "total_steps": 12,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-02-jira-cloud-team-delta",
+    "ado": "Epic #5687 / Story #5725",
+    "goal": "The second and later refreshes of a Jira Cloud team enumerate the whole query for identity plus the tracker's `updated` stamp, and download full payloads only for the issues whose stamp moved - so `removed = stored - sweepIds` keeps today's meaning while a routine cycle costs a scan instead of a download. Ships dark behind an opt-in OptionalFeature that defaults to off."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (roadmap gate) + orchestrator mechanical gate",
+    "reviewed_at": "2026-08-10",
+    "notes": "Mechanical gate: 12 steps, all ids match NN-NN, every step has test_file/scenario_name and a non-empty files_to_modify, 12 steps over 21 distinct files = 0.57 (ceiling 2.5), no AC references a private method, dependency chain strictly linear 01-01 -> 04-02. Coverage: the 12 DISTILL specifications are claimed exactly once each - 11a+11b by 01-01 (one line in WorkItemBase.Update fixes both, the copy constructor delegates to it), scenario 1 by 01-02, 2 by 02-01, 3 by 02-02, 4 by 02-03, 6 by 02-04, 10 by 03-01, 9 by 03-02, 8 by 03-03, 5 by 04-01, 7 by 04-02. Counted precisely: 11 automated acceptance scenarios plus the 2 direct AC-2.7 specs, against 11 scenario-claiming steps; AC-2.8 is a dogfood measurement carried in out_of_scope, never a step. Step 02-05 (Jira Cloud adapter) claims no acceptance scenario by design - DISTILL Adapter Coverage records the connector as faked by policy, so the real sweep/probe/by-key implementation is covered by its own JiraIncrementalSyncTest. Reviewer verdict needs_revision was raised on two blockers that were both its own file-read truncation, not roadmap defects: the phase-02/03 dependency chain and the four upstream-gap mitigations were verified present by the orchestrator (never-swept collapse in 02-01, resolver parameter cap in 02-01 and 03-02, the AC-2.4 re-run instruction in 02-03/03-01/03-03/04-01, and all seven new WorkItemService(...) sites enumerated with line numbers in 03-02 and confirmed against the tree). The reviewer independently CONFIRMED the load-bearing phase-ordering claim by reading the harness: scenario 8 is vacuously green today and genuinely red at the end of phase 02. Its one substantive nit - imprecise 12-specifications wording - is fixed in this note."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5687-faster-updates/feature-delta.md",
+    "slice_brief": "docs/feature/epic-5687-faster-updates/slices/slice-02-jira-cloud-team-delta.md",
+    "amendments": "docs/feature/epic-5687-faster-updates/feature-delta.md - Wave: DELIVER / Post-slice-01 Amendments (A1 governs this slice, A2 is slice 05 context)",
+    "prior_slice_roadmap": "docs/feature/epic-5687-faster-updates/deliver/roadmap-slice-01.json",
+    "ci_ledger": "docs/ci-learnings.md",
+    "scenarios": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaSpecifications.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs"
+    ]
+  },
+  "out_of_scope": [
+    "Jira Data Center - `SupportsIncrementalSync` stays false for DC until slice 04 resolves OQ-1 (whether DC offset pagination returns a STABLE id set, not merely a duplicated one). Only `GetIssuesByQueryFromCloud` is touched",
+    "Portfolio Features and parent Features (slice 03). The port gains only the TEAM sweep and the TEAM by-reference-id fetch - `SweepFeaturesForPortfolio` and the Feature-side overload are slice 03's and would be dead surface on five connectors today (DT2-1)",
+    "The fetch fingerprint (slice 05). `SyncModeResolver` carries the branch as a stub that never fires; do not invent the property set here - A2 records that it already exists twice and the two copies disagree",
+    "ADO, ServiceNow and Linear connectors (slices 06-08). Their probes stay false and both new fetches keep throwing NotSupportedException",
+    "CSV - permanently out of scope (D11). Its probe returns false forever; the fetch is a file the user already uploaded and there is no remote call to save",
+    "Any UI (D4). The observable surface is the log; Epic #5511 owns the richer view. The Settings -> Optional Features WRITE side is unchanged and already covered by OptionalFeaturesControllerTest",
+    "Any new EF migration. `LastChangedRemote` shipped with `20260810061716_AddLastChangedRemoteToWorkItems` (SQLite) and `20260810061726_...` (Postgres) in the DISTILL commit. Phases 01-04 need no model change - if a step thinks it does, STOP and flag it rather than adding one quietly",
+    "AC-2.8 (<=10% of a full cycle's remote requests, KPI-2) is NOT automated and is NOT a step. It is a dogfood measurement against a real Jira Cloud project with >=1000 issues in one team query and <=5% churn: point a team at it, let one full cycle run, let a delta cycle run the same day, read the two summary lines side by side. Synthetic issue counts prove the plumbing and not the premise. The slice cannot be called confirmed without it - the two lines go in the Verdict section of the slice brief. Post-delivery pre-requisite, owned by the maintainer",
+    "Retro-tagging slice 01's specifications with `@contract-shape:` - a pre-existing gap in the same folder, recorded by Sentinel and deliberately left alone"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The stamp",
+      "description": "US-08 precursor, `@infrastructure`. A work item remembers when the tracker says it last changed, and that memory survives every path a refresh puts it through. Nothing about the fetch changes yet - every cycle is still `mode=full`. This is first because both later phases compare against a stored stamp, and the failure mode here is silent: a dropped stamp degrades delta to 'always refetch' with every other test in the suite still green.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The remote change stamp survives the copy path",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs",
+          "scenario_name": "An_issue_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed + An_issue_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed",
+          "criteria": [
+            "`stored.Update(incoming)` leaves `stored.LastChangedRemote` equal to the incoming value",
+            "`new WorkItem(fromTheTracker, team)` carries the stamp through to the copy",
+            "No other member's copy behaviour changes - `CurrentStateEnteredAt` is still deliberately not copied",
+            "No model change, therefore no migration"
+          ],
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs"
+          ],
+          "implementation_notes": "AC-2.7 / D6 / DT2-4. Both specifications un-ignore in ONE cycle: `WorkItemBase`'s copy constructor is `protected WorkItemBase(WorkItemBase w) { Update(w); SyncedTransitions = w.SyncedTransitions; }`, so the single line added to `Update(...)` satisfies 11a and 11b at once - splitting them into two steps would make the second one vacuous. DISTILL left that line out on purpose (DT2-4); it is not an oversight and it is the whole RED. Put the assignment inside `Update(...)` beside the other plain settable properties, NOT in the copy constructor - a copy-constructor-only fix passes 11b and leaves 11a red, and it is the refresh path (11a) that carries the production consequence. Why this is asserted directly instead of end-to-end: the copy path drops members that are not plain settable properties, and this repository has already been bitten by exactly that shape (a `[NotMapped]` init-only member dropped by the copy constructor - docs/ci-learnings.md, work-item-sync). A lost stamp is a performance regression with a green suite. `LastChangedRemote` is already declared on `WorkItemBase` and its expand-only migration already shipped in the DISTILL commit - do NOT regenerate it, and do not run `Create-Migration.ps1` in this step. Also do not 'fix' `Update(...)` to copy `CurrentStateEnteredAt`: that omission is load-bearing (the value is derived from transitions in `WorkItemService.SyncStateTransitions`) and copying it would break the transition tests. Preflight: run `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` before pushing (see the mandatory block at the head of docs/ci-learnings.md), and union `git diff --name-only` with `git status --porcelain` when filtering the log - a brand-new file is invisible to `git diff` and its findings sit unread."
+        },
+        {
+          "id": "01-02",
+          "name": "The first refresh after an upgrade stores a stamp for every issue",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "The_first_refresh_after_an_upgrade_downloads_everything_and_remembers_when_each_issue_last_changed",
+          "criteria": [
+            "An instance whose work is already stored without stamps runs `mode=full`, scanned 3 / fetched 3, and every stored issue ends the cycle carrying the tracker's stamp",
+            "The Jira connector maps the issue's `updated` field onto `WorkItemBase.LastChangedRemote` on the whole-query path, for Cloud and Data Center alike",
+            "A missing or unparseable `updated` leaves the stamp null rather than defaulting to a sentinel date",
+            "The stamp is stored as UTC"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/Issue.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs"
+          ],
+          "implementation_notes": "AC-2.1. Read the RED honestly: the acceptance scenario goes green off 01-01 alone, because the harness's connector double already sets `LastChangedRemote` after construction (DT2-7 - a double that inherited the defect under test could not measure it). That makes the AT necessary but not sufficient. In production nothing populates the stamp yet, so a real full cycle would store nothing to compare and delta would never engage - a silent no-op behind a green pipeline. This step therefore ships the connector mapping too, proven by its own test, and un-ignores the AT as the port-level confirmation. DISTILL's Adapter Coverage table records this split explicitly: `IWorkTrackingConnector` is faked by policy, so the Jira mapping is DELIVER's and is covered by the connector's own tests, never by the AT. Where to map it: `JiraFieldNames.UpdatedFieldName` already exists (`\"updated\"`). `Issue` has no `Updated` member; either add one and populate it in `IssueFactory.CreateIssueFromJson`, or read `issue.Fields.GetFieldValue(JiraFieldNames.UpdatedFieldName)` inside `CreateWorkItemFromJiraIssue` the way `TrySetParentForJiraDataCenter` reads its link field. The former is preferable - `CreateWorkItemFromJiraIssue` is shared by the team and Feature paths and slice 03 needs the same value on Features. Cloud's `fields=*all` already returns `updated`, so no query change is needed on the whole-query path. Test home: a new `JiraIncrementalSyncTest.cs` modelled on `JiraIssuesPerRequestTest.cs`, which already drives the connector through a recording `HttpMessageHandler` (`httpMessageHandlerForTesting`) and a canned response - do not turn this into a live-Jira test, those are path-scoped for rate-limit reasons (ci-learnings 2026-06-16 / 2026-05-25). AC-2.1's wording says 'the first update of a team'; its teeth are the upgrade case (DISTILL upstream issue 2) - a brand-new item is persisted whole and keeps its stamp already, which is why the scenario seeds two of its three issues as stored-before-this-release. Calendar-day rule from the ledger: an instant has no time zone. `updated` is an instant, store it as UTC, and never reduce it to a day anywhere - comparison is instant-to-instant (D12)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The two-phase fetch, ungated",
+      "description": "The delta path itself, shipped WITHOUT the opt-in gate. Ordering is deliberate and load-bearing: DISTILL classified AC-2.10 (scenario 8) as GUARD_NOT_YET_FALSIFIABLE because it forbids behaviour that does not exist yet - with nothing scanning at all, 'no sweep was issued' is true for the trivial reason. Shipping delta ungated here makes it genuinely false: a sweep now happens whether or not anyone asked for it. Phase 03 then un-ignores AC-2.10 and AC-2.11 against a real RED. Ordering the gate first would leave AC-2.10 green from start to finish and prove nothing. The removal rule (AC-2.3) lands immediately after the walking skeleton and BEFORE the real Jira adapter can ever issue a sweep against a live instance, because that is the one failure in this epic a user cannot undo.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "01"
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A later refresh downloads only the issues that moved",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "A_later_refresh_downloads_only_the_issues_that_moved",
+          "criteria": [
+            "A cycle whose stored set is complete and stamped issues exactly one sweep and zero whole-query downloads",
+            "Exactly one by-reference-id request is issued, naming only the ids whose swept stamp differs from the stored one (D12, per item, no watermark)",
+            "`RefreshLog` records mode Delta with scanned 3 and fetched 1, and the operator's summary line reads `mode=delta | scanned=3 | fetched=1`",
+            "`SyncModeResolver` is a pure static with no constructor dependencies and is directly unit-tested branch by branch",
+            "Nothing is scanned when the connector's per-connection probe says it cannot sweep"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/SyncModeResolverTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.2, the walking skeleton - the thing the epic is buying, and the line a non-technical stakeholder can confirm. DDD-6: EXTEND `WorkItemService.RefreshWorkItems` in place. No new orchestrator. The removal rule, the diff and the event collection are already in that one method and must stay there; a new orchestrator would either duplicate them or hollow out the class. `SyncModeResolver` (CREATE NEW, `Services/Implementation/WorkItems/`) is a pure static, DDD-5 - `WorkItemService` already carries 12 constructor dependencies behind `#pragma warning disable S107` and a 13th for a total function of data in hand would not earn its place. DISTILL deliberately did NOT scaffold it (DT2-6): no AT references it, and a static that always answers Full and that nothing calls is dead code, not a scaffold. Its branches are this step's unit tests, in a new `SyncModeResolverTest.cs`. Six branches, and only five of them are yours: never swept / any stored record lacks a stamp / probe false / sweep failed / otherwise delta. The FINGERPRINT branch is slice 05's - leave it a stub that never fires (a `false` input), do not invent the property set, and read A2 first if tempted: the fetch-shaping property list already exists twice in this codebase and the two copies disagree. IMPORTANT - there is no per-entity 'has this ever been swept' column, and there will not be one in this slice (`FetchFingerprint` is slice 05). 'Never swept' therefore collapses into 'the stored set is empty, or any stored record has a null `LastChangedRemote`'. Get this wrong and scenario 5 (phase 04) breaks: it seeds a single stored item that ALREADY carries a stamp and expects delta on that team's very first cycle. Keep the resolver's parameter list at four or fewer - pass the stored collection rather than five pre-computed booleans; S107 fires above seven and a six-bool call site is unreadable besides. Counts: `SyncOutcome.FullSync(n)` is the one seam encoding 'a full sync fetches everything it scanned' and it is exactly the rule this slice inverts - add a `DeltaSync(scanned, fetched)` factory beside it rather than constructing the record inline in two places. scanned = the size of the sweep's result set; fetched = the number of payloads actually downloaded. Reuse, do not reinvent: `DeduplicateByReferenceId` already exists (it exists BECAUSE of the DC duplicate hazard, ci-learnings 2026-05-25) and the sweep result must go through the same collapse rule with the same warning format - one collapse rule, one warning. The connector stays faked in this step; the real Jira sweep is 02-05. Structured logging only: message-template placeholders, never string interpolation."
+        },
+        {
+          "id": "02-02",
+          "name": "An issue that left the query is gone on the very next cycle",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "An_issue_that_left_the_query_is_gone_from_the_team_on_the_very_next_cycle",
+          "criteria": [
+            "Under delta, removal is `stored - sweepIds` - an exact set difference over the SWEPT ids, never over the fetched ids",
+            "An issue that left the query is deleted on the next cycle; every issue the query still returns survives it",
+            "The cycle reports mode Delta, scanned 2, fetched 0 - a cycle that removes something still fetches nothing",
+            "The removal set is computed from the deduplicated sweep result, so a duplicated id cannot look like an absent one"
+          ],
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.3 / D2 - the rule whose failure DELETES LIVE WORK ITEMS. This is the reason the whole epic chose the two-phase design over the cheaper `updated >= lastSync` alternatives, and it is the reason A1 exists: a sweep that loses an id is data loss behind a green pipeline, and the only failure mode in this epic a user cannot undo. Write it so the removal set can only ever be driven by phase 1's enumeration: today's full path removes whatever is left in `storedWorkItems` after the fetched items have been removed from it, and the delta path must keep that exact shape with the SWEPT ids doing the removing - not the fetched ids, which under delta are a strict subset. The single most dangerous mistake available in this slice is reusing the fetched-payload loop as the survivor set; it would delete every unchanged item and every test except this one would stay green. Land it here, before 02-05 gives Jira Cloud a real sweep, so the destructive rule is proven against a deterministic double first. Note the count assertion: scanned 2 / fetched 0 - a cycle that removes an item downloads nothing, which is only true if the diff is computed from stamps rather than from payloads. Mutation testing will come for the set operator here; keep the removal expression in one place so a survivor is obvious."
+        },
+        {
+          "id": "02-03",
+          "name": "An issue that did not move is left exactly as it was",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "An_issue_that_did_not_move_is_left_exactly_as_it_was",
+          "criteria": [
+            "Every readable stored property of an unmoved issue is identical before and after a delta cycle",
+            "Its ordered transition history is not rewritten, and no synthetic sync-delta transition is recorded for it",
+            "`CurrentStateEnteredAt` is not re-derived for an issue whose payload was not downloaded",
+            "The cycle it is measured across is genuinely a delta cycle (mode Delta, scanned 3, fetched 1)"
+          ],
+          "deps": [
+            "02-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.4, contract shape `unbounded-preservation` - the defining claim is an absence, so the assertion is the whole readable property surface by reflection plus the ordered transitions, not a spot check of two fields (DT2-9). The exclusion list is a DENY-list (`Team`, `SyncedTransitions`, both justified in the spec) rather than a type filter, so any property added to the work item later joins the comparison on its own - Sentinel's medium finding was that an `IsValueType` filter would have dropped a future reference-type property silently. Do not narrow it. This is the assertion that catches learning-hypothesis failure #2, 'the tracker's `updated` is not trustworthy': if Jira moves `updated` for something Lighthouse does not care about, this stays green and the epic is fine; if Lighthouse rewrites an untouched row, this goes red. The practical trap is `SyncStateTransitions` and `WithSyncDeltaTransition` - both currently run per item inside the fetched loop, and both write. Under delta an unmoved item must not enter that loop at all. Second trap: `workItemRepository.Update(...)` on an unmoved entity. EF will not mark it dirty if nothing changed, but calling it at all invites a future edit that does. Keep unmoved items out of the write path entirely. CROSS-CHECK, do not skip: phase 04 adds a second pass over the STORED set that writes `WasStaleAtLastSync`, which is inside this reflection surface. Re-run this scenario after 04-01 and confirm it is still green - for the default team (`StalenessThresholdDays = 0`, `CurrentStateEnteredAt` null after a first cycle with no state change) `IsStale` is false and the flag is already false, so the write is a no-op, but that is an argument, not evidence."
+        },
+        {
+          "id": "02-04",
+          "name": "A refresh whose scan fails downloads everything rather than half",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "A_refresh_whose_scan_fails_downloads_everything_rather_than_half",
+          "criteria": [
+            "A sweep that throws falls back to one whole-query download in the same cycle - never a partial result, never a skipped cycle",
+            "The cycle reports mode Full with scanned 3 / fetched 3, and `Success` is true - resolving one's own ambiguity is a successful refresh, not a failed one",
+            "Nothing is removed: all three stored issues survive",
+            "Exactly one Warning-or-above line carries the underlying failure's message"
+          ],
+          "deps": [
+            "02-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.6 / D8 - there is no partial mode. Anything ambiguous resolves to full, because the expensive answer is always the safe one. DISTILL declared this scenario's assertion set partially vacuous today: the first three assertions (whole query downloaded, mode full, nothing lost) hold right now only because no scan is attempted, and they become meaningful the moment 02-01 lands. The genuinely red one is the fourth. `ThenTheOperatorIsToldTheScanFailed` matches with `Has.One.Contains(...)` over `CapturedLogs.AtOrAbove(Warning)` - EXACTLY ONE line, so log the failure once. `CapturedLogMessages.Emit` appends `:: <ExceptionType>: <Message>` to the rendered message when an exception is attached, so `logger.LogWarning(ex, \"...\")` puts the message in reach without interpolating it into the template. Do not also rethrow-and-log higher up: S2139 (log-and-rethrow when a higher layer already logs) is in the ledger, and a second line would fail `Has.One` regardless of Sonar. The fallback must re-issue the WHOLE query, not merge whatever the sweep managed to return before it threw - a half-enumerated sweep feeding `removed = stored - sweepIds` is the data-loss path 02-02 exists to prevent. Scope the catch to the sweep call only; a failure in the by-reference-id fetch is a different animal and keeps today's behaviour (the update fails and slice 01's summary line reports success=false)."
+        },
+        {
+          "id": "02-05",
+          "name": "Jira Cloud actually sweeps and actually fetches by key",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs",
+          "scenario_name": "The Jira Cloud adapter implements the probe, the sweep and the by-reference-id fetch (no acceptance scenario - the port is faked by policy)",
+          "criteria": [
+            "`SupportsIncrementalSync` answers true for a Cloud connection and false for Data Center, per connection rather than per connector",
+            "`SweepWorkItemsForTeam` issues the SAME JQL the whole-query fetch issues, requests identity plus `updated` only, and pages the entire result set",
+            "`GetWorkItemsForTeam(team, referenceIds)` fetches full payloads - fields and changelog, including the >30-entry paged path - for the named keys only",
+            "The by-key query is one extracted routine shared with `GetParentFeaturesDetails`, not a second copy",
+            "The other four connectors are untouched: probe false, both fetches still throw"
+          ],
+          "deps": [
+            "02-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs"
+          ],
+          "implementation_notes": "DT2-2: DISTILL made every connector's probe return false and both new fetches throw `NotSupportedException`; DELIVER flips JIRA CLOUD ONLY. DDD-1 - the probe is per-CONNECTION, not per-connector, precisely because Jira Cloud and Jira Data Center are one class and do not answer the same way; `GetDeploymentType(client, connection)` already exists and is cached in `DeploymentCache`. Note it is async and the port member is not, so resolve deployment from what is already cached on the connection rather than making the probe block. DC stays false until slice 04 resolves OQ-1: DC offset pagination over an unordered JQL is the documented source of duplicate ReferenceIds, and if the id set is UNSTABLE rather than merely duplicated then `removed = stored - sweepIds` deletes live items there. Sweep: reuse `PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)` verbatim - the sweep must enumerate exactly the query the full fetch would, or D2 stops holding - then go through `GetIssuesByQueryFromCloud`'s paging shape with `fields=` narrowed from `*all` to key+`updated` and `expand=changelog` dropped. Do not add a second paging loop; extract the page walk if you must. Return `RemoteRecordStamp(ReferenceId, ChangedAt)` for the whole result set. Phase 2: DDD-2 and the Reuse Analysis both say the by-key query already exists inside `GetParentFeaturesDetails` (`string.Join(\" OR \", ids.Select(id => $\"key = \\\"{id}\\\"\"))`, JiraWorkTrackingConnector.cs:167) - EXTRACT it and let the parent path and phase 2 call the same routine. Two callers of one query beats two queries; this is a behaviour-preserving extraction, so `GetParentFeaturesDetails`'s existing tests must stay green untouched. Watch the URL length on a large changed set - chunk the key list the way `GetAdoWorkItemsById` chunks, and cover the chunking in the test. S4136, error-severity here and the reason six files broke at once in the DISTILL commit (docs/ci-learnings.md 2026-08-10): the by-reference-id overload must sit IMMEDIATELY beside `GetWorkItemsForTeam(team)` in every file - it already does, so the hazard in this step is moving or re-ordering it while filling in the body. Expect one violation per implementing type, not one per change. This step claims no acceptance scenario on purpose: DISTILL's Adapter Coverage table records `IWorkTrackingConnector` as faked by policy with the Jira Cloud implementation left to DELIVER's connector tests, so a green AT suite is NOT evidence this step works. Model the test on `JiraIssuesPerRequestTest.cs` (recording `HttpMessageHandler` + canned JSON), and keep it out of the live path-scoped Jira integration tests."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "The opt-in gate",
+      "description": "A1, decided 2026-08-09 after slice 01 shipped. Delta ships dark: present in the build, unreachable until an instance volunteers. The driver is D2, not testability - a sweep that loses an id deletes live work items, so only instances that asked for it can be hurt, and the named on-prem Data Center instance opts in deliberately rather than by upgrading. This phase lands AFTER the delta path exists, which is what turns AC-2.10 from a vacuous pass into a genuine RED: with phase 02 shipped, a sweep now happens when nobody asked for it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "02"
+      ],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The cheaper refresh is offered, and it is switched off",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "An_instance_that_never_asked_for_the_cheaper_refresh_does_not_get_it",
+          "criteria": [
+            "A fresh install seeds an `OptionalFeature` row for the delta key with `Enabled = false` and `IsPreview = true`",
+            "Re-running the seeders - what an upgrade does - leaves it off and does not resurrect a row an operator turned on",
+            "The row is not on the deprecated list and is not removed by `RemoveDeprecatedFeatures`",
+            "No other seeded optional feature changes"
+          ],
+          "deps": [
+            "02-05"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/OptionalFeatureSeederTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.12 / DT2-5. `OptionalFeatureKeys.DeltaSyncKey` was added at DISTILL; the SEEDER ENTRY was deliberately withheld and is what makes this scenario red - `GetOptionalFeatures()` currently returns an empty list and the comment says 'we have no new features to add'. Add the one entry. `OptionalFeature.Id` is `required` (DISTILL upstream issue 3), so the initialiser must write `Id = 0` explicitly; it will read as odd in the diff and it is correct - do NOT 'fix' it to an omitted property. The machinery is dormant, not absent: entity, seeder, repository, controller, Settings UI and the `IsPreview`/`IsPremium` flags all exist, all four historical keys are deprecated, and no backend service has ever READ an optional feature. This slice is the first backend-gated one, so the read path (03-02) is new work - but the WRITE path and the Settings screen are untouched. Note the existing `AddOrUpdateCurrentFeatures` semantics and lean on them rather than changing them: for an existing row it refreshes `IsPreview`/`IsPremium` and leaves `Enabled` alone, which is exactly the upgrade behaviour AC-2.12's second half needs (`WhenTheInstanceIsUpgradedAgain` re-runs every `ISeeder` against a live host). `OptionalFeatureSeederTests` currently asserts against an empty current-feature list; update it in the same commit. Do NOT flip the default to on 'for convenience while testing' - `GivenNobodyAskedForTheCheaperRefresh` is a positive control on the default and three other scenarios depend on it. Nothing reads the row yet after this step, so scenarios 2/3/4/6 stay green unchanged."
+        },
+        {
+          "id": "03-02",
+          "name": "Asking for the cheaper refresh takes effect on the very next cycle",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle",
+          "criteria": [
+            "The flag is read once per update, inside that update's own DI scope - never cached in a field, a static or at startup",
+            "A cycle that ran full while the flag was off runs delta on the next cycle after the flag is turned on, with no restart",
+            "The flag reaches `SyncModeResolver` as a parameter; the resolver gains no constructor and no dependency",
+            "The gate composes with `SupportsIncrementalSync(connection)` rather than replacing it - capability stays per-connector, opt-in is per-instance",
+            "All seven `new WorkItemService(...)` sites in the test suite are updated in the same commit"
+          ],
+          "deps": [
+            "03-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionSyncIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTransitionFallbackIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceFeatureTransitionIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceCsvStateEnteredSeamIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/DemoDataStateEnteredSeamIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/WorkItemDomainEventsGoldTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/SyncModeResolverTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.11 / A1. This is the property that makes a soft launch usable: the toggle bites today, not after a restart. Read it PER UPDATE, in the update's own scope. `WorkItemService` is scoped and `RefreshWorkItems` is the natural read site; inject `IRepository<OptionalFeature>` (registered in Program.cs:989 as `OptionalFeatureRepository`) and query the key there. Do not memoise it in a field - `WorkItemService` is scoped today, and a field would still be a landmine the day a lifetime changes. Do not add a startup cache and do not read it in `Program.cs`. DDD-5 survives intact and Sentinel checked this explicitly: the flag is a PARAMETER INTO `SyncModeResolver`, never a dependency of it. The resolver stays a pure static; `WorkItemService` does the resolving and passes a bool. Off is not a special case - it resolves to `SyncMode.Full`, which is D8's own 'ambiguity resolves to a full fetch'. One more branch into an outcome the resolver already has, not a new mechanism. And it COMPOSES with `SupportsIncrementalSync(connection)`: capability is per-connector, opt-in is per-instance, and a global toggle plus a per-connector probe covers the rollout without a per-connector opt-in matrix. Blast radius, measured: `new WorkItemService(...)` appears at seven sites in the test suite (WorkItemServiceTest:1430, WorkItemServiceTransitionSyncIntegrationTest:97, WorkItemServiceTransitionFallbackIntegrationTest:175, WorkItemServiceFeatureTransitionIntegrationTest:161, WorkItemServiceCsvStateEnteredSeamIntegrationTest:124, DemoDataStateEnteredSeamIntegrationTest:206, WorkItemDomainEventsGoldTest:142). A 13th constructor parameter breaks all seven at once; per the project rule on shared contracts, extend the shared factory/`CreateSubject` helpers before changing the constructor. S107 is already suppressed around this constructor by a `#pragma warning disable S107` wrapping the declaration - keep the pragma wrapping the declaration that triggers it, which is the only form that works (ledger, 2026-05-16). Missing row = off: if the option row does not exist (an instance mid-upgrade, or a test that skipped the seeder), treat it as disabled and run full. `TheCheaperRefreshOption()` in the harness is deliberately null-tolerant for exactly this reason. Add the resolver's opted-in branch to `SyncModeResolverTest` alongside the five from 02-01. Expect scenario 8 to be genuinely red at the END of this step and green at the end of 03-03 - that is the intended sequence, not a regression."
+        },
+        {
+          "id": "03-03",
+          "name": "A refresh never scans unless an operator asked for it",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "A_refresh_never_scans_unless_an_operator_asked_for_it",
+          "criteria": [
+            "With the flag off, zero sweeps are issued - the connector's sweep method is never called at all, not called-and-ignored",
+            "The off path is decided BEFORE any remote call, so a connector that can sweep is still not asked to",
+            "The cycle behaves exactly as it did before this slice: one whole-query download, mode Full, scanned 3 / fetched 3",
+            "This holds on the second and later cycles of a fully stamped team, which is the only situation in which a sweep would otherwise have been issued"
+          ],
+          "deps": [
+            "03-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/SyncModeResolver.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.10 / A1, contract shape `unbounded-preservation`. This step may well require NO production change - and that is the point of running it last rather than first. DISTILL declared it GUARD_NOT_YET_FALSIFIABLE: at DISTILL time it PASSED, because with nothing scanning at all 'no sweep was issued' was true for the trivial reason. It is not manufactured red. Its positive control is scenario 9, and DELIVER was told explicitly to re-run scenario 8 AFTER scenario 9 is green - that is the moment it starts guarding something. Sequence check before you touch anything: with phase 02 shipped and 03-02 landed, un-ignore this scenario and RUN IT. If it is green, the gate is correctly ordered and this step is a verification checkpoint - record the run in the commit message rather than inventing work. If it is red, the flag is being consulted after the sweep has already gone out (an easy shape: probe -> sweep -> then decide), and the fix is to make the off answer terminate the decision before any remote call. Either way, prove the guard can fail: temporarily force the flag to true in the resolver, confirm this scenario goes red, restore, confirm green. `if (false)` does not work for this in C# - `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error (ledger). DT2-10 explains why the assertion is a call counter read on the test thread rather than an `Assert.Fail` inside the mock callback: the callback runs on the update queue's thread, where an assertion exception is swallowed into a failed refresh and the test reports the wrong thing. Do not 'improve' it into a callback assertion. Also revisit Sentinel's deferred low finding now that 03-01 has landed: `GivenNobodyAskedForTheCheaperRefresh` is null-tolerant (`?.Enabled`) only because the row did not exist before the seeder entry. With the row now seeded it can be tightened to assert the row exists and is off - that is a real strengthening, and Sentinel explicitly said 'revisit once scenario 10 is green'."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "What must keep happening",
+      "description": "Delta changes what is fetched and nothing else (D9). The two promises that break silently under it: a time-driven derivation evaluated over the fetched set stops seeing the items that stopped moving, and everything downstream of the fetch must fire on a cheap cycle exactly as on a full one. Both are regressions that leave every other test green, which is why they are their own phase rather than assertions folded into the skeleton.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "03"
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "An issue that stopped moving still goes stale",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "An_issue_that_stopped_moving_still_goes_stale",
+          "criteria": [
+            "`AddStalenessEventIfThresholdCrossed` is called from a second pass over the STORED set, not from the fetched-item loop",
+            "An item nobody has touched for longer than the team's threshold raises `WorkItemBecameStale` on a delta cycle in which it was never downloaded",
+            "`WasStaleAtLastSync` is persisted for items visited only by the second pass, so the event fires once and not on every cycle",
+            "Staleness events are still collected in the same method as every other domain event this feature raises, and dispatched through the same publish path"
+          ],
+          "deps": [
+            "03-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.5 / D10 / DDD-4 - the slice brief names this as one of the two criteria that fail SILENTLY if skipped. An item that stops changing is exactly the item that goes stale, and under delta it is exactly the item that stops being fetched; leave the evaluation on the fetch loop and staleness quietly stops firing for the only population it was ever about. This also preserves ADR-027's assumption that a re-sync re-derives the signals. Today `AddStalenessEventIfThresholdCrossed` is the last call inside `CollectDomainEvents`, which runs per fetched item. Move it OUT of `CollectDomainEvents` and onto a second `foreach` over the stored set, after the fetched loop and before `PublishDomainEvents` - DDD-4 is explicit that the smallest correct change is a second pass inside `WorkItemService`, and that keeping every domain event this feature can raise collected in one method is what makes AC-2.5 readable as a test. Do not extract a `StalenessEvaluator` collaborator. Two mechanical traps. First, entity tracking: `AddStalenessEventIfThresholdCrossed` mutates `WasStaleAtLastSync`, and today that mutation is saved by the `workItemRepository.Save()` that follows the fetched loop. Items visited only by the second pass must be tracked (they come from `GetAllByPredicate`, so they are) AND the save must happen after the pass - check the ordering, do not assume it. Second, the stored set: build the pass over the full stored collection as it was read at the top of `RefreshWorkItems`, MINUS the ones removed this cycle - raising staleness for a work item that was just deleted would publish an event naming a dead id. AC-2.5 is observed on the domain-event bus through a recording handler registered alongside the production handlers (DT2-8): `WorkItemBecameStale` has no handler that persists anything, so the bus is the only port-exposed place it exists. The scenario's `ThenTheIssueWasReportedAsStale` carries a positive control (the issue must be stored at all) - if that half fails, the seeding is wrong, not the pass. After this step, re-run 02-03's byte-identical scenario: this pass writes into the property surface that scenario compares."
+        },
+        {
+          "id": "04-02",
+          "name": "A cheaper refresh still rolls up remaining work and still asks for a new forecast",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs",
+          "scenario_name": "A_cheaper_refresh_still_rolls_up_remaining_work_and_still_asks_for_a_new_forecast",
+          "criteria": [
+            "A delta cycle runs the remaining-work rollup for every portfolio the team delivers into, exactly as a full cycle does",
+            "The rollup reflects the whole stored set, not what this cycle happened to download - an item removed by the sweep drops out of the Feature's remaining count",
+            "`TeamDataRefreshed` is raised on a delta cycle, so forecasts are still requested",
+            "The assertion is made on a cycle that genuinely ran delta (mode Delta, scanned 2, fetched 0)"
+          ],
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamData/TeamDataService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice02JiraCloudTeamDeltaScenarios.cs"
+          ],
+          "implementation_notes": "AC-2.9 / D9 - only the remote fetch is deltaed. Remaining-work rollup, Feature extrapolation, percentile defaults and forecasts continue to recompute every cycle, because they depend on wall clock and on OTHER teams' data; skipping them because this team's items did not move would be wrong. Expect this to be largely a regression check: `UpdateWorkItemsForTeam` already calls `RefreshWorkItems` and then loops `team.Portfolios` calling `UpdateRemainingWorkForPortfolio`, and `TeamDataRefreshed` is raised on the `TeamDataService` path. If it is red, the likely cause is a delta short-circuit that returned early past the post-fetch work - an easy shape when 'nothing changed' tempts an early return. There is no early return in D9's world: a delta cycle with zero fetched records still runs everything after the fetch. Files are listed as where a fix would land, not as a promise of edits. Two things not to re-derive. `Portfolio.Teams` is a COMPUTED property (`=> GetTeams()`, derived from `FeatureWork`) sitting on top of a real many-to-many `PortfolioTeam` mapping, so a portfolio with no feature work reports no teams and saving it removes join rows that were explicitly added. A team belongs to a portfolio in this codebase THROUGH feature work. That footgun cost slice 01 one reshaped scenario and slice 02 another, and it is why `SeedFeature` takes the delivering team and the work the previous cycle counted (DISTILL upstream issue 1). Sentinel verified that `workAlreadyCounted: 3` is fully overwritten by a real recompute during the chained first cycle, so it is a precondition and not a planted expected value. Also note the scenario originally asserted only the rollup and the forecast signal and therefore PASSED - it was reshaped during the RED gate to assert the cycle was a delta one, because AC-2.9's promise is about a delta cycle. Do not weaken it back. Run this step last: it is the one that says nothing downstream regressed, and it is only meaningful once phases 02-04 are all in."
+        }
+      ]
+    }
+  ]
+}
