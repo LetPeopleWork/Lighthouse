@@ -2,12 +2,15 @@
   "roadmap": {
     "project_id": "epic-5687-faster-updates",
     "created_at": "2026-08-11T14:33:58Z",
-    "total_steps": 14,
+    "total_steps": 13,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "slice": "slice-05-fetch-fingerprint",
     "ado": "Epic #5687 / Story #5728 (Active)",
-    "goal": "Lighthouse decides for itself whether a settings edit changed what gets fetched. A hash over thirteen properties - what the query asks the tracker for UNION how the answer is read into the stored record - is written at the end of every cycle and compared at the start of the next one; a mismatch makes the next cycle `mode=full` and the summary line says `reason=configuration-changed`. Everything outside the set costs no remote call at all. The same thirteen properties also become the ONE list the save-time purge decision reads, and that purge narrows from five triggers to one: a connection change, the only edit `removed = stored - fetched` cannot reconcile. Ungated - with delta off the fingerprint is inert, not inactive."
+    "goal": "Lighthouse decides for itself whether a settings edit changed what gets fetched. A hash over thirteen properties - what the query asks the tracker for UNION how the answer is read into the stored record - is written at the end of every cycle and compared at the start of the next one; a mismatch makes the next cycle `mode=full` and the summary line says `reason=configuration-changed`. Everything outside the set costs no remote call at all. The same thirteen properties also become the ONE list the save-time purge decision reads, and that purge narrows from five triggers to one: a connection change, the only edit `removed = stored - fetched` cannot reconcile. Ungated - with delta off the fingerprint is inert, not inactive.",
+    "absorbed_steps": [
+      "03-01 -> 02-01: scenarios 15 and 17 were mutually unverifiable with the fingerprint wiring. Narrowing alone leaves scenario 15 red on the mode (storage survives with stamps, so Delta); wiring alone leaves it red on the history (the purge takes it). Both landed together in e0f5cba90, with scenarios 1, 15 and 17 green and a litmus inversion recorded. Scenario 17 passed on the wiring alone - the portfolio has no purge to narrow - so it is a guard, not new work."
+    ]
   },
   "validation": {
     "status": "approved",
@@ -208,29 +211,6 @@
       ],
       "steps": [
         {
-          "id": "03-01",
-          "name": "A query edit keeps the history and the Features already stored",
-          "agent": "nw-software-crafter",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
-          "scenario_name": "A_team_whose_query_changed_keeps_the_history_it_already_recorded + A_portfolio_whose_query_changed_keeps_the_features_it_already_stored",
-          "criteria": [
-            "Changing a team's query no longer deletes that team's stored work items or their recorded state transitions - the rendered history is byte-identical across the save",
-            "The next cycle after that edit still downloads the whole query and reports Full with 3 scanned / 3 fetched, so the widened query really does take effect",
-            "Changing a portfolio's query leaves the portfolio holding the same three Features it held before, and that cycle records the portfolio's new fingerprint",
-            "The save-time purge decision reads the one registered set, not a second list of its own",
-            "A connection change still purges on the team side - the existing behaviour is narrowed, not removed"
-          ],
-          "deps": [
-            "02-03"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
-          ],
-          "implementation_notes": "A2 / DT5-2, contract shape `unbounded-preservation` on both - their defining claim is an ABSENCE (nothing stored was thrown away), which is why DISTILL gave each a positive control. THIS IS THE USER-VISIBLE BEHAVIOUR CHANGE THE SLICE SHIPS, and nobody wrote the current behaviour down, so nobody will notice it changed: today `TeamController.UpdateTeam:178` calls `team.WorkItemRelatedSettingsChanged(teamSetting)` and on true runs `workItemRepository.RemoveWorkItemsForTeam(team.Id)`, deleting the team's stored work items AND their transition history. After this step only a connection change does. What replaces it is `removed = stored - fetched` on the next full cycle, which is how the portfolio side has always reconciled the same edit without a purge. A release-note line is OWED at slice close (slice brief, `Behaviour change this slice ships`). WHAT `WorkItemRelatedSettingsChanged` LOOKS LIKE TODAY (`API/Helpers/TeamExtensions.cs:65-79`): it ORs five comparisons - queryChanged, connectionChanged, workItemTypesChanged, statesChanged, stateMappingsChanged. Four of the five go; only `connectionChanged` earns the purge. `FetchFingerprint.PropertiesThatAlsoCostAFreshStart` is the SSOT for which ones those are, and G2 is what keeps the two in step - so read the registry rather than deleting four lines and leaving a hard-coded comparison behind. Name the narrowed method for what it now decides; the old name describes the old, wider question. THE ASYMMETRY THAT IS NOT A BUG (DISTILL upstream issue 2, ADR-140 Consequences): the save-time consumer compares an entity against an incoming settings DTO, which carries no connection field definitions and no work tracking system, so three of the thirteen rows are permanently invisible to it. G2 asserts the SET, not that both consumers can reach every member. Do not try to make the controller see them. Scenario 15's red is the history (`TheHistoryOf(history.WorkItemId)` returns `<string.Empty>` today because the purge already ran); scenario 17's red is the portfolio fingerprint being null - which 01-03 and 02-01 should already have fixed, so 17 may well be GREEN on arrival. That is expected and is the point of doing both entities' wiring in phase 01/02: un-ignore it, RUN it, and record the run in the commit message rather than inventing work. Do NOT touch `PortfolioController` in this step - the portfolio's purge is 03-02's, and adding it here would make scenario 17's `the portfolio still has all three Features` pass for the trivial reason that nothing purges the portfolio yet. Regression watch: `TeamsControllerTest` / the team settings tests almost certainly pin the current purge behaviour on a query or state edit. If one goes red, it is asserting the behaviour this step deliberately changes - update it and say so in the commit body, do not weaken the new behaviour to keep it green. Preflight and gates as in 01-01; skipped goes 44 -> 42."
-        },
-        {
           "id": "03-02",
           "name": "A connection change starts from nothing, on both entities",
           "agent": "nw-software-crafter",
@@ -244,7 +224,7 @@
             "Both entities answer the one question the same way"
           ],
           "deps": [
-            "03-01"
+            "02-03"
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
