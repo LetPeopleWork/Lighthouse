@@ -79,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // portfolio is rebuilt from the fetched list, so under delta the Features that did NOT move are
         // the ones at risk. Losing a Feature here deletes it outright.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_feature_that_did_not_move_is_still_part_of_the_portfolio_after_a_cheaper_refresh()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
@@ -98,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @driving_port @real-io @AC-3.3 @contract-shape:unbounded-preservation
         // The second half of failure mode 1: what a dropped Feature costs beyond the row itself.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
