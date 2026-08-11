@@ -2470,3 +2470,440 @@ The contract exists and is proven on the team half. What slice 03 inherits, and 
   anyway. AC-3.5 is the assertion that catches confusing the two.
 - The parent key list must be derived from the **stored** set, not from what this cycle fetched, or delta
   shrinks it and parents silently drop out.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 03
+
+**DISTILL run**: 2026-08-11 · **Scope**: slice 03 only (Story #5726, US-03) · **Policy**: `inherit` ·
+**Deliverable type**: `application` (unchanged from slice 02 — no plugin or skill reviewer applies)
+
+- ✓ This file's DISCUSS wave (D1 … D12, US-03 AC-3.1 … AC-3.6) and DESIGN wave (DDD-1 … DDD-8)
+- ✓ `docs/feature/epic-5687-faster-updates/slices/slice-03-jira-cloud-portfolio-delta.md`, including its
+  learning hypothesis and its two named failure modes
+- ✓ Every `## Wave: DISTILL … — slice 02` section, including the corrected RED classification and the
+  AC-2.4 write-path observation added after slice 02 shipped
+- ✓ Every `## Wave: DELIVER … — slice 02` section, and in particular the slice-02 → slice-03 handoff,
+  whose five inherited facts this wave takes as given rather than re-deriving
+- ✓ The slice-02 specifications this wave mirrors: `Slice02JiraCloudTeamDeltaScenarios.cs`,
+  `…Specifications.cs`, `FasterUpdatesAcceptanceTest.cs`, `Models/Slice02RemoteChangeStampSurvivesUpdateTest.cs`
+- ✓ `docs/architecture/atdd-infrastructure-policy.md`
+- ✓ `docs/ci-learnings.md` — pre-applied. S4136 (the ledger entry slice 02 wrote *for this slice*) governed
+  where the Feature-side overload was placed; the mandatory `dotnet format analyzers` sweep was run over
+  the new and modified files before handoff and returned zero findings in any of them
+- ⊘ `docs/feature/epic-5687-faster-updates/devops/` — no DEVOPS wave ran. Graceful degradation: WARN,
+  project defaults apply. Slice 03 adds no substrate, no dependency and no deployment change
+- ⊘ `spike/` — none ran; the slice brief records "Pre-slice SPIKE: not needed"
+
+**Wave-decision reconciliation**: passed — 0 contradictions. One apparent tension was checked and is not
+one: the slice brief's IN-scope line *"`LastChangedRemote` on the Feature (additive, expand-only, same
+migration pattern as slice 02)"* reads as new migration work, and it is not. `Feature : WorkItemBase`, and
+slice 02's migration `AddLastChangedRemoteToWorkItems` added the column to **both** the `WorkItems` and
+`Features` tables in the same `Up` (verified in
+`Lighthouse.Migrations.Sqlite/Migrations/20260810061716_AddLastChangedRemoteToWorkItems.cs`, and its
+Postgres twin). The brief's requirement is already satisfied; generating a second migration would be
+duplicate schema work. **No migration ships in this wave.**
+
+---
+
+## Wave: DISTILL / [REF] Scenario List — slice 03
+
+Ten acceptance scenarios in one fixture plus a two-case specification on the model. Every one is
+example-based: the C#/NUnit row of the polyglot matrix governs (no PBT, no state-delta Universe — the
+ATDD policy records why the Python-pilot artefacts do not apply to this repo).
+
+| # | Scenario | Tags | Contract shape | AC |
+|---|---|---|---|---|
+| 1 | `The_first_portfolio_refresh_downloads_every_feature_and_remembers_when_each_one_last_changed` | `@driving_port` `@real-io` | bounded-change | AC-3.1, D6 |
+| 2 | `A_later_portfolio_refresh_downloads_only_the_features_that_moved` | `@walking_skeleton` `@driving_port` `@real-io` | bounded-change | AC-3.1, AC-3.6 |
+| 3 | `A_feature_that_did_not_move_is_still_part_of_the_portfolio_after_a_cheaper_refresh` | `@driving_port` `@real-io` | unbounded-preservation | AC-3.1, AC-3.2 (D2) |
+| 4 | `A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was` | `@driving_port` `@real-io` | unbounded-preservation | AC-3.3 |
+| 5 | `A_feature_that_left_the_query_is_gone_from_the_portfolio_on_the_very_next_cycle` | `@error` `@driving_port` `@real-io` | bounded-change | AC-3.2 (D2) |
+| 6 | `A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both` | `@driving_port` `@real-io` | bounded-change | AC-3.4 |
+| 7 | `The_parent_features_survive_a_cycle_in_which_no_child_feature_moved` | `@driving_port` `@real-io` | unbounded-preservation | AC-3.1 (parent path) |
+| 8 | `A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left_and_still_asks_for_a_new_forecast` | `@driving_port` `@real-io` | bounded-change | AC-3.5 (D9) |
+| 9 | `A_portfolio_refresh_whose_scan_fails_downloads_every_feature_rather_than_half` | `@error` `@driving_port` `@real-io` | bounded-change | AC-3.1 (D8) |
+| 10 | `A_portfolio_refresh_never_scans_unless_an_operator_asked_for_it` | `@driving_port` `@real-io` | unbounded-preservation | A1 |
+| 11a | `A_feature_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed` | `@unit` | bounded-change | AC-3.1, D6 |
+| 11b | `A_feature_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed` | `@unit` | pure-function | AC-3.1, D6 |
+
+Every scenario carries its `@contract-shape:` tag in the source, beside its other tags. Four are
+**unbounded-preservation** because their defining claim is an absence: 3 says the Features that did not
+move did not leave, 4 says nothing about the untouched Feature's history or blocked spell changed, 7 says
+the parents did not drop out and nothing was downloaded for them, and 10 says no scan was issued at all.
+
+**The walking skeleton is scenario 2**: a routine portfolio cycle scans the whole Feature query and
+downloads one Feature, and the operator reads `mode=delta | scanned=3 | fetched=1`. That line is the
+second half of what the epic is buying, and a non-technical stakeholder can confirm it.
+
+Error/edge share: scenarios 3, 4, 5, 7, 9 and 10 all assert that something is absent, removed, failed or
+refused — six of ten, well above the 40 % bar.
+
+**Where slice 03 is genuinely its own design, not slice 02 pointed at another method.** The slice brief's
+learning hypothesis names two ways the contract fails to generalise. Both have a scenario, and the first
+one is the substantive finding of this wave:
+
+1. **The portfolio is rebuilt from what was fetched.** `WorkItemService.RefreshFeatures` builds its
+   `features` list from what the tracker returned and then calls
+   `portfolio.UpdateFeatures(featureOrdering.Order(features))`, and hands the same list to
+   `SweepDepartedFeatureSpells`. Under delta that list holds **only the Features that moved** — so every
+   unchanged Feature loses its portfolio claim. `Portfolio.UpdateFeatures` is `Features.Clear()` +
+   `AddRange`, and the updater's own `finally` block runs `IOrphanedFeatureCleanupService.CleanupAsync()`,
+   which is `db.Features.Where(f => !f.IsParentFeature && !f.Portfolios.Any()).ExecuteDeleteAsync(...)`.
+   **A Feature that did not move is not merely hidden — it is deleted.** Its open blocked spells are
+   closed by the departed sweep on the way. That is data loss on a green sync, and it is scenarios 3 and 4.
+   The brief's own framing — "removal by set difference" — is *not* where the portfolio-side hazard is:
+   removal already works and needs no new mechanism. Recorded as a correction below.
+2. **The parent key list shrinks.** `RefreshParentFeatures` derives its keys from `project.Features` —
+   the **stored** set, which is the safe source — so failure mode 2 is already mitigated *provided*
+   failure mode 1 is handled, since `UpdateFeatures` is what determines `project.Features`. Scenario 7
+   asserts the mitigation directly: a cycle in which no child Feature moved still sweeps the parent keys,
+   downloads no parent payload, and leaves the parent stored, marked and stamped.
+
+**AC-3.5 (D9) is where "the Feature record did not move" is separated from "the Feature's rollup did not
+change".** Scenario 8 chains it: cycle 1 sizes a Feature by the default because nothing is broken down
+under it; between cycles the delivering team stores three work items (one Done); cycle 2 is a delta cycle
+in which the Feature's own record never moved, and the Feature must nonetheless report two items left and
+stop being sized by the default. An implementation that skips `UpdateRemainingWorkForPortfolio` because
+nothing moved leaves the portfolio's numbers stale while every Feature row looks fresh.
+
+**Pillar 2 (chained narrative)** is live: scenarios 2, 3, 4, 5, 6, 7, 8, 9 and 10 all open with
+`GivenThePortfolioHasAlreadyBeenRefreshed(portfolio)`, which is literally
+`WhenTheScheduledRefreshRuns(portfolio)` — the previous cycle run through the same driving port with the
+same step method, never a hand-built row that happens to look like its result. Scenario 6 chains two
+portfolios through it.
+
+**Slice-02's harness rule holds (DT2-13): no step method reads a field another step method assigns.**
+`SeededPortfolio` is threaded through every step as a parameter; the fixture carries no mutable
+entity-under-test field.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 03
+
+| Artifact | Path |
+|---|---|
+| Harness (shared, EXTENDED) | `Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs` |
+| Scenarios | `…/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs` |
+| Specifications (step methods) | `…/FasterUpdates/Slice03JiraCloudPortfolioDeltaSpecifications.cs` |
+| Feature copy-path specification | `Lighthouse.Backend.Tests/Models/Slice03FeatureRemoteChangeStampSurvivesUpdateTest.cs` |
+
+Same `<Feature>AcceptanceTest` + `SliceNNScenarios` / `SliceNNSpecifications` triple as slices 01 and 02.
+Categories `acceptance` / `epic-5687-faster-updates` / `slice-03`. No new test helper was needed:
+`CapturedDomainEvents`, `CapturingDomainEventHandler<T>` and `CapturedLogMessages` all carry over.
+
+The Feature copy-path specification sits in `Models/` beside its slice-02 twin, for the same reason:
+`Feature.Update(…)` is its own method (it calls `base.Update(…)` and then adds `EstimatedSize` and
+`OwningTeam`), and losing the stamp there degrades every later portfolio cycle to a full download with
+every other test still green.
+
+---
+
+## Wave: DISTILL / [REF] Architecture of Reference — applied (slice 03)
+
+Per `docs/architecture/atdd-infrastructure-policy.md`. **No row had to be added**: every seam this slice
+touches is already covered. The three new port members are members of `IWorkTrackingConnector`, which the
+policy already names as driven-external/fake; the blocked-spell and Feature-transition reads are EF
+through repositories the policy already names as driven-internal/real.
+
+| Port | Class | Treatment in these scenarios |
+|---|---|---|
+| Scheduled portfolio refresh (`IPortfolioUpdater` → `IUpdateQueueService`) | Driving | **Real** — triggered, then the production queue runs it in its own DI scope |
+| EF `LighthouseAppContext` + repositories, `IRefreshLogService`, `IRepository<OptionalFeature>`, `IFeatureStateTransitionRepository`, `IFeatureBlockedTransitionRepository` | Driven internal | **Real** — SQLite via the test factory, `EnsureDeleted` + `EnsureCreated` per `[SetUp]`, seeders run |
+| `IOrphanedFeatureCleanupService` | Driven internal | **Real** — deliberately not faked; it is what turns "dropped from the portfolio" into "deleted", and faking it would make scenario 3 a claim about a collection rather than about the user's data |
+| `IWorkTrackingConnector` (incl. the new Feature sweep, Feature by-reference-id fetch and parent sweep) | Driven external | **Fake** — `Mock<IWorkTrackingConnector>`, programmed from one coherent picture of the tracker |
+| `IForecastService` | Driven external / non-deterministic | **Fake** |
+| `ILicenseService` | Driven external | **Fake** — premium true |
+| `ILoggerFactory` | Observation seam | Serilog factory writing to `CapturedLogMessages` (unchanged) |
+| `IDomainEventDispatcher` | Observation seam | **Real dispatcher**; recording `IDomainEventHandler<T>`s for `FeatureUnblocked`, `PortfolioFeaturesRefreshed` and `PortfolioForecastsUpdated` registered **alongside** the production handlers, never in place of one |
+
+**Deliberately not faked**: `IWorkItemService`, `IUpdateQueueService`, `IFeatureOrdering`,
+`IBlockedItemService`, `IOrphanedFeatureCleanupService`. The whole slice lives inside
+`WorkItemService.RefreshFeatures` / `RefreshParentFeatures`; faking any of these would make a criterion
+vacuous.
+
+**Why `FeatureUnblocked` is observed on the bus.** The departed-spell sweep publishes it and
+`FeatureBlockedTransitionCloseHandler` persists the close. Observing the event catches the defect at the
+moment it is decided; observing the spell catches its effect. Scenario 4 asserts both, because a future
+refactor could move the close off the bus and the spell assertion would still hold the line.
+
+**No write-recording decorator on the Feature side.** Slice 02 added
+`WriteRecordingWorkItemRepository` because for an unmoved *work item* "never written" and "rewritten with
+what it already said" are value-identical (DT2-14). That argument does not carry over: the portfolio-side
+hazard is not a redundant write, it is a **dropped portfolio claim followed by a delete**, which is
+plainly visible in `TheFeaturesInThePortfolio(...)` and `TheStoredFeature(...)`. Recorded so DELIVER does
+not read the asymmetry as an oversight.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage — slice 03
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| EF repositories (`IRepository<Feature>`, `IRepository<Portfolio>`, `IWorkItemRepository`, `IRepository<Team>`) | YES | Every scenario — real SQLite through the production composition root |
+| `IFeatureBlockedTransitionRepository` / `FeatureBlockedTransitionRepository` | YES | Scenario 4 — seeds an open spell and reads the open set back |
+| `IFeatureStateTransitionRepository` | YES | Scenario 4 — the untouched Feature's history, read before and after |
+| `IOrphanedFeatureCleanupService` | YES | Scenarios 3 and 5 — the real cleanup pass runs in the updater's `finally`; scenario 5 depends on it to delete the departed Feature, scenario 3 forbids it deleting the quiet one |
+| `RefreshLogService` / `RefreshLogRepository` | YES | Scenarios 1-3, 5-10 read the persisted row back through `IRefreshLogService` |
+| `IUpdateQueueService` / `IUpdateStatusStore` | YES | Every scenario — the refresh is admitted and run by the real queue |
+| `IDomainEventDispatcher` | YES | Scenarios 4 and 8 observe the real dispatcher's output |
+| `IRepository<OptionalFeature>` / `OptionalFeatureRepository` | YES | Scenario 10, and every scenario's opt-in Given |
+| `IWorkTrackingConnector` (Jira / ADO / ServiceNow / Linear / CSV) | NO — faked by policy | The port is extended in this slice; the Jira Cloud **implementation** of the Feature sweep is DELIVER's, covered by the connector's own tests. Recorded so the fake is not mistaken for coverage of the JQL |
+
+Zero `NO — MISSING` rows. The one faked driven port is the one the project policy names as
+external/non-deterministic.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 03
+
+DESIGN declares **no new inbound surface** (D4), and slice 03 adds none. Scanned anyway:
+
+| Entry point in DESIGN | Covered |
+|---|---|
+| Background timer loop (`UpdateServiceBase.ExecuteAsync`) | Unchanged by this slice; slice 01's second fixture already drives it |
+| `POST api/v1\|latest/portfolios/{id}` manual trigger | Same code path as every scenario here — they enter at `IPortfolioUpdater.TriggerUpdate`, which is what the controller calls |
+| `GET api/v1\|latest/update/status` | Untouched this epic (Epic #5511 owns it) — no scenario, by design |
+| Settings → Optional Features | Unchanged: slice 03 adds **no** new gate and no new opt-in. Scenario 10 asserts the existing one covers the portfolio half |
+| Container log stream | The observable of scenario 2 |
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds — slice 03
+
+The C# rows of the polyglot matrix govern: `[Ignore]` is the skip marker and there is no `__SCAFFOLD__`
+convention in this repo. What DISTILL added so the scenarios compile and reach their assertions:
+
+| Scaffold | Path | Note |
+|---|---|---|
+| `IWorkTrackingConnector.GetFeaturesForProject(portfolio, referenceIds)` | `Services/Interfaces/WorkTrackingConnectors/` | New port member — phase 2 for the portfolio's Feature query (DDD-2). Placed **immediately beside** `GetFeaturesForProject(portfolio)` (S4136) |
+| `IWorkTrackingConnector.SweepFeaturesForPortfolio(portfolio)` | same | New port member — phase 1 for the Feature query (D1) |
+| `IWorkTrackingConnector.SweepParentFeatures(portfolio, parentFeatureIds)` | same | New port member — phase 1 for the parent path. Placed beside `GetParentFeaturesDetails` |
+| The three members on Jira, ADO, ServiceNow, Linear and CSV | `…/WorkTrackingConnectors/*` | All five **throw** `NotSupportedException`, Jira included. Unreachable until `RefreshFeatures` calls them, which is DELIVER's; permanent for CSV (D11) |
+| Harness extensions | `…/FasterUpdates/FasterUpdatesAcceptanceTest.cs` | `TheTrackerHoldsFeatures`, `TheTrackerHoldsParentFeatures`, `TheFeatureScanFails`, `OnTheTrackerTheFeature{Changes,IsGone}`, `TheTrackersChangeStampForFeature`, the five Feature-side call counters, `SeedStoredFeatures`, `TheFeaturesInThePortfolio`, `TheStoredTransitionsForFeature`, `AFeatureIsAlreadyBlockedInThePortfolio`, `TheOpenBlockedSpellsInThePortfolio`, and the three new capturing event handlers |
+
+**No migration ships in this wave, and that is a decision, not an omission.** `Feature : WorkItemBase`,
+and slice 02's `AddLastChangedRemoteToWorkItems` already added `LastChangedRemote` to the `Features` table
+alongside `WorkItems`, in both providers. The slice brief's IN-scope line reads as new migration work; it
+is already satisfied. See the reconciliation note above.
+
+**Only ONE phase-2 overload was added, not two.** DDD-1 pairs every sweep with a by-id fetch, but the
+parent path is **already** a keyed query — `GetParentFeaturesDetails(portfolio, parentFeatureIds)` — so
+its phase 2 is that same method called with a shorter key list. Adding a second overload beside it would
+be dead surface on five connectors. The parent path therefore gains a sweep and nothing else.
+
+**Two deliberate non-scaffolds**, recorded so DELIVER does not read them as oversights:
+
+- **`SyncModeResolver` was not touched.** No AT references it, and slice 03 adds no branch to it. DELIVER
+  will have to widen its `IReadOnlyCollection<WorkItem> storedWorkItems` parameter to `WorkItemBase` (or
+  add a Feature-shaped overload) because `Feature : WorkItemBase` is not a `WorkItem` — that is a
+  production change with its own unit tests (DDD-5), not a scaffold.
+- **`WorkItemService` is unchanged.** Nothing in this wave changes behaviour; every scenario's RED comes
+  from behaviour that does not exist yet.
+
+**S4136 was pre-applied, not discovered.** Slice 02's upstream-issues entry predicted this slice would hit
+it again, and it would have: `GetFeaturesForProject(portfolio, referenceIds)` anywhere other than
+immediately beside `GetFeaturesForProject(portfolio)` reds the interface and all five connectors at once.
+Placed adjacent from the first edit; the build was clean on the first run.
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate) — slice 03
+
+Slice 02's review gate recorded that *"reviewing a RED table is not the same as reading the run that
+produced it"* and that the next slice's gate evidence must be the failure output itself. It is, below:
+every row's "Observed failure" column is copied from the run, not from what the scenario was expected to
+say.
+
+`dotnet test Lighthouse.sln --filter "TestCategory=slice-03&TestCategory=epic-5687-faster-updates"` with
+the `[Ignore]`s temporarily lifted — **8 failed, 4 passed, 0 setup failures**. Every failure is on an
+assertion; none is an import error, a fixture error or a setup error.
+
+| # | Scenario | Observed failure (verbatim from the run) | Class |
+|---|---|---|---|
+| 1 | `The_first_portfolio_refresh_downloads_every_feature…` | **passes** | GREEN off shipped code (declared below) |
+| 2 | `A_later_portfolio_refresh_downloads_only_the_features_that_moved` | `Assert.That(FeatureScansIssued, Is.EqualTo(1))` → `Expected: 1 But was: 0`; `Assert.That(FullFeatureDownloadsIssued, Is.Zero)` → `Expected: 0 But was: 1` | MISSING_FUNCTIONALITY ✅ |
+| 3 | `A_feature_that_did_not_move_is_still_part_of_the_portfolio…` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 1 But was: 3` | MISSING_FUNCTIONALITY ✅ |
+| 4 | `A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 1 But was: 3` | MISSING_FUNCTIONALITY ✅ |
+| 5 | `A_feature_that_left_the_query_is_gone_from_the_portfolio…` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 0 But was: 2` | MISSING_FUNCTIONALITY ✅ |
+| 6 | `A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 0 But was: 3` | MISSING_FUNCTIONALITY ✅ |
+| 7 | `The_parent_features_survive_a_cycle_in_which_no_child_feature_moved` | `Assert.That(ParentFeatureScans, Has.Count.EqualTo(1))` → `Expected: property Count equal to 1 But was: 0` | MISSING_FUNCTIONALITY ✅ |
+| 8 | `A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left…` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 0 But was: 1` | MISSING_FUNCTIONALITY ✅ |
+| 9 | `A_portfolio_refresh_whose_scan_fails_downloads_every_feature…` | `Has.One.Contains("The identity scan was refused…")` → `But was: 0 matching items < "No teams available for extrapolation…" ×3 >` | MISSING_FUNCTIONALITY ✅ |
+| 10 | `A_portfolio_refresh_never_scans_unless_an_operator_asked_for_it` | **passes** | GUARD_NOT_YET_FALSIFIABLE (declared below) |
+| 11a | `A_feature_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed` | **passes** | GREEN off shipped code (declared below) |
+| 11b | `A_feature_copied_from_what_the_tracker_returned…` | **passes** | GREEN off shipped code (declared below) |
+
+Gate: **PASSED** — zero scenarios in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `SETUP_FAILURE` /
+`WRONG_ASSERTION` classes.
+
+### The blindness check the fail-fast would otherwise have hidden
+
+NUnit's multiple-assert scope aborts a scenario at its first failing block, so six of the eight failures
+above stop before the scenario's *later* assertions run — and a broken assertion sitting behind a
+fail-fast is invisible at DISTILL and surfaces as a mystery at DELIVER GREEN. A second, diagnostic run was
+therefore made with **every delta-specific assertion temporarily commented out**
+(`ThenTheRefreshReportedACheaperUpdateOf`, `ThenTheParentFeaturesWereScannedFor`,
+`ThenNoParentFeatureWasDownloaded`, `ThenTheWholeFeatureQueryWasScannedForIdentitiesOnly`,
+`ThenOnlyTheFeaturesThatMovedWereDownloaded`, `ThenTheOperatorSeesACheaperUpdate`,
+`ThenTheOperatorIsToldTheScanFailed`) and everything else left in place:
+
+```
+Passed!  - Failed: 0, Passed: 12, Skipped: 0, Total: 12
+```
+
+Every non-delta assertion in every scenario holds against current `HEAD`. So the eight failures are
+failures *of the delta claim* and of nothing else, and no assertion is silently broken behind one. The
+diagnostic edit was reverted; the file that ships is the reordered one, byte-verified against the copy
+taken before the diagnostic.
+
+**Assertion order was changed as a result of the first run.** Four scenarios originally asserted the mode
+first, which meant their own headline claim — the parent sweep, the preserved history, the recomputed
+rollup — never ran. They now assert their headline first and the mode last, so the failure a reader sees
+is the failure the scenario is named after. Scenario 7's red went from *"mode Full, expected Delta"* to
+*"ParentFeatureScans is empty"*, which is the actual missing behaviour.
+
+### Three declared non-reds (no manufactured red)
+
+- **Scenario 1 is GREEN off shipped code.** It asserts a full first cycle stores a stamp for every
+  Feature. Slice 02's one-line change to `WorkItemBase.Update(…)` is in the base method `Feature.Update`
+  calls, so the Feature side inherited it. Framing the scenario as the upgrade case (two of three Features
+  seeded already-stored without stamps) is what makes it *capable* of failing; it does not fail today
+  because the behaviour it asks for already exists. It ships as a regression guard on that reuse.
+- **Scenarios 11a and 11b are GREEN off shipped code**, for the same reason and by the same mechanism.
+  `Feature.Update(…)` calls `base.Update(feature)` (`Models/Feature.cs:200`), which copies the stamp
+  (`Models/WorkItemBase.cs:154`). They are worth shipping because `Feature.Update` is its own method that
+  a future edit could stop delegating, and the failure mode is silent. **They are guards, not reds**, and
+  are recorded as such rather than passed off.
+- **Scenario 10 is a guard that cannot yet be falsified.** It forbids behaviour that does not exist: with
+  nothing scanning at all, "no Feature scan was issued" is true for the trivial reason. Its positive
+  control is **scenario 2**, which is genuinely red. DELIVER must re-run scenario 10 **after** scenario 2
+  is green — that is the point at which it starts guarding something. This is exactly slice 02's scenario
+  8, and slice 02's DELIVER handled it by ordering the ungated delta path first; the same ordering applies
+  here.
+
+### One partially-vacuous assertion set, accepted and declared
+
+Scenario 9's first three assertions (whole Feature query downloaded, mode full, nothing lost) hold today
+because no scan is attempted. Only the fourth — the operator is told the scan failed — is red. They become
+meaningful together once the scan exists. Same shape as slice 02's scenario 6, and recorded for the same
+reason.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 03
+
+1. **The slice brief names the wrong portfolio-side hazard, and the right one is worse.** The brief's IN
+   scope reads *"The slice-02 sweep applied to `GetFeaturesForProject`"* and treats removal-by-set-
+   difference as the risk to watch. Removal is **not** the portfolio-side hazard: it already works, and it
+   needs no new mechanism, because `RefreshFeatures` never deletes anything — a Feature leaves by dropping
+   out of `portfolio.Features`. The hazard is the same line seen from the other side:
+   `portfolio.UpdateFeatures(featureOrdering.Order(features))` rebuilds the portfolio from **what the
+   cycle fetched**, so under delta every Feature that did *not* move loses its claim, is deleted by
+   `IOrphanedFeatureCleanupService`, and has its open blocked spells closed by
+   `SweepDepartedFeatureSpells`. Scenarios 3 and 4 are that finding. No decision changes — the brief's
+   AC-3.2 and AC-3.3 already cover it once the mechanism is named correctly — but a DELIVER step written
+   against the brief's framing alone would ship the delete.
+2. **`Feature` is not a `WorkItem`, and `SyncModeResolver` takes `WorkItem`.**
+   `SyncModeResolver.Resolve(..., IReadOnlyCollection<WorkItem> storedWorkItems, ...)` cannot be handed a
+   list of stored Features. DDD-5 says the resolver is the single mode decision, and slice 03 routes
+   through it, so DELIVER must widen the parameter to `IReadOnlyCollection<WorkItemBase>` (the property it
+   reads, `LastChangedRemote`, lives on the base). Recorded here rather than scaffolded, because it is a
+   production change with a behaviour consequence and belongs in a DELIVER step with its own unit test.
+3. **The `RefreshLog.ItemCount` of a portfolio update is `project.Features.Count`.** `PortfolioUpdater`
+   reads it after `UpdateFeaturesForPortfolio` returns. It is therefore a **second**, independent witness
+   of failure mode 1 — under a naive delta it collapses to the moved count. No scenario asserts it (the
+   portfolio-membership assertion is the direct observable and does not depend on which field the updater
+   happens to record), but DELIVER should expect it to move if the defect is present.
+4. **A portfolio with no teams logs a Warning per Feature.** `AssignExtrapolatedWorkToTeams` emits
+   `"No teams available for extrapolation of feature {X} in portfolio {Y}"` at Warning when neither
+   `portfolio.Teams` nor `teamRepository.GetAll()` yields anyone. Every scenario here except 8 seeds a
+   portfolio with no team, so the operator-visible stream carries three such lines. Harmless for this
+   slice's assertions (they select by fragment, not by count) but worth knowing before anyone writes a
+   line-budget assertion over a portfolio cycle, as AC-1.7 does over a team cycle. Recorded, not actioned.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 03
+
+- DESIGN's driving ports: unchanged inbound surface (D4) — nothing to provision.
+- DEVOPS environment matrix: none produced; project defaults apply. No Docker, no Testcontainers, no
+  external service for the acceptance suite. **No migration**, therefore no `Create-Migration.ps1` run and
+  no Docker requirement for this wave.
+- Terminology: scenarios and log fragments use the seeded defaults (`Portfolio`, `Feature`, `Team`,
+  `Work Item`) per `TerminologySeeder`.
+- **The dogfood measurement the slice brief asks for is not automated.** "Run a portfolio over the real
+  Jira Cloud project through one full cycle and one delta cycle, then confirm the portfolio's forecast
+  dates are identical across the two, same day." That is the premise check for D9 and it needs a real
+  project with real child work; a portfolio whose Features are all synthetic proves the plumbing and none
+  of the rollup risk. It belongs in the slice verdict, alongside slice 02's still-owed AC-2.8 reading.
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions Summary — slice 03
+
+| ID | Decision |
+|---|---|
+| DT3-1 | **No migration.** `Feature : WorkItemBase` and slice 02's `AddLastChangedRemoteToWorkItems` already added the column to the `Features` table in both providers. The slice brief's IN-scope line is already satisfied; a second migration would be duplicate schema work |
+| DT3-2 | The port gains **three** members, not four: a Feature sweep, a Feature by-reference-id fetch, and a parent sweep. The parent path's phase 2 is the existing `GetParentFeaturesDetails` called with a shorter key list, so it needs no overload — adding one would be dead surface on five connectors |
+| DT3-3 | All five connectors **throw** from all three new members, Jira included. They are unreachable until `WorkItemService` calls them, which is DELIVER's; permanent for CSV (D11) |
+| DT3-4 | The Feature-side phase-2 overload sits immediately beside `GetFeaturesForProject(Portfolio)` in the interface and in all five connectors. S4136 is error-severity here and reds six files at once — slice 02 predicted this and the placement was pre-applied |
+| DT3-5 | Slice 03 adds **no** new opt-in and **no** new gate. The `DeltaSync` optional feature composes with the per-connector probe and nothing else; scenario 10 asserts the existing gate covers the portfolio half. `fetchShapeChanged: false` stays hard-coded — that is slice 05's seam |
+| DT3-6 | The real portfolio-side hazard is `Portfolio.UpdateFeatures` being fed the **fetched** list, not removal-by-set-difference. Scenarios 3 and 4 assert it directly, at the two places it shows: the portfolio's Feature set (which the orphan cleanup turns into a delete) and the open blocked spells the departed sweep closes |
+| DT3-7 | `IOrphanedFeatureCleanupService` is **not** faked. It is what turns "dropped from the portfolio" into "deleted from the database", and faking it would reduce scenario 3 to a claim about an in-memory collection |
+| DT3-8 | No write-recording decorator on the Feature side. Slice 02 needed one because for an unmoved work item "never written" and "rewritten with what it already said" are value-identical (DT2-14). The portfolio-side hazard is a dropped claim and a delete, which the stored-state assertions see directly |
+| DT3-9 | AC-3.5's D9 guard is chained rather than asserted in isolation: the delivering team stores work between the two portfolio cycles, so the Feature's rollup must change on a cycle in which the Feature's own record did not. Asserting the rollup on an unchanged input would pass under an implementation that skipped the recompute entirely |
+| DT3-10 | `Feature.Update(…)` is specified directly (11a/11b) even though it is expected green: it is its own method, and losing the stamp there is a silent degradation to full downloads. Recorded as a **guard**, not passed off as a red |
+| DT3-11 | Every scenario asserts its headline claim **before** the mode, so the failure a reader sees is the failure the scenario is named after. Four scenarios were reordered after the first gate run for exactly this reason |
+| DT3-12 | The gate's evidence is the run output, per scenario, plus a second diagnostic run with the delta-specific assertions removed — which proves no assertion is silently broken behind NUnit's fail-fast. Slice 02's review recorded that a RED table without the run output is not the same thing |
+| DT3-13 | Scenarios ship `[Ignore]`d so the tree stays green; DELIVER un-ignores them one at a time as the RED entry gate |
+
+---
+
+## Wave: DISTILL / Handoff — slice 03
+
+**To**: `nw-software-crafter` (DELIVER).
+
+Twelve specifications, eight red on assertions, four declared guards, all `[Ignore]`d. Un-ignore one at a
+time; each is one TDD cycle.
+
+Suggested order — and the ordering argument from slice 02 applies again: **ship the delta path ungated
+first**, so scenario 10 turns from vacuous green to real red and the gate is written against a guard that
+actually guards.
+
+1. **Scenario 2** — the walking skeleton: the Feature sweep, the per-Feature stamp comparison, the phase-2
+   fetch, the counts into the summary line. `SyncModeResolver`'s parameter has to widen to `WorkItemBase`
+   here (see Upstream Issues 2).
+2. **Scenarios 3 and 4** — the portfolio-membership and blocked-spell guards. **Do these immediately after
+   the skeleton, not last.** They are the ones that fail if `UpdateFeatures` and `SweepDepartedFeatureSpells`
+   are fed the fetched list, which is the natural first implementation.
+3. **Scenario 5** — removal under delta.
+4. **Scenario 7** — the parent path: sweep the keys the portfolio stores, download only the parents that
+   moved.
+5. **Scenario 6** — the shared Feature. Nothing new should be needed if 2-5 are right; it is the
+   cross-portfolio proof.
+6. **Scenario 8** — the D9 guard. Verify nothing downstream of the fetch was skipped.
+7. **Scenario 9** — the scan-failure fallback, then the Jira Cloud adapter itself (the connector is faked
+   by policy, so no acceptance test sees it, and without it the delta path never engages on a real
+   instance).
+8. **Scenario 10**, last — the gate, now against a real sweep.
+9. **Scenario 1, 11a, 11b** — un-ignore the three guards. They pass today; taking them in their own step
+   records the transition in one commit rather than letting it arrive silently with a test-infrastructure
+   change (slice 02's amendment made exactly this point about its own scenario 1).
+
+Six things not to re-derive:
+
+- **There is no migration to write.** `LastChangedRemote` is already on the `Features` table in both
+  providers, from slice 02's `AddLastChangedRemoteToWorkItems`.
+- **`Feature.Update(…)` already copies the stamp**, via `base.Update(…)`. Scenarios 11a/11b prove it and
+  pass today.
+- **The hazard is `Portfolio.UpdateFeatures`, not removal.** Feeding it the fetched list drops every
+  unchanged Feature, and `IOrphanedFeatureCleanupService` then deletes it. `RefreshParentFeatures` derives
+  its keys from `project.Features`, so it is safe **only** while that stays whole.
+- **`SyncModeResolver.Resolve` takes `IReadOnlyCollection<WorkItem>` and a Feature is not a `WorkItem`.**
+  Widen to `WorkItemBase`; the property it reads is on the base.
+- **S4136 already bit and was already paid.** The Feature-side overload is adjacent to its sibling in six
+  files. Keep it there.
+- **`Portfolio.Teams` is computed from feature work** (slice 02 upstream issue 1). A portfolio with no
+  feature work reports no teams, which is why extrapolation falls back to every team and logs a Warning
+  per Feature.
