@@ -123,10 +123,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Parsed exactly the way <see cref="IssueFactory"/> parses it (D6) - two different parses of the same
-        /// string would make D12's per-item comparison report every record as moved, forever. A record the
-        /// tracker gave no readable stamp for still belongs in the sweep: leaving it out would place it in
-        /// "stored minus swept" and delete it, where an unmatchable stamp merely re-downloads it (D8).
+        /// Parsed exactly the way <see cref="IssueFactory"/> parses it (D6), because D12 compares swept
+        /// stamp against stored stamp per record with no watermark - a second reading of the same string
+        /// would report every record as moved, forever. A record with no readable stamp still belongs in the
+        /// sweep: leaving it out would put it in "stored minus swept" and delete it, where an unmatchable
+        /// stamp merely re-downloads it (D8).
         /// </summary>
         private static RemoteRecordStamp ReadStamp(JsonElement jsonIssue)
         {

@@ -1074,26 +1074,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// Phase 2 for the parent half (DDD-2). One asymmetry against the Feature half, and it inverts that
-        /// half's rule: parents are excluded from the orphaned-Feature cleanup by <c>!f.IsParentFeature</c>,
-        /// so this sweep removes nothing. A stored key the scan did not answer for is therefore DOWNLOADED,
-        /// never read as departed. A cycle in which no parent moved asks for nothing at all - a keyed query
-        /// for an empty key set is still a remote round trip.
+        /// Phase 2 for the parent half (DDD-2), over the keys the portfolio stores. A cycle in which no
+        /// parent moved asks for nothing at all - a keyed query for an empty key set is still a remote
+        /// round trip.
         /// </summary>
         private async Task<List<Feature>> FetchOnlyTheParentFeaturesThatMoved(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds, List<Feature> storedParentFeatures, List<RemoteRecordStamp> sweptRecords)
         {
             var sweptOnce = DeduplicateByReferenceId(sweptRecords, portfolio.Name, record => record.ReferenceId);
 
-            var keysToDownload = parentFeatureIds.FindAll(parentFeatureId =>
-            {
-                var swept = sweptOnce.Find(record => record.ReferenceId == parentFeatureId);
-
-                return swept == null || HasMoved(swept, storedParentFeatures);
-            });
+            var keysToDownload = parentFeatureIds.FindAll(
+                parentFeatureId => TheSweepDidNotVouchForThisParent(parentFeatureId, sweptOnce, storedParentFeatures));
 
             return keysToDownload.Count == 0
                 ? []
                 : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, keysToDownload), portfolio.Name, feature => feature.ReferenceId);
+        }
+
+        // Inverts the Feature half's rule: parents are excluded from the orphaned-Feature cleanup by
+        // !f.IsParentFeature, so a stored key the sweep did not answer for is DOWNLOADED, never read as
+        // departed.
+        private static bool TheSweepDidNotVouchForThisParent(string parentFeatureId, List<RemoteRecordStamp> sweptOnce, List<Feature> storedParentFeatures)
+        {
+            var swept = sweptOnce.Find(record => record.ReferenceId == parentFeatureId);
+
+            return swept == null || HasMoved(swept, storedParentFeatures);
         }
 
         private static void AddProjectToFeature(Feature feature, Portfolio project)
