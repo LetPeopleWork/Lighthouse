@@ -296,6 +296,245 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 + "learns to escape a quote.");
         }
 
+        [Test]
+        public async Task SweepFeaturesForPortfolio_AsksTheVeryQuestionTheWholeFeatureQueryAsks()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql");
+
+            await subject.SweepFeaturesForPortfolio(portfolio);
+
+            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
+                "Removal is 'stored minus swept' (D2). A sweep that enumerates anything other than the exact "
+                + "query the whole Feature fetch enumerates deletes whatever the two disagree about.");
+        }
+
+        [Test]
+        public async Task SweepFeaturesForPortfolio_AsksOnlyForIdentityAndTheChangeStamp()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+
+            await subject.SweepFeaturesForPortfolio(portfolio);
+
+            var sweep = jira.SearchRequests.Last();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo("key,updated"),
+                    "Downloading *all during the sweep would cost exactly what the two-phase fetch exists to save.");
+                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                    "The changelog is the single most expensive part of a Jira issue and phase 1 never reads it.");
+            }
+        }
+
+        [Test]
+        public async Task SweepFeaturesForPortfolio_WalksEveryPage()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: "page-2");
+            jira.QueueSweepPage(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"), nextPageToken: null);
+
+            var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
+
+            Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
+                "A sweep that stops at page one under-reports the query, and D2 deletes every Feature it missed.");
+        }
+
+        [Test]
+        public async Task SweepFeaturesForPortfolio_RefusesToReportAHalfWalkedQuery()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: "page-2");
+            jira.FailTheSearchAfterTheNextOne();
+
+            Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.Exception,
+                "Returning the first page as if it were the whole query is the one answer D2 cannot survive: "
+                + "every Feature on the pages that never arrived would be deleted. Throwing falls back to a full fetch.");
+        }
+
+        [Test]
+        public async Task SweepFeaturesForPortfolio_ReportsTheChangeStampTheFullFetchWouldStore()
+        {
+            const string updated = "2026-08-05T14:30:00.000+0200";
+
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud, updated);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", updated), nextPageToken: null);
+
+            var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
+            var stored = (await subject.GetFeaturesForProject(portfolio)).Single();
+
+            Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
+                "D12 compares the swept stamp against the stored one per Feature. Two different parses of the same "
+                + "string would make every Feature look moved forever.");
+        }
+
+        [Test]
+        public async Task SweepFeaturesForPortfolio_StillReportsARecordTheTrackerGaveNoStampFor()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", updated: null), nextPageToken: null);
+
+            var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(TheOnlyRecord),
+                    "Dropping it from the sweep would put it in 'stored minus swept' and delete a live Feature (D2).");
+                Assert.That(stamps.Single().ChangedAt, Is.Default,
+                    "No stamp can never equal a stored stamp, so the Feature is re-downloaded rather than assumed unchanged (D8).");
+            }
+        }
+
+        [Test]
+        public async Task SweepFeaturesForPortfolio_RefusesOnDataCenter()
+        {
+            var (subject, portfolio, _) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.TypeOf<NotSupportedException>());
+        }
+
+        [Test]
+        public async Task GetFeaturesForProjectByReferenceId_NamesOnlyTheKeysItWasAskedFor()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+
+            await subject.GetFeaturesForProject(portfolio, ["PROJ-1", "PROJ-3"]);
+
+            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo("key = \"PROJ-1\" OR key = \"PROJ-3\""),
+                "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the cutoff "
+                + "date silently drop a Feature the sweep just reported as changed.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProjectByReferenceId_AsksTheTrackerNothingWhenNoKeysAreNamed()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            var requestsBefore = jira.SearchRequests.Count();
+
+            var features = await subject.GetFeaturesForProject(portfolio, []);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Is.Empty);
+                Assert.That(jira.SearchRequests.Count(), Is.EqualTo(requestsBefore),
+                    "An empty key list as JQL is an empty JQL, which Jira answers with the whole project.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProjectByReferenceId_SplitsALargeSetAcrossSeveralRequests()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            var requestsBefore = jira.SearchRequests.Count();
+            var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
+
+            await subject.GetFeaturesForProject(portfolio, manyKeys);
+
+            Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
+                "250 key clauses in one GET is a URL no proxy is obliged to carry; the batch is chunked the way "
+                + "the by-key Work Item fetch chunks its id list.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProjectByReferenceId_DownloadsTheFullPayloadIncludingAPagedChangelog()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            jira.ChangelogEntryCount = 31;
+
+            var features = await subject.GetFeaturesForProject(portfolio, ["PROJ-1"]);
+
+            var byKeyRequest = jira.SearchRequests.Last();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Has.Count.EqualTo(1), "positive control: the canned response was not read at all.");
+                Assert.That(features[0].LastChangedRemote, Is.Not.Null,
+                    "Phase 2 has to stamp what it returns, or the next cycle has nothing to compare against and D8 "
+                    + "resolves every cycle to a full download.");
+                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo("*all"),
+                    "Phase 2 is the download - narrowing it here would store a Feature with holes in it.");
+                Assert.That(byKeyRequest.Query, Does.Contain("expand=changelog"));
+                Assert.That(jira.Requests.Any(uri => uri.AbsolutePath.EndsWith("/changelog", StringComparison.Ordinal)), Is.True,
+                    "Jira caps the inlined changelog at 30 entries; the 31st only arrives via the paged endpoint.");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProjectByReferenceId_RefusesOnDataCenter()
+        {
+            var (subject, portfolio, _) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            Assert.That(async () => await subject.GetFeaturesForProject(portfolio, ["PROJ-1"]), Throws.TypeOf<NotSupportedException>());
+        }
+
+        [Test]
+        public async Task SweepParentFeatures_SweepsTheSameKeyedQueryTheParentDetailFetchIssues()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            string[] keys = ["PROJ-1", "PROJ-3"];
+
+            await subject.GetParentFeaturesDetails(portfolio, keys);
+            var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql");
+
+            await subject.SweepParentFeatures(portfolio, keys);
+
+            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(detailQuery),
+                "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names "
+                + "a different set makes D12's comparison meaningless for whatever the two disagree about.");
+        }
+
+        [Test]
+        public async Task SweepParentFeatures_AsksOnlyForIdentityAndTheChangeStamp()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+
+            await subject.SweepParentFeatures(portfolio, ["PROJ-1"]);
+
+            var sweep = jira.SearchRequests.Last();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo("key,updated"));
+                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                    "A parent sweep that pulled the changelog would cost more than the detail fetch it exists to avoid.");
+            }
+        }
+
+        [Test]
+        public async Task SweepParentFeatures_SplitsALargeSetAcrossSeveralRequests()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
+            var requestsBefore = jira.SearchRequests.Count();
+            var manyKeys = Enumerable.Range(1, 250).Select(number => $"PROJ-{number}").ToList();
+
+            await subject.SweepParentFeatures(portfolio, manyKeys);
+
+            Assert.That(jira.SearchRequests.Count() - requestsBefore, Is.EqualTo(2),
+                "Chunked the way the keyed detail fetch is chunked - a single 250-clause URL is one no proxy is obliged to carry.");
+        }
+
+        [Test]
+        public async Task SweepParentFeatures_RefusesOnDataCenter()
+        {
+            var (subject, portfolio, _) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            Assert.That(async () => await subject.SweepParentFeatures(portfolio, ["PROJ-1"]), Throws.TypeOf<NotSupportedException>());
+        }
+
+        private static async Task<(JiraWorkTrackingConnector Subject, Portfolio Portfolio, JiraStub Jira)> AJiraPortfolioThatHasAlreadyBeenTalkedTo(
+            string deploymentType, string? updated = "2026-08-01T10:00:00.000+0000")
+        {
+            var jira = new JiraStub(deploymentType) { Updated = updated };
+            var subject = CreateSubject(jira.Handler);
+            var portfolio = CreatePortfolio(CreateTeam());
+
+            // Same reason as the team-side helper: the deployment is discovered by asking the instance, so the
+            // capability probe only answers once a first cycle has run - and that first cycle is a full download.
+            await subject.GetFeaturesForProject(portfolio);
+
+            return (subject, portfolio, jira);
+        }
+
         private static async Task<(JiraWorkTrackingConnector Subject, Team Team, JiraStub Jira)> AJiraThatHasAlreadyBeenTalkedTo(
             string deploymentType, string? updated = "2026-08-01T10:00:00.000+0000")
         {

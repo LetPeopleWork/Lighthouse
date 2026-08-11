@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int ReferenceIdsPerQuery = 200;
 
+        private const string DeltaIsJiraCloudOnly = "Only Jira Cloud sweeps - Epic #5687 slice 04 settles Data Center.";
+
         private static readonly SocketsHttpHandler SharedHandler = new()
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(10),
@@ -74,33 +76,47 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// half-walked query would delete whatever the missing pages held - a rejected page throws instead,
         /// and the caller falls back to the whole query.
         /// </summary>
-        public async Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+        public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
+            => SweepIdentities(
+                team,
+                [PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)],
+                $"Team {team.Name}");
+
+        /// <summary>
+        /// The one sweep every caller goes through: walk each query in full, keep identity and the change stamp,
+        /// and refuse to answer at all when a page was rejected - a half-walked query reported as whole puts every
+        /// record on the missing pages into "stored minus swept", which deletes them (D2).
+        /// </summary>
+        private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
+            IWorkItemQueryOwner owner, IEnumerable<string> jqlQueries, string sweptDescription)
         {
-            if (!SupportsIncrementalSync(team.WorkTrackingSystemConnection))
+            if (!SupportsIncrementalSync(owner.WorkTrackingSystemConnection))
             {
-                throw new NotSupportedException("Only Jira Cloud sweeps - Epic #5687 slice 04 settles Data Center.");
+                throw new NotSupportedException(DeltaIsJiraCloudOnly);
             }
 
-            var jql = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
-            var client = await GetJiraRestClientAsync(team.WorkTrackingSystemConnection);
-
+            var client = await GetJiraRestClientAsync(owner.WorkTrackingSystemConnection);
             var stamps = new List<RemoteRecordStamp>();
-            var request = new CloudSearchRequest(
-                jql,
-                SweepFields,
-                ExpandChangelog: false,
-                ResolveIssuesPerRequest(team.WorkTrackingSystemConnection),
-                SinglePage: false);
 
-            var walkedEveryPage = await WalkCloudSearchPages(client, request, jsonIssue =>
+            foreach (var jql in jqlQueries)
             {
-                stamps.Add(ReadStamp(jsonIssue));
-                return Task.CompletedTask;
-            });
+                var request = new CloudSearchRequest(
+                    jql,
+                    SweepFields,
+                    ExpandChangelog: false,
+                    ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection),
+                    SinglePage: false);
 
-            if (!walkedEveryPage)
-            {
-                throw new InvalidOperationException($"Jira rejected a page of the identity sweep for Team {team.Name}.");
+                var walkedEveryPage = await WalkCloudSearchPages(client, request, jsonIssue =>
+                {
+                    stamps.Add(ReadStamp(jsonIssue));
+                    return Task.CompletedTask;
+                });
+
+                if (!walkedEveryPage)
+                {
+                    throw new InvalidOperationException($"Jira rejected a page of the identity sweep for {sweptDescription}.");
+                }
             }
 
             return stamps;
@@ -261,11 +277,47 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await CreateFeaturesFromIssues(project, issues);
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
-            => throw new NotSupportedException("Jira does not fetch Features by reference id on this port yet - Epic #5687 slice 03 implements it.");
+        /// <summary>
+        /// Phase 2 of the two-phase fetch (D1): full payloads for the named Features and for nothing else. The
+        /// portfolio's own filter is deliberately not re-applied - the sweep already decided what belongs to the
+        /// query, and a second cutoff evaluation could drop a Feature the sweep just reported as changed.
+        /// The whole delta path is one capability, so a deployment that cannot sweep does not fetch by key either.
+        /// </summary>
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        {
+            if (!SupportsIncrementalSync(project.WorkTrackingSystemConnection))
+            {
+                throw new NotSupportedException(DeltaIsJiraCloudOnly);
+            }
 
+            if (referenceIds.Count == 0)
+            {
+                return [];
+            }
+
+            logger.LogDebug("Updating {Count} Feature(s) by reference id for Portfolio {PortfolioName}", referenceIds.Count, project.Name);
+
+            var issues = new List<Issue>();
+
+            // Chunked exactly like the by-key Work Item fetch: every key is another OR clause in a URL that has
+            // to survive whatever proxy sits in front of Jira.
+            foreach (var chunk in referenceIds.Chunk(ReferenceIdsPerQuery))
+            {
+                issues.AddRange(await GetIssuesByQuery(project, PrepareIssueKeyQuery(chunk)));
+            }
+
+            return await CreateFeaturesFromIssues(project, issues);
+        }
+
+        /// <summary>
+        /// Phase 1 of the two-phase fetch (D1): the very query <see cref="GetFeaturesForProject(Portfolio)"/>
+        /// issues, narrowed to identity plus the change stamp.
+        /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
-            => throw new NotSupportedException("Jira does not sweep Features yet - Epic #5687 slice 03 implements it.");
+            => SweepIdentities(
+                project,
+                [PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays)],
+                $"Portfolio {project.Name}");
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
@@ -275,8 +327,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await CreateFeaturesFromIssues(project, issues);
         }
 
+        /// <summary>
+        /// Phase 1 for the parent Features: the very keys <see cref="GetParentFeaturesDetails"/> asks for,
+        /// chunked the same way, narrowed to identity plus the change stamp.
+        /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
-            => throw new NotSupportedException("Jira does not sweep parent Features yet - Epic #5687 slice 03 implements it.");
+            => SweepIdentities(
+                project,
+                parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(chunk => PrepareIssueKeyQuery(chunk)),
+                $"the parent Features of Portfolio {project.Name}");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
