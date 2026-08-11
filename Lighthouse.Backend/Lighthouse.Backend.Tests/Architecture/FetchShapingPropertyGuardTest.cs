@@ -193,7 +193,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// <c>TeamExtensions</c> - which is the very drift the guard exists to prevent, reintroduced.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         public void TheSaveTimeDecisionAndTheFingerprintReadTheSamePropertySet()
         {
             var inTheFingerprint = WhatEachPropertyCosts

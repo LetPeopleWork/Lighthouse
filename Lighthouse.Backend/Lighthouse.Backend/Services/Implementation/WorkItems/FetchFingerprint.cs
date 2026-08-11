@@ -24,14 +24,36 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// <c>Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest</c> holds the reason for
         /// each one, and for every property deliberately absent (AC-5.4).
         /// </summary>
-        public static IReadOnlyCollection<string> RegisteredProperties { get; } = [];
+        public static IReadOnlyCollection<string> RegisteredProperties { get; } =
+        [
+            // What the query asks the tracker for.
+            nameof(WorkTrackingSystemOptionsOwner.DataRetrievalValue),
+            nameof(WorkTrackingSystemOptionsOwner.WorkItemTypes),
+            nameof(WorkTrackingSystemOptionsOwner.DoneItemsCutoffDays),
+            nameof(WorkTrackingSystemOptionsOwner.ToDoStates),
+            nameof(WorkTrackingSystemOptionsOwner.DoingStates),
+            nameof(WorkTrackingSystemOptionsOwner.DoneStates),
+
+            // How the answer is read into the stored record.
+            nameof(WorkTrackingSystemOptionsOwner.StateMappings),
+            nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId),
+            nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId),
+            nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId),
+            nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions),
+            nameof(WorkTrackingSystemConnection.WorkTrackingSystem),
+
+            nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId),
+        ];
 
         /// <summary>
         /// The subset that ALSO costs a fresh start at save time. Only a connection change belongs here:
         /// it is the only edit that makes the same reference id a different item, and therefore the only
         /// one <c>removed = stored - fetched</c> cannot reconcile on the next full cycle.
         /// </summary>
-        public static IReadOnlyCollection<string> PropertiesThatAlsoCostAFreshStart { get; } = [];
+        public static IReadOnlyCollection<string> PropertiesThatAlsoCostAFreshStart { get; } =
+        [
+            nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId),
+        ];
 
         /// <remarks>
         /// A throw rather than an assertion failure, deliberately: nothing reaches this yet — the guards
