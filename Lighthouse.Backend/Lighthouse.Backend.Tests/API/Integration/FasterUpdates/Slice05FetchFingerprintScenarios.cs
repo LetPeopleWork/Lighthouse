@@ -199,7 +199,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // The collections are sets. A fingerprint that is order-sensitive turns opening the Settings
         // screen and pressing Save into a full re-download of the whole query.
         [Test]
-        [Ignore(Pending)]
         public async Task Re_saving_the_same_states_in_a_different_order_costs_no_download()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();

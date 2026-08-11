@@ -36,12 +36,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             logger.LogInformation("Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
+            var whatThisCycleAsksFor = FetchFingerprint.For(portfolio);
+
             var outcome = await RefreshFeatures(portfolio);
             await RefreshParentFeatures(portfolio);
 
             await UpdateRemainingWorkForPortfolio(portfolio);
 
             portfolio.RefreshUpdateTime();
+
+            // AC-5.1: recorded beside UpdateTime, and only once the fetch it describes completed (ADR-140).
+            portfolio.FetchFingerprint = whatThisCycleAsksFor;
 
             // Stryker disable once all: what an update completed is now said by the one "Update completed" summary line (Epic #5687), whose text UpdateServiceBase pins; this is Debug trace.
             logger.LogDebug("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
@@ -53,12 +58,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
+            var whatThisCycleAsksFor = FetchFingerprint.For(team);
+
             var outcome = await RefreshWorkItems(team);
 
             foreach (var portfolio in team.Portfolios.ToList())
             {
                 await UpdateRemainingWorkForPortfolio(portfolio);
             }
+
+            // AC-5.1: the team half — no RefreshUpdateTime lives here, so this write saves itself (ADR-140).
+            team.FetchFingerprint = whatThisCycleAsksFor;
+            await teamRepository.Save();
 
             // Stryker disable once all: the team half of the same trace — the summary line, not this one, is what an operator reads.
             logger.LogDebug("Done Updating Work Items for Team {TeamName}", team.Name);
