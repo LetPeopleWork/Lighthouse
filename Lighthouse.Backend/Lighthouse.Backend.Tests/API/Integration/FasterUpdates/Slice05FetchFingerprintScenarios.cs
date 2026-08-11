@@ -321,7 +321,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // item, and SyncWorkItem updates the stored copy in place - so without a purge the old system's
         // transition history silently becomes the new system's.
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_that_moves_to_a_different_connection_starts_from_nothing()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
@@ -362,7 +361,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // so a portfolio repointed at a different tracker carries every Feature - and every Feature's
         // recorded history - across with it.
         [Test]
-        [Ignore(Pending)]
         public async Task A_portfolio_that_moves_to_a_different_connection_starts_from_nothing()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();

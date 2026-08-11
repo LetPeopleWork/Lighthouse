@@ -133,6 +133,13 @@ namespace Lighthouse.Backend.API
 
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
+                if (portfolio.WorkItemRelatedSettingsChanged(portfolioSetting))
+                {
+                    // A2: the claim goes, not the rows - a Feature another portfolio still holds is not this
+                    // one's to delete, and IOrphanedFeatureCleanupService deletes the ones nobody claims.
+                    portfolio.UpdateFeatures([]);
+                }
+
                 portfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);
                 portfolio.BlockedRuleSetJson = portfolioSetting.BlockedRuleSetJson;
 
