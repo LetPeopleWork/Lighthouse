@@ -178,7 +178,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // "The Feature record did not move remotely" is not "the Feature's rollup did not change". The
         // work under a Feature belongs to a team whose own refresh has its own schedule.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left_and_still_asks_for_a_new_forecast()
         {
             var portfolio = GivenAPortfolioDeliveredByOneTeam();
