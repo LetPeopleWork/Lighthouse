@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
@@ -24,6 +25,7 @@ using NUnit.Framework;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using System.Net.Http.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 {
@@ -911,6 +913,118 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+        }
+
+        // --- The settings screen (Epic #5687 slice 05) ---
+
+        /// <summary>
+        /// The admin's browser, against the running host. Settings saves go through the controller because
+        /// half of what slice 05 decides - whether the edit costs a purge - is decided there, in
+        /// <c>WorkItemRelatedSettingsChanged</c>. An edit applied straight through the repository would
+        /// bypass that decision entirely and leave the scenario measuring the other half only.
+        /// </summary>
+        private HttpClient TheSettingsScreen() => Factory.CreateClient().AsSystemAdmin();
+
+        protected TeamSettingDto TheTeamsCurrentSettings(int teamId)
+        {
+            using var client = TheSettingsScreen();
+            var settings = client.GetFromJsonAsync<TeamSettingDto>($"/api/latest/teams/{teamId}/settings").GetAwaiter().GetResult();
+
+            Assert.That(settings, Is.Not.Null, $"Team {teamId} has no settings to read.");
+            return settings!;
+        }
+
+        protected PortfolioSettingDto ThePortfoliosCurrentSettings(int portfolioId)
+        {
+            using var client = TheSettingsScreen();
+            var settings = client.GetFromJsonAsync<PortfolioSettingDto>($"/api/latest/portfolios/{portfolioId}/settings").GetAwaiter().GetResult();
+
+            Assert.That(settings, Is.Not.Null, $"Portfolio {portfolioId} has no settings to read.");
+            return settings!;
+        }
+
+        /// <summary>
+        /// Saves the team's settings the way the Settings screen does. Round-tripping the DTO the GET
+        /// returned rather than hand-building one is deliberate: a hand-built payload that misses a
+        /// [JsonRequired] field is a deterministic 400 that reads like a scenario failure
+        /// (docs/ci-learnings.md 2026-07-07).
+        /// </summary>
+        protected void TheOperatorSavesTheTeamsSettings(int teamId, TeamSettingDto settings)
+        {
+            using var client = TheSettingsScreen();
+            var response = client.PutAsJsonAsync($"/api/latest/teams/{teamId}", settings).GetAwaiter().GetResult();
+
+            Assert.That(response.IsSuccessStatusCode, Is.True,
+                $"The settings save was refused with {(int)response.StatusCode}: {response.Content.ReadAsStringAsync().GetAwaiter().GetResult()}");
+        }
+
+        protected void TheOperatorSavesThePortfoliosSettings(int portfolioId, PortfolioSettingDto settings)
+        {
+            using var client = TheSettingsScreen();
+            var response = client.PutAsJsonAsync($"/api/latest/portfolios/{portfolioId}", settings).GetAwaiter().GetResult();
+
+            Assert.That(response.IsSuccessStatusCode, Is.True,
+                $"The settings save was refused with {(int)response.StatusCode}: {response.Content.ReadAsStringAsync().GetAwaiter().GetResult()}");
+        }
+
+        // --- What the last cycle asked for, as storage holds it (Epic #5687 slice 05) ---
+
+        protected string? TheStoredFetchFingerprintForTeam(int teamId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)?.FetchFingerprint;
+        }
+
+        protected string? TheStoredFetchFingerprintForPortfolio(int portfolioId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)?.FetchFingerprint;
+        }
+
+        // --- The connection, which the query owner only points at (Epic #5687 slice 05) ---
+
+        /// <summary>
+        /// Adds a field definition to the CONNECTION, not to the team. Everything the connector reads out
+        /// of a payload is defined here, so this is an edit that changes what is stored without touching a
+        /// single property of the team - and it is invisible to any save-time comparison against a team
+        /// settings DTO, because the DTO carries no field definitions.
+        /// </summary>
+        protected int SeedAdditionalFieldDefinition(int connectionId, string reference)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>();
+
+            var connection = repository.GetById(connectionId)!;
+            var definition = new AdditionalFieldDefinition { DisplayName = reference, Reference = reference };
+            connection.AdditionalFieldDefinitions.Add(definition);
+
+            repository.Update(connection);
+            repository.Save().GetAwaiter().GetResult();
+
+            return definition.Id;
+        }
+
+        // --- History as it was before this refresh (Epic #5687 slice 05) ---
+
+        /// <summary>
+        /// One recorded state change for a stored issue. Transition rows are the part of a purge nobody
+        /// gets back: <c>RemoveWorkItemsForTeam</c> deletes the work item, and the cascade on
+        /// <c>WorkItemStateTransition.WorkItemId</c> takes its whole history with it.
+        /// </summary>
+        protected void SeedStoredTransition(int workItemId, string fromState, string toState, DateTime transitionedAt)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IWorkItemStateTransitionRepository>();
+
+            repository.Add(new WorkItemStateTransition
+            {
+                WorkItemId = workItemId,
+                FromState = fromState,
+                ToState = toState,
+                TransitionedAt = transitionedAt,
+            });
+
+            repository.Save().GetAwaiter().GetResult();
         }
     }
 }
