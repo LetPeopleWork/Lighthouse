@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         private async Task<RemoteFetch> FetchEverything(IWorkTrackingConnector connector, Team team)
         {
             var recordsFromTracker = (await connector.GetWorkItemsForTeam(team)).ToList();
-            var actualWorkItems = DeduplicateByReferenceId(recordsFromTracker, team, workItem => workItem.ReferenceId);
+            var actualWorkItems = DeduplicateByReferenceId(recordsFromTracker, team.Name, workItem => workItem.ReferenceId);
 
             return new RemoteFetch(
                 actualWorkItems,
@@ -223,14 +223,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// <summary>Phase 2 of the two-phase fetch (DDD-2): full payloads for the records whose stamp moved, and for nothing else.</summary>
         private async Task<RemoteFetch> FetchOnlyWhatMoved(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, List<RemoteRecordStamp> sweptRecords)
         {
-            var sweptOnce = DeduplicateByReferenceId(sweptRecords, team, record => record.ReferenceId);
+            var sweptOnce = DeduplicateByReferenceId(sweptRecords, team.Name, record => record.ReferenceId);
             var movedReferenceIds = sweptOnce
                 .FindAll(record => HasMoved(record, storedWorkItems))
                 .ConvertAll(record => record.ReferenceId);
 
             List<WorkItem> downloaded = movedReferenceIds.Count == 0
                 ? []
-                : DeduplicateByReferenceId((await connector.GetWorkItemsForTeam(team, movedReferenceIds)).ToList(), team, workItem => workItem.ReferenceId);
+                : DeduplicateByReferenceId((await connector.GetWorkItemsForTeam(team, movedReferenceIds)).ToList(), team.Name, workItem => workItem.ReferenceId);
 
             return new RemoteFetch(
                 downloaded,
@@ -240,17 +240,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         // D12: compared per item against the stored stamp. No global watermark, so clock skew and
         // server-time drift stay out of the design. A record nobody stored yet has always moved.
-        private static bool HasMoved(RemoteRecordStamp record, List<WorkItem> storedWorkItems)
+        private static bool HasMoved<TStored>(RemoteRecordStamp record, List<TStored> storedRecords) where TStored : WorkItemBase
         {
-            var stored = storedWorkItems.Find(workItem => workItem.ReferenceId == record.ReferenceId);
+            var stored = storedRecords.Find(candidate => candidate.ReferenceId == record.ReferenceId);
 
             return stored?.LastChangedRemote != record.ChangedAt;
         }
 
         // Jira DC offset pagination over an unordered JQL can return the same ReferenceId twice in one fetch;
         // persisting both breaks the SingleOrDefault above on every later sync (docs/ci-learnings.md 2026-05-25).
-        // The identity sweep enumerates the very same query, so it collapses under the very same rule.
-        private List<T> DeduplicateByReferenceId<T>(List<T> fetchedRecords, Team team, Func<T, string> referenceIdOf)
+        // The identity sweep enumerates the very same query, so it collapses under the very same rule, and
+        // so does the portfolio's Feature query - one collapse rule, one warning, named after whoever synced.
+        private List<T> DeduplicateByReferenceId<T>(List<T> fetchedRecords, string syncedFor, Func<T, string> referenceIdOf)
         {
             var groupedByReferenceId = fetchedRecords.GroupBy(referenceIdOf).ToList();
             var duplicatedGroups = groupedByReferenceId.Where(group => group.Count() > 1).ToList();
@@ -258,9 +259,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             if (duplicatedGroups.Count > 0)
             {
                 logger.LogWarning(
-                    "Work Tracking System returned {DroppedCopies} duplicate Work Item copies for Team {TeamName} - keeping the first copy of each. Affected Reference Ids: {ReferenceIds}",
+                    "Work Tracking System returned {DroppedCopies} duplicate copies for {SyncedFor} - keeping the first copy of each. Affected Reference Ids: {ReferenceIds}",
                     duplicatedGroups.Sum(group => group.Count() - 1),
-                    team.Name,
+                    syncedFor,
                     string.Join(",", duplicatedGroups.Select(group => group.Key)));
             }
 
@@ -697,7 +698,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var featuresWithTransitions = new List<(Feature persistedFeature, IReadOnlyList<WorkItemStateTransition> syncedTransitions)>();
             var syncedFeatures = new List<SyncedFeature>();
 
-            var fetch = await FetchEveryFeature(connector, portfolio);
+            // Read BEFORE UpdateFeatures below clears the collection: what the portfolio already stores is
+            // the resolver's input, and an empty or unstamped set is what keeps the upgrade case on the full
+            // path (D8).
+            var storedFeatures = portfolio.Features.ToList();
+
+            var fetch = await ResolveRemoteFeatureFetch(connector, portfolio, storedFeatures);
 
             foreach (var feature in fetch.Features)
             {
@@ -771,6 +777,83 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 recordsFromTracker,
                 recordsFromTracker.ConvertAll(feature => feature.ReferenceId),
                 SyncOutcome.FullSync(recordsFromTracker.Count));
+        }
+
+        /// <summary>
+        /// The portfolio half of D8, mirroring the team path deliberately rather than sharing it: a Feature
+        /// is not a Work Item, and merging the two routines would put a refactor of the shipped team path
+        /// inside the slice that changes portfolio behaviour. The opt-in gates the scan as well as the
+        /// resolver, so a connector nobody volunteered is never approached at all (AC-2.10).
+        /// </summary>
+        private async Task<RemoteFeatureFetch> ResolveRemoteFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures)
+        {
+            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
+
+            var scan = operatorAskedForTheCheaperRefresh
+                ? await ScanRemoteFeatureIdentities(connector, portfolio)
+                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+
+            var mode = SyncModeResolver.Resolve(
+                operatorAskedForTheCheaperRefresh,
+                scan.TrackerCanBeScanned,
+                storedFeatures,
+                scan.Succeeded,
+                fetchShapeChanged: false);
+
+            return mode == SyncMode.Delta
+                ? await FetchOnlyTheFeaturesThatMoved(connector, portfolio, storedFeatures, scan.Stamps)
+                : await FetchEveryFeature(connector, portfolio);
+        }
+
+        /// <summary>Phase 1 for the portfolio (D1): the same Feature query, asking only for identity plus the remote change stamp.</summary>
+        private async Task<IdentityScan> ScanRemoteFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio)
+        {
+            if (!connector.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
+            {
+                return new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+            }
+
+            try
+            {
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepFeaturesForPortfolio(portfolio)]);
+            }
+            // D8: a half-scanned query is the one answer never allowed, so any scan failure falls back to
+            // the whole query - loudly, or nobody learns the cheap path stopped working.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                // The sink renders the exception itself, so interpolating its message into the template as
+                // well would print the failure text twice on the operator's one line.
+                logger.LogWarning(
+                    exception,
+                    "Identity scan failed for Portfolio {PortfolioName} - downloading the whole query instead.",
+                    portfolio.Name);
+
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: false, Stamps: []);
+            }
+        }
+
+        /// <summary>
+        /// Phase 2 for the portfolio (DDD-2): full Feature payloads for the records whose stamp moved, and
+        /// for nothing else. A cycle in which nothing moved asks for nothing - a keyed query for an empty
+        /// key set is still a remote round trip.
+        /// </summary>
+        private async Task<RemoteFeatureFetch> FetchOnlyTheFeaturesThatMoved(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures, List<RemoteRecordStamp> sweptRecords)
+        {
+            var sweptOnce = DeduplicateByReferenceId(sweptRecords, portfolio.Name, record => record.ReferenceId);
+            var movedReferenceIds = sweptOnce
+                .FindAll(record => HasMoved(record, storedFeatures))
+                .ConvertAll(record => record.ReferenceId);
+
+            List<Feature> downloaded = movedReferenceIds.Count == 0
+                ? []
+                : DeduplicateByReferenceId((await connector.GetFeaturesForProject(portfolio, movedReferenceIds)).ToList(), portfolio.Name, feature => feature.ReferenceId);
+
+            return new RemoteFeatureFetch(
+                downloaded,
+                sweptOnce.ConvertAll(record => record.ReferenceId),
+                SyncOutcome.DeltaSync(sweptOnce.Count, downloaded.Count));
         }
 
         /// <summary>
