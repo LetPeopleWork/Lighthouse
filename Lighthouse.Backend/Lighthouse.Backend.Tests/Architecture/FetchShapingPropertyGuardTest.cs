@@ -5,17 +5,17 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// AC-5.4 / DDD-8. The invariant this file exists for is not "the fingerprint is correct" — it is
+    /// Epic #5687. The invariant this file exists for is not "the fingerprint is correct" — it is
     /// "nobody can add a fetch-shaping property without deciding, in writing, what it costs".
     ///
     /// Delta skips the whole of an unchanged record: it is not re-downloaded, not re-mapped, not
     /// re-derived. So the set the fingerprint has to cover is <b>what the query asks the tracker for
-    /// UNION how the answer is read into the stored record</b>. AC-5.4 as briefed says "reachable from
-    /// <c>PrepareQuery</c> and the connector call sites", which is the first half only, and the first
-    /// half misses state mappings, the connection's field definitions and the portfolio's owner/size
-    /// field references — each of which changes every stored record while leaving the request identical.
+    /// UNION how the answer is read into the stored record</b>. Covering only what is reachable from
+    /// <c>PrepareQuery</c> and the connector call sites is the first half only, and the first half
+    /// misses state mappings, the connection's field definitions and the portfolio's owner/size field
+    /// references — each of which changes every stored record while leaving the request identical.
     ///
-    /// There are TWO consumers of the one property set (A2), and they see different things:
+    /// There are TWO consumers of the one property set, and they see different things:
     /// <list type="bullet">
     /// <item><b>The fingerprint</b> is computed at sync time from the entity and the connection it points
     /// at, so it sees everything below.</item>
@@ -25,20 +25,15 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// </list>
     ///
     /// ArchUnitNET constrains types and dependencies, not property membership, which is why this is a
-    /// reflection assertion rather than an ArchUnit rule (DDD-8).
-    ///
-    /// Both tests ship [Ignore]d: <see cref="FetchFingerprint"/> does not exist yet. DELIVER un-ignores
-    /// them together with the type.
+    /// reflection assertion rather than an ArchUnit rule.
     /// </summary>
     [TestFixture]
     [Category("epic-5687-faster-updates")]
     [Category("slice-05")]
     public class FetchShapingPropertyGuardTest
     {
-        private const string Pending = "DISTILL scaffold - FetchFingerprint does not exist yet.";
-
         private const string Because =
-            "Epic #5687 AC-5.4. A fetch-shaping property that is neither registered nor excluded makes the "
+            "Epic #5687. A fetch-shaping property that is neither registered nor excluded makes the "
             + "fingerprint drift silently, and a stale fingerprint means delta serves a stale result set "
             + "with every test green - wrong numbers, no error. If you are reading this because the test "
             + "went red: decide what the new property costs, then either add it to the fingerprint or add "
@@ -78,7 +73,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// <summary>
         /// One row per property of the four types above. The three <c>AFullDownload…</c> groups are the
         /// widened fingerprint set; everything else is an exclusion with its reason attached, which is
-        /// the artefact AC-5.4 actually asks for.
+        /// the artefact this guard exists to keep honest.
         /// </summary>
         private static readonly Decision[] WhatEachPropertyCosts =
         [
@@ -86,7 +81,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             new("DataRetrievalValue", Cost.AFullDownload, "The query text itself."),
             new("WorkItemTypes", Cost.AFullDownload, "Narrows the query by type."),
             new("DoneItemsCutoffDays", Cost.AFullDownload,
-                "Part of the query's resolved-cutoff clause. It shapes the result set today and triggers no purge - the live gap A2 names."),
+                "Part of the query's resolved-cutoff clause. It shapes the result set today and triggers no purge - widening the window re-downloads, narrowing it leaves already-stored older items in place."),
             new("ToDoStates", Cost.AFullDownload,
                 "Half of the query's state clause, and half of the state category stored against every record. AllStates is a UNION, so moving a state between columns leaves the query identical and re-categorises every record in it - which is why the three columns are registered separately rather than as AllStates."),
             new("DoingStates", Cost.AFullDownload, "See ToDoStates."),
@@ -123,13 +118,13 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "CONNECTION-SCOPED. Mostly credentials, by the same argument as AuthenticationMethodKey. NOTE: it also carries the instance URL, and re-pointing a connection at a different instance IS a fetch-shaping change - recorded as an upstream issue rather than decided here, because the fix is connection identity, not a hash."),
             new(nameof(WorkTrackingSystemConnection.WriteBackMappingDefinitions), Cost.Nothing, "Write-back is an outbound path; it shapes nothing that is fetched."),
 
-            // --- Excluded: derived, or evaluated over the stored set every cycle (ADR-141 / D9 / D10) ---
+            // --- Excluded: derived, or evaluated over the stored set every cycle ---
             new("AllStates", Cost.Nothing, "Derived from the three state columns and the mappings, all of which are registered."),
             new("OpenStates", Cost.Nothing, "Derived, as AllStates."),
-            new("StalenessThresholdDays", Cost.Nothing, "Evaluated over the WHOLE stored set every cycle (DDD-4), so a change takes effect on the next cycle without any download."),
+            new("StalenessThresholdDays", Cost.Nothing, "Evaluated over the WHOLE stored set every cycle, so a change takes effect on the next cycle without any download."),
             new("BlockedStalenessThresholdDays", Cost.Nothing, "As StalenessThresholdDays."),
             new("BlockedRuleSetJson", Cost.Nothing,
-                "AC-5.3 names it free, and it is evaluated over STORED data rather than remote data - so re-deriving it needs no remote call. NOTE: the delta loop currently only visits downloaded items, so a rule edit does not re-open spells for quiet ones. That gap is real and belongs in the ADR-141 derivation pass, not here: paying a full remote download to fix a local derivation is the wrong instrument. Recorded as an upstream issue."),
+                "Free by design: it is evaluated over STORED data rather than remote data - so re-deriving it needs no remote call. NOTE: the delta loop currently only visits downloaded items, so a rule edit does not re-open spells for quiet ones. That gap is real and belongs in the derivation pass, not here: paying a full remote download to fix a local derivation is the wrong instrument. Recorded as an upstream issue."),
             new("WaitStates", Cost.Nothing, "Read only on the metrics path, per request."),
             new("CycleTimeDefinitions", Cost.Nothing, "Read only on the metrics path, per request."),
             new("ServiceLevelExpectationProbability", Cost.Nothing, "Read path."),
@@ -152,7 +147,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             new(nameof(Team.ThroughputHistoryEndDate), Cost.Nothing, "Throughput window; read path."),
             new(nameof(Team.ForecastFilterRuleSetJson), Cost.Nothing, "Evaluated over the stored set on the forecast path."),
 
-            // --- Excluded: Portfolio-only derivations (D9 / ADR-141) ---
+            // --- Excluded: Portfolio-only derivations ---
             new(nameof(Portfolio.DefaultAmountOfWorkItemsPerFeature), Cost.Nothing, "Recomputed every cycle over the stored set."),
             new(nameof(Portfolio.OverrideRealChildCountStates), Cost.Nothing, "Recomputed every cycle over the stored set."),
             new(nameof(Portfolio.UsePercentileToCalculateDefaultAmountOfWorkItems), Cost.Nothing, "Recomputed every cycle."),
@@ -176,7 +171,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         [Test]
-        [Ignore(Pending)]
         public void EveryPropertyThatShapesAFetchIsEitherInTheFingerprintOrExplicitlyExcluded()
         {
             var undecided = TheOperatorEditableSurface()
