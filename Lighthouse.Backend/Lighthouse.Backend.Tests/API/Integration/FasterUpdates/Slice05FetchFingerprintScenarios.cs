@@ -80,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // AC-5.2 is a promise about EVERY fetch-shaping property, and a fingerprint that covers six of
         // seven fails silently on the seventh: delta serves a stale result set with every test green.
         [Test]
-        [Ignore(Pending)]
         [TestCaseSource(nameof(EveryTeamSettingThatChangesWhatIsFetched))]
         public async Task An_edit_to_a_fetch_shaping_team_setting_makes_the_next_refresh_download_everything(TeamEdit edit)
         {
