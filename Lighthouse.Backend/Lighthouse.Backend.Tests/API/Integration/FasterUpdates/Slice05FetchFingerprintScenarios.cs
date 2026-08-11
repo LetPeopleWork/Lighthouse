@@ -275,7 +275,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // fingerprint - or one hung off the connection - would make every team edit cost every portfolio
         // on the same connection a full re-download.
         [Test]
-        [Ignore(Pending)]
         public async Task A_team_edit_does_not_cost_its_portfolio_a_full_download()
         {
             var (team, portfolio) = GivenATeamAndAPortfolioOnTheSameConnection();
@@ -294,7 +293,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // @driving_port @real-io @AC-5.6 @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(Pending)]
         public async Task A_portfolio_edit_does_not_cost_its_team_a_full_download()
         {
             var (team, portfolio) = GivenATeamAndAPortfolioOnTheSameConnection();
