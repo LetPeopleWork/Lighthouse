@@ -90,6 +90,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 new RemoteRecord("FEAT-2", AWhileAgo),
                 new RemoteRecord("FEAT-3", AWhileAgo));
 
+        private void GivenTheTrackerHoldsTwoFeatures()
+            => TheTrackerHoldsFeatures(
+                new RemoteRecord("FEAT-1", AWhileAgo),
+                new RemoteRecord("FEAT-2", AWhileAgo));
+
+        /// <summary>
+        /// A third Feature starts being returned by the query the portfolios share - and only that. The
+        /// tracker is re-stated from one whole picture rather than nudged, so the two Features already
+        /// there keep the change stamp they had: the arrival is the only thing that can have moved.
+        /// </summary>
+        private void GivenAThirdFeatureStartsBeingReturnedByTheQuery() => GivenTheTrackerHoldsThreeFeatures();
+
         private void GivenTheTrackerHoldsTwoFeaturesUnderOneParent()
         {
             TheTrackerHoldsFeatures(
@@ -293,6 +305,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             => Assert.That(TheStoredFeature(referenceId), Is.Not.Null,
                 $"'{referenceId}' did not move on the tracker and never left the query, so it must still exist. A Feature "
                 + "dropped from the portfolio is not merely hidden - the cleanup pass deletes the row.");
+
+        private void ThenTheDepartedFeatureIsStillStored(string referenceId)
+            => Assert.That(TheStoredFeature(referenceId), Is.Not.Null,
+                $"'{referenceId}' left ONE portfolio's query, not every portfolio's. The orphaned-Feature cleanup deletes what "
+                + "no portfolio claims AT ALL, so a Feature another portfolio still holds has to survive losing this one's "
+                + "claim - and losing it is a hard DELETE, not a hidden row.");
 
         private void ThenEveryFeatureInThePortfolioRemembersWhenItLastChanged(SeededPortfolio portfolio)
         {

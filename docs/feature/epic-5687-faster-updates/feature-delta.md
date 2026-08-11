@@ -2512,6 +2512,10 @@ Ten acceptance scenarios in one fixture plus a two-case specification on the mod
 example-based: the C#/NUnit row of the polyglot matrix governs (no PBT, no state-delta Universe — the
 ATDD policy records why the Python-pilot artefacts do not apply to this repo).
 
+**Amended after DELIVER** (2026-08-11) with scenarios 6a and 6b — twelve acceptance scenarios, fourteen
+specifications. See *Wave: DISTILL / [WHY] AC-3.4 amendment — slice 03* at the end of this file for what
+the falsification probe found and why AC-3.4 was under-specified.
+
 | # | Scenario | Tags | Contract shape | AC |
 |---|---|---|---|---|
 | 1 | `The_first_portfolio_refresh_downloads_every_feature_and_remembers_when_each_one_last_changed` | `@driving_port` `@real-io` | bounded-change | AC-3.1, D6 |
@@ -2520,6 +2524,8 @@ ATDD policy records why the Python-pilot artefacts do not apply to this repo).
 | 4 | `A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was` | `@driving_port` `@real-io` | unbounded-preservation | AC-3.3 |
 | 5 | `A_feature_that_left_the_query_is_gone_from_the_portfolio_on_the_very_next_cycle` | `@error` `@driving_port` `@real-io` | bounded-change | AC-3.2 (D2) |
 | 6 | `A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both` | `@driving_port` `@real-io` | bounded-change | AC-3.4 |
+| 6a | `A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it` | `@driving_port` `@real-io` | bounded-change | AC-3.4 (amendment) |
+| 6b | `A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it` | `@error` `@driving_port` `@real-io` | bounded-change | AC-3.2, AC-3.4 (amendment) |
 | 7 | `The_parent_features_survive_a_cycle_in_which_no_child_feature_moved` | `@driving_port` `@real-io` | unbounded-preservation | AC-3.1 (parent path) |
 | 8 | `A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left_and_still_asks_for_a_new_forecast` | `@driving_port` `@real-io` | bounded-change | AC-3.5 (D9) |
 | 9 | `A_portfolio_refresh_whose_scan_fails_downloads_every_feature_rather_than_half` | `@error` `@driving_port` `@real-io` | bounded-change | AC-3.1 (D8) |
@@ -2727,6 +2733,8 @@ assertion; none is an import error, a fixture error or a setup error.
 | 4 | `A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 1 But was: 3` | MISSING_FUNCTIONALITY ✅ |
 | 5 | `A_feature_that_left_the_query_is_gone_from_the_portfolio…` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 0 But was: 2` | MISSING_FUNCTIONALITY ✅ |
 | 6 | `A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 0 But was: 3` | MISSING_FUNCTIONALITY ✅ |
+| 6a | `A_feature_another_portfolio_already_stores_joins_this_portfolio…` | **passes** (added post-DELIVER against the finished slice) | GUARD, probe recorded (declared below) |
+| 6b | `A_feature_that_left_one_portfolios_query_survives…` | **passes** (added post-DELIVER against the finished slice) | GUARD, probe recorded (declared below) |
 | 7 | `The_parent_features_survive_a_cycle_in_which_no_child_feature_moved` | `Assert.That(ParentFeatureScans, Has.Count.EqualTo(1))` → `Expected: property Count equal to 1 But was: 0` | MISSING_FUNCTIONALITY ✅ |
 | 8 | `A_cheaper_portfolio_refresh_still_counts_the_work_that_is_left…` | `recorded!.Mode` → `Expected: Delta But was: Full`; `recorded.RecordsFetched` → `Expected: 0 But was: 1` | MISSING_FUNCTIONALITY ✅ |
 | 9 | `A_portfolio_refresh_whose_scan_fails_downloads_every_feature…` | `Has.One.Contains("The identity scan was refused…")` → `But was: 0 matching items < "No teams available for extrapolation…" ×3 >` | MISSING_FUNCTIONALITY ✅ |
@@ -2907,3 +2915,133 @@ Six things not to re-derive:
 - **`Portfolio.Teams` is computed from feature work** (slice 02 upstream issue 1). A portfolio with no
   feature work reports no teams, which is why extrapolation falls back to every team and logs a Warning
   per Feature.
+
+---
+
+## Wave: DISTILL / [WHY] AC-3.4 amendment — slice 03
+
+Authored 2026-08-11, **after** slice 03 was delivered and green. Back-propagation, not new scope: two
+acceptance scenarios (6a, 6b) added to `Slice03JiraCloudPortfolioDeltaScenarios.cs`, both `[Ignore]`d,
+both **guards that pass on arrival**, both with a recorded falsification probe.
+
+### What the probe found
+
+During DELIVER a falsification probe scoped the survivor lookup in
+`WorkItemService.TheFeaturesTheQueryStillReturns` to the portfolio's own `storedFeatures` collection
+instead of resolving by reference id through `featureRepository`. The entire `FasterUpdates` fixture
+stayed green — 26 passed, 3 skipped, 0 failed. A production line whose doc comment explains why it must
+be repository-wide was not observed by a single scenario.
+
+### Why the gap existed
+
+The slice brief's IN scope reads: *"A Feature shared across portfolios is fetched once per cycle and
+**applied to every portfolio that claims it**"*. Scenario 6
+(`A_feature_shared_by_two_portfolios_is_downloaded_once_and_shown_in_both`) proves that for two portfolios
+**that were both pre-refreshed over the same three Features**. Every other multi-portfolio path in the
+fixture does the same. So no scenario ever sent a Feature into a portfolio's query for the *first* time
+while another portfolio already stored it stamped — nor took a Feature out of *one* portfolio's query
+while another still claimed it. AC-3.4 was under-specified at DISTILL: it named the "already claimed by
+both" case and left the two boundary cases — joining and departing — unwritten.
+
+### What slice 05 does not cover
+
+Slice 05's fetch fingerprint protects against **this portfolio's own query text changing**. Neither case
+here involves a query edit: in 6a the tracker starts returning a Feature this portfolio's unchanged query
+already selects for, and in 6b it stops. The fingerprint never fires.
+
+### Correction to the probe's stated failure mode — the mechanism is not what it was thought to be
+
+The DELIVER note reasoned that the exposure was *"a Feature already stored AND stamped by another
+portfolio's cycle enters THIS portfolio's query without its `updated` moving. Under delta it is swept (so
+it is a survivor) but not downloaded (its stamp did not move). A portfolio-scoped survivor lookup never
+finds it."* **That mechanism does not exist in the shipped code, and scenario 6a is the evidence.**
+
+`FetchOnlyTheFeaturesThatMoved` decides what to download with `HasMoved(record, storedFeatures)`, and
+`storedFeatures` is `portfolio.Features.ToList()` — read at the top of `RefreshFeatures`, scoped to
+**this** portfolio. `HasMoved` returns `stored?.LastChangedRemote != record.ChangedAt`, so a Feature this
+portfolio has never stored resolves `stored` to `null` and has, by definition, *always* moved. It is
+therefore **downloaded**. Scenario 6a asserts `fetched: 1` and passes.
+
+That yields the closed argument, and it is why the probe left everything green:
+
+- **Not downloaded** ⟺ `HasMoved` false ⟺ present in `storedFeatures` with a matching stamp.
+- So every survivor that reaches the fallback branch is *already* in `portfolio.Features`.
+- Therefore the repository resolution and a portfolio-scoped one are **observationally identical today**,
+  and no scenario — however constructed — can red the probe with that one mutation alone.
+
+The repository-wide lookup is not dead weight; it is **headroom for exactly the optimisation this epic
+invites**. "The row is already stored and its stamp is current, so don't pay for it again" is the natural
+next saving, and it widens `HasMoved`'s comparison set from the portfolio to storage. The moment that
+lands, the survivor lookup is the only thing keeping the Feature in the portfolio.
+
+### The three probes, and what each proved
+
+Run against `Slice03JiraCloudPortfolioDeltaScenarios.cs` with both amendment scenarios un-ignored
+(14 specifications in the `slice-03` category). `WorkItemService.cs` was byte-verified against `HEAD`
+after every revert.
+
+| Probe | Mutation | Result |
+|---|---|---|
+| P1 (the one from DELIVER) | survivor lookup scoped to `storedFeatures` | **14 passed, 0 failed** — including both new scenarios. The stated failure mode is unreachable. |
+| P2 | `HasMoved`'s comparison set widened from `portfolio.Features` to anything stored | **1 failed, 13 passed** — only scenario 6a. |
+| P3 = P1 + P2 | both together | **1 failed, 13 passed** — only scenario 6a, and the symptom is the data loss itself. |
+| P4 | departed Features have every portfolio claim cleared, not just this portfolio's | **1 failed, 13 passed** — only scenario 6b. |
+
+P2, verbatim:
+
+```
+Failed A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it
+  Error Message:
+     Assert.That(recorded.RecordsFetched, Is.EqualTo(fetched))
+  Expected: 1
+  But was:  0
+```
+
+P3, verbatim:
+
+```
+Failed A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it
+  Error Message:
+     The portfolio is rebuilt from the list the refresh hands it, so under the cheaper refresh the Features
+     at risk are the ones that did NOT move. A Feature that loses its last portfolio claim is deleted
+     outright by the orphaned-Feature cleanup - data loss on a green sync.
+Assert.That(TheFeaturesInThePortfolio(portfolio.Id).ConvertAll(feature => feature.ReferenceId), Is.EquivalentTo(referenceIds))
+  Expected: equivalent to < "FEAT-1", "FEAT-2", "FEAT-3" >
+  But was:  < "FEAT-1", "FEAT-2" >
+  Missing (1): < "FEAT-3" >
+```
+
+P4, verbatim:
+
+```
+Failed A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it
+  Error Message:
+     'FEAT-3' left ONE portfolio's query, not every portfolio's. The orphaned-Feature cleanup deletes what
+     no portfolio claims AT ALL, so a Feature another portfolio still holds has to survive losing this
+     one's claim - and losing it is a hard DELETE, not a hidden row.
+Assert.That(TheStoredFeature(referenceId), Is.Not.Null)
+  Expected: not null
+  But was:  null
+```
+
+**So `fetched: 1` in scenario 6a is not incidental — it is the tripwire.** The day it becomes `0`,
+`TheFeaturesTheQueryStillReturns`'s repository resolution stops being headroom and becomes load-bearing,
+and P3 shows what a portfolio-scoped lookup costs at that moment: the Feature is silently missing from
+the portfolio, with a green sync and no log line, until it next changes remotely. Scenario 6a is the only
+test in the fixture that notices either half.
+
+### Pillar 2 held without new harness
+
+Both scenarios are assembled from step methods that already existed. 6a widens the shared tracker picture
+between two cycles (`GivenTheTrackerHoldsTwoFeatures` → `GivenAThirdFeatureStartsBeingReturnedByTheQuery`)
+rather than giving the two portfolios different queries, so no per-portfolio connector setup was needed.
+6b reuses `GivenOneFeatureLeftTheQuery` and simply does not re-refresh the other portfolio. Two additions
+to the Specifications file: the two-Feature Given above, and `ThenTheDepartedFeatureIsStillStored`, whose
+message states the departure case accurately rather than borrowing
+`ThenTheUntouchedFeatureIsStillStored`'s "never left the query".
+
+### Handoff
+
+Roadmap phase `05`, step `05-01` (`deps: ["04-02"]`) un-ignores both. **No production change is expected.**
+The step's instruction is to re-prove the guards with P2 and P4 rather than trust a green run — a guard
+whose probe has not been re-run in the tree it ships into is a guard on nothing.

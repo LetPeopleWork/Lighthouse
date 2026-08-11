@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5687-faster-updates",
     "created_at": "2026-08-11",
-    "total_steps": 12,
+    "total_steps": 13,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "slice": "slice-03-jira-cloud-portfolio-delta",
@@ -337,6 +337,40 @@
             "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs"
           ],
           "implementation_notes": "A1 / DT3-5, contract shape `unbounded-preservation`. This step may well require NO production change - and that is the point of running it last rather than first. DISTILL declared it GUARD_NOT_YET_FALSIFIABLE: at DISTILL time it PASSED, because with nothing scanning at all 'no Feature scan was issued' was true for the trivial reason. It is not a manufactured red. Its positive control is scenario 2, and DELIVER was told explicitly to re-run it AFTER scenario 2 is green - that is the moment it starts guarding something, and it is exactly how slice 02 sequenced AC-2.10 after AC-2.11. Sequence check before you touch anything: un-ignore it and RUN it. If green, the gate is correctly ordered and this step is a verification checkpoint - record the run in the commit message rather than inventing work. If red, the option is being consulted AFTER the sweep has already gone out (an easy shape: probe -> sweep -> then decide), and the fix is to make the off answer terminate the decision before any remote call, the way `ResolveRemoteFetch` does on the team side. Either way, prove the guard can fail: temporarily force the opt-in to true at the decision point, confirm this scenario goes red, restore, confirm green. `if (false)` does not work for this in C# - `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error (ledger). `GivenNobodyAskedForTheCheaperRefresh` already asserts the row EXISTS and is off - slice 02 tightened it from a null-tolerant check once its own gate scenario went green, and it is a positive control on the seeded default, so a missing or flipped seeder entry fails loudly here. Do not loosen it, and do not flip the default to on 'for convenience while testing'. Nothing in this slice adds an optional-feature row: `OptionalFeatureKeys.DeltaSyncKey` is seeded and read already, and `WorkItemService` reads it per update inside that update's own scope so the toggle bites on the next cycle without a restart. This is the last step of the slice: after it, run the whole fixture un-ignored (12 specifications), then `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` with the file filter that unions `git diff --name-only` and `git status --porcelain`, before pushing."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "The two boundaries of the shared Feature (AC-3.4 amendment)",
+      "description": "Added after the slice was green, by DISTILL back-propagation. A falsification probe run during DELIVER scoped the survivor lookup in `WorkItemService.TheFeaturesTheQueryStillReturns` to the portfolio's own `storedFeatures` collection instead of resolving by reference id through `featureRepository`, and the ENTIRE FasterUpdates fixture stayed green - 26 passed, 3 skipped, 0 failed. The cause is AC-3.4 being under-specified at DISTILL: scenario 6 proves 'shared between two portfolios' only for two portfolios that were both pre-refreshed over the same three Features, so no scenario ever sent a Feature into a portfolio's query for the FIRST time while another portfolio already stored it stamped, nor took a Feature out of ONE portfolio's query while another still claimed it. This phase adds those two boundaries. Slice 05's fetch fingerprint does not cover either: it covers this portfolio's own query TEXT changing, not the tracker moving a Feature into or out of an unchanged query. Read `feature-delta.md` - Wave: DISTILL / [WHY] AC-3.4 amendment - slice 03 before starting; it carries the full probe evidence and one correction to the DELIVER note's stated failure mode.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "04"
+      ],
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "A Feature joining one portfolio and leaving another",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+          "scenario_name": "A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it + A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it",
+          "criteria": [
+            "A Feature another portfolio already stored and stamped is claimed by this portfolio the first time this portfolio's query returns it, and both portfolios then hold it",
+            "That first sight costs exactly one by-reference-id download - `fetched: 1` - because what THIS portfolio has stored is the only thing its own cycle compares against",
+            "A Feature that leaves ONE portfolio's query loses that portfolio's claim and nothing else: the row survives, and the portfolio that still claims it still holds it",
+            "Both scenarios run un-ignored in the tree, in the same commit, and the whole slice-03 fixture is 14 specifications green",
+            "No production change is made unless one of them is red"
+          ],
+          "deps": [
+            "04-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice03JiraCloudPortfolioDeltaScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs"
+          ],
+          "implementation_notes": "AC-3.4 amendment, contract shape `bounded-change` on both. **NO PRODUCTION CHANGE IS EXPECTED.** Both scenarios PASS on arrival - they were run un-ignored once at authoring time and both were green. `WorkItemService.cs` is listed as where a fix would land, not as a promise of an edit; if you find yourself editing it, stop and re-read the amendment section first. These are GUARDS, in the same sense as scenarios 1, 10, 11a and 11b, and they ship for the same reason: the failure mode they forbid is silent. **Do not trust the green run - re-prove both.** A guard whose probe has not been re-run in the tree it ships into is a guard on nothing, and this phase exists precisely because a probe was run and found nothing. Two probes, one per scenario, each of which must red that scenario AND NOTHING ELSE in the fixture (13 passed / 1 failed): (P2, for the joining scenario) in `FetchOnlyTheFeaturesThatMoved`, widen `HasMoved`'s comparison set from the portfolio's own `storedFeatures` to anything stored - resolve each swept reference id through `featureRepository` and union it in. Expect `Assert.That(recorded.RecordsFetched, Is.EqualTo(fetched)) Expected: 1 But was: 0`. (P4, for the departing scenario) after the `AddProjectToFeature` sweep in `RefreshFeatures`, clear `Portfolios` on every stored Feature that is not in `featuresTheQueryStillReturns` - the over-eager 'detach on removal' shape. Expect `'FEAT-3' left ONE portfolio's query... Expected: not null But was: null`. Revert each probe and verify `WorkItemService.cs` is byte-identical to HEAD before committing (`git checkout --` then `git status --porcelain` must show no production file). Note that C# `if (false)` cannot be used to disable a probe - `TreatWarningsAsErrors` turns CS0162 into a build error (ledger). **One thing not to re-derive, and it contradicts the DELIVER note that triggered this phase.** The note reasoned that a Feature stored by another portfolio would be swept but NOT downloaded because 'its stamp did not move'. It IS downloaded. `HasMoved(record, storedFeatures)` compares against `portfolio.Features.ToList()`, so a Feature this portfolio has never stored resolves to `null` and has, by definition, always moved. That is why the original probe (P1: survivor lookup scoped to `storedFeatures`) leaves all 14 green - it was re-run at authoring time and did. The repository-wide survivor lookup is not dead weight, it is headroom: the moment someone widens `HasMoved` to storage - the natural next saving - it becomes the only thing keeping the Feature in the portfolio, which is what P3 (P1+P2 together) demonstrates. `fetched: 1` in the joining scenario is the tripwire for that day. Do not 'optimise' it away while you are in there. Preflight the mandatory analyzer sweep as in every other step: `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, unioning `git diff --name-only` with `git status --porcelain` when filtering the log."
         }
       ]
     }

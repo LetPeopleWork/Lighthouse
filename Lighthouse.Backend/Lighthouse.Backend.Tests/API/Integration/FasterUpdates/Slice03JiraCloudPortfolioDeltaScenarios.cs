@@ -31,6 +31,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// tolerates.
     ///
     /// Every scenario ships [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle.
+    ///
+    /// The two AC-3.4 amendment scenarios were added after the slice was green, and they differ from the
+    /// rest only in why they exist. Every shared-Feature scenario above pre-refreshes BOTH portfolios over
+    /// the same Features, so nothing here ever sent a Feature into a portfolio's query for the FIRST time
+    /// while another portfolio already stored it - nor took a Feature out of one portfolio's query while
+    /// another portfolio still claimed it. Both are guards that pass on arrival; both have a recorded
+    /// probe that reds them and nothing else in this fixture.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -153,6 +160,55 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenThePortfolioStillHas(second, "FEAT-1", "FEAT-2", "FEAT-3");
             ThenBothPortfoliosShowTheFeatureAsFinished(first, second, "FEAT-2");
             ThenTheRefreshReportedACheaperUpdateOf(second, scanned: 3, fetched: 0);
+        }
+
+        // @driving_port @real-io @AC-3.4 @contract-shape:bounded-change
+        // The other half of AC-3.4, and the one no scenario reached: every shared-Feature scenario above
+        // pre-refreshes BOTH portfolios over the same Features, so a Feature never arrives in a
+        // portfolio's query for the first time while another portfolio already stores it stamped. What
+        // this portfolio has stored is the only thing its own cycle compares against, so a Feature it has
+        // never held has always moved as far as it is concerned - and the claim it takes out is what
+        // keeps the row alive when the other portfolio later lets go.
+        [Test]
+        [Ignore("DISTILL scaffold (AC-3.4 amendment) - DELIVER un-ignores this scenario when it implements it.")]
+        public async Task A_feature_another_portfolio_already_stores_joins_this_portfolio_the_first_time_its_query_returns_it()
+        {
+            var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsTwoFeatures();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(second);
+
+            GivenAThirdFeatureStartsBeingReturnedByTheQuery();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(first);
+            await WhenTheScheduledRefreshRuns(second);
+
+            ThenThePortfolioStillHas(second, "FEAT-1", "FEAT-2", "FEAT-3");
+            ThenThePortfolioStillHas(first, "FEAT-1", "FEAT-2", "FEAT-3");
+            ThenTheRefreshReportedACheaperUpdateOf(second, scanned: 3, fetched: 1);
+        }
+
+        // @error @driving_port @real-io @AC-3.2 @AC-3.4 @contract-shape:bounded-change
+        // The mirror of the scenario above: letting go is per portfolio, deletion is not. A Feature that
+        // leaves one portfolio's query loses that portfolio's claim and nothing else, because the
+        // orphaned-Feature cleanup deletes only what no portfolio claims at all.
+        [Test]
+        [Ignore("DISTILL scaffold (AC-3.4 amendment) - DELIVER un-ignores this scenario when it implements it.")]
+        public async Task A_feature_that_left_one_portfolios_query_survives_because_the_other_portfolio_still_claims_it()
+        {
+            var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsThreeFeatures();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(first);
+            await GivenThePortfolioHasAlreadyBeenRefreshed(second);
+
+            GivenOneFeatureLeftTheQuery("FEAT-3");
+            await WhenTheScheduledRefreshRuns(second);
+
+            ThenThePortfolioNoLongerHas(second, "FEAT-3");
+            ThenTheDepartedFeatureIsStillStored("FEAT-3");
+            ThenThePortfolioStillHas(first, "FEAT-1", "FEAT-2", "FEAT-3");
+            ThenThePortfolioStillHas(second, "FEAT-1", "FEAT-2");
+            ThenTheRefreshReportedACheaperUpdateOf(second, scanned: 2, fetched: 0);
         }
 
         // @driving_port @real-io @AC-3.1 @contract-shape:unbounded-preservation
