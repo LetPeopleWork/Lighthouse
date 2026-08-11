@@ -118,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // @error @driving_port @real-io @AC-3.2 @D2 @contract-shape:bounded-change
         // Removal is a set difference against the whole query, exactly as it is today.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_feature_that_left_the_query_is_gone_from_the_portfolio_on_the_very_next_cycle()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
