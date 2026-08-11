@@ -3045,3 +3045,42 @@ message states the departure case accurately rather than borrowing
 Roadmap phase `05`, step `05-01` (`deps: ["04-02"]`) un-ignores both. **No production change is expected.**
 The step's instruction is to re-prove the guards with P2 and P4 rather than trust a green run — a guard
 whose probe has not been re-run in the tree it ships into is a guard on nothing.
+
+---
+
+## Wave: DISCUSS / [REF] OQ-1 answered — Jira Data Center pagination is stable
+
+**Probed 2026-08-11 by the maintainer against a real Data Center instance. OQ-1 CLEARS.** Recorded here
+rather than in slice 04's brief because it retires an open question the whole epic carried from DISCUSS.
+
+**Instance**: `Jira Server 10.3.6` (build 10030006). Note the `deploymentType` this reports is
+**`Server`**, not `DataCenter` — `GetDeploymentType` maps anything that is not `Cloud` to
+`JiraDeployment.DataCenter`, so the classification is already right; nobody needs to add a `Server` case.
+
+**Method**: the probe walks `rest/api/latest/search?jql=…&startAt=…&maxResults=…` exactly as
+`GetIssuesByQueryFromDataCenter` walks it — offset pagination, `fields=key,updated`, page size 50 — three
+back-to-back passes per query, then three more with `ORDER BY key ASC` appended. Read-only.
+
+| query shape | issues | pages | duplicates | walked vs `total` | 3 passes identical | sorted vs unsorted |
+|---|---|---|---|---|---|---|
+| Team (`"Assign Team" = … OR component in componentsLeadByUser(…)`) | 5056 | 102 | 0 | equal | yes | same id set |
+| Portfolio / Feature (`project = "…" AND type = Epic`) | 597 | 12 | 0 | equal | yes | same id set |
+
+102 pages with zero drift is the answer the epic needed: on this instance the id set is **exact and
+repeatable**, and `total` never moved mid-walk. The duplicate-`ReferenceId` hazard in the ledger
+(2026-05-25) is not reproduced by paging itself.
+
+**What this does and does not license.**
+
+- Slice 04 is transport work, not a redesign. DC can be swept, and `removed = stored − swept` keeps its
+  meaning there.
+- **Not tested: churn during the walk.** Both queries were paged on a quiet instance in ~8 s. The
+  realistic hazard is an issue whose rank or sort key changes *between* page 3 and page 4 on a busy
+  instance, which is exactly how a row slips a page. Slice 04 should still append a stable `ORDER BY`
+  itself rather than inherit whatever Jira's default ordering is — it costs nothing here (the sorted and
+  unsorted walks agreed) and it removes the dependency entirely.
+- **Not tested: the keyed shape.** `GetParentFeaturesDetails` pages `key in (…)` chunks the same way, and
+  slice 03 gave that path a sweep. Worth one probe run before slice 04 turns it on for DC.
+- One instance, one version. `SupportsIncrementalSync` stays per connection (ADR-139), so this evidence
+  licenses DC in general only as far as the next instance behaves like this one — which is why the whole
+  thing ships behind the opt-in.
