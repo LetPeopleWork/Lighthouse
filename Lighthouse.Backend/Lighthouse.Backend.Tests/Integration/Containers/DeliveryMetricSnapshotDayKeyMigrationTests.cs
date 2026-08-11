@@ -331,12 +331,19 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             await context.GetService<IMigrator>().MigrateAsync(PreviousMigrationId(context));
 
+            // The seed below goes through the CURRENT model against a HISTORICAL schema, so any column a
+            // later migration adds to Portfolios has to exist for the duration of it - and be gone again
+            // before the migration that really adds it runs.
+            await HistoricalSchemaPatch.AddColumnsTheCurrentModelExpectsAsync(context);
+
             var deliveryId = await GivenPersistedDeliveryAsync(context);
 
             foreach (var instant in instants)
             {
                 await InsertLegacySnapshotAsync(context, deliveryId, instant);
             }
+
+            await HistoricalSchemaPatch.RemoveColumnsTheCurrentModelExpectsAsync(context);
 
             return deliveryId;
         }

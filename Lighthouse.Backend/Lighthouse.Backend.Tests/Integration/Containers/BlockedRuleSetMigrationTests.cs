@@ -159,6 +159,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 await EnsureLegacyColumnsHaveWorkingDefaultAsync(context, "Teams");
                 await EnsureLegacyColumnsHaveWorkingDefaultAsync(context, "Portfolios");
 
+                // The mirror image of the two calls above: a column the CURRENT model declares but this
+                // historical schema does not have yet.
+                await HistoricalSchemaPatch.AddColumnsTheCurrentModelExpectsAsync(context);
+
                 var legacyTeam = NewTeam();
                 var legacyPortfolio = NewPortfolio();
 
@@ -175,6 +179,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 // columns directly instead of going through the EF model.
                 await SeedLegacyBlockedColumnsAsync(context, "Teams", teamId, [BlockedStateOne, BlockedStateTwo], [BlockedTagOne]);
                 await SeedLegacyBlockedColumnsAsync(context, "Portfolios", portfolioId, [BlockedStateOne], [BlockedTagOne]);
+
+                await HistoricalSchemaPatch.RemoveColumnsTheCurrentModelExpectsAsync(context);
 
                 await migrator.MigrateAsync();
 

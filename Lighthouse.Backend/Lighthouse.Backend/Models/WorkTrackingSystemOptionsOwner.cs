@@ -15,6 +15,13 @@ namespace Lighthouse.Backend.Models
 
         public DateTime UpdateTime { get; set; }
 
+        /// <summary>
+        /// What the last cycle asked the tracker for and how it read the answer (Epic #5687, ADR-140).
+        /// Sync-owned, like <see cref="UpdateTime"/>: null means nobody has recorded one yet, which is
+        /// how an instance upgrading into this release gets a full first cycle (D8).
+        /// </summary>
+        public string? FetchFingerprint { get; set; }
+
         public abstract List<string> WorkItemTypes { get; set; }
 
         public List<string> ToDoStates { get; set; } = new List<string> { "New", "Proposed", "To Do" };

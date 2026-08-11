@@ -874,6 +874,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int?>("FeatureOwnerAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("FetchFingerprint")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1104,6 +1107,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("FetchFingerprint")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ForecastFilterRuleSetJson")
                         .HasColumnType("TEXT");
