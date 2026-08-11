@@ -8,14 +8,14 @@ namespace Lighthouse.Backend.API.Helpers
     public static class PortfolioExtensions
     {
         /// <summary>
-        /// Whether this edit costs the portfolio a fresh start (A2). Driven by
-        /// <see cref="FetchFingerprint.PropertiesThatAlsoCostAFreshStart"/> so that one question about two
-        /// entities gets one answer.
+        /// Whether this edit means the portfolio has to start from nothing. Driven by
+        /// <see cref="FetchFingerprint.PropertiesThatAlsoCostAFreshStart"/> so a team and a portfolio give
+        /// the same answer to the same question.
         /// </summary>
         public static bool WorkItemRelatedSettingsChanged(this Portfolio portfolio, PortfolioSettingDto portfolioSetting)
             => FetchFingerprint.PropertiesThatAlsoCostAFreshStart.Any(property => TheEditChanges(portfolio, property, portfolioSetting));
 
-        /// <summary>D8: an unregistered property purges, because the expensive answer is the safe one.</summary>
+        /// <summary>A property nobody registered purges anyway: when the answer is unknown, take the expensive one.</summary>
         private static bool TheEditChanges(Portfolio portfolio, string property, PortfolioSettingDto portfolioSetting) => property switch
         {
             nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId)

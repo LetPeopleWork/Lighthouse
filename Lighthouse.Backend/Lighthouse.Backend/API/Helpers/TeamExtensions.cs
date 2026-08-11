@@ -64,15 +64,15 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             /// <summary>
-            /// Whether this edit costs the team a fresh start (A2). Driven by
+            /// Whether this edit means the team has to start from nothing. Driven by
             /// <see cref="FetchFingerprint.PropertiesThatAlsoCostAFreshStart"/> so the save path and the
-            /// fingerprint read one list rather than two that drift.
+            /// fingerprint read one list rather than two that drift apart.
             /// </summary>
             public bool WorkItemRelatedSettingsChanged(TeamSettingDto teamSetting)
                 => FetchFingerprint.PropertiesThatAlsoCostAFreshStart.Any(property => TheEditChanges(team, property, teamSetting));
         }
 
-        /// <summary>D8: an unregistered property purges, because the expensive answer is the safe one.</summary>
+        /// <summary>A property nobody registered purges anyway: when the answer is unknown, take the expensive one.</summary>
         private static bool TheEditChanges(Team team, string property, TeamSettingDto teamSetting) => property switch
         {
             nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId)

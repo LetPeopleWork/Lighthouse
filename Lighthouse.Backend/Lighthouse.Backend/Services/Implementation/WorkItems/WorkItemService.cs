@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             portfolio.RefreshUpdateTime();
 
-            // AC-5.1: recorded beside UpdateTime, and only once the fetch it describes completed (ADR-140).
+            // Recorded beside UpdateTime, and only once the fetch it describes actually completed.
             portfolio.FetchFingerprint = whatThisCycleAsksFor;
 
             // Stryker disable once all: what an update completed is now said by the one "Update completed" summary line (Epic #5687), whose text UpdateServiceBase pins; this is Debug trace.
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 await UpdateRemainingWorkForPortfolio(portfolio);
             }
 
-            // AC-5.1: the team half — no RefreshUpdateTime lives here, so this write saves itself (ADR-140).
+            // The team half has no RefreshUpdateTime on this path, so this write has to save itself.
             team.FetchFingerprint = whatThisCycleAsksFor;
             await teamRepository.Save();
 
@@ -82,17 +82,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// AC-5.1: what the last completed cycle asked for against what this one would, asked of the base
-        /// both entities share so there is one comparison rather than two. Nothing recorded reads as
-        /// changed, which is what gives an instance upgrading into this release one full cycle (D8).
+        /// What the last completed cycle asked for against what this one would - asked of the base both a
+        /// team and a portfolio share, so there is one comparison rather than two. Nothing recorded reads
+        /// as changed, which is what gives an instance upgrading into this release one full cycle.
         /// </summary>
         private static bool TheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
             => queryOwner.FetchFingerprint != whatThisCycleAsksFor;
 
         /// <summary>
-        /// AC-5.2: what to tell the operator, which is not what decided the mode. An instance that never
-        /// recorded a fingerprint and one whose fingerprint moved both take the expensive path (D8), but only
-        /// the second has a cause anybody caused - naming configuration on the first would name the wrong one.
+        /// What to tell the operator, which is not the same question as what decided the mode. An instance
+        /// that never recorded a fingerprint and one whose fingerprint moved both take the expensive path,
+        /// but only the second was caused by anybody - blaming configuration for the first would be a lie.
         /// </summary>
         private static string? WhyTheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
             => queryOwner.FetchFingerprint != null && TheFetchShapeChanged(queryOwner, whatThisCycleAsksFor)
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task<SyncOutcome> RefreshWorkItems(Team team, bool fetchShapeChanged)
         {
-            // Stryker disable once all: one of the three copies of this announcement AC-1.5 caps at one; the scenario counts it by level, not by wording.
+            // Stryker disable once all: one of three copies of an announcement the operator only ever sees once; the scenario counts it by level, not by wording.
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
             var syncTime = DateTime.UtcNow;
@@ -134,10 +134,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// How much this cycle downloads, and the download itself (D8). The opt-in gates the scan as well as
-        /// the resolver: AC-2.10 terminates the decision before the tracker is approached at all, because a
-        /// connector that could be swept but was not volunteered is exactly the data-loss exposure (D2) the
-        /// opt-in exists to confine.
+        /// How much this cycle downloads, and the download itself. The opt-in gates the scan as well as the
+        /// mode decision, so an instance that never volunteered for the cheaper refresh never reaches the
+        /// tracker for one - a connector that could be swept but was not volunteered is precisely the
+        /// data-loss exposure the opt-in exists to confine.
         /// </summary>
         private async Task<RemoteFetch> ResolveRemoteFetch(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, bool fetchShapeChanged)
         {
@@ -160,8 +160,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// AC-2.4: downloaded payloads only. SyncWorkItem, WithSyncDeltaTransition and SyncStateTransitions
-        /// all write, so an item whose stamp did not move must never reach this loop.
+        /// Downloaded payloads only. SyncWorkItem, WithSyncDeltaTransition and SyncStateTransitions all
+        /// write, so an item whose remote stamp did not move must never reach this loop.
         /// </summary>
         private List<SyncedItem> SyncDownloadedItems(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, List<WorkItem> downloaded, DateTime syncTime)
         {
@@ -181,7 +181,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return itemsWithTransitions;
         }
 
-        /// <summary>Removal is a set difference against the whole query, never against what was downloaded (D2).</summary>
+        /// <summary>Removal is a set difference against the whole query, never against what was downloaded.</summary>
         private List<WorkItem> RemoveItemsThatLeftTheQuery(List<WorkItem> storedWorkItems, HashSet<string> stillOnTheTracker)
         {
             var itemsRemovedThisCycle = storedWorkItems.FindAll(stored => !stillOnTheTracker.Contains(stored.ReferenceId));
@@ -198,14 +198,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// <summary>
         /// What one refresh has to work with: the payloads it downloaded, every reference id the query
         /// still returns - removal is a set difference against the whole query, never against what was
-        /// downloaded (D2) - and what to report to the operator.
+        /// downloaded - and what to report to the operator.
         /// </summary>
         private sealed record RemoteFetch(List<WorkItem> WorkItems, HashSet<string> StillOnTheTracker, SyncOutcome Outcome);
 
         private sealed record IdentityScan(bool TrackerCanBeScanned, bool Succeeded, List<RemoteRecordStamp> Stamps);
 
         /// <summary>
-        /// Read per update, inside that update's own scope (Epic #5687 A1) - never cached in a field or at
+        /// Read per update, inside that update's own scope - never cached in a field or at
         /// startup, so turning the option on takes effect on the next cycle without a restart. No row means
         /// nobody volunteered, which is the same answer as off.
         /// </summary>
@@ -213,7 +213,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             => optionalFeatureRepository
                 .GetByPredicate(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey)?.Enabled == true;
 
-        /// <summary>Phase 1 of the two-phase fetch (D1): the same query, asking only for identity plus the remote change stamp.</summary>
+        /// <summary>The scan: the same query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteIdentities(IWorkTrackingConnector connector, Team team)
         {
             if (!connector.SupportsIncrementalSync(team.WorkTrackingSystemConnection))
@@ -225,8 +225,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             {
                 return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepWorkItemsForTeam(team)]);
             }
-            // D8: a half-scanned query is the one answer never allowed, so any scan failure falls back to
-            // the whole query - loudly, or nobody learns the cheap path stopped working.
+            // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
+            // whole query - loudly, or nobody learns the cheap path stopped working.
 #pragma warning disable CA1031
             catch (Exception exception)
 #pragma warning restore CA1031
@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 SyncOutcome.FullSync(recordsFromTracker.Count));
         }
 
-        /// <summary>Phase 2 of the two-phase fetch (DDD-2): full payloads for the records whose stamp moved, and for nothing else.</summary>
+        /// <summary>The download: full payloads for the records whose stamp moved, and for nothing else.</summary>
         private async Task<RemoteFetch> FetchOnlyWhatMoved(IWorkTrackingConnector connector, Team team, List<WorkItem> storedWorkItems, List<RemoteRecordStamp> sweptRecords)
         {
             var sweptOnce = DeduplicateByReferenceId(sweptRecords, team.Name, record => record.ReferenceId);
@@ -271,7 +271,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count));
         }
 
-        // D12: compared per item against the stored stamp. No global watermark, so clock skew and
+        // Compared per item against the stored stamp. No global watermark, so clock skew and
         // server-time drift stay out of the design. A record nobody stored yet has always moved.
         private static bool HasMoved<TStored>(RemoteRecordStamp record, List<TStored> storedRecords) where TStored : WorkItemBase
         {
@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// Staleness is time-driven, so it is derived for everything the team still has rather than for
-        /// what this cycle happened to download (D10, Epic #5687). An item that stopped changing is
+        /// what this cycle happened to download. An item that stopped changing is
         /// exactly the item a delta cycle stops fetching, and exactly the item that goes stale.
         /// </summary>
         private static List<IDomainEvent> CollectStalenessEvents(Team team, List<WorkItem> workItems, DateTime syncTime)
@@ -381,7 +381,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private static string ResolveBlockReason(WorkItem workItem)
         {
-            // The blocked DECISION is owned by IBlockedItemService (rule-set based, ADR-067); this only
+            // The blocked DECISION is owned by IBlockedItemService, which evaluates the rule set; this only
             // supplies human-readable reason text for the WorkItemBlocked event, so the item's current
             // state is the simplest faithful description of "why" without re-deriving the rule match.
             return workItem.State;
@@ -583,7 +583,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 }
             }
 
-            // Stryker disable once all: per-record narration. AC-1.6's control asserts the set is present at Debug by fragment, so emptying one line deliberately leaves the others.
+            // Stryker disable once all: per-record narration. Its control asserts the set is present at Debug by fragment, so emptying one line deliberately leaves the others.
             logger.LogDebug("Extrapolating Not Broken Down Features for Portfolio {PortfolioName}", portfolio.Name);
 
             foreach (var feature in portfolio.GetFeaturesToExtrapolate())
@@ -732,8 +732,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var syncedFeatures = new List<SyncedFeature>();
 
             // Read BEFORE UpdateFeatures below clears the collection: what the portfolio already stores is
-            // the resolver's input, and an empty or unstamped set is what keeps the upgrade case on the full
-            // path (D8).
+            // the resolver's input, and an empty or unstamped set is what keeps an upgraded instance on the
+            // full path for one cycle.
             var storedFeatures = portfolio.Features.ToList();
 
             var fetch = await ResolveRemoteFeatureFetch(connector, portfolio, storedFeatures, fetchShapeChanged);
@@ -741,7 +741,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             foreach (var feature in fetch.Features)
             {
                 // Read the PRE-UPDATE per-portfolio blocked verdict BEFORE AddOrUpdateFeature mutates the
-                // persisted feature in place (ADR-104 seam hoist) — otherwise the prior state is destroyed
+                // persisted feature in place - otherwise the prior state is destroyed
                 // before the rising/falling edge can be observed.
                 var existingFeature = featureRepository.GetByPredicate(f => f.ReferenceId == feature.ReferenceId);
                 var wasObservedBeforeSync = existingFeature != null;
@@ -795,7 +795,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// <summary>
         /// What one portfolio refresh has to work with: the Feature payloads it downloaded, every reference
         /// id the query still returns, and what to report to the operator. The second is the one the
-        /// portfolio's membership is rebuilt from - never the first (D2). Ordered rather than a set, because
+        /// portfolio's membership is rebuilt from - never the first. Ordered rather than a set, because
         /// Features tied on their order value fall back to arrival order until the save gives them an id.
         /// </summary>
         private sealed record RemoteFeatureFetch(List<Feature> Features, List<string> StillOnTheTracker, SyncOutcome Outcome);
@@ -811,10 +811,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// The portfolio half of D8, mirroring the team path deliberately rather than sharing it: a Feature
-        /// is not a Work Item, and merging the two routines would put a refactor of the shipped team path
-        /// inside the slice that changes portfolio behaviour. The opt-in gates the scan as well as the
-        /// resolver, so a connector nobody volunteered is never approached at all (AC-2.10).
+        /// The portfolio half of the same decision, mirroring the team path deliberately rather than
+        /// sharing it: a Feature is not a Work Item, and merging the two routines would mean refactoring
+        /// the shipped team path inside a change about portfolios. The opt-in gates the scan as well as the
+        /// mode decision, so a connector nobody volunteered is never approached at all.
         /// </summary>
         private async Task<RemoteFeatureFetch> ResolveRemoteFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<Feature> storedFeatures, bool fetchShapeChanged)
         {
@@ -836,7 +836,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 : await FetchEveryFeature(connector, portfolio);
         }
 
-        /// <summary>Phase 1 for the portfolio (D1): the same Feature query, asking only for identity plus the remote change stamp.</summary>
+        /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio)
         {
             if (!connector.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
@@ -848,8 +848,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             {
                 return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepFeaturesForPortfolio(portfolio)]);
             }
-            // D8: a half-scanned query is the one answer never allowed, so any scan failure falls back to
-            // the whole query - loudly, or nobody learns the cheap path stopped working.
+            // A half-scanned query is the one answer never allowed, so any scan failure falls back to the
+            // whole query - loudly, or nobody learns the cheap path stopped working.
 #pragma warning disable CA1031
             catch (Exception exception)
 #pragma warning restore CA1031
@@ -866,7 +866,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// Phase 2 for the portfolio (DDD-2): full Feature payloads for the records whose stamp moved, and
+        /// The download for the portfolio: full Feature payloads for the records whose stamp moved, and
         /// for nothing else. A cycle in which nothing moved asks for nothing - a keyed query for an empty
         /// key set is still a remote round trip.
         /// </summary>
@@ -949,7 +949,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private async Task SweepDepartedFeatureSpells(Portfolio portfolio, List<Feature> refreshedFeatures)
         {
-            // Empty-refresh guard (DDD-5): a transient connector failure returning zero features must not
+            // Empty-refresh guard: a transient connector failure returning zero features must not
             // silently close every open spell. A portfolio genuinely holding zero features has no open
             // spells, so skipping the sweep is free.
             if (refreshedFeatures.Count == 0)
@@ -1032,12 +1032,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// The parent half of D8, over the keys the portfolio STORES. Phase 2 is the existing keyed
-        /// <c>GetParentFeaturesDetails</c> asked for a shorter key list, and the mode decision goes through
-        /// the same resolver (DDD-5) - over the stored PARENTS, which are not members of
+        /// The parent half of the same decision, over the keys the portfolio STORES. The download is the
+        /// existing keyed <c>GetParentFeaturesDetails</c> asked for a shorter key list, and the mode goes
+        /// through the same resolver - over the stored PARENTS, which are not members of
         /// <c>portfolio.Features</c> and so are resolved from storage by reference id. The parent sweep
         /// stays out of <see cref="SyncOutcome"/>: the summary line's counts are the Feature half's. The
-        /// fetch shape is the PORTFOLIO's own answer, passed down rather than compared a second time (AC-5.1).
+        /// fetch shape is the PORTFOLIO's own answer, passed down rather than compared a second time.
         /// </summary>
         private async Task<List<Feature>> ResolveRemoteParentFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds, bool fetchShapeChanged)
         {
@@ -1077,7 +1077,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return storedParentFeatures;
         }
 
-        /// <summary>Phase 1 for the parent half (D1): the same keyed query, asking only for identity plus the remote change stamp.</summary>
+        /// <summary>The scan for the parent half: the same keyed query, asking only for identity plus the remote change stamp.</summary>
         private async Task<IdentityScan> ScanRemoteParentFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds)
         {
             if (!connector.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
@@ -1089,7 +1089,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             {
                 return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepParentFeatures(portfolio, parentFeatureIds)]);
             }
-            // D8 again: a half-scanned key list falls back to downloading every parent, and says so.
+            // Same rule again: a half-scanned key list falls back to downloading every parent, and says so.
 #pragma warning disable CA1031
             catch (Exception exception)
 #pragma warning restore CA1031
@@ -1106,7 +1106,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// Phase 2 for the parent half (DDD-2), over the keys the portfolio stores. A cycle in which no
+        /// The download half for parent Features, over the keys the portfolio stores. A cycle in which no
         /// parent moved asks for nothing at all - a keyed query for an empty key set is still a remote
         /// round trip.
         /// </summary>

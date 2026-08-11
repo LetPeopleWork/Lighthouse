@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    // S107: see PortfolioController - the eighth collaborator is the ordering seam ADR-134 SA-2 requires.
+    // S107 (too many constructor parameters): the eighth is the Feature ordering seam - see PortfolioController.
 #pragma warning disable S107
     public class PortfoliosController(
         IRepository<Portfolio> portfolioRepository,

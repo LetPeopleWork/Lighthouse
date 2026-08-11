@@ -3,14 +3,14 @@ using Lighthouse.Backend.Models;
 namespace Lighthouse.Backend.Services.Implementation.WorkItems
 {
     /// <summary>
-    /// How much one refresh has to download (Epic #5687, D8). There is no partial mode: everything the
+    /// How much one refresh has to download. There is no partial mode: everything the
     /// refresh cannot resolve with certainty resolves to <see cref="SyncMode.Full"/>, because the
     /// expensive answer is the safe one.
     /// </summary>
     public static class SyncModeResolver
     {
         /// <param name="operatorAskedForTheCheaperRefresh">
-        /// Whether this instance volunteered (A1). A parameter rather than a dependency: the resolver is a
+        /// Whether this instance opted in to the cheaper refresh. A parameter rather than a dependency: the resolver is a
         /// total function of what the refresh already holds, and reading the option is the caller's job so
         /// that it happens once per update inside that update's own scope. Composes with
         /// <paramref name="trackerCanBeScanned"/> rather than replacing it - the capability is per

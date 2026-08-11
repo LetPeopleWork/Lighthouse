@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
-        /// The one place write-back reaches the tracker (ADR-144 §4). Every update type inherits it, so
+        /// The one place write-back reaches the tracker. Every update type inherits it, so
         /// no updater can forget it and the ordering contract stays in the updater's own method body.
         /// </summary>
         private async Task FlushWriteBack(int id, IServiceProvider serviceProvider)
@@ -56,9 +56,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
-        /// The one line an operator reads per completed update (Epic #5687). The reason rides as a whole
-        /// token or not at all (AC-5.2): a cycle with nothing to explain would otherwise carry a bare
-        /// <c>reason=</c> on every line, on the very line slice 01 existed to clean up.
+        /// The one line an operator reads per completed update. The reason is appended whole or left out
+        /// entirely - a cycle with nothing to explain would otherwise carry an empty <c>reason=</c> on
+        /// every line, and this line exists precisely because the logs were too noisy to read.
         /// </summary>
         protected void LogUpdateSummary(string entityName, SyncOutcome outcome, long durationMs, bool success)
         {

@@ -52,7 +52,12 @@ Two standing principles worth keeping visible here because they're easy to skip 
 - Conventional commits with scopes: `feat(payment): …`, `fix(user): …`, `refactor(order): …`, `test(payment): …`. Refactor commits separate from feature commits.
 - Before editing a shared contract (DTO, API payload, cross-cutting interface): grep for usages and extend the relevant test factory/builder first to bound the blast radius.
 - DRY = don't repeat *knowledge*, not code. Don't abstract structurally-similar code that represents different business concepts (e.g., `validatePaymentAmount` and `validateTransferAmount` may look identical but evolve independently).
-- **Comments are sparse by default.** Write one only when the *why* cannot be read off the code, and then keep it to a line or two that points at the source of truth — `Bug #5567`, `ADR-058` — rather than restating it. Never narrate what the code does, re-explain a decision already captured in an ADR, a work item or the commit body, or leave a running commentary of alternatives considered. Long rationale belongs in the commit message or the ADR, where it is versioned and searchable. When you touch a file that carries over-wordy comments, trim them as you go; don't open a separate cleanup pass for it.
+- **Comments are rare, and they are written for a stranger.** Write one only when the *why* cannot be read off the code — then say the why itself, in plain language, in a line or two. The test is: someone opening this file cold, with no other tab open, must get the whole point from the comment alone.
+  - **Never cite an internal reference as the explanation.** `A2`, `DT5-1`, `DDD-5`, `AC-5.2`, `SA-2`, `D8` and friends name sections of feature documents that get archived; `ADR-134` names a file nobody has open. A reader six months from now cannot resolve any of them, so a comment built on one explains nothing. Write the reason, not the pointer to it.
+  - Never narrate what the code does, restate a decision already in the commit body, or leave a running commentary of alternatives considered.
+  - **The one exception is a narrow suppression.** `#pragma warning disable <RULE>` must carry its justification inline, because that is where a reviewer reads it — still in plain language, and an ADO item number (`Bug #5567`) is fine there since it resolves to something a human can actually open.
+  - Long rationale belongs in the commit message, where it is versioned, searchable, and attached to the change that needed it.
+  - When you touch a file carrying comments that break these rules, fix them as you go; don't open a separate cleanup pass for it.
 
 ### EF Migrations
 

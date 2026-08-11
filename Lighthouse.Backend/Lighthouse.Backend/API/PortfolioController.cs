@@ -21,9 +21,9 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/portfolios/{portfolioId:int}")]
     [Route("api/latest/portfolios/{portfolioId:int}")]
     [ApiController]
-    // S107: the eighth collaborator is IFeatureOrdering, and it is here because ADR-134 SA-2 makes one
-    // seam the only place an ordering comparer may be built - so the DTO has to be handed it rather than
-    // reach for one. Same trade WorkItemService already took.
+    // S107 (too many constructor parameters): the eighth is the Feature ordering seam. Building an
+    // ordering comparer anywhere else is how two screens end up sorting differently, so callers are
+    // handed the one seam rather than allowed to construct their own.
 #pragma warning disable S107
     public class PortfolioController(
         IRepository<Portfolio> portfolioRepository,
@@ -135,8 +135,9 @@ namespace Lighthouse.Backend.API
             {
                 if (portfolio.WorkItemRelatedSettingsChanged(portfolioSetting))
                 {
-                    // A2: the claim goes, not the rows - a Feature another portfolio still holds is not this
-                    // one's to delete, and IOrphanedFeatureCleanupService deletes the ones nobody claims.
+                    // Drop this portfolio's claim on its Features rather than deleting them: another
+                    // portfolio may still hold the same Feature. The orphan cleanup deletes the ones
+                    // nobody claims any more.
                     portfolio.UpdateFeatures([]);
                 }
 
