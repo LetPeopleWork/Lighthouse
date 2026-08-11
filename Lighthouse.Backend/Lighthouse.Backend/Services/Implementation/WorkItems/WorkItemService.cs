@@ -729,11 +729,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var featuresTheQueryStillReturns = TheFeaturesTheQueryStillReturns(fetch.StillOnTheTracker, downloadedFeatures);
 
-            // Claiming runs over the whole surviving set, not over the downloads: a Feature nobody had to
-            // download this cycle is still one this portfolio holds, and a Feature with no portfolio claim
-            // left is deleted outright by the orphaned-Feature cleanup the updater runs.
-            featuresTheQueryStillReturns.ForEach(feature => AddProjectToFeature(feature, portfolio));
-
+            // The whole surviving set, not the downloads: a Feature nobody had to download this cycle is
+            // still one this portfolio holds, and a Feature left with no portfolio claim is deleted
+            // outright by the orphaned-Feature cleanup the updater runs.
             portfolio.UpdateFeatures(featureOrdering.Order(featuresTheQueryStillReturns));
 
             await featureRepository.Save();
@@ -1098,15 +1096,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var swept = sweptOnce.Find(record => record.ReferenceId == parentFeatureId);
 
             return swept == null || HasMoved(swept, storedParentFeatures);
-        }
-
-        private static void AddProjectToFeature(Feature feature, Portfolio project)
-        {
-            var featureIsAddedToProject = feature.Portfolios.Exists(p => p.Id == project.Id);
-            if (!featureIsAddedToProject)
-            {
-                feature.Portfolios.Add(project);
-            }
         }
 
         private IWorkTrackingConnector GetWorkItemServiceForWorkTrackingSystem(WorkTrackingSystems workTrackingSystem)
