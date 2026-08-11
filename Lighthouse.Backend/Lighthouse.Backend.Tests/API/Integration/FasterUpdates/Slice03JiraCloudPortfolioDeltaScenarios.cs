@@ -218,7 +218,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // Slice 03 adds no second gate: the portfolio half is covered by the opt-in the team half already
         // has. The defining claim is an absence.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task A_portfolio_refresh_never_scans_unless_an_operator_asked_for_it()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
