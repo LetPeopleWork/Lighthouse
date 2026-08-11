@@ -28,9 +28,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         private const string FetchedField = "fetched=";
 
         private const string TheScansRefusal = "The identity scan was refused by the work tracking system";
+        private const string TheParentScansRefusal = "The parent identity scan was refused by the work tracking system";
 
         private const string TheParentFeature = "PARENT-1";
+        private const string TheParentsNewName = "The parent feature, renamed";
         private const string TheDeliveredFeature = "FEAT-1";
+        private const string TheDepartingFeature = "FEAT-3";
 
         private static readonly DateTime AWhileAgo = new(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc);
 
@@ -48,6 +51,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
             return portfolio;
         }
+
+        /// <summary>
+        /// A Jira Data Center portfolio, in effect: the connector answers that it cannot be swept, so the
+        /// cheap path is refused per connector no matter what the instance volunteered (A1).
+        /// </summary>
+        private SeededPortfolio GivenAPortfolioWhoseTrackerRefusesToBeScanned() => SeedAPortfolio();
 
         private (SeededPortfolio First, SeededPortfolio Second) GivenTwoPortfoliosThatTrackTheSameFeatures()
         {
@@ -135,6 +144,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         private void GivenOneFeatureLeftTheQuery(string referenceId) => OnTheTrackerTheFeatureIsGone(referenceId);
 
         private void GivenTheFeatureScanFails() => TheFeatureScanFails(new InvalidOperationException(TheScansRefusal));
+
+        private void GivenTheParentFeatureScanFails() => TheParentFeatureScanFails(new InvalidOperationException(TheParentScansRefusal));
+
+        /// <summary>
+        /// The parent's own record moves while both its children stay exactly where they were. Nothing on
+        /// the Feature side of the cycle can report this, which is why the parent half sweeps at all.
+        /// </summary>
+        private void GivenTheParentFeatureWasRenamedOnTheTracker()
+            => OnTheTrackerTheParentFeatureChanges(TheParentFeature, AWhileAgo.AddHours(1), name: TheParentsNewName);
+
+        private void GivenTheParentFeatureQueryStoppedAnsweringForIt() => OnTheTrackerTheParentFeatureIsGone(TheParentFeature);
 
         private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
 
@@ -247,6 +267,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 + "round trip on every quiet cycle, which is the cost this epic exists to remove. Requested: "
                 + RenderParentDownloads());
 
+        private void ThenTheParentFeaturesWereNeverScanned()
+            => Assert.That(ParentFeatureScans, Is.Empty,
+                "The parent half carries no opt-in of its own - it rides the one the Feature half already reads. A scan "
+                + "issued here is a remote round trip nobody volunteered for, and it costs the same whether or not the "
+                + "answer is then used. Scans: " + RenderParentScans());
+
+        private void ThenTheParentFeaturesWereDownloaded(params string[] parentReferenceIds)
+        {
+            Assert.That(ParentFeatureDownloads, Has.Count.EqualTo(1),
+                "One cycle asks for the parent payloads once. Requests: " + RenderParentDownloads());
+
+            Assert.That(ParentFeatureDownloads[0], Is.EquivalentTo(parentReferenceIds),
+                "A parent this cycle had to fetch and did not is a parent whose stored copy is now wrong, and nothing "
+                + "later in the cycle re-reads it. Requested: " + RenderParentDownloads());
+        }
+
         // --- Then: what the operator reads and what was recorded ---
 
         private void ThenTheOperatorSeesACheaperUpdate(int scanned, int fetched)
@@ -286,6 +322,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         private void ThenTheOperatorIsToldTheScanFailed()
             => Assert.That(CapturedLogs.AtOrAbove(LogEventLevel.Warning), Has.One.Contains(TheScansRefusal),
                 "Falling back silently means nobody ever learns the cheaper path stopped working. Lines: "
+                + string.Join(" | ", CapturedLogs.AtOrAbove(LogEventLevel.Warning)));
+
+        private void ThenTheOperatorIsToldTheParentScanFailed()
+            => Assert.That(CapturedLogs.AtOrAbove(LogEventLevel.Warning), Has.One.Contains(TheParentScansRefusal),
+                "The parent half falls back on its own and has to say so on its own - the Feature half's line says nothing "
+                + "about the parents, so a silent parent fallback is a saving quietly handed back. Lines: "
                 + string.Join(" | ", CapturedLogs.AtOrAbove(LogEventLevel.Warning)));
 
         // --- Then: what the portfolio still holds ---
@@ -340,6 +382,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             }
         }
 
+        private void ThenTheParentFeatureShowsWhatTheTrackerNowSays(string referenceId, string name)
+        {
+            var parent = TheStoredFeature(referenceId);
+
+            Assert.That(parent, Is.Not.Null, $"'{referenceId}' is not stored at all.");
+            Assert.That(parent!.Name, Is.EqualTo(name),
+                "A parent whose own record moved is the one thing the children can never report, so a cycle that skips it "
+                + "leaves the portfolio showing a name, a state and an owner the tracker stopped agreeing with - and every "
+                + "later cheap cycle agrees with the stale copy all over again.");
+        }
+
+        private void ThenTheParentFeatureIsStillStored(string referenceId)
+            => Assert.That(TheStoredFeature(referenceId), Is.Not.Null,
+                $"The keyed query stopped answering for '{referenceId}', which is not the same as the tracker saying it is "
+                + "gone. Parents are excluded from the orphaned-Feature cleanup precisely so that silence cannot delete "
+                + "one, and the Feature half's 'stored minus swept' rule is inverted here for the same reason.");
+
         private void ThenTheUntouchedFeaturesHistoryIsIdenticalTo(string before, StoredFeature feature)
             => Assert.That(TheHistoryOf(feature), Is.EqualTo(before),
                 $"'{feature.ReferenceId}' did not move on the tracker, so its recorded history may not be rewritten.");
@@ -354,6 +413,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         private void ThenTheFeatureIsStillBlockedInThePortfolio(SeededPortfolio portfolio, StoredFeature feature)
             => Assert.That(TheOpenBlockedSpellsInThePortfolio(portfolio.Id).Keys, Does.Contain(feature.Id),
                 $"'{feature.ReferenceId}' was blocked before this cycle and nothing about it changed, so its spell is still open.");
+
+        private void ThenTheDepartedFeaturesBlockedSpellWasClosed(SeededPortfolio portfolio, StoredFeature feature)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CapturedEvents.Of<FeatureUnblocked>().ConvertAll(raised => raised.FeatureId),
+                    Does.Contain(feature.Id),
+                    $"'{feature.ReferenceId}' left this portfolio's query while it was blocked. Nothing later in the cycle "
+                    + "visits a Feature the refresh no longer holds, so the sweep over what departed is the only thing that "
+                    + "can end the spell - and a spell nobody ends keeps accruing blocked time against a Feature this "
+                    + "portfolio stopped tracking. Declared unblocked: "
+                    + string.Join(",", CapturedEvents.Of<FeatureUnblocked>().Select(raised => raised.FeatureId)));
+
+                Assert.That(TheOpenBlockedSpellsInThePortfolio(portfolio.Id).Keys, Does.Not.Contain(feature.Id),
+                    "The signal has to be acted on, not merely raised: an open spell is what every blocked-time number reads.");
+            }
+        }
 
         private void ThenBothPortfoliosShowTheFeatureAsFinished(SeededPortfolio first, SeededPortfolio second, string referenceId)
         {

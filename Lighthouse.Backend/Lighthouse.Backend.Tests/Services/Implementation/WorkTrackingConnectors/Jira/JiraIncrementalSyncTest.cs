@@ -409,15 +409,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProjectByReferenceId_AsksTheTrackerNothingWhenNoKeysAreNamed()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
-            var requestsBefore = jira.SearchRequests.Count();
+            var searchesBefore = jira.SearchRequests.Count();
+            var requestsBefore = jira.Requests.Count;
 
             var features = await subject.GetFeaturesForProject(portfolio, []);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(features, Is.Empty);
-                Assert.That(jira.SearchRequests.Count(), Is.EqualTo(requestsBefore),
+                Assert.That(jira.SearchRequests.Count(), Is.EqualTo(searchesBefore),
                     "An empty key list as JQL is an empty JQL, which Jira answers with the whole project.");
+                Assert.That(jira.Requests, Has.Count.EqualTo(requestsBefore),
+                    "Nothing to fetch has to cost nothing, and the search is not the only round trip on this path - "
+                    + "building Features re-reads the field catalogue. A quiet portfolio runs this every cycle, which "
+                    + "is exactly the cost the epic exists to remove. Asked for: "
+                    + string.Join(" | ", jira.Requests.Skip(requestsBefore).Select(uri => uri.AbsolutePath)));
             }
         }
 

@@ -601,6 +601,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         protected void OnTheTrackerTheFeatureIsGone(string referenceId)
             => remoteFeatures.RemoveAll(record => record.ReferenceId == referenceId);
 
+        protected void TheParentFeatureScanFails(Exception failure)
+            => ConnectorMock
+                .Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>()))
+                .ThrowsAsync(failure);
+
+        /// <summary>
+        /// A parent Feature's own record moves while its children stay put - a rename, a state change, an
+        /// owner swapped. The parent half has to notice on its own, because nothing about the children
+        /// says so.
+        /// </summary>
+        protected void OnTheTrackerTheParentFeatureChanges(string referenceId, DateTime changedAt, string? name = null)
+        {
+            var index = remoteParentFeatures.FindIndex(record => record.ReferenceId == referenceId);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), $"The tracker does not hold Parent Feature '{referenceId}'.");
+
+            var record = remoteParentFeatures[index];
+            remoteParentFeatures[index] = record with { ChangedAt = changedAt, Name = name ?? record.Name };
+        }
+
+        /// <summary>
+        /// The keyed parent query stops answering for a parent the portfolio's children still name -
+        /// deleted, moved out of scope, or hidden by a permission change. Both phases go quiet about it.
+        /// </summary>
+        protected void OnTheTrackerTheParentFeatureIsGone(string referenceId)
+            => remoteParentFeatures.RemoveAll(record => record.ReferenceId == referenceId);
+
         /// <summary>
         /// The connector hands back a Feature that already carries its remote change stamp - the same
         /// port contract the work-item side holds, and set after construction for the same reason: the

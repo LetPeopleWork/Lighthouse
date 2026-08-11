@@ -285,5 +285,124 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheWholeFeatureQueryWasDownloaded();
             ThenTheRefreshReportedAFullUpdateOf(portfolio, scanned: 3, fetched: 3);
         }
+
+        // @driving_port @real-io @A1 @contract-shape:unbounded-preservation
+        // The parent half of the gate above. It is a separate scenario because it is a separate decision
+        // in the code: the parent path reads the opt-in for itself, and the Feature half's scenario holds
+        // no parents at all, so nothing there says whether the parent query is left alone too.
+        [Test]
+        public async Task A_portfolio_refresh_nobody_asked_for_never_scans_the_parent_features_either()
+        {
+            var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
+            GivenNobodyAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
+
+            await WhenTheScheduledRefreshRuns(portfolio);
+
+            ThenTheParentFeaturesWereNeverScanned();
+            ThenTheParentFeaturesWereDownloaded(TheParentFeature);
+            ThenTheParentFeatureIsStillStoredAndCurrent(TheParentFeature);
+        }
+
+        // @driving_port @real-io @AC-3.1 @contract-shape:bounded-change
+        // The other direction of the quiet-cycle scenario above: a parent whose OWN record moved has to be
+        // refetched even though not one child did. Nothing on the Feature side of the cycle can report
+        // this, which is the whole reason the parent half sweeps at all.
+        [Test]
+        public async Task A_parent_feature_that_moved_on_the_tracker_is_refetched_by_the_cheaper_cycle()
+        {
+            var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
+
+            GivenTheParentFeatureWasRenamedOnTheTracker();
+            await WhenTheScheduledRefreshRuns(portfolio);
+
+            ThenTheParentFeaturesWereScannedFor(TheParentFeature);
+            ThenTheParentFeaturesWereDownloaded(TheParentFeature);
+            ThenTheParentFeatureShowsWhatTheTrackerNowSays(TheParentFeature, TheParentsNewName);
+            ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 2, fetched: 0);
+        }
+
+        // @error @driving_port @real-io @AC-3.1 @contract-shape:bounded-change
+        // The Feature half's rule inverted. A Feature the sweep does not answer for has left the query and
+        // is dropped; a PARENT the sweep does not answer for is downloaded, because parents are excluded
+        // from the orphaned-Feature cleanup and silence must never be read as departure.
+        [Test]
+        public async Task A_parent_feature_the_sweep_did_not_answer_for_is_asked_for_rather_than_assumed_gone()
+        {
+            var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
+
+            GivenTheParentFeatureQueryStoppedAnsweringForIt();
+            await WhenTheScheduledRefreshRuns(portfolio);
+
+            ThenTheParentFeaturesWereDownloaded(TheParentFeature);
+            ThenTheParentFeatureIsStillStored(TheParentFeature);
+        }
+
+        // @error @driving_port @real-io @AC-3.1 @D8 @contract-shape:bounded-change
+        // The parent half of D8, and the half no scenario reached: the parent path scans and falls back on
+        // its own, so the Feature half's fallback says nothing about it.
+        [Test]
+        public async Task A_portfolio_refresh_whose_parent_scan_fails_downloads_every_parent_rather_than_half()
+        {
+            var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
+
+            GivenTheParentFeatureScanFails();
+            await WhenTheScheduledRefreshRuns(portfolio);
+
+            ThenTheParentFeaturesWereDownloaded(TheParentFeature);
+            ThenTheParentFeatureIsStillStoredAndCurrent(TheParentFeature);
+            ThenTheOperatorIsToldTheParentScanFailed();
+        }
+
+        // @driving_port @real-io @AC-3.1 @A1 @contract-shape:unbounded-preservation
+        // The opt-in is per instance, the capability is per connector, and the parent half honours both.
+        // An operator who volunteered a Jira Data Center portfolio must still get every parent.
+        [Test]
+        public async Task A_portfolio_whose_tracker_refuses_to_be_scanned_still_gets_every_parent_feature()
+        {
+            var portfolio = GivenAPortfolioWhoseTrackerRefusesToBeScanned();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
+
+            await WhenTheScheduledRefreshRuns(portfolio);
+
+            ThenTheParentFeaturesWereNeverScanned();
+            ThenTheParentFeaturesWereDownloaded(TheParentFeature);
+            ThenTheParentFeatureIsStillStoredAndCurrent(TheParentFeature);
+            ThenTheRefreshReportedAFullUpdateOf(portfolio, scanned: 2, fetched: 2);
+        }
+
+        // @error @driving_port @real-io @AC-3.2 @AC-3.3 @contract-shape:bounded-change
+        // The mirror of "a quiet Feature keeps its open spell": a Feature that genuinely LEFT this
+        // portfolio's query has to have its spell closed, and only the sweep over what departed can do it.
+        // Two portfolios, so the row survives losing this one's claim and the spell survives with it.
+        [Test]
+        public async Task A_feature_that_was_blocked_when_it_left_the_query_stops_accruing_blocked_time()
+        {
+            var (first, second) = GivenTwoPortfoliosThatTrackTheSameFeatures();
+            GivenTheOperatorAskedForTheCheaperRefresh();
+            GivenTheTrackerHoldsThreeFeatures();
+            await GivenThePortfolioHasAlreadyBeenRefreshed(first);
+            await GivenThePortfolioHasAlreadyBeenRefreshed(second);
+            var departingFeature = GivenOneFeatureHasBeenBlockedForAWhile(second, TheDepartingFeature);
+
+            GivenOneFeatureLeftTheQuery(TheDepartingFeature);
+            await WhenTheScheduledRefreshRuns(second);
+
+            ThenThePortfolioNoLongerHas(second, TheDepartingFeature);
+            ThenTheDepartedFeatureIsStillStored(TheDepartingFeature);
+            ThenTheDepartedFeaturesBlockedSpellWasClosed(second, departingFeature);
+        }
     }
 }
