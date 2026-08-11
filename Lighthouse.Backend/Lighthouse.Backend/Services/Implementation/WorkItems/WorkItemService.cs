@@ -987,7 +987,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
-            var parentFeatures = await workItemService.GetParentFeaturesDetails(project, parentFeatureIds);
+            var parentFeatures = await ResolveRemoteParentFeatureFetch(workItemService, project, parentFeatureIds);
 
             foreach (var parentFeature in parentFeatures)
             {
@@ -998,6 +998,102 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             await featureRepository.Save();
+        }
+
+        /// <summary>
+        /// The parent half of D8, over the keys the portfolio STORES. Phase 2 is the existing keyed
+        /// <c>GetParentFeaturesDetails</c> asked for a shorter key list, and the mode decision goes through
+        /// the same resolver (DDD-5) - over the stored PARENTS, which are not members of
+        /// <c>portfolio.Features</c> and so are resolved from storage by reference id. The parent sweep
+        /// stays out of <see cref="SyncOutcome"/>: the summary line's counts are the Feature half's.
+        /// </summary>
+        private async Task<List<Feature>> ResolveRemoteParentFeatureFetch(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds)
+        {
+            var storedParentFeatures = TheStoredParentFeatures(parentFeatureIds);
+            var operatorAskedForTheCheaperRefresh = TheOperatorAskedForTheCheaperRefresh();
+
+            var scan = operatorAskedForTheCheaperRefresh
+                ? await ScanRemoteParentFeatureIdentities(connector, portfolio, parentFeatureIds)
+                : new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+
+            var mode = SyncModeResolver.Resolve(
+                operatorAskedForTheCheaperRefresh,
+                scan.TrackerCanBeScanned,
+                storedParentFeatures,
+                scan.Succeeded,
+                fetchShapeChanged: false);
+
+            return mode == SyncMode.Delta
+                ? await FetchOnlyTheParentFeaturesThatMoved(connector, portfolio, parentFeatureIds, storedParentFeatures, scan.Stamps)
+                : await connector.GetParentFeaturesDetails(portfolio, parentFeatureIds);
+        }
+
+        private List<Feature> TheStoredParentFeatures(List<string> parentFeatureIds)
+        {
+            var storedParentFeatures = new List<Feature>();
+
+            foreach (var parentFeatureId in parentFeatureIds)
+            {
+                var stored = featureRepository.GetByPredicate(feature => feature.ReferenceId == parentFeatureId);
+
+                if (stored != null)
+                {
+                    storedParentFeatures.Add(stored);
+                }
+            }
+
+            return storedParentFeatures;
+        }
+
+        /// <summary>Phase 1 for the parent half (D1): the same keyed query, asking only for identity plus the remote change stamp.</summary>
+        private async Task<IdentityScan> ScanRemoteParentFeatureIdentities(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds)
+        {
+            if (!connector.SupportsIncrementalSync(portfolio.WorkTrackingSystemConnection))
+            {
+                return new IdentityScan(TrackerCanBeScanned: false, Succeeded: false, Stamps: []);
+            }
+
+            try
+            {
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: true, Stamps: [.. await connector.SweepParentFeatures(portfolio, parentFeatureIds)]);
+            }
+            // D8 again: a half-scanned key list falls back to downloading every parent, and says so.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                // The sink renders the exception itself, so interpolating its message into the template as
+                // well would print the failure text twice on the operator's one line.
+                logger.LogWarning(
+                    exception,
+                    "Parent Feature identity scan failed for Portfolio {PortfolioName} - downloading every parent instead.",
+                    portfolio.Name);
+
+                return new IdentityScan(TrackerCanBeScanned: true, Succeeded: false, Stamps: []);
+            }
+        }
+
+        /// <summary>
+        /// Phase 2 for the parent half (DDD-2). One asymmetry against the Feature half, and it inverts that
+        /// half's rule: parents are excluded from the orphaned-Feature cleanup by <c>!f.IsParentFeature</c>,
+        /// so this sweep removes nothing. A stored key the scan did not answer for is therefore DOWNLOADED,
+        /// never read as departed. A cycle in which no parent moved asks for nothing at all - a keyed query
+        /// for an empty key set is still a remote round trip.
+        /// </summary>
+        private async Task<List<Feature>> FetchOnlyTheParentFeaturesThatMoved(IWorkTrackingConnector connector, Portfolio portfolio, List<string> parentFeatureIds, List<Feature> storedParentFeatures, List<RemoteRecordStamp> sweptRecords)
+        {
+            var sweptOnce = DeduplicateByReferenceId(sweptRecords, portfolio.Name, record => record.ReferenceId);
+
+            var keysToDownload = parentFeatureIds.FindAll(parentFeatureId =>
+            {
+                var swept = sweptOnce.Find(record => record.ReferenceId == parentFeatureId);
+
+                return swept == null || HasMoved(swept, storedParentFeatures);
+            });
+
+            return keysToDownload.Count == 0
+                ? []
+                : DeduplicateByReferenceId(await connector.GetParentFeaturesDetails(portfolio, keysToDownload), portfolio.Name, feature => feature.ReferenceId);
         }
 
         private static void AddProjectToFeature(Feature feature, Portfolio project)

@@ -160,7 +160,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // Failure mode 2: the parent key list is derived from what the portfolio STORES. Derived from
         // what this cycle fetched, it shrinks to nothing on a quiet cycle and the parents drop out.
         [Test]
-        [Ignore("DISTILL scaffold — DELIVER un-ignores this scenario when it implements it.")]
         public async Task The_parent_features_survive_a_cycle_in_which_no_child_feature_moved()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
