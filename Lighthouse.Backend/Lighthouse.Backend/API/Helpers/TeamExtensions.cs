@@ -1,6 +1,5 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkItems;
 
 namespace Lighthouse.Backend.API.Helpers
 {
@@ -62,23 +61,7 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncWaitStates(team, teamSetting);
                 SyncCycleTimeDefinitions(team, teamSetting);
             }
-
-            /// <summary>
-            /// Whether this edit means the team has to start from nothing. Driven by
-            /// <see cref="FetchFingerprint.PropertiesThatAlsoCostAFreshStart"/> so the save path and the
-            /// fingerprint read one list rather than two that drift apart.
-            /// </summary>
-            public bool WorkItemRelatedSettingsChanged(TeamSettingDto teamSetting)
-                => FetchFingerprint.PropertiesThatAlsoCostAFreshStart.Any(property => TheEditChanges(team, property, teamSetting));
         }
-
-        /// <summary>A property nobody registered purges anyway: when the answer is unknown, take the expensive one.</summary>
-        private static bool TheEditChanges(Team team, string property, TeamSettingDto teamSetting) => property switch
-        {
-            nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId)
-                => team.WorkTrackingSystemConnectionId != teamSetting.WorkTrackingSystemConnectionId,
-            _ => true,
-        };
 
         private static void SyncStates(Team team, TeamSettingDto teamSetting)
         {

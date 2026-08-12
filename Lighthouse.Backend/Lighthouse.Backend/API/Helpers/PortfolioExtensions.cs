@@ -1,28 +1,11 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.API.Helpers
 {
     public static class PortfolioExtensions
     {
-        /// <summary>
-        /// Whether this edit means the portfolio has to start from nothing. Driven by
-        /// <see cref="FetchFingerprint.PropertiesThatAlsoCostAFreshStart"/> so a team and a portfolio give
-        /// the same answer to the same question.
-        /// </summary>
-        public static bool WorkItemRelatedSettingsChanged(this Portfolio portfolio, PortfolioSettingDto portfolioSetting)
-            => FetchFingerprint.PropertiesThatAlsoCostAFreshStart.Any(property => TheEditChanges(portfolio, property, portfolioSetting));
-
-        /// <summary>A property nobody registered purges anyway: when the answer is unknown, take the expensive one.</summary>
-        private static bool TheEditChanges(Portfolio portfolio, string property, PortfolioSettingDto portfolioSetting) => property switch
-        {
-            nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId)
-                => portfolio.WorkTrackingSystemConnectionId != portfolioSetting.WorkTrackingSystemConnectionId,
-            _ => true,
-        };
-
         public static void SyncWithPortfolioSettings(this Portfolio project, PortfolioSettingDto portfolioSetting, IRepository<Team> teamRepo)
         {
             project.Name = portfolioSetting.Name;
