@@ -36,19 +36,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             logger.LogInformation("Updating Features for Portfolio {PortfolioName}", portfolio.Name);
 
-            var whatThisCycleAsksFor = FetchFingerprint.For(portfolio);
-            var fetchShapeChanged = TheFetchShapeChanged(portfolio, whatThisCycleAsksFor);
-            var reason = WhyTheFetchShapeChanged(portfolio, whatThisCycleAsksFor);
+            var fetchShape = FetchShape.Of(portfolio);
 
-            var outcome = (await RefreshFeatures(portfolio, fetchShapeChanged)) with { Reason = reason };
-            await RefreshParentFeatures(portfolio, fetchShapeChanged);
+            var outcome = (await RefreshFeatures(portfolio, fetchShape.Changed)) with { Reason = fetchShape.Reason };
+            await RefreshParentFeatures(portfolio, fetchShape.Changed);
 
             await UpdateRemainingWorkForPortfolio(portfolio);
 
             portfolio.RefreshUpdateTime();
 
             // Recorded beside UpdateTime, and only once the fetch it describes actually completed.
-            portfolio.FetchFingerprint = whatThisCycleAsksFor;
+            portfolio.FetchFingerprint = fetchShape.Fingerprint;
 
             // Stryker disable once all: what an update completed is now said by the one "Update completed" summary line (Epic #5687), whose text UpdateServiceBase pins; this is Debug trace.
             logger.LogDebug("Done Updating Features for Portfolio {PortfolioName}", portfolio.Name);
@@ -60,11 +58,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             logger.LogInformation("Updating Work Items for Team {TeamName}", team.Name);
 
-            var whatThisCycleAsksFor = FetchFingerprint.For(team);
-            var fetchShapeChanged = TheFetchShapeChanged(team, whatThisCycleAsksFor);
-            var reason = WhyTheFetchShapeChanged(team, whatThisCycleAsksFor);
+            var fetchShape = FetchShape.Of(team);
 
-            var outcome = (await RefreshWorkItems(team, fetchShapeChanged)) with { Reason = reason };
+            var outcome = (await RefreshWorkItems(team, fetchShape.Changed)) with { Reason = fetchShape.Reason };
 
             foreach (var portfolio in team.Portfolios.ToList())
             {
@@ -72,7 +68,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             }
 
             // The team half has no RefreshUpdateTime on this path, so this write has to save itself.
-            team.FetchFingerprint = whatThisCycleAsksFor;
+            team.FetchFingerprint = fetchShape.Fingerprint;
             await teamRepository.Save();
 
             // Stryker disable once all: the team half of the same trace — the summary line, not this one, is what an operator reads.
@@ -82,22 +78,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// What the last completed cycle asked for against what this one would - asked of the base both a
-        /// team and a portfolio share, so there is one comparison rather than two. Nothing recorded reads
-        /// as changed, which is what gives an instance upgrading into this release one full cycle.
+        /// What this cycle would ask the tracker for, whether that differs from what the last completed
+        /// cycle asked, and whether anybody caused the difference. The three travel together because the
+        /// fingerprint that gets compared has to be the one that gets stored afterwards.
+        ///
+        /// The reason is not the same question as the mode. An instance that never recorded a fingerprint
+        /// and one whose fingerprint moved both take the expensive path, but only the second was caused by
+        /// anybody - blaming configuration for the first would be a lie.
         /// </summary>
-        private static bool TheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
-            => queryOwner.FetchFingerprint != whatThisCycleAsksFor;
+        private sealed record FetchShape(string Fingerprint, bool Changed, string? Reason)
+        {
+            /// <summary>
+            /// Asked of the base a team and a portfolio share, so there is one comparison rather than two.
+            /// Nothing recorded reads as changed, which is what gives an instance upgrading into this
+            /// release one full cycle.
+            /// </summary>
+            public static FetchShape Of(WorkTrackingSystemOptionsOwner queryOwner)
+            {
+                var fingerprint = FetchFingerprint.For(queryOwner);
+                var changed = queryOwner.FetchFingerprint != fingerprint;
+                var reason = changed && queryOwner.FetchFingerprint != null ? SyncOutcome.ConfigurationChanged : null;
 
-        /// <summary>
-        /// What to tell the operator, which is not the same question as what decided the mode. An instance
-        /// that never recorded a fingerprint and one whose fingerprint moved both take the expensive path,
-        /// but only the second was caused by anybody - blaming configuration for the first would be a lie.
-        /// </summary>
-        private static string? WhyTheFetchShapeChanged(WorkTrackingSystemOptionsOwner queryOwner, string whatThisCycleAsksFor)
-            => queryOwner.FetchFingerprint != null && TheFetchShapeChanged(queryOwner, whatThisCycleAsksFor)
-                ? SyncOutcome.ConfigurationChanged
-                : null;
+                return new FetchShape(fingerprint, changed, reason);
+            }
+        }
 
         private async Task<SyncOutcome> RefreshWorkItems(Team team, bool fetchShapeChanged)
         {
