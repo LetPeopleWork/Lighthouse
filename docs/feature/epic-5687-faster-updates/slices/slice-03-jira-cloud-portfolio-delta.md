@@ -75,4 +75,36 @@ Not needed.
 
 ## Verdict
 
-_(recorded at slice close)_
+**Confirmed, mechanism and cost.** Recorded 2026-08-12, retroactively — the block was left at its
+placeholder when the slice shipped on 2026-08-11 as `593d11131..2c443ea59`.
+
+The hypothesis was *"the portfolio half is the team half with a different noun"*. It is not, and the
+difference is the whole value of the slice. A team refresh removes what the query stopped returning; a
+portfolio refresh **rebuilds itself from what was fetched** — `Portfolio.UpdateFeatures` is a Clear +
+AddRange. Under delta, every unchanged Feature therefore loses its portfolio claim, and
+`OrphanedFeatureCleanupService.CleanupAsync` — which the updater runs in its own `finally` — then deletes
+anything left with `!IsParentFeature && !Portfolios.Any()`.
+
+That was demonstrated, not theorised: at step 02-02 the crafter fed the fetched list straight back into
+`portfolio.UpdateFeatures` and the scenario reported `FEAT-1, FEAT-3` MISSING, deleted, with
+`FeatureUnblocked` raised on the way out. Sequencing the survivor rule first — while every cycle was still
+full — is what kept that out of a commit.
+
+Survivors are resolved by reference id through `featureRepository`, never out of `portfolio.Features`. A
+probe at step 03-02 proved no test in the fixture catches a regression there, because every portfolio in
+it is pre-refreshed over the same Features. That lookup is load-bearing and must not be "simplified".
+
+**Live dogfood on a real Jira Cloud project**, 2026-08-11:
+`mode=Full scanned=4 fetched=4 3555ms` → `mode=Delta scanned=4 fetched=0 1092ms` → after one state change
+`mode=Delta scanned=4 fetched=1 1944ms`. Mechanism confirmed end to end.
+
+**Mutation: 78.69 % on slice-03 changed lines — the 80 % gate was missed by one mutant**, recorded rather
+than padded. All 13 survivors were verified equivalent by application; on non-equivalent mutants it is
+48/48. The pass killed five, including a `SweepDepartedFeatureSpells` deletion that slice 01 had recorded
+and nobody closed (a Feature blocked when it left the query accrued blocked time forever) and the whole
+parent-inversion rule, which had no test at all. It also found `AddProjectToFeature` to be dead code — the
+many-to-many writes the join row from `Portfolio.UpdateFeatures`, so the per-Feature loop wrote what the
+next line already wrote — and it was removed.
+
+CI green including `sonar-gates`. ADO #5726 **Closed**. Still Jira Cloud only; Data Center waited on OQ-1,
+which slice 04 now has an answer for.

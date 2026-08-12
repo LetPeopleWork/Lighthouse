@@ -235,3 +235,111 @@ All 13 verified by applying the mutation and running the fixture green.
 hit `letpeoplework.atlassian.net` for real and Stryker reruns the suite hundreds of times.
 `JiraIncrementalSyncTest` carries no category — it drives a recording `HttpMessageHandler` — and is
 included, which is why the connector scores 100 % here.
+
+# Mutation testing — 5728 (Faster updates: a setting costs a refetch only when it changes what is fetched)
+
+Two runs 2026-08-12. Gate is 80 % kill rate on the lines the slice changed.
+
+| run | whole-file | changed lines | tested | killed | survived | no coverage | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A — before closing survivors | 69.00 % | 73.91 % (17/23) | 425 | 312 | 109 | 33 | 4 | 36 m 20 s |
+| **B — after `6e75e3c49`** | **69.43 %** | **82.61 % (19/23)** | 425 | 318 | 107 | 33 | 0 | 33 m 18 s |
+
+Config: `stryker.5728.backend.json`. Run B is the verdict: **82.61 % — gate met.** Frontend is **N/A, not
+skipped**: slice 05 changes zero files under `Lighthouse.Frontend/`, by decision D4 (no UI this epic).
+
+Run B was taken after a rebase onto eight dependabot commits, so it measures the tree that actually
+shipped as `5f2ac86c5`, including the `StackExchange.Redis 3.1.3 → 3.1.13` bump.
+
+## Which number is the gate, and why 23 is a thin one
+
+**82.61 %, on the 23 mutants that land on lines slice 05 changed.** Stryker.NET ignores line ranges in
+`mutate` — only whole-file globs work — so the whole-file figure buries the slice's own score under
+eleven files it barely touched. The per-changed-line figure is recovered from `mutation-report.json` by
+intersecting each mutant's location with `git diff -U0 a27b4acf2^..HEAD`.
+
+Worth stating plainly: **23 mutants is a thin basis for a percentage.** Slice 02 had 90, slice 03 had 61.
+Two mutants move this number by nine points. The reason is that most of what slice 05 adds is a static
+registry of `nameof(...)` entries and string rendering, and `ignore-mutations: ["string"]` removes the
+latter wholesale — `FetchFingerprint.cs` is 137 lines and yields six mutants. The score is honest for
+what it measures; it is not a dense measurement.
+
+## Backend
+
+| file | killed | survived | no coverage | score | note |
+| --- | --- | --- | --- | --- | --- |
+| `SyncModeResolver.cs` | 13 | 0 | 0 | 100 % | every branch of the mode decision has a named unit test |
+| `WorkItemExtensions.cs` | 2 | 0 | 0 | 100 % | the `GetValueOrDefault` fix |
+| `UpdateServiceBase.cs` | 15 | 2 | 0 | 88.2 % | was 82.4 % in run A |
+| `FetchFingerprint.cs` | 5 | 1 | 0 | 83.3 % | was 66.7 % in run A |
+| `WorkItemService.cs` | 203 | 60 | 0 | 77.2 % | 263 mutants over a 1144-line file; the slice touched ~140 lines of it |
+| `PortfoliosController.cs` | 16 | 6 | 0 | 72.7 % | |
+| `TeamExtensions.cs` | 20 | 18 | 0 | 52.6 % | mostly pre-existing settings-sync code |
+| `PortfolioController.cs` | 18 | 18 | 0 | 50.0 % | |
+| `PortfolioExtensions.cs` | 14 | 16 | 0 | 46.7 % | |
+| `WorkTrackingSystemOptionsOwner.cs` | 11 | 17 | 0 | 39.3 % | |
+| `WorkTrackingSystemOptionsOwnerExtensions.cs` | 1 | 1 | 1 | 33.3 % | 3 mutants total; see the triage below |
+
+The low whole-file scores on the last five are pre-existing surface the slice passed through, not code it
+wrote. None of their survivors sit on a changed line.
+
+### Closed by this pass
+
+Two survivors produced tests (`6e75e3c49`). Both were real gaps, and both were verified by **applying the
+mutant to production code by hand**, running the suite, watching exactly the intended test go red, and
+reverting — not by trusting the report.
+
+- **`UpdateServiceBase.cs:65` — the reason ternary forced false.** Every summary line would carry a bare
+  ` | reason=`. The upgrade scenario's `ThenTheOperatorIsNotToldConfigurationIsWhy` only forbade the word
+  `configuration-changed`, so a blank field passed it — and an empty `reason=` on every line is precisely
+  the log noise slice 01 existed to remove. The assertion now forbids the **field**, not the word.
+
+- **`FetchFingerprint.cs:120` — the null guard on the connection's field definitions.** Every owner in the
+  fixture had a loaded connection, so the `Absent` branch was never taken. A query that does not include
+  the navigation property hands back null, and throwing there takes the whole update cycle down instead of
+  costing one full fetch. `For_AnOwnerWhoseConnectionWasNotLoaded_StillProducesAFingerprintAndADifferentOne`
+  covers it.
+
+### Survivors on changed lines, all four equivalent
+
+Recorded rather than chased. None is a missing test.
+
+- **`WorkTrackingSystemOptionsOwnerExtensions.cs:16` — `Any()` → `All()`.**
+  `PropertiesThatAlsoCostAFreshStart` holds exactly one element, and `Any` and `All` are the same function
+  on a one-element sequence. It stops being equivalent the day a second property is registered — which is
+  the drift the guard test exists to catch, so the guard is the right instrument here, not a unit test
+  written against a list of one.
+
+- **`WorkTrackingSystemOptionsOwnerExtensions.cs:23` — the `_ => true` fallback arm, no coverage.**
+  Unreachable by construction: the switch is driven by `PropertiesThatAlsoCostAFreshStart`, every member of
+  which has an explicit arm. Reaching the default requires registering a property with no arm, which
+  `FetchShapingPropertyGuardTest` forbids. The arm is the safe default for exactly that mistake and stays.
+
+- **`FetchFingerprint.cs:132` — `OrderBy()` → `OrderByDescending()`.** The digest needs *a* total order, not
+  a particular one. Descending is as stable across restarts as ascending, so no input distinguishes them.
+
+- **`WorkItemService.cs:72` — `await teamRepository.Save()` removed.** The team's fingerprint is still
+  persisted, because a sibling repository's `SaveChanges` on the same tracked `DbContext` flushes it. The
+  call is kept deliberately: without it, persistence of a sync-owned field would depend on an unrelated
+  repository happening to save in the same scope. Equivalent today, load-bearing as a guarantee.
+
+## Test filter
+
+Fifteen `FullyQualifiedName` fragments covering the eleven mutated files, minus every live-IO category —
+`JiraIntegration`, `AdoIntegration`, `LinearIntegration`, `ServiceNowIntegration`, `GithubIntegration`,
+`requires-docker`, `real-io`. Without those exclusions Stryker would make a network round trip per mutant.
+
+## Two false-green generators found during this run
+
+Both are now in `docs/ci-learnings.md` under `## Tests`, because both cost a cycle here:
+
+1. **`dotnet test --no-build` after a failed build runs the previous binary and prints `Passed!`.** It
+   means "do not build", not "require a build". Chaining with `&&` does not save you when the build's exit
+   code is masked by a pipe (`dotnet build | tail` exits with `tail`'s status). Assert `0 Error(s)` and
+   `0 Warning(s)` from captured output before testing.
+
+2. **The mutation text Stryker reports does not compile if you apply it literally.** Stryker emits
+   `MutantControl.IsActive(n)` switches that keep the original expression in the sibling branch, so
+   nullable-flow analysis stays satisfied; a human deleting that branch trips CS8604 — and the other
+   obvious probe shapes trip S1172, S1125, S3981, CS0162 or S1144 under `TreatWarningsAsErrors`.
+   **Inversions and value swaps are the only safe hand-probe shape here.**

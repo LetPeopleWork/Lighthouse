@@ -1,0 +1,33 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkItems/FetchFingerprint.cs",
+      "**/Services/Implementation/WorkItems/SyncModeResolver.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs",
+      "**/API/Helpers/TeamExtensions.cs",
+      "**/API/Helpers/PortfolioExtensions.cs",
+      "**/API/PortfolioController.cs",
+      "**/API/PortfoliosController.cs",
+      "**/Models/SyncOutcome.cs",
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/Extensions/WorkItemExtensions.cs"
+    ],
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "ignore-mutations": ["string"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~FasterUpdates|FullyQualifiedName~FetchFingerprint|FullyQualifiedName~FetchShaping|FullyQualifiedName~SyncModeResolver|FullyQualifiedName~WorkItemService|FullyQualifiedName~WorkItemExtensions|FullyQualifiedName~StateMappingSync|FullyQualifiedName~AdditionalFieldsHelper|FullyQualifiedName~TeamControllerTest|FullyQualifiedName~TeamsControllerTest|FullyQualifiedName~PortfolioControllerTest|FullyQualifiedName~PortfoliosControllerTest|FullyQualifiedName~TeamUpdaterTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~Slice01SkippedEntityLog)&TestCategory!=JiraIntegration&TestCategory!=AdoIntegration&TestCategory!=LinearIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration&TestCategory!=requires-docker&TestCategory!=real-io",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

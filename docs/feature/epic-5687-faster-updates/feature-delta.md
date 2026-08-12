@@ -3643,3 +3643,156 @@ Seven things not to re-derive:
 - **`Create-Migration.ps1` needs Docker** (it starts a Postgres container), and any new column on `Teams`
   or `Portfolios` needs a row in `TestHelpers/HistoricalSchemaPatch` or six migration tests go red for a
   reason that has nothing to do with the change.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary — slice 05
+
+Every Team and Portfolio now stores a **fetch fingerprint**: a SHA-256 digest, truncated to 32 hex
+characters, of the thirteen properties that decide what the next cycle asks the tracker for **and** how it
+reads the answer back into the stored record. `FetchFingerprint.For(queryOwner)` renders each property,
+sorts every collection with `StringComparer.Ordinal`, joins on control characters and digests the result —
+nothing reaches for `GetHashCode` or object identity, so a fingerprint survives a restart and an upgrade.
+
+`WorkItemService` computes it once per cycle through a private `FetchShape(Fingerprint, Changed, Reason)`
+record. `Changed` is a plain inequality against what is stored, and feeds the `fetchShapeChanged` parameter
+`SyncModeResolver.Resolve` has carried unused since slice 02 — filling all three call sites that hard-coded
+`false`. `Reason` is gated separately on a non-null stored fingerprint, so an instance upgrading into this
+release takes its one full cycle without `reason=configuration-changed` being printed at it. The
+fingerprint is written back only after the fetch it describes completed.
+
+The second half is a **narrowing**. `WorkItemRelatedSettingsChanged` used to fire on any of the
+work-item-related settings and discard the entity's stored records and their transition history. It is now
+driven by `FetchFingerprint.PropertiesThatAlsoCostAFreshStart`, which holds exactly one entry — the
+connection id. Everything else is reconciled by `removed = stored − fetched` on the full cycle the
+fingerprint already forces. A connection change is the only edit that cannot be so reconciled, because the
+same reference id on a different tracker is a different item and `SyncWorkItem` would merge two trackers'
+histories in place. `PortfolioController.UpdatePortfolio` gained the equivalent purge it never had.
+
+The set is kept honest by `FetchShapingPropertyGuardTest`, which walks every public settable property of
+`WorkTrackingSystemOptionsOwner`, `Team`, `Portfolio` and `WorkTrackingSystemConnection` and fails on any
+that is neither registered nor excluded-with-a-reason.
+
+---
+
+## Wave: DELIVER / [REF] Files Modified — slice 05
+
+**Production (new)**
+- `Services/Implementation/WorkItems/FetchFingerprint.cs` — the registry, the fresh-start subset, and the
+  one `For(IWorkItemQueryOwner)` entry point
+- `API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs` — the save-time decision, one implementation
+  serving both Team and Portfolio (created by the refactor pass; see below)
+- `Migrations/…_AddFetchFingerprintToQueryOwners.cs` — both providers, additive, via `Create-Migration.ps1`
+
+**Production (extended)**
+- `Services/Implementation/WorkItems/WorkItemService.cs` — the `FetchShape` record and its `Of` factory;
+  the three resolve paths that previously passed `fetchShapeChanged: false`
+- `Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs` — the `reason=` field, appended
+  whole or omitted entirely
+- `Models/SyncOutcome.cs` — the `Reason` init member and the `ConfigurationChanged` token
+- `Models/WorkTrackingSystemOptionsOwner.cs` — the `FetchFingerprint` column
+- `Services/Implementation/WorkItems/SyncModeResolver.cs` — documentation of the now-live parameter
+- `API/PortfolioController.cs`, `API/PortfoliosController.cs` — the portfolio-side purge
+- `API/Helpers/TeamExtensions.cs`, `API/Helpers/PortfolioExtensions.cs` — the duplicated comparison removed
+- `Extensions/WorkItemExtensions.cs` — `GetAdditionalFieldValue` indexer → `GetValueOrDefault`
+
+**Tests (new)**
+- `API/Integration/FasterUpdates/Slice05FetchFingerprint{Scenarios,Specifications}.cs` — 17 scenarios,
+  49 specs
+- `Architecture/FetchShapingPropertyGuardTest.cs` — the enumerability guard
+- `Services/Implementation/WorkItems/FetchFingerprintTest.cs` — the digest's own contract
+- `TestHelpers/HistoricalSchemaPatch.cs` — one row per future column on `Teams` / `Portfolios`
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates — slice 05
+
+| Gate | Outcome |
+|---|---|
+| 13 TDD steps across 4 phases, 3-phase canon | all RED → GREEN → COMMIT; `des-verify-integrity` exit 0, "All 13 steps have complete DES traces" |
+| `dotnet build` | 0 warnings, 0 errors (`TreatWarningsAsErrors`) |
+| `dotnet test` | **4874 passed, 0 failed, 0 skipped**, verified independently after the refactor and again after the rebase |
+| L1-L6 refactor pass | ✅ 4 commits — a merged save-time decision (L3), the `FetchShape` record (L2/L4), two comment/expression cleanups (L1). `FetchFingerprint.cs` deliberately untouched |
+| Adversarial DELIVER review | ✅ **APPROVED, zero defects** at every severity. Single-reviewer pass with no findings is weak evidence, so registry↔render parity (13 = 13) and the upgrade-path reason gating were re-verified by hand |
+| Mutation — slice-05 changed lines | ✅ **82.61 %** (23 tested, 19 killed) — gate met. Four remaining survivors all equivalent, triaged in `mutation/results.md` |
+| Mutation — whole-file scope | 69.43 %, a Stryker.NET scoping artefact across eleven files, not the verdict |
+| Frontend gates | ✅ **N/A, because** slice 05 changes zero files under `Lighthouse.Frontend/` (D4 — no UI this epic) |
+| EF migration | ✅ `AddFetchFingerprintToQueryOwners`, expand-only, both providers, via `Create-Migration.ps1` |
+| SonarCloud | ✅ **success.** Run 31632853558 on `5f2ac86c5` — `sonar-gates` green. This is the first readable gate result on the epic; slices 02 and 03 were checked while their runs sat in `waiting` |
+| CI | ✅ all real jobs green (backend, SQLite, Postgres, auth, docker, SBOM, package). The three standalone-package jobs are manual release gates, not failures |
+| Manual verification | ✅ maintainer-verified on a live Jira Cloud instance 2026-08-12 — checks A-F |
+| ADO | Story #5728 → **Resolved**; Epic #5687 stays open, slices 04 and 06-08 remain |
+
+---
+
+## Wave: DELIVER / [REF] DoD Check — slice 05
+
+| # | Item | Verdict |
+|---|---|---|
+| 1 | All slice ACs pass as automated tests | ✅ 49 specs across 17 scenarios, all green |
+| 2 | `dotnet build` zero warnings, `dotnet test` green | ✅ 4874 / 0 / 0 |
+| 3 | Frontend gates | ✅ N/A, because zero frontend files changed |
+| 4 | Mutation ≥ 80 % on the changed backend surface | ✅ 82.61 % |
+| 5 | SonarCloud no new issues | ✅ `sonar-gates` success on `5f2ac86c5` |
+| 6 | EF migration via `Create-Migration.ps1`, additive only | ✅ |
+| 7 | Docs updated per-feature | ✅ see the checklist below |
+| 8 | ADO story transitioned; pushed only after CI green | ✅ pushed on a locally green tree, CI confirmed green, then Resolved |
+| 9 | Learning hypothesis has an explicit verdict | ✅ recorded in the slice brief: confirmed, with the set thirteen rather than seven |
+
+---
+
+## Wave: DELIVER / [REF] Per-Feature Checklist (slice 05)
+
+Every item answered explicitly — no silent N/A.
+
+| Item | Verdict |
+|---|---|
+| **Docs prose** | ✅ **N/A, because** the operator-facing surface did not change. `docs/settings/configuration.md` already describes *Faster Updates* from slice 02, and this slice adds no setting, no toggle and no field an operator reads — it changes when an existing toggle's cheap path applies. The one behaviour an operator will notice is the narrowed purge, which is a release-note line rather than a settings-page line |
+| **Per-feature screenshots** | ✅ **N/A, because** no UI changed. The `assets/settings/optionalfeatures.png` regeneration owed since slice 02 is still owed and is unaffected by this slice |
+| **Demo data** | ✅ **N/A, because** the fingerprint is sync-owned state written by a cycle, not a seeded entity. A demo dataset carries nothing for it |
+| **Website marketing surface** | ✅ **N/A, because** the feature still ships dark — off by default, preview-flagged, Jira Cloud only. The marketing beat belongs at epic close |
+| **Lighthouse-Clients (CLI / MCP) versioning** | ✅ **N/A, because** no API contract changed. The fingerprint is a column read by the sync; the settings DTOs are untouched |
+| **Root `ARCHITECTURE.md`** | ✅ §3 already records the two-phase fetch and ADR-138/139/141 from slice 02; ADR-140 (the fingerprint) was added to the ADR range at DESIGN |
+| **Evolution doc / workspace archive** | ⏸️ **deliberately deferred** — this is slice 5 of 8, and slices 04 and 06-08 read these documents daily. Archive at epic close |
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues — slice 05
+
+1. **The existing purge masked the feature it was meant to compose with.** Any test written against the
+   widened fingerprint before the narrowing landed would have gone green on the resolver's "nothing stored"
+   branch. Generalises: when a new decision sits behind an old destructive one, remove the destruction
+   first, or every measurement of the new decision is vacuous.
+2. **`Any()` over a one-element registry is unfalsifiable.** The save-time decision reads a list holding a
+   single property, so `Any` and `All` are the same function and no unit test can tell them apart. The
+   guard test — which fails when the two lists disagree — is the right instrument, not a mutation-chasing
+   test written against a list of one.
+3. **A single reviewer returning zero findings is not the same as no defects.** The DELIVER review approved
+   with nothing at any severity, which is weaker evidence than slice 03's gate where the third reviewer
+   rejected and was right. Two hazards were re-checked by hand rather than banked.
+4. **`Options` / instance URL remains outside the fingerprint.** Re-pointing a connection at a different
+   instance IS a fetch-shaping change. Accepted residual, recorded in ADR-140's Consequences — the fix is
+   connection identity, not a hash.
+5. **A blocked-rule edit still does not re-open spells for quiet items** under delta, because the loop
+   visits downloaded items only. Real, and belongs in the derivation pass; paying a full remote download to
+   fix a local derivation is the wrong instrument.
+
+---
+
+## Wave: DELIVER / [REF] Handoff — slice 05 → slice 04
+
+**To**: slice 04 (`#5727`, Jira Data Center delta).
+
+- **`fetchShapeChanged` is now live in all three resolve paths.** Slice 04 inherits query-edit protection
+  for free and must not add a second mechanism.
+- **OQ-1 is answered: Data Center pagination is stable.** Probed against Jira Server 10.3.6 — team query
+  5056 issues over 102 pages, portfolio query 597 Epics over 12 pages, three passes each with
+  `fields=key,updated` at page size 50: zero duplicates, walked == total, every pass identical, sorted and
+  unsorted agreeing. Slice 04 is transport work, not a redesign. **Not** covered: churn during the walk
+  (the probed instance was quiet, ~8 s walks) and the keyed `key in (…)` shape the parent path uses —
+  append `ORDER BY key ASC` regardless.
+- **`SupportsIncrementalSync(connection)` is per connection, not per class.** Jira Cloud and Data Center are
+  one class resolving deployment at runtime; slice 04 flips the Data Center answer, it does not add a type.
+- **The fingerprint is connector-agnostic.** Nothing in `FetchFingerprint` knows about Jira, so Data Center
+  needs no registry change — but `WorkTrackingSystem` is registered, so switching a connection's system
+  already forces a full cycle.

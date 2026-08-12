@@ -195,4 +195,40 @@ Not needed. The uncertainty is enumerability, and the guard test answers it insi
 
 ## Verdict
 
-_(recorded at slice close)_
+**Confirmed, and the hypothesis was wrong in the direction that mattered.** Recorded 2026-08-12 at slice
+close, shipped as `5f2ac86c5`.
+
+The hypothesis was *"the set of properties that shape a fetch can be enumerated in one place, and a guard
+can keep it enumerated"*. Both halves hold. `FetchFingerprint.RegisteredProperties` is that place,
+`FetchShapingPropertyGuardTest` walks every public settable property of the four types an operator can
+edit and forces a decision on each, and the two consumers — the sync's mode decision and the save-time
+purge — now read the same list through one function.
+
+What the slice got wrong going in was the **size** of the set. AC-5.1 said seven properties, drawn from
+what `PrepareQuery` is handed. The real membership is *what the query asks for* **union** *how the answer
+is read into the stored record*, because a cheap cycle skips an unchanged record's whole derivation and
+not merely its download. That is thirteen. A state mapping, a parent-override field, a portfolio's
+feature-owner and size-estimate fields, and the connection's own field definitions and system all decide
+what ends up stored without changing a byte of the query text. AC-5.1, AC-5.4 and ADR-140 all carried the
+narrow wording and were all restated.
+
+Two findings worth keeping:
+
+- **The old purge was masking the whole feature.** A query, type, state or mapping edit tripped
+  `WorkItemRelatedSettingsChanged`, emptied storage, and the resolver then answered `Full` on its "nothing
+  stored" branch. Six of scenario 3's eight cases and the walking skeleton itself would have gone green
+  against a fingerprint that did nothing at all. The narrowing had to land *before* anything measured the
+  widened set, which is why the roadmap reordered the DISTILL handoff.
+- **Narrowing the purge is the user-visible win, and it was never the headline.** The slice was scoped as
+  "stop re-downloading for free", but what an operator actually notices is that editing a team's query no
+  longer destroys that team's stored work items and their transition history. Only a connection change
+  does — the one edit `removed = stored − fetched` cannot reconcile, because the same reference id on a
+  different tracker is a different item.
+
+**Verified manually** on a live Jira Cloud instance 2026-08-12: a fetch-shaping edit produces
+`mode=Full | reason=configuration-changed`, a non-shaping edit stays `mode=Delta`, recorded history
+survives a query edit, a connection change still starts from nothing, and an upgrading instance takes one
+full cycle without being told configuration caused it.
+
+**Owed at epic close, not here**: the release-note line for the narrowed purge. Release notes are drafted
+at feature close from the epic, so this is the flag that it is owed, not a task for this slice.
