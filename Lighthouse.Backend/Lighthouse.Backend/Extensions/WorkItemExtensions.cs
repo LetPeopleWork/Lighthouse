@@ -10,14 +10,6 @@ namespace Lighthouse.Backend.Extensions
         /// null as "not set" - so the absent case answers rather than throwing.
         /// </summary>
         public static string? GetAdditionalFieldValue(this WorkItemBase workItem, int? fieldId)
-        {
-            if (!fieldId.HasValue)
-            {
-                return null;
-            }
-
-            workItem.AdditionalFieldValues.TryGetValue(fieldId.Value, out var value);
-            return value;
-        }
+            => fieldId.HasValue ? workItem.AdditionalFieldValues.GetValueOrDefault(fieldId.Value) : null;
     }
 }
