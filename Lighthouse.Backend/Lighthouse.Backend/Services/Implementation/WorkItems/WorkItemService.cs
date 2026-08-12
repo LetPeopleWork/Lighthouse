@@ -752,8 +752,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 downloadedFeatures.Add(featureFromDatabase);
                 featuresWithTransitions.Add((featureFromDatabase, feature.SyncedTransitions));
 
-                // Parent features are captured through RefreshParentFeatures and never emit blocked spells
-                // (OQ-1 / DST-8) — exclude them from the eligible edge-detection set.
+                // Parent features are captured through RefreshParentFeatures and never emit blocked
+                // spells - exclude them from the eligible edge-detection set.
                 if (!featureFromDatabase.IsParentFeature)
                 {
                     syncedFeatures.Add(new SyncedFeature(featureFromDatabase, wasObservedBeforeSync, wasBlockedBeforeSync));
