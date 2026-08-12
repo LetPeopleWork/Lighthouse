@@ -284,6 +284,18 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-12 — `dotnet test --no-build` after a FAILED build silently runs the previous binary and prints `Passed!`
+- **Symptom**: a hand-applied mutation probe reported the wrong test failing. The `dotnet build` in the same command chain had failed with `error CS8604`, but `dotnet test --no-build` still executed — against the binary from the *previous* build — and reported a failure belonging to an earlier, already-reverted probe.
+- **Root cause**: `--no-build` means "do not build", not "require a build". It never checks whether the assembly on disk matches the sources, so a red build followed by `--no-build` measures stale code. Chaining with `&&` does not help when the build command's own exit code is masked by a pipe (`dotnet build | tail`, which exits with `tail`'s status).
+- **Fix**: gate the test run on the build output itself — `dotnet build … | tail -4 | tee /tmp/b.txt && grep -q " 0 Error(s)" /tmp/b.txt && grep -q " 0 Warning(s)" /tmp/b.txt && dotnet test … --no-build`.
+- **Rule going forward**: never chain `dotnet test --no-build` off a piped `dotnet build`; assert `0 Error(s)` (and `0 Warning(s)`, since `TreatWarningsAsErrors` is on) from the captured build output before running tests, or a green test result may describe code that no longer exists.
+
+### 2026-08-12 — hand-applied mutation probes must be inversions or value swaps; the obvious literal edits do not compile here
+- **Symptom**: verifying a Stryker survivor by hand, the literal mutation Stryker reports (`condition` → `false`) failed to compile: `error CS8604: Possible null reference argument`. Other obvious probe shapes fail the same way — a discarded parameter trips **S1172**, `false &&` trips **S1125**, `.Length >= 0` trips **S3981**, a now-unreachable statement trips **CS0162**, and an orphaned private member trips **S1144**.
+- **Root cause**: Stryker.NET does not edit source the way a human does — it emits `if (MutantControl.IsActive(n))` switches that keep the original expression in the sibling branch, so nullable-flow analysis and the unused-code analyzers stay satisfied. A human writing the mutation literally removes the sibling branch, and `TreatWarningsAsErrors` promotes the resulting analyzer finding to a build error.
+- **Fix**: probe with a shape that preserves compilability — invert the condition, swap a value, or keep the null-forgiving operator (`fieldDefinitions!.Select(…)`) so flow analysis still passes. Revert immediately after and confirm with `git diff` that no production file is left modified.
+- **Rule going forward**: when hand-verifying a Stryker.NET survivor, use inversions and value swaps only; never expect the reported mutation text to compile verbatim, and always `git diff` afterwards to prove the probe was reverted.
+
 ### 2026-08-02 — a docs-enforcement test scoped to the `vNext` release-notes section self-destructs at release
 
 - **Symptom**: `Verify Frontend` red on an unrelated frontend push (Epic #5585 slice 01). Two failures in
