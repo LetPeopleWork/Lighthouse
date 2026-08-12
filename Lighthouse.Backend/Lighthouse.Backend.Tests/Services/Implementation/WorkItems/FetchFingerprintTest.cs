@@ -133,7 +133,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(FetchFingerprint.For(portfolio), Is.Not.EqualTo(before));
         }
 
-        /// <summary>DDD-5: no repository, no clock, no service graph to stand up.</summary>
+        /// <summary>
+        /// An owner whose connection was never loaded still has to hash. The connection is a navigation
+        /// property, so any query that does not include it hands back null - and throwing there would take
+        /// the whole update cycle down instead of costing one full fetch.
+        /// </summary>
+        [Test]
+        public void For_AnOwnerWhoseConnectionWasNotLoaded_StillProducesAFingerprintAndADifferentOne()
+        {
+            var portfolio = APortfolio();
+            var withTheConnectionLoaded = FetchFingerprint.For(portfolio);
+
+            portfolio.WorkTrackingSystemConnection = null!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(FetchFingerprint.For(portfolio), Is.Not.Empty);
+                Assert.That(FetchFingerprint.For(portfolio), Is.Not.EqualTo(withTheConnectionLoaded));
+            }
+        }
+
+        /// <summary>No repository, no clock, no service graph to stand up.</summary>
         [Test]
         public void FetchFingerprintIsAPureStatic()
         {

@@ -346,10 +346,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 + "edit took effect. Line: " + TheSummaryLine());
 
         private void ThenTheOperatorIsNotToldConfigurationIsWhy()
-            => Assert.That(TheSummaryLine(), Does.Not.Contain(ConfigurationChanged),
+            => Assert.That(TheSummaryLine(), Does.Not.Contain(ReasonField),
                 "This cycle is full because nothing was ever stamped, not because anybody changed a setting. A reason that is "
-                + "printed whenever the mode is full names the wrong cause and is worse than no reason at all. Line: "
-                + TheSummaryLine());
+                + "printed whenever the mode is full names the wrong cause and is worse than no reason at all - and an empty "
+                + "reason= on a line that has nothing to explain is the noise this epic exists to remove, so the field has to be "
+                + "absent rather than blank. Line: " + TheSummaryLine());
 
         private void ThenTheOperatorSeesAFullUpdate(int scanned, int fetched)
         {
