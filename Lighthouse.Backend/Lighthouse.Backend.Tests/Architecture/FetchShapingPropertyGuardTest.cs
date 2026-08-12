@@ -184,7 +184,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// <summary>
         /// The other half of "one property set, two consumers". Without this, the guard protects the new
         /// fingerprint from drift while an older, shorter list sits one directory away in
-        /// <c>TeamExtensions</c> - which is the very drift the guard exists to prevent, reintroduced.
+        /// <c>WorkTrackingSystemOptionsOwnerExtensions</c> - which is the very drift the guard exists to
+        /// prevent, reintroduced.
         /// </summary>
         [Test]
         public void TheSaveTimeDecisionAndTheFingerprintReadTheSamePropertySet()
