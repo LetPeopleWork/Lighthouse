@@ -145,7 +145,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var witClient = await GetWorkItemTrackingHttpClientAsync(owner.WorkTrackingSystemConnection);
             var url = witClient.BaseAddress!.ToString();
 
-            var swept = (await GetWorkItemReferencesByQuery(witClient, sweepQuery)).Select(reference => reference.Id).ToList();
+            // Deliberately not GetWorkItemReferencesByQuery: that one answers a failed query with an empty
+            // list, and an empty sweep does not mean "the query failed", it means "the query matches nothing" -
+            // which removes every record the entity has. A sweep that could not ask has to say so instead.
+            var answer = await ExecuteWithThrottle(url, () => witClient.QueryByWiqlAsync(new Wiql { Query = sweepQuery }));
+            var swept = (answer.WorkItems ?? []).Select(reference => reference.Id).ToList();
             var stamps = new List<RemoteRecordStamp>();
 
             foreach (var chunk in swept.Chunk(MaxChunkSize))
@@ -663,7 +667,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
                 var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
-                return await ThePayloadsOf(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList());
+                return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList());
             }
             catch (Exception ex)
             {
@@ -684,7 +688,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             {
                 var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
-                return await ThePayloadsOf(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds));
+                return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds));
             }
             catch (Exception ex)
             {
@@ -698,7 +702,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// then read the payloads in batches. An empty id set asks for nothing at all, because a keyed read of
         /// no keys is still a remote round trip.
         /// </summary>
-        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> ThePayloadsOf(
+        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> ThePayloadsAndFieldsFor(
             IWorkItemQueryOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds)
         {
             if (workItemIds.Count == 0)

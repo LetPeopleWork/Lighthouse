@@ -197,6 +197,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public void SweepWorkItemsForTeam_RefusesWhenTheTrackerWillNotAnswerTheQueryAtAll()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
+            ado.RejectTheQuery = true;
+
+            Assert.That(async () => await subject.SweepWorkItemsForTeam(team),
+                Throws.Exception,
+                "An empty sweep does not mean 'the query failed', it means 'the query matches nothing' - and "
+                + "removal is 'stored minus swept', so answering a rejected query with an empty sweep deletes "
+                + "every record the team has. One transient error would empty the team.");
+        }
+
+        [Test]
         public async Task SweepWorkItemsForTeam_ReadsTheStampsInBatchesTheTrackerAccepts()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds([.. Enumerable.Range(1, 201)]);
@@ -440,6 +453,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     .Returns((Wiql wiql, bool? _, int? _, object _, CancellationToken _) =>
                     {
                         WiqlQueries.Add(wiql.Query);
+
+                        if (RejectTheQuery)
+                        {
+                            throw new VssServiceException("The query could not be run.");
+                        }
+
                         return Task.FromResult(new WorkItemQueryResult
                         {
                             WorkItems = WhatTheQueryAnswersWith(wiql.Query, itemIds),
@@ -482,6 +501,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             /// <summary>A payload read that answers for none of the ids it was given - a rejected batch.</summary>
             public bool AnswerPayloadReadsWithNothing { get; set; }
+
+            /// <summary>A tracker that will not run the query at all - an expired token, a timeout, a blip.</summary>
+            public bool RejectTheQuery { get; set; }
 
             /// <summary>
             /// A full download reads twice: once for the fields it maps, and once more with the relations
