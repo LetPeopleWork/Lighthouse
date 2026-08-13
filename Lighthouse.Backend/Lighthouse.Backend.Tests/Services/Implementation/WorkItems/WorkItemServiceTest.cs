@@ -967,6 +967,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        public void UpdateWorkItemsForTeam_TrackerCouldNotBeAsked_RemovesNothing()
+        {
+            var team = CreateTeam();
+
+            AddWorkItemForTeam(team);
+            AddWorkItemForTeam(team);
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team))
+                .ThrowsAsync(new InvalidOperationException("The tracker could not be asked."));
+
+            var subject = CreateSubject();
+
+            Assert.That(async () => await subject.UpdateWorkItemsForTeam(team),
+                Throws.Exception,
+                "A cycle that could not read the tracker has to fail rather than complete. One team's update "
+                + "is skipped and retried; the alternative is a cycle that reports success having emptied it.");
+
+            workItemRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never,
+                "Removal is a set difference against what the query returned. Run against a fetch that threw, "
+                + "it deletes every Work Item the team has - and their blocked spells do not come back.");
+        }
+
+        [Test]
+        public void UpdateFeaturesForPortfolio_TrackerCouldNotBeAsked_KeepsTheFeaturesThePortfolioHolds()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.UpdateFeatures([new Feature { Id = idCounter++, ReferenceId = "FTR-1" }]);
+
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio))
+                .ThrowsAsync(new InvalidOperationException("The tracker could not be asked."));
+
+            var subject = CreateSubject();
+
+            Assert.That(async () => await subject.UpdateFeaturesForPortfolio(portfolio), Throws.Exception);
+
+            Assert.That(portfolio.Features, Has.Count.EqualTo(1),
+                "Membership is rebuilt from what the query still returns, so a fetch that threw would strip "
+                + "every claim - and a Feature no portfolio claims is deleted outright by the orphan cleanup.");
+        }
+
+        [Test]
         public async Task UpdateWorkItemsForTeam_ConnectorReturnsSameItemTwice_PersistsItemOnceWithoutDuplicatingTransitions()
         {
             var team = CreateTeam();
