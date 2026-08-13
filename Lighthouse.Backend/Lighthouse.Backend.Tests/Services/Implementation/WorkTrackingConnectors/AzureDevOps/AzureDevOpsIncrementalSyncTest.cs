@@ -509,6 +509,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     });
 
                 clientMock
+                    .Setup(client => client.GetWorkItemFieldsAsync(It.IsAny<GetFieldsExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                    .Returns(() =>
+                    {
+                        FieldLookups++;
+                        return Task.FromResult(new List<WorkItemField2>());
+                    });
+
+                clientMock
                     .Setup(client => client.GetRevisionsAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
                     .Returns((int id, int? _, int? _, WorkItemExpand? _, object _, CancellationToken _) =>
                     {
@@ -539,9 +547,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             /// <summary>A tracker that answers the query with no result set rather than with an empty one.</summary>
             public bool AnswerTheQueryWithoutAResultSet { get; set; }
 
+            /// <summary>
+            /// How often the connector asked the organisation for its field definitions. Counted because it is
+            /// the request that hides: it precedes every payload read, and a test counting only payload reads
+            /// reports "nothing was fetched" for a cycle that still went to the tracker.
+            /// </summary>
+            public int FieldLookups { get; private set; }
+
             /// <summary>Every request of any kind, so a test can say that none was made.</summary>
             public List<string> EveryRequestMade =>
-                [.. WiqlQueries, .. PayloadReads.Select(read => $"payload:{read.Ids.Count}"), .. RevisionReads.Select(id => $"revisions:{id}")];
+            [
+                .. WiqlQueries,
+                .. PayloadReads.Select(read => $"payload:{read.Ids.Count}"),
+                .. RevisionReads.Select(id => $"revisions:{id}"),
+                .. Enumerable.Range(0, FieldLookups).Select(_ => "fields"),
+            ];
 
             /// <summary>
             /// A full download reads twice: once for the fields it maps, and once more with the relations
