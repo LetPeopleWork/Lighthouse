@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// above is the question "has this instance been reached yet", and it answered yes.
         /// </summary>
         private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
-            IWorkItemQueryOwner owner, IEnumerable<SweepQuery> sweepQueries, string sweptDescription)
+            IWorkItemQueryOwner owner, IEnumerable<string> sweepQueries, string sweptDescription)
         {
             if (!SupportsIncrementalSync(owner.WorkTrackingSystemConnection))
             {
@@ -109,9 +109,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var walkedEveryPage = sweepsOverCloud
                     ? await WalkCloudSearchPages(
                         client,
-                        new CloudSearchRequest(sweepQuery.AsTheDownloadAsksIt, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
+                        new CloudSearchRequest(sweepQuery, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
                         CollectStamp)
-                    : await WalkDataCenterSearchOffsets(client, sweepQuery.OrderedForTheOffsetWalk, pageLimit, CollectStamp);
+                    : await WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), pageLimit, CollectStamp);
 
                 if (!walkedEveryPage)
                 {
@@ -344,7 +344,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
             => SweepIdentities(
                 project,
-                parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(chunk => SweepQueryOf(PrepareIssueKeyQuery(chunk))),
+                parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(PrepareIssueKeyQuery),
                 $"the parent Features of Portfolio {project.Name}");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
@@ -1592,47 +1592,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// someone editing an issue while the walk is running can slide a record onto a page already read, so
         /// the sweep never sees it - and because removal is "stored minus swept", that deletes live work. An
         /// issue's key never changes, so ordering on it is an order no edit can disturb. Cloud walks by page
-        /// token rather than by offset and has no such exposure, and the full download keeps whatever ordering
-        /// it was given because that ordering is what decides the order items are shown in.
+        /// token rather than by offset and has no such exposure, and neither does the full download.
         /// </summary>
         private static string OrderedForOffsetPaging(string jql) => $"{jql.TrimEnd()} ORDER BY key ASC";
 
-        /// <summary>
-        /// The one query a sweep enumerates, in the two shapes its two transports need: what the full download
-        /// asks, and the same thing ordered so an offset walk can be trusted.
-        /// </summary>
-        private sealed record SweepQuery(string AsTheDownloadAsksIt, string OrderedForTheOffsetWalk);
-
-        private static SweepQuery SweepQueryOf(string jql) => new(jql, OrderedForOffsetPaging(jql));
-
-        /// <summary>
-        /// A JQL query carries at most one ordering clause, so a team or portfolio whose own query already ends
-        /// in one has to give it up before the sweep's ordering can be appended. It comes off here, while that
-        /// query is still an expression standing on its own - once it has been wrapped in parentheses and the
-        /// type, state and cutoff filters have been hung off it, its ordering sits in the middle of the string
-        /// and nothing can be cut off the end without leaving an unbalanced expression behind.
-        /// </summary>
-        private static SweepQuery SweepQueryFor(IWorkItemQueryOwner owner)
-        {
-            var states = owner.AllStates.ToList();
-
-            return new SweepQuery(
-                PrepareQuery(owner.WorkItemTypes, states, owner.DataRetrievalValue, owner.DoneItemsCutoffDays),
-                OrderedForOffsetPaging(
-                    PrepareQuery(owner.WorkItemTypes, states, RemoveOrderByClause(owner.DataRetrievalValue), owner.DoneItemsCutoffDays)));
-        }
+        /// <summary>The very query the full download issues, which is the only thing a sweep may enumerate.</summary>
+        private static string SweepQueryFor(IWorkItemQueryOwner owner)
+            => PrepareQuery(owner.WorkItemTypes, owner.AllStates, owner.DataRetrievalValue, owner.DoneItemsCutoffDays);
 
         /// <summary>Names issues by key and nothing else - shared by the parent lookup and by phase 2 of the two-phase fetch.</summary>
         private static string PrepareIssueKeyQuery(IEnumerable<string> referenceIds)
             => string.Join(" OR ", referenceIds.Select(id => $"key = \"{id}\""));
 
+        /// <summary>
+        /// The operator's query is wrapped in brackets and the type, state and cutoff filters are hung off it,
+        /// so an ordering they wrote would end up in the middle of an expression - which Jira rejects, and the
+        /// team or portfolio then fetches nothing at all. An ordering says nothing about what a query selects,
+        /// so it comes off here, the same way it already comes off the JQL of a saved Jira filter.
+        /// </summary>
         private static string PrepareQuery(IEnumerable<string> includedWorkItemTypes, IEnumerable<string> includedStates, string query, int cutOffDays)
         {
             var workItemsQuery = PrepareGenericQuery(includedWorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
             var stateQuery = PrepareGenericQuery(includedStates, JiraFieldNames.StatusFieldName, "OR", "=");
             var cutoffDateFilter = PrepareCutoffDateFilter(cutOffDays);
-            var jql = $"({query}) {workItemsQuery} {stateQuery} {cutoffDateFilter}";
-            return jql;
+
+            return $"({RemoveOrderByClause(query)}) {workItemsQuery} {stateQuery} {cutoffDateFilter}";
         }
 
         private static string PrepareCutoffDateFilter(int cutOffDays)

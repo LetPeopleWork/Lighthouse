@@ -43,6 +43,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheDeterministicOrdering = "ORDER BY key ASC";
         private const string TheKeyedQuery = "key = \"PROJ-1\" OR key = \"PROJ-3\"";
 
+        private const string AQueryTheOperatorOrdered = "project = PROJ ORDER BY created DESC";
+        private const string TheSameQueryWithoutItsOrdering = "(project = PROJ) AND";
+
         private static readonly string[] TheDataCenterSearchPathOnly = [DataCenterSearchPath];
         private static readonly string[] TheTwoKeysAskedFor = ["PROJ-1", "PROJ-3"];
 
@@ -90,6 +93,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "A stamp the tracker gave no zone for is an instant, and which instant it is may not depend on where "
                 + "Lighthouse happens to run. Reading it as host-local time makes the same payload mean a different "
                 + "instant on every deployment, and D12's per-item comparison then reports every record as moved.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_LeavesOutAnOrderingTheTeamsOwnQueryCarries()
+        {
+            var jira = new JiraStub(Cloud);
+            var subject = CreateSubject(jira.Handler);
+            var team = CreateTeam();
+            team.DataRetrievalValue = AQueryTheOperatorOrdered;
+
+            await subject.GetWorkItemsForTeam(team);
+
+            var jql = QueryValue(jira.SearchRequests.Last(), "jql");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Does.Not.Contain(OrderingKeyword),
+                    "The team's own query is wrapped in brackets and the type, state and cutoff filters are hung off "
+                    + "it, so an ordering the operator wrote lands in the middle of an expression. Jira rejects that "
+                    + $"as invalid JQL and the team then fetches nothing at all. Asked for: {jql}");
+                Assert.That(jql, Does.StartWith(TheSameQueryWithoutItsOrdering),
+                    "What is left has to still be the operator's filter, with its brackets closed - cutting the "
+                    + $"ordering off the finished string would leave '(project = PROJ' open. Asked for: {jql}");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_LeavesOutAnOrderingThePortfoliosOwnQueryCarries()
+        {
+            var jira = new JiraStub(Cloud);
+            var subject = CreateSubject(jira.Handler);
+            var portfolio = CreatePortfolio(CreateTeam());
+            portfolio.DataRetrievalValue = AQueryTheOperatorOrdered;
+
+            await subject.GetFeaturesForProject(portfolio);
+
+            var jql = QueryValue(jira.SearchRequests.Last(), "jql");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Does.Not.Contain(OrderingKeyword),
+                    "A portfolio's Features are fetched through the same wrapping, so an operator who orders their "
+                    + $"Feature query loses the whole portfolio the same way. Asked for: {jql}");
+                Assert.That(jql, Does.StartWith(TheSameQueryWithoutItsOrdering),
+                    $"What is left has to still be the operator's filter, with its brackets closed. Asked for: {jql}");
+            }
         }
 
         [Test]
@@ -611,7 +660,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepWorkItemsForTeam_OnDataCenter_LeavesAQueryThatAlreadyOrdersWithOneOrderingClause()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
-            team.DataRetrievalValue = "project = PROJ ORDER BY created DESC";
+            team.DataRetrievalValue = AQueryTheOperatorOrdered;
 
             await subject.SweepWorkItemsForTeam(team);
 
