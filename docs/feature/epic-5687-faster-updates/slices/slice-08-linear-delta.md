@@ -6,8 +6,12 @@ templates with an optional history fragment (`HistoryConnectionFragment`,
 `ProjectHistoryConnectionFragment`), so "with history" and "without history" is a parameter that already
 exists.
 
-**Subject to the D7 checkpoint. Lowest-value slice in the epic — Linear's API is already the fastest of
-the four connectors.**
+> **DEFERRED 2026-08-13 — this slice does not ship in Epic #5687.** The D7 checkpoint was answered in
+> favour of Jira and Azure DevOps only: nobody knows yet how many instances run on Linear, so the work
+> has not earned its cost — and Linear's API is already the fastest of the four connectors, which made
+> this the lowest-value slice in the epic. Linear keeps using full updates. Story #5731 is Removed in
+> Azure DevOps. Everything below is a costed, feasible design kept for the day usage data says
+> otherwise — resume by re-creating the story and running DISTILL against this brief unchanged.
 
 ## Goal
 

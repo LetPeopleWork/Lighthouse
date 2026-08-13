@@ -4,8 +4,9 @@
 **Reference class**: `AzureDevOpsWorkTrackingConnector` is already two-phase — `QueryByWiqlAsync` returns
 id references, `GetWorkItemsInChunks` fetches payloads. This slice adds the missing middle step.
 
-**Subject to the D7 checkpoint**: after slice 04, decide whether this and slices 07/08 stay in this epic
-or become a follow-on feature.
+**D7 checkpoint answered 2026-08-13**: this slice stays in the epic and is the last one. Slices 07
+(ServiceNow) and 08 (Linear) are deferred — ADO's per-item revision read is the biggest remaining cost,
+and it is a tracker Lighthouse itself runs on.
 
 ## Goal
 
@@ -51,7 +52,7 @@ AC-6.1 … AC-6.5 from `feature-delta.md` (US-06). AC-6.3 is the alignment asser
 ## Dependencies
 
 - Slices 02 and 05 (the contract, and the fingerprint gate).
-- The D7 checkpoint verdict.
+- The D7 checkpoint verdict — answered 2026-08-13, in scope.
 - Lighthouse's own ADO project — real data, already in daily use.
 
 ## Effort

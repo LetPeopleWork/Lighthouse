@@ -114,8 +114,8 @@ timestamp for the full result set.
 | **Jira Cloud** | `updated` (JQL + `fields=updated`) | Yes — same JQL, one field | Full field set + `expand=changelog` + per-issue changelog paging (`:776`) | **In scope.** Biggest single win. |
 | **Jira Data Center** | `updated` | Yes, **but** offset pagination over an unordered JQL is the known duplicate-`ReferenceId` hazard (ci-learnings 2026-05-25) | Same as Cloud, and this is the epic's named instance | **In scope, after a stability probe** (OQ-1). |
 | **Azure DevOps** | `System.ChangedDate` | Yes — a second WIQL `AND [System.ChangedDate] >= @x`; the plain WIQL already gives the full id set for free | `GetRevisionsAsync` per item (`:811`) — the dominant cost | **In scope.** Structurally the smallest change. |
-| **ServiceNow** | `sys_updated_on` | Yes — `sysparm_query` already carries an ordering clause (`InAStableOrder`), and `sysparm_fields` can narrow to id+timestamp | Per-record state-span reads (`ReadSpans`, `ReadHistory`) | **In scope**, lower value — PDI-scale data, and paging already guarded. |
-| **Linear** | `updatedAt` | Yes — GraphQL `filter: { updatedAt: { gt: … } }`, and the history fragment is what costs (`HistoryConnectionFragment`) | History connection per issue/project | **In scope**, lowest value — Linear's API is already the fastest of the four. |
+| **ServiceNow** | `sys_updated_on` | Yes — `sysparm_query` already carries an ordering clause (`InAStableOrder`), and `sysparm_fields` can narrow to id+timestamp | Per-record state-span reads (`ReadSpans`, `ReadHistory`) | **Deferred** (maintainer, 2026-08-13) — feasible and costed, but stays on full updates until adoption justifies the work. |
+| **Linear** | `updatedAt` | Yes — GraphQL `filter: { updatedAt: { gt: … } }`, and the history fragment is what costs (`HistoryConnectionFragment`) | History connection per issue/project | **Deferred** (maintainer, 2026-08-13) — same reasoning, and Linear's API is already the fastest of the four. |
 | **CSV** | — | **No** | Nothing. The "fetch" is a user-uploaded file. | **Out of scope, permanently** (D11). |
 
 Consequence: the delta contract is expressible on every remote connector. Nothing in the matrix forces a
@@ -154,10 +154,16 @@ different design per connector, which is why D1 can be a single contract rather 
   properties, and a dropped timestamp silently degrades delta to "always refetch" — the failure is a
   performance regression with green tests, so it needs its own test.
 - **[D7] Slice order: log → Jira Cloud → Jira Cloud portfolios → Jira DC → fingerprint → ADO →
-  ServiceNow → Linear.** All connectors are *assessed* in this wave (matrix above). Whether slices 06-08
-  stay in this epic or become a follow-on feature is an explicit checkpoint after slice 04, per the
-  user's note ("once we have the jira cases, we can decide how to proceed with the others"). CSV is
+  ~~ServiceNow → Linear~~.** All connectors are *assessed* in this wave (matrix above). Whether slices
+  06-08 stay in this epic or become a follow-on feature was an explicit checkpoint after slice 04, per
+  the user's note ("once we have the jira cases, we can decide how to proceed with the others"). CSV is
   never in scope.
+
+  **Checkpoint answered early, 2026-08-13**: Jira (Cloud + Data Center) and Azure DevOps are in scope.
+  ServiceNow and Linear are **deferred** — nobody knows yet whether enough instances use them to earn
+  the work, and the matrix above already proves both are feasible whenever that changes. They keep
+  running full updates, which is the correct behaviour and not a degradation. The epic therefore ends
+  after slice 06, and slices 07-08 close as recorded assessments rather than as code.
 - **[D8] There is no partial mode.** An update is either `full` or `delta`. It is `full` when: the entity
   has never been swept, the fingerprint changed, any stored item lacks a `LastChangedRemote`, or the
   sweep itself failed. Anything ambiguous resolves to `full` — the expensive answer is always the safe
@@ -188,7 +194,8 @@ different design per connector, which is why D1 can be a single contract rather 
   `DeduplicateByReferenceId` exists because of it). If the id set is *unstable* — not merely duplicated —
   then `removed = stored − sweepIds` would delete live items on DC. Resolved by a timeboxed probe at the
   head of slice 04, before any DC code is written. This is the single question that can invalidate D1 on
-  the epic's named instance.
+  the epic's named instance. **ANSWERED 2026-08-11 — the set is stable; see the OQ-1 section further
+  down and the slice 04 brief for the numbers.**
 - **[OQ-2] How many teams/portfolios does a typical instance carry?** Determines whether the per-entity
   Information logging in `UpdateAll` is a nuisance or the dominant log volume. Does not block slice 01
   (the fix is the same either way); does inform the KPI-5 target.
@@ -208,8 +215,8 @@ different design per connector, which is why D1 can be a single contract rather 
 | Multiple independent user outcomes that could ship separately | **Yes** — the log, each connector, and the fingerprint each ship value alone |
 
 Three signals fired. Split into 8 elephant-carpaccio slices, each ≤1 day, each with its own brief under
-`docs/feature/epic-5687-faster-updates/slices/`. Slices 06-08 carry an explicit re-scoping checkpoint
-after slice 04 (D7).
+`docs/feature/epic-5687-faster-updates/slices/`. Slices 06-08 carried an explicit re-scoping checkpoint
+after slice 04 (D7), answered 2026-08-13: 06 stays, 07 and 08 are deferred, so six slices ship.
 
 ---
 
@@ -492,9 +499,14 @@ maintainer dogfoods, so it is where the number is checked first.
 
 ---
 
-### US-07 — ServiceNow and Linear join the contract
+### US-07 — ServiceNow and Linear join the contract — **DEFERRED 2026-08-13**
 
 `job_id: job-operator-sync-without-hammering-the-tracker` · persona `platform-operator` · **slices 07, 08**
+
+**Not shipping in this epic.** ServiceNow and Linear stay on full updates until there is evidence that
+enough instances run on them to earn the work (maintainer, 2026-08-13). Nothing below is retracted — the
+connector matrix establishes both are feasible, and the acceptance criteria are ready the day the
+evidence arrives. ADO stories #5730 and #5731 are Removed; this section is where the assessment lives.
 
 As a platform operator on ServiceNow or Linear, I want delta refreshes there too, so that no connector is
 left as the slow one.
@@ -534,7 +546,7 @@ commit inside slices 02 and 05 respectively, never as a slice of its own** (slic
 | Understand what an update costs | Fetch less on Jira | Keep configuration honest | Cover the rest of the connectors |
 |---|---|---|---|
 | US-01 summary line, quiet logs | US-02 Jira Cloud team | US-05 fetch fingerprint | US-06 Azure DevOps |
-| | US-03 Jira Cloud portfolio | | US-07 ServiceNow, Linear |
+| | US-03 Jira Cloud portfolio | | ~~US-07 ServiceNow, Linear~~ deferred |
 | | US-04 Jira Data Center | | |
 
 **Walking skeleton**: US-02 (slice 02). Thinnest path that proves the whole contract end to end.
@@ -549,10 +561,12 @@ commit inside slices 02 and 05 respectively, never as a slice of its own** (slic
 | 04 | Jira Data Center delta | US-04 | #5727 | ~6h + 2h probe | That DC's pagination yields a *stable* id set. If not, delta cannot drive deletion on the epic's named instance. |
 | 05 | Fetch fingerprint | US-05 | #5728 | ~6h | That the fetch-shaping property set can be enumerated in one place. If it cannot, config invalidation cannot be automatic and D3 collapses into "any save refetches". |
 | 06 | Azure DevOps delta | US-06 | #5729 | ~6h | That `System.ChangedDate` aligns with revision history. If an item's revisions can move without `ChangedDate` moving, ADO delta drops transitions. |
-| 07 | ServiceNow delta | US-07 | #5730 | ~5h | That narrowing `sysparm_fields` does not disturb the existing paging guard. |
-| 08 | Linear delta | US-07 | #5731 | ~4h | That the history fragment is separable from the issue query. |
+| ~~07~~ | ~~ServiceNow delta~~ — **deferred 2026-08-13** | US-07 | ~~#5730~~ Removed | — | Unrun. Would have tested that narrowing `sysparm_fields` does not disturb the existing paging guard. |
+| ~~08~~ | ~~Linear delta~~ — **deferred 2026-08-13** | US-07 | ~~#5731~~ Removed | — | Unrun. Would have tested that the history fragment is separable from the issue query. |
 
-**Checkpoint after slice 04** (D7): decide whether 06-08 stay in this epic or become a follow-on feature.
+**Checkpoint after slice 04** (D7): **answered 2026-08-13, ahead of slice 04's close.** Slice 06 (Azure
+DevOps) stays in the epic; slices 07 and 08 are deferred and their stories Removed. The epic now runs
+01 → 02 → 03 → 05 → 04 → 06 and ends there.
 
 ### Carpaccio taste tests
 
@@ -581,7 +595,7 @@ commit inside slices 02 and 05 respectively, never as a slice of its own** (slic
 5. **Slice 05 fifth**, before the remaining connectors: once three connectors' worth of delta exists,
    a silent config-drift bug would be three bugs. It is a correctness gate on everything shipped so far.
 6. **Slices 06-08 last**, in descending value (ADO's per-item revision read is the biggest remaining
-   cost), subject to the D7 checkpoint.
+   cost), subject to the D7 checkpoint. Answered 2026-08-13: 06 ships, 07 and 08 are deferred.
 
 ---
 
@@ -907,8 +921,8 @@ context, so a cold dispatch would have re-derived it)
 | `RemoteRecordStamp` | `Models/` (new, `sealed record`) | **CREATE NEW** — `(string ReferenceId, DateTime ChangedAt)`; the sweep's return element. No behaviour, no equivalent type exists |
 | `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** — sweep via `fields=updated`; probe returns true for Cloud (slice 02), for DC after slice 04 |
 | `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** — sweep = existing WIQL + a second WIQL on `System.ChangedDate` |
-| `ServiceNowWorkTrackingConnector` | `…/ServiceNow/ServiceNowWorkTrackingConnector.cs` | **EXTEND** — sweep on `sys_updated_on`, `sysparm_fields` narrowed, `InAStableOrder` kept |
-| `LinearWorkTrackingConnector` | `…/Linear/LinearWorkTrackingConnector.cs` | **EXTEND** — sweep with `includeHistory: false` |
+| `ServiceNowWorkTrackingConnector` | `…/ServiceNow/ServiceNowWorkTrackingConnector.cs` | **UNCHANGED** — deferred 2026-08-13; the probe returns false, so ServiceNow keeps running full updates. The design (sweep on `sys_updated_on`, `sysparm_fields` narrowed, `InAStableOrder` kept) is recorded, not built |
+| `LinearWorkTrackingConnector` | `…/Linear/LinearWorkTrackingConnector.cs` | **UNCHANGED** — deferred 2026-08-13, same as ServiceNow. The recorded design is a sweep with `includeHistory: false` |
 | `CsvWorkTrackingConnector` | `…/Csv/CsvWorkTrackingConnector.cs` | **EXTEND** — probe returns `false`; sweeps throw `NotSupportedException` and are never reached (D11) |
 | `WorkItemService` | `Services/Implementation/WorkItems/WorkItemService.cs` | **EXTEND** — two-phase path in `RefreshWorkItems` / `RefreshFeatures`; staleness moves to its own pass over the stored set (DDD-4) |
 | `SyncModeResolver` | `Services/Implementation/WorkItems/` (new, static) | **CREATE NEW** — pure `Full`/`Delta` decision (D8). Justified: no existing type makes this decision, and it must be directly unit-testable across six branches without a service graph |
@@ -1131,7 +1145,7 @@ No `upstream-changes.md` is written: neither sharpening changes a user story or 
 | ID | Question | Deferred to | Why it is safe to defer |
 |---|---|---|---|
 | OQ-1 | Does the Jira DC identity sweep return a *stable* id set across back-to-back calls? | Slice 04 pre-slice probe (DELIVER) | Carried from DISCUSS. Only DC is affected; the probe runs before any DC code is written, and the slice is written to stop rather than guess |
-| OQ-D1 | Is the by-reference-id fetch shape genuinely present on ServiceNow and Linear, or only on Jira and ADO? | Slices 07 / 08 | Verified present on the two connectors that ship first; if it is absent on a later one, that connector's slice adds it as its own step rather than blocking the contract |
+| OQ-D1 | Is the by-reference-id fetch shape genuinely present on ServiceNow and Linear, or only on Jira and ADO? | **Moot** — slices 07 / 08 deferred 2026-08-13 | Verified present on the two connectors that ship first; if it is absent on a later one, that connector's slice adds it as its own step rather than blocking the contract |
 | OQ-D2 | What uncertainty window does each connector's timestamp granularity need (D12's residual)? | Per connector at slice time | It is a per-connector constant, not a design choice. Jira is minute-grained, ADO and Linear sub-second, ServiceNow second-grained; the safe default is one unit of the connector's own granularity |
 | OQ-D3 | Does anything other than `TeamUpdater` consume `ITeamDataService.UpdateTeamData`? | Slice 01, before the signature changes | A shared-contract change; the project rule is to grep usages and extend the test builders first, which is a slice-01 step, not a design unknown |
 

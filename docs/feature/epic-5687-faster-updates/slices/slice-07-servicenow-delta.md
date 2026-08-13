@@ -5,7 +5,12 @@
 a stable ordering clause (`InAStableOrder`) and a repeated-record guard, which is most of what a safe
 sweep needs.
 
-**Subject to the D7 checkpoint.**
+> **DEFERRED 2026-08-13 — this slice does not ship in Epic #5687.** The D7 checkpoint was answered in
+> favour of Jira and Azure DevOps only: nobody knows yet how many instances run on ServiceNow, so the
+> work has not earned its cost. ServiceNow keeps using full updates, which is correct behaviour and not
+> a regression. Story #5730 is Removed in Azure DevOps. Everything below is a costed, feasible design
+> kept for the day usage data says otherwise — resume by re-creating the story and running DISTILL
+> against this brief unchanged.
 
 ## Goal
 
