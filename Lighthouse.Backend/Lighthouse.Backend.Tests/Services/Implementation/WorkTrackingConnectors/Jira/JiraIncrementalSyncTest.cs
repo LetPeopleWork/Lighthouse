@@ -39,8 +39,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string DataCenterSearchPath = "/rest/api/latest/search";
         private const string SweepFieldList = "key,updated";
 
-        private const string Pending = "DISTILL scaffold — slice 04 is not implemented yet.";
-
         private const string OrderingKeyword = "ORDER BY";
         private const string TheDeterministicOrdering = "ORDER BY key ASC";
         private const string TheKeyedQuery = "key = \"PROJ-1\" OR key = \"PROJ-3\"";
@@ -104,6 +102,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(subject.SupportsIncrementalSync(team.WorkTrackingSystemConnection), Is.False,
                 "The port member cannot block on a network round trip, so an undiscovered deployment answers "
                 + "'no' - which resolves the cycle to a full download (D8) rather than to a guess.");
+        }
+
+        [Test]
+        public void BothByReferenceIdFetches_RefuseAnInstanceLighthouseHasNeverReached()
+        {
+            // A connector per half: reaching the instance is what teaches it the deployment, so one half that
+            // answered would leave the other looking at an instance that is no longer undiscovered.
+            var teamSide = CreateSubject(new JiraStub(Cloud).Handler);
+            var portfolioSide = CreateSubject(new JiraStub(Cloud).Handler);
+            var team = CreateTeam();
+            var portfolio = CreatePortfolio(CreateTeam());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await teamSide.GetWorkItemsForTeam(team, TheTwoKeysAskedFor),
+                    Throws.InstanceOf<NotSupportedException>(),
+                    "Sweeping and fetching by key are one capability. An instance nobody has swept has no changed "
+                    + "set, so a key list arriving here came from a caller that had no business producing one, and "
+                    + "answering it would hide that.");
+                Assert.That(async () => await portfolioSide.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor),
+                    Throws.InstanceOf<NotSupportedException>(),
+                    "The two halves of the same capability may not disagree about who they serve - the next "
+                    + "connector to implement this port copies whichever shape it finds.");
+            }
         }
 
         [Test]
@@ -503,9 +525,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         // --- Jira Data Center ---
-        //
-        // What is still [Ignore]d below is not yet built. Each one is un-ignored on its own, so the commit
-        // that makes it pass is the commit that turned it from a description into a requirement.
 
         [Test]
         public async Task SupportsIncrementalSync_IsTrueForDataCenterOnceTheDeploymentIsKnown()
@@ -715,13 +734,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        /// <summary>
-        /// Passes on arrival: the by-key Work Item fetch never asked whether the deployment could be swept, so
-        /// Data Center already reaches its own transport here. Its opposite number for Features does refuse, and
-        /// asserting this half is what says the difference is a bug in that half rather than a decision.
-        /// </summary>
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeamByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);

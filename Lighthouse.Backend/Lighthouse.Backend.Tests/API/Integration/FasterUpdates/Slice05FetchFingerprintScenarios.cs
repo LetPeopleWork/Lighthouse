@@ -36,8 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-05")]
     public partial class Slice05FetchFingerprintTest
     {
-        private const string Pending = "DISTILL scaffold — slice 05 is not implemented yet.";
-
         // @walking_skeleton @driving_port @real-io @AC-5.1 @AC-5.2 @contract-shape:bounded-change
         // The promise the slice is named after, in the one shape an operator recognises: edit the query,
         // save, and the next cycle really does go and get the new answer.

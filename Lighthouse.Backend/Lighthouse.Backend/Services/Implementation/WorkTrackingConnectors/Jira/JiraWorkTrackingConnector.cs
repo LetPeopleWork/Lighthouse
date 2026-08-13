@@ -223,12 +223,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Phase 2 of the two-phase fetch (DDD-2): full payloads for the named records and for nothing else.
+        /// The download half of the two-phase fetch: full payloads for the named records and for nothing else.
         /// The team's own filter is deliberately not re-applied - the sweep already decided what belongs to
         /// the query, and a second cutoff evaluation could drop an item the sweep just reported as changed.
+        /// Sweeping and fetching by key are one capability, so an instance that cannot be swept never reaches here.
         /// </summary>
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
         {
+            if (!SupportsIncrementalSync(team.WorkTrackingSystemConnection))
+            {
+                throw new NotSupportedException(DeploymentNotKnownYet);
+            }
+
             if (referenceIds.Count == 0)
             {
                 return [];
@@ -317,7 +323,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Phase 1 of the two-phase fetch (D1): the very query <see cref="GetFeaturesForProject(Portfolio)"/>
+        /// The sweep half of the two-phase fetch: the very query <see cref="GetFeaturesForProject(Portfolio)"/>
         /// issues, narrowed to identity plus the change stamp.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
