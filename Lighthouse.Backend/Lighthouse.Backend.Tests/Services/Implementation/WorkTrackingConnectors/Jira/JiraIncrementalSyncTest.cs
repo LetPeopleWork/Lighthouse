@@ -43,6 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string DataCenterSearchPath = "/rest/api/latest/search";
         private const string SweepFieldList = "key,updated";
         private const string EveryField = "*all";
+        private const string TheSecondPage = "page-2";
 
         private const string OrderingKeyword = "ORDER BY";
         private const string TheDeterministicOrdering = OrderingKeyword + " key ASC";
@@ -231,7 +232,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepWorkItemsForTeam_WalksEveryPage()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
-            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: "page-2");
+            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: TheSecondPage);
             jira.QueueSweepPage(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"), nextPageToken: null);
 
             var stamps = await subject.SweepWorkItemsForTeam(team);
@@ -289,12 +290,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepWorkItemsForTeam_RefusesToReportAHalfWalkedQuery()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
-            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: "page-2");
+            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: TheSecondPage);
             jira.FailTheSearchAfterTheNextOne();
 
-            Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.Exception,
-                "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
-                + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<InvalidOperationException>(),
+                    "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
+                    + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
+                    + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
+                    + "satisfy a looser assertion without a single page ever being walked.");
+                Assert.That(TheTokensTheSweepAskedFor(jira), Does.Contain(TheSecondPage),
+                    "The half-walk is the whole point: the token the first page handed back has to have been asked for "
+                    + "before the rejection, or the refusal being asserted is some earlier refusal that never "
+                    + "enumerated anything.");
+            }
         }
 
         [Test]
@@ -410,7 +420,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepFeaturesForPortfolio_WalksEveryPage()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
-            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: "page-2");
+            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: TheSecondPage);
             jira.QueueSweepPage(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"), nextPageToken: null);
 
             var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
@@ -423,12 +433,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepFeaturesForPortfolio_RefusesToReportAHalfWalkedQuery()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
-            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: "page-2");
+            jira.QueueSweepPage(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"), nextPageToken: TheSecondPage);
             jira.FailTheSearchAfterTheNextOne();
 
-            Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.Exception,
-                "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
-                + "every Feature on the pages that never arrived would be deleted. Throwing falls back to a full fetch.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.TypeOf<InvalidOperationException>(),
+                    "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
+                    + "every Feature on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
+                    + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
+                    + "satisfy a looser assertion without a single page ever being walked.");
+                Assert.That(TheTokensTheSweepAskedFor(jira), Does.Contain(TheSecondPage),
+                    "The half-walk is the whole point: the token the first page handed back has to have been asked for "
+                    + "before the rejection, or the refusal being asserted is some earlier refusal that never "
+                    + "enumerated anything.");
+            }
         }
 
         [Test]
@@ -863,6 +882,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var updatedField = updated is null ? string.Empty : $"\"updated\":{JsonSerializer.Serialize(updated)}";
             return $"{{\"key\":\"{key}\",\"fields\":{{{updatedField}}}}}";
         }
+
+        /// <summary>
+        /// The page tokens the Cloud sweep put on the wire, in order. Cloud has no offset to look at: the only
+        /// evidence a second page was ever asked for is the token the first page handed back coming straight
+        /// back out on the next request.
+        /// </summary>
+        private static List<string> TheTokensTheSweepAskedFor(JiraStub jira)
+            => jira.SearchRequests.ToList().ConvertAll(uri => QueryValue(uri, "nextPageToken"));
 
         private static string QueryValue(Uri uri, string name)
         {
