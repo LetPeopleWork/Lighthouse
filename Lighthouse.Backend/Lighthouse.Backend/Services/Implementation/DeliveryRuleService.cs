@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -60,7 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     continue;
                 }
 
-                var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(delivery.RuleDefinitionJson);
+                var ruleSet = WorkItemRuleSetJson.Deserialize(delivery.RuleDefinitionJson);
                 if (ruleSet == null)
                 {
                     continue;

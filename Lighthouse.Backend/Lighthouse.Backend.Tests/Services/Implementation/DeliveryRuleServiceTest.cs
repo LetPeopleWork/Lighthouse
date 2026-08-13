@@ -581,6 +581,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void RecomputeRuleBasedDeliveries_CamelCaseRuleDefinition_UpdatesFeatures()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.Features.Add(CreateFeature("Epic1", type: "Epic"));
+            portfolio.Features.Add(CreateFeature("Bug1", type: "Bug"));
+
+            var delivery = new Delivery("Rule-Based", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
+            {
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                RuleDefinitionJson = "{\"version\":1,\"mode\":\"and\",\"conditions\":[{\"fieldKey\":\"feature.type\",\"operator\":\"equals\",\"value\":\"Epic\"}]}",
+                RuleSchemaVersion = 1
+            };
+
+            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
+
+            Assert.That(delivery.Features.Select(f => f.Name), Is.EquivalentTo(["Epic1"]));
+        }
+
+        [Test]
         public void RecomputeRuleBasedDeliveries_RuleBasedDelivery_UpdatesFeatures()
         {
             var portfolio = CreatePortfolio();
