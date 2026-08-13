@@ -658,23 +658,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
         {
-            var additionalFieldsRef = new Dictionary<int, string>();
-
             try
             {
                 var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
                 var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
-                if (!workItemReferences.Any())
-                {
-                    return ([], additionalFieldsRef);
-                }
-
-                additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
-
-                var adoWOrkItemsById = await GetAdoWorkItemsById(workItemReferences.Select(wi => wi.Id), workItemQueryOwner, additionalFieldsRef.Select(f => f.Value));
-
-                return (adoWOrkItemsById, additionalFieldsRef);
+                return await ThePayloadsOf(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList());
             }
             catch (Exception ex)
             {
@@ -691,31 +680,53 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsById(
             IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds)
         {
-            var additionalFieldsRef = new Dictionary<int, string>();
-            var workItemIds = referenceIds
-                .Select(referenceId => int.TryParse(referenceId, out var workItemId) ? workItemId : -1)
-                .Where(workItemId => workItemId >= 0)
-                .ToList();
-
-            if (workItemIds.Count == 0)
-            {
-                return ([], additionalFieldsRef);
-            }
-
             try
             {
                 var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
-                additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
 
-                var adoWorkItemsById = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Select(f => f.Value));
-
-                return (adoWorkItemsById, additionalFieldsRef);
+                return await ThePayloadsOf(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds));
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to fetch ADO work items with IDs {ItemIds}", string.Join(",", workItemIds));
+                logger.LogError(ex, "Failed to fetch ADO work items with IDs {ItemIds}", string.Join(",", referenceIds));
                 return ([], new Dictionary<int, string>());
             }
+        }
+
+        /// <summary>
+        /// What both fetches do once they know which ids they want: resolve the connection's additional fields,
+        /// then read the payloads in batches. An empty id set asks for nothing at all, because a keyed read of
+        /// no keys is still a remote round trip.
+        /// </summary>
+        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> ThePayloadsOf(
+            IWorkItemQueryOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds)
+        {
+            if (workItemIds.Count == 0)
+            {
+                return ([], new Dictionary<int, string>());
+            }
+
+            var additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
+            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Select(field => field.Value));
+
+            return (adoWorkItems, additionalFieldsRef);
+        }
+
+        // A reference id on Azure DevOps is the tracker's own numeric work-item id, so anything else cannot
+        // name a record there and is dropped rather than sent.
+        private static List<int> WorkItemIdsIn(IEnumerable<string> referenceIds)
+        {
+            var workItemIds = new List<int>();
+
+            foreach (var referenceId in referenceIds)
+            {
+                if (int.TryParse(referenceId, out var workItemId))
+                {
+                    workItemIds.Add(workItemId);
+                }
+            }
+
+            return workItemIds;
         }
 
         private static async Task<T> ExecuteWithThrottle<T>(string url, Func<Task<T>> action)
