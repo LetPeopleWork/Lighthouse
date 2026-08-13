@@ -4391,4 +4391,34 @@ No migration, no service change, no UI, no new dependency.
 - **The measurement is still owed.** AC-6.3's product half and AC-2.8's request-count target are the dogfood
   run on Lighthouse's own board: one full cycle, one delta cycle, and identical stored transition counts
   across both. Until that runs, the slice has evidence that the requests changed and no evidence that
-  nothing was lost.
+  nothing was lost. **Taken 2026-08-13 — see below.**
+
+---
+
+## Wave: DELIVER / [REF] Dogfood measurement — slice 06
+
+Lighthouse's own Azure DevOps board, team `Lighthouse Dev Team`, 374 work items, 2026-08-13.
+
+| cycle | mode | scanned | fetched | duration |
+|---|---|---|---|---|
+| full | `Full` | 374 | 374 | 20106 ms |
+| delta | `Delta` | 374 | 4 | **947 ms** |
+
+**21× on wall clock. `scanned` is identical across both**, which is the part that matters as much as the
+duration: the whole query is still enumerated every cycle, so `stored − swept` keeps exactly the meaning it
+had before delta existed. AC-2.8's inherited target (a cheap cycle costs ≤10 % of a full one) is met with
+room — 4 of 374 records fetched, 4.7 % of the duration.
+
+**AC-6.3's product half: passed.** Per-item transition counts were dumped from `WorkItemStateTransitions`
+(`SELECT WorkItemId, COUNT(*) … GROUP BY WorkItemId`) before and after delta cycles, and came back
+**byte-identical** — 793 items, 5426 bytes both times, empty diff. Not one transition was lost. This is the
+whole learning hypothesis: on Azure DevOps a transition is reconstructed by walking an item's revisions,
+and under delta a quiet item is never fetched, so every transition it already has must survive untouched in
+storage rather than being rebuilt. It did.
+
+The first full cycle logged `reason=configuration-changed`, so it was forced by slice 05's fetch
+fingerprint rather than by a missing stamp or a failed sweep — the fingerprint doing exactly its job on a
+board whose settings had just been edited.
+
+One honest limit on this measurement: the durations come from one run of each mode on one board, not from a
+distribution. What it establishes is the shape of the win and the absence of data loss, not a benchmark.

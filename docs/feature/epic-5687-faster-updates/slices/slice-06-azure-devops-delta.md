@@ -75,4 +75,22 @@ against Lighthouse's own board, which has items with rich revision history.
 
 ## Verdict
 
-_(recorded at slice close)_
+**Held.** Dogfooded 2026-08-13 against Lighthouse's own Azure DevOps board, team `Lighthouse Dev Team`,
+374 work items:
+
+| cycle | mode | scanned | fetched | duration |
+|---|---|---|---|---|
+| full | `Full` | 374 | 374 | 20106 ms |
+| delta | `Delta` | 374 | 4 | **947 ms** |
+
+**21× on wall clock**, and `scanned` identical across both — the whole query is still enumerated every
+cycle, so removal keeps exactly the meaning it had.
+
+**The learning hypothesis survived.** Per-item transition counts were dumped from
+`WorkItemStateTransitions` before and after delta cycles and came back **byte-identical** (793 items,
+5426 bytes both times). Not one transition was lost, which is what the hypothesis put at risk: on Azure
+DevOps transitions are rebuilt by walking an item's revisions, and under delta a quiet item is never
+fetched, so its transitions have to survive untouched in storage. They did.
+
+The first full cycle logged `reason=configuration-changed` — the fetch fingerprint from slice 05 doing its
+job rather than the sweep failing.
