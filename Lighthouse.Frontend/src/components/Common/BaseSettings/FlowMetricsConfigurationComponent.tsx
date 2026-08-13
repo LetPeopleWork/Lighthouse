@@ -31,7 +31,10 @@ import type {
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { DeliveryRuleBuilder } from "../DeliveryRuleBuilder/DeliveryRuleBuilder";
-import type { DeliveryRuleGroupMode } from "../DeliveryRuleBuilder/types";
+import {
+	type DeliveryRuleGroupMode,
+	isRuleConditionComplete,
+} from "../DeliveryRuleBuilder/types";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface FlowMetricsConfigurationComponentProps<T extends IBaseSettings> {
@@ -95,6 +98,14 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			},
 		[settings.blockedRuleSetJson],
 	);
+
+	// A rule row is born empty — a field and an operator, no value yet — and only
+	// the finished rows are worth storing. Holding the rows being edited here lets
+	// a half-typed one stay on screen without ever reaching the settings payload.
+	const [blockedRuleDraft, setBlockedRuleDraft] = useState<
+		IWorkItemRuleCondition[] | null
+	>(null);
+	const blockedRules = blockedRuleDraft ?? blockedRuleSet.conditions;
 
 	const { getTerm } = useTerminology();
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
@@ -269,32 +280,50 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		}
 	};
 
+	const serializeConditions = (
+		conditions: IWorkItemRuleCondition[],
+		mode: DeliveryRuleGroupMode,
+	): string | null => {
+		// BlockedRuleSetJson is the sole blocked-rule source; clearing it to null
+		// fully removes the blocked definition.
+		if (conditions.length === 0) {
+			return null;
+		}
+
+		return serializeBlockedRuleSet({
+			version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+			mode,
+			conditions,
+		});
+	};
+
 	const persistBlockedRuleSet = (
 		conditions: IWorkItemRuleCondition[],
 		mode: DeliveryRuleGroupMode,
 	) => {
-		if (conditions.length === 0) {
-			// BlockedRuleSetJson is the sole blocked-rule source; clearing it to
-			// null fully removes the blocked definition.
-			onSettingsChange("blockedRuleSetJson" as keyof T, null);
-		} else {
-			onSettingsChange(
-				"blockedRuleSetJson" as keyof T,
-				serializeBlockedRuleSet({
-					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
-					mode,
-					conditions,
-				}),
-			);
+		const next = serializeConditions(
+			conditions.filter(isRuleConditionComplete),
+			mode,
+		);
+		const stored = serializeConditions(
+			blockedRuleSet.conditions,
+			blockedRuleSet.mode,
+		);
+
+		if (next === stored) {
+			return;
 		}
+
+		onSettingsChange("blockedRuleSetJson" as keyof T, next);
 	};
 
 	const handleBlockedRulesChange = (conditions: IWorkItemRuleCondition[]) => {
+		setBlockedRuleDraft(conditions);
 		persistBlockedRuleSet(conditions, blockedRuleSet.mode);
 	};
 
 	const handleBlockedRulesModeChange = (mode: DeliveryRuleGroupMode) => {
-		persistBlockedRuleSet(blockedRuleSet.conditions, mode);
+		persistBlockedRuleSet(blockedRules, mode);
 	};
 
 	const handleBlockedItemsEnableChange = (checked: boolean) => {
@@ -302,6 +331,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 		if (!checked) {
 			// Clear the rule-based definition so no stale blocked signal lingers.
+			setBlockedRuleDraft(null);
 			onSettingsChange("blockedRuleSetJson" as keyof T, null);
 		}
 	};
@@ -541,7 +571,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 					>
 						<Grid size={{ xs: 12 }}>
 							<DeliveryRuleBuilder
-								rules={blockedRuleSet.conditions}
+								rules={blockedRules}
 								onChange={handleBlockedRulesChange}
 								fields={blockedSchema.fields}
 								operators={blockedSchema.operators}

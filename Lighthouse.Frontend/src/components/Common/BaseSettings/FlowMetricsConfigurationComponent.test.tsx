@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -656,7 +662,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			).not.toBeInTheDocument();
 		});
 
-		it("threads an added field condition through save as blockedRuleSetJson", async () => {
+		it("keeps a rule row out of the saved set until it has a value", async () => {
 			const user = userEvent.setup();
 			render(
 				<FlowMetricsConfigurationComponent
@@ -668,12 +674,39 @@ describe("FlowMetricsConfigurationComponent", () => {
 
 			await user.click(await screen.findByTestId("add-rule-button"));
 
-			const call = mockOnSettingsChange.mock.calls.find(
+			expect(await screen.findAllByTestId("rule-row")).toHaveLength(2);
+			expect(
+				mockOnSettingsChange.mock.calls.find(
+					(c) => c[0] === "blockedRuleSetJson",
+				),
+			).toBeFalsy();
+		});
+
+		it("threads an added field condition through save once its value is typed", async () => {
+			const user = userEvent.setup();
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(await screen.findByTestId("add-rule-button"));
+			const valueInputWrapper = await screen.findByTestId("rule-value-input-1");
+			await user.type(
+				within(valueInputWrapper).getByRole("textbox"),
+				"On Hold",
+			);
+
+			const blockedCalls = mockOnSettingsChange.mock.calls.filter(
 				(c) => c[0] === "blockedRuleSetJson",
 			);
+			const call = blockedCalls[blockedCalls.length - 1];
 			expect(call).toBeTruthy();
 			const persisted = parseBlockedRuleSet(call?.[1] as string);
 			expect(persisted?.conditions).toHaveLength(2);
+			expect(persisted?.conditions[1].value).toBe("On Hold");
 		});
 
 		it("threads the OR match mode through save", async () => {

@@ -20,6 +20,7 @@ import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
 import {
 	type DeliveryRuleBuilderProps,
 	type DeliveryRuleGroupMode,
+	isRuleConditionComplete,
 	isValuelessOperator,
 	type RuleRowProps,
 } from "./types";
@@ -150,16 +151,6 @@ const RuleRow: React.FC<RuleRowProps> = ({
 	);
 };
 
-const ruleIsIncomplete = (rule: IWorkItemRuleCondition): boolean => {
-	if (!rule.fieldKey.trim() || !rule.operator.trim()) {
-		return true;
-	}
-	if (isValuelessOperator(rule.operator)) {
-		return false;
-	}
-	return !rule.value.trim();
-};
-
 export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 	rules,
 	onChange,
@@ -222,7 +213,7 @@ export const DeliveryRuleBuilder: React.FC<DeliveryRuleBuilderProps> = ({
 		onModeChange(next);
 	};
 
-	const hasEmptyRules = rules.some(ruleIsIncomplete);
+	const hasEmptyRules = rules.some((rule) => !isRuleConditionComplete(rule));
 	const separatorLabel = mode === "or" ? "OR" : "AND";
 	const showModeToggle = Boolean(onModeChange) && rules.length >= 2;
 

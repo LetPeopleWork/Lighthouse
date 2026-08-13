@@ -33,3 +33,15 @@ export const isValuelessOperator = (operator: string): boolean => {
 	const normalised = operator.toLowerCase();
 	return normalised === "isempty" || normalised === "isnotempty";
 };
+
+export const isRuleConditionComplete = (
+	condition: IWorkItemRuleCondition,
+): boolean => {
+	if (!condition.fieldKey.trim() || !condition.operator.trim()) {
+		return false;
+	}
+
+	return (
+		isValuelessOperator(condition.operator) || condition.value.trim() !== ""
+	);
+};
