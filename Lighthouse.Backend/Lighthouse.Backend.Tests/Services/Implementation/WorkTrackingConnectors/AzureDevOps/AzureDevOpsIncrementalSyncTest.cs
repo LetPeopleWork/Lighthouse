@@ -1,7 +1,7 @@
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
-using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+
+using static Lighthouse.Backend.Tests.TestHelpers.AzureDevOpsOrganisation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
@@ -26,10 +26,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const int TheOnlyItem = 1;
         private const int TheItemThatMoved = 1;
         private const int TheItemThatDidNot = 2;
-
-        private const string TheTeamsFilter = AzureDevOpsOrganisation.TheTeamsFilter;
-
-        private static readonly DateTime WhenTheTrackerSaysItLastChanged = AzureDevOpsOrganisation.WhenTheTrackerSaysItLastChanged;
 
         private static readonly int[] TheTwoIdsAskedFor = [TheItemThatMoved, 3];
 
@@ -361,20 +357,5 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        private static (AzureDevOpsWorkTrackingConnector Subject, Team Team, AzureDevOpsOrganisation Ado) AnAzureDevOpsThatHolds(params int[] itemIds)
-        {
-            var ado = new AzureDevOpsOrganisation(itemIds);
-            var team = AzureDevOpsOrganisation.ATeamOnAzureDevOps();
-
-            return (new RecordedAzureDevOpsConnector(ado.Client), team, ado);
-        }
-
-        private static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio, AzureDevOpsOrganisation Ado) AnAzureDevOpsPortfolioThatHolds(params int[] itemIds)
-        {
-            var ado = new AzureDevOpsOrganisation(itemIds);
-            var portfolio = AzureDevOpsOrganisation.APortfolioOnAzureDevOps();
-
-            return (new RecordedAzureDevOpsConnector(ado.Client), portfolio, ado);
-        }
     }
 }

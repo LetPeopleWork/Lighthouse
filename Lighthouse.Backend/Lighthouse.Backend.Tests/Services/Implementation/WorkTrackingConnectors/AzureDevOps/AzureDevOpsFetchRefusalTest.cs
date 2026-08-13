@@ -1,6 +1,4 @@
-using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
-using Lighthouse.Backend.Tests.TestHelpers;
+using static Lighthouse.Backend.Tests.TestHelpers.AzureDevOpsOrganisation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
@@ -137,20 +135,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "Same on the portfolio half: 'no features found' names a configuration problem, and a "
                     + "failed round trip is not one.");
             }
-        }
-
-        private static (AzureDevOpsWorkTrackingConnector Subject, Team Team, AzureDevOpsOrganisation Ado) AnAzureDevOpsThatHolds(params int[] itemIds)
-        {
-            var ado = new AzureDevOpsOrganisation(itemIds);
-
-            return (new RecordedAzureDevOpsConnector(ado.Client), AzureDevOpsOrganisation.ATeamOnAzureDevOps(), ado);
-        }
-
-        private static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio, AzureDevOpsOrganisation Ado) AnAzureDevOpsPortfolioThatHolds(params int[] itemIds)
-        {
-            var ado = new AzureDevOpsOrganisation(itemIds);
-
-            return (new RecordedAzureDevOpsConnector(ado.Client), AzureDevOpsOrganisation.APortfolioOnAzureDevOps(), ado);
         }
     }
 }

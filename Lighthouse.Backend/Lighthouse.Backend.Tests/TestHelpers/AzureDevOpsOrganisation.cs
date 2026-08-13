@@ -160,7 +160,22 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public List<int> EveryIdRead => [.. PayloadReads.SelectMany(read => read.Ids).Distinct()];
 
-        internal static Team ATeamOnAzureDevOps()
+        /// <summary>The connector, the team it fetches for, and the organisation both are pointed at.</summary>
+        internal static (AzureDevOpsWorkTrackingConnector Subject, Team Team, AzureDevOpsOrganisation Ado) AnAzureDevOpsThatHolds(params int[] itemIds)
+        {
+            var ado = new AzureDevOpsOrganisation(itemIds);
+
+            return (new RecordedAzureDevOpsConnector(ado.Client), ATeamOnAzureDevOps(), ado);
+        }
+
+        internal static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio, AzureDevOpsOrganisation Ado) AnAzureDevOpsPortfolioThatHolds(params int[] itemIds)
+        {
+            var ado = new AzureDevOpsOrganisation(itemIds);
+
+            return (new RecordedAzureDevOpsConnector(ado.Client), APortfolioOnAzureDevOps(), ado);
+        }
+
+        private static Team ATeamOnAzureDevOps()
         {
             var team = new Team
             {
@@ -184,7 +199,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return team;
         }
 
-        internal static Portfolio APortfolioOnAzureDevOps()
+        private static Portfolio APortfolioOnAzureDevOps()
         {
             var portfolio = new Portfolio
             {
