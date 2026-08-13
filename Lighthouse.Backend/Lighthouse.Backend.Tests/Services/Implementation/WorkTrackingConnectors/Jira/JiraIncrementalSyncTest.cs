@@ -589,7 +589,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_OnDataCenter_LeavesAQueryThatAlreadyOrdersWithOneOrderingClause()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);

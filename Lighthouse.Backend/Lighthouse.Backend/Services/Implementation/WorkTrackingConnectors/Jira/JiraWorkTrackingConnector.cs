@@ -78,10 +78,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// and the caller falls back to the whole query.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
-            => SweepIdentities(
-                team,
-                [PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)],
-                $"Team {team.Name}");
+            => SweepIdentities(team, [SweepQueryFor(team)], $"Team {team.Name}");
 
         /// <summary>
         /// The one sweep every caller goes through: walk each query in full, keep identity and the change stamp,
@@ -93,7 +90,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// above is the question "has this instance been reached yet", and it answered yes.
         /// </summary>
         private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
-            IWorkItemQueryOwner owner, IEnumerable<string> jqlQueries, string sweptDescription)
+            IWorkItemQueryOwner owner, IEnumerable<SweepQuery> sweepQueries, string sweptDescription)
         {
             if (!SupportsIncrementalSync(owner.WorkTrackingSystemConnection))
             {
@@ -107,14 +104,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var pageLimit = ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
             var stamps = new List<RemoteRecordStamp>();
 
-            foreach (var jql in jqlQueries)
+            foreach (var sweepQuery in sweepQueries)
             {
                 var walkedEveryPage = sweepsOverCloud
                     ? await WalkCloudSearchPages(
                         client,
-                        new CloudSearchRequest(jql, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
+                        new CloudSearchRequest(sweepQuery.AsTheDownloadAsksIt, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
                         CollectStamp)
-                    : await WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(jql), pageLimit, CollectStamp);
+                    : await WalkDataCenterSearchOffsets(client, sweepQuery.OrderedForTheOffsetWalk, pageLimit, CollectStamp);
 
                 if (!walkedEveryPage)
                 {
@@ -324,10 +321,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// issues, narrowed to identity plus the change stamp.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
-            => SweepIdentities(
-                project,
-                [PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays)],
-                $"Portfolio {project.Name}");
+            => SweepIdentities(project, [SweepQueryFor(project)], $"Portfolio {project.Name}");
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
@@ -344,7 +338,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
             => SweepIdentities(
                 project,
-                parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(chunk => PrepareIssueKeyQuery(chunk)),
+                parentFeatureIds.Chunk(ReferenceIdsPerQuery).Select(chunk => SweepQueryOf(PrepareIssueKeyQuery(chunk))),
                 $"the parent Features of Portfolio {project.Name}");
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
@@ -1596,6 +1590,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// it was given because that ordering is what decides the order items are shown in.
         /// </summary>
         private static string OrderedForOffsetPaging(string jql) => $"{jql.TrimEnd()} ORDER BY key ASC";
+
+        /// <summary>
+        /// The one query a sweep enumerates, in the two shapes its two transports need: what the full download
+        /// asks, and the same thing ordered so an offset walk can be trusted.
+        /// </summary>
+        private sealed record SweepQuery(string AsTheDownloadAsksIt, string OrderedForTheOffsetWalk);
+
+        private static SweepQuery SweepQueryOf(string jql) => new(jql, OrderedForOffsetPaging(jql));
+
+        /// <summary>
+        /// A JQL query carries at most one ordering clause, so a team or portfolio whose own query already ends
+        /// in one has to give it up before the sweep's ordering can be appended. It comes off here, while that
+        /// query is still an expression standing on its own - once it has been wrapped in parentheses and the
+        /// type, state and cutoff filters have been hung off it, its ordering sits in the middle of the string
+        /// and nothing can be cut off the end without leaving an unbalanced expression behind.
+        /// </summary>
+        private static SweepQuery SweepQueryFor(IWorkItemQueryOwner owner)
+        {
+            var states = owner.AllStates.ToList();
+
+            return new SweepQuery(
+                PrepareQuery(owner.WorkItemTypes, states, owner.DataRetrievalValue, owner.DoneItemsCutoffDays),
+                OrderedForOffsetPaging(
+                    PrepareQuery(owner.WorkItemTypes, states, RemoveOrderByClause(owner.DataRetrievalValue), owner.DoneItemsCutoffDays)));
+        }
 
         /// <summary>Names issues by key and nothing else - shared by the parent lookup and by phase 2 of the two-phase fetch.</summary>
         private static string PrepareIssueKeyQuery(IEnumerable<string> referenceIds)
