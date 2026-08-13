@@ -145,9 +145,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             var witClient = await GetWorkItemTrackingHttpClientAsync(owner.WorkTrackingSystemConnection);
             var url = witClient.BaseAddress!.ToString();
 
-            // Deliberately not GetWorkItemReferencesByQuery: that one answers a failed query with an empty
-            // list, and an empty sweep does not mean "the query failed", it means "the query matches nothing" -
-            // which removes every record the entity has. A sweep that could not ask has to say so instead.
+            // Not GetWorkItemReferencesByQuery, which answers with references alone: the sweep needs to keep
+            // reading from the same answer, and the two refusals below are what stop an unanswerable sweep
+            // from reading as "the query matches nothing" - which removes every record the entity has.
             var answer = await ExecuteWithThrottle(url, () => witClient.QueryByWiqlAsync(new Wiql { Query = sweepQuery }));
 
             // An answer carrying no result set at all is not an answer of "nothing matched": reading it as one
@@ -669,41 +669,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return customFieldMappings;
         }
 
+        /// <summary>
+        /// Every failure here travels on to the caller. Removal is a set difference against what this fetch
+        /// returned, so answering a failed fetch with no records deletes every record the team or portfolio
+        /// has - and their blocked spells, which no tracker can rebuild, do not come back with them.
+        /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(IWorkItemQueryOwner workItemQueryOwner, string query)
         {
-            try
-            {
-                var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
-                var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
+            var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
+            var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query);
 
-                return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList());
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to fetch ADO work items for query '{Query}'", query);
-                return ([], new Dictionary<int, string>());
-            }
+            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList());
         }
 
         /// <summary>
         /// Phase two's fetch: a lookup by id, never a query. What phase one enumerated, phase two may only look
         /// up - re-applying the team's own filter or its done-items cutoff would let the tracker drop a record
         /// the sweep just vouched for, and removal is "stored minus swept".
+        ///
+        /// It refuses on failure for the same reason the whole-query fetch does: records it answers for are
+        /// the ones that survive the cycle.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsById(
             IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds)
         {
-            try
-            {
-                var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
+            var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
-                return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to fetch ADO work items with IDs {ItemIds}", string.Join(",", referenceIds));
-                return ([], new Dictionary<int, string>());
-            }
+            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds));
         }
 
         /// <summary>
@@ -800,23 +792,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private async Task<IEnumerable<WorkItemReference>> GetWorkItemReferencesByQuery(WorkItemTrackingHttpClient witClient, string query)
         {
-            try
-            {
-                var result = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(),
-                    () => witClient.QueryByWiqlAsync(new Wiql { Query = query }));
+            var result = await ExecuteWithThrottle(witClient.BaseAddress!.ToString(),
+                () => witClient.QueryByWiqlAsync(new Wiql { Query = query }));
 
-                return result.WorkItems ?? [];
-            }
-            catch (VssServiceException ex)
+            // An answer carrying no result set at all is not an answer of "nothing matched": reading it as
+            // one removes every record the query owner has, on a cycle nothing else complains about.
+            if (result.WorkItems is null)
             {
-                logger.LogError(ex, "Error while querying Work Items with Query '{Query}'", query);
-                return [];
+                throw new InvalidOperationException(
+                    $"Azure DevOps answered the query '{query}' without a result set.");
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Unexpected error while querying Work Items with Query '{Query}'", query);
-                return [];
-            }
+
+            return result.WorkItems;
         }
 
         private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, IEnumerable<string> additionalFields)

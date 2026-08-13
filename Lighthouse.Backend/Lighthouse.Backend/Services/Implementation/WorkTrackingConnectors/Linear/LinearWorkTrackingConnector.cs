@@ -43,118 +43,112 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         public Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
             => throw new NotSupportedException("Linear does not fetch by reference id yet - Epic #5687 slice 08 implements it.");
 
+        /// <summary>
+        /// Every failure here travels on to the caller. Removal is a set difference against what this fetch
+        /// returned, so answering a failed fetch with no records deletes every Work Item the team has - and
+        /// their blocked spells, which no tracker can rebuild, do not come back with them.
+        /// </summary>
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team)
         {
             logger.LogInformation("Getting Work Items for Team {TeamName}", team.Name);
 
-            try
+            var teamName = team.DataRetrievalValue;
+
+            if (string.IsNullOrEmpty(teamName))
             {
-                var teamName = team.DataRetrievalValue;
-
-                if (string.IsNullOrEmpty(teamName))
-                {
-                    logger.LogWarning("Team {TeamName} has no Linear team identity configured", team.Name);
-                    return [];
-                }
-
-                var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName);
-
-                if (string.IsNullOrEmpty(teamId))
-                {
-                    logger.LogWarning("Could not resolve Linear team ID for team name '{TeamName}'", teamName);
-                    return [];
-                }
-
-                var workItems = new List<WorkItem>();
-                var allTeamIssues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId);
-                var issues = FilterIssuesForStates(team, allTeamIssues);
-
-                if (issues.Count == 0)
-                {
-                    logger.LogInformation("No issues found for team {TeamName}", team.Name);
-                    return workItems;
-                }
-
-                var issuesLinkedToProject = 0;
-                var issuesWithoutProject = 0;
-
-                foreach (var issue in issues)
-                {
-                    var projectId = ResolveProjectIdForIssue(issue, allTeamIssues);
-                    var workItemBase = CreateWorkItemFromIssue(issue, team, projectId);
-                    workItems.Add(new WorkItem(workItemBase, team));
-
-                    if (!string.IsNullOrEmpty(projectId))
-                    {
-                        issuesLinkedToProject++;
-                    }
-                    else
-                    {
-                        issuesWithoutProject++;
-                        logger.LogDebug("Issue {Identifier} has no resolvable project reference", issue.Identifier);
-                    }
-                }
-
-                logger.LogInformation(
-                    "Hierarchy summary for team {TeamName}: {Total} issues scanned, {Linked} linked to projects, {Unlinked} without project reference",
-                    team.Name, workItems.Count, issuesLinkedToProject, issuesWithoutProject);
-
-                return workItems;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error getting work items for team {TeamName}", team.Name);
+                logger.LogWarning("Team {TeamName} has no Linear team identity configured", team.Name);
                 return [];
             }
+
+            var teamId = await ResolveTeamIdByName(team.WorkTrackingSystemConnection, teamName);
+
+            if (string.IsNullOrEmpty(teamId))
+            {
+                logger.LogWarning("Could not resolve Linear team ID for team name '{TeamName}'", teamName);
+                return [];
+            }
+
+            var workItems = new List<WorkItem>();
+            var allTeamIssues = await GetAllIssuesForTeam(team.WorkTrackingSystemConnection, teamId);
+            var issues = FilterIssuesForStates(team, allTeamIssues);
+
+            if (issues.Count == 0)
+            {
+                logger.LogInformation("No issues found for team {TeamName}", team.Name);
+                return workItems;
+            }
+
+            var issuesLinkedToProject = 0;
+            var issuesWithoutProject = 0;
+
+            foreach (var issue in issues)
+            {
+                var projectId = ResolveProjectIdForIssue(issue, allTeamIssues);
+                var workItemBase = CreateWorkItemFromIssue(issue, team, projectId);
+                workItems.Add(new WorkItem(workItemBase, team));
+
+                if (!string.IsNullOrEmpty(projectId))
+                {
+                    issuesLinkedToProject++;
+                }
+                else
+                {
+                    issuesWithoutProject++;
+                    logger.LogDebug("Issue {Identifier} has no resolvable project reference", issue.Identifier);
+                }
+            }
+
+            logger.LogInformation(
+                "Hierarchy summary for team {TeamName}: {Total} issues scanned, {Linked} linked to projects, {Unlinked} without project reference",
+                team.Name, workItems.Count, issuesLinkedToProject, issuesWithoutProject);
+
+            return workItems;
         }
 
+        /// <summary>
+        /// Refuses on failure for the same reason the team fetch does: the portfolio's membership is rebuilt
+        /// from what this answers with, and a Feature no portfolio claims is deleted outright by the
+        /// orphaned-Feature cleanup.
+        /// </summary>
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
             logger.LogInformation("Getting Features for Project {ProjectName} - retrieving all Linear projects as features", project.Name);
 
-            try
+            var features = new List<Feature>();
+            var projects = await GetAllProjects(project.WorkTrackingSystemConnection);
+
+            if (projects.Count == 0)
             {
-                var features = new List<Feature>();
-                var projects = await GetAllProjects(project.WorkTrackingSystemConnection);
-
-                if (projects.Count == 0)
-                {
-                    logger.LogInformation("No projects found in workspace for portfolio {ProjectName}", project.Name);
-                    return features;
-                }
-
-                var states = project.AllStates.ToList();
-                var featuresWithInitiative = 0;
-
-                foreach (var linearProject in projects)
-                {
-                    var state = linearProject.Status?.Name ?? UnknownStateIdentifier;
-
-                    if (states.Count > 0 && !states.Contains(state))
-                    {
-                        continue;
-                    }
-
-                    var feature = CreateFeatureFromProject(linearProject, project);
-                    features.Add(feature);
-
-                    if (!string.IsNullOrEmpty(feature.ParentReferenceId))
-                    {
-                        featuresWithInitiative++;
-                    }
-                }
-
-                logger.LogInformation(
-                    "Created {Count} features from Linear projects for portfolio {ProjectName} ({WithInitiative} linked to initiatives)",
-                    features.Count, project.Name, featuresWithInitiative);
-
+                logger.LogInformation("No projects found in workspace for portfolio {ProjectName}", project.Name);
                 return features;
             }
-            catch (Exception ex)
+
+            var states = project.AllStates.ToList();
+            var featuresWithInitiative = 0;
+
+            foreach (var linearProject in projects)
             {
-                logger.LogError(ex, "Error getting Features for Project {ProjectName}", project.Name);
-                return new List<Feature>();
+                var state = linearProject.Status?.Name ?? UnknownStateIdentifier;
+
+                if (states.Count > 0 && !states.Contains(state))
+                {
+                    continue;
+                }
+
+                var feature = CreateFeatureFromProject(linearProject, project);
+                features.Add(feature);
+
+                if (!string.IsNullOrEmpty(feature.ParentReferenceId))
+                {
+                    featuresWithInitiative++;
+                }
             }
+
+            logger.LogInformation(
+                "Created {Count} features from Linear projects for portfolio {ProjectName} ({WithInitiative} linked to initiatives)",
+                features.Count, project.Name, featuresWithInitiative);
+
+            return features;
         }
 
         public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
