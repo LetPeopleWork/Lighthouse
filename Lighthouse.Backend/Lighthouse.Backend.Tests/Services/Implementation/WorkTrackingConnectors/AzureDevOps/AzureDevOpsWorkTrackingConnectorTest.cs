@@ -394,14 +394,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProject_AreaPathDoesNotExist_ReturnsNoItems()
+        public void GetFeaturesForProject_AreaPathDoesNotExist_Refuses()
         {
             var subject = CreateSubject();
             var portfolio = CreatePortfolio($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.AreaPath}] UNDER 'CMFTTestTeamProject\\NotExistingAreaPath'");
 
-            var itemsByTag = await subject.GetFeaturesForProject(portfolio);
-
-            Assert.That(itemsByTag, Is.Empty);
+            Assert.That(async () => await subject.GetFeaturesForProject(portfolio),
+                Throws.Exception,
+                "Unlike a tag nobody uses, an area path that does not exist is a query Azure DevOps refuses to "
+                + "run at all. Answering that with no Features strips every Feature's portfolio claim, and the "
+                + "orphaned-Feature cleanup then deletes them - over one mistyped path in the settings.");
         }
 
         [Test]
