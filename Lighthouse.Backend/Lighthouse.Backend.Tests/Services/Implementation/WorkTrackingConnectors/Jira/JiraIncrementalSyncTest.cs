@@ -52,6 +52,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string AQueryTheOperatorOrdered = "project = PROJ ORDER BY created DESC";
         private const string TheSameQueryWithoutItsOrdering = "(project = PROJ) AND";
 
+        private const string AnOrderingAndNothingElse = "ORDER BY rank ASC";
+        private const string TheTypeFilterOnItsOwn = "(issuetype = \"Story\")";
+
         private static readonly string[] TheDataCenterSearchPathOnly = [DataCenterSearchPath];
         private static readonly string[] TheTwoKeysAskedFor = ["PROJ-1", "PROJ-3"];
 
@@ -145,6 +148,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(jql, Does.StartWith(TheSameQueryWithoutItsOrdering),
                     $"What is left has to still be the operator's filter, with its brackets closed. Asked for: {jql}");
             }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_LeavesNoEmptyFilterWhenTheTeamsQueryIsNothingButAnOrdering()
+        {
+            var jql = await TheQueryJiraIsAskedFor(AnOrderingAndNothingElse);
+
+            AssertJiraCanParseTheWholeFilter(jql);
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_LeavesNoEmptyFilterWhenThePortfoliosQueryIsNothingButAnOrdering()
+        {
+            var jira = new JiraStub(Cloud);
+            var subject = CreateSubject(jira.Handler);
+            var portfolio = CreatePortfolio(CreateTeam());
+            portfolio.DataRetrievalValue = AnOrderingAndNothingElse;
+
+            await subject.GetFeaturesForProject(portfolio);
+
+            AssertJiraCanParseTheWholeFilter(QueryValue(jira.SearchRequests.Last(), "jql"));
         }
 
         [TestCase("summary ~ \"reorder by priority\"")]
@@ -890,6 +914,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         private static List<string> TheTokensTheSweepAskedFor(JiraStub jira)
             => jira.SearchRequests.ToList().ConvertAll(uri => QueryValue(uri, "nextPageToken"));
+
+        /// <summary>
+        /// What has to hold of every query Lighthouse builds: Jira parses it. An empty bracket pair is the shape
+        /// worth naming, because a query that consists only of an ordering clause - valid JQL, and a plausible
+        /// saved-filter value - leaves nothing to wrap. Should Jira read the empty pair as "matches nothing"
+        /// rather than rejecting it, the sweep reports no records at all, and removal is "stored minus swept":
+        /// every stored record for that team or portfolio goes.
+        /// </summary>
+        private static void AssertJiraCanParseTheWholeFilter(string jql)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Does.Not.Contain("()"),
+                    $"An empty filter is not the operator's filter, and Jira owes no answer to it. Asked for: {jql}");
+                Assert.That(jql.Count(character => character == '('), Is.EqualTo(jql.Count(character => character == ')')),
+                    $"Jira rejects an unbalanced query outright, and the team then fetches nothing at all. Asked for: {jql}");
+                Assert.That(jql, Does.StartWith(TheTypeFilterOnItsOwn),
+                    "Dropping the empty pair may not take the filters hung off it with it, and what is left may not "
+                    + $"open on a dangling conjunction. Asked for: {jql}");
+            }
+        }
 
         private static string QueryValue(Uri uri, string name)
         {

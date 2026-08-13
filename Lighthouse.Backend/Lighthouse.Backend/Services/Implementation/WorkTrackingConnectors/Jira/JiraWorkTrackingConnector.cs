@@ -1667,8 +1667,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var workItemsQuery = PrepareGenericQuery(owner.WorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
             var stateQuery = PrepareGenericQuery(owner.AllStates, JiraFieldNames.StatusFieldName, "OR", "=");
             var cutoffDateFilter = PrepareCutoffDateFilter(owner.DoneItemsCutoffDays);
+            var configuredFilter = RemoveOrderByClause(owner.DataRetrievalValue);
+            var lighthousesOwnFilters = $"{workItemsQuery} {stateQuery} {cutoffDateFilter}";
 
-            return $"({RemoveOrderByClause(owner.DataRetrievalValue)}) {workItemsQuery} {stateQuery} {cutoffDateFilter}";
+            return string.IsNullOrWhiteSpace(configuredFilter)
+                ? WithoutTheLeadingConjunction(lighthousesOwnFilters)
+                : $"({configuredFilter}) {lighthousesOwnFilters}";
+        }
+
+        /// <summary>
+        /// A query that is nothing but an ordering clause - valid JQL, and a plausible thing to find in a saved
+        /// filter - has nothing left once the ordering comes off, and there is then no filter of the operator's
+        /// to wrap. Wrapping it anyway writes an empty bracket pair, and what Jira does with one is not knowable
+        /// from here: reading it as "matches nothing" would make the sweep report no records, and removal is
+        /// "stored minus swept", so every stored record for that team or portfolio would be deleted. Leaving the
+        /// pair out asks the question Lighthouse's own filters ask and nothing more, which at worst over-fetches.
+        /// </summary>
+        private static string WithoutTheLeadingConjunction(string filters)
+        {
+            const string conjunction = "AND ";
+            var withoutLeadingSpace = filters.TrimStart();
+
+            return withoutLeadingSpace.StartsWith(conjunction, StringComparison.Ordinal)
+                ? withoutLeadingSpace[conjunction.Length..]
+                : withoutLeadingSpace;
         }
 
         private static string PrepareCutoffDateFilter(int cutOffDays)
