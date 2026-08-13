@@ -1000,11 +1000,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var subject = CreateSubject();
 
-            Assert.That(async () => await subject.UpdateFeaturesForPortfolio(portfolio), Throws.Exception);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await subject.UpdateFeaturesForPortfolio(portfolio), Throws.Exception);
 
-            Assert.That(portfolio.Features, Has.Count.EqualTo(1),
-                "Membership is rebuilt from what the query still returns, so a fetch that threw would strip "
-                + "every claim - and a Feature no portfolio claims is deleted outright by the orphan cleanup.");
+                Assert.That(portfolio.Features, Has.Count.EqualTo(1),
+                    "Membership is rebuilt from what the query still returns, so a fetch that threw would strip "
+                    + "every claim - and a Feature no portfolio claims is deleted outright by the orphan cleanup.");
+            }
         }
 
         [Test]
