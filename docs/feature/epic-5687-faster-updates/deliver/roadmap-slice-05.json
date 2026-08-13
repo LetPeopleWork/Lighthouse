@@ -1,0 +1,404 @@
+{
+  "roadmap": {
+    "project_id": "epic-5687-faster-updates",
+    "created_at": "2026-08-11T14:33:58Z",
+    "total_steps": 13,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-05-fetch-fingerprint",
+    "ado": "Epic #5687 / Story #5728 (Active)",
+    "goal": "Lighthouse decides for itself whether a settings edit changed what gets fetched. A hash over thirteen properties - what the query asks the tracker for UNION how the answer is read into the stored record - is written at the end of every cycle and compared at the start of the next one; a mismatch makes the next cycle `mode=full` and the summary line says `reason=configuration-changed`. Everything outside the set costs no remote call at all. The same thirteen properties also become the ONE list the save-time purge decision reads, and that purge narrows from five triggers to one: a connection change, the only edit `removed = stored - fetched` cannot reconcile. Ungated - with delta off the fingerprint is inert, not inactive.",
+    "absorbed_steps": [
+      "03-01 -> 02-01: scenarios 15 and 17 were mutually unverifiable with the fingerprint wiring. Narrowing alone leaves scenario 15 red on the mode (storage survives with stamps, so Delta); wiring alone leaves it red on the history (the purge takes it). Both landed together in e0f5cba90, with scenarios 1, 15 and 17 green and a litmus inversion recorded. Scenario 17 passed on the wiring alone - the portfolio has no purge to narrow - so it is a guard, not new work."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "Sentinel (nw-acceptance-designer-reviewer) 2026-08-11: APPROVED, 0 blockers / 0 high / 0 low. Coverage table verified - all 17 scenarios (47 cases) plus both guards claimed exactly once, zero orphans. All four sequencing deviations from the DISTILL Handoff verified against the RED table and the controller source and upheld. Both architectural claims (Portfolio-only field reach; drop-claims-not-rows) verified. Orchestrator mechanical gate: 6/6 checks pass, decomposition 1.27, des-verify-integrity --roadmap-only exit 0.",
+    "approved_at": "2026-08-11",
+    "reviewed_at": "2026-08-11",
+    "notes": "Mechanical gate: 14 steps, all ids match ^\\d{2}-\\d{2}$ inside the scaffold's four phases (no phase renumbered), every step carries a test_file, a scenario_name and a non-empty files_to_modify, the dependency chain is strictly linear 01-01 -> 04-04, and no criterion names a private method. Decomposition: 14 steps over 12 distinct files = 1.17 (ceiling 2.5). No step authors an acceptance test - DISTILL owns all 49 specifications (ADR-025) and every step's job is to un-ignore and implement. Two steps author crafter-owned UNIT tests, which is allowed: 01-02 creates FetchFingerprintTest.cs for the pure hash. Coverage - all 17 acceptance scenarios plus both guards are claimed exactly once: G2 by 01-01, 8 by 01-03, 1 by 02-01, 11 by 02-02, 2 by 02-03, 15+17 by 03-01, 14+16 by 03-02, 3 by 03-03, 5+6+7 by 03-04, 4 by 04-01, 12+13 by 04-02, 9+10 by 04-03, G1 by 04-04. Batching: 03-04 takes scenarios 5, 6 and 7 as one step rather than three, because three separate steps would carry an identical AC structure (edit X, request unchanged, whole query downloaded) - the decomposition rule forbids that shape at 3+. ONE DELIBERATE DIVERGENCE FROM THE DISTILL HANDOFF'S SUGGESTED ORDER, and it is the reason this roadmap is not a transcription of it. The Handoff puts scenarios 5, 6, 7 at step 5 and the purge narrowing at step 6. Scenarios 5 and 6 cannot go green in that order: both assert ThenTheTeamKeptTheHistoryItRecorded BEFORE the refresh, and today a state or state-mapping edit trips WorkItemRelatedSettingsChanged and purges the team's work items and their transitions (TeamController.UpdateTeam:178). DISTILL knew this - it is why the gate re-shaped 5 and 6 in the first place ('Two wrong-reason greens found by the gate and fixed') - but the ordering was not updated to match. The same argument applies one step earlier: six of scenario 3's eight cases (query, types, the three state columns, state mappings) download fully TODAY because of the purge, so taking scenario 3 before the narrowing means writing the fingerprint against six tests that would go green whether or not the fingerprint works. So the narrowing (03-01, 03-02) lands BEFORE the widened set (03-03, 03-04). The two orderings the brief names as load-bearing are preserved exactly: the registries and For(...) land first (01-01, 01-02), and 15/17 precede 14/16 (03-01 before 03-02). A second, smaller divergence: the Handoff pairs scenario 11 with 8 at its step 2, but 11 needs the stored-vs-computed comparison wired at WorkItemService.cs:122, which is the Handoff's step 3 - so 11 moves to 02-02, immediately after the wiring it depends on. Note on the test-paradigm mandate: NONE is emitted. This is C#/.NET, not the Python pilot - docs/architecture/atdd-infrastructure-policy.md records that Hypothesis, state-delta Universes, assert_state_delta and __SCAFFOLD__ do not apply to this repo; the C# row of the polyglot matrix governs, [Ignore] is the skip marker, and the crafter's own tests are NUnit, example-based or [TestCaseSource], with Moq at the connector boundary. Slice 02's and slice 03's roadmaps carry none either."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-5687-faster-updates/feature-delta.md - every `## Wave: DISTILL ... - slice 05` section, in particular Scenario List, RED Classification, Wave Decisions Summary (DT5-1 ... DT5-16), Upstream Issues 1-6 and Handoff",
+    "slice_brief": "docs/feature/epic-5687-faster-updates/slices/slice-05-fetch-fingerprint.md, including the 2026-08-09 amendment (A2), `Behaviour change this slice ships` and `Known limitation this slice does not close`",
+    "adr": "docs/product/architecture/adr-140-fetch-fingerprint-on-the-config-aggregate.md - the Decision section is the authoritative property list; adr-138 (mode resolution) and adr-139 (per-connection probe) are the other two inputs to the same decision",
+    "prior_slice_roadmap": "docs/feature/epic-5687-faster-updates/deliver/roadmap-slice-03.json",
+    "ci_ledger": "docs/ci-learnings.md",
+    "atdd_policy": "docs/architecture/atdd-infrastructure-policy.md",
+    "scenarios": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintSpecifications.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs"
+    ]
+  },
+  "out_of_scope": [
+    "ANY new EF migration. The US-08 precursor already landed (commit 31b94e13a): `WorkTrackingSystemOptionsOwner.FetchFingerprint` (`string?`) plus `20260811130742_AddFetchFingerprintToQueryOwners` (Sqlite) and `20260811130752_AddFetchFingerprintToQueryOwners` (Postgres), both additive and expand-only, both verified present on disk. Do NOT run `Create-Migration.ps1` - it needs Docker and a second migration for the same column is a schema conflict. If a step believes it needs a new column on `Teams` or `Portfolios`, STOP and flag it: it would also need a row in `Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs` or six migration tests across `DeliveryMetricSnapshotDayKeyMigrationTests` and `BlockedRuleSetMigrationTests` go red for a reason unrelated to the change (DISTILL upstream issue 5)",
+    "A `Reason` column on `RefreshLog` (DT5-8). AC-5.2 is a promise about the operator's LOG LINE. The persisted row is read by nothing that needs the token, and a second migration to carry it is schema for its own sake. `ThenTheRefreshReported(...)` asserts Mode / RecordsScanned / RecordsFetched / Success and nothing else",
+    "Changing `SyncModeResolver.Resolve`'s signature. It ALREADY takes `bool fetchShapeChanged` and ALREADY returns `SyncMode.Full` when it is true - verified in `Services/Implementation/WorkItems/SyncModeResolver.cs`. The seam is complete. DELIVER fills the three call sites where the argument is hard-coded `false`, and adds no branch",
+    "Detecting a connection's `AdditionalFieldDefinitions` change at save time. A team or portfolio settings DTO carries no field definitions, so this is structurally impossible, permanently (DISTILL upstream issue 2, ADR-140 Consequences). Only the sync-time fingerprint sees that edit; scenario 7 is the proof. A step that tries to detect it in a controller is chasing something that cannot exist",
+    "Connection IDENTITY. `WorkTrackingSystemConnection.Options` carries the instance URL, so re-pointing a connection at a different Jira is the same hazard as moving an entity to a different connection. It is on the guard's exclusion list with the reason attached, accepted as a residual in ADR-140, and no acceptance criterion in this epic names it. Do not widen the hash to cover it - that buys the URL case at the price of making every credential rotation a full re-download",
+    "Blocked rules in the fingerprint. Answered NO by the slice's own criterion: `blockedItemService.IsBlocked(workItem, team)` (WorkItemService.cs:290,293) reads the STORED item, so re-deriving needs no remote call. The real gap - the delta loop only visits downloaded items, so a rule edit does not re-open a quiet item's spell - belongs to the ADR-141 / DDD-4 derivation pass, not here. Recorded in the slice brief under `Known limitation this slice does not close`",
+    "Triggering an update on save, a manual `Force full refresh` action, per-field granularity, and any UI. All four are OUT in the slice brief; D3 makes the manual action unnecessary and its presence would imply the automatic path is not trusted",
+    "Any new opt-in or gate. A2 is not gated by A1: the fingerprint ships plain. With delta off its only output (`the next cycle is mode=full`) is what already happens, so it is inert rather than inactive",
+    "The dogfood measurement, which is NOT automated and is NOT a step. On `:5169` with real recorded history: change a team's query and watch the next cycle log `mode=full | reason=configuration-changed`; then add a wait state and watch it log `mode=delta | fetched=0`. Two log lines, same day, and they are the acceptance for KPI-4. It goes in the Verdict section of the slice brief, alongside slice 02's still-owed AC-2.8 reading and slice 03's rollup premise check. Maintainer-owned",
+    "The release note. Narrowing the purge is a user-visible behaviour change nobody wrote down: today a team query edit deletes that team's stored work items and their whole transition history, after this slice it does not. The note belongs to whoever cuts the release; the slice brief's `Behaviour change this slice ships` section is the flag that it is owed"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "One list, one hash, one column",
+      "description": "The SSOT the rest of the slice points at, built bottom-up and landed before anything consumes it. `FetchFingerprint` ships from DISTILL as a real type with EMPTY registries and a throwing `For(...)` (DT5-5) - deliberately, because an empty registry is what makes guard G2 a genuine red rather than a table agreeing with itself. Fill the registries first (01-01), so every later step has one place to point at and one test that fails when the pointing goes stale; then the hash itself as a pure function with its own unit test (01-02); then persistence, so a cycle records what it asked for (01-03). Nothing in this phase changes what any cycle downloads: the three `fetchShapeChanged: false` literals are still hard-coded, so the column fills and behaviour is unchanged. That is on purpose - it means the hash can be got wrong and corrected without a single scenario's mode assertion moving.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The two registries, filled from the decision table",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs",
+          "scenario_name": "TheSaveTimeDecisionAndTheFingerprintReadTheSamePropertySet",
+          "criteria": [
+            "`FetchFingerprint.RegisteredProperties` holds exactly the thirteen property names the guard's decision table marks `AFullDownload` or `AFullDownloadAndAFreshStart` - no more and no fewer",
+            "`FetchFingerprint.PropertiesThatAlsoCostAFreshStart` holds exactly one name, `WorkTrackingSystemConnectionId`",
+            "Guard G2 runs un-ignored and green in this commit",
+            "Guard G1 stays `[Ignore]`d - it is the last step of the slice, on purpose",
+            "No acceptance scenario is un-ignored in this commit, and the suite reports zero failures"
+          ],
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs"
+          ],
+          "implementation_notes": "AC-5.4 / DT5-1 / DT5-5 / DT5-6, contract shape `pure-function`. HOW I WILL VERIFY THIS RUN, READ THIS FIRST: the shared `.nwave` execution log accumulates across the whole epic and slices 01, 02 and 03 all restarted numbering at `01-01`, so the log already holds three prior sets of events for these ids. Every step's COMMIT will be verified by TIMESTAMP - it must post-date this roadmap's `created_at` (2026-08-11T14:33:58Z) - not by id alone. Do not assume a step is done because an event with its id exists. THE THIRTEEN, copied off `WhatEachPropertyCosts` in the guard file, which is the authoritative table and is already written: DataRetrievalValue, WorkItemTypes, DoneItemsCutoffDays, ToDoStates, DoingStates, DoneStates, StateMappings, ParentOverrideAdditionalFieldDefinitionId, FeatureOwnerAdditionalFieldDefinitionId, SizeEstimateAdditionalFieldDefinitionId, AdditionalFieldDefinitions, WorkTrackingSystem, WorkTrackingSystemConnectionId. Do NOT retype them from AC-5.1 - AC-5.1 names seven, and the 2026-08-11 maintainer decision widened it to thirteen (`request shape UNION response interpretation`); the guard file is where the widened set and the reason for every row already live. Derive the two registries FROM the enum values if you like, but do not import the guard's table into production: it is a test artefact and G2 exists precisely to compare two independently-written lists. DO NOT touch `For(...)` in this step - it stays throwing, which is what keeps 01-02 a real red. Three things not to re-derive. (1) `AllStates` is a `Union` over the three state columns, which is why they are registered SEPARATELY and `AllStates` is on the exclusion list; a fingerprint over the union cannot see a state moving between columns and scenario 6 is what fails if you collapse them. (2) `GetRawStatesForCategory` (`Models/WorkTrackingSystemOptionsOwner.cs:104`) resolves a mapping BY NAME from the category list, so a mapping rename falls through to the literal and moves `AllStates` anyway - the genuinely invisible edit is a RE-ASSIGNMENT of the same raw states across different mappings, which is why `StateMappings` is registered and scenario 5 is the test. (3) `AdditionalFieldDefinitions` and `WorkTrackingSystem` live on the CONNECTION, not on the entity, and are permanently invisible to the save-time consumer - G2 asserts the SET, not that both consumers can reach every member (DISTILL upstream issue 2). Gates before commit: `cd Lighthouse.Backend && dotnet build` with zero warnings (`TreatWarningsAsErrors` makes any warning a failure) and `dotnet test` green. Baseline is 4786 passed / 49 skipped / 0 failed; this step takes the skipped count to 48 and nothing may fail. That 49 is a count of CASES, not of methods - four of the seventeen scenarios are table-driven - so later steps drop the skip count by eight, ten and sixteen at a time; each step's notes carry its own expected figure. Known flakes, not regressions: `JiraWriteBackTest.WriteDate_DifferentDate_...` under full-suite load (live-Jira index lag - passes when run alone) and `ReleaseService` failing in a block of exactly ten (contention - re-run that class alone). Preflight before push, the mandatory block at the head of docs/ci-learnings.md: `cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`. Exit code 2 means findings; the repo carries ~35 pre-existing hits (almost all CA1861 in generated EF migration files). Filter with `{ git diff --name-only <base>; git status --porcelain | awk '{print $2}'; } | grep '\\.cs$' | sort -u` - `git diff` alone never lists an untracked file, so a filter built on it reports clean for a change made of new files."
+        },
+        {
+          "id": "01-02",
+          "name": "The hash itself, order-insensitive and total",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintTest.cs",
+          "scenario_name": "FetchFingerprint.For reads the thirteen registered properties and nothing else, order-insensitively (crafter-authored NUnit unit test - no acceptance scenario can see the pure function directly)",
+          "criteria": [
+            "`FetchFingerprint.For(queryOwner)` returns a non-empty string for a Team and for a Portfolio, and no longer throws",
+            "Two query owners differing only in the ORDER of a registered collection produce the same string",
+            "Changing any ONE of the thirteen registered properties produces a different string - one case per property, table-driven",
+            "Changing a representative property from each excluded group in the guard's table produces the SAME string",
+            "The function reads the connection the owner points at, not only the owner: adding a field definition to the connection changes the string while every property of the owner stays put",
+            "It stays a pure static - no repository, no clock, no new `WorkItemService` constructor dependency",
+            "Guard G2 stays green: filling `For(...)` must not move either registry"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintTest.cs"
+          ],
+          "implementation_notes": "AC-5.1 (widened) / ADR-140's Decision section, contract shape `pure-function`. THE ONE DESIGN QUESTION DISTILL'S SCAFFOLD DOES NOT ANSWER, and it will bite at 04-01 if it is ducked here: the scaffolded signature is `For(IWorkItemQueryOwner queryOwner)`, and that interface reaches only TWELVE of the thirteen groups. `Models/IWorkItemQueryOwner.cs` exposes DataRetrievalValue, WorkItemTypes, ToDoStates, DoingStates, DoneStates, StateMappings, DoneItemsCutoffDays and ParentOverrideAdditionalFieldDefinitionId, and it inherits WorkTrackingSystemConnectionId + WorkTrackingSystemConnection from `IWorkTrackingSystemOptionsOwner` (which is where the connection's AdditionalFieldDefinitions and WorkTrackingSystem are reachable). `FeatureOwnerAdditionalFieldDefinitionId` and `SizeEstimateAdditionalFieldDefinitionId` are declared on `Portfolio` (`Models/Portfolio.cs:19,21`) and on NOTHING the interface can see. Resolve it with a pattern match inside `For` (`if (queryOwner is Portfolio portfolio) { ... }`) - one entry point, one registry, and G2 keeps pinning it. Do NOT widen `IWorkItemQueryOwner` with portfolio-only members (Team implements it too, and the members would be dead surface on the team half) and do NOT add a `For(Portfolio)` overload: two entry points make G2's single registry stop meaning one function, and S4136 is error-severity in this repo. If you skip this, scenario 4's `which field names the owning team` and `which field carries the size estimate` cases are the two that go red at 04-01, and they will read as a portfolio-wiring bug rather than a reach bug. Hashing: collections hash ORDER-INSENSITIVELY (ADR-140), which for `StateMappings` means order-insensitive over the mappings AND over each mapping's `States` - scenario 8 reverses WorkItemTypes and all three state columns, and `TeamExtensions.StateMappingsChanged` is index-wise today, so do not copy that comparison's shape. `AdditionalFieldDefinitions` is a `List<AdditionalFieldDefinition>`, so project it to a stable, order-insensitive rendering of the fields that decide what is requested and stored, not to object identity or EF ids alone. Verified so you do not have to: BOTH `TeamRepository.GetAll` (`:21-26`) and `PortfolioRepository.GetAllProjectsWithIncludes` (`:63-65`) eagerly `Include` the connection with its `AdditionalFieldDefinitions`, so the sync scope really can see them - scenario 7 is not going to fail on a missing EF include. The hash must be STABLE across processes and releases: no `GetHashCode()` on strings or collections (randomised per process in .NET, so the stored fingerprint would mismatch after every restart and every cycle would be full forever) and no `Guid`/timestamp in the input. A rendered, sorted, delimited string run through a deterministic digest is the shape. Watch the column: `FetchFingerprint` is `string?` on `WorkTrackingSystemOptionsOwner` with no length constraint declared, so keep the output short and fixed-width rather than storing the rendered input. Tests are NUnit, example-based, `[TestCaseSource]` for the thirteen `changes the hash` cases; Moq is not needed here - the function takes entities, not ports. New test file, so the analyzer filter MUST union `git status --porcelain` (ci-learnings recurrence 3: seven new violations in one brand-new test file went unread because `git diff` cannot see it). Preflight and gates exactly as in 01-01; expect skipped to stay at 48 and passed to rise."
+        },
+        {
+          "id": "01-03",
+          "name": "A cycle records what it asked for",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "Re_saving_the_same_states_in_a_different_order_costs_no_download",
+          "criteria": [
+            "After a team refresh completes, the team's stored fetch fingerprint is present and non-empty",
+            "After a portfolio refresh completes, the portfolio's stored fetch fingerprint is present and non-empty",
+            "Re-saving the same work item types and the same three state columns in a different order leaves the stored fingerprint byte-identical, and that cycle downloads nothing and reports Delta with 3 scanned / 0 fetched",
+            "The fingerprint is written on the path that produces the cycle's outcome, so a cycle that threw before completing its fetch leaves the previous value in place",
+            "The value written is the one computed for THIS cycle's configuration - computed once per cycle, not once per phase"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.1 (the storage half) / ADR-140, contract shape `bounded-change` (declared mutation: one nullable column per entity per cycle). DISTILL's recorded red for scenario 8 is the POSITIVE CONTROL, not the mode: `Assert.That(before, Is.Not.Null.And.Not.Empty)` inside `ThenTheTeamsFingerprintIsUnchangedBy` - with nothing stored, `the fingerprint did not change` compared null to null and passed, which is the vacuous assertion the gate caught and fixed. So this step is red on `nothing was ever recorded`, and the order-insensitivity claim only becomes real once it is green. THE ASYMMETRY THAT WILL COST YOU AN HOUR IF YOU ASSUME SYMMETRY: the portfolio's sync-owned write is `portfolio.RefreshUpdateTime()` at `WorkItemService.cs:44`, inside `UpdateFeaturesForPortfolio` - the fingerprint write belongs right beside it, and ADR-140's whole argument is that `UpdateTime` already proves a sync write to a concurrency-tokened config aggregate is safe here (`RegenerateConcurrencyTokens` rotates only for `EntityState.Added`, `LighthouseAppContext.cs:572-579`). The TEAM has no such line in `WorkItemService`: `team.RefreshUpdateTime()` lives in `TeamMetricsService.cs:785`, which runs AFTER `UpdateWorkItemsForTeam` inside `TeamDataService.UpdateTeamData`. Do not move it and do not put the fingerprint there - metrics is the wrong home for a fetch decision. `WorkItemService` already injects `IRepository<Team> teamRepository` (constructor arg 6), so the team write needs no new dependency; make sure it is actually SAVED - the harness reads the column back through `IRepository<Team>.GetById` in a FRESH scope (`FasterUpdatesAcceptanceTest.cs:972-982`), so an in-memory assignment that never reaches the database will fail the assertion while looking correct in the debugger. Compute the fingerprint ONCE per cycle and use the same value for the comparison (02-01) and the write: recomputing between them is harmless today but makes a later reader believe the two can differ. Do NOT write the fingerprint from the parent-Feature path (`ResolveRemoteParentFeatureFetch`, `:1008`) - parents share the portfolio's fingerprint and a second write there would be the same value twice, or worse, a different one. Do NOT touch the three `fetchShapeChanged: false` literals in this step: this commit must leave every mode assertion in the whole suite exactly where it was, which is what makes it safe to correct the hash afterwards. No model change here, therefore no migration - the column landed with the precursor (31b94e13a). Preflight and gates as in 01-01; skipped goes 48 -> 47."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The next cycle acts on it, and the operator reads why",
+      "description": "The three `fetchShapeChanged: false` literals get filled and the summary line gains its one new token. Order inside the phase is the Handoff's, with one correction: the walking skeleton (scenario 1) comes before the upgrade case (scenario 11), because 11 needs the same stored-vs-computed comparison the skeleton installs and the Handoff paired it one step too early. The reason token lands LAST in this phase and not with the wiring, because its only real constraint is negative - scenario 11 asserts the reason is ABSENT on a cycle that is full for a different cause, and that assertion cannot fail until something is capable of printing it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "01"
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A query edit makes the next refresh download everything again",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "A_query_edit_makes_the_next_refresh_download_everything_again",
+          "criteria": [
+            "A cycle compares the stored fingerprint against the one computed from the entity's current configuration, and hands the answer to the existing mode decision",
+            "After a query edit, the next team cycle issues exactly one whole-query download and no by-reference-id fetches, and reports Full with 3 scanned / 3 fetched",
+            "The team's stored fingerprint is refreshed to the new configuration by that cycle",
+            "All three hard-coded call sites are filled in this commit - the team fetch, the portfolio Feature fetch and the parent-Feature fetch - so no path is left permanently blind",
+            "The parent-Feature path uses the portfolio's own answer, not a second comparison of its own",
+            "Every scenario green before this step stays green"
+          ],
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.1 / AC-5.2, the walking skeleton - a non-technical stakeholder can confirm this is the thing being bought. DO NOT CHANGE `SyncModeResolver`. Verified in `Services/Implementation/WorkItems/SyncModeResolver.cs`: `Resolve(bool operatorAskedForTheCheaperRefresh, bool trackerCanBeScanned, IReadOnlyCollection<WorkItemBase> storedWorkItems, bool scanSucceeded, bool fetchShapeChanged)` already takes the parameter and already returns `SyncMode.Full` when it is true, ahead of the `nothing stored` and `nothing stamped` branches. The seam is complete; fill it. THE THREE LITERALS, verified line by line: `WorkItemService.cs:122` in `ResolveRemoteFetch` (team), `:799` in `ResolveRemoteFeatureFetch` (portfolio Features), `:1022` in `ResolveRemoteParentFeatureFetch` (parent Features). The slice brief's `:1008+` is the METHOD DECLARATION, not the literal - DISTILL upstream issue 6 corrected it and this roadmap has re-verified it. Fill ALL THREE here rather than one per phase. The fingerprint lives on `WorkTrackingSystemOptionsOwner`, the shared base both Team and Portfolio inherit (DDD-3, DESIGN changed-assumption 2), so `stored != computed` is ONE expression written once and asked of whichever entity is in hand - splitting it across phases would mean writing the same three lines three times and leaving two paths blind in between. This is also what makes 03-01's scenario 17 and 04-01's scenario 4 largely verification steps rather than new work, and that is deliberate. The parent path (`:1022`) is asked about the SAME portfolio as `:799`, so pass the portfolio's answer down rather than recomputing: `ResolveRemoteParentFeatureFetch` already takes the portfolio. Ordering inside the resolve: the opt-in must still terminate the decision BEFORE any remote call (AC-2.10 / A1 - slice 03's 04-02 is the guard that proves it), so compute the fingerprint comparison where it cannot make an unvolunteered cycle reach the tracker. It is a local comparison of data already in hand, so it costs nothing to do it after the opt-in check. Do NOT add a branch to `SyncModeResolver` and do NOT add a `SyncMode` value: the mode stays Full/Delta and the REASON is a separate concern that arrives in 02-03. Scenario 11 stays `[Ignore]`d until 02-02 even though this step probably makes it pass - taking it in its own commit is what records the transition. Preflight and gates as in 01-01; skipped goes 47 -> 46."
+        },
+        {
+          "id": "02-02",
+          "name": "An instance that never recorded a fingerprint downloads everything",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "An_instance_that_upgraded_into_this_release_downloads_everything_on_its_first_refresh",
+          "criteria": [
+            "A team whose stored work already carries remote change stamps but whose fingerprint was never recorded runs its next cycle Full, with one whole-query download and 3 scanned / 3 fetched",
+            "That cycle records a fingerprint, so the cycle after it can be cheap",
+            "The summary line for that cycle does NOT name a configuration change - this cycle is full because nothing was ever recorded, not because anybody edited a setting",
+            "No stored fingerprint is treated as `unchanged`: ambiguity resolves to the expensive answer"
+          ],
+          "deps": [
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.5 / D8, contract shape `bounded-change`. This step may need NO production change beyond 02-01 - a null stored fingerprint is a mismatch, and a mismatch is Full. Un-ignore it and RUN it; if green, record the run in the commit message rather than inventing work. What it is actually guarding is the tempting shape `if (stored is null) return false; // nothing to compare` - which is safe-looking and is exactly the bug D8 exists to forbid: an upgraded instance would run delta against nothing and serve whatever the previous release stored, forever. DT5-10 explains why this scenario can fail for the right reason at all: `GivenTheTeamsWorkWasStoredByAReleaseThatKnewNothingOfFingerprints` seeds work that ALREADY CARRIES remote change stamps, so slice 02's `any stored record without a stamp resolves to Full` branch cannot be what makes the cycle full - the only thing missing is the fingerprint. Do not `simplify` the seeding. The third criterion is currently vacuous and becomes real in 02-03: `ThenTheOperatorIsNotToldConfigurationIsWhy` asserts `Does.Not.Contain(\"configuration-changed\")`, and nothing prints that token yet. RE-RUN THIS SCENARIO AT 02-03 - it is the assertion that stops the reason from being printed unconditionally whenever the mode is Full, and it is the reason 02-03 has to distinguish `never recorded` from `changed`. DISTILL already ran an absence-assertion audit over this fixture and fixed scenario 11 by adding `ThenTheOperatorSeesAFullUpdate(3, 3)` before the absence claim, so the line it reads is already proven to carry mode, scanned and fetched (DT5-16). Do not remove it as redundant. Preflight and gates as in 01-01; skipped goes 46 -> 45."
+        },
+        {
+          "id": "02-03",
+          "name": "The operator is told that configuration is why",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "The_operator_is_told_that_a_configuration_change_is_why_everything_was_downloaded",
+          "criteria": [
+            "A cycle that ran Full because the fingerprint changed prints the token `reason=configuration-changed` on its one summary line",
+            "A cycle that ran Full because nothing was ever recorded does NOT print that token - scenario 11 re-run and green in this same commit",
+            "The token rides on the same summary line as mode, scanned, fetched, duration and success, and the other five tokens are unchanged",
+            "The persisted refresh log row gains no new field",
+            "The reason travels from where the mode is decided to where the line is written, without a second decision being made at the log site"
+          ],
+          "deps": [
+            "02-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SyncOutcome.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.2 / DT5-8 / the amended Summary-Line Contract. THE LOAD-BEARING CONSTRAINT, and the one a fast implementation gets wrong: `reason=configuration-changed` must be printed when the fingerprint CHANGED and must NOT be printed when there was never one. Both are `stored != computed` if you write the comparison naively, and scenario 11's `ThenTheOperatorIsNotToldConfigurationIsWhy` (`Does.Not.Contain(\"configuration-changed\")`) is what fails. So the mode input stays one boolean (`fetchShapeChanged`, true in both cases - D8's expensive answer) while the reason distinguishes them: `null stored` is `no reason`, `stored and different` is the configuration reason. Un-ignore scenario 2 AND re-run scenario 11 in this same commit; if 11 goes red here the reason is being derived from the mode rather than from the cause. Where the token rides: `Models/SyncOutcome.cs` is `public sealed record SyncOutcome(SyncMode Mode, int RecordsScanned, int RecordsFetched)`, constructed POSITIONALLY in several places and returned all the way from `WorkItemService` through `ITeamDataService`/`IWorkItemService` to both updaters. It is a shared contract, so extend it the way CLAUDE.md asks: add an optional `init` member with a default rather than a fourth positional parameter, so every existing construction site - including `SyncOutcome.None` - keeps compiling untouched and the blast radius stays at the two updaters plus `LogUpdateSummary`. Grep for `SyncOutcome` before you edit it. `UpdateServiceBase.LogUpdateSummary` (`:59-64`) is the ONE place the line is written, for both entities - do not add a second log call in either updater. Field ORDER is not asserted: the specifications use `Does.Contain` per token (`ModeField`, `ScannedField`, `FetchedField`, `ReasonField` are separate constants), so put `reason=` wherever it reads best; do NOT print an empty `reason=` when there is no reason, because `ThenTheOperatorIsNotToldConfigurationIsWhy` only forbids the VALUE but a bare `reason=` is noise on every line the epic just cleaned up. `RefreshLog` gains NO `Reason` column (DT5-8) - `ThenTheRefreshReported` asserts Mode, RecordsScanned, RecordsFetched and Success and nothing else, and a second migration to persist a token nothing queries is schema for its own sake; both updaters build their `RefreshLog` in a `finally` and those blocks stay as they are. `configuration-changed` is the ONLY reason value this slice needs. Stryker: the summary-line template already carries `Stryker disable once all` comments on its neighbouring Debug traces because slice 01 pinned the wording here - do not add the token to a trace line, add it to the pinned summary. Preflight and gates as in 01-01; skipped goes 45 -> 44."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "A save stops throwing away history - and only then can the widened set be measured",
+      "description": "The phase that diverges from the DISTILL Handoff's suggested order, deliberately. The Handoff puts the widened set (scenarios 3, 5, 6, 7) before the purge narrowing; that order cannot work. Scenarios 5 and 6 assert `the team kept the history it recorded` BEFORE the refresh, and today a state or state-mapping edit trips `TeamExtensions.WorkItemRelatedSettingsChanged`, so `TeamController.UpdateTeam:178` deletes every stored work item for the team and the cascade on `WorkItemStateTransition.WorkItemId` takes the history with it. Worse, six of scenario 3's eight cases download the whole query TODAY for exactly that reason - the team has nothing stored, so the resolver answers Full without the fingerprint being consulted at all. Taking the widened set first therefore means writing the fingerprint against six tests that go green either way: the same wrong-reason-green the DISTILL gate caught twice in this fixture. So the purge narrows first (03-01, 03-02), and the widened set is measured against a save that no longer answers the question by deleting the evidence (03-03, 03-04). Within the narrowing, the Handoff's own ordering is load-bearing and preserved: the DON'T-purge half (15, 17) before the DO-purge half (14, 16), because 14 passes today and taking it first would mean writing the narrowing against a test that cannot see it.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "02"
+      ],
+      "steps": [
+        {
+          "id": "03-02",
+          "name": "A connection change starts from nothing, on both entities",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "A_team_that_moves_to_a_different_connection_starts_from_nothing + A_portfolio_that_moves_to_a_different_connection_starts_from_nothing",
+          "criteria": [
+            "Moving a team to a different connection leaves that team with no stored work items and no stored transitions for them, and the next cycle reports Full with 3 scanned / 3 fetched",
+            "Moving a portfolio to a different connection leaves the portfolio claiming no Features, and the next cycle reports Full with 3 scanned / 3 fetched",
+            "A Feature another portfolio still claims survives the move - the moving portfolio drops its claim, it does not delete somebody else's row",
+            "Scenarios 15 and 17 are re-run in this commit and stay green: the narrowing did not narrow too far",
+            "Both entities answer the one question the same way"
+          ],
+          "deps": [
+            "02-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "A2 / DT5-2, contract shape `bounded-change` on both. WHY THIS EDIT AND ONLY THIS EDIT EARNS A PURGE: the same reference id on a different tracker is a DIFFERENT item, and `SyncWorkItem` updates the stored copy IN PLACE - so without a purge the old system's transition history silently becomes the new system's. That is the one case `removed = stored - fetched` cannot reconcile, because the ids match. Scenario 14 is GREEN OFF SHIPPED CODE and DISTILL declared it as such rather than manufacturing a red: `TeamController.UpdateTeam:178` already purges on a connection change and the cascade on `WorkItemStateTransition.WorkItemId` already takes the history. It ships as the regression guard on the one behaviour 03-01 keeps - the risk in this slice is narrowing too far - and its positive control is scenario 15, which was red. Un-ignore it, RUN it, record the run. THE PORTFOLIO HALF IS THE REAL WORK, and `PortfolioController.UpdatePortfolio` (`:96`, the body at `:134-150`) has no change detection at all today: it syncs and saves. Give it the equivalent, reading the same `FetchFingerprint.PropertiesThatAlsoCostAFreshStart` the team half reads - one question, two entities, one answer. WHAT `starting from nothing` MEANS FOR A PORTFOLIO, and getting this wrong deletes other people's data: the assertion is `TheFeaturesInThePortfolio(portfolioId)`, which reads `portfolio.Features` through `IRepository<Portfolio>` (`FasterUpdatesAcceptanceTest.cs:823-829`). So DROP THE PORTFOLIO'S CLAIMS - do not hard-delete Feature rows. A Feature can be claimed by more than one portfolio (slice 03 phase 05 added the two boundary scenarios for exactly this), and the existing `IOrphanedFeatureCleanupService.CleanupAsync`, which `PortfolioUpdater` runs in its own `finally` (`:121-125`), already hard-deletes `!IsParentFeature && !Portfolios.Any()` with `SweepDepartedFeatureSpells` closing the open blocked spells on the way. Dropping the claim is therefore both sufficient for the assertion and correct for the shared case; deleting rows directly would take a Feature another portfolio still holds. Note the assertion runs BEFORE the refresh, so the claim must be dropped at SAVE time, not deferred to the next cycle. Do not reach for `PortfolioRepository.Remove` - that is the delete-the-portfolio path and it removes orphaned Features as a side effect. Re-run scenarios 15 and 17 in this commit; if 15 reds here, the narrowing has been widened back by whatever shape the portfolio half borrowed. Preflight and gates as in 01-01; skipped goes 42 -> 40."
+        },
+        {
+          "id": "03-03",
+          "name": "Every fetch-shaping team setting, as one table",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "An_edit_to_a_fetch_shaping_team_setting_makes_the_next_refresh_download_everything (8 cases)",
+          "criteria": [
+            "All eight cases pass: the query text, the work item types, each of the three state columns, the finished-work cutoff, the parent-naming field and a state mapping",
+            "Each case downloads the whole query exactly once, issues no by-reference-id fetches, and reports Full with 3 scanned / 3 fetched",
+            "Each case prints `reason=configuration-changed`",
+            "Each case is now full because the fingerprint changed, not because a purge emptied storage - none of the eight trips a purge after 03-01",
+            "The cutoff case and the parent-field case in particular go from downloading nothing to downloading everything"
+          ],
+          "deps": [
+            "03-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.1 / AC-5.2, contract shape `bounded-change`, eight cases via `[TestCaseSource(nameof(EveryTeamSettingThatChangesWhatIsFetched))]`. WHY THIS STEP IS HERE AND NOT AT THE HANDOFF'S POSITION 5: DISTILL's RED run recorded `6 of 8 on Does.Contain(\"reason=configuration-changed\"); the cutoff and parent-field cases on FullDownloadsIssued -> Expected: 1 But was: 0`. Read that carefully - six of the eight cases ALREADY download the whole query today, and not because of any fingerprint: the query, types, state-column and state-mapping edits all trip `WorkItemRelatedSettingsChanged`, storage is emptied, and `SyncModeResolver` answers Full on its `nothing stored` branch. Run before 03-01 and 03-02, this step would go green on six cases with a fingerprint that does nothing. After the narrowing it discriminates, which is the whole point. The two cases that were genuinely red from the start - `how far back finished work still counts` (`DoneItemsCutoffDays`) and `which field names the parent` (`ParentOverrideAdditionalFieldDefinitionId`) - are the live gap A2 named: both demonstrably shape the remote query and neither triggers anything today. `WorkTrackingSystemConnectionId` is DELIBERATELY ABSENT from this table (DT5-9): it also purges, so `nothing is stored` would be a second, independent reason for the next cycle to be full and the row would stop discriminating. It has scenario 14 instead. Do not add it. Expect little or no production change here if 01-02 read all thirteen registered properties - `FetchFingerprint.cs` is listed as where a fix would land, not as a promise of an edit. If a case is red, the fix belongs in `For(...)`, never in the scenario and never by adding a special case to the resolver. If you find yourself editing `Slice05FetchFingerprintSpecifications.cs`, stop: DISTILL owns the specifications (ADR-025) and the table is the acceptance criterion, not a fixture detail. Preflight and gates as in 01-01. Skip arithmetic: the 49 baseline counts CASES, not methods, so lifting this one `[Ignore]` drops eight at once - skipped goes 40 -> 32."
+        },
+        {
+          "id": "03-04",
+          "name": "The three edits that leave the request byte-identical",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "Reading_a_tracker_state_as_a_different_state_makes_the_next_refresh_download_everything_even_though_the_query_is_unchanged + Moving_a_state_to_a_different_column_makes_the_next_refresh_download_everything_even_though_the_query_is_unchanged + Adding_a_field_to_the_connection_makes_the_next_refresh_download_everything_for_the_teams_that_use_it",
+          "criteria": [
+            "Re-assigning the same raw states across different mappings leaves what the tracker is asked for identical and still makes the next cycle download the whole query",
+            "Moving a state from one column to another leaves what the tracker is asked for identical and still makes the next cycle download the whole query",
+            "Adding a field definition to the CONNECTION - changing no property of the team at all - still makes the next cycle download the whole query for a team on that connection",
+            "In all three the request-unchanged control is asserted first and holds: these are not query changes wearing a disguise",
+            "The first two keep the team's recorded history across the save - they are state edits, and state edits no longer purge",
+            "All three report Full with 3 scanned / 3 fetched"
+          ],
+          "deps": [
+            "03-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.1 (widened) / DT5-1 - these three ARE the wave's substantive finding, and a fingerprint built from what `PrepareQuery` is handed passes scenarios 1-4 and fails all three. Batched into one step on purpose: three separate steps would carry an identical AC structure (edit X, request unchanged, whole query downloaded), which the decomposition rule forbids at 3+, and they share one production concern - whether `For(...)` reaches past the request into how the answer is READ. Three mechanisms, all verified in code, none to re-derive. (1) SCENARIO 5, state-mapping RE-ASSIGNMENT: `JiraWorkTrackingConnector.CreateWorkItemFromJiraIssue:1313,1316` stores `MapRawStateToMappedName(issue.State)` and `MapStateToStateCategory(issue.State)`, both of which walk `GetRawStatesForCategory`. The edit redistributes the SAME raw states across different mappings - `WhenTheOperatorReadsOneRawStateAsADifferentState` moves `Test` from the `In Progress` mapping to the `Done` mapping - so the raw state set, and therefore `AllStates` and the query, do not move while the stored State and StateCategory of every record in it do. Note the correction DISTILL made to the maintainer's stated mechanism: a mapping RENAME is visible (`GetRawStatesForCategory` resolves a mapping by NAME from the category list, so an un-renamed category entry falls through to the literal and `AllStates` does change). Re-assignment is the invisible one. (2) SCENARIO 6, a state moving between columns: `WorkTrackingSystemOptionsOwner.AllStates` is a `Union` of the three columns, so `DoingStates = [In Progress]` + `DoneStates = [Done, In Review]` yields the same union as before and re-categorises every stored record in `In Review`. This is the scenario that fails if the three columns were collapsed to `AllStates` at 01-01 - AC-5.1 as briefed names `AllStates`, and that is the bug. (3) SCENARIO 7, a CONNECTION field definition: `JiraWorkTrackingConnector:1300,1320,1361` and `AzureDevOpsWorkTrackingConnector:577,609` - adding a definition changes what is requested AND what is stored in `AdditionalFieldValues` for every entity on the connection, while `WorkTrackingSystemConnectionId` never moves. This is the one no save-time comparison can EVER catch, so its only detector is the sync-time fingerprint; `WhenTheOperatorAddsAFieldToTheConnection` seeds the definition directly on the connection rather than through the settings PUT, precisely because a settings DTO cannot carry it. Both repositories already eagerly include the connection's `AdditionalFieldDefinitions` (`TeamRepository.cs:21-26`, `PortfolioRepository.cs:63-65`), so a red here is a hashing-reach problem, not an EF include problem. Scenarios 5 and 6 also assert `ThenTheTeamKeptTheHistoryItRecorded` BEFORE the refresh - that is 03-01's narrowing, and if it reds here the narrowing regressed. Fixes belong in `For(...)`; do not touch the scenarios or the specifications. Preflight and gates as in 01-01; three `[Ignore]`s, one case each, so skipped goes 32 -> 29."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "The portfolio half, the free list, and the guard that closes the surface",
+      "description": "What is left once the team half is proven: the portfolio's own three fetch-shaping settings, the two independence guards that only guard once both halves exist, AC-5.3's free list - which is the half of the epic that is easiest to lose and is deliberately last, because it is vacuous until a fingerprint exists that could have invalidated - and finally G1, in a commit of its own. The ordering inside this phase is the Handoff's, unchanged: scenario 4, then 12 and 13, then 9 and 10, then G1.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "03"
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Every fetch-shaping portfolio setting, including the two only a portfolio has",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "An_edit_to_a_fetch_shaping_portfolio_setting_makes_the_next_refresh_download_every_feature (10 cases)",
+          "criteria": [
+            "All ten cases pass, including the two the team half does not have: the field that names the owning team and the field that carries the size estimate",
+            "Each case downloads the whole Feature query exactly once, issues no by-reference-id Feature fetches, and reports Full with 3 scanned / 3 fetched",
+            "Each case prints `reason=configuration-changed`",
+            "The portfolio's fingerprint is computed from the portfolio's own configuration, including the two portfolio-only field references"
+          ],
+          "deps": [
+            "03-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.1 / AC-5.2 / AC-5.6, contract shape `bounded-change`, ten cases via `[TestCaseSource(nameof(EveryPortfolioSettingThatChangesWhatIsFetched))]`. DISTILL's RED run: all 10 failed on `FullFeatureDownloadsIssued -> Expected: 1 But was: 0`, i.e. purely the wiring - which 02-01 filled at `WorkItemService.cs:799`. So expect this to be LARGELY A VERIFICATION STEP, and if it is, record the run in the commit message rather than inventing work. THE TWO CASES THAT CAN STILL FAIL, and they are the payoff of 01-02's interface note: `which field names the owning team` (`FeatureOwnerAdditionalFieldDefinitionId`) and `which field carries the size estimate` (`SizeEstimateAdditionalFieldDefinitionId`) are declared on `Portfolio` (`Models/Portfolio.cs:19,21`) and are NOT reachable through `IWorkItemQueryOwner`, which is the parameter type of `FetchFingerprint.For`. If 01-02 wrote `For` against the interface alone, these two are the red, and the failure will read like a portfolio-wiring bug rather than a reach bug. The fix is the pattern match inside `For`, not a new overload and not a wider interface. Why they belong in the set at all, verified: `FeatureOwnerAdditionalFieldDefinitionId` is read at sync time by `JiraWorkTrackingConnector.GetOwningTeam:1020-1022` and `AzureDevOps...:940-942` and lands on the stored `Feature.OwningTeam` (`Jira...:1006,1011`); `SizeEstimateAdditionalFieldDefinitionId` by `GetEstimatedSize:1027-1029` / `947-950`, stored as `Feature.EstimatedSize`. Under delta an unchanged Feature is never re-derived, so the old owner and the old size survive the edit indefinitely - a wrong number with no error, which is the failure mode this whole slice exists to prevent. The connection reference is absent from this table for the same reason as the team one (DT5-9); scenario 16 covers it. Preflight and gates as in 01-01. One `[Ignore]`, ten cases, so skipped goes 29 -> 19."
+        },
+        {
+          "id": "04-02",
+          "name": "An edit to one entity is not an invalidation of the other",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "A_team_edit_does_not_cost_its_portfolio_a_full_download + A_portfolio_edit_does_not_cost_its_team_a_full_download",
+          "criteria": [
+            "A team query edit leaves a portfolio on the same connection running Delta with 3 scanned / 0 fetched and downloading no Feature",
+            "A portfolio query edit leaves a team on the same connection running Delta with 3 scanned / 0 fetched and downloading nothing",
+            "The fingerprint is stored per entity, so neither edit reaches the other's stored value",
+            "Both were declared not-yet-falsifiable at DISTILL time and are re-run here, after both halves exist, which is the point at which they start guarding something"
+          ],
+          "deps": [
+            "04-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.6, contract shape `unbounded-preservation` on both - each claims an absence. DISTILL classified both GUARD_NOT_YET_FALSIFIABLE and both PASSED at DISTILL time: with no fingerprint at all, `this edit invalidated nothing` was true for the trivial reason. Their positive controls are scenarios 3 and 4, which are now green, so this is the moment they become real. Un-ignore, RUN, and if green record the run rather than inventing work - `WorkItemService.cs` is listed as where a fix would land, not as a promise of an edit. WHAT THEY FORBID, and it is a shape somebody will reach for: hanging the fingerprint off the CONNECTION, or sharing one per connection, so that every team edit costs every portfolio on that connection a full re-download. ADR-140 chose one column on the shared base `WorkTrackingSystemOptionsOwner`, inherited by both, precisely so the invalidation is per entity. Note the related design point ADR-140 accepted and these two do NOT contradict: a change to the CONNECTION does fan out to every entity on it - passively, each entity noticing at its own next cycle when it recomputes its own fingerprint, rather than as an N-entity write at connection-save time. Scenario 7 is that case; these two are about entity-scoped edits. PROVE THE GUARD CAN FAIL before committing: temporarily make the team's stored fingerprint the one the portfolio compares against (or vice versa), confirm the relevant scenario reds AND that nothing else in the fixture changes, then revert and confirm `git status --porcelain` shows no production file modified. A guard whose probe has not been re-run in the tree it ships into is a guard on nothing - the slice-03 phase 05 lesson. C# note from the ledger: `if (false)` cannot be used to park a probe, `TreatWarningsAsErrors` turns CS0162 unreachable-code into a build error. Preflight and gates as in 01-01; two `[Ignore]`s, one case each, so skipped goes 19 -> 17."
+        },
+        {
+          "id": "04-03",
+          "name": "The free list, re-run against a fingerprint that could have invalidated",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs",
+          "scenario_name": "An_edit_that_changes_nothing_about_what_is_fetched_costs_no_download (10 cases) + A_portfolio_edit_that_changes_nothing_about_what_is_fetched_costs_no_download (6 cases)",
+          "criteria": [
+            "All sixteen cases run Delta with 3 scanned / 0 fetched and issue zero downloads of any kind",
+            "The team's ten cover wait states, a blocked rule, both staleness thresholds, a named cycle time, the service level expectation, the system WIP limit, the throughput window, feature WIP and how estimates are read",
+            "The portfolio's six cover wait states, the staleness threshold, the assumed feature size, the states sized by that assumption, the percentile that derives it, and the service level expectation",
+            "The sixteen results are read, not assumed: the run output is recorded in the commit message",
+            "Not one of the sixteen edits moves the stored fingerprint"
+          ],
+          "deps": [
+            "04-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice05FetchFingerprintScenarios.cs"
+          ],
+          "implementation_notes": "AC-5.3 / KPI-4, contract shape `unbounded-preservation`. THESE GO LAST AND MUST BE RE-RUN AND READ, NOT ASSUMED. DISTILL classified both GUARD_NOT_YET_FALSIFIABLE and both passed on arrival - 10/10 and 6/6 - because with no fingerprint at all, `this edit invalidated nothing` is true for the trivial reason. They only start guarding something once a fingerprint exists that COULD have invalidated, which is now. Their positive controls are scenarios 3 and 4. WHAT THEY CATCH is the exact failure the slice brief names as the honest-but-wasteful collapse: `any settings save invalidates`. That answer is safe, it passes scenarios 1-8 and 11-17, and it spends the entire win - an admin who learns that every save is expensive stops tuning, which is worse than the original problem. Sixteen cases going green here is the only evidence the slice kept its second promise. So: un-ignore both, run the filtered suite, and PASTE THE COUNTS INTO THE COMMIT MESSAGE. If any case reds, the fingerprint is reading something the guard's decision table marks `Nothing` - the fix is in `For(...)`, and the offending property already has a row in the table explaining why it is free, so read that row before widening anything. The blocked-rule case (`a blocked rule`) is the interesting one and its answer is already recorded: it stays free, because `blockedItemService.IsBlocked(workItem, team)` (`WorkItemService.cs:290,293`) reads the STORED item, so re-deriving needs no remote call. The known gap that follows from that - the delta loop only visits downloaded items, so a rule edit does not re-open a quiet item's spell until it next moves - is REAL, is documented in the slice brief under `Known limitation this slice does not close`, and belongs to the ADR-141 / DDD-4 derivation pass. Do not fix it here by putting blocked rules in the fingerprint: that buys a local derivation with a full remote download and spends exactly the win these sixteen cases protect. Preflight and gates as in 01-01. Two `[Ignore]`s carrying sixteen cases between them, so skipped goes 17 -> 1 - the last skip in the slice is G1, which 04-04 takes."
+        },
+        {
+          "id": "04-04",
+          "name": "The property surface is closed, and the guard says so",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs",
+          "scenario_name": "EveryPropertyThatShapesAFetchIsEitherInTheFingerprintOrExplicitlyExcluded",
+          "criteria": [
+            "Every operator-editable property across the query owners and the connection they point at is either registered in the fingerprint or on the exclusion list with its reason attached - nothing undecided",
+            "G1 runs un-ignored and green, in a commit of its own",
+            "G1 is proven able to fail: a throwaway property on the query-owner surface reds it and reds nothing else, and is removed again",
+            "The whole slice-05 filter runs with every specification un-ignored: 49 total, 49 passed, 0 skipped, 0 failed",
+            "The full backend suite is green, with the slice's un-ignored specifications now counted as passing rather than skipped"
+          ],
+          "deps": [
+            "04-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs"
+          ],
+          "implementation_notes": "AC-5.4 / DDD-8 / DT5-13, contract shape `pure-function`. THIS GETS ITS OWN COMMIT PRECISELY BECAUSE IT PASSES TODAY. G1 walks the operator-editable property surface of `WorkTrackingSystemOptionsOwner`, `Team`, `Portfolio` and `WorkTrackingSystemConnection` and finds everything already decided - because DISTILL is what decided it. Taking it in its own step records the transition from ignored to enforced instead of letting it arrive silently inside a later test-infrastructure change, which is how a guard quietly becomes decoration. What it actually guards is the NEXT connector option somebody adds: a fetch-shaping property that is neither registered nor excluded makes the fingerprint drift, and a stale fingerprint means delta serves a stale result set with every test green - wrong numbers, no error. That is the slice's learning hypothesis, and AC-5.4 is why it is an acceptance criterion rather than a nice-to-have. RE-RUN THE FALSIFICATION PROBE IN THIS TREE, do not trust DISTILL's. DISTILL's is recorded and is the shape to repeat: add a throwaway `public string? ProbeOnlyDelete { get; set; }` to `WorkTrackingSystemOptionsOwner`, run the slice-05 filter, confirm G1 fails with `Undecided properties: ProbeOnlyDelete` and that the failed count moves by exactly one - nothing else in the filter changes - then remove the property and confirm the tree returns. A guard whose probe has not been re-run in the tree it ships into is a guard on nothing. `git status --porcelain` must show no production file modified before you commit. Remember the collateral trap while the probe property exists: it is not mapped and has no migration, so it will not red the six migration tests, but if you are ever tempted to make it a real column, `Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs` needs a row or `DeliveryMetricSnapshotDayKeyMigrationTests` and `BlockedRuleSetMigrationTests` go red across two fixtures and two providers for a reason that has nothing to do with the change. `FetchFingerprint.cs` is listed as where a fix would land if G1 turns up something undecided; no edit is expected. ArchUnitNET cannot express this - it constrains types and dependencies, not property membership - which is why both guards are reflection assertions living in `Architecture/` beside the twenty ArchUnit seam tests, categorised `epic-5687-faster-updates` / `slice-05` but NOT `acceptance` (DT5-7). SLICE CLOSE-OUT, all in this commit or immediately after it: run the whole filter `dotnet test Lighthouse.sln --filter \"TestCategory=slice-05&TestCategory=epic-5687-faster-updates\"` and expect 49/49 with zero skips; run the full `dotnet test` and confirm 0 failed (baseline was 4786 passed / 49 skipped, and the 49 skips are now passes); run `cd Lighthouse.Backend && dotnet build` for zero warnings; then the mandatory analyzer preflight `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, filtered with `{ git diff --name-only <base>; git status --porcelain | awk '{print $2}'; } | grep '\\.cs$' | sort -u` so the new `FetchFingerprintTest.cs` is not invisible to the filter. Known flakes, not regressions: `JiraWriteBackTest.WriteDate_DifferentDate_...` under full-suite load and `ReleaseService` failing in a block of exactly ten. A release-note line is OWED at slice close for the narrowed purge - flag it, do not write it."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/",
+      "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/",
+      "Lighthouse.Backend/Lighthouse.Backend/API/",
+      "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/",
+      "Lighthouse.Backend/Lighthouse.Backend/Models/"
+    ],
+    "test_directories": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/"
+    ],
+    "excluded_patterns": [
+      "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/**",
+      "Lighthouse.Backend/Lighthouse.Migrations.Postgres/**",
+      "**/*.Designer.cs",
+      "**/obj/**",
+      "**/bin/**",
+      "Lighthouse.Frontend/**"
+    ]
+  }
+}
