@@ -3810,3 +3810,187 @@ Every item answered explicitly — no silent N/A.
 - **The fingerprint is connector-agnostic.** Nothing in `FetchFingerprint` knows about Jira, so Data Center
   needs no registry change — but `WorkTrackingSystem` is registered, so switching a connection's system
   already forces a full cycle.
+
+---
+
+## Wave: DISTILL / [REF] Where slice 04's tests live, and why almost none of them are acceptance tests
+
+Slice 04 is transport work. What changes is **which HTTP requests the Jira connector issues for an
+on-premise instance** — and the acceptance suite fakes `IWorkTrackingConnector` by policy
+(`docs/architecture/atdd-infrastructure-policy.md`), so it cannot see one of them. An acceptance
+scenario "for Data Center" would program the same fake the slice-02 scenarios program, run the same
+service path, and assert the same thing slice 02 already asserts. It would read as coverage and prove
+nothing.
+
+So the slice splits:
+
+| Level | File | What it can see |
+|---|---|---|
+| Transport | `…Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraIncrementalSyncTest.cs` | The actual requests, through the `JiraStub` fake `HttpMessageHandler`: endpoint, JQL, `fields`, `expand`, `startAt` |
+| Acceptance | `…Tests/API/Integration/FasterUpdates/Slice04JiraDataCenterDelta{Scenarios,Specifications}.cs` | What a refresh does with a record the tracker reports twice — the one slice-04 promise that is about the refresh rather than about Jira |
+
+**13 transport specs + 2 acceptance scenarios. All 15 ship `[Ignore(Pending)]`d**, the way slices 02, 03
+and 05 shipped. DELIVER un-ignores one at a time.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List — slice 04
+
+### Transport (`JiraIncrementalSyncTest`, Data Center block)
+
+| # | Spec | Falsifies |
+|---|---|---|
+| 1 | `SupportsIncrementalSync_IsTrueForDataCenterOnceTheDeploymentIsKnown` | "Data Center still refuses the cheap path" — the one-line answer OQ-1 bought |
+| 2 | `SweepWorkItemsForTeam_OnDataCenter_WalksTheOffsetPagedSearchEndpoint` | "the Cloud walk was pointed at Data Center". Data Center has no `rest/api/3/search/jql` and no page token; the spec pins the endpoint AND that a second offset was asked for, so a sweep that reads page one and stops is red |
+| 3 | `…_AsksOnlyForIdentityAndTheChangeStamp` | "the sweep downloads everything anyway". Data Center returns every field when none is named, so a sweep that omits `fields` costs exactly what it exists to save |
+| 4 | `…_EnumeratesTheSameQueryTheWholeDownloadEnumerates` | "the sweep asks a different question than the download" — the drift that makes `removed = stored − swept` delete whatever the two disagree about (D2) |
+| 5 | `…_WalksInAnOrderNoEditCanDisturb` | "offset paging over Jira's default ordering is safe". An edit mid-walk reshuffles relevance ordering and can move a record onto a page already read; ordering on the key cannot be reshuffled, because a key never changes |
+| 6 | `…_LeavesAQueryThatAlreadyOrdersWithOneOrderingClause` | "the ordering is appended unconditionally". Two `ORDER BY`s is not valid JQL, so a naive append breaks the sweep for exactly the operators who write their own JQL — which is who runs this deployment |
+| 7 | `…_RefusesToReportAHalfWalkedQuery` | "a rejected page is reported as the whole query", which deletes every record on the pages that never arrived |
+| 8 | `…_ReportsTheChangeStampTheFullFetchWouldStore` | "the sweep parses `updated` differently from the download" — two readings of one string report every record as moved, forever (D12) |
+| 9 | `…_StillReportsARecordTheTrackerGaveNoStampFor` | "a record with no stamp is dropped from the sweep", which puts it in `stored − swept` and deletes a live item |
+| 10 | `SweepFeaturesForPortfolio_OnDataCenter_EnumeratesTheSameFeatureQueryTheWholeDownloadEnumerates` | "the portfolio half walks its own way" — a second implementation to keep in step with the first (AC-4.5) |
+| 11 | `SweepParentFeatures_OnDataCenter_SweepsTheSameKeyedQueryTheParentDetailFetchIssues` | "the parent sweep and the parent detail fetch answer for different key sets" |
+| 12 | `GetFeaturesForProjectByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor` | "phase 2 still refuses on Data Center" — the guard at `JiraWorkTrackingConnector.cs:289` |
+| 13 | `GetWorkItemsForTeamByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor` | **declared guard** — see below |
+
+### Acceptance (`Slice04JiraDataCenterDeltaTest`)
+
+| # | Scenario | Falsifies |
+|---|---|---|
+| A | `An_issue_the_tracker_reports_twice_is_downloaded_once_and_stored_once` | **declared guard** — "the collapse happens only on the way into storage". A download list built straight from a repeating scan names the record twice and pays twice on every cycle |
+| B | `A_feature_the_tracker_reports_twice_is_downloaded_once_and_claimed_once` | **declared guard** — same, from the portfolio call site. A Feature claimed twice doubles remaining work, the size percentile and the forecast that reads them |
+
+---
+
+## Wave: DISTILL / [REF] AC coverage — slice 04
+
+| AC | Treatment |
+|---|---|
+| AC-4.1 (probe: two back-to-back sweeps return the same id set) | **Recorded evidence, deliberately not automated.** Run 2026-08-11 against a real Jira Server 10.3.6: team query 5056 issues / 102 pages, portfolio query 597 Epics / 12 pages, three passes each, zero duplicates, walked == total, every pass identical. A test that re-ran this against a stub would assert that the stub is deterministic, which is a property of the stub |
+| AC-4.2 (a sweep that can lose an id must never drive removal) | **Automated, specs 5 and 6.** The probe answered the stop condition — it did not fire — but it ran on a quiet instance and could not exercise churn during a walk. That residual is closed by construction rather than by measurement: an ordering on an immutable field cannot be disturbed by an edit. Spec 6 is the half a naive implementation gets wrong |
+| AC-4.3 (duplicates collapsed, collapse logged with a count) | **Declared guard, scenarios A and B.** `WorkItemService.DeduplicateByReferenceId` already collapses and already logs the count, and the sweep path already reaches it from all three call sites (`:263` team, `:879` Features, `:1119` parent Features). Nothing in the suite asserted it, which is why the guards were written rather than skipped |
+| AC-4.4 (US-02's AC-2.1 … AC-2.7 hold on the DC transport) | **Split.** The transport half — AC-2.1's stamp on the full fetch — is already covered by the `[TestCase(DataCenter)]` cases at the head of `JiraIncrementalSyncTest`, and the sweep half is specs 2-11. The service half (AC-2.2 … AC-2.6) is deployment-agnostic by construction: once `SupportsIncrementalSync` answers yes, `WorkItemService` runs the identical path, and slices 02 and 03 assert it against the same faked connector. AC-2.7 is a model-level promise about the copy path, asserted in `Models/Slice02RemoteChangeStampSurvivesUpdateTest` |
+| AC-4.5 (one sweep contract, not a strategy per connector) | **Automated, specs 1, 4, 10, 11.** The falsifier is a connector that grows a second walk or a public Data-Center-shaped method; specs 10 and 11 pin both entity types onto the same endpoint and the same query builder |
+
+---
+
+## Wave: DISTILL / [REF] Declared guards and their positive controls — slice 04
+
+A guard with no positive control proves nothing. All three were run with the behaviour they forbid
+removed, and all three went red on the assertion they are named after.
+
+| Guard | Green today because | Positive control (run, not reasoned) |
+|---|---|---|
+| Scenario A (issue reported twice) | `DeduplicateByReferenceId` already collapses the scan result at `WorkItemService.cs:263` | `return groupedByReferenceId.Select(g => g.First()).ToList()` replaced with `return fetchedRecords;` → **red**: `The scan named the same issue twice… Requested: ITEM-1,ITEM-1 / Expected: property Count equal to 1 / But was: 2`. Restored, and the production tree diff-verified clean afterwards |
+| Scenario B (Feature reported twice) | same method, portfolio call site `:879` | same edit → **red**: `Requested: FEAT-1,FEAT-1 / But was: 2` |
+| Spec 13 (`GetWorkItemsForTeamByReferenceId_OnDataCenter…`) | the by-key **Work Item** fetch never asked whether the deployment can be swept, so Data Center already reaches its own transport there | Its own body carries the control: `Assert.That(workItems, Is.Not.Empty, "positive control: the canned response was not read at all")`. Its opposite number for Features (spec 12) *does* refuse today and is red — asserting this half is what says the asymmetry is a bug in that half rather than a decision |
+
+Two further guards are **inherited, not written**, and are named here so DELIVER does not read their
+absence as an oversight:
+
+- `SupportsIncrementalSync_IsFalseBeforeLighthouseHasEverReachedTheInstance` (already in the fixture,
+  green). After slice 04 it is the only thing standing between "Data Center answers yes" and "everything
+  answers yes", and its positive control is spec 1. A twin spec would assert the identical thing.
+- The parent-Feature duplicate collapse (`:1119`). Same shared method as scenarios A and B, reached from
+  a third call site; a dedicated scenario would need the full parent setup to re-assert one call. Left
+  out deliberately — recorded here so it is a decision rather than a gap.
+
+---
+
+## Wave: DISTILL / [REF] Five shipped tests slice 04 inverts
+
+These record today's behaviour and are exactly what the slice reverses. Un-ignoring a new spec turns its
+opposite red; **delete the opposite in the same DELIVER step.** They were left in place rather than
+deleted at DISTILL so that no coverage is lost if the slice stalls — a red test is a discoverable
+handover, a missing one is not.
+
+| Shipped test (green today) | Replaced by |
+|---|---|
+| `SupportsIncrementalSync_StaysFalseForDataCenter` | spec 1 |
+| `SweepWorkItemsForTeam_RefusesOnDataCenter` | specs 2-9 |
+| `SweepFeaturesForPortfolio_RefusesOnDataCenter` | spec 10 |
+| `SweepParentFeatures_RefusesOnDataCenter` | spec 11 |
+| `GetFeaturesForProjectByReferenceId_RefusesOnDataCenter` | spec 12 |
+
+Verified rather than predicted: a throwaway probe that widened `SupportsIncrementalSync` to
+`deployment != JiraDeployment.Unknown` reddened all five, each with `Expected: <NotSupportedException>
+But was: no exception thrown`. The probe was reverted; `git diff` over the production tree is empty.
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate) — slice 04
+
+Run with the `[Ignore]`s temporarily lifted. **Transport: 11 failed, 2 passed of 13. Acceptance: 2
+passed of 2** (both declared guards, controls above). No setup failure, no import error, no fixture
+error.
+
+All 11 transport failures land on the same choke point — `NotSupportedException: Only Jira Cloud sweeps`
+from `SweepIdentities:95` — which is `MISSING_FUNCTIONALITY`, and correct, but it means the specs'
+*own* assertions are unproven until the capability lifts. So a second probe lifted it (naive: capability
+widened, still walking the Cloud endpoint) and recorded where each spec then lands:
+
+| Spec | Failure under the naive probe | Class |
+|---|---|---|
+| 2 | `Expected: "/rest/api/latest/search" But was: "/rest/api/3/search/jql"`; `Expected: some item equal to "1" But was: < <string.Empty> >` | MISSING_FUNCTIONALITY ✅ |
+| 5 | `Expected: String ending with "ORDER BY key ASC" But was: "(project = PROJ) AND (issuetype = "Story") …"` | MISSING_FUNCTIONALITY ✅ |
+| 6 | same, against `"(project = PROJ ORDER BY created DESC) AND …"` — and its first assertion (`exactly one ordering clause`) passes here, which is what a naive append would break | MISSING_FUNCTIONALITY ✅ |
+| 7 | `Expected: <InvalidOperationException> But was: no exception thrown` | MISSING_FUNCTIONALITY ✅ |
+| 9 | `Expected: default But was: 2026-08-01 10:00:00` — the sweep never reached the Data Center path, so the stub answered with the canned Cloud issue | MISSING_FUNCTIONALITY ✅ |
+| 10 | `Expected: String ending with "/rest/api/latest/search" But was: "/rest/api/3/search/jql"` | MISSING_FUNCTIONALITY ✅ |
+| 1, 3, 4, 8, 11, 12 | pass under the naive probe — they are shared-contract claims the Cloud walk already honours, and their job is to stay green while specs 2-10 force the transport apart | GREEN-under-probe, by design |
+
+Gate: **PASSED** — zero specs in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `SETUP_FAILURE` /
+`WRONG_ASSERTION` classes.
+
+### One wrong-reason green the gate caught, and fixed
+
+`SweepWorkItemsForTeam_OnDataCenter_RefusesToReportAHalfWalkedQuery` first shipped asserting
+`Throws.Exception`, and **passed on arrival** — satisfied by the "Only Jira Cloud sweeps" refusal,
+without a single page ever being walked. It would have gone green at DELIVER the moment the capability
+lifted, while the half-walk protection it is named after was never exercised. Now
+`Throws.TypeOf<InvalidOperationException>()`, which the refusal cannot satisfy, and which reds under the
+naive probe.
+
+---
+
+## Wave: DISTILL / [REF] Test infrastructure — slice 04
+
+No production scaffold was needed: every spec drives methods that already exist on
+`IJiraWorkTrackingConnector`. What slice 04 changes is what those methods *do*, not their shape, so
+`git diff` over `Lighthouse.Backend/` is empty for this commit.
+
+One test-infrastructure addition, in `JiraStub`:
+
+| Addition | Why |
+|---|---|
+| `OffsetSweepIssues` + `OffsetSweepPage(uri)` | Data Center has no page token, so pages cannot be queued the way the Cloud sweep's are. The stub slices the list by the `startAt` and `maxResults` the request asks for and echoes `total` — a faithful offset-pager, so a walk that ignores either one is visible rather than accidentally satisfied |
+| The sweep branch now keys on `fields=key,updated` rather than `fields != "*all"` | The Data Center *full* fetch sends no `fields` at all, so the old condition would have handed a full fetch a sweep page. Stricter, and equivalent for every Cloud test |
+
+**S4136 was not reached.** No overload was added on either side — the new stub members and helpers carry
+distinct names, and `WhenTheScheduledRefreshRuns(SeededTeam)` / `(SeededPortfolio)` in the acceptance
+specifications are adjacent by construction. The mandatory `dotnet format analyzers` sweep returned
+**zero findings in any new or modified file** (the file list unioned `git diff --name-only` with
+`git status --porcelain`, per the 2026-08-09 ledger entry — the new files are invisible to `git diff`
+alone).
+
+---
+
+## Wave: DISTILL / [REF] Deliberately not scaffolded — slice 04
+
+- **No Data Center acceptance scenarios for AC-4.4.** The connector is faked at that level; a "Data
+  Center" scenario there would be slice 02's scenario with a different name. Recorded above.
+- **AC-4.1 has no test.** It is a measurement against a real instance, already taken. See the AC table.
+- **AC-2.8's Data Center twin (the ≤10 % request-count KPI) has no test.** Like AC-2.8 it is a dogfood
+  measurement read off the summary line; the slice brief asks for one full cycle and one delta cycle on
+  the real instance at slice close.
+- **The parent-Feature duplicate guard.** Third call site of the same collapse. Recorded above.
+- **The full fetch's own handling of a user query that already orders.** `PrepareQuery` wraps the user's
+  `DataRetrievalValue` in parentheses, so a query carrying `ORDER BY` is already invalid JQL today, for
+  Cloud as much as for Data Center, on the full fetch as much as on the sweep. Spec 6 covers the sweep
+  because the sweep is what this slice adds; fixing the pre-existing full-fetch case is a separate bug,
+  not slice 04 scope.
+- **Stub fidelity for a Cloud endpoint answering on Data Center.** Under the naive probe the stub happily
+  answers `rest/api/3/search/jql` for a Data Center instance, where a real one would 404. Spec 2's
+  endpoint assertion catches that directly, so teaching the stub to 404 would add a second detector for
+  one defect.
