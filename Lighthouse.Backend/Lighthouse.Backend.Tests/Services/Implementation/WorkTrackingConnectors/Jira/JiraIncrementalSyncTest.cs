@@ -10,14 +10,15 @@ using Moq.Protected;
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
     /// <summary>
-    /// Epic #5687 AC-2.1: the whole-query path carries Jira's <c>updated</c> onto
-    /// <see cref="WorkItemBase.LastChangedRemote"/>. Without it a full cycle stores nothing to compare
-    /// against, so every later cycle resolves to a full download (D8) and the delta never engages.
-    /// Cloud and Data Center are the same connector class, so both deployments are exercised.
+    /// The whole-query path carries Jira's <c>updated</c> onto <see cref="WorkItemBase.LastChangedRemote"/>.
+    /// Without it a full cycle stores nothing for the next one to compare against, so every later cycle
+    /// downloads everything and the incremental sync never engages. Cloud and Data Center are the same
+    /// connector class, so both deployments are exercised.
     ///
-    /// The rest of the fixture covers slice 02's two-phase fetch for Jira Cloud: the identity sweep (phase 1)
-    /// and the fetch-by-key (phase 2). The acceptance suite fakes <c>IWorkTrackingConnector</c> by policy and
-    /// therefore cannot see any of this - these tests are the only evidence the Jira side actually works.
+    /// The rest of the fixture covers the two-phase fetch for Jira Cloud: the identity sweep that reports
+    /// which records moved, and the download of those records and no others. The acceptance suite fakes
+    /// <c>IWorkTrackingConnector</c> by policy and therefore cannot see any of this - these tests are the
+    /// only evidence the Jira side actually works.
     ///
     /// The Data Center block at the foot of the fixture is the same contract over the other transport. Data
     /// Center has no page token and no <c>search/jql</c> endpoint, so its sweep is an offset walk over
@@ -74,7 +75,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var workItem = await TheSingleWorkItemFetchedFrom(deploymentType, updated: null);
 
             Assert.That(workItem.LastChangedRemote, Is.Null,
-                "No stamp means 'never swept', which resolves the next update to a full fetch (D8). "
+                "No stamp means 'never swept', so the next update downloads everything. "
                 + "A sentinel date would claim knowledge the tracker never gave.");
         }
 
@@ -85,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var workItem = await TheSingleWorkItemFetchedFrom(deploymentType, updated: "not a date");
 
             Assert.That(workItem.LastChangedRemote, Is.Null,
-                "An unreadable stamp is no knowledge at all - falling back to a full fetch is the safe resolution (D8).");
+                "An unreadable stamp is no knowledge at all - downloading everything is the safe answer.");
         }
 
         [Test]
@@ -96,7 +97,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(workItem.LastChangedRemote, Is.EqualTo(TheInstantThatStampNames),
                 "A stamp the tracker gave no zone for is an instant, and which instant it is may not depend on where "
                 + "Lighthouse happens to run. Reading it as host-local time makes the same payload mean a different "
-                + "instant on every deployment, and D12's per-item comparison then reports every record as moved.");
+                + "instant on every deployment, and the per-record comparison then reports every record as moved.");
         }
 
         [Test]
@@ -184,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(subject.SupportsIncrementalSync(team.WorkTrackingSystemConnection), Is.False,
                 "The port member cannot block on a network round trip, so an undiscovered deployment answers "
-                + "'no' - which resolves the cycle to a full download (D8) rather than to a guess.");
+                + "'no' - which downloads everything rather than guessing.");
         }
 
         [Test]
@@ -204,7 +205,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.SweepWorkItemsForTeam(team);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
-                "Removal is 'stored minus swept' (D2). A sweep that enumerates anything other than the exact "
+                "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact "
                 + "query the full fetch enumerates deletes whatever the two disagree about.");
         }
 
@@ -236,7 +237,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var stamps = await subject.SweepWorkItemsForTeam(team);
 
             Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
-                "A sweep that stops at page one under-reports the query, and D2 deletes everything it missed.");
+                "A sweep that stops at page one under-reports the query, and 'stored minus swept' deletes everything it missed.");
         }
 
         [Test]
@@ -249,7 +250,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(TheInstantThatStampNames),
                 "The sweep reads the stamp exactly the way the full fetch reads it. A zone the sweep assumes and the "
-                + "full fetch does not is the one disagreement D12 cannot absorb: every record would look moved forever.");
+                + "full fetch does not is the one disagreement the per-record comparison cannot absorb: every "
+                + "record would look moved forever.");
         }
 
         [Test]
@@ -262,8 +264,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var stored = (await subject.GetWorkItemsForTeam(team)).Single();
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
-                "D12 compares the swept stamp against the stored one per item. Two different parses of the same "
-                + "string would make every item look moved forever.");
+                "The swept stamp is compared against the stored one item by item. Two different parses of the "
+                + "same string would make every item look moved forever.");
         }
 
         [Test]
@@ -277,9 +279,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(TheOnlyRecord),
-                    "Dropping it from the sweep would put it in 'stored minus swept' and delete a live item (D2).");
+                    "Dropping it from the sweep would put it in 'stored minus swept' and delete a live item.");
                 Assert.That(stamps.Single().ChangedAt, Is.Default,
-                    "No stamp can never equal a stored stamp, so the record is re-downloaded rather than assumed unchanged (D8).");
+                    "No stamp can never equal a stored stamp, so the record is re-downloaded rather than assumed unchanged.");
             }
         }
 
@@ -291,7 +293,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.FailTheSearchAfterTheNextOne();
 
             Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.Exception,
-                "Returning the first page as if it were the whole query is the one answer D2 cannot survive: "
+                "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
                 + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch.");
         }
 
@@ -382,7 +384,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.SweepFeaturesForPortfolio(portfolio);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(fullFetchQuery),
-                "Removal is 'stored minus swept' (D2). A sweep that enumerates anything other than the exact "
+                "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact "
                 + "query the whole Feature fetch enumerates deletes whatever the two disagree about.");
         }
 
@@ -414,7 +416,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
 
             Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
-                "A sweep that stops at page one under-reports the query, and D2 deletes every Feature it missed.");
+                "A sweep that stops at page one under-reports the query, and 'stored minus swept' deletes every Feature it missed.");
         }
 
         [Test]
@@ -425,7 +427,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.FailTheSearchAfterTheNextOne();
 
             Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.Exception,
-                "Returning the first page as if it were the whole query is the one answer D2 cannot survive: "
+                "Returning the first page as if it were the whole query is the one answer removal cannot survive: "
                 + "every Feature on the pages that never arrived would be deleted. Throwing falls back to a full fetch.");
         }
 
@@ -439,8 +441,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var stored = (await subject.GetFeaturesForProject(portfolio)).Single();
 
             Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
-                "D12 compares the swept stamp against the stored one per Feature. Two different parses of the same "
-                + "string would make every Feature look moved forever.");
+                "The swept stamp is compared against the stored one Feature by Feature. Two different parses of "
+                + "the same string would make every Feature look moved forever.");
         }
 
         [Test]
@@ -454,9 +456,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(TheOnlyRecord),
-                    "Dropping it from the sweep would put it in 'stored minus swept' and delete a live Feature (D2).");
+                    "Dropping it from the sweep would put it in 'stored minus swept' and delete a live Feature.");
                 Assert.That(stamps.Single().ChangedAt, Is.Default,
-                    "No stamp can never equal a stored stamp, so the Feature is re-downloaded rather than assumed unchanged (D8).");
+                    "No stamp can never equal a stored stamp, so the Feature is re-downloaded rather than assumed unchanged.");
             }
         }
 
@@ -522,8 +524,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(features, Has.Count.EqualTo(1), "positive control: the canned response was not read at all.");
                 Assert.That(features[0].LastChangedRemote, Is.Not.Null,
-                    "Phase 2 has to stamp what it returns, or the next cycle has nothing to compare against and D8 "
-                    + "resolves every cycle to a full download.");
+                    "The download has to stamp what it returns, or the next cycle has nothing to compare against "
+                    + "and downloads everything, every time.");
                 Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo(EveryField),
                     "Phase 2 is the download - narrowing it here would store a Feature with holes in it.");
                 Assert.That(byKeyRequest.Query, Does.Contain("expand=changelog"));
@@ -544,7 +546,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names "
-                + "a different set makes D12's comparison meaningless for whatever the two disagree about.");
+                + "a different set makes the per-record comparison meaningless for whatever the two disagree about.");
         }
 
         [Test]
