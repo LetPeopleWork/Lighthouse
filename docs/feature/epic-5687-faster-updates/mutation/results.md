@@ -426,4 +426,98 @@ a scan.
 `FullyQualifiedName~JiraIncrementalSync`, with every integration category excluded. That fixture is the
 only stub-driven coverage of this connector; `JiraWorkTrackingConnectorTest` and `JiraWriteBackTest` are
 `[Category("JiraIntegration")]` and hit a real Atlassian instance, which Stryker would hammer hundreds of
+
+---
+
+# Mutation testing — 5729 (Faster updates: Azure DevOps stops re-reading every revision)
+
+Three runs 2026-08-13, the last against `main` @ `728aad930`. Gate is 80 % kill rate on the lines the
+slice changed.
+
+| run | whole-file | changed lines | tested | killed | survived | no coverage | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A — before triage | 23.58 % | 80.00 % | 15 | 12 | 1 | 2 | 2 m 39 s |
+| B — after the null-result-set fix | 24.02 % | 86.67 % | 15 | 13 | 1 | 1 | 2 m 35 s |
+| **C — after counting the hidden request** | 24.45 % | **93.33 %** | **15** | **14** | 0 | 1 | 2 m 43 s |
+
+Backend Stryker.NET 4.16.0. Config: `stryker.5729.backend.json`. **Frontend is N/A, not skipped**: slice
+06 changed zero files under `Lighthouse.Frontend/` — the epic is backend-only, and the observable surface
+is the log.
+
+## Which number is the gate
+
+**93.33 % on the lines slice 06 changed**, same convention as the 5725, 5726 and 5728 runs above:
+whole-file figures are in the table for honesty, not as the verdict. Stryker.NET ignores line ranges in
+`mutate`, and slice 06 changed ~150 lines of a 1296-line connector, so the whole-file score is mostly a
+measurement of Azure DevOps code this slice never touched — code whose only tests are the live
+`AdoIntegration` fixtures the run has to exclude. The per-changed-line figure is recovered from
+`mutation-report.json` by intersecting each mutant's location with `git diff -U0 origin/main..HEAD`.
+
+**One trap worth writing down for the next slice**: run that intersection against the *committed* tree.
+The first attempt scored 60 % because the fix under evaluation was still uncommitted, so
+`git diff origin/main..HEAD` was nine lines behind the file Stryker had mutated and the line numbers no
+longer lined up — it reported survivors in `GetAllProjects` and `ExtractFieldValue`, neither of which this
+slice touches.
+
+## Backend
+
+| file | changed-line mutants | killed | survived | no coverage | score |
+| --- | --- | --- | --- | --- | --- |
+| `AzureDevOpsWorkTrackingConnector.cs` | 15 | 14 | 0 | 1 | **93.33 %** |
+| `WorkItemExtensions.cs` | 0 tested (9 compile-error) | — | — | — | n/a |
+
+### Closed by this pass
+
+Two survivors produced production fixes and three specs. Both were the same defect class the review pass
+found independently: **an empty answer read as a legitimate one, on a path where "empty" means "delete
+everything".**
+
+- **`SweepIdentities` — null-coalescing on the query's result set removed (`answer.WorkItems ?? []` →
+  `answer.WorkItems`).** The surviving mutant was the *safer* program: with the coalescing in place, an
+  answer carrying no result set became an empty sweep, and removal is `stored − swept`, so it would have
+  deleted every record the entity has on a cycle nothing else complains about. Without it, the sweep
+  throws and the caller falls back to the whole query. Fixed by refusing explicitly rather than by
+  deleting the guard, so the intent stays legible; pinned by
+  `SweepWorkItemsForTeam_RefusesWhenTheTrackerAnswersWithoutAResultSet`.
+- **`ThePayloadsAndFieldsFor` — the empty-id guard's block removed, `NoCoverage`.** Phase two with nothing
+  to fetch still went to the tracker. This is the connector-level twin of the survivor slice 02 closed at
+  `WorkItemService.cs:231`, and it is the cycle this epic exists to make cheap. Pinned by
+  `GetWorkItemsForTeam_ByReferenceId_AsksTheTrackerNothingWhenNothingMoved`.
+- **The spec that pinned it was itself blind at first.** It counted queries, payload reads and revision
+  reads — and the field-definition lookup that precedes every payload read is none of those, so the mutant
+  survived a test whose name already claimed otherwise. Slice 03 hit exactly this on the Jira side
+  (`GetCustomFieldReferences` still GETs `rest/api/latest/field`). The stub now counts every request kind.
+
+### Accepted survivors
+
+- **`AzureDevOpsWorkTrackingConnector.cs:682` — the `catch` block of `FetchAdoWorkItemsByQuery`,
+  `NoCoverage`.** Killing it means asserting that a failed whole-query fetch answers with no records — and
+  that behaviour is a latent hazard rather than a promise: on the full path, no records means
+  `stored − fetched` removes every item the team has. It predates this epic (only the block's line numbers
+  moved in this slice), and pinning it with a test would make the hazard harder to fix. Recorded here and
+  raised as its own finding rather than tested.
+
+### Not mutated, and not measurable
+
+- **`WorkItemExtensions.ExtractChangedDateFromWorkItem`: all 9 mutants on its lines are `CompileError`,**
+  so Stryker measures none of it. Mutating the `TryParse` guard leaves the pattern variable unassigned
+  (`CS0165`), which trips safe mode and removes every mutation in the method — the same shape the ledger
+  records for hand-applied probes. Its behaviour is covered by two specs that assert the value *and* the
+  `DateTimeKind`: `GetWorkItemsForTeam_RemembersWhenTheItemLastChangedRemotely` and
+  `SweepWorkItemsForTeam_ReportsTheStampTheWholeDownloadWouldStore`.
+- **Log message templates and display strings**, via `ignore-mutations: ["string"]` and
+  `ignore-methods: ["*Log*", "Console.*"]`, as in every earlier run in this epic.
+- **The rest of the connector** — board discovery, write-back, validation, project paging, credential
+  handling. Untouched by this slice, and reachable only from the live `AdoIntegration` fixtures excluded
+  from the filter. That is the whole of the gap between 24.45 % and 93.33 %.
+
+## Test filter
+
+`(FullyQualifiedName~AzureDevOps)` with every live-integration category excluded — `AdoIntegration` is
+load-bearing here: `AzureDevOpsWorkTrackingConnectorTest` and `AzureDevOpsWriteBackTest` talk to a real
+organisation (`dev.azure.com/huserben`, `CMFTTestTeamProject`) and Stryker would re-run them hundreds of
+times. `AzureDevOpsIncrementalSyncTest` carries no integration category — it drives a recording
+`WorkItemTrackingHttpClient` — and is what produces the 93.33 %. `AzureDevOpsBatchedWriteBackTest` and
+`AzureDevOpsStateTransitionParserTest` are included too and account for part of the killed count on
+unchanged lines.
 times.
