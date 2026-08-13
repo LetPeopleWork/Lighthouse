@@ -28,9 +28,12 @@ namespace Lighthouse.Backend.Models.WorkItemRules
                 .Select(definition => $"{AdditionalFieldPrefix}{definition.Id}")
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            ruleSet.Conditions = [.. ruleSet.Conditions.Where(condition => IsStillDefined(condition.FieldKey, definedKeys))];
-
-            return ruleSet;
+            return new WorkItemRuleSet
+            {
+                Version = ruleSet.Version,
+                Mode = ruleSet.Mode,
+                Conditions = [.. ruleSet.Conditions.Where(condition => IsStillDefined(condition.FieldKey, definedKeys))],
+            };
         }
 
         private static bool IsStillDefined(string fieldKey, HashSet<string> definedKeys)

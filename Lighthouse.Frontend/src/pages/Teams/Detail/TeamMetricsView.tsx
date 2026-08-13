@@ -1,12 +1,12 @@
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
-import { parseBlockedRuleSet } from "../../../models/Common/BaseSettings";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { ICycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { parseRuleSet } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
@@ -96,8 +96,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				setStateMappings(settings.stateMappings);
 				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
 				setHasBlockedConfig(
-					(parseBlockedRuleSet(settings.blockedRuleSetJson)?.conditions
-						.length ?? 0) > 0,
+					(parseRuleSet(settings.blockedRuleSetJson)?.conditions.length ?? 0) >
+						0,
 				);
 				setStalenessThresholdDays(settings.stalenessThresholdDays);
 				setBlockedStalenessThresholdDays(

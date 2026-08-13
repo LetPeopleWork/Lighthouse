@@ -21,40 +21,37 @@ import type { SaveState } from "../../../hooks/useModifySettings";
 import { useRuleRowDraft } from "../../../hooks/useRuleRowDraft";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
+import {
+	type IWorkItemRuleCondition,
+	type IWorkItemRuleSet,
+	parseRuleSet,
+	RULE_SET_SCHEMA_VERSION,
+	serializeRuleSet,
+} from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
-const RULE_SET_SCHEMA_VERSION = 1;
 
-interface RuleSetData {
-	rules: IWorkItemRuleCondition[];
-	mode: DeliveryRuleGroupMode;
-}
-
-const parseRuleSetFromJson = (json: string | null | undefined): RuleSetData => {
-	if (!json || json.trim() === "") {
-		return { rules: [], mode: "and" };
-	}
-	try {
-		const parsed = JSON.parse(json) as {
-			conditions?: IWorkItemRuleCondition[];
-			mode?: string;
-		};
-		const mode: DeliveryRuleGroupMode =
-			parsed.mode?.toLowerCase() === "or" ? "or" : "and";
-		return { rules: parsed.conditions ?? [], mode };
-	} catch {
-		return { rules: [], mode: "and" };
-	}
+const EMPTY_RULE_SET: IWorkItemRuleSet = {
+	version: RULE_SET_SCHEMA_VERSION,
+	mode: "and",
+	conditions: [],
 };
 
-const serializeRuleSetToJson = (data: RuleSetData): string => {
-	return JSON.stringify({
+const serializeConditions = (
+	conditions: IWorkItemRuleCondition[],
+	mode: DeliveryRuleGroupMode,
+): string | null => {
+	// A filter with no rules is stored as null — the column is the whole definition.
+	if (conditions.length === 0) {
+		return null;
+	}
+
+	return serializeRuleSet({
 		version: RULE_SET_SCHEMA_VERSION,
-		mode: data.mode,
-		conditions: data.rules,
+		mode,
+		conditions,
 	});
 };
 
@@ -144,26 +141,35 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 
-	const storedRuleSet = parseRuleSetFromJson(
-		teamSettings?.forecastFilterRuleSetJson,
-	);
+	const storedRuleSet =
+		parseRuleSet(teamSettings?.forecastFilterRuleSetJson) ?? EMPTY_RULE_SET;
 	const { rules: filterRules, trackRules } = useRuleRowDraft(
-		storedRuleSet.rules,
+		storedRuleSet.conditions,
 	);
 
-	const persistRuleSet = (next: RuleSetData) => {
-		const complete = next.rules.filter(isRuleConditionComplete);
-		onTeamSettingsChange(
-			"forecastFilterRuleSetJson",
-			complete.length === 0
-				? null
-				: serializeRuleSetToJson({ rules: complete, mode: next.mode }),
+	const persistRuleSet = (
+		conditions: IWorkItemRuleCondition[],
+		mode: DeliveryRuleGroupMode,
+	) => {
+		const next = serializeConditions(
+			conditions.filter(isRuleConditionComplete),
+			mode,
 		);
+		const stored = serializeConditions(
+			storedRuleSet.conditions,
+			storedRuleSet.mode,
+		);
+
+		if (next === stored) {
+			return;
+		}
+
+		onTeamSettingsChange("forecastFilterRuleSetJson", next);
 	};
 
 	const handleFilterRulesChange = (rules: IWorkItemRuleCondition[]) => {
 		trackRules(rules);
-		persistRuleSet({ rules, mode: storedRuleSet.mode });
+		persistRuleSet(rules, storedRuleSet.mode);
 	};
 
 	const handleDateChange = (name: keyof ITeamSettings, newDate: string) => {
@@ -258,7 +264,7 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 					rules={filterRules}
 					mode={storedRuleSet.mode}
 					onRulesChange={handleFilterRulesChange}
-					onModeChange={(mode) => persistRuleSet({ rules: filterRules, mode })}
+					onModeChange={(mode) => persistRuleSet(filterRules, mode)}
 					saveState={saveState}
 				/>
 			)}

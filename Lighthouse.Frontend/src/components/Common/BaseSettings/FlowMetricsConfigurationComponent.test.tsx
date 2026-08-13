@@ -9,12 +9,10 @@ import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	BLOCKED_RULE_SET_SCHEMA_VERSION,
-	blockedRuleSetSchema,
-	parseBlockedRuleSet,
-	serializeBlockedRuleSet,
-} from "../../../models/Common/BaseSettings";
-import type { IWorkItemRuleSchema } from "../../../models/WorkItemRules";
+	type IWorkItemRuleSchema,
+	parseRuleSet,
+	serializeRuleSet,
+} from "../../../models/WorkItemRules";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import { testTheme } from "../../../tests/testTheme";
 import FlowMetricsConfigurationComponent from "./FlowMetricsConfigurationComponent";
@@ -625,7 +623,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 	});
 
 	describe("Blocked Rule Set Configuration (DeliveryRuleBuilder)", () => {
-		const flaggedRuleSet = serializeBlockedRuleSet({
+		const flaggedRuleSet = serializeRuleSet({
 			version: 1,
 			mode: "or",
 			conditions: [
@@ -633,7 +631,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			],
 		});
 
-		const twoRuleSet = serializeBlockedRuleSet({
+		const twoRuleSet = serializeRuleSet({
 			version: 1,
 			mode: "and",
 			conditions: [
@@ -704,7 +702,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 			);
 			const call = blockedCalls[blockedCalls.length - 1];
 			expect(call).toBeTruthy();
-			const persisted = parseBlockedRuleSet(call?.[1] as string);
+			const persisted = parseRuleSet(call?.[1] as string);
 			expect(persisted?.conditions).toHaveLength(2);
 			expect(persisted?.conditions[1].value).toBe("On Hold");
 		});
@@ -727,7 +725,7 @@ describe("FlowMetricsConfigurationComponent", () => {
 				(c) => c[0] === "blockedRuleSetJson",
 			);
 			expect(call).toBeTruthy();
-			expect(parseBlockedRuleSet(call?.[1] as string)?.mode).toBe("or");
+			expect(parseRuleSet(call?.[1] as string)?.mode).toBe("or");
 		});
 
 		it("keeps the blocked rule editor open after the last rule row is cleared", async () => {
@@ -849,73 +847,6 @@ describe("FlowMetricsConfigurationComponent", () => {
 			const changedKeys = mockOnSettingsChange.mock.calls.map((c) => c[0]);
 			expect(changedKeys).not.toContain("blockedTags");
 			expect(changedKeys).not.toContain("blockedStates");
-		});
-	});
-
-	describe("blockedRuleSetSchema (Zod boundary)", () => {
-		it("accepts a well-formed blocked rule set", () => {
-			const result = blockedRuleSetSchema.safeParse({
-				version: 1,
-				mode: "or",
-				conditions: [
-					{ fieldKey: "state", operator: "equals", value: "Blocked" },
-				],
-			});
-			expect(result.success).toBe(true);
-		});
-
-		it("rejects a malformed blocked rule set at the boundary", () => {
-			const result = blockedRuleSetSchema.safeParse({
-				version: "not-a-number",
-				mode: "sometimes",
-				conditions: "nope",
-			});
-			expect(result.success).toBe(false);
-		});
-
-		it("returns null when parsing malformed JSON at the boundary", () => {
-			expect(parseBlockedRuleSet('{"conditions": ')).toBeNull();
-			expect(parseBlockedRuleSet('{"mode":"maybe"}')).toBeNull();
-			expect(parseBlockedRuleSet(null)).toBeNull();
-			expect(parseBlockedRuleSet(undefined)).toBeNull();
-			expect(parseBlockedRuleSet("")).toBeNull();
-			expect(parseBlockedRuleSet("   ")).toBeNull();
-		});
-
-		it("parses a well-formed blocked rule set JSON string", () => {
-			const result = parseBlockedRuleSet(
-				JSON.stringify({
-					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
-					mode: "or",
-					conditions: [
-						{ fieldKey: "state", operator: "equals", value: "Blocked" },
-					],
-				}),
-			);
-			expect(result).not.toBeNull();
-			expect(result?.mode).toBe("or");
-			expect(result?.conditions).toHaveLength(1);
-			expect(result?.conditions[0].fieldKey).toBe("state");
-		});
-
-		it("serializes a blocked rule set to JSON", () => {
-			const ruleSet = {
-				version: BLOCKED_RULE_SET_SCHEMA_VERSION,
-				mode: "or" as const,
-				conditions: [
-					{ fieldKey: "state", operator: "equals", value: "Blocked" },
-				],
-			};
-			const json = serializeBlockedRuleSet(ruleSet);
-			expect(json).toBe(
-				JSON.stringify({
-					version: BLOCKED_RULE_SET_SCHEMA_VERSION,
-					mode: "or",
-					conditions: [
-						{ fieldKey: "state", operator: "equals", value: "Blocked" },
-					],
-				}),
-			);
 		});
 	});
 

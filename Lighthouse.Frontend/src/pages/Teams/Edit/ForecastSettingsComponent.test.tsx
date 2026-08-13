@@ -402,10 +402,13 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 		fireEvent.click(await screen.findByTestId("add-rule-button"));
 
 		expect(await screen.findByTestId("rule-row")).toBeInTheDocument();
-		expect(onTeamSettingsChange).not.toHaveBeenCalledWith(
-			"forecastFilterRuleSetJson",
-			expect.anything(),
-		);
+		// not.toHaveBeenCalledWith(..., expect.anything()) would pass on a null write,
+		// which is exactly the redundant save this guards against.
+		expect(
+			onTeamSettingsChange.mock.calls.filter(
+				(call) => call[0] === "forecastFilterRuleSetJson",
+			),
+		).toHaveLength(0);
 	});
 
 	it("propagates editor rule changes through onTeamSettingsChange as serialised JSON", async () => {

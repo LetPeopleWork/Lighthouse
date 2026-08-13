@@ -18,16 +18,14 @@ import {
 } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import { useRuleRowDraft } from "../../../hooks/useRuleRowDraft";
-import {
-	BLOCKED_RULE_SET_SCHEMA_VERSION,
-	type IBaseSettings,
-	parseBlockedRuleSet,
-	serializeBlockedRuleSet,
-} from "../../../models/Common/BaseSettings";
+import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type {
-	IWorkItemRuleCondition,
-	IWorkItemRuleSchema,
+import {
+	type IWorkItemRuleCondition,
+	type IWorkItemRuleSchema,
+	parseRuleSet,
+	RULE_SET_SCHEMA_VERSION,
+	serializeRuleSet,
 } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -65,8 +63,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	// also be recomputed on every settings change).
 	const [isBlockedItemsEnabled, setIsBlockedItemsEnabled] = useState(
 		() =>
-			(parseBlockedRuleSet(settings.blockedRuleSetJson)?.conditions.length ??
-				0) > 0,
+			(parseRuleSet(settings.blockedRuleSetJson)?.conditions.length ?? 0) > 0,
 	);
 	const [isStalenessEnabled, setIsStalenessEnabled] = useState(false);
 	const [isBlockedStalenessEnabled, setIsBlockedStalenessEnabled] =
@@ -92,8 +89,8 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 	const blockedRuleSet = useMemo(
 		() =>
-			parseBlockedRuleSet(settings.blockedRuleSetJson) ?? {
-				version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+			parseRuleSet(settings.blockedRuleSetJson) ?? {
+				version: RULE_SET_SCHEMA_VERSION,
 				mode: "and" as DeliveryRuleGroupMode,
 				conditions: [],
 			},
@@ -289,8 +286,8 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 			return null;
 		}
 
-		return serializeBlockedRuleSet({
-			version: BLOCKED_RULE_SET_SCHEMA_VERSION,
+		return serializeRuleSet({
+			version: RULE_SET_SCHEMA_VERSION,
 			mode,
 			conditions,
 		});
