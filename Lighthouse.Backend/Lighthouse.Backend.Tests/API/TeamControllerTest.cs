@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -32,6 +33,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
         private Mock<IForecastFilterRuleService> forecastFilterRuleServiceMock;
+        private Mock<IBlockedItemService> blockedItemServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
@@ -47,6 +49,16 @@ namespace Lighthouse.Backend.Tests.API
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             forecastFilterRuleServiceMock = new Mock<IForecastFilterRuleService>();
+            forecastFilterRuleServiceMock
+                .Setup(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<Team>()))
+                .Returns(true);
+            blockedItemServiceMock = new Mock<IBlockedItemService>();
+            blockedItemServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(new WorkItemRuleSet());
+            blockedItemServiceMock
+                .Setup(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(true);
             licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             rbacAdministrationServiceMock
@@ -708,6 +720,48 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateTeam_BlockedRuleSetFailsValidation_ReturnsBadRequest()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            blockedItemServiceMock
+                .Setup(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(false);
+
+            var dto = new TeamSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                BlockedRuleSetJson = "{\"version\":1,\"mode\":\"or\",\"conditions\":[{\"fieldKey\":\"workitem.tags\",\"operator\":\"contains\",\"value\":\"\"}]}",
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public async Task UpdateTeam_ForecastFilterRuleSetFailsValidation_ReturnsBadRequest()
+        {
+            var team = new Team { Id = 1 };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(team);
+            forecastFilterRuleServiceMock
+                .Setup(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<Team>()))
+                .Returns(false);
+
+            var dto = new TeamSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                ForecastFilterRuleSetJson = "{\"version\":1,\"mode\":\"and\",\"conditions\":[{\"fieldKey\":\"workitem.type\",\"operator\":\"equals\",\"value\":\"Bug\"}]}",
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
         public async Task UpdateTeam_ValidStateMappings_ReturnsOk()
         {
             var team = new Team { Id = 1, DoneItemsCutoffDays = 180 };
@@ -752,11 +806,6 @@ namespace Lighthouse.Backend.Tests.API
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
-
-            var blockedItemServiceMock = new Mock<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>();
-            blockedItemServiceMock
-                .Setup(x => x.GetEffectiveRuleSet(It.IsAny<WorkTrackingSystemOptionsOwner>()))
-                .Returns(new WorkItemRuleSet());
 
             return new TeamController(
                 teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));

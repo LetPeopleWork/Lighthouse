@@ -2,11 +2,13 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -22,6 +24,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
         private Mock<IUpdateQueueService> updateQueueServiceMock;
+        private Mock<IBlockedItemService> blockedItemServiceMock;
 
         [SetUp]
         public void Setup()
@@ -31,6 +34,13 @@ namespace Lighthouse.Backend.Tests.API
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             updateQueueServiceMock = new Mock<IUpdateQueueService>();
+            blockedItemServiceMock = new Mock<IBlockedItemService>();
+            blockedItemServiceMock
+                .Setup(x => x.GetEffectiveRuleSet(It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(new WorkItemRuleSet());
+            blockedItemServiceMock
+                .Setup(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(true);
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().ToArray());
@@ -380,6 +390,27 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdatePortfolio_BlockedRuleSetFailsValidation_ReturnsBadRequest()
+        {
+            var portfolio = new Portfolio { Id = 1 };
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(portfolio);
+            blockedItemServiceMock
+                .Setup(x => x.ValidateRuleSet(It.IsAny<WorkItemRuleSet>(), It.IsAny<WorkTrackingSystemOptionsOwner>()))
+                .Returns(false);
+
+            var dto = new PortfolioSettingDto
+            {
+                WorkTrackingSystemConnectionId = 1,
+                BlockedRuleSetJson = "{\"version\":1,\"mode\":\"or\",\"conditions\":[{\"fieldKey\":\"feature.tags\",\"operator\":\"contains\",\"value\":\"\"}]}",
+            };
+
+            var subject = CreateSubject();
+            var result = await subject.UpdatePortfolio(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
         public async Task UpdatePortfolio_InvalidStateMappings_ReturnsBadRequest()
         {
             var portfolio = new Portfolio { Id = 1 };
@@ -403,11 +434,6 @@ namespace Lighthouse.Backend.Tests.API
 
         private PortfolioController CreateSubject()
         {
-            var blockedItemServiceMock = new Mock<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>();
-            blockedItemServiceMock
-                .Setup(x => x.GetEffectiveRuleSet(It.IsAny<WorkTrackingSystemOptionsOwner>()))
-                .Returns(new Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet());
-
             return new PortfolioController(
                 portfolioRepoMock.Object,
                 teamRepoMock.Object,

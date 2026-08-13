@@ -39,6 +39,11 @@ namespace Lighthouse.Backend.API
         ILighthouseClock clock)
         : ControllerBase
     {
+        private static readonly JsonSerializerOptions RuleSetSerializerOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+
         internal const int MinStalenessThresholdDays = 0;
         internal const int MaxStalenessThresholdDays = 365;
 
@@ -246,7 +251,7 @@ namespace Lighthouse.Backend.API
             WorkItemRuleSet? ruleSet;
             try
             {
-                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson);
+                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson, RuleSetSerializerOptions);
             }
             catch (JsonException)
             {
@@ -276,7 +281,7 @@ namespace Lighthouse.Backend.API
             WorkItemRuleSet? ruleSet;
             try
             {
-                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson);
+                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson, RuleSetSerializerOptions);
             }
             catch (JsonException)
             {

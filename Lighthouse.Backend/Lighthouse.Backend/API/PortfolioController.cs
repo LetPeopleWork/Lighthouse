@@ -37,6 +37,11 @@ namespace Lighthouse.Backend.API
         : ControllerBase
 #pragma warning restore S107
     {
+        private static readonly JsonSerializerOptions RuleSetSerializerOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public async Task<ActionResult<PortfolioDto>> Get(int portfolioId)
@@ -196,7 +201,7 @@ namespace Lighthouse.Backend.API
             WorkItemRuleSet? ruleSet;
             try
             {
-                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson);
+                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson, RuleSetSerializerOptions);
             }
             catch (JsonException)
             {
