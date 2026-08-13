@@ -1,3 +1,5 @@
+using Microsoft.VisualStudio.Services.Common;
+
 using static Lighthouse.Backend.Tests.TestHelpers.AzureDevOpsOrganisation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
@@ -13,6 +15,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// What the failed cycle costs is one team, not the refresh - every entity's update is wrapped
     /// individually - and the fetch runs before anything is written, so a refusal leaves the stored data
     /// untouched rather than half-updated.
+    ///
+    /// The tracker's own failure is what has to arrive, unwrapped: an operator reading the log needs to see
+    /// the area path Azure DevOps refused, not that something somewhere went wrong.
     /// </summary>
     [TestFixture]
     public class AzureDevOpsFetchRefusalTest
@@ -26,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheQuery = true;
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team),
-                Throws.Exception,
+                Throws.TypeOf<VssServiceException>(),
                 "An expired token or a timeout is not the tracker saying the query matches nothing. Answering "
                 + "with no records hands removal an empty query, which deletes every Work Item the team has.");
         }
@@ -38,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheFieldLookup = true;
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team),
-                Throws.Exception,
+                Throws.TypeOf<VssServiceException>(),
                 "The field lookup runs after the query already succeeded and before any payload is read, so "
                 + "its failure is invisible to anything watching the query - and empties the team just the same.");
         }
@@ -62,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectPayloadReads = true;
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team),
-                Throws.Exception,
+                Throws.TypeOf<VssServiceException>(),
                 "Azure DevOps fails a whole batch over one id deleted since the query ran. Reading that as an "
                 + "empty query deletes the other one hundred and ninety-nine records in the batch too.");
         }
@@ -74,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheFieldLookup = true;
 
             Assert.That(async () => await subject.GetWorkItemsForTeam(team, [$"{TheOnlyItem}"]),
-                Throws.Exception,
+                Throws.TypeOf<VssServiceException>(),
                 "The keyed fetch is where the cheap refresh sends its traffic. A failure it answers with no "
                 + "records reports the moved items as gone.");
         }
@@ -86,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheQuery = true;
 
             Assert.That(async () => await subject.GetFeaturesForProject(portfolio),
-                Throws.Exception,
+                Throws.TypeOf<VssServiceException>(),
                 "On the portfolio half an empty answer strips every Feature's portfolio claim, and the "
                 + "orphaned-Feature cleanup then deletes outright whatever no portfolio still claims.");
         }
@@ -98,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             ado.RejectTheQuery = true;
 
             Assert.That(async () => await subject.GetParentFeaturesDetails(portfolio, [$"{TheOnlyItem}"]),
-                Throws.Exception,
+                Throws.TypeOf<VssServiceException>(),
                 "Parent Features are fetched by the same swallowing path, and a parent that comes back empty "
                 + "is one every child Feature stops being able to name.");
         }

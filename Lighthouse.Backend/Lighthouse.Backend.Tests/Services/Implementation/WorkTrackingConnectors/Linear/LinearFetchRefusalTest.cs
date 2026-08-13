@@ -56,6 +56,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 + "to keep answering with nothing, or removal never runs and departed Features live forever.");
         }
 
+        [Test]
+        public async Task ValidateTeamSettings_ReportsAFetchItCouldNotMakeAsAFailureRatherThanAsAnEmptyBoard()
+        {
+            var subject = ALinearThat(WillNotAnswer());
+
+            var result = await subject.ValidateTeamSettings(ATeamOnLinear());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("validation_failed"),
+                    "Validation reads the workspace on its own path rather than through the team fetch, so it "
+                    + "has to make the same distinction independently: an unreachable workspace is not an "
+                    + "empty one, and telling an operator to go and check their states hides the outage.");
+            }
+        }
+
+        [Test]
+        public async Task ValidatePortfolioSettings_ReportsAFetchItCouldNotMakeAsAFailureRatherThanAsAnEmptyBoard()
+        {
+            var subject = ALinearThat(WillNotAnswer());
+
+            var result = await subject.ValidatePortfolioSettings(APortfolioOnLinear());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.False);
+                Assert.That(result.Code, Is.EqualTo("validation_failed"),
+                    "Same on the portfolio half: 'no features found' names a configuration problem, and a "
+                    + "failed round trip is not one.");
+            }
+        }
+
         private static HttpMessageHandler WillNotAnswer()
         {
             return HandlerReturning(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)
