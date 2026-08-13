@@ -1071,7 +1071,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return query;
         }
 
-        private Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
+        // Overridable so a test can hand the connector a recording client. Which requests this connector
+        // issues - and how many of them per work item - is otherwise only observable against a live
+        // organisation, and that is the whole subject of the incremental sync.
+        internal virtual Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
         {
             return GetClientAsync<WorkItemTrackingHttpClient>(workTrackingSystemConnection);
         }
