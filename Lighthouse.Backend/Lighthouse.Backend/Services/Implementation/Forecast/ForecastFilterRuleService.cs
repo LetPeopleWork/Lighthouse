@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -13,8 +12,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         ILicenseService licenseService)
         : IForecastFilterRuleService
     {
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
-
         public WorkItemRuleSchema GetSchema(Team team)
         {
             var fields = fieldProvider.GetFixedFields().ToList();
@@ -50,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 return null;
             }
             
-            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(team.ForecastFilterRuleSetJson, JsonSerializerOptions);
+            var ruleSet = WorkItemRuleSetJson.Deserialize(team.ForecastFilterRuleSetJson);
             if (ruleSet == null || ruleSet.Conditions.Count == 0)
             {
                 return null;

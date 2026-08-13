@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
@@ -18,12 +17,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IRuleFieldProvider<WorkItem> workItemFieldProvider)
         : IBlockedItemService
     {
-        private static readonly JsonSerializerOptions JsonSerializerOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
-
         private static readonly RuleEvaluator<Feature> FeatureRuleEvaluator = new();
 
         private static readonly FeatureFieldProvider FeatureFieldProvider = new();
@@ -54,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         {
             if (!string.IsNullOrWhiteSpace(owner.BlockedRuleSetJson))
             {
-                var stored = JsonSerializer.Deserialize<WorkItemRuleSet>(owner.BlockedRuleSetJson, JsonSerializerOptions);
+                var stored = WorkItemRuleSetJson.Deserialize(owner.BlockedRuleSetJson);
                 if (stored != null)
                 {
                     return stored;
@@ -71,7 +64,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         public string GetEffectiveRuleSetJson(WorkTrackingSystemOptionsOwner owner)
         {
-            return JsonSerializer.Serialize(GetEffectiveRuleSet(owner), JsonSerializerOptions);
+            return WorkItemRuleSetJson.Serialize(GetEffectiveRuleSet(owner));
         }
 
         public bool ValidateRuleSet(WorkItemRuleSet ruleSet, WorkTrackingSystemOptionsOwner owner)

@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 ],
             };
 
-            return JsonSerializer.Serialize(ruleSet);
+            return WorkItemRuleSetJson.Serialize(ruleSet);
         }
 
         private void SeedBurnupSnapshots(int deliveryId)

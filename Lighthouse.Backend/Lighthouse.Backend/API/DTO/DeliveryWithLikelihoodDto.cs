@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 
@@ -105,10 +104,8 @@ namespace Lighthouse.Backend.API.DTO
                 return new WorkItemRuleSet();
             }
 
-            return JsonSerializer.Deserialize<WorkItemRuleSet>(ruleDefinitionJson, JsonOptions) ?? new WorkItemRuleSet();
+            return WorkItemRuleSetJson.Deserialize(ruleDefinitionJson) ?? new WorkItemRuleSet();
         }
-
-        private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         private static List<string> GetTeamsWithoutForecast(Delivery delivery)
         {

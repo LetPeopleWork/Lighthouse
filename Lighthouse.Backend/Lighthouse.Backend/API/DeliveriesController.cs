@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
@@ -266,7 +265,7 @@ namespace Lighthouse.Backend.API
                     Value = r.Value
                 }).ToList()
             };
-            delivery.RuleDefinitionJson = JsonSerializer.Serialize(ruleSet);
+            delivery.RuleDefinitionJson = WorkItemRuleSetJson.Serialize(ruleSet);
             delivery.RuleSchemaVersion = WorkItemRuleSet.SchemaVersion;
 
 

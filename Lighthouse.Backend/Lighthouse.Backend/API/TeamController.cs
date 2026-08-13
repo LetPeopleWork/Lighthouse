@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Lighthouse.Backend.API.DTO;
+﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
@@ -39,11 +38,6 @@ namespace Lighthouse.Backend.API
         ILighthouseClock clock)
         : ControllerBase
     {
-        private static readonly JsonSerializerOptions RuleSetSerializerOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-        };
-
         internal const int MinStalenessThresholdDays = 0;
         internal const int MaxStalenessThresholdDays = 365;
 
@@ -232,80 +226,11 @@ namespace Lighthouse.Backend.API
                 return null;
             }
 
-            var filterValidation = ValidateForecastFilterRuleSet(teamSetting.ForecastFilterRuleSetJson, team);
-            if (!filterValidation.IsValid)
-            {
-                return filterValidation.ErrorMessage;
-            }
+            var filterError = RuleSetValidation.ValidateForecastFilterRuleSet(
+                teamSetting.ForecastFilterRuleSetJson, team, forecastFilterRuleService);
 
-            return ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, team);
-        }
-
-        private ForecastFilterValidationResult ValidateForecastFilterRuleSet(string? ruleSetJson, Team team)
-        {
-            if (string.IsNullOrWhiteSpace(ruleSetJson))
-            {
-                return ForecastFilterValidationResult.Valid();
-            }
-
-            WorkItemRuleSet? ruleSet;
-            try
-            {
-                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson, RuleSetSerializerOptions);
-            }
-            catch (JsonException)
-            {
-                return ForecastFilterValidationResult.Invalid("Forecast filter rule set is not valid JSON.");
-            }
-
-            if (ruleSet == null || ruleSet.Conditions.Count == 0)
-            {
-                return ForecastFilterValidationResult.Valid();
-            }
-
-            if (!forecastFilterRuleService.ValidateRuleSet(ruleSet, team))
-            {
-                return ForecastFilterValidationResult.Invalid("Forecast filter rule set is invalid: unknown field key, unsupported operator, value exceeds maximum length, or rule count exceeds the allowed maximum.");
-            }
-
-            return ForecastFilterValidationResult.Valid();
-        }
-
-        private string? ValidateBlockedRuleSet(string? ruleSetJson, Team team)
-        {
-            if (string.IsNullOrWhiteSpace(ruleSetJson))
-            {
-                return null;
-            }
-
-            WorkItemRuleSet? ruleSet;
-            try
-            {
-                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson, RuleSetSerializerOptions);
-            }
-            catch (JsonException)
-            {
-                return "Blocked rule set is not valid JSON.";
-            }
-
-            if (ruleSet == null || ruleSet.Conditions.Count == 0)
-            {
-                return null;
-            }
-
-            if (!blockedItemService.ValidateRuleSet(ruleSet, team))
-            {
-                return "Blocked rule set is invalid: unknown field key, unsupported operator, value exceeds maximum length, or rule count exceeds the allowed maximum.";
-            }
-
-            return null;
-        }
-
-        private sealed record ForecastFilterValidationResult(bool IsValid, string? ErrorMessage)
-        {
-            public static ForecastFilterValidationResult Valid() => new(true, null);
-
-            public static ForecastFilterValidationResult Invalid(string message) => new(false, message);
+            return filterError
+                ?? RuleSetValidation.ValidateBlockedRuleSet(teamSetting.BlockedRuleSetJson, team, blockedItemService);
         }
     }
 }

@@ -869,7 +869,8 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
             await controller.CreateDelivery(portfolioId, request);
 
-            Assert.That(savedDelivery!.RuleDefinitionJson, Does.Match("\\\"Mode\\\":\\s*\\\"or\\\""));
+            var storedRuleSet = WorkItemRuleSetJson.Deserialize(savedDelivery!.RuleDefinitionJson);
+            Assert.That(storedRuleSet?.Mode, Is.EqualTo(WorkItemRuleSet.ModeOr));
         }
 
         [Test]
@@ -895,7 +896,8 @@ namespace Lighthouse.Backend.Tests.API
             var controller = CreateSubject();
             await controller.CreateDelivery(portfolioId, request);
 
-            Assert.That(savedDelivery!.RuleDefinitionJson, Does.Match("\\\"Mode\\\":\\s*\\\"and\\\""));
+            var storedRuleSet = WorkItemRuleSetJson.Deserialize(savedDelivery!.RuleDefinitionJson);
+            Assert.That(storedRuleSet?.Mode, Is.EqualTo(WorkItemRuleSet.ModeAnd));
         }
 
         [Test]

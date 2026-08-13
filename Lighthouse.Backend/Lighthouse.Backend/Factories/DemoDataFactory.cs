@@ -1,5 +1,4 @@
-﻿﻿using System.Text.Json;
-using Lighthouse.Backend.Models;
+﻿﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
@@ -154,7 +153,7 @@ namespace Lighthouse.Backend.Factories
                 Conditions = [new WorkItemRuleCondition { FieldKey = fieldKey, Operator = RuleOperators.Contains, Value = "Blocked" }],
             };
 
-            return JsonSerializer.Serialize(ruleSet);
+            return WorkItemRuleSetJson.Serialize(ruleSet);
         }
     }
 

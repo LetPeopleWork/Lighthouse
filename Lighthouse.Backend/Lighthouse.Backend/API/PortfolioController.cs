@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Lighthouse.Backend.API.DTO;
+﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
@@ -37,11 +36,6 @@ namespace Lighthouse.Backend.API
         : ControllerBase
 #pragma warning restore S107
     {
-        private static readonly JsonSerializerOptions RuleSetSerializerOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-        };
-
         [HttpGet]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public async Task<ActionResult<PortfolioDto>> Get(int portfolioId)
@@ -129,7 +123,8 @@ namespace Lighthouse.Backend.API
             var portfolioForValidation = portfolioRepository.GetById(portfolioId);
             if (portfolioForValidation != null)
             {
-                var blockedError = ValidateBlockedRuleSet(portfolioSetting.BlockedRuleSetJson, portfolioForValidation);
+                var blockedError = RuleSetValidation.ValidateBlockedRuleSet(
+                    portfolioSetting.BlockedRuleSetJson, portfolioForValidation, blockedItemService);
                 if (blockedError != null)
                 {
                     return BadRequest(blockedError);
@@ -189,36 +184,6 @@ namespace Lighthouse.Backend.API
                 };
                 return portfolioSettingDto;
             });
-        }
-
-        private string? ValidateBlockedRuleSet(string? ruleSetJson, Portfolio portfolio)
-        {
-            if (string.IsNullOrWhiteSpace(ruleSetJson))
-            {
-                return null;
-            }
-
-            WorkItemRuleSet? ruleSet;
-            try
-            {
-                ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(ruleSetJson, RuleSetSerializerOptions);
-            }
-            catch (JsonException)
-            {
-                return "Blocked rule set is not valid JSON.";
-            }
-
-            if (ruleSet == null || ruleSet.Conditions.Count == 0)
-            {
-                return null;
-            }
-
-            if (!blockedItemService.ValidateRuleSet(ruleSet, portfolio))
-            {
-                return "Blocked rule set is invalid: unknown field key, unsupported operator, value exceeds maximum length, or rule count exceeds the allowed maximum.";
-            }
-
-            return null;
         }
     }
 }
