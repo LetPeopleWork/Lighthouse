@@ -79,13 +79,23 @@ the fix was carried across:
 - **The evaluator guard is shared**, so a blank contains value is inert for exclusion and
   delivery rules too, not just blocked ones.
 
+## Deleted additional fields heal themselves
+
+Reviving validation made it stricter than data already in the wild:
+`WorkTrackingSystemConnectionController.UpdateAdditionalFieldDefinitions` deletes the
+additional fields missing from its payload and re-adds them under fresh ids, so a rule
+saved earlier can name a field that is gone. That rule fails `IsValid`, which would have
+rejected the entire settings save until someone found and deleted the row by hand.
+
+Reading a rule set now drops conditions naming a field the connection no longer defines,
+so the settings page never shows one and the next save writes the cleaned set back. When
+the definitions are not loaded the conditions are kept — a deleted field and an unloaded
+one look identical, and discarding a live rule is the worse mistake. This also closes the
+"unknown field reads as empty, and a negated operator therefore matches everything" path,
+which was the original leading theory for this bug.
+
 ## Known follow-ups
 
-- **Live validation is stricter than stored data.** With validation running again, a
-  stored rule referencing a deleted additional field now fails `IsValid` and rejects the
-  whole settings save with 400. `WorkTrackingSystemConnectionController.UpdateAdditionalFieldDefinitions`
-  deletes and re-adds non-predefined fields with new ids, so such rows can exist. Not
-  addressed here.
 - **Migrated state rules compare against the raw state**, while the legacy
   `BlockedStates` held mapped names. Teams using state mappings lost their blocked signal
   in the same backfill.
