@@ -47,13 +47,15 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 return null;
             }
             
-            var ruleSet = WorkItemRuleSetJson.Deserialize(team.ForecastFilterRuleSetJson);
-            if (ruleSet == null || ruleSet.Conditions.Count == 0)
+            var stored = WorkItemRuleSetJson.Deserialize(team.ForecastFilterRuleSetJson);
+            if (stored == null)
             {
                 return null;
             }
 
-            return ruleSet;
+            var ruleSet = AdditionalFieldRuleHealing.WithoutDeletedAdditionalFields(stored, team.WorkTrackingSystemConnection);
+
+            return ruleSet.Conditions.Count == 0 ? null : ruleSet;
         }
 
         public IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, WorkItemRuleSet ruleSet)

@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var stored = WorkItemRuleSetJson.Deserialize(owner.BlockedRuleSetJson);
                 if (stored != null)
                 {
-                    return stored;
+                    return AdditionalFieldRuleHealing.WithoutDeletedAdditionalFields(stored, owner.WorkTrackingSystemConnection);
                 }
             }
 

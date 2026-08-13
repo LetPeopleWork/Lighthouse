@@ -229,6 +229,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 licenseServiceMock.Object);
         }
 
+        [Test]
+        public void GetEffectiveRuleSet_ConditionOnADeletedAdditionalField_DropsThatCondition()
+        {
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var team = CreateTeamWithAdditionalFields(new AdditionalFieldDefinition { Id = 42, DisplayName = "Impediment" });
+            team.ForecastFilterRuleSetJson = SerializeRuleSet(new WorkItemRuleSet
+            {
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = "workitem.type", Operator = "equals", Value = "Bug" },
+                    new WorkItemRuleCondition { FieldKey = "additionalField.99", Operator = "equals", Value = "Yes" }
+                ]
+            });
+            var subject = CreateSubject();
+
+            var result = subject.GetEffectiveRuleSet(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result!.Conditions, Has.Count.EqualTo(1));
+                Assert.That(result.Conditions[0].FieldKey, Is.EqualTo("workitem.type"));
+            }
+        }
+
+        [Test]
+        public void GetEffectiveRuleSet_OnlyConditionTargetsADeletedAdditionalField_ReturnsNull()
+        {
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+            var team = CreateTeamWithAdditionalFields(new AdditionalFieldDefinition { Id = 42, DisplayName = "Impediment" });
+            team.ForecastFilterRuleSetJson = SerializeRuleSet(new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = "additionalField.99", Operator = "equals", Value = "Yes" }]
+            });
+            var subject = CreateSubject();
+
+            Assert.That(subject.GetEffectiveRuleSet(team), Is.Null);
+        }
+
         private static Team CreateTeam(string? forecastFilterRuleSetJson = null)
         {
             return new Team
