@@ -61,6 +61,24 @@ Three separate places should have caught this and none did:
 4. Both controllers deserialize case-insensitively, putting the existing validation back
    in the save path.
 
+## The same hole in the other rule surfaces
+
+Blocked rules are one of four columns driven by the same engine and the same builder, so
+the fix was carried across:
+
+- **The exclusion rules** (a team's forecast filter, "Exclude items where…") wrote a
+  half-typed row into the settings payload exactly like the blocked editor did. A blank
+  contains value there would have excluded every item carrying anything in that field from
+  the throughput a forecast runs on. Both editors now share one hook for the rows being
+  edited.
+- **Delivery rule definitions** were serialized with no options while every other column
+  used camelCase. Writer and reader only agreed because *both* omitted them — an accident,
+  not a decision, and any camelCase definition would have selected no features while
+  reading as "no rules configured". One serializer now owns the format for all four
+  columns: it reads either casing so old rows still load, and writes camelCase.
+- **The evaluator guard is shared**, so a blank contains value is inert for exclusion and
+  delivery rules too, not just blocked ones.
+
 ## Known follow-ups
 
 - **Live validation is stricter than stored data.** With validation running again, a
@@ -68,9 +86,6 @@ Three separate places should have caught this and none did:
   whole settings save with 400. `WorkTrackingSystemConnectionController.UpdateAdditionalFieldDefinitions`
   deletes and re-adds non-predefined fields with new ids, so such rows can exist. Not
   addressed here.
-- **`DeliveryRuleService.RecomputeRuleBasedDeliveries`** carries the same optionless
-  deserialize (`DeliveryRuleService.cs:63`), which would make rule-based deliveries match
-  nothing. Separate area, not touched.
 - **Migrated state rules compare against the raw state**, while the legacy
   `BlockedStates` held mapped names. Teams using state mappings lost their blocked signal
   in the same backfill.
