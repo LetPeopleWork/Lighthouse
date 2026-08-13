@@ -48,6 +48,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
                 return false;
             }
 
+            if (IsContainsWithoutValue(condition))
+            {
+                return false;
+            }
+
             return condition.Value.Length <= maxValueLength;
         }
 
@@ -122,6 +127,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
 
         private static bool EvaluateCondition(T item, WorkItemRuleCondition condition, IRuleFieldProvider<T> fieldProvider)
         {
+            if (IsContainsWithoutValue(condition))
+            {
+                return false;
+            }
+
             var op = condition.Operator.ToLowerInvariant();
 
             if (IsMultiValueField(condition.FieldKey, fieldProvider))
@@ -141,6 +151,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItemRules
                 RuleOperators.IsNotEmpty => !string.IsNullOrEmpty(fieldValue),
                 _ => false,
             };
+        }
+
+        /// <summary>
+        /// "Contains nothing" is true of every string, so a contains rule whose value was left blank
+        /// would mark every item — and its negation would mark none. Neither is ever what someone
+        /// meant to express, so a blank value makes the condition match nothing at all.
+        /// </summary>
+        private static bool IsContainsWithoutValue(WorkItemRuleCondition condition)
+        {
+            var op = condition.Operator.ToLowerInvariant();
+            return op is RuleOperators.Contains or RuleOperators.NotContains
+                && string.IsNullOrEmpty(condition.Value);
         }
 
         private static bool IsMultiValueField(string fieldKey, IRuleFieldProvider<T> fieldProvider)

@@ -98,6 +98,71 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
             Assert.That(result, shouldMatch ? Does.Contain(feature) : Is.Empty);
         }
 
+        [TestCase("contains", "Authentication Module")]
+        [TestCase("contains", "")]
+        [TestCase("notContains", "Authentication Module")]
+        [TestCase("notContains", "")]
+        public void Match_ContainsOperatorWithoutAValue_MatchesNothing(string op, string itemFieldValue)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = op, Value = string.Empty }]
+            };
+            var feature = new Feature { Name = "F1" };
+            fieldProvider.Setup(p => p.GetFieldValue(feature, TypeFieldKey)).Returns(itemFieldValue);
+
+            var result = subject.Match(ruleSet, [feature], fieldProvider.Object).ToList();
+
+            Assert.That(result, Is.Empty);
+        }
+
+        [TestCase("contains", new[] { "Priority" })]
+        [TestCase("contains", new string[0])]
+        [TestCase("notContains", new[] { "Priority" })]
+        [TestCase("notContains", new string[0])]
+        public void Match_TagsContainsOperatorWithoutAValue_MatchesNothing(string op, string[] tags)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TagsFieldKey, Operator = op, Value = string.Empty }]
+            };
+            var feature = new Feature { Name = "F1" };
+            fieldProvider.Setup(p => p.GetFieldValue(feature, TagsFieldKey)).Returns(string.Empty);
+            fieldProvider.Setup(p => p.GetTagsForField(feature, TagsFieldKey)).Returns(tags);
+
+            var result = subject.Match(ruleSet, [feature], fieldProvider.Object).ToList();
+
+            Assert.That(result, Is.Empty);
+        }
+
+        [Test]
+        public void Match_ModeOr_ValuelessContainsCondition_LeavesSiblingConditionsIntact()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = "or",
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "On Hold" },
+                    new WorkItemRuleCondition { FieldKey = TagsFieldKey, Operator = "contains", Value = string.Empty },
+                ]
+            };
+            var onHold = new Feature { Name = "H" };
+            var active = new Feature { Name = "A" };
+            fieldProvider.Setup(p => p.GetFieldValue(onHold, StateFieldKey)).Returns("On Hold");
+            fieldProvider.Setup(p => p.GetTagsForField(onHold, TagsFieldKey)).Returns(["Priority"]);
+            fieldProvider.Setup(p => p.GetFieldValue(active, StateFieldKey)).Returns("Active");
+            fieldProvider.Setup(p => p.GetTagsForField(active, TagsFieldKey)).Returns(["Priority"]);
+
+            var result = subject.Match(ruleSet, [onHold, active], fieldProvider.Object).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Has.Count.EqualTo(1));
+                Assert.That(result, Does.Contain(onHold));
+            }
+        }
+
         [Test]
         public void Match_ModeOmitted_DefaultsToAndSemantics()
         {
@@ -315,6 +380,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
             var valid = subject.IsValid(ruleSet, BuildSchema());
 
             Assert.That(valid, Is.True);
+        }
+
+        [TestCase("contains")]
+        [TestCase("notContains")]
+        public void IsValid_ContainsOperatorWithEmptyValue_ReturnsFalse(string op)
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = op, Value = string.Empty }]
+            };
+
+            var valid = subject.IsValid(ruleSet, BuildSchema());
+
+            Assert.That(valid, Is.False);
         }
 
         [Test]
