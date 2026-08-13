@@ -9,12 +9,16 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
-import type { DeliveryRuleGroupMode } from "../../../components/Common/DeliveryRuleBuilder/types";
+import {
+	type DeliveryRuleGroupMode,
+	isRuleConditionComplete,
+} from "../../../components/Common/DeliveryRuleBuilder/types";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import ReloadDependentDataAction from "../../../components/Common/StateMappings/ReloadDependentDataAction";
 import ForecastFilterEditor from "../../../components/Teams/ForecastFilterEditor/ForecastFilterEditor";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { SaveState } from "../../../hooks/useModifySettings";
+import { useRuleRowDraft } from "../../../hooks/useRuleRowDraft";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItemRuleCondition } from "../../../models/WorkItemRules";
@@ -140,6 +144,28 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 	const { getTerm } = useTerminology();
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 
+	const storedRuleSet = parseRuleSetFromJson(
+		teamSettings?.forecastFilterRuleSetJson,
+	);
+	const { rules: filterRules, trackRules } = useRuleRowDraft(
+		storedRuleSet.rules,
+	);
+
+	const persistRuleSet = (next: RuleSetData) => {
+		const complete = next.rules.filter(isRuleConditionComplete);
+		onTeamSettingsChange(
+			"forecastFilterRuleSetJson",
+			complete.length === 0
+				? null
+				: serializeRuleSetToJson({ rules: complete, mode: next.mode }),
+		);
+	};
+
+	const handleFilterRulesChange = (rules: IWorkItemRuleCondition[]) => {
+		trackRules(rules);
+		persistRuleSet({ rules, mode: storedRuleSet.mode });
+	};
+
 	const handleDateChange = (name: keyof ITeamSettings, newDate: string) => {
 		onTeamSettingsChange(name, new Date(newDate));
 	};
@@ -226,33 +252,16 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 				</Grid>
 			)}
 
-			{!isDefaultSettings &&
-				teamSettings &&
-				(() => {
-					const currentRuleSet = parseRuleSetFromJson(
-						teamSettings.forecastFilterRuleSetJson,
-					);
-					const persistRuleSet = (next: RuleSetData) => {
-						onTeamSettingsChange(
-							"forecastFilterRuleSetJson",
-							next.rules.length === 0 ? null : serializeRuleSetToJson(next),
-						);
-					};
-					return (
-						<PremiumGatedForecastFilter
-							teamId={teamSettings.id}
-							rules={currentRuleSet.rules}
-							mode={currentRuleSet.mode}
-							onRulesChange={(rules) =>
-								persistRuleSet({ rules, mode: currentRuleSet.mode })
-							}
-							onModeChange={(mode) =>
-								persistRuleSet({ rules: currentRuleSet.rules, mode })
-							}
-							saveState={saveState}
-						/>
-					);
-				})()}
+			{!isDefaultSettings && teamSettings && (
+				<PremiumGatedForecastFilter
+					teamId={teamSettings.id}
+					rules={filterRules}
+					mode={storedRuleSet.mode}
+					onRulesChange={handleFilterRulesChange}
+					onModeChange={(mode) => persistRuleSet({ rules: filterRules, mode })}
+					saveState={saveState}
+				/>
+			)}
 		</InputGroup>
 	);
 };

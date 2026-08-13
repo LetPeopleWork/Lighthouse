@@ -17,6 +17,7 @@ import {
 	useState,
 } from "react";
 import { useRbac } from "../../../hooks/useRbac";
+import { useRuleRowDraft } from "../../../hooks/useRuleRowDraft";
 import {
 	BLOCKED_RULE_SET_SCHEMA_VERSION,
 	type IBaseSettings,
@@ -99,13 +100,11 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 		[settings.blockedRuleSetJson],
 	);
 
-	// A rule row is born empty — a field and an operator, no value yet — and only
-	// the finished rows are worth storing. Holding the rows being edited here lets
-	// a half-typed one stay on screen without ever reaching the settings payload.
-	const [blockedRuleDraft, setBlockedRuleDraft] = useState<
-		IWorkItemRuleCondition[] | null
-	>(null);
-	const blockedRules = blockedRuleDraft ?? blockedRuleSet.conditions;
+	const {
+		rules: blockedRules,
+		trackRules: trackBlockedRules,
+		discardDraft: discardBlockedRuleDraft,
+	} = useRuleRowDraft(blockedRuleSet.conditions);
 
 	const { getTerm } = useTerminology();
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
@@ -318,7 +317,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 	};
 
 	const handleBlockedRulesChange = (conditions: IWorkItemRuleCondition[]) => {
-		setBlockedRuleDraft(conditions);
+		trackBlockedRules(conditions);
 		persistBlockedRuleSet(conditions, blockedRuleSet.mode);
 	};
 
@@ -331,7 +330,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 		if (!checked) {
 			// Clear the rule-based definition so no stale blocked signal lingers.
-			setBlockedRuleDraft(null);
+			discardBlockedRuleDraft();
 			onSettingsChange("blockedRuleSetJson" as keyof T, null);
 		}
 	};

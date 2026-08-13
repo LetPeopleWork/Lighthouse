@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -381,6 +387,27 @@ describe("ForecastSettingsComponent — Exclude Items for Throughput sub-section
 describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", () => {
 	const teamSettings = createMockTeamSettings();
 
+	it("keeps a rule row out of the saved set until it has a value", async () => {
+		mockCanUsePremiumFeatures.mockReturnValue(true);
+		const onTeamSettingsChange = vi.fn();
+
+		renderWithContext(
+			<ForecastSettingsComponent
+				teamSettings={teamSettings}
+				isDefaultSettings={false}
+				onTeamSettingsChange={onTeamSettingsChange}
+			/>,
+		);
+
+		fireEvent.click(await screen.findByTestId("add-rule-button"));
+
+		expect(await screen.findByTestId("rule-row")).toBeInTheDocument();
+		expect(onTeamSettingsChange).not.toHaveBeenCalledWith(
+			"forecastFilterRuleSetJson",
+			expect.anything(),
+		);
+	});
+
 	it("propagates editor rule changes through onTeamSettingsChange as serialised JSON", async () => {
 		mockCanUsePremiumFeatures.mockReturnValue(true);
 		const onTeamSettingsChange = vi.fn();
@@ -395,6 +422,11 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 
 		const addRuleButton = await screen.findByTestId("add-rule-button");
 		fireEvent.click(addRuleButton);
+
+		const valueInput = within(
+			await screen.findByTestId("rule-value-input-0"),
+		).getByRole("textbox");
+		fireEvent.change(valueInput, { target: { value: "Bug" } });
 
 		await waitFor(() => {
 			expect(onTeamSettingsChange).toHaveBeenCalledWith(
@@ -413,6 +445,7 @@ describe("ForecastSettingsComponent — forecastFilterRuleSetJson round-trip", (
 		expect(payload.version).toBe(1);
 		expect(payload.conditions).toHaveLength(1);
 		expect(payload.conditions[0].fieldKey).toBe("workitem.type");
+		expect(payload.conditions[0].value).toBe("Bug");
 	});
 
 	it("hydrates the editor from teamSettings.forecastFilterRuleSetJson on render", async () => {
