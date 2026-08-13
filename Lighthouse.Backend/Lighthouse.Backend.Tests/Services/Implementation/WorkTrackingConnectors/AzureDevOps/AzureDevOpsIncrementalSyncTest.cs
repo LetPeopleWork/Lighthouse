@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(swept.Select(record => record.ReferenceId), Does.Contain($"{TheOnlyItem}"),
                     "Leaving it out of the sweep puts it in 'stored minus swept', which deletes a live item. "
                     + "Reporting it without a stamp merely downloads it again.");
-                Assert.That(swept.Single().ChangedAt, Is.EqualTo(default(DateTime)),
+                Assert.That(swept.Single().ChangedAt, Is.Default,
                     "A stamp nobody can match is what makes the item look moved, which is the safe answer.");
             }
         }

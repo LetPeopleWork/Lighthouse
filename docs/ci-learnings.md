@@ -295,6 +295,12 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-13 — NUnit4002 (`Is.EqualTo(default(T))` → `Is.Default`) is an INFO rule the mandatory sweep caught before it reached the gate; now promoted to `warning`
+- **Symptom**: `dotnet build` clean with 0 warnings, and the pre-push `dotnet format analyzers Lighthouse.sln --severity info` returned exit 2 with one finding in a brand-new test file: `AzureDevOpsIncrementalSyncTest.cs(182,55): info NUnit4002: Replace 'Is.EqualTo(default(DateTime))' with 'Is.Default' constraint`. Never reached CI — the sweep is what surfaced it.
+- **Root cause**: NUnit4002 is INFO severity, so `TreatWarningsAsErrors` never sees it while Sonar's `new_violations = 0` gate counts it. Same shape as the CA1861 / CA1859 / NUnit1028 family already in this ledger: a rule that only exists between "local build is green" and "the gate is red". Asserting a default `DateTime` is the natural way to write "the sweep reported no stamp", so this will recur wherever a nullable-timestamp default is asserted.
+- **Fix**: `Is.Default` at the call site, plus `dotnet_diagnostic.NUnit4002.severity = warning` in `Lighthouse.Backend/.editorconfig` beside the other seven promoted rules. The whole solution still builds with 0 warnings, so no other file violated it.
+- **Rule going forward**: assert a default value with `Is.Default`, never `Is.EqualTo(default(T))`. More generally: when the mandatory INFO sweep finds a rule that is not yet in the `.editorconfig` promotion block, promote it there in the same change — fixing only the instance leaves the next occurrence to CI, which is what the promotion block exists to prevent.
+
 ### 2026-08-12 — `dotnet test --no-build` after a FAILED build silently runs the previous binary and prints `Passed!`
 - **Symptom**: a hand-applied mutation probe reported the wrong test failing. The `dotnet build` in the same command chain had failed with `error CS8604`, but `dotnet test --no-build` still executed — against the binary from the *previous* build — and reported a failure belonging to an earlier, already-reverted probe.
 - **Root cause**: `--no-build` means "do not build", not "require a build". It never checks whether the assembly on disk matches the sources, so a red build followed by `--no-build` measures stale code. Chaining with `&&` does not help when the build command's own exit code is masked by a pipe (`dotnet build | tail`, which exits with `tail`'s status).
