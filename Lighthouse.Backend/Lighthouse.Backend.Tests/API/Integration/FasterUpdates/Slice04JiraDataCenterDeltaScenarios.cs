@@ -27,8 +27,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// They are guards, and each carries its own positive control - the repeated record has to be stored and
     /// downloaded at all, or "exactly one copy" would be satisfied by nothing being there.
     ///
-    /// Both ship [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle, and a guard's cycle is
-    /// the shortest kind - un-ignore, watch it pass, and prove it can fail by taking the collapse out.
+    /// Both were proven able to fail here rather than on the machine that wrote them: with the grouping in the
+    /// collapse taken out, each reds on the assertion it is named after.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -41,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // collapse has to happen in the scan, not only on the way into storage: a download list built from a
         // scan that repeats itself pays twice for the same payload on every cycle.
         [Test]
-        [Ignore(Pending)]
         public async Task An_issue_the_tracker_reports_twice_is_downloaded_once_and_stored_once()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
@@ -61,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // The portfolio half reaches the same collapse from its own call site, and a Feature counted twice
         // doubles the remaining work, the size percentile and the forecast that reads them.
         [Test]
-        [Ignore(Pending)]
         public async Task A_feature_the_tracker_reports_twice_is_downloaded_once_and_claimed_once()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();

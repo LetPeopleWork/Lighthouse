@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// </summary>
     public partial class Slice04JiraDataCenterDeltaTest : FasterUpdatesAcceptanceTest
     {
-        private const string Pending = "DISTILL scaffold — slice 04 is not implemented yet.";
-
         private const string TheRepeatedIssue = "ITEM-1";
         private const string TheOtherIssue = "ITEM-2";
 
