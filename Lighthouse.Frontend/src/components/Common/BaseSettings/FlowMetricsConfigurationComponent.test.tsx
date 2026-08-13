@@ -707,6 +707,36 @@ describe("FlowMetricsConfigurationComponent", () => {
 			expect(persisted?.conditions[1].value).toBe("On Hold");
 		});
 
+		it("keeps the chosen OR mode while the last rule value is being retyped", async () => {
+			// Clearing the last value empties the saved set, which reads back as AND. The mode the
+			// user picked has to survive that, or retyping the value silently flips the operator
+			// between the rules from OR to AND.
+			const user = userEvent.setup();
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: twoRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(
+				await screen.findByRole("button", { name: /Match any rule \(OR\)/i }),
+			);
+
+			const valueInput = within(
+				await screen.findByTestId("rule-value-input-0"),
+			).getByRole("textbox");
+			await user.clear(valueInput);
+			await user.type(valueInput, "Waiting");
+
+			const blockedCalls = mockOnSettingsChange.mock.calls.filter(
+				(c) => c[0] === "blockedRuleSetJson",
+			);
+			const lastCall = blockedCalls[blockedCalls.length - 1];
+			expect(parseRuleSet(lastCall?.[1] as string)?.mode).toBe("or");
+		});
+
 		it("threads the OR match mode through save", async () => {
 			const user = userEvent.setup();
 			render(

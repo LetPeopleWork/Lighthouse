@@ -207,36 +207,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        public void GetEffectiveRuleSet_DropsConditionsOnAnAdditionalFieldTheConnectionNoLongerDefines()
+        public void GetEffectiveRuleSetJson_DropsConditionsOnAnAdditionalFieldTheConnectionNoLongerDefines()
         {
             var team = TeamWithAdditionalFields(
                 RuleSetJson(("workitem.state", "equals", "Blocked"), ("additionalField.42", "equals", "Yes"), ("additionalField.99", "equals", "Yes")),
                 42);
 
-            var ruleSet = CreateSut().GetEffectiveRuleSet(team);
+            var json = CreateSut().GetEffectiveRuleSetJson(team);
 
+            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(json, CaseInsensitive);
             Assert.That(
-                ruleSet.Conditions.Select(c => c.FieldKey),
+                ruleSet!.Conditions.Select(c => c.FieldKey),
                 Is.EqualTo(new[] { "workitem.state", "additionalField.42" }));
         }
 
         [Test]
-        public void GetEffectiveRuleSet_KeepsAdditionalFieldConditions_WhenTheConnectionIsUnavailable()
+        public void GetEffectiveRuleSetJson_KeepsEveryConditionTheConnectionStillDefines()
         {
+            var team = TeamWithAdditionalFields(
+                RuleSetJson(("workitem.tags", "contains", "Impediment"), ("additionalField.42", "equals", "Yes")),
+                42);
+
+            var json = CreateSut().GetEffectiveRuleSetJson(team);
+
+            var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(json, CaseInsensitive);
+            Assert.That(ruleSet!.Conditions, Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void GetEffectiveRuleSet_LeavesStoredConditionsAlone_SoEvaluationNeverDependsOnWhatWasLoaded()
+        {
+            // The evaluation path is reached with owners loaded in several shapes, and an
+            // additional-field collection that was not included looks exactly like one with no
+            // fields defined. Healing belongs to the settings read, where the schema is built
+            // from a connection that definitely carries its definitions.
             var team = new Team { BlockedRuleSetJson = RuleSetJson(("additionalField.99", "equals", "Yes")) };
 
             var ruleSet = CreateSut().GetEffectiveRuleSet(team);
 
             Assert.That(ruleSet.Conditions, Has.Count.EqualTo(1));
-        }
-
-        [Test]
-        public void IsBlocked_ReturnsFalse_WhenTheOnlyRuleTargetsADeletedAdditionalField()
-        {
-            var team = TeamWithAdditionalFields(RuleSetJson(("additionalField.99", "notequals", "Impediment")), 42);
-            var item = new WorkItem { State = "In Progress", Tags = [] };
-
-            Assert.That(CreateSut().IsBlocked(item, team), Is.False);
         }
 
         private static Team TeamWithAdditionalFields(string blockedRuleSetJson, params int[] definedFieldIds)

@@ -1,45 +1,31 @@
 namespace Lighthouse.Backend.Models.WorkItemRules
 {
     /// <summary>
-    /// Removes rule conditions pointing at an additional field the connection no longer defines.
-    /// Editing a connection's additional fields deletes the ones missing from the payload and
-    /// re-adds them under fresh ids, so a rule saved earlier can end up naming a field that is
-    /// gone. Such a rule reads as a blank row on screen, matches against an always-empty value —
-    /// which with a negated operator marks every item — and fails validation hard enough to
-    /// reject the whole settings save. Dropping it as the rule set is read means the next save
-    /// writes the cleaned set back without anyone being asked to fix it by hand.
+    /// Removes rule conditions naming a field the rule builder no longer offers. Editing a
+    /// connection's additional fields deletes the ones missing from the payload and re-adds them
+    /// under fresh ids, so a rule saved earlier can name a field that is gone. Such a rule reads as
+    /// a blank row on screen and fails validation hard enough to reject the whole settings save,
+    /// leaving no way to clear it from the UI. Dropping it as the settings are read means the next
+    /// save writes the cleaned set back.
+    ///
+    /// The schema is the authority on what exists, and it must be one built from a connection whose
+    /// additional fields were actually loaded: an unloaded collection is empty rather than absent,
+    /// and taking that at face value would discard every additional-field rule the owner has.
     /// </summary>
     public static class AdditionalFieldRuleHealing
     {
-        private const string AdditionalFieldPrefix = "additionalField.";
-
-        public static WorkItemRuleSet WithoutDeletedAdditionalFields(
-            WorkItemRuleSet ruleSet,
-            WorkTrackingSystemConnection? connection)
+        public static WorkItemRuleSet WithoutFieldsMissingFrom(WorkItemRuleSet ruleSet, WorkItemRuleSchema schema)
         {
-            // Without the definitions there is no way to tell a deleted field from an unloaded
-            // one, and dropping a live rule is worse than keeping a dead one.
-            if (connection?.AdditionalFieldDefinitions == null)
-            {
-                return ruleSet;
-            }
-
-            var definedKeys = connection.AdditionalFieldDefinitions
-                .Select(definition => $"{AdditionalFieldPrefix}{definition.Id}")
+            var offeredKeys = schema.Fields
+                .Select(field => field.FieldKey)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             return new WorkItemRuleSet
             {
                 Version = ruleSet.Version,
                 Mode = ruleSet.Mode,
-                Conditions = [.. ruleSet.Conditions.Where(condition => IsStillDefined(condition.FieldKey, definedKeys))],
+                Conditions = [.. ruleSet.Conditions.Where(condition => offeredKeys.Contains(condition.FieldKey))],
             };
-        }
-
-        private static bool IsStillDefined(string fieldKey, HashSet<string> definedKeys)
-        {
-            return !fieldKey.StartsWith(AdditionalFieldPrefix, StringComparison.OrdinalIgnoreCase)
-                || definedKeys.Contains(fieldKey);
         }
     }
 }

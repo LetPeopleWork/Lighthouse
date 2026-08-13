@@ -47,15 +47,27 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 return null;
             }
             
+            var ruleSet = WorkItemRuleSetJson.Deserialize(team.ForecastFilterRuleSetJson);
+
+            return ruleSet == null || ruleSet.Conditions.Count == 0 ? null : ruleSet;
+        }
+
+        public string? GetStoredRuleSetJsonForEditing(Team team)
+        {
+            // Deliberately not routed through GetEffectiveRuleSet: that one answers "does this
+            // filter apply", which is false on a free licence, and a downgraded tenant must still
+            // see the rules it configured rather than an empty editor.
             var stored = WorkItemRuleSetJson.Deserialize(team.ForecastFilterRuleSetJson);
             if (stored == null)
             {
                 return null;
             }
 
-            var ruleSet = AdditionalFieldRuleHealing.WithoutDeletedAdditionalFields(stored, team.WorkTrackingSystemConnection);
+            var healed = team.WorkTrackingSystemConnection == null
+                ? stored
+                : AdditionalFieldRuleHealing.WithoutFieldsMissingFrom(stored, GetSchema(team));
 
-            return ruleSet.Conditions.Count == 0 ? null : ruleSet;
+            return healed.Conditions.Count == 0 ? null : WorkItemRuleSetJson.Serialize(healed);
         }
 
         public IEnumerable<WorkItem> Filter(IEnumerable<WorkItem> items, WorkItemRuleSet ruleSet)

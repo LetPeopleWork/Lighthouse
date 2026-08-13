@@ -59,8 +59,16 @@ namespace Lighthouse.Backend.Services.Implementation
                     continue;
                 }
 
-                var ruleSet = WorkItemRuleSetJson.Deserialize(delivery.RuleDefinitionJson);
-                if (ruleSet == null)
+                var stored = WorkItemRuleSetJson.Deserialize(delivery.RuleDefinitionJson);
+                if (stored == null)
+                {
+                    continue;
+                }
+
+                // A condition naming a deleted additional field reads every feature's value as
+                // empty, so a negated operator on it would match the whole portfolio.
+                var ruleSet = AdditionalFieldRuleHealing.WithoutFieldsMissingFrom(stored, GetRuleSchema(portfolio));
+                if (ruleSet.Conditions.Count == 0)
                 {
                     continue;
                 }

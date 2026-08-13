@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 var stored = WorkItemRuleSetJson.Deserialize(owner.BlockedRuleSetJson);
                 if (stored != null)
                 {
-                    return AdditionalFieldRuleHealing.WithoutDeletedAdditionalFields(stored, owner.WorkTrackingSystemConnection);
+                    return stored;
                 }
             }
 
@@ -64,7 +64,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         public string GetEffectiveRuleSetJson(WorkTrackingSystemOptionsOwner owner)
         {
-            return WorkItemRuleSetJson.Serialize(GetEffectiveRuleSet(owner));
+            var ruleSet = GetEffectiveRuleSet(owner);
+
+            // No connection means no way to know which additional fields exist, and an owner
+            // without one has no additional-field rules worth healing anyway.
+            if (owner.WorkTrackingSystemConnection != null)
+            {
+                ruleSet = AdditionalFieldRuleHealing.WithoutFieldsMissingFrom(ruleSet, GetSchema(owner));
+            }
+
+            return WorkItemRuleSetJson.Serialize(ruleSet);
         }
 
         public bool ValidateRuleSet(WorkItemRuleSet ruleSet, WorkTrackingSystemOptionsOwner owner)

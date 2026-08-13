@@ -143,9 +143,12 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 
 	const storedRuleSet =
 		parseRuleSet(teamSettings?.forecastFilterRuleSetJson) ?? EMPTY_RULE_SET;
-	const { rules: filterRules, trackRules } = useRuleRowDraft(
-		storedRuleSet.conditions,
-	);
+	const {
+		rules: filterRules,
+		mode: filterMode,
+		trackRules,
+		trackMode,
+	} = useRuleRowDraft(storedRuleSet.conditions, storedRuleSet.mode);
 
 	const persistRuleSet = (
 		conditions: IWorkItemRuleCondition[],
@@ -169,7 +172,12 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 
 	const handleFilterRulesChange = (rules: IWorkItemRuleCondition[]) => {
 		trackRules(rules);
-		persistRuleSet(rules, storedRuleSet.mode);
+		persistRuleSet(rules, filterMode);
+	};
+
+	const handleFilterModeChange = (mode: DeliveryRuleGroupMode) => {
+		trackMode(mode);
+		persistRuleSet(filterRules, mode);
 	};
 
 	const handleDateChange = (name: keyof ITeamSettings, newDate: string) => {
@@ -262,9 +270,9 @@ const ForecastSettingsComponent: React.FC<ForecastSettingsComponentProps> = ({
 				<PremiumGatedForecastFilter
 					teamId={teamSettings.id}
 					rules={filterRules}
-					mode={storedRuleSet.mode}
+					mode={filterMode}
 					onRulesChange={handleFilterRulesChange}
-					onModeChange={(mode) => persistRuleSet(filterRules, mode)}
+					onModeChange={handleFilterModeChange}
 					saveState={saveState}
 				/>
 			)}

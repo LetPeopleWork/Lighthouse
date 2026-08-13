@@ -99,9 +99,11 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 	const {
 		rules: blockedRules,
+		mode: blockedMode,
 		trackRules: trackBlockedRules,
+		trackMode: trackBlockedMode,
 		discardDraft: discardBlockedRuleDraft,
-	} = useRuleRowDraft(blockedRuleSet.conditions);
+	} = useRuleRowDraft(blockedRuleSet.conditions, blockedRuleSet.mode);
 
 	const { getTerm } = useTerminology();
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
@@ -315,10 +317,11 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 
 	const handleBlockedRulesChange = (conditions: IWorkItemRuleCondition[]) => {
 		trackBlockedRules(conditions);
-		persistBlockedRuleSet(conditions, blockedRuleSet.mode);
+		persistBlockedRuleSet(conditions, blockedMode);
 	};
 
 	const handleBlockedRulesModeChange = (mode: DeliveryRuleGroupMode) => {
+		trackBlockedMode(mode);
 		persistBlockedRuleSet(blockedRules, mode);
 	};
 
@@ -573,7 +576,7 @@ const FlowMetricsConfigurationComponent = <T extends IBaseSettings>({
 								operators={blockedSchema.operators}
 								maxRules={blockedSchema.maxRules}
 								maxValueLength={blockedSchema.maxValueLength}
-								mode={blockedRuleSet.mode}
+								mode={blockedMode}
 								onModeChange={handleBlockedRulesModeChange}
 								title={`Mark ${workItemsTerm.toLowerCase()} as ${blockedTerm.toLowerCase()} where…`}
 								emptyStateMessage={`Add at least one rule to mark ${workItemsTerm.toLowerCase()} as ${blockedTerm.toLowerCase()}.`}

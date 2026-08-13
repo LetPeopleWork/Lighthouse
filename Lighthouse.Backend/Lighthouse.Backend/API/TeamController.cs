@@ -206,6 +206,7 @@ namespace Lighthouse.Backend.API
                 var teamSettingDto = new TeamSettingDto(team, clock.Today)
                 {
                     BlockedRuleSetJson = blockedItemService.GetEffectiveRuleSetJson(team),
+                    ForecastFilterRuleSetJson = forecastFilterRuleService.GetStoredRuleSetJsonForEditing(team),
                 };
                 return teamSettingDto;
             });
