@@ -628,7 +628,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_OnDataCenter_ReportsTheChangeStampTheFullFetchWouldStore()
         {
             const string updated = "2026-08-05T14:30:00.000+0200";
@@ -645,7 +644,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_OnDataCenter_StillReportsARecordTheTrackerGaveNoStampFor()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
