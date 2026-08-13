@@ -612,7 +612,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_OnDataCenter_RefusesToReportAHalfWalkedQuery()
         {
             var (subject, team, jira) = await AJiraDataCenterThatPagesOneIssueAtATime();
@@ -620,11 +619,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             jira.OffsetSweepIssues.Add(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"));
             jira.FailTheSearchAfterTheNextOne();
 
-            Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<InvalidOperationException>(),
-                "Returning the first offset as if it were the whole query is the one answer removal cannot survive: "
-                + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
-                + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
-                + "satisfy a looser assertion without a single page ever being walked.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<InvalidOperationException>(),
+                    "Returning the first offset as if it were the whole query is the one answer removal cannot survive: "
+                    + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
+                    + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
+                    + "satisfy a looser assertion without a single page ever being walked.");
+                Assert.That(jira.SearchRequests.ToList().ConvertAll(uri => QueryValue(uri, "startAt")), Does.Contain("1"),
+                    "The half-walk is the whole point: one page has to have been read before the rejection, or the "
+                    + "refusal being asserted is some earlier refusal that never enumerated anything.");
+            }
         }
 
         [Test]
