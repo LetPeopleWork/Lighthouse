@@ -41,7 +41,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int ReferenceIdsPerQuery = 200;
 
-        private const string DeltaIsJiraCloudOnly = "Only Jira Cloud sweeps - Epic #5687 slice 04 settles Data Center.";
+        private const string DeploymentNotKnownYet =
+            "Lighthouse has not reached this Jira instance yet, so it does not know which kind of Jira it is.";
 
         private static readonly SocketsHttpHandler SharedHandler = new()
         {
@@ -62,13 +63,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         /// <summary>
-        /// On for Jira Cloud; Data Center answers only once slice 04 resolves OQ-1 (whether its offset
-        /// pagination returns a stable id set - an unstable one turns "removed = stored - swept" into a
-        /// deletion of live items). The port member cannot block on a round trip, so an instance Lighthouse
-        /// has not reached yet answers no, and that cycle resolves to a full download (D8).
+        /// Yes for any instance Lighthouse has already reached, because the sweep needs to know which kind of
+        /// Jira it is talking to - Cloud and Data Center page their search results in completely different ways.
+        /// This cannot block on a round trip to go and find out, so an instance never reached answers no, and
+        /// that cycle downloads everything instead. Slower, but never wrong.
         /// </summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection)
-            => TryResolveKnownDeployment(connection, out var deployment) && deployment == JiraDeployment.Cloud;
+            => TryResolveKnownDeployment(connection, out var deployment) && deployment is not JiraDeployment.Unknown;
 
         /// <summary>
         /// Phase 1 of the two-phase fetch (D1): the very query <see cref="GetWorkItemsForTeam(Team)"/> issues,
@@ -86,32 +87,34 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The one sweep every caller goes through: walk each query in full, keep identity and the change stamp,
         /// and refuse to answer at all when a page was rejected - a half-walked query reported as whole puts every
         /// record on the missing pages into "stored minus swept", which deletes them (D2).
+        ///
+        /// The two deployments page their search results differently and neither endpoint exists on the other,
+        /// so the transport is chosen here. The deployment is guaranteed to be known: the capability check just
+        /// above is the question "has this instance been reached yet", and it answered yes.
         /// </summary>
         private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
             IWorkItemQueryOwner owner, IEnumerable<string> jqlQueries, string sweptDescription)
         {
             if (!SupportsIncrementalSync(owner.WorkTrackingSystemConnection))
             {
-                throw new NotSupportedException(DeltaIsJiraCloudOnly);
+                throw new NotSupportedException(DeploymentNotKnownYet);
             }
 
+            var sweepsOverCloud = TryResolveKnownDeployment(owner.WorkTrackingSystemConnection, out var deployment)
+                && deployment == JiraDeployment.Cloud;
+
             var client = await GetJiraRestClientAsync(owner.WorkTrackingSystemConnection);
+            var pageLimit = ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
             var stamps = new List<RemoteRecordStamp>();
 
             foreach (var jql in jqlQueries)
             {
-                var request = new CloudSearchRequest(
-                    jql,
-                    SweepFields,
-                    ExpandChangelog: false,
-                    ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection),
-                    SinglePage: false);
-
-                var walkedEveryPage = await WalkCloudSearchPages(client, request, jsonIssue =>
-                {
-                    stamps.Add(ReadStamp(jsonIssue));
-                    return Task.CompletedTask;
-                });
+                var walkedEveryPage = sweepsOverCloud
+                    ? await WalkCloudSearchPages(
+                        client,
+                        new CloudSearchRequest(jql, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
+                        CollectStamp)
+                    : await WalkDataCenterSearchOffsets(client, jql, pageLimit, CollectStamp);
 
                 if (!walkedEveryPage)
                 {
@@ -120,6 +123,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             return stamps;
+
+            Task CollectStamp(JsonElement jsonIssue)
+            {
+                stamps.Add(ReadStamp(jsonIssue));
+                return Task.CompletedTask;
+            }
         }
 
         /// <summary>
@@ -279,16 +288,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Phase 2 of the two-phase fetch (D1): full payloads for the named Features and for nothing else. The
-        /// portfolio's own filter is deliberately not re-applied - the sweep already decided what belongs to the
-        /// query, and a second cutoff evaluation could drop a Feature the sweep just reported as changed.
-        /// The whole delta path is one capability, so a deployment that cannot sweep does not fetch by key either.
+        /// The download half of the two-phase fetch: full payloads for the named Features and for nothing else.
+        /// The portfolio's own filter is deliberately not re-applied - the sweep already decided what belongs to
+        /// the query, and a second cutoff evaluation could drop a Feature the sweep just reported as changed.
+        /// Sweeping and fetching by key are one capability, so an instance that cannot be swept never reaches here.
         /// </summary>
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
         {
             if (!SupportsIncrementalSync(project.WorkTrackingSystemConnection))
             {
-                throw new NotSupportedException(DeltaIsJiraCloudOnly);
+                throw new NotSupportedException(DeploymentNotKnownYet);
             }
 
             if (referenceIds.Count == 0)
@@ -1530,6 +1539,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 pageCount++;
             }
             while (!request.SinglePage && !string.IsNullOrEmpty(nextPageToken) && pageCount < MaxCloudSearchPages);
+
+            return true;
+        }
+
+        /// <summary>
+        /// The offset walk over Jira Data Center's search endpoint, which has no page token: the only way to
+        /// reach the next page is to ask for the offset after the one just read, and to keep asking until the
+        /// offset has passed the total the instance reports back. Reads identity and the change stamp only -
+        /// naming no field at all would make Data Center return every one of them, which is the whole cost the
+        /// sweep exists to avoid. Answers false when Jira rejects a page, leaving the caller to decide between
+        /// falling back and failing.
+        /// </summary>
+        private static async Task<bool> WalkDataCenterSearchOffsets(HttpClient client, string jql, int pageLimit, Func<JsonElement, Task> onIssue)
+        {
+            var encodedJql = Uri.EscapeDataString(jql);
+            var startAt = 0;
+            var pageSize = pageLimit;
+            var total = int.MaxValue;
+
+            while (startAt < total)
+            {
+                var url = $"rest/api/latest/search?jql={encodedJql}&fields={SweepFields}&startAt={startAt}&maxResults={pageSize}";
+
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return false;
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+                using var json = JsonDocument.Parse(body);
+
+                // Jira decides the page size, not the caller, and an instance that answered zero would leave the
+                // offset exactly where it is - the same page asked for forever.
+                pageSize = Math.Max(1, json.RootElement.GetProperty("maxResults").GetInt32());
+                total = json.RootElement.GetProperty("total").GetInt32();
+                startAt += pageSize;
+
+                foreach (var jsonIssue in json.RootElement.GetProperty("issues").EnumerateArray())
+                {
+                    await onIssue(jsonIssue);
+                }
+            }
 
             return true;
         }

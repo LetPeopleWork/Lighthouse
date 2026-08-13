@@ -115,16 +115,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task SupportsIncrementalSync_StaysFalseForDataCenter()
-        {
-            var (subject, team, _) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
-
-            Assert.That(subject.SupportsIncrementalSync(team.WorkTrackingSystemConnection), Is.False,
-                "Data Center answers only once slice 04 settles OQ-1 - whether its offset pagination returns a "
-                + "stable id set. An unstable set turns 'removed = stored - swept' into a deletion of live items.");
-        }
-
-        [Test]
         public async Task SweepWorkItemsForTeam_AsksTheVeryQuestionTheWholeQueryAsks()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
@@ -224,14 +214,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.Exception,
                 "Returning the first page as if it were the whole query is the one answer D2 cannot survive: "
                 + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch.");
-        }
-
-        [Test]
-        public async Task SweepWorkItemsForTeam_RefusesOnDataCenter()
-        {
-            var (subject, team, _) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
-
-            Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<NotSupportedException>());
         }
 
         [Test]
@@ -403,14 +385,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task SweepFeaturesForPortfolio_RefusesOnDataCenter()
-        {
-            var (subject, portfolio, _) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
-
-            Assert.That(async () => await subject.SweepFeaturesForPortfolio(portfolio), Throws.TypeOf<NotSupportedException>());
-        }
-
-        [Test]
         public async Task GetFeaturesForProjectByReferenceId_NamesOnlyTheKeysItWasAskedFor()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
@@ -483,14 +457,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetFeaturesForProjectByReferenceId_RefusesOnDataCenter()
-        {
-            var (subject, portfolio, _) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
-
-            Assert.That(async () => await subject.GetFeaturesForProject(portfolio, ["PROJ-1"]), Throws.TypeOf<NotSupportedException>());
-        }
-
-        [Test]
         public async Task SweepParentFeatures_SweepsTheSameKeyedQueryTheParentDetailFetchIssues()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
@@ -536,24 +502,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 "Chunked the way the keyed detail fetch is chunked - a single 250-clause URL is one no proxy is obliged to carry.");
         }
 
-        [Test]
-        public async Task SweepParentFeatures_RefusesOnDataCenter()
-        {
-            var (subject, portfolio, _) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
-
-            Assert.That(async () => await subject.SweepParentFeatures(portfolio, ["PROJ-1"]), Throws.TypeOf<NotSupportedException>());
-        }
-
-        // --- Jira Data Center (Epic #5687 slice 04) ---
+        // --- Jira Data Center ---
         //
-        // Everything below ships [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle.
-        //
-        // Five assertions above are the inverse of five below - SupportsIncrementalSync_StaysFalseForDataCenter
-        // and the four ..._RefusesOnDataCenter tests. They record today's behaviour and are what slice 04
-        // reverses, so un-ignoring a spec here turns its opposite red; delete the opposite in the same step.
+        // What is still [Ignore]d below is not yet built. Each one is un-ignored on its own, so the commit
+        // that makes it pass is the commit that turned it from a description into a requirement.
 
         [Test]
-        [Ignore(Pending)]
         public async Task SupportsIncrementalSync_IsTrueForDataCenterOnceTheDeploymentIsKnown()
         {
             var (subject, team, _) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
@@ -564,7 +518,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_OnDataCenter_WalksTheOffsetPagedSearchEndpoint()
         {
             var (subject, team, jira) = await AJiraDataCenterThatPagesOneIssueAtATime();
@@ -712,7 +665,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepFeaturesForPortfolio_OnDataCenter_EnumeratesTheSameFeatureQueryTheWholeDownloadEnumerates()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
@@ -733,7 +685,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepParentFeatures_OnDataCenter_SweepsTheSameKeyedQueryTheParentDetailFetchIssues()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
@@ -750,7 +701,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetFeaturesForProjectByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
