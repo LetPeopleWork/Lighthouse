@@ -149,7 +149,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             // list, and an empty sweep does not mean "the query failed", it means "the query matches nothing" -
             // which removes every record the entity has. A sweep that could not ask has to say so instead.
             var answer = await ExecuteWithThrottle(url, () => witClient.QueryByWiqlAsync(new Wiql { Query = sweepQuery }));
-            var swept = (answer.WorkItems ?? []).Select(reference => reference.Id).ToList();
+
+            // An answer carrying no result set at all is not an answer of "nothing matched": reading it as one
+            // would remove every record the entity has, on a cycle nothing else complains about.
+            if (answer.WorkItems is null)
+            {
+                throw new InvalidOperationException(
+                    $"Azure DevOps answered the identity sweep for {sweptDescription} without a result set.");
+            }
+
+            var swept = answer.WorkItems.Select(reference => reference.Id).ToList();
             var stamps = new List<RemoteRecordStamp>();
 
             foreach (var chunk in swept.Chunk(MaxChunkSize))

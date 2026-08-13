@@ -1,0 +1,23 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs"
+    ],
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "ignore-mutations": ["string"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~AzureDevOps)&TestCategory!=JiraIntegration&TestCategory!=AdoIntegration&TestCategory!=LinearIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration&TestCategory!=requires-docker&TestCategory!=real-io",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

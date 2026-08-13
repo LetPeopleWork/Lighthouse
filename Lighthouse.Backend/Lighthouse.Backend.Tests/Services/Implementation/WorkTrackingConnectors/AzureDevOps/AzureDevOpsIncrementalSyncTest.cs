@@ -210,6 +210,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public void SweepWorkItemsForTeam_RefusesWhenTheTrackerAnswersWithoutAResultSet()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
+            ado.AnswerTheQueryWithoutAResultSet = true;
+
+            Assert.That(async () => await subject.SweepWorkItemsForTeam(team),
+                Throws.TypeOf<InvalidOperationException>(),
+                "No result set is not the same answer as an empty one. Treating it as 'nothing matched' hands "
+                + "removal an empty sweep, which deletes every record the team has.");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_ByReferenceId_AsksTheTrackerNothingWhenNothingMoved()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved);
+
+            var workItems = await subject.GetWorkItemsForTeam(team, []);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Empty);
+                Assert.That(ado.EveryRequestMade, Is.Empty,
+                    "A cycle in which nothing moved should cost nothing. A keyed read of no keys is still a "
+                    + "round trip, and so is the field lookup that precedes it - on the quiet cycle this epic "
+                    + "exists to make cheap.");
+            }
+        }
+
+        [Test]
         public async Task SweepWorkItemsForTeam_ReadsTheStampsInBatchesTheTrackerAccepts()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds([.. Enumerable.Range(1, 201)]);
@@ -461,7 +490,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                         return Task.FromResult(new WorkItemQueryResult
                         {
-                            WorkItems = WhatTheQueryAnswersWith(wiql.Query, itemIds),
+                            WorkItems = AnswerTheQueryWithoutAResultSet
+                                ? null
+                                : WhatTheQueryAnswersWith(wiql.Query, itemIds),
                         });
                     });
 
@@ -504,6 +535,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             /// <summary>A tracker that will not run the query at all - an expired token, a timeout, a blip.</summary>
             public bool RejectTheQuery { get; set; }
+
+            /// <summary>A tracker that answers the query with no result set rather than with an empty one.</summary>
+            public bool AnswerTheQueryWithoutAResultSet { get; set; }
+
+            /// <summary>Every request of any kind, so a test can say that none was made.</summary>
+            public List<string> EveryRequestMade =>
+                [.. WiqlQueries, .. PayloadReads.Select(read => $"payload:{read.Ids.Count}"), .. RevisionReads.Select(id => $"revisions:{id}")];
 
             /// <summary>
             /// A full download reads twice: once for the fields it maps, and once more with the relations
