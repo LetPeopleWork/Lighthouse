@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -32,6 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] BothPages = ["PROJ-1", "PROJ-2"];
         private static readonly string[] TheOnlyRecord = ["PROJ-1"];
+        private static readonly string[] FourRecordsOverTwoPages = ["PROJ-1", "PROJ-2", "PROJ-3", "PROJ-4"];
 
         private const string StampWithNoZone = "2026-08-05T14:30:00.000";
         private static readonly DateTime TheInstantThatStampNames = new(2026, 8, 5, 14, 30, 0, DateTimeKind.Utc);
@@ -176,6 +178,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("text ~ \"border by\"")]
         [TestCase("summary ~ \"ORDER BY created\"")]
         [TestCase("summary ~ 'ORDER BY created'")]
+        [TestCase("description ~ \"please ORDER BY priority\"")]
         [TestCase("project = PROJ AND status != Done")]
         public async Task GetWorkItemsForTeam_AsksForTheTeamsQueryWholeWhenNothingInItOrdersTheResult(string theTeamsOwnQuery)
         {
@@ -199,6 +202,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(jql, Does.StartWith(whatIsLeftOfIt),
                 "The ordering an operator wrote at the end of their query has to come off however they spelled it, "
                 + "and what comes off is that clause and nothing before it. Asked for: " + jql);
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_AsksForTheTeamsQueryWholeWhenAValueItSearchesForIsNeverClosed()
+        {
+            var jql = await TheQueryJiraIsAskedFor("summary ~ \"never closed ORDER BY created");
+
+            Assert.That(jql, Does.StartWith("(summary ~ \"never closed ORDER BY created) AND"),
+                "A quote with nothing closing it runs to the end of the query, so every word after it is still part "
+                + "of the value the operator is searching for and orders nothing. Treating the quote as if it closed "
+                + "where it opened puts the search for the ordering clause inside that value, where it finds those "
+                + $"words and cuts the query in half. Asked for: {jql}");
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_AsksForTheTeamsQueryWholeWhenItEndsOnTheOrderingKeywordAndNothingElse()
+        {
+            var jql = await TheQueryJiraIsAskedFor("project = PROJ ORDER BY");
+
+            Assert.That(jql, Does.StartWith("(project = PROJ ORDER BY) AND"),
+                "An ordering clause names what to order by, and this one names nothing, so there is nothing to take "
+                + "off. The part worth holding is that looking at what follows the keyword stops at the end of the "
+                + "query: here the keyword is the end, and reading one character further throws and takes the whole "
+                + $"fetch for that team with it. Asked for: {jql}");
+        }
+
+        [Test]
+        public void SweepWorkItemsForTeam_RefusesToSweepAnInstanceLighthouseHasNeverReached()
+        {
+            var jira = new JiraStub(Cloud);
+            var subject = CreateSubject(jira.Handler);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(async () => await subject.SweepWorkItemsForTeam(CreateTeam()), Throws.TypeOf<NotSupportedException>(),
+                    "The two deployments page their search results differently and each one's endpoint answers 404 on "
+                    + "the other, so which one to walk has to be settled before the first request goes out. Guessing "
+                    + "wrong returns nothing, 'nothing' reads as 'the query holds no records', and removal is 'stored "
+                    + "minus swept' - every stored record for that team would go.");
+                Assert.That(jira.Requests, Is.Empty,
+                    "Refusing after the round trip would still have cost the round trip.");
+            }
         }
 
         [Test]
@@ -659,6 +704,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_SpendsOneRoundTripPerPageAndNotOneMore()
+        {
+            var (subject, team, jira) = await AJiraDataCenterPagingBy(2);
+            jira.OffsetSweepIssues.AddRange(FourRecordsOverTwoPages.Select(key => SweepIssue(key, "2026-08-01T10:00:00.000+0000")));
+            var searchesBefore = jira.SearchRequests.Count();
+
+            var stamps = await subject.SweepWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(FourRecordsOverTwoPages),
+                    "Every record the query holds, each of them once. An offset that moves by anything other than the "
+                    + "page size just read either steps over records or reads the same ones again.");
+                Assert.That(jira.SearchRequests.Count() - searchesBefore, Is.EqualTo(2),
+                    "Four records at two per page is two requests, and how many requests a sweep spends is the whole "
+                    + "reason it exists. Asking once more after the offset has already reached the total wastes a "
+                    + "round trip every cycle, and an offset creeping forward by one turns the walk over the "
+                    + "instance this slice was written for into a request per issue.");
+            }
+        }
+
+        [Test]
         public async Task SweepWorkItemsForTeam_OnDataCenter_AsksOnlyForIdentityAndTheChangeStamp()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
@@ -845,15 +912,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        private static Task<(JiraWorkTrackingConnector Subject, Team Team, JiraStub Jira)> AJiraDataCenterThatPagesOneIssueAtATime()
+            => AJiraDataCenterPagingBy(1);
+
         /// <summary>
-        /// A Data Center instance whose pages hold one issue each, so a walk that reads only the first page is
-        /// visible. The page size is a connection setting, which is the same lever an operator has in the field.
+        /// A Data Center instance whose pages hold <paramref name="issuesPerPage"/> issues each, so both how far a
+        /// walk gets and how many round trips it takes to get there are visible. The page size is a connection
+        /// setting, which is the same lever an operator has in the field.
         /// </summary>
-        private static async Task<(JiraWorkTrackingConnector Subject, Team Team, JiraStub Jira)> AJiraDataCenterThatPagesOneIssueAtATime()
+        private static async Task<(JiraWorkTrackingConnector Subject, Team Team, JiraStub Jira)> AJiraDataCenterPagingBy(int issuesPerPage)
         {
             var jira = new JiraStub(DataCenter);
             var subject = CreateSubject(jira.Handler);
-            var team = JiraConnectorTestSetup.ATeamOnJiraCloud(issuesPerRequestOption: "1", doneItemsCutoffDays: 30);
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud(
+                issuesPerRequestOption: issuesPerPage.ToString(CultureInfo.InvariantCulture), doneItemsCutoffDays: 30);
 
             // The deployment is discovered by asking the instance, so the capability probe only answers once a
             // first cycle has run - and that first cycle is a full download.
