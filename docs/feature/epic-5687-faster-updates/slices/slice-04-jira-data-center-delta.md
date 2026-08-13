@@ -110,4 +110,27 @@ instance, both summary lines recorded in the verdict.
 
 ## Verdict
 
-_(recorded at slice close — probe result first, then the two summary lines)_
+**Shipped 2026-08-13, and the premise held on the instance the epic was written about.** The probe
+result is above: pagination is stable, so the sweep was allowed to drive removal. The two cycles below
+are from the maintainer's own on-premise Data Center instance, read off a CI-built package.
+
+| Cycle | scanned | fetched | duration |
+|---|---|---|---|
+| Full | 1457 | 1457 | 468 856 ms (7 min 49 s) |
+| Delta | 1457 | 0 | 2 087 ms (2.1 s) |
+
+**225× faster on a cycle with nothing to fetch.** The number that matters for correctness is not the
+duration though — it is that `scanned` is 1457 in both. The sweep enumerated exactly the result set the
+full download enumerated, over roughly thirty offset pages. Removal is `stored − swept`, so a sweep
+that had dropped a record on a page boundary would show a smaller `scanned` and would have deleted live
+work items; at this size, on this instance, it did not.
+
+AC-2.8's Data Center reading falls out of the same lines: a delta cycle that fetches nothing issues only
+the sweep's page requests, against 1457 payload downloads plus paging for a full cycle — far inside the
+ten-percent target. The Jira Cloud reading is still owed on a project of comparable size.
+
+Not yet read: a third cycle after changing one issue, which should report `fetched=1`. Deliberately not
+taken here — the instance is live production, and editing someone's real work item to watch a log line
+is not a reasonable thing to do to it. Deferred to the next window on that instance (2026-08-17). The
+mechanism is shared code and the Cloud dogfood at slice 03 showed exactly that progression, so this is
+confirmation rather than an open question.

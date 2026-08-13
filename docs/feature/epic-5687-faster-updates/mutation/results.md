@@ -343,3 +343,87 @@ Both are now in `docs/ci-learnings.md` under `## Tests`, because both cost a cyc
    nullable-flow analysis stays satisfied; a human deleting that branch trips CS8604 — and the other
    obvious probe shapes trip S1172, S1125, S3981, CS0162 or S1144 under `TreatWarningsAsErrors`.
    **Inversions and value swaps are the only safe hand-probe shape here.**
+
+---
+
+# Mutation testing — 5727 (Faster updates: Jira Data Center delta)
+
+Run 2026-08-13 against `main` @ `0f3334a51`. Gate is 80 % kill rate.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0), whole file | 38.34 % | 196 | 118 | 71 | 7 | 3 m 15 s |
+| **Backend, slice-04 changed lines only** | **90.91 %** | **55** | **46** | 4 | 4 | — |
+| Frontend (StrykerJS) | **N/A** | — | — | — | — | — |
+
+Config: `stryker.5727.backend.json`. Frontend is N/A, not skipped — slice 04 changed no file under
+`Lighthouse.Frontend/`.
+
+## Which number is the gate
+
+**90.91 %, on the lines slice 04 changed**, recovered from `mutation-report.json` by intersecting each
+mutant's location with `git diff -U0 89baa5663..HEAD`. Same method as slices 02, 03 and 05, and for the
+same reason: Stryker.NET ignores line ranges in `mutate`, so one 1880-line connector is in scope whatever
+the change was, and slice 04 touched 232 of those lines.
+
+The whole-file figure is depressed by more than untouched code. The test filter must exclude the
+live-Jira fixtures, which are what covers the boards, write-back and field-catalogue regions — hence 130
+NoCoverage and 71 survived mutants that no test written for this slice could reach.
+
+## Closed by this pass
+
+The first run scored **78.18 % (43/55)**, one mutant short of the gate. Seven survivors were killed by
+four new tests and one new case, each verified by applying the mutation, rebuilding, and watching the
+named test go red — not by re-running and hoping.
+
+- **`while (startAt < total)` mutated to `<=`** — killed by
+  `SweepWorkItemsForTeam_OnDataCenter_SpendsOneRoundTripPerPageAndNotOneMore`: four records at two per
+  page must cost exactly two requests. The mutant makes a third, and the records come back identical, so
+  only the request count catches it.
+- **`Math.Max(1, maxResults)` mutated to `Math.Min`** — same test. Page size collapses to one, so the
+  maintainer's real 1457-issue sweep would cost 1457 requests instead of about thirty.
+- **`IndexOf(quote, openingQuote + 1)` mutated to `openingQuote - 1`** — killed by a search value with
+  whitespace before the words `order by`. Every pre-existing quoted case put the keyword at the start of
+  its value, where the boundary check masks this mutant.
+- **The unclosed-quote ternary forced to `closingQuote + 1`** — killed by a query whose search value is
+  never closed. The mutant returns 0, so the scan restarts at the beginning forever; Stryker records the
+  timeout as a kill.
+- **`afterKeyword < jql.Length` mutated to `<=`, and its `&&` to `||`** — both killed by a query ending on
+  the ordering keyword with nothing after it. Both mutants read one past the end of the string.
+- **The sweep's refusal for an instance never reached** (previously NoCoverage) — killed by
+  `SweepWorkItemsForTeam_RefusesToSweepAnInstanceLighthouseHasNeverReached`. It was reachable from this
+  fixture all along: the deployment cache is keyed by base URL and every test team gets a fresh one.
+
+## Accepted survivors
+
+Four survived and one has no coverage. None is a missing test.
+
+- **`closingQuote < 0` mutated to `<= 0`** — equivalent. The search starts at `openingQuote + 1`, which is
+  at least 1, so `IndexOf` returns `-1` or something `>= 1`; zero is unreachable. Confirmed by applying it.
+- **`index > 0` mutated to `index < 0`, and the `return false` beside it to `true`** — both need the words
+  `order by` glued to a preceding non-space character. An unquoted JQL value cannot contain a space, so
+  the only ways to write it are `)ORDER BY` or `"x"ORDER BY`. In each, the correct code leaves the
+  ordering inside the brackets Lighthouse wraps around the operator's query, which Jira rejects — while
+  the mutant strips it and produces a query that works. **Killing these means asserting the worse of the
+  two outcomes.**
+- **The `continue` after a quoted value** — differs only when a closing quote is immediately followed by
+  another, which valid JQL produces only through a backslash-escaped quote. Both versions mis-handle
+  those; see the known gap below.
+- **`WithoutTheLeadingConjunction`'s ternary forced true** — its other branch is reachable only when work
+  item types, states and cutoff are all empty at once. That configuration asks Jira for the whole instance
+  whichever branch runs, and the mutant throws instead. Pinning "we over-fetch rather than crash" on a
+  configuration the product does not produce is not worth a test.
+
+## Known gap, recorded not fixed
+
+The ordering finder does not understand backslash-escaped quotes (`summary ~ "he said \"order by\""`) and
+can cut such a query short. This predates the slice — the same helper has stripped ordering from
+saved-filter JQL since long before it — and reading it correctly needs the JQL value grammar rather than
+a scan.
+
+## Test filter
+
+`FullyQualifiedName~JiraIncrementalSync`, with every integration category excluded. That fixture is the
+only stub-driven coverage of this connector; `JiraWorkTrackingConnectorTest` and `JiraWriteBackTest` are
+`[Category("JiraIntegration")]` and hit a real Atlassian instance, which Stryker would hammer hundreds of
+times.
