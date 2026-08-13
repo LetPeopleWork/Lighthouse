@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// and the caller falls back to the whole query.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
-            => SweepIdentities(team, [SweepQueryFor(team)], $"Team {team.Name}");
+            => SweepIdentities(team, [PrepareQuery(team)], $"Team {team.Name}");
 
         /// <summary>
         /// The one sweep every caller goes through: walk each query in full, keep identity and the change stamp,
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var query = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
+            var query = PrepareQuery(team);
             var issues = await GetIssuesByQuery(team, query);
 
             workItems.AddRange(await CreateWorkItemsFromIssues(team, issues));
@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays);
+            var query = PrepareQuery(project);
             var issues = await GetIssuesByQuery(project, query);
             return await CreateFeaturesFromIssues(project, issues);
         }
@@ -317,7 +317,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// issues, narrowed to identity plus the change stamp.
         /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
-            => SweepIdentities(project, [SweepQueryFor(project)], $"Portfolio {project.Name}");
+            => SweepIdentities(project, [PrepareQuery(project)], $"Portfolio {project.Name}");
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
@@ -979,7 +979,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 logger.LogInformation("Validating Team Settings for Team {TeamName} and Query {Query}", team.Name, team.DataRetrievalValue);
 
-                var workItemsQuery = PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
+                var workItemsQuery = PrepareQuery(team);
                 var issues = await GetIssuesByQuery(team, workItemsQuery, 10);
                 var totalItems = issues.Count();
 
@@ -1012,7 +1012,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 logger.LogInformation("Validating Project Settings for Project {ProjectName} and Query {Query}", portfolio.Name, portfolio.DataRetrievalValue);
 
-                var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
+                var query = PrepareQuery(portfolio);
                 var issues = await GetIssuesByQuery(portfolio, query, 10);
                 var totalFeatures = issues.Count();
 
@@ -1638,27 +1638,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private static string OrderedForOffsetPaging(string jql) => $"{jql.TrimEnd()} ORDER BY key ASC";
 
-        /// <summary>The very query the full download issues, which is the only thing a sweep may enumerate.</summary>
-        private static string SweepQueryFor(IWorkItemQueryOwner owner)
-            => PrepareQuery(owner.WorkItemTypes, owner.AllStates, owner.DataRetrievalValue, owner.DoneItemsCutoffDays);
-
-        /// <summary>Names issues by key and nothing else - shared by the parent lookup and by phase 2 of the two-phase fetch.</summary>
+        /// <summary>Names issues by key and nothing else - shared by the parent lookup and by the download of what moved.</summary>
         private static string PrepareIssueKeyQuery(IEnumerable<string> referenceIds)
             => string.Join(" OR ", referenceIds.Select(id => $"key = \"{id}\""));
 
         /// <summary>
-        /// The operator's query is wrapped in brackets and the type, state and cutoff filters are hung off it,
-        /// so an ordering they wrote would end up in the middle of an expression - which Jira rejects, and the
-        /// team or portfolio then fetches nothing at all. An ordering says nothing about what a query selects,
-        /// so it comes off here, the same way it already comes off the JQL of a saved Jira filter.
+        /// The one query a team's or a portfolio's records are ever asked for. The sweep and the whole download
+        /// both come through here, and that is what keeps the two enumerating the same set: removal is "stored
+        /// minus swept", so a sweep built from a query of its own would report as removed whatever the two
+        /// disagreed about.
+        ///
+        /// An ordering the operator wrote comes off first. Their query is wrapped in brackets and the type,
+        /// state and cutoff filters are hung off it, so an ordering left in would end up in the middle of an
+        /// expression - which Jira rejects, and the team or portfolio then fetches nothing at all. An ordering
+        /// says nothing about what a query selects, so it costs nothing to drop, the same way it already comes
+        /// off the JQL of a saved Jira filter.
         /// </summary>
-        private static string PrepareQuery(IEnumerable<string> includedWorkItemTypes, IEnumerable<string> includedStates, string query, int cutOffDays)
+        private static string PrepareQuery(IWorkItemQueryOwner owner)
         {
-            var workItemsQuery = PrepareGenericQuery(includedWorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
-            var stateQuery = PrepareGenericQuery(includedStates, JiraFieldNames.StatusFieldName, "OR", "=");
-            var cutoffDateFilter = PrepareCutoffDateFilter(cutOffDays);
+            var workItemsQuery = PrepareGenericQuery(owner.WorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
+            var stateQuery = PrepareGenericQuery(owner.AllStates, JiraFieldNames.StatusFieldName, "OR", "=");
+            var cutoffDateFilter = PrepareCutoffDateFilter(owner.DoneItemsCutoffDays);
 
-            return $"({RemoveOrderByClause(query)}) {workItemsQuery} {stateQuery} {cutoffDateFilter}";
+            return $"({RemoveOrderByClause(owner.DataRetrievalValue)}) {workItemsQuery} {stateQuery} {cutoffDateFilter}";
         }
 
         private static string PrepareCutoffDateFilter(int cutOffDays)
