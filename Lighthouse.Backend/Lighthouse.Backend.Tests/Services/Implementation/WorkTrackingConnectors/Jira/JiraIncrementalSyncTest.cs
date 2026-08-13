@@ -35,12 +35,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string StampWithNoZone = "2026-08-05T14:30:00.000";
         private static readonly DateTime TheInstantThatStampNames = new(2026, 8, 5, 14, 30, 0, DateTimeKind.Utc);
 
+        private const string StampTwoHoursAheadOfUtc = "2026-08-05T14:30:00.000+0200";
+        private static readonly DateTime TheInstantThatOffsetStampNames = new(2026, 8, 5, 12, 30, 0, DateTimeKind.Utc);
+
         private const string CloudSearchPath = "rest/api/3/search/jql";
         private const string DataCenterSearchPath = "/rest/api/latest/search";
         private const string SweepFieldList = "key,updated";
+        private const string EveryField = "*all";
 
         private const string OrderingKeyword = "ORDER BY";
-        private const string TheDeterministicOrdering = "ORDER BY key ASC";
+        private const string TheDeterministicOrdering = OrderingKeyword + " key ASC";
         private const string TheKeyedQuery = "key = \"PROJ-1\" OR key = \"PROJ-3\"";
 
         private const string AQueryTheOperatorOrdered = "project = PROJ ORDER BY created DESC";
@@ -53,11 +57,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(DataCenter)]
         public async Task GetWorkItemsForTeam_RemembersWhenTheIssueLastChangedRemotely(string deploymentType)
         {
-            var workItem = await TheSingleWorkItemFetchedFrom(deploymentType, updated: "2026-08-05T14:30:00.000+0200");
+            var workItem = await TheSingleWorkItemFetchedFrom(deploymentType, updated: StampTwoHoursAheadOfUtc);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(workItem.LastChangedRemote, Is.EqualTo(new DateTime(2026, 8, 5, 12, 30, 0, DateTimeKind.Utc)));
+                Assert.That(workItem.LastChangedRemote, Is.EqualTo(TheInstantThatOffsetStampNames));
                 Assert.That(workItem.LastChangedRemote?.Kind, Is.EqualTo(DateTimeKind.Utc),
                     "An instant has no time zone - storing it in anything but UTC makes the next cycle's comparison wrong.");
             }
@@ -215,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo("key,updated"),
+                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList),
                     "Downloading *all during the sweep would cost exactly what the two-phase fetch exists to save.");
                 Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
                     "The changelog is the single most expensive part of a Jira issue and phase 1 never reads it.");
@@ -251,10 +255,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task SweepWorkItemsForTeam_ReportsTheChangeStampTheFullFetchWouldStore()
         {
-            const string updated = "2026-08-05T14:30:00.000+0200";
-
-            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud, updated);
-            jira.QueueSweepPage(SweepIssue("PROJ-1", updated), nextPageToken: null);
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud, StampTwoHoursAheadOfUtc);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc), nextPageToken: null);
 
             var stamps = await subject.SweepWorkItemsForTeam(team);
             var stored = (await subject.GetWorkItemsForTeam(team)).Single();
@@ -298,9 +300,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetWorkItemsForTeam(team, ["PROJ-1", "PROJ-3"]);
+            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo("key = \"PROJ-1\" OR key = \"PROJ-3\""),
+            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the team filter would let the cutoff "
                 + "date silently drop an item the sweep just reported as changed.");
         }
@@ -348,7 +350,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(workItems.Count(), Is.EqualTo(1), "positive control: the canned response was not read at all.");
-                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo("*all"),
+                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo(EveryField),
                     "Phase 2 is the download - narrowing it here would store a work item with holes in it.");
                 Assert.That(byKeyRequest.Query, Does.Contain("expand=changelog"));
                 Assert.That(jira.Requests.Any(uri => uri.AbsolutePath.EndsWith("/changelog", StringComparison.Ordinal)), Is.True,
@@ -360,12 +362,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetParentFeaturesDetails_AndTheByKeyFetch_IssueTheSameQuery()
         {
             var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);
-            string[] keys = ["PROJ-1", "PROJ-3"];
 
-            await subject.GetWorkItemsForTeam(team, keys);
+            await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor);
             var byKeyQuery = QueryValue(jira.SearchRequests.Last(), "jql");
 
-            await subject.GetParentFeaturesDetails(CreatePortfolio(team), keys);
+            await subject.GetParentFeaturesDetails(CreatePortfolio(team), TheTwoKeysAskedFor);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(byKeyQuery),
                 "Two callers, one query. A second copy of the key-OR builder drifts the moment either side "
@@ -396,7 +397,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo("key,updated"),
+                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList),
                     "Downloading *all during the sweep would cost exactly what the two-phase fetch exists to save.");
                 Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
                     "The changelog is the single most expensive part of a Jira issue and phase 1 never reads it.");
@@ -431,10 +432,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task SweepFeaturesForPortfolio_ReportsTheChangeStampTheFullFetchWouldStore()
         {
-            const string updated = "2026-08-05T14:30:00.000+0200";
-
-            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud, updated);
-            jira.QueueSweepPage(SweepIssue("PROJ-1", updated), nextPageToken: null);
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud, StampTwoHoursAheadOfUtc);
+            jira.QueueSweepPage(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc), nextPageToken: null);
 
             var stamps = await subject.SweepFeaturesForPortfolio(portfolio);
             var stored = (await subject.GetFeaturesForProject(portfolio)).Single();
@@ -466,9 +465,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
 
-            await subject.GetFeaturesForProject(portfolio, ["PROJ-1", "PROJ-3"]);
+            await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor);
 
-            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo("key = \"PROJ-1\" OR key = \"PROJ-3\""),
+            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
                 "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the cutoff "
                 + "date silently drop a Feature the sweep just reported as changed.");
         }
@@ -525,7 +524,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(features[0].LastChangedRemote, Is.Not.Null,
                     "Phase 2 has to stamp what it returns, or the next cycle has nothing to compare against and D8 "
                     + "resolves every cycle to a full download.");
-                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo("*all"),
+                Assert.That(QueryValue(byKeyRequest, "fields"), Is.EqualTo(EveryField),
                     "Phase 2 is the download - narrowing it here would store a Feature with holes in it.");
                 Assert.That(byKeyRequest.Query, Does.Contain("expand=changelog"));
                 Assert.That(jira.Requests.Any(uri => uri.AbsolutePath.EndsWith("/changelog", StringComparison.Ordinal)), Is.True,
@@ -537,12 +536,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepParentFeatures_SweepsTheSameKeyedQueryTheParentDetailFetchIssues()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(Cloud);
-            string[] keys = ["PROJ-1", "PROJ-3"];
 
-            await subject.GetParentFeaturesDetails(portfolio, keys);
+            await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor);
             var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql");
 
-            await subject.SweepParentFeatures(portfolio, keys);
+            await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor);
 
             Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names "
@@ -560,7 +558,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo("key,updated"));
+                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList));
                 Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
                     "A parent sweep that pulled the changelog would cost more than the detail fetch it exists to avoid.");
             }
@@ -707,10 +705,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task SweepWorkItemsForTeam_OnDataCenter_ReportsTheChangeStampTheFullFetchWouldStore()
         {
-            const string updated = "2026-08-05T14:30:00.000+0200";
-
-            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter, updated);
-            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", updated));
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter, StampTwoHoursAheadOfUtc);
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", StampTwoHoursAheadOfUtc));
 
             var stamps = await subject.SweepWorkItemsForTeam(team);
             var stored = (await subject.GetWorkItemsForTeam(team)).Single();
@@ -761,12 +757,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task SweepParentFeatures_OnDataCenter_SweepsTheSameKeyedQueryTheParentDetailFetchIssues()
         {
             var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
-            string[] keys = ["PROJ-1", "PROJ-3"];
 
-            await subject.GetParentFeaturesDetails(portfolio, keys);
+            await subject.GetParentFeaturesDetails(portfolio, TheTwoKeysAskedFor);
             var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql").Trim();
 
-            await subject.SweepParentFeatures(portfolio, keys);
+            await subject.SweepParentFeatures(portfolio, TheTwoKeysAskedFor);
 
             Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(detailQuery),
                 "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names a "
@@ -997,7 +992,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Ok(OffsetSweepPage(uri));
                 }
 
-                if (sweepPages.Count > 0 && QueryValue(uri, "fields") != "*all")
+                if (sweepPages.Count > 0 && QueryValue(uri, "fields") != EveryField)
                 {
                     return Ok(sweepPages.Dequeue());
                 }
