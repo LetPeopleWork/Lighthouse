@@ -18,6 +18,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// The rest of the fixture covers slice 02's two-phase fetch for Jira Cloud: the identity sweep (phase 1)
     /// and the fetch-by-key (phase 2). The acceptance suite fakes <c>IWorkTrackingConnector</c> by policy and
     /// therefore cannot see any of this - these tests are the only evidence the Jira side actually works.
+    ///
+    /// The Data Center block at the foot of the fixture is the same contract over the other transport. Data
+    /// Center has no page token and no <c>search/jql</c> endpoint, so its sweep is an offset walk over
+    /// <c>rest/api/latest/search</c> - a different set of requests answering the same two questions.
     /// </summary>
     [TestFixture]
     public class JiraIncrementalSyncTest
@@ -30,6 +34,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string StampWithNoZone = "2026-08-05T14:30:00.000";
         private static readonly DateTime TheInstantThatStampNames = new(2026, 8, 5, 14, 30, 0, DateTimeKind.Utc);
+
+        private const string CloudSearchPath = "rest/api/3/search/jql";
+        private const string DataCenterSearchPath = "/rest/api/latest/search";
+        private const string SweepFieldList = "key,updated";
+
+        private const string Pending = "DISTILL scaffold — slice 04 is not implemented yet.";
+
+        private const string OrderingKeyword = "ORDER BY";
+        private const string TheDeterministicOrdering = "ORDER BY key ASC";
+        private const string TheKeyedQuery = "key = \"PROJ-1\" OR key = \"PROJ-3\"";
+
+        private static readonly string[] TheDataCenterSearchPathOnly = [DataCenterSearchPath];
+        private static readonly string[] TheTwoKeysAskedFor = ["PROJ-1", "PROJ-3"];
 
         [TestCase(Cloud)]
         [TestCase(DataCenter)]
@@ -527,6 +544,278 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(async () => await subject.SweepParentFeatures(portfolio, ["PROJ-1"]), Throws.TypeOf<NotSupportedException>());
         }
 
+        // --- Jira Data Center (Epic #5687 slice 04) ---
+        //
+        // Everything below ships [Ignore]d. DELIVER un-ignores one at a time; each is one TDD cycle.
+        //
+        // Five assertions above are the inverse of five below - SupportsIncrementalSync_StaysFalseForDataCenter
+        // and the four ..._RefusesOnDataCenter tests. They record today's behaviour and are what slice 04
+        // reverses, so un-ignoring a spec here turns its opposite red; delete the opposite in the same step.
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SupportsIncrementalSync_IsTrueForDataCenterOnceTheDeploymentIsKnown()
+        {
+            var (subject, team, _) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            Assert.That(subject.SupportsIncrementalSync(team.WorkTrackingSystemConnection), Is.True,
+                "A real instance answered the question the probe was written for: three back-to-back walks over "
+                + "5056 issues returned the same id set every time, so 'stored minus swept' can be trusted here.");
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_WalksTheOffsetPagedSearchEndpoint()
+        {
+            var (subject, team, jira) = await AJiraDataCenterThatPagesOneIssueAtATime();
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"));
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"));
+            var searchesBefore = jira.SearchRequests.Count();
+
+            var stamps = await subject.SweepWorkItemsForTeam(team);
+
+            var sweepRequests = jira.SearchRequests.Skip(searchesBefore).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(BothPages),
+                    "A sweep that stops at the first page under-reports the query, and 'stored minus swept' deletes everything it missed.");
+                Assert.That(sweepRequests.ConvertAll(uri => uri.AbsolutePath).Distinct(), Is.EqualTo(TheDataCenterSearchPathOnly),
+                    "Data Center has no rest/api/3/search/jql - the endpoint the Cloud walk uses answers 404 here, "
+                    + "so a sweep that reuses it never enumerates anything at all.");
+                Assert.That(sweepRequests.ConvertAll(uri => QueryValue(uri, "startAt")), Does.Contain("1"),
+                    "Without a page token the only way to reach page two is to ask for the next offset.");
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_AsksOnlyForIdentityAndTheChangeStamp()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            await subject.SweepWorkItemsForTeam(team);
+
+            var sweep = jira.SearchRequests.Last();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(QueryValue(sweep, "fields"), Is.EqualTo(SweepFieldList),
+                    "Data Center returns every field when none is named, which costs exactly what the two-phase fetch exists to save.");
+                Assert.That(sweep.Query, Does.Not.Contain("expand=changelog"),
+                    "The changelog is the single most expensive part of a Jira issue, and on the instance this slice "
+                    + "was written for it is decades deep. Phase 1 never reads it.");
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_EnumeratesTheSameQueryTheWholeDownloadEnumerates()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql").Trim();
+
+            await subject.SweepWorkItemsForTeam(team);
+
+            Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(fullFetchQuery),
+                "Removal is 'stored minus swept'. A sweep that enumerates anything other than the exact query the "
+                + "full fetch enumerates deletes whatever the two disagree about - and on this instance that is decades of work.");
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_WalksInAnOrderNoEditCanDisturb()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            await subject.SweepWorkItemsForTeam(team);
+
+            Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Does.EndWith(TheDeterministicOrdering),
+                "Offset paging asks for 'issues 500 to 549 of the current answer'. Someone editing an issue mid-walk "
+                + "reshuffles Jira's default relevance ordering, which can move a record onto a page already read - so "
+                + "it never appears in the sweep, and 'stored minus swept' deletes it. Ordering on the key cannot be "
+                + "reshuffled by an edit, because an issue's key never changes. The probe ran on a quiet instance and "
+                + "could not exercise this, which is why it is asserted rather than measured.");
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_LeavesAQueryThatAlreadyOrdersWithOneOrderingClause()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+            team.DataRetrievalValue = "project = PROJ ORDER BY created DESC";
+
+            await subject.SweepWorkItemsForTeam(team);
+
+            var jql = QueryValue(jira.SearchRequests.Last(), "jql");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrderingClausesIn(jql), Is.EqualTo(1),
+                    "Two ordering clauses is not valid JQL, so the sweep would fail for every instance whose own query "
+                    + "already orders - and an operator who writes their own JQL is exactly who runs this deployment. "
+                    + $"Asked for: {jql}");
+                Assert.That(jql, Does.EndWith(TheDeterministicOrdering),
+                    "The one that survives has to be the sweep's: the user's ordering is the one an edit can reshuffle.");
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_RefusesToReportAHalfWalkedQuery()
+        {
+            var (subject, team, jira) = await AJiraDataCenterThatPagesOneIssueAtATime();
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", "2026-08-01T10:00:00.000+0000"));
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-2", "2026-08-02T10:00:00.000+0000"));
+            jira.FailTheSearchAfterTheNextOne();
+
+            Assert.That(async () => await subject.SweepWorkItemsForTeam(team), Throws.TypeOf<InvalidOperationException>(),
+                "Returning the first offset as if it were the whole query is the one answer removal cannot survive: "
+                + "every record on the pages that never arrived would be deleted. Throwing falls back to a full fetch. "
+                + "The rejected page is what has to be reported - a refusal to sweep this deployment at all would "
+                + "satisfy a looser assertion without a single page ever being walked.");
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_ReportsTheChangeStampTheFullFetchWouldStore()
+        {
+            const string updated = "2026-08-05T14:30:00.000+0200";
+
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter, updated);
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", updated));
+
+            var stamps = await subject.SweepWorkItemsForTeam(team);
+            var stored = (await subject.GetWorkItemsForTeam(team)).Single();
+
+            Assert.That(stamps.Single().ChangedAt, Is.EqualTo(stored.LastChangedRemote),
+                "The sweep and the full fetch are compared against each other per record, with no watermark in "
+                + "between. Two different readings of the same string would report every record as moved, forever.");
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepWorkItemsForTeam_OnDataCenter_StillReportsARecordTheTrackerGaveNoStampFor()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+            jira.OffsetSweepIssues.Add(SweepIssue("PROJ-1", updated: null));
+
+            var stamps = await subject.SweepWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stamps.Select(stamp => stamp.ReferenceId), Is.EqualTo(TheOnlyRecord),
+                    "Dropping it from the sweep would put it in 'stored minus swept' and delete a live item.");
+                Assert.That(stamps.Single().ChangedAt, Is.Default,
+                    "No stamp can never equal a stored stamp, so the record is re-downloaded rather than assumed unchanged.");
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepFeaturesForPortfolio_OnDataCenter_EnumeratesTheSameFeatureQueryTheWholeDownloadEnumerates()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
+            var fullFetchQuery = QueryValue(jira.SearchRequests.Single(), "jql").Trim();
+
+            await subject.SweepFeaturesForPortfolio(portfolio);
+
+            var sweep = jira.SearchRequests.Last();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WithoutOrdering(QueryValue(sweep, "jql")), Is.EqualTo(fullFetchQuery),
+                    "The portfolio half deletes Features the same way, so it enumerates the same query the same way.");
+                Assert.That(sweep.AbsolutePath, Does.EndWith(DataCenterSearchPath),
+                    "One sweep, reached by both entity types: a portfolio that walked its own way would be a second "
+                    + "implementation to keep in step with the first.");
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SweepParentFeatures_OnDataCenter_SweepsTheSameKeyedQueryTheParentDetailFetchIssues()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
+            string[] keys = ["PROJ-1", "PROJ-3"];
+
+            await subject.GetParentFeaturesDetails(portfolio, keys);
+            var detailQuery = QueryValue(jira.SearchRequests.Last(), "jql").Trim();
+
+            await subject.SweepParentFeatures(portfolio, keys);
+
+            Assert.That(WithoutOrdering(QueryValue(jira.SearchRequests.Last(), "jql")), Is.EqualTo(detailQuery),
+                "The parent sweep and the parent detail fetch answer for the same set of keys. A sweep that names a "
+                + "different set makes the per-record comparison meaningless for whatever the two disagree about.");
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task GetFeaturesForProjectByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor()
+        {
+            var (subject, portfolio, jira) = await AJiraPortfolioThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            var features = await subject.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features, Is.Not.Empty, "positive control: the canned response was not read at all.");
+                Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
+                    "Phase 2 downloads what moved and nothing else - re-applying the portfolio filter would let the "
+                    + "cutoff date silently drop a Feature the sweep just reported as changed.");
+            }
+        }
+
+        /// <summary>
+        /// Passes on arrival: the by-key Work Item fetch never asked whether the deployment could be swept, so
+        /// Data Center already reaches its own transport here. Its opposite number for Features does refuse, and
+        /// asserting this half is what says the difference is a bug in that half rather than a decision.
+        /// </summary>
+        [Test]
+        [Ignore(Pending)]
+        public async Task GetWorkItemsForTeamByReferenceId_OnDataCenter_NamesOnlyTheKeysItWasAskedFor()
+        {
+            var (subject, team, jira) = await AJiraThatHasAlreadyBeenTalkedTo(DataCenter);
+
+            var workItems = await subject.GetWorkItemsForTeam(team, TheTwoKeysAskedFor);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Is.Not.Empty, "positive control: the canned response was not read at all.");
+                Assert.That(QueryValue(jira.SearchRequests.Last(), "jql"), Is.EqualTo(TheKeyedQuery),
+                    "Phase 2 downloads what moved and nothing else - re-applying the team filter would let the cutoff "
+                    + "date silently drop an item the sweep just reported as changed.");
+            }
+        }
+
+        /// <summary>
+        /// A Data Center instance whose pages hold one issue each, so a walk that reads only the first page is
+        /// visible. The page size is a connection setting, which is the same lever an operator has in the field.
+        /// </summary>
+        private static async Task<(JiraWorkTrackingConnector Subject, Team Team, JiraStub Jira)> AJiraDataCenterThatPagesOneIssueAtATime()
+        {
+            var jira = new JiraStub(DataCenter);
+            var subject = CreateSubject(jira.Handler);
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud(issuesPerRequestOption: "1", doneItemsCutoffDays: 30);
+
+            // The deployment is discovered by asking the instance, so the capability probe only answers once a
+            // first cycle has run - and that first cycle is a full download.
+            await subject.GetWorkItemsForTeam(team);
+
+            return (subject, team, jira);
+        }
+
+        /// <summary>The query without whatever it is ordered by - which is the part that says what it enumerates.</summary>
+        private static string WithoutOrdering(string jql)
+        {
+            var orderingStarts = jql.IndexOf(OrderingKeyword, StringComparison.OrdinalIgnoreCase);
+
+            return (orderingStarts < 0 ? jql : jql[..orderingStarts]).Trim();
+        }
+
+        private static int OrderingClausesIn(string jql)
+            => jql.ToUpperInvariant().Split(OrderingKeyword, StringSplitOptions.None).Length - 1;
+
         private static async Task<(JiraWorkTrackingConnector Subject, Portfolio Portfolio, JiraStub Jira)> AJiraPortfolioThatHasAlreadyBeenTalkedTo(
             string deploymentType, string? updated = "2026-08-01T10:00:00.000+0000")
         {
@@ -615,6 +904,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public int ChangelogEntryCount { get; set; }
 
+            /// <summary>
+            /// What a Data Center sweep finds, in the order the instance would hand it back. Data Center has
+            /// no page token, so pages are not queued: the stub slices this list by the offset and page size
+            /// the request asks for, which is what makes a walk that ignores either one visible.
+            /// </summary>
+            public List<string> OffsetSweepIssues { get; } = [];
+
             public IEnumerable<Uri> SearchRequests => Requests.Where(uri => uri.AbsolutePath.Contains("search", StringComparison.Ordinal));
 
             public void QueueSweepPage(string issueJson, string? nextPageToken)
@@ -667,6 +963,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     };
                 }
 
+                if (QueryValue(uri, "fields") == SweepFieldList && !uri.AbsolutePath.Contains(CloudSearchPath, StringComparison.Ordinal))
+                {
+                    return Ok(OffsetSweepPage(uri));
+                }
+
                 if (sweepPages.Count > 0 && QueryValue(uri, "fields") != "*all")
                 {
                     return Ok(sweepPages.Dequeue());
@@ -674,9 +975,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 var issues = string.Join(",", KeysAskedFor(uri).Select(IssueJson));
 
-                return uri.AbsolutePath.Contains("rest/api/3/search/jql", StringComparison.Ordinal)
+                return uri.AbsolutePath.Contains(CloudSearchPath, StringComparison.Ordinal)
                     ? Ok($"{{\"issues\":[{issues}]}}")
                     : Ok($"{{\"startAt\":0,\"maxResults\":50,\"total\":1,\"issues\":[{issues}]}}");
+            }
+
+            /// <summary>
+            /// One page of an offset walk, echoing back the offset and page size that were asked for and the
+            /// size of the whole result, the way Data Center's search endpoint answers.
+            /// </summary>
+            private string OffsetSweepPage(Uri uri)
+            {
+                var startAt = int.TryParse(QueryValue(uri, "startAt"), out var offset) ? offset : 0;
+                var pageSize = int.TryParse(QueryValue(uri, "maxResults"), out var size) && size > 0 ? size : 50;
+                var page = OffsetSweepIssues.Skip(startAt).Take(pageSize);
+
+                return $"{{\"startAt\":{startAt},\"maxResults\":{pageSize},\"total\":{OffsetSweepIssues.Count},\"issues\":[{string.Join(",", page)}]}}";
             }
 
             private static IEnumerable<string> KeysAskedFor(Uri uri)
