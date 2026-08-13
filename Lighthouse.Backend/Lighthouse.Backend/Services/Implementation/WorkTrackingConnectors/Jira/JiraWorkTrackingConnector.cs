@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// that cycle downloads everything instead. Slower, but never wrong.
         /// </summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection)
-            => TryResolveKnownDeployment(connection, out var deployment) && deployment is not JiraDeployment.Unknown;
+            => SearchTransportOf(connection) is not JiraDeployment.Unknown;
 
         /// <summary>
         /// Phase 1 of the two-phase fetch: the very query <see cref="GetWorkItemsForTeam(Team)"/> issues,
@@ -88,32 +88,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// record on the missing pages into "stored minus swept", which deletes them.
         ///
         /// The two deployments page their search results differently and neither endpoint exists on the other,
-        /// so the transport is chosen here. The deployment is guaranteed to be known: the capability check just
-        /// above is the question "has this instance been reached yet", and it answered yes.
+        /// so the transport has to be settled before the first request goes out.
         /// </summary>
         private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(
             IWorkItemQueryOwner owner, IEnumerable<string> sweepQueries, string sweptDescription)
         {
-            if (!SupportsIncrementalSync(owner.WorkTrackingSystemConnection))
+            var connection = owner.WorkTrackingSystemConnection;
+            var transport = SearchTransportOf(connection);
+
+            if (transport is JiraDeployment.Unknown)
             {
                 throw new NotSupportedException(DeploymentNotKnownYet);
             }
 
-            var sweepsOverCloud = TryResolveKnownDeployment(owner.WorkTrackingSystemConnection, out var deployment)
-                && deployment == JiraDeployment.Cloud;
-
-            var client = await GetJiraRestClientAsync(owner.WorkTrackingSystemConnection);
-            var pageLimit = ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection);
+            var client = await GetJiraRestClientAsync(connection);
+            var pageLimit = ResolveIssuesPerRequest(connection);
             var stamps = new List<RemoteRecordStamp>();
 
             foreach (var sweepQuery in sweepQueries)
             {
-                var walkedEveryPage = sweepsOverCloud
-                    ? await WalkCloudSearchPages(
-                        client,
-                        new CloudSearchRequest(sweepQuery, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
-                        CollectStamp)
-                    : await WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), pageLimit, CollectStamp);
+                var walkedEveryPage = await WalkSweep(client, transport, sweepQuery, pageLimit, CollectStamp);
 
                 if (!walkedEveryPage)
                 {
@@ -1536,6 +1530,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private sealed record CloudSearchRequest(string Jql, string Fields, bool ExpandChangelog, int PageLimit, bool SinglePage);
 
         /// <summary>
+        /// One query's worth of the sweep, over whichever search endpoint this instance actually has. Cloud pages
+        /// by handing back a token for the next page; Data Center has no such token and is walked by offset. Each
+        /// endpoint answers 404 on the other deployment, so this is not a detail that can be hidden any deeper.
+        /// Answers false when Jira rejected a page.
+        /// </summary>
+        private static Task<bool> WalkSweep(
+            HttpClient client, JiraDeployment transport, string sweepQuery, int pageLimit, Func<JsonElement, Task> onIssue)
+            => transport == JiraDeployment.Cloud
+                ? WalkCloudSearchPages(
+                    client,
+                    new CloudSearchRequest(sweepQuery, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
+                    onIssue)
+                : WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), pageLimit, onIssue);
+
+        /// <summary>
         /// The one token-paged walk over Jira Cloud's search endpoint. Both the whole-query download and the
         /// identity sweep go through it, which is what keeps the two enumerating the same result set (D2).
         /// Answers false when Jira rejects a page, leaving the caller to decide between falling back and failing.
@@ -1781,6 +1790,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             client.DefaultRequestHeaders.Authorization = probeRequest.Headers.Authorization;
         }
+
+        /// <summary>
+        /// Which of the two search endpoints this instance answers on, as far as that is known without calling
+        /// Jira. Unknown covers both an instance Lighthouse has never reached and one it reached and could not
+        /// identify; neither can be swept, so both get the same answer here.
+        /// </summary>
+        private static JiraDeployment SearchTransportOf(WorkTrackingSystemConnection connection)
+            => TryResolveKnownDeployment(connection, out var deployment) ? deployment : JiraDeployment.Unknown;
 
         /// <summary>
         /// The deployment as far as it is known without calling Jira: the Atlassian gateway can only be Cloud,
