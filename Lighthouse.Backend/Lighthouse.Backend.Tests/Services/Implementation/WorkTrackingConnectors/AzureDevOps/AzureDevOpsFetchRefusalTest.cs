@@ -44,6 +44,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public void GetWorkItemsForTeam_RefusesWhenTheTrackerAnswersWithoutAResultSet()
+        {
+            var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
+            ado.AnswerTheQueryWithoutAResultSet = true;
+
+            Assert.That(async () => await subject.GetWorkItemsForTeam(team),
+                Throws.TypeOf<InvalidOperationException>(),
+                "No result set is not the same answer as an empty one, and the difference between them is "
+                + "every record the team has.");
+        }
+
+        [Test]
         public void GetWorkItemsForTeam_RefusesWhenAPayloadBatchIsRejected()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
