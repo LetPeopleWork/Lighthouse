@@ -64,6 +64,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return (DateTime?)workItem.Fields[AzureDevOpsFieldNames.CreatedDate] ?? DateTime.MinValue;
         }
 
+        /// <summary>
+        /// When Azure DevOps says this item last changed. Always returned in UTC: the field arrives without a
+        /// dependable kind, and this value is both compared against a stored one and written to a column
+        /// Postgres rejects a non-UTC instant for.
+        /// </summary>
+        public static DateTime? ExtractChangedDateFromWorkItem(this WorkItem workItem)
+        {
+            if (!workItem.Fields.TryGetValue(AzureDevOpsFieldNames.ChangedDate, out var changedDate) || changedDate is not DateTime changed)
+            {
+                return null;
+            }
+
+            return changed.Kind == DateTimeKind.Local
+                ? changed.ToUniversalTime()
+                : DateTime.SpecifyKind(changed, DateTimeKind.Utc);
+        }
+
         public static List<string> ExtractTagsFromWorkItem(this WorkItem workItem)
         {
             if (workItem.Fields.TryGetValue(AzureDevOpsFieldNames.Tags, out var tagsField) && tagsField is string tags)

@@ -30,8 +30,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [Category("slice-06")]
     public class AzureDevOpsIncrementalSyncTest
     {
-        private const string Pending = "Pending - Epic #5687 slice 06 (#5729) implements it.";
-
         private const int TheOnlyItem = 1;
         private const int TheItemThatMoved = 1;
         private const int TheItemThatDidNot = 2;
@@ -47,7 +45,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] TheStampAndNothingElse = [AzureDevOpsFieldNames.ChangedDate];
 
         [Test]
-        [Ignore(Pending)]
         public void SupportsIncrementalSync_IsTrueForAzureDevOps()
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -58,7 +55,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeam_RemembersWhenTheItemLastChangedRemotely()
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -77,7 +73,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeam_AsksTheTrackerForTheChangeStamp()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -90,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetFeaturesForProject_RemembersWhenTheFeatureLastChangedRemotely()
         {
             var (subject, portfolio, _) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
@@ -103,7 +97,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_AsksTheSameQuestionTheWholeDownloadAsks()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -120,7 +113,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_AsksOnlyForTheChangeStamp()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -145,7 +137,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_ReadsNoRevisionsAtAll()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
@@ -158,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_ReportsTheStampTheWholeDownloadWouldStore()
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -177,7 +167,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_StillReportsAnIdTheTrackerGaveNoStampFor()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheOnlyItem);
@@ -196,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public void SweepWorkItemsForTeam_RefusesToReportASweepTheTrackerOnlyHalfAnswered()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
@@ -209,7 +197,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepWorkItemsForTeam_ReadsTheStampsInBatchesTheTrackerAccepts()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds([.. Enumerable.Range(1, 201)]);
@@ -226,7 +213,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepFeaturesForPortfolio_AsksTheSameQuestionTheWholeFeatureDownloadAsks()
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheOnlyItem);
@@ -243,7 +229,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SweepParentFeatures_AsksForTheSameKeysTheParentDetailFetchAsksFor()
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheItemThatMoved, 3);
@@ -261,7 +246,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeam_ByReferenceId_DownloadsExactlyTheIdsItWasAskedFor()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot, 3);
@@ -279,7 +263,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeam_ByReferenceId_DoesNotReApplyTheTeamsOwnFilter()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved);
@@ -298,7 +281,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeam_ByReferenceId_ReadsRevisionsOnlyForTheIdsItWasAskedFor()
         {
             var (subject, team, ado) = AnAzureDevOpsThatHolds(TheItemThatMoved, TheItemThatDidNot);
@@ -318,7 +300,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetWorkItemsForTeam_ByReferenceId_StillRebuildsTheTransitionsItWasFetchedFor()
         {
             var (subject, team, _) = AnAzureDevOpsThatHolds(TheItemThatMoved);
@@ -331,7 +312,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task GetFeaturesForProject_ByReferenceId_DownloadsExactlyTheIdsItWasAskedFor()
         {
             var (subject, portfolio, ado) = AnAzureDevOpsPortfolioThatHolds(TheItemThatMoved, TheItemThatDidNot, 3);

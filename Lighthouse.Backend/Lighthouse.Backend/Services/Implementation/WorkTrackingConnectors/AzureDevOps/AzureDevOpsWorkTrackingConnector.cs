@@ -33,13 +33,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
     {
         private const int MaxChunkSize = 200;
 
+        private static readonly string[] TheChangeStampOnly = [AzureDevOpsFieldNames.ChangedDate];
+
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
-        /// <summary>Epic #5687 slice 06 turns this on for Azure DevOps; until then the sweep is unreachable.</summary>
-        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
+        /// <summary>
+        /// Yes, unconditionally: a WIQL is the same request on every Azure DevOps deployment, so unlike Jira
+        /// there is nothing about the instance the sweep has to discover first.
+        /// </summary>
+        public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => true;
 
+        /// <summary>
+        /// Phase one of the two-phase fetch: the very query <see cref="GetWorkItemsForTeam(Team)"/> issues,
+        /// answered with identity and the change stamp only. Removal is "stored minus swept", so a sweep that
+        /// answers for fewer records than the query returned would delete the difference - it refuses instead,
+        /// and the caller falls back to the whole query.
+        /// </summary>
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepWorkItemsForTeam(Team team)
-            => throw new NotSupportedException("Azure DevOps does not sweep yet - Epic #5687 slice 06 implements it.");
+            => SweepIdentities(team, TheQueryATeamIsFetchedBy(team), $"Team {team.Name}");
 
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection) => [];
 
@@ -55,9 +66,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var workItemQuery = $"{PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays)}";
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team));
 
-            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, workItemQuery);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences);
+        }
+
+        /// <summary>
+        /// Phase two for a team: the records the sweep reported as moved, and no others.
+        /// </summary>
+        public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
+        {
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds);
+
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences);
+        }
+
+        private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
+            Team team, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
+        {
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
             var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences);
 
@@ -72,43 +98,74 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return workItems.Select(workItem => new LighthouseWorkItem(workItem, team));
         }
 
-        public Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
-            => throw new NotSupportedException("Azure DevOps does not fetch by reference id on this port yet - Epic #5687 slice 06 names it.");
-
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project)
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
-            var query = PrepareQuery(project.WorkItemTypes, project.AllStates, project.DataRetrievalValue, project.DoneItemsCutoffDays);
-            var features = await GetFeaturesForProjectByQuery(project, query);
+            var features = await GetFeaturesForProjectByQuery(project, TheQueryAPortfolioIsFetchedBy(project));
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
 
             return features;
         }
 
-        public Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
-            => throw new NotSupportedException("Azure DevOps does not fetch Features by reference id on this port yet - Epic #5687 slice 06 names it.");
+        /// <summary>
+        /// Phase two for a portfolio: the Features the sweep reported as moved, and no others.
+        /// </summary>
+        public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
+        {
+            var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(project, referenceIds);
+
+            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldReferences);
+        }
 
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project)
-            => throw new NotSupportedException("Azure DevOps does not sweep Features yet - Epic #5687 slice 06 names it.");
+            => SweepIdentities(project, TheQueryAPortfolioIsFetchedBy(project), $"Portfolio {project.Name}");
 
         public async Task<List<Feature>> GetParentFeaturesDetails(Portfolio project, IEnumerable<string> parentFeatureIds)
         {
             logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
 
-            var whereClause = string.Join(" OR ", parentFeatureIds.Select(id => $"[{AzureDevOpsFieldNames.Id}] = {id}"));
-
-            var query = $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {whereClause}";
-
-            var features = await GetFeaturesForProjectByQuery(project, query);
+            var features = await GetFeaturesForProjectByQuery(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds));
 
             logger.LogInformation("Found Parent Features with IDs {ParentFeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
             return features;
         }
 
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepParentFeatures(Portfolio project, IEnumerable<string> parentFeatureIds)
-            => throw new NotSupportedException("Azure DevOps does not sweep parent Features yet - Epic #5687 slice 06 names it.");
+            => SweepIdentities(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), $"Parent Features of Portfolio {project.Name}");
+
+        /// <summary>
+        /// The one sweep every caller goes through. A WIQL answers with ids alone, so the stamps cost a second
+        /// read - narrowed to the one field, batched at the size the tracker accepts, and with nothing expanded,
+        /// because every expansion there is would download what the sweep exists to skip.
+        /// </summary>
+        private async Task<IReadOnlyList<RemoteRecordStamp>> SweepIdentities(IWorkItemQueryOwner owner, string sweepQuery, string sweptDescription)
+        {
+            var witClient = await GetWorkItemTrackingHttpClientAsync(owner.WorkTrackingSystemConnection);
+            var url = witClient.BaseAddress!.ToString();
+
+            var swept = (await GetWorkItemReferencesByQuery(witClient, sweepQuery)).Select(reference => reference.Id).ToList();
+            var stamps = new List<RemoteRecordStamp>();
+
+            foreach (var chunk in swept.Chunk(MaxChunkSize))
+            {
+                var answered = await ExecuteWithThrottle(url, () => witClient.GetWorkItemsAsync(chunk, TheChangeStampOnly, expand: null));
+
+                if (answered.Count != chunk.Length)
+                {
+                    throw new InvalidOperationException(
+                        $"Azure DevOps answered for {answered.Count} of {chunk.Length} records in the identity sweep for {sweptDescription}.");
+                }
+
+                // A record the tracker reports no stamp for still belongs in the sweep: leaving it out puts it
+                // in "stored minus swept" and deletes a live record, where an unmatchable stamp re-downloads it.
+                stamps.AddRange(answered.Select(record =>
+                    new RemoteRecordStamp($"{record.Id}", record.ExtractChangedDateFromWorkItem() ?? default)));
+            }
+
+            return stamps;
+        }
 
         public async Task<ConnectionValidationResult> ValidateConnection(WorkTrackingSystemConnection connection)
         {
@@ -527,6 +584,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query)
         {
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(portfolio, query);
+
+            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldReferences);
+        }
+
+        private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
+            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
+        {
             var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, portfolio);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences);
@@ -615,6 +679,41 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to fetch ADO work items for query '{Query}'", query);
+                return ([], new Dictionary<int, string>());
+            }
+        }
+
+        /// <summary>
+        /// Phase two's fetch: a lookup by id, never a query. What phase one enumerated, phase two may only look
+        /// up - re-applying the team's own filter or its done-items cutoff would let the tracker drop a record
+        /// the sweep just vouched for, and removal is "stored minus swept".
+        /// </summary>
+        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsById(
+            IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds)
+        {
+            var additionalFieldsRef = new Dictionary<int, string>();
+            var workItemIds = referenceIds
+                .Select(referenceId => int.TryParse(referenceId, out var workItemId) ? workItemId : -1)
+                .Where(workItemId => workItemId >= 0)
+                .ToList();
+
+            if (workItemIds.Count == 0)
+            {
+                return ([], additionalFieldsRef);
+            }
+
+            try
+            {
+                var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
+                additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions);
+
+                var adoWorkItemsById = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Select(f => f.Value));
+
+                return (adoWorkItemsById, additionalFieldsRef);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to fetch ADO work items with IDs {ItemIds}", string.Join(",", workItemIds));
                 return ([], new Dictionary<int, string>());
             }
         }
@@ -716,6 +815,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 AzureDevOpsFieldNames.BacklogPriority,
                 AzureDevOpsFieldNames.CreatedDate,
                 AzureDevOpsFieldNames.Tags,
+                AzureDevOpsFieldNames.ChangedDate,
             };
 
             fields.AddRange(additionalFields.Where(f => !string.IsNullOrEmpty(f)));
@@ -765,6 +865,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 StartedDate = startedDate,
                 ClosedDate = closedDate,
                 Tags = workItem.ExtractTagsFromWorkItem(),
+                LastChangedRemote = workItem.ExtractChangedDateFromWorkItem(),
                 AdditionalFieldValues = additionalFields,
                 SyncedTransitions = syncedTransitions,
             };
@@ -999,6 +1100,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             return string.Empty;
+        }
+
+        // One place builds each query, because the sweep and the download have to ask the same question:
+        // removal is "stored minus swept", so anything the two disagree about is deleted.
+        private static string TheQueryATeamIsFetchedBy(Team team)
+            => PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
+
+        private static string TheQueryAPortfolioIsFetchedBy(Portfolio portfolio)
+            => PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
+
+        private static string TheQueryParentFeaturesAreFetchedBy(IEnumerable<string> parentFeatureIds)
+        {
+            var whereClause = string.Join(" OR ", parentFeatureIds.Select(id => $"[{AzureDevOpsFieldNames.Id}] = {id}"));
+
+            return $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {whereClause}";
         }
 
         private static string PrepareQuery(
