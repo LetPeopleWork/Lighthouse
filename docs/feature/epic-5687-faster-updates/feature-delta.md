@@ -4325,3 +4325,70 @@ change" claims against the code rather than taking them from the prose.
 - **The dogfood run is part of the slice, not after it**: one full cycle and one delta cycle on Lighthouse's
   own board, comparing stored transition counts across both. If a single transition differs, the learning
   hypothesis failed and the slice does not close.
+
+---
+
+## Wave: DELIVER / [REF] Implementation Summary — slice 06
+
+All 18 specs green, un-ignored in four steps in the order the handoff asked for. The whole slice is one
+connector plus one extension method; nothing in `WorkItemService` changed, because slices 02 and 03 already
+built the service half against this contract.
+
+| Step | Specs | What landed |
+|---|---|---|
+| 1 | 2, 3, 4 | `System.ChangedDate` added to the payload field list, and `ExtractChangedDateFromWorkItem` mapping it onto `LastChangedRemote` — always UTC |
+| 2 | 5-11 | `SweepIdentities`: the download's own query, then one batched read of the stamp per chunk of 200, expanding nothing, refusing a short answer |
+| 3 | 12, 13 | The portfolio and parent sweeps, through the same `SweepIdentities` |
+| 4 | 14-18 | `FetchAdoWorkItemsById` — phase two looks up by id and issues no query at all |
+| 5 | 1 | `SupportsIncrementalSync` answers yes, last, so no cycle could reach a half-built path |
+
+Three query builders (`TheQueryATeamIsFetchedBy`, `TheQueryAPortfolioIsFetchedBy`,
+`TheQueryParentFeaturesAreFetchedBy`) replaced the inline query strings at each call site, which is what
+makes specs 5, 12 and 13 true by construction rather than by coincidence. Two extractions
+(`TheTeamsWorkItemsFrom`, `ThePortfoliosFeaturesFrom`) let the keyed fetch reuse the whole-query fetch's
+conversion, parent resolution and Feature construction rather than growing a second copy of them — which is
+what keeps spec 17 (phase two still rebuilds the transitions) honest.
+
+**The capability is unconditional, unlike Jira's.** Jira answers yes only for an instance it has already
+reached, because Cloud and Data Center page search results differently and the sweep has to know which it is
+talking to. A WIQL is the same request on every Azure DevOps deployment, so there is nothing to discover and
+no first-cycle exception to make.
+
+### Files modified
+
+| File | Change |
+|---|---|
+| `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | The sweep, the keyed fetch, the three query builders, the two conversion extractions, the capability, and `System.ChangedDate` in the payload field list |
+| `…/AzureDevOps/WorkItemExtensions.cs` | `ExtractChangedDateFromWorkItem`, UTC-normalising |
+| `…Tests/…/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs` | 18 specs un-ignored |
+
+No migration, no service change, no UI, no new dependency.
+
+## Wave: DELIVER / [REF] Quality Gates — slice 06
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | Clean — 0 warnings, 0 errors |
+| `dotnet test --filter Category!=Integration` | **4714 passed, 0 failed, 0 skipped** (3 m 13 s) |
+| `dotnet format analyzers` on all three touched files | Zero findings |
+| Slice-06 fixture | 18 of 18 green |
+| Live `AdoIntegration` category | Not run locally — needs the real organisation and its token. The connector folder changed, so CI's path classifier will run it |
+
+## Wave: DELIVER / [WHY] What the specs cannot see, and one consequence worth knowing
+
+- **Write-back moves the stamp.** Lighthouse writes fields back into Azure DevOps for teams that ask for it,
+  and any write bumps that item's `System.ChangedDate` — so the next cycle sees those items as moved and
+  re-downloads them. Correct, and it costs exactly the items Lighthouse itself touched. Worth knowing before
+  reading a dogfood number: a team with write-back on will show a higher `fetched` count than its actual
+  churn, and that is the feature working rather than failing.
+- **`fields` and `expand` together.** The whole-query fetch has always sent both, which the API documents as
+  mutually exclusive; it evidently tolerates it, and this slice did not touch it. The sweep sends fields and
+  no expansion, which is the documented shape, and spec 6 pins that.
+- **A chunk that 404s.** Azure DevOps fails a whole batch when one id in it no longer exists. On the sweep
+  that surfaces as a thrown request, which the service catches and answers with a full fetch — the safe
+  resolution. Spec 10 covers the quieter variant, where the tracker answers with fewer records rather than
+  failing.
+- **The measurement is still owed.** AC-6.3's product half and AC-2.8's request-count target are the dogfood
+  run on Lighthouse's own board: one full cycle, one delta cycle, and identical stored transition counts
+  across both. Until that runs, the slice has evidence that the requests changed and no evidence that
+  nothing was lost.
