@@ -18,6 +18,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// promise US-04 makes (AC-4.4) is US-02's and US-03's, already asserted in slices 02 and 03 against the
     /// same faked connector, and those assertions do not know or care which deployment answered.
     ///
+    /// A refresh reaches the collapse from three places: the team's work items, the portfolio's Features, and
+    /// the parent Features a portfolio pulls in from outside its own query. The third has no scenario of its
+    /// own — it would need a whole parent setup to re-assert the one call the other two already assert, and
+    /// they all reach the same collapse. If that path ever grows its own collapse, it needs its own scenario.
+    ///
     /// Both scenarios pass on arrival: the collapse already exists, and the scan already goes through it.
     /// They are guards, and each carries its own positive control - the repeated record has to be stored and
     /// downloaded at all, or "exactly one copy" would be satisfied by nothing being there.
