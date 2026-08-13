@@ -61,6 +61,24 @@ dotnet_diagnostic.IDE0008.severity = none
 
 dotnet_diagnostic.CA1873.severity = none
 
+# The Sonar quality gate fails the build on any new violation, and it counts INFO-severity
+# diagnostics that `dotnet build` says nothing about. These are the rules that have actually
+# failed that gate; at warning severity TreatWarningsAsErrors stops them here instead, hours
+# before CI would.
+dotnet_diagnostic.CA1861.severity = warning
+dotnet_diagnostic.CA1859.severity = warning
+dotnet_diagnostic.CA1825.severity = warning
+dotnet_diagnostic.CA2016.severity = warning
+dotnet_diagnostic.NUnit1028.severity = warning
+dotnet_diagnostic.NUnit2045.severity = warning
+dotnet_diagnostic.NUnit2056.severity = warning
+
+# EF writes the migration files and we do not hand-edit them, so the same rules stay advisory
+# there rather than making a generated file unbuildable.
+[**/Migrations/*.cs]
+dotnet_diagnostic.CA1861.severity = suggestion
+dotnet_diagnostic.CA1825.severity = suggestion
+
 [*.{cs,vb}]
 #### Naming styles ####
 

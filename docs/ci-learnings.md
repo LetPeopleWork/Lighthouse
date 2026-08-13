@@ -10,6 +10,17 @@ Durable rules derived from CI / SonarCloud failures on `Build And Deploy Lightho
 cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore
 ```
 
+**2026-08-13 — the rules below that had actually failed the gate are now `warning` in
+`Lighthouse.Backend/.editorconfig`, so `dotnet build` fails on them.** CA1861, CA1859, CA1825,
+CA2016, NUnit1028, NUnit2045 and NUnit2056 no longer depend on anyone remembering to run the
+command above: `TreatWarningsAsErrors` turns each into a build error at the moment it is written.
+Generated EF migration files keep them advisory (`[**/Migrations/*.cs]`), because the 33
+pre-existing CA1861 hits all live there and we do not hand-edit generated code.
+
+The command stays mandatory anyway — it is the only thing that surfaces the INFO rules *not* on
+that list, and the next gate failure will be one of those. When it is, promote that rule too
+rather than only fixing the instance.
+
 **This surfaces locally the exact INFO-severity diagnostics that fail the Sonar `new_violations = 0`
 gate and are invisible to `dotnet build`.** `dotnet build` reports 0 warnings on code that fails the
 gate, because CA1859 / CA1861 / NUnit1028 / S6561 and friends are INFO, not warning. That gap is what

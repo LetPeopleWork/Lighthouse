@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
+        private static readonly string[] ExpectedHealedFieldKeys = ["workitem.state", "additionalField.42"];
+
         private static BlockedItemService CreateSut()
             => new(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider());
 
@@ -218,7 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var ruleSet = JsonSerializer.Deserialize<WorkItemRuleSet>(json, CaseInsensitive);
             Assert.That(
                 ruleSet!.Conditions.Select(c => c.FieldKey),
-                Is.EqualTo(new[] { "workitem.state", "additionalField.42" }));
+                Is.EqualTo(ExpectedHealedFieldKeys));
         }
 
         [Test]
