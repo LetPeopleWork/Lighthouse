@@ -141,6 +141,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [TestCase("summary ~ \"reorder by priority\"")]
+        [TestCase("description ~ \"preorder by hand\"")]
+        [TestCase("text ~ \"border by\"")]
+        [TestCase("summary ~ \"ORDER BY created\"")]
+        [TestCase("summary ~ 'ORDER BY created'")]
+        [TestCase("project = PROJ AND status != Done")]
+        public async Task GetWorkItemsForTeam_AsksForTheTeamsQueryWholeWhenNothingInItOrdersTheResult(string theTeamsOwnQuery)
+        {
+            var jql = await TheQueryJiraIsAskedFor(theTeamsOwnQuery);
+
+            Assert.That(jql, Does.StartWith($"({theTeamsOwnQuery}) AND"),
+                "Only a trailing ordering clause may come off an operator's query. The words 'order by' sitting "
+                + "inside a longer word, or inside a value the operator searches for, order nothing - cutting there "
+                + "leaves a truncated filter that Jira still accepts and that quietly selects the wrong work items. "
+                + $"Asked for: {jql}");
+        }
+
+        [TestCase("project = PROJ order by created desc", "(project = PROJ) AND")]
+        [TestCase("project = PROJ   ORDER BY   created DESC", "(project = PROJ) AND")]
+        [TestCase("summary ~ \"reorder by priority\" ORDER BY created DESC", "(summary ~ \"reorder by priority\") AND")]
+        [TestCase("summary ~ \"ORDER BY created\" ORDER BY created DESC", "(summary ~ \"ORDER BY created\") AND")]
+        public async Task GetWorkItemsForTeam_LeavesOutTheOrderingTheTeamsQueryEndsWith(string theTeamsOwnQuery, string whatIsLeftOfIt)
+        {
+            var jql = await TheQueryJiraIsAskedFor(theTeamsOwnQuery);
+
+            Assert.That(jql, Does.StartWith(whatIsLeftOfIt),
+                "The ordering an operator wrote at the end of their query has to come off however they spelled it, "
+                + "and what comes off is that clause and nothing before it. Asked for: " + jql);
+        }
+
         [Test]
         public void SupportsIncrementalSync_IsFalseBeforeLighthouseHasEverReachedTheInstance()
         {
@@ -843,6 +873,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var match = Array.Find(pairs, pair => pair.StartsWith($"{name}=", StringComparison.Ordinal));
 
             return match is null ? string.Empty : Uri.UnescapeDataString(match[(name.Length + 1)..]);
+        }
+
+        private static async Task<string> TheQueryJiraIsAskedFor(string theTeamsOwnQuery)
+        {
+            var jira = new JiraStub(Cloud);
+            var subject = CreateSubject(jira.Handler);
+            var team = CreateTeam();
+            team.DataRetrievalValue = theTeamsOwnQuery;
+
+            await subject.GetWorkItemsForTeam(team);
+
+            return QueryValue(jira.SearchRequests.Last(), "jql");
         }
 
         private static async Task<WorkItem> TheSingleWorkItemFetchedFrom(string deploymentType, string? updated)

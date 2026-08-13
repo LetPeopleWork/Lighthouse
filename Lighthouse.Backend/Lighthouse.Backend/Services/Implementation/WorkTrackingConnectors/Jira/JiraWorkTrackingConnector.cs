@@ -34,6 +34,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string AllFields = "*all";
 
+        private const string OrderByKeyword = "ORDER BY";
+
         // Phase 1 reads identity and the change stamp and nothing else - the changelog alone is the bulk of an issue.
         private const string SweepFields = "key,updated";
 
@@ -819,14 +821,66 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return string.Empty;
             }
 
-            var orderByIndex = jql.IndexOf("ORDER BY", StringComparison.OrdinalIgnoreCase);
+            var orderByIndex = IndexOfOrderByClause(jql);
 
-            if (orderByIndex > 0)
+            return orderByIndex < 0 ? jql : jql[..orderByIndex].TrimEnd();
+        }
+
+        /// <summary>
+        /// Where the query's ordering clause begins, or -1 when it has none. The words have to stand on their own
+        /// and sit outside quotes to count: an operator searching for <c>summary ~ "reorder by priority"</c> or for
+        /// <c>summary ~ "ORDER BY"</c> has written no ordering at all, and cutting the query there leaves a filter
+        /// Jira still accepts - one that quietly returns the wrong work items and feeds a wrong forecast.
+        /// </summary>
+        private static int IndexOfOrderByClause(string jql)
+        {
+            var index = 0;
+
+            while (index < jql.Length)
             {
-                return jql.Substring(0, orderByIndex).TrimEnd();
+                if (jql[index] is '"' or '\'')
+                {
+                    index = EndOfQuotedValue(jql, index);
+                    continue;
+                }
+
+                if (StartsOrderByClauseAt(jql, index))
+                {
+                    return index;
+                }
+
+                index++;
             }
 
-            return jql;
+            return -1;
+        }
+
+        /// <summary>
+        /// One past the quote closing the value that opens at <paramref name="openingQuote"/>, or the end of the
+        /// query when nothing closes it - an unbalanced quote is left whole rather than cut into.
+        /// </summary>
+        private static int EndOfQuotedValue(string jql, int openingQuote)
+        {
+            var closingQuote = jql.IndexOf(jql[openingQuote], openingQuote + 1);
+
+            return closingQuote < 0 ? jql.Length : closingQuote + 1;
+        }
+
+        private static bool StartsOrderByClauseAt(string jql, int index)
+        {
+            if (!jql.AsSpan(index).StartsWith(OrderByKeyword, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (index > 0 && !char.IsWhiteSpace(jql[index - 1]))
+            {
+                return false;
+            }
+
+            var afterKeyword = index + OrderByKeyword.Length;
+
+            return afterKeyword < jql.Length && char.IsWhiteSpace(jql[afterKeyword]);
         }
 
         private async Task<IEnumerable<Board>> GetBoardsFromJira(WorkTrackingSystemConnection workTrackingSystemConnection, HttpClient client)
