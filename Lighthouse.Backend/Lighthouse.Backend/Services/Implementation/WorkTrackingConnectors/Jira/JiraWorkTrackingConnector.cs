@@ -72,8 +72,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => TryResolveKnownDeployment(connection, out var deployment) && deployment is not JiraDeployment.Unknown;
 
         /// <summary>
-        /// Phase 1 of the two-phase fetch (D1): the very query <see cref="GetWorkItemsForTeam(Team)"/> issues,
-        /// narrowed to identity plus the change stamp. Removal is "stored minus swept" (D2), so reporting a
+        /// Phase 1 of the two-phase fetch: the very query <see cref="GetWorkItemsForTeam(Team)"/> issues,
+        /// narrowed to identity plus the change stamp. Removal is "stored minus swept", so reporting a
         /// half-walked query would delete whatever the missing pages held - a rejected page throws instead,
         /// and the caller falls back to the whole query.
         /// </summary>
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// The one sweep every caller goes through: walk each query in full, keep identity and the change stamp,
         /// and refuse to answer at all when a page was rejected - a half-walked query reported as whole puts every
-        /// record on the missing pages into "stored minus swept", which deletes them (D2).
+        /// record on the missing pages into "stored minus swept", which deletes them.
         ///
         /// The two deployments page their search results differently and neither endpoint exists on the other,
         /// so the transport is chosen here. The deployment is guaranteed to be known: the capability check just
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         client,
                         new CloudSearchRequest(jql, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
                         CollectStamp)
-                    : await WalkDataCenterSearchOffsets(client, jql, pageLimit, CollectStamp);
+                    : await WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(jql), pageLimit, CollectStamp);
 
                 if (!walkedEveryPage)
                 {
@@ -1585,6 +1585,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return true;
         }
+
+        /// <summary>
+        /// Offset paging asks Jira for "the issues at positions 500 to 549 of this answer", which only holds
+        /// together if the answer stays in the same order between pages. Jira's default ordering does not:
+        /// someone editing an issue while the walk is running can slide a record onto a page already read, so
+        /// the sweep never sees it - and because removal is "stored minus swept", that deletes live work. An
+        /// issue's key never changes, so ordering on it is an order no edit can disturb. Cloud walks by page
+        /// token rather than by offset and has no such exposure, and the full download keeps whatever ordering
+        /// it was given because that ordering is what decides the order items are shown in.
+        /// </summary>
+        private static string OrderedForOffsetPaging(string jql) => $"{jql.TrimEnd()} ORDER BY key ASC";
 
         /// <summary>Names issues by key and nothing else - shared by the parent lookup and by phase 2 of the two-phase fetch.</summary>
         private static string PrepareIssueKeyQuery(IEnumerable<string> referenceIds)
