@@ -758,6 +758,47 @@ describe("FlowMetricsConfigurationComponent", () => {
 			expect(parseRuleSet(call?.[1] as string)?.mode).toBe("or");
 		});
 
+		it("clears the stored definition when the last rule row is deleted", async () => {
+			const user = userEvent.setup();
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(await screen.findByTestId("rule-delete-0"));
+
+			const blockedCalls = mockOnSettingsChange.mock.calls.filter(
+				(c) => c[0] === "blockedRuleSetJson",
+			);
+			expect(blockedCalls[blockedCalls.length - 1]?.[1]).toBeNull();
+		});
+
+		it("forgets the rows being edited once blocked items are switched off", async () => {
+			const user = userEvent.setup();
+			render(
+				<FlowMetricsConfigurationComponent
+					settings={{ ...mockSettings, blockedRuleSetJson: flaggedRuleSet }}
+					onSettingsChange={mockOnSettingsChange}
+					stalenessSeedDefault={5}
+				/>,
+			);
+
+			await user.click(await screen.findByTestId("add-rule-button"));
+			expect(await screen.findAllByTestId("rule-row")).toHaveLength(2);
+
+			const blockedCheckbox = screen.getByRole("checkbox", {
+				name: /Configure Blocked Work Items/i,
+			});
+			await user.click(blockedCheckbox);
+			await user.click(blockedCheckbox);
+
+			// The half-typed row is gone: what comes back is what is stored.
+			expect(await screen.findAllByTestId("rule-row")).toHaveLength(1);
+		});
+
 		it("keeps the blocked rule editor open after the last rule row is cleared", async () => {
 			// Regression test for the BlockedItems E2E walking-skeleton failure:
 			// deleting the last rule row makes persistBlockedRuleSet null out

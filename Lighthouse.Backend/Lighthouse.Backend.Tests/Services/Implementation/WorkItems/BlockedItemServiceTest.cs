@@ -248,6 +248,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(ruleSet.Conditions, Has.Count.EqualTo(1));
         }
 
+        [Test]
+        public void ValidateRuleSet_PortfolioRule_IsCheckedAgainstTheFeatureFields()
+        {
+            // A portfolio's rules name feature fields; validating them against the work item field
+            // list would reject every rule a portfolio can express.
+            var portfolio = new Portfolio { WorkTrackingSystemConnection = new WorkTrackingSystemConnection() };
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = "feature.state", Operator = "equals", Value = "On Hold" }],
+            };
+
+            Assert.That(CreateSut().ValidateRuleSet(ruleSet, portfolio), Is.True);
+        }
+
+        [Test]
+        public void ValidateRuleSet_TeamRule_IsCheckedAgainstTheWorkItemFields()
+        {
+            var team = new Team { WorkTrackingSystemConnection = new WorkTrackingSystemConnection() };
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = "feature.state", Operator = "equals", Value = "On Hold" }],
+            };
+
+            Assert.That(CreateSut().ValidateRuleSet(ruleSet, team), Is.False);
+        }
+
         private static Team TeamWithAdditionalFields(string blockedRuleSetJson, params int[] definedFieldIds)
         {
             var connection = new WorkTrackingSystemConnection();

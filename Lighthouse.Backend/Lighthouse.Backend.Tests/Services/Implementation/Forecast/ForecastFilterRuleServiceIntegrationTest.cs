@@ -295,6 +295,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             Assert.That(subject.GetEffectiveRuleSet(team)!.Conditions, Has.Count.EqualTo(1));
         }
 
+        [Test]
+        public void GetStoredRuleSetJsonForEditing_TeamWithoutAConnection_ReturnsTheStoredRulesUntouched()
+        {
+            // Without a connection there is no schema to heal against, and the rules stored on the
+            // team are still the honest answer to what it has configured.
+            var team = new Team
+            {
+                Name = "No Connection",
+                ForecastFilterRuleSetJson = SerializeRuleSet(new WorkItemRuleSet
+                {
+                    Conditions = [new WorkItemRuleCondition { FieldKey = "additionalField.99", Operator = "equals", Value = "Yes" }]
+                }),
+            };
+            var subject = CreateSubject();
+
+            var result = WorkItemRuleSetJson.Deserialize(subject.GetStoredRuleSetJsonForEditing(team));
+
+            Assert.That(result!.Conditions, Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void GetSchema_AdditionalFields_AreNotMultiValue()
+        {
+            var team = CreateTeamWithAdditionalFields(new AdditionalFieldDefinition { Id = 42, DisplayName = "Impediment" });
+
+            var schema = CreateSubject().GetSchema(team);
+
+            var additionalField = schema.Fields.Single(f => f.FieldKey == "additionalField.42");
+            Assert.That(additionalField.IsMultiValue, Is.False);
+        }
+
         private static Team CreateTeam(string? forecastFilterRuleSetJson = null)
         {
             return new Team

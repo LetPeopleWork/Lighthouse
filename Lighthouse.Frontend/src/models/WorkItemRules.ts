@@ -68,7 +68,7 @@ export type IWorkItemRuleSet = z.infer<typeof ruleSetSchema>;
 export function parseRuleSet(
 	json: string | null | undefined,
 ): IWorkItemRuleSet | null {
-	if (!json || json.trim() === "") {
+	if (!json) {
 		return null;
 	}
 

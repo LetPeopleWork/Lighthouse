@@ -410,6 +410,115 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItemRules
         }
 
         [Test]
+        public void IsValid_ConditionCountExactlyAtTheCap_ReturnsTrue()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = Enumerable.Range(1, WorkItemRuleSet.MaxRules)
+                    .Select(_ => new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" })
+                    .ToList()
+            };
+
+            Assert.That(subject.IsValid(ruleSet, BuildSchema()), Is.True);
+        }
+
+        [Test]
+        public void IsValid_ValueExactlyAtTheLengthCap_ReturnsTrue()
+        {
+            var atCap = new string('x', WorkItemRuleSet.MaxValueLength);
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = atCap }]
+            };
+
+            Assert.That(subject.IsValid(ruleSet, BuildSchema()), Is.True);
+        }
+
+        [Test]
+        public void IsValid_OneConditionAmongSeveralIsInvalid_ReturnsFalse()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" },
+                    new WorkItemRuleCondition { FieldKey = "unknown.field", Operator = "equals", Value = "Epic" },
+                ]
+            };
+
+            Assert.That(subject.IsValid(ruleSet, BuildSchema()), Is.False);
+        }
+
+        [Test]
+        public void Match_ConditionCountExactlyAtTheCap_StillEvaluates()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = "or",
+                Conditions = Enumerable.Range(1, WorkItemRuleSet.MaxRules)
+                    .Select(_ => new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = "Epic" })
+                    .ToList()
+            };
+            var feature = new Feature { Name = "F1" };
+            fieldProvider.Setup(p => p.GetFieldValue(feature, TypeFieldKey)).Returns("Epic");
+
+            Assert.That(subject.Match(ruleSet, [feature], fieldProvider.Object), Does.Contain(feature));
+        }
+
+        [Test]
+        public void Match_ValueExactlyAtTheLengthCap_StillEvaluates()
+        {
+            var atCap = new string('x', WorkItemRuleSet.MaxValueLength);
+            var ruleSet = new WorkItemRuleSet
+            {
+                Conditions = [new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "equals", Value = atCap }]
+            };
+            var feature = new Feature { Name = "F1" };
+            fieldProvider.Setup(p => p.GetFieldValue(feature, TypeFieldKey)).Returns(atCap);
+
+            Assert.That(subject.Match(ruleSet, [feature], fieldProvider.Object), Does.Contain(feature));
+        }
+
+        [Test]
+        public void Match_OneConditionNamesAnUnknownField_MatchesNothingEvenInOrMode()
+        {
+            // A rule set carrying a condition the field provider cannot evaluate is not partially
+            // applied: OR mode would otherwise let the sound condition mark items while the
+            // unsound one is quietly ignored.
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = "or",
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Blocked" },
+                    new WorkItemRuleCondition { FieldKey = "unknown.field", Operator = "equals", Value = "X" },
+                ]
+            };
+            var feature = new Feature { Name = "F1" };
+            fieldProvider.Setup(p => p.GetFieldValue(feature, StateFieldKey)).Returns("Blocked");
+
+            Assert.That(subject.Match(ruleSet, [feature], fieldProvider.Object), Is.Empty);
+        }
+
+        [Test]
+        public void Match_OneConditionUsesAnUnknownOperator_MatchesNothingEvenInOrMode()
+        {
+            var ruleSet = new WorkItemRuleSet
+            {
+                Mode = "or",
+                Conditions =
+                [
+                    new WorkItemRuleCondition { FieldKey = StateFieldKey, Operator = "equals", Value = "Blocked" },
+                    new WorkItemRuleCondition { FieldKey = TypeFieldKey, Operator = "greaterThan", Value = "X" },
+                ]
+            };
+            var feature = new Feature { Name = "F1" };
+            fieldProvider.Setup(p => p.GetFieldValue(feature, StateFieldKey)).Returns("Blocked");
+
+            Assert.That(subject.Match(ruleSet, [feature], fieldProvider.Object), Is.Empty);
+        }
+
+        [Test]
         public void Match_RuleSetFailsValidation_ReturnsEmpty()
         {
             var ruleSet = new WorkItemRuleSet { Conditions = [] };

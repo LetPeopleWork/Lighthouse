@@ -1,0 +1,27 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkItemRules/RuleEvaluator.cs",
+      "**/Models/WorkItemRules/WorkItemRuleSetJson.cs",
+      "**/Models/WorkItemRules/AdditionalFieldRuleHealing.cs",
+      "**/API/Helpers/RuleSetValidation.cs",
+      "**/Services/Implementation/WorkItems/BlockedItemService.cs",
+      "**/Services/Implementation/Forecast/ForecastFilterRuleService.cs"
+    ],
+    "ignore-methods": [
+      "*Log*",
+      "Console.*"
+    ],
+    "ignore-mutations": ["string"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~RuleEvaluatorTest|FullyQualifiedName~WorkItemRuleSetJsonTest|FullyQualifiedName~BlockedItemServiceTest|FullyQualifiedName~ForecastFilterRuleService|FullyQualifiedName~ForecastFilter|FullyQualifiedName~DeliveryRuleServiceTest|FullyQualifiedName~TeamControllerTest|FullyQualifiedName~PortfolioControllerTest|FullyQualifiedName~DeliveriesControllerTest|FullyQualifiedName~BlockedItems)&TestCategory!=JiraIntegration&TestCategory!=AdoIntegration&TestCategory!=LinearIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration&TestCategory!=requires-docker&TestCategory!=real-io",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

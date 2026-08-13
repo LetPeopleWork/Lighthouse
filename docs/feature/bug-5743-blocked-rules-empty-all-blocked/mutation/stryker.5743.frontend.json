@@ -1,0 +1,24 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/models/WorkItemRules.ts",
+    "src/hooks/useRuleRowDraft.ts",
+    "src/components/Common/DeliveryRuleBuilder/types.ts",
+    "src/components/Common/BaseSettings/FlowMetricsConfigurationComponent.tsx:281-330",
+    "src/pages/Teams/Edit/ForecastSettingsComponent.tsx:42-56",
+    "src/pages/Teams/Edit/ForecastSettingsComponent.tsx:143-181"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-bug5743.json" },
+  "tempDirName": ".stryker-tmp-bug5743"
+}
