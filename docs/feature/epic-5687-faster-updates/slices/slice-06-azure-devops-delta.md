@@ -17,8 +17,11 @@ only for items whose `System.ChangedDate` moved.
 
 - Identity sweep = the existing WIQL, which already returns ids only and therefore already costs what a
   sweep should cost.
-- Changed set = a second WIQL with `AND [System.ChangedDate] >= @lastSweep`, combined with the stored
-  per-item timestamps per D12 so the watermark is a query narrowing device, not the comparison itself.
+- Change stamps = one batched `GetWorkItemsAsync` over the swept ids asking for `System.ChangedDate` and
+  nothing else, 200 ids per request. **Amended at DISTILL, 2026-08-13**: the second WIQL this bullet used to
+  name cannot report a stamp — a WIQL answers with ids only — and a sweep that cannot report a stamp for a
+  quiet item cannot say it is quiet. Comparison stays per-item against the stored stamp (D12); no watermark
+  is involved at all. See the AC-6.1 amendment in `feature-delta.md`.
 - `LastChangedRemote` populated from `System.ChangedDate`.
 - `GetAdoWorkItemsById` and `GetAllStateTransitionsThrottled` restricted to the changed set.
 - Portfolio Features and parent Features on the same path.

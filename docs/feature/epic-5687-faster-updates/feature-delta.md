@@ -491,6 +491,8 @@ maintainer dogfoods, so it is where the number is checked first.
 **Acceptance criteria**
 - AC-6.1 The identity sweep is the existing WIQL (already ids only); the changed set comes from a second
   WIQL with `AND [System.ChangedDate] >= @lastSweep`, and the two are combined per D12.
+  **Amended at DISTILL, 2026-08-13** — the second WIQL is withdrawn (a WIQL cannot report a stamp); the
+  stamps come from one batched field read over the swept ids. See the AC-6.1 amendment section below.
 - AC-6.2 `GetRevisionsAsync` is called only for ids in the changed set.
 - AC-6.3 A transition that happened on an unchanged item is impossible by construction, and a test
   asserts an item whose `System.ChangedDate` moved always has its revisions re-read.
@@ -3994,3 +3996,332 @@ alone).
   answers `rest/api/3/search/jql` for a Data Center instance, where a real one would 404. Spec 2's
   endpoint assertion catches that directly, so teaching the stub to 404 would add a second detector for
   one defect.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 06
+
+- `docs/feature/epic-5687-faster-updates/slices/slice-06-azure-devops-delta.md` — read (goal, IN/OUT, learning
+  hypothesis, dogfood moment)
+- `feature-delta.md` — read: US-06 with AC-6.1 … AC-6.5, the locked decisions (D1, D2, D8, D9, D10, D12), the
+  D7 checkpoint verdict, and the DISTILL + DELIVER sections of slices 02, 03, 04 and 05
+- `docs/architecture/atdd-infrastructure-policy.md` — read; **no row added**. `IWorkTrackingConnector` is
+  already recorded as driven-external/fake, which is exactly why this slice's tests are not acceptance tests
+- `docs/ci-learnings.md` — read. Three entries bind this slice and all three are applied: Azure DevOps
+  connector fixtures must set `AuthenticationMethodKey` (2026-05-17); the connector's static
+  `VssConnection` / `ClientCache` collide across fixtures on a shared connection id (2026-05-17); a new
+  fixture must be parallel-safe rather than `[NonParallelizable]`, which a guard enforces (2026-06-16)
+- Shipped code read rather than assumed: `AzureDevOpsWorkTrackingConnector` in full, `WorkItemService`'s
+  three delta paths, `SyncModeResolver`, `RemoteRecordStamp`, `JiraWorkTrackingConnector.SweepIdentities`
+  (the contract's only implementation), and the two existing Azure DevOps fixtures
+- **Reconciliation: passed — 0 contradictions.** DISCUSS, DESIGN and the slice brief agree. One conflict was
+  found between AC-6.1 and the shipped sweep contract, which is a mechanism error rather than a
+  cross-wave contradiction; it is recorded and resolved below.
+
+---
+
+## Wave: DISTILL / [REF] AC-6.1 amendment — a second WIQL cannot report a change stamp
+
+AC-6.1 and the slice brief both describe the changed set as *a second WIQL with
+`AND [System.ChangedDate] >= @lastSweep`*. That is not implementable against the contract slices 02-05
+shipped, and the reason is a property of Azure DevOps rather than a design preference.
+
+**The mechanism.** A WIQL flat query answers with `WorkItemReference` — an id and a url. The columns named
+in the `SELECT` are metadata about the result, not values in it; every field value costs a separate
+`GetWorkItemsAsync`. The shipped connector already works this way (`GetWorkItemReferencesByQuery` then
+`GetAdoWorkItemsById`). So no WIQL, first or second, can carry a stamp.
+
+**Why that breaks the two-WIQL shape.** Change detection is `stored?.LastChangedRemote != record.ChangedAt`
+per swept record (D12). A second WIQL can name the ids that *moved*; it cannot supply a value for the ids
+that did not, and the connector has no access to stored state to echo one back. Any sentinel it invents for
+a quiet id compares unequal to that id's stored stamp, which reports the whole board as moved every cycle —
+green tests, and delta that never saves a request.
+
+**Resolved, user decision 2026-08-13: the sweep is the existing WIQL plus one batched read of
+`System.ChangedDate`.** Two hundred ids per request against `MaxChunkSize`, so a 1204-item team pays one
+WIQL plus seven reads to learn what moved. The alternative — keeping the second WIQL and teaching
+`RemoteRecordStamp` / `HasMoved` a "the sweep vouches this one is unchanged" shape — saves about five
+requests per cycle and costs a change to a contract five connectors implement, plus the watermark semantics
+D12 was written to remove. **AC-6.1's second WIQL is withdrawn; the rest of AC-6.1 stands unchanged**, and
+the slice brief's IN-scope bullet is amended to match.
+
+What survives from the withdrawn wording: the identity sweep is still the existing WIQL, unchanged and
+unnarrowed, so removal is still `stored − swept` over the whole query (D2), and comparison is still
+per-item, never against a watermark (D12).
+
+---
+
+## Wave: DISTILL / [REF] Where slice 06's tests live, and why none of them are acceptance tests
+
+Slice 06 is transport work, like slice 04. What changes is **which requests the Azure DevOps connector
+issues, and how many of them per work item** — and the acceptance suite fakes `IWorkTrackingConnector` by
+policy, so it cannot see one of them. An "Azure DevOps" acceptance scenario would seed
+`SeedConnection(WorkTrackingSystems.AzureDevOps)`, program the same `ConnectorMock` slice 02's scenarios
+program, run the same service path and assert the same outcome. It would read as coverage and prove
+nothing.
+
+Unlike slice 04, there is no acceptance half at all: slice 04 had one promise about the refresh (a record
+the tracker reports twice), and Azure DevOps adds none — every claim here is about the requests.
+
+| Level | File | What it can see |
+|---|---|---|
+| Transport | `…Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsIncrementalSyncTest.cs` | Every request the connector issues through a recording `WorkItemTrackingHttpClient`: the WIQL text, the field list, the expansion, the chunk sizes, and which ids had their revisions read |
+
+**18 transport specs, all shipping `[Ignore(Pending)]`d**, the way slices 02, 03, 04 and 05 shipped. DELIVER
+un-ignores one at a time.
+
+The fixture sits in the Azure DevOps connector folder, which the path classifier reads as `ado_connector`,
+but it carries **no `Integration` category** — it needs no organisation, so it runs on every push under
+`Category!=Integration` rather than only when someone opts the live connector run in.
+
+---
+
+## Wave: DISTILL / [REF] What one Azure DevOps cycle costs today
+
+Measured off the recording client, not reasoned: the per-item revision read is not one round trip but
+between one and four, because `ConvertAdoWorkItemToLighthouseWorkItem` asks for revisions twice over.
+
+| Per work item, per cycle | Round trips | From |
+|---|---|---|
+| A To Do item | 1 | `GetSyncedTransitionsForWorkItem` → `GetAllStateTransitionsThrottled` |
+| An in-progress item | 2 | the above, plus one `GetStateTransitionDateThrottled` for the entry into Doing |
+| A done item | 4 | the above, plus the entries into Done and back into To Do |
+
+Two items in progress produced revision reads `1, 1, 2, 2` under the probe below — two per item, exactly as
+the table says.
+
+By request count, on the shape of Lighthouse's own board (≈1204 items, 9 moving on a quiet cycle): today
+is 1 WIQL + 7 payload chunks + 7 relation chunks + ~2408 revision reads ≈ 2423 requests. After this slice:
+1 WIQL + 7 stamp chunks + 1 payload + 1 relations + ~18 revision reads ≈ 28. Arithmetic, not a
+measurement — the measurement is the dogfood run in the slice brief, and it is what AC-6.4's inherited
+AC-2.8 asks for.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List — slice 06
+
+| # | Spec | Falsifies |
+|---|---|---|
+| 1 | `SupportsIncrementalSync_IsTrueForAzureDevOps` | "Azure DevOps still refuses the cheap path" — while this answers no, the sweep is unreachable and every other spec is decoration |
+| 2 | `GetWorkItemsForTeam_RemembersWhenTheItemLastChangedRemotely` | "the full cycle stores a stamp". It stores none today, and without one `SyncModeResolver` forces `full` forever — a slice that ships every request-saving change and saves nothing, with a green suite |
+| 3 | `GetWorkItemsForTeam_AsksTheTrackerForTheChangeStamp` | "the mapping is enough". The payload read names seven fields and `System.ChangedDate` is not among them, so a careful mapping still reads nothing. Spec 2 alone cannot see this — a stub that answers with the field regardless would let it pass |
+| 4 | `GetFeaturesForProject_RemembersWhenTheFeatureLastChangedRemotely` | "the portfolio half inherits the stamp" (AC-6.5) — it is a different code path with its own conversion |
+| 5 | `SweepWorkItemsForTeam_AsksTheSameQuestionTheWholeDownloadAsks` | "the two queries agree". Removal is `stored − swept`, so any drift deletes whatever they disagree about (D2) |
+| 6 | `SweepWorkItemsForTeam_AsksOnlyForTheChangeStamp` | "the sweep is cheap because it is called a sweep". One read per batch, the stamp and nothing else, and no expansion — Azure DevOps refuses fields and an expansion in one request anyway, and every expansion there is is payload the sweep exists to skip |
+| 7 | `SweepWorkItemsForTeam_ReadsNoRevisionsAtAll` | **the headline claim** — "the sweep costs what a sweep should". A sweep that reaches the conversion pays the revision reads for every item on the board and is indistinguishable from today by the clock |
+| 8 | `SweepWorkItemsForTeam_ReportsTheStampTheWholeDownloadWouldStore` | "one field read the same way twice reads the same". Two readings — one UTC-kinded, one not — report every item as moved forever (D12) |
+| 9 | `SweepWorkItemsForTeam_StillReportsAnIdTheTrackerGaveNoStampFor` | "an id with no stamp can be left out", which puts it in `stored − swept` and deletes a live item |
+| 10 | `SweepWorkItemsForTeam_RefusesToReportASweepTheTrackerOnlyHalfAnswered` | "a partly-answered sweep is a sweep". Every id whose stamp never arrived lands in `stored − swept`. Refusing costs one full download; answering costs the items |
+| 11 | `SweepWorkItemsForTeam_ReadsTheStampsInBatchesTheTrackerAccepts` | "the ids all fit in one request". Azure DevOps rejects more than two hundred, so a single-request sweep fails on every real team — and the fallback logs it as merely slow |
+| 12 | `SweepFeaturesForPortfolio_AsksTheSameQuestionTheWholeFeatureDownloadAsks` | "the portfolio half walks its own way" (AC-6.5) — the orphaned-Feature cleanup deletes what the two queries disagree about |
+| 13 | `SweepParentFeatures_AsksForTheSameKeysTheParentDetailFetchAsksFor` | "the parent sweep and the parent detail fetch answer for the same keys" (AC-6.5) |
+| 14 | `GetWorkItemsForTeam_ByReferenceId_DownloadsExactlyTheIdsItWasAskedFor` | "phase two downloads what moved". Re-enumerating the query is today's cost with a sweep added on top |
+| 15 | `GetWorkItemsForTeam_ByReferenceId_DoesNotReApplyTheTeamsOwnFilter` | "a keyed fetch may keep the filters". The cutoff can drop an item the sweep just vouched for, and `stored − swept` then deletes it |
+| 16 | `GetWorkItemsForTeam_ByReferenceId_ReadsRevisionsOnlyForTheIdsItWasAskedFor` | "the revisions follow the ids" (AC-6.2) — the one cost that scales with the board rather than with what changed |
+| 17 | `GetWorkItemsForTeam_ByReferenceId_StillRebuildsTheTransitionsItWasFetchedFor` | **the learning hypothesis' failure mode** — "phase two still does the work it exists for". A phase two that skips the revision read is fast and silently wrong, and time-in-state, aging pace, cumulative state time and blocked history all read those transitions without complaining when they thin out |
+| 18 | `GetFeaturesForProject_ByReferenceId_DownloadsExactlyTheIdsItWasAskedFor` | the portfolio half of 14 (AC-6.5) |
+
+Every spec is example-based: the C#/NUnit row of the polyglot matrix governs, and the ATDD policy records
+why the Python-pilot artifacts do not apply here.
+
+**Error/edge share**: specs 9, 10, 11 and 15 assert that something is refused, absent, or must not be
+re-applied, and 3, 7 and 17 are silent-regression guards. Seven of eighteen — 38.9%, one spec short of the
+40% bar, and left there deliberately. The obvious nineteenth would be the connector's answer to an empty id
+set, which `WorkItemService` never asks for (`movedReferenceIds.Count == 0` returns before the call), so it
+would guard an unreachable input purely to cross a threshold. That is the ratio-chasing the methodology's own
+anti-pattern note warns against.
+
+---
+
+## Wave: DISTILL / [REF] AC coverage — slice 06
+
+| AC | Treatment |
+|---|---|
+| AC-6.1 (identity sweep is the existing WIQL; changed set combined per D12) | **Automated, specs 5, 6, 8, 11.** The second WIQL is withdrawn — see the amendment above. What is asserted is what the withdrawn wording was protecting: one question for both phases, a stamp per swept id, read the way the download reads it |
+| AC-6.2 (`GetRevisionsAsync` only for the changed set) | **Automated, specs 7 and 16**, from both ends: the sweep reads no revisions at all, and the keyed fetch reads them only for the ids it was named |
+| AC-6.3 (a transition on an unchanged item is impossible by construction; a moved item always has its revisions re-read) | **Split.** The automated half is specs 16 and 17 — the ids that moved are exactly the ids whose revisions are re-read, and the rebuild still happens. The **product** half is a claim about Azure DevOps, not about Lighthouse, and is by construction: a transition is derived from a revision's own `System.ChangedDate` (`RevisionWasChangingState`), and an item's `System.ChangedDate` is its newest revision's — so a state-changing revision cannot land without moving the stamp. Comparison is inequality, not `>`, so even an admin edit that moves a stamp backwards still reads as moved. The dogfood run in the slice brief measures it: stored transition counts across a full cycle and a delta cycle must be identical |
+| AC-6.4 (US-02's AC-2.3 … AC-2.7 hold on Azure DevOps) | **Inherited, deliberately not re-asserted.** AC-2.3 … AC-2.6 live in `WorkItemService`, which is connector-agnostic once `SupportsIncrementalSync` answers yes, and slices 02 and 03 assert them against the faked connector. AC-2.7 is a promise about the copy path, asserted in `Models/Slice02RemoteChangeStampSurvivesUpdateTest`. The transport half — the stamp on the whole-query fetch — is specs 2, 3 and 4. AC-2.8 is a dogfood measurement, not a test |
+| AC-6.5 (portfolio Features and parent Features on the same path) | **Automated, specs 4, 12, 13, 18** — both entity types, both halves, and the keyed parent query |
+
+---
+
+## Wave: DISTILL / [REF] Test infrastructure — slice 06
+
+One production change, and it is a seam rather than behaviour:
+`GetWorkItemTrackingHttpClientAsync` becomes `internal virtual`, so a fixture can hand the connector a
+recording client. Everything else is production code: the queries, the field lists, the chunking, the
+conversion. Precedent in the same file — `GetAllStateTransitionsThrottled` is already `internal static`
+over an injected client for the same reason, and `AzureDevOpsBatchedWriteBackTest` already intercepts the
+SDK client with Moq.
+
+Overriding one method rather than reaching for the private internals also sidesteps the collision the
+ledger warns about (2026-05-17): the connector's static `VssConnection` and `ClientCache` are keyed by
+connection id and credential fingerprint, and the override means neither cache is ever reached, so no
+fixture id can collide with another's.
+
+The recording double, `AdoStub`, is a `Mock<WorkItemTrackingHttpClient>` over three methods:
+
+| Recorded | Answers with |
+|---|---|
+| `QueryByWiqlAsync` | every id the organisation holds — except for a query that names ids (`[System.Id] = n`), which answers with those only. Without that, a keyed fetch and a whole-query fetch would be indistinguishable here and spec 14 would pass for a fetch that re-enumerates the team |
+| `GetWorkItemsAsync` | one item per id asked for, carrying the fields the conversion reads. `AnswerPayloadReadsWithNothing` stands for a rejected batch, which is spec 10's precondition |
+| `GetRevisionsAsync` | two state-changing revisions, so the transitions the conversion rebuilds are non-empty and spec 17 has something to see |
+
+The fixture is parallel-safe by construction — no host, no database, no file system, no environment
+variable, and no mutable static reached — so it carries no `[NonParallelizable]` and stays off the guard's
+allowlist (2026-06-16).
+
+`AuthenticationMethodKey` is set on the connection (2026-05-17), though the override means no credential is
+ever built. It is set anyway because the next person to add a spec here may not override the client.
+
+`dotnet format analyzers` returns **zero findings** in both touched files. Four analyzer errors were fixed
+during authoring rather than discovered in CI: S4487 (a captured constructor parameter kept as an unread
+field), S6608 (`Last()` where `[^1]` is required) twice, and CA1861 (a constant array argument) twice.
+
+---
+
+## Wave: DISTILL / [REF] RED Classification (fail-for-the-right-reason gate) — slice 06
+
+Run with the `[Ignore]`s temporarily lifted: **18 failed, 0 passed of 18.** No import error, no fixture
+error, no setup failure.
+
+Twelve of the eighteen land on one of three choke points — `NotSupportedException: Azure DevOps does not
+sweep yet` / `does not fetch by reference id` / `does not sweep Features` — which is
+`MISSING_FUNCTIONALITY`, and correct, but it leaves those specs' *own* assertions unproven. So a second
+probe implemented the naive version a crafter would reach for first — capability flipped on, the sweep
+implemented as "download everything, then project the stamp off it", the keyed fetches as "the existing
+query with an id filter bolted on" — and recorded where each spec then lands.
+
+| Spec | Failure under the naive probe | Class |
+|---|---|---|
+| 2 | `Expected: 2026-08-05 14:30:00 But was: null` | MISSING_FUNCTIONALITY ✅ |
+| 3 | `Expected: some item equal to "System.ChangedDate" But was: < "System.State", "System.Title", "System.WorkItemType", "Microsoft.VSTS.Common.StackRank", "Microsoft.VSTS.Common.BacklogPriority", "System.CreatedDate", "System.Tags" >` | MISSING_FUNCTIONALITY ✅ |
+| 4 | `Expected: 2026-08-05 14:30:00 But was: null` | MISSING_FUNCTIONALITY ✅ |
+| 6 | `Expected: property Count equal to 1 But was: 2` — the download's payload read and its relations read, neither of which a sweep may issue | MISSING_FUNCTIONALITY ✅ |
+| 7 | `Expected: <empty> But was: < 1, 1, 2, 2 >` — two revision reads per item, which is what makes this the headline spec | MISSING_FUNCTIONALITY ✅ |
+| 8 | `Expected: null But was: 0001-01-01 00:00:00`, and `Kind Expected: Utc But was: Unspecified` | MISSING_FUNCTIONALITY ✅ |
+| 10 | `Expected: <System.InvalidOperationException> But was: no exception thrown` | MISSING_FUNCTIONALITY ✅ |
+| 15 | `Expected: no item String containing "Microsoft.VSTS.Common.ClosedDate" But was: < "… WHERE ([System.TeamProject] = 'TestProject' AND ([System.Id] = 1)) … AND ([Microsoft.VSTS.Common.ClosedDate] = '' OR … >` | MISSING_FUNCTIONALITY ✅ |
+| 1, 5, 9, 11, 12, 13, 14, 16, 17, 18 | pass under the naive probe — shared-contract claims the existing query builder and chunker already honour. Their job is to stay green while 2-15 force the transport apart | GREEN-under-probe, by design |
+
+Gate: **PASSED** — zero specs in the `IMPORT_ERROR` / `FIXTURE_BROKEN` / `SETUP_FAILURE` /
+`WRONG_ASSERTION` classes. The probe was reverted; `git diff` over the production tree carries only the
+`internal virtual` seam.
+
+### One wrong-reason red the gate caught, and fixed
+
+The recording client's canned work items were first built without a `Links` collection, which the
+conversion reads unconditionally (`ExtractUrlFromWorkItem`). The resulting `NullReferenceException` was
+swallowed by `FetchAdoWorkItemsByQuery`'s catch-all, which answers with an empty list — so four specs
+failed with `Sequence contains no elements` from their own `Single()`, a `SETUP_FAILURE` wearing a
+plausible red. Specs 2 and 4 would have gone green at DELIVER only once the stamp landed *and* someone
+noticed the fetch was returning nothing. Fixed at the stub.
+
+### One vacuous guard the reviewer caught, and its positive control
+
+Sentinel's one high finding, and it was right: spec 16 asserted only
+`Assert.That(ado.RevisionReads, Has.All.EqualTo(TheItemThatMoved))`, and `Has.All` is **vacuously true on an
+empty collection**. A phase two that read no revisions at all — the exact failure the learning hypothesis
+names — satisfied "only for the ids it was asked for" and went green. The spec named the right thing and
+protected nothing.
+
+Fixed by pairing it with `Is.Not.Empty`, the way spec 11 pairs a count with its `Has.All`. The count itself
+is deliberately not pinned: an item's revisions are read once for its transitions and again per state
+boundary its category needs, so a fixed number would break when a test item's state changes.
+
+**Positive control, run rather than reasoned.** A third probe implemented phase two as a crafter optimising
+for speed would — keyed query, items mapped straight off the payload, conversion skipped entirely, so no
+revision read happens. Spec 16 reds on its new assertion: `Expected: not <empty> But was: <empty>`. Spec 17
+reds alongside it (`SyncedTransitions` empty), which confirms the two are independent detectors of the same
+regression rather than one detector and one decoration. Probe reverted; production carries only the
+`internal virtual` seam.
+
+### One spec that is green for the wrong reason until the stamp lands
+
+Spec 9 (an id the tracker gave no stamp for) passes under the naive probe, because nothing maps the stamp
+yet and every id therefore reports `default`. It only starts discriminating once spec 2 is green — from
+then on, dropping a stampless id from the sweep reds it. Recorded so DELIVER does not read its early green
+as evidence.
+
+---
+
+## Wave: DISTILL / [REF] Deliberately not scaffolded — slice 06
+
+- **No acceptance scenarios at all.** The connector is faked at that level; an Azure DevOps scenario there
+  is slice 02's scenario with a different enum. Recorded above, and it is the same call slice 04 made.
+- **No twin of slice 02's "an issue that did not move is left exactly as it was".** Under delta an unfetched
+  item keeps its stored transitions, and that is asserted already — `Slice02JiraCloudTeamDeltaSpecifications`
+  reads them back through `TheStoredTransitionsFor`. It is connector-agnostic, and re-asserting it here
+  would add a second detector for one defect.
+- **AC-6.3's product half has no test.** It is a claim about how Azure DevOps stamps revisions, answered by
+  construction and measured on the real board at slice close. A test would assert that the stub is
+  consistent with itself.
+- **AC-2.8's Azure DevOps twin (the ≤10 % request-count target) has no test.** A dogfood measurement read
+  off the summary line, as in slices 02 and 04.
+- **The relations read is not narrowed.** A full cycle issues a second chunked read with the relations
+  expanded, to find each item's parent. Under delta it follows the payload read and so is already paid only
+  for what moved; making it cheaper is a separate change, not this slice's.
+- **The pre-existing "a failed fetch answers with an empty list" hazard is untouched.** `FetchAdoWorkItemsByQuery`
+  catches everything and returns no items, which on the *full* path means `stored − fetched` removes every
+  item the team has. Slice 06 makes the sweep refuse rather than half-answer (spec 10), which is the same
+  hazard on the new path; the whole-query path's version of it predates this epic and is a bug of its own.
+  Recorded here so it is a decision rather than an oversight.
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions Summary — slice 06
+
+- **The second WIQL is withdrawn; the sweep is the existing WIQL plus one batched stamp read.** User
+  decision 2026-08-13, after the mechanism above was established. No contract change, no watermark.
+- **The tests are transport tests, and there are no acceptance scenarios.** The port is faked by policy, so
+  an acceptance scenario here could only re-assert slice 02.
+- **The seam is one `internal virtual` method, not a new internal surface.** The specs drive the real public
+  API; only the client is substituted.
+- **AC-6.3 is split between an automated half and a recorded measurement**, because half of it is a claim
+  about Azure DevOps rather than about Lighthouse.
+- **Nothing was scaffolded in production.** Every method the specs drive already exists; slice 02 and 03
+  added them to all five connectors as throwing members, and slice 06 replaces three throws and one `false`.
+
+---
+
+## Wave: DISTILL / [REF] Final Wave Review Gate — slice 06
+
+Sentinel (`@nw-acceptance-designer-reviewer`) only. DISCUSS, DESIGN and DEVOPS are untouched by this slice —
+the AC-6.1 amendment is a mechanism correction inside an existing AC, not a scope or architecture change —
+so Eclipse, Architect and Forge were not dispatched. Recorded rather than skipped silently.
+
+| Verdict | Blockers | High | Low |
+|---|---|---|---|
+| `conditionally_approved` | 0 | 1 | 2 |
+
+- **High — spec 16 was vacuous.** Confirmed, fixed, and given a positive control. See the RED-classification
+  section above. This is the finding the gate paid for.
+- **Low — error/edge share 38.9%, one short of 40%.** Answered above: the nineteenth spec would guard an
+  input the only caller cannot produce.
+- **Low — no `@contract-shape` tags and no `.feature` file.** N/A rather than a gap: this repo's acceptance
+  layer is C#/NUnit `*Scenarios.cs` / `*Specifications.cs` pairs, and this slice has no acceptance layer at
+  all by the decision recorded above.
+
+Sentinel independently re-derived the AC-6.1 amendment from `GetWorkItemReferencesByQuery` and
+`HasMoved` and found it sound, and confirmed the "no production scaffold needed" and "one production
+change" claims against the code rather than taking them from the prose.
+
+---
+
+## Wave: DISTILL / Handoff — slice 06
+
+**To**: DELIVER (`#5729`).
+
+- **18 specs, all `[Ignore(Pending)]`d, in `AzureDevOpsIncrementalSyncTest`.** Un-ignore one at a time. Spec
+  1 (the capability flip) makes twelve others reachable, so it goes first — but on its own it turns
+  Azure DevOps delta on with no stamp stored anywhere, and `SyncModeResolver` will answer `full` every
+  cycle until spec 2 is green. Specs 2 and 3 before anything else claims a saving.
+- **The naive shape is written down above, and eight specs red on it.** If a change makes all eighteen green
+  at once, that is worth distrusting rather than celebrating.
+- **`System.ChangedDate` needs `DateTime.SpecifyKind(…, Utc)`.** The SDK does not reliably hand back a
+  UTC-kinded value — the shipped transition rebuild already specifies it — and spec 2 and spec 8 both
+  assert `Kind`. Postgres rejects a non-UTC `timestamptz` write, so this is not only about comparison.
+- **No migration.** `LastChangedRemote` shipped in slice 02 for both work items and Features.
+- **The dogfood run is part of the slice, not after it**: one full cycle and one delta cycle on Lighthouse's
+  own board, comparing stored transition counts across both. If a single transition differs, the learning
+  hypothesis failed and the slice does not close.
