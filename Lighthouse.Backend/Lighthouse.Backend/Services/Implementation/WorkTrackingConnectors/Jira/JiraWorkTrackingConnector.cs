@@ -125,11 +125,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Parsed exactly the way <see cref="IssueFactory"/> parses it (D6), because D12 compares swept
-        /// stamp against stored stamp per record with no watermark - a second reading of the same string
-        /// would report every record as moved, forever. A record with no readable stamp still belongs in the
-        /// sweep: leaving it out would put it in "stored minus swept" and delete it, where an unmatchable
-        /// stamp merely re-downloads it (D8).
+        /// Parsed exactly the way <see cref="IssueFactory"/> parses it, because the swept stamp is compared
+        /// against the stored one record by record, with nothing else in between - a second reading of the
+        /// same string would report every record as moved, forever. A record with no readable stamp still
+        /// belongs in the sweep: leaving it out would put it in "stored minus swept" and delete it, where an
+        /// unmatchable stamp merely re-downloads it.
         /// </summary>
         private static RemoteRecordStamp ReadStamp(JsonElement jsonIssue)
         {
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         // Jira contributes exactly one system-owned (predefined) additional field: the flagged/impediment
         // field. Its Reference is resolved WITHOUT a live Jira call — from the connection's already-discovered
         // flagged field mapping when present, otherwise the stable Jira Cloud default. This keeps the field
-        // deterministic and its Reference immutable across syncs (ADR-071).
+        // deterministic and its Reference immutable across syncs.
         public IReadOnlyList<AdditionalFieldDefinition> GetPredefinedAdditionalFields(WorkTrackingSystemConnection connection)
         {
             return
@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async Task<List<WorkItem>> CreateWorkItemsFromIssues(Team team, IEnumerable<Issue> issues)
         {
-            // The Jira flag flows into a work item ONLY through the predefined additional field (ADR-071).
+            // The Jira flag flows into a work item ONLY through the predefined additional field.
             // GetWorkItemsForTeam does not pass through the controller, so the predefined field must be
             // registered on the connection here — after GetIssuesByQuery has resolved the flagged field key
             // (SetStoredFieldKeys) — so PopulateAdditionalFieldValues picks it up with the resolved Reference.
@@ -465,7 +465,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// One PUT carrying every changed field on the issue (ADR-143). Jira rejects a mixed-validity
+        /// One PUT carrying every changed field on the issue. Jira rejects a mixed-validity
         /// `fields` object whole — measured, not assumed — so a rejected batch is re-sent field by field:
         /// the valid ones land and the offending one fails alone, which is the isolation the per-field
         /// calls used to give for free.
@@ -502,8 +502,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// One attempt to write a set of fields, plus what it learned about staying quiet. The 403 retry
         /// lives here rather than in <see cref="UpdateIssue"/> so the two degradations compose: dropping
-        /// suppression keeps the batch, and dropping the batch keeps the suppression request (ADR-142,
-        /// ADR-143 §2).
+        /// suppression keeps the batch, and dropping the batch keeps the suppression request.
         /// </summary>
         private async Task<WriteAttempt> TryWriteFields(HttpClient client, string issueKey,
             IReadOnlyList<WriteBackFieldUpdate> updates, Dictionary<string, string> additionalFieldReferences)
@@ -547,7 +546,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 // A 403 on the suppressed attempt is not yet a diagnosis: Jira answers the same way when
                 // the credential cannot edit the issue at all. The retry's outcome is what tells the two
-                // apart (ADR-142 §3), so nothing is reported as a suppression problem until it comes back.
+                // apart, so nothing is reported as a suppression problem until it comes back.
                 var audible = await Put(client, issueKey, payload, updates.Count, silently: false);
 
                 // Stryker disable once String: an ErrorMessage on a success path is never read — Written() does not carry one
@@ -1546,7 +1545,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         /// <summary>
         /// The one token-paged walk over Jira Cloud's search endpoint. Both the whole-query download and the
-        /// identity sweep go through it, which is what keeps the two enumerating the same result set (D2).
+        /// identity sweep go through it, which is what keeps the two enumerating the same result set.
         /// Answers false when Jira rejects a page, leaving the caller to decide between falling back and failing.
         /// </summary>
         private static async Task<bool> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue)
@@ -1645,7 +1644,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// issue's key never changes, so ordering on it is an order no edit can disturb. Cloud walks by page
         /// token rather than by offset and has no such exposure, and neither does the full download.
         /// </summary>
-        private static string OrderedForOffsetPaging(string jql) => $"{jql.TrimEnd()} ORDER BY key ASC";
+        private static string OrderedForOffsetPaging(string jql) => $"{jql.TrimEnd()} {OrderByKeyword} key ASC";
 
         /// <summary>Names issues by key and nothing else - shared by the parent lookup and by the download of what moved.</summary>
         private static string PrepareIssueKeyQuery(IEnumerable<string> referenceIds)
@@ -1679,8 +1678,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return string.Empty;
             }
 
-            // Bug #5567 decision 4: stays UTC. A tracker's history window is an instant offset, not
-            // a calendar day, and the remote system has its own zone; an off-by-one only over-fetches.
+            // Bug #5567 decision 4: a tracker's history window is an instant offset, not a calendar day, and
+            // the remote system has its own zone - so this stays UTC. An off-by-one here only over-fetches.
             var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
             var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
 
