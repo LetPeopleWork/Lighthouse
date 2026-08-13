@@ -154,30 +154,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void BothByReferenceIdFetches_RefuseAnInstanceLighthouseHasNeverReached()
-        {
-            // A connector per half: reaching the instance is what teaches it the deployment, so one half that
-            // answered would leave the other looking at an instance that is no longer undiscovered.
-            var teamSide = CreateSubject(new JiraStub(Cloud).Handler);
-            var portfolioSide = CreateSubject(new JiraStub(Cloud).Handler);
-            var team = CreateTeam();
-            var portfolio = CreatePortfolio(CreateTeam());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(async () => await teamSide.GetWorkItemsForTeam(team, TheTwoKeysAskedFor),
-                    Throws.InstanceOf<NotSupportedException>(),
-                    "Sweeping and fetching by key are one capability. An instance nobody has swept has no changed "
-                    + "set, so a key list arriving here came from a caller that had no business producing one, and "
-                    + "answering it would hide that.");
-                Assert.That(async () => await portfolioSide.GetFeaturesForProject(portfolio, TheTwoKeysAskedFor),
-                    Throws.InstanceOf<NotSupportedException>(),
-                    "The two halves of the same capability may not disagree about who they serve - the next "
-                    + "connector to implement this port copies whichever shape it finds.");
-            }
-        }
-
-        [Test]
         public async Task SupportsIncrementalSync_IsTrueForCloudOnceTheDeploymentIsKnown()
         {
             var (subject, team, _) = await AJiraThatHasAlreadyBeenTalkedTo(Cloud);

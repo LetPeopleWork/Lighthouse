@@ -226,15 +226,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The download half of the two-phase fetch: full payloads for the named records and for nothing else.
         /// The team's own filter is deliberately not re-applied - the sweep already decided what belongs to
         /// the query, and a second cutoff evaluation could drop an item the sweep just reported as changed.
-        /// Sweeping and fetching by key are one capability, so an instance that cannot be swept never reaches here.
         /// </summary>
         public async Task<IEnumerable<WorkItem>> GetWorkItemsForTeam(Team team, IReadOnlyCollection<string> referenceIds)
         {
-            if (!SupportsIncrementalSync(team.WorkTrackingSystemConnection))
-            {
-                throw new NotSupportedException(DeploymentNotKnownYet);
-            }
-
             if (referenceIds.Count == 0)
             {
                 return [];
@@ -294,15 +288,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The download half of the two-phase fetch: full payloads for the named Features and for nothing else.
         /// The portfolio's own filter is deliberately not re-applied - the sweep already decided what belongs to
         /// the query, and a second cutoff evaluation could drop a Feature the sweep just reported as changed.
-        /// Sweeping and fetching by key are one capability, so an instance that cannot be swept never reaches here.
         /// </summary>
         public async Task<List<Feature>> GetFeaturesForProject(Portfolio project, IReadOnlyCollection<string> referenceIds)
         {
-            if (!SupportsIncrementalSync(project.WorkTrackingSystemConnection))
-            {
-                throw new NotSupportedException(DeploymentNotKnownYet);
-            }
-
             if (referenceIds.Count == 0)
             {
                 return [];
