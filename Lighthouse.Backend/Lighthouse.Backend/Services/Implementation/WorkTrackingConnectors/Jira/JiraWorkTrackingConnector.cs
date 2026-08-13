@@ -728,7 +728,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var data = JsonDocument.Parse(json);
 
             var issueTypeNames = data.RootElement
-                .GetProperty("issues")
+                .GetProperty(JiraFieldNames.IssuesFieldName)
                 .EnumerateArray()
                 .Select(issue => issue.GetProperty("fields")
                     .GetProperty("issuetype")
@@ -1474,7 +1474,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
 
-                foreach (var jsonIssue in jsonResponse.RootElement.GetProperty("issues").EnumerateArray())
+                foreach (var jsonIssue in jsonResponse.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
                 {
                     var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName);
                     issues.Add(issue);
@@ -1580,7 +1580,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var body = await response.Content.ReadAsStringAsync();
                 using var json = JsonDocument.Parse(body);
 
-                foreach (var jsonIssue in json.RootElement.GetProperty("issues").EnumerateArray())
+                foreach (var jsonIssue in json.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
                 {
                     await onIssue(jsonIssue);
                 }
@@ -1627,7 +1627,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 total = json.RootElement.GetProperty("total").GetInt32();
                 startAt += pageSize;
 
-                foreach (var jsonIssue in json.RootElement.GetProperty("issues").EnumerateArray())
+                foreach (var jsonIssue in json.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
                 {
                     await onIssue(jsonIssue);
                 }

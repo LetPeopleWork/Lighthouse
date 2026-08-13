@@ -36,6 +36,8 @@
 
         public static string TotalFieldName => "total";
 
+        public static string IssuesFieldName => "issues";
+
         public static string IsLastFieldName => "isLast";
 
         public static string StartAtFieldName => "startAt";
