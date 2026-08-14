@@ -3082,6 +3082,122 @@ whose probe has not been re-run in the tree it ships into is a guard on nothing.
 
 ---
 
+## Wave: DELIVER / [REF] Implementation Summary — slice 03
+
+Shipped 2026-08-11 as `593d11131..2c443ea59`. Twelve steps in four phases, plus a post-DELIVER amendment
+step, a refactor pass and a mutation pass; `des-verify-integrity` exit 0 on all of them.
+
+The portfolio half reuses slice 02's contract and adds three port members — a Feature sweep, a Feature
+fetch by reference id, and a parent sweep. There is deliberately no fourth: the parent path's phase two is
+the existing `GetParentFeaturesDetails` called with a shorter key list, so a new member there would be dead
+surface on five connectors.
+
+Two production changes were not in the handoff and had to be made:
+
+- **`SyncModeResolver.Resolve` was widened from `IReadOnlyCollection<WorkItem>` to `WorkItemBase`.** A
+  `Feature` is not a `WorkItem` — they are siblings under `WorkItemBase` — so the resolver could not see a
+  portfolio's stored records at all. Its own unit tests widened with it.
+- **The claim sweep `AddProjectToFeature` was removed as dead code** after the mutation pass showed it
+  equivalent: the many-to-many relationship writes the join row from `Portfolio.UpdateFeatures`, which is
+  handed the identical list, so the per-Feature loop wrote what the next line already wrote.
+
+**Six of the twelve steps needed no production change.** They were guards whose seam an earlier step had
+already landed, and each carries an explicit falsification probe in its commit body rather than a bare
+green — step 03-03 (the scan-failure fallback) was fully pre-satisfied by 03-01, and was recorded as such
+rather than being credited to itself.
+
+### Files modified — slice 03
+
+| File | Change |
+|---|---|
+| `…/WorkItems/WorkItemService.cs` | The Feature sweep, the survivor rule, the parent sweep and its download rule |
+| `…/WorkItems/SyncModeResolver.cs` | Parameter widened to `WorkItemBase` |
+| `…/WorkTrackingConnectors/IWorkTrackingConnector.cs` | Three new members |
+| `…/Jira/JiraWorkTrackingConnector.cs` | The Jira Cloud implementation of all three |
+| Azure DevOps / ServiceNow / Linear / CSV connectors | Signatures only — probe false, both fetches throw |
+| `…Tests/…/FasterUpdates/Slice03…{Scenarios,Specifications}.cs`, `FasterUpdatesAcceptanceTest.cs`, `Jira/JiraIncrementalSyncTest.cs`, `Models/Slice03FeatureRemoteChangeStampSurvivesUpdateTest.cs`, `…/WorkItems/SyncModeResolverTest.cs` | The 14 specs, un-ignored |
+
+No migration: `Feature : WorkItemBase`, and slice 02's `AddLastChangedRemoteToWorkItems` already added the
+column to both `WorkItems` and `Features`. The slice brief said otherwise and was wrong.
+
+## Wave: DELIVER / [REF] Quality Gates — slice 03
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | Clean — 0 warnings, 0 errors |
+| `dotnet test` | **4786 passed, 0 failed, 0 skipped** |
+| Slice-03 fixture | 14 of 14 green |
+| Adversarial review | **Approved** — 0 blockers, 0 high, 0 medium |
+| Mutation, slice-03 changed lines | **78.69 %** — the 80 % gate missed by one mutant, recorded rather than padded. All 13 survivors verified equivalent by application; 48 of 48 on non-equivalent mutants. See `mutation/results.md` |
+| CI | Green including `sonar-gates` |
+| Dogfood | Live Jira Cloud: `Full 4/4 3555 ms` → `Delta 4/0 1092 ms` → after one state change `Delta 4/1 1944 ms` |
+
+The mutation pass is the one worth reading rather than scoring. It killed a `SweepDepartedFeatureSpells`
+deletion that slice 01 had recorded as a gap and nobody had closed — a Feature blocked when it left the
+query accrued blocked time forever — and it killed the entire parent-inversion rule, which had no test at
+all. Killing survivors could not move the score: six mutants that were `NoCoverage` in the first run became
+`Survived` in the second, and both count as not-killed.
+
+## Wave: DELIVER / [REF] DoD Check — slice 03
+
+| Item | Status |
+|---|---|
+| All acceptance criteria green | ✓ AC-3.1 … AC-3.6, plus the AC-3.4 amendment's two added guards |
+| Suite green, zero skips | ✓ 4786 / 0 / 0 |
+| Zero build warnings | ✓ `TreatWarningsAsErrors` |
+| Mutation gate | ✗ 78.69 %, one mutant short — accepted with every survivor verified equivalent |
+| Adversarial review | ✓ Approved, 0 findings above low |
+| Dogfooded on real data | ✓ Real Jira Cloud project, three cycles |
+| ADO | ✓ #5726 Closed |
+
+## Wave: DELIVER / [REF] Per-Feature Checklist (slice 03)
+
+| Item | Answer |
+|---|---|
+| Public docs | N/A for this slice — the toggle's documentation landed at slice 02 close in `docs/settings/configuration.md`, and slice 03 changes nothing an operator sees differently. Updated at epic close for the connectors slices 04 and 06 added |
+| Screenshots | N/A — no UI this epic (D4); the observable surface is the log line |
+| Lighthouse-Clients CLI / MCP | N/A — no API contract changed |
+| Website | N/A — no marketing surface |
+| Demo data | N/A — the delta path is exercised through a fake connector, not through seeded demo data |
+| RBAC | N/A — no new endpoint, no new permission |
+| Release notes | Deferred to epic close by maintainer decision — release notes are drafted from the Epic, never per slice |
+
+## Wave: DELIVER / [WHY] Upstream Issues — slice 03
+
+**The portfolio half is not the team half with a different noun, and the difference would have shipped a
+data-loss bug.** A team refresh removes what the query stopped returning. A portfolio refresh *rebuilds
+itself from what was fetched* — `Portfolio.UpdateFeatures` is a Clear + AddRange. Under delta every
+unchanged Feature therefore loses its portfolio claim, and `OrphanedFeatureCleanupService.CleanupAsync`,
+which the updater runs in its own `finally`, then deletes anything left with
+`!IsParentFeature && !Portfolios.Any()`.
+
+That was demonstrated rather than theorised: at step 02-02 the crafter fed the fetched list straight back
+into `portfolio.UpdateFeatures` and the scenario reported `FEAT-1, FEAT-3` MISSING — deleted, with
+`FeatureUnblocked` raised on the way out. Sequencing the survivor rule first, while every cycle was still
+full, is what kept that out of a commit.
+
+**Survivors are resolved by reference id through `featureRepository`, never out of `portfolio.Features`.**
+A probe at step 03-02 proved that no test in the fixture catches a regression there, because every
+portfolio in the fixture is pre-refreshed over the same Features. That lookup is load-bearing and must not
+be "simplified".
+
+**D9's four claims are not co-located.** The remaining-work rollup and the percentile default size live in
+`WorkItemService.UpdateFeaturesForPortfolio`; the forecast trigger is in `PortfolioUpdater.Update`. A delta
+short-circuit can be introduced in either one independently, which is why both are guarded separately
+rather than by one test.
+
+## Wave: DELIVER / [REF] Handoff — slice 03 → slice 05
+
+The learning hypothesis is confirmed: the contract generalises, so slices 04 and 06 are transport work and
+no further contract design is owed. Two things travel with it:
+
+- **Slice 05 goes before slice 04.** `fetchShapeChanged: false` is hard-coded in all three resolve paths,
+  so a query edit is knowingly unprotected for anyone opted in — and the existing purge is what masks it.
+- **Data Center still refuses.** `SupportsIncrementalSync` answers false for it until slice 04 settles
+  OQ-1, which the next section does.
+
+---
+
 ## Wave: DISCUSS / [REF] OQ-1 answered — Jira Data Center pagination is stable
 
 **Probed 2026-08-11 by the maintainer against a real Data Center instance. OQ-1 CLEARS.** Recorded here
@@ -3999,6 +4115,131 @@ alone).
 
 ---
 
+## Wave: DELIVER / [REF] Implementation Summary — slice 04
+
+Shipped 2026-08-13. Eight steps in four phases as `b7cefdf30`…`60274c8b7`, then a live bug and its fix,
+a refactor pass and a mutation pass; pushed with the D7 checkpoint as `9006a4b87..acbc90e58`.
+`des-verify-integrity` exit 0 ("All 8 steps have complete DES traces").
+
+No new port members and no service change: Data Center enters through the same three members Jira Cloud
+already implements. What slice 04 changes is what those members *do* when the connector has discovered it
+is talking to a Data Center instance.
+
+- **The capability flip is one step with the walk and five deletions in it, and that is not a planning
+  failure.** While `SupportsIncrementalSync` answers false for Data Center, every DC sweep spec dies at the
+  same refusal instead of at its own assertion; the moment it answers true, five shipped tests
+  (`SupportsIncrementalSync_StaysFalseForDataCenter` and four `…_RefusesOnDataCenter`) go red at once. No
+  ordering separates them honestly, so step 01-02 absorbs the flip, the offset walk and all five deletions.
+  Its size is deletions, not implementation.
+- **The offset walk is Data Center only and sweep only.** Shipped Cloud sweep tests compare sweep JQL to
+  full-fetch JQL by exact equality, so an ordering clause applied in the shared entry point reds them.
+  Implemented as a `SweepQuery(AsTheDownloadAsksIt, OrderedForTheOffsetWalk)` pair: the walk gets its own
+  stable ordering, the download keeps the operator's own order, and Jira's rank still drives what manual
+  sorting shows.
+- **Both by-reference-id capability guards were added and then removed again** (maintainer decision at
+  close). `WorkItemService` enters a by-key fetch only inside the delta branch, which it takes only once
+  the capability said yes — so the guards were unreachable; and where they were reachable they were wrong,
+  because `GetIssuesByQuery` resolves the deployment itself and the guard turned a working call into a
+  throw.
+
+### Files modified — slice 04
+
+| File | Change |
+|---|---|
+| `…/Jira/JiraWorkTrackingConnector.cs` | Data Center sweep over the offset endpoint, the ordering pair, the capability, and the `PrepareQuery` ordering strip |
+| `…/Jira/JiraFieldNames.cs` | The field every search answer carries, named once |
+| `…Tests/…/Jira/JiraIncrementalSyncTest.cs` | 13 transport specs un-ignored, five inverted tests deleted |
+| `…Tests/…/FasterUpdates/Slice04JiraDataCenterDelta{Scenarios,Specifications}.cs` | The two acceptance specs |
+
+No migration, no service change, no UI.
+
+## Wave: DELIVER / [WHY] The live bug slice 04 found — Bug #5755
+
+`PrepareQuery` wraps the operator's own query in parentheses before combining it with the type, state and
+cutoff filters. A query ending in `ORDER BY created DESC` therefore reached Jira as
+`(project = PROJ ORDER BY created DESC) AND (issuetype = "Story") …` — an ordering clause in the *middle*
+of an expression, which is invalid JQL. Pre-existing, on Cloud as much as Data Center, and on the full
+fetch as much as on the sweep. Self-written JQL is exactly who runs a Data Center deployment.
+
+Two things about it are worth keeping:
+
+1. **The spec could not see the bug.** The obvious fix — truncate the whole JQL at the first `ORDER BY` —
+   leaves `(project = PROJ`, unbalanced garbage, and the spec still passes because it counts occurrences.
+   The JQL had to be read by eye. The strip belongs on the operator's value *before* it is wrapped.
+2. **The house rule already existed.** `RemoveOrderByClause` had been stripping saved-filter JQL for
+   years; it had simply never been applied to the team and portfolio query. It needed hardening on the way
+   in — it matched `ORDER BY` anywhere, so `summary ~ "reorder by priority"` truncated to `summary ~ "re`
+   — and is now token-boundary and quote-aware for both quote styles, since Lighthouse's own cutoff filter
+   emits single quotes. **Backslash-escaped quotes are still not handled.** An ordering-only query used to
+   build an empty `()`; `PrepareQuery` now omits the empty filter.
+
+Fixed as **Bug #5755**, tagged for the release notes because operators with such a query have a broken
+update today.
+
+## Wave: DELIVER / [REF] Quality Gates — slice 04
+
+| Gate | Result |
+|---|---|
+| `dotnet build` | Clean — 0 warnings, 0 errors |
+| `dotnet test` | **4944 passed, 0 failed, 0 skipped** — both filters report zero skips, which is the proof all 15 specs are enforced |
+| Mutation, slice-04 changed lines | **90.91 % (50/55)**, gate met, after a first run at 78.18 %. Whole-file 38.34 % is the usual Stryker.NET scoping artefact |
+| CI | Run 31700337089 green including `sonar-gates` |
+| Dogfood | The maintainer's on-premise Data Center instance, team `Team Bear`, 1457 work items: `Full 1457/1457 468 856 ms` → `Delta 1457/0 2 087 ms` — **225×** |
+| ADO | #5727 Closed, Bug #5755 Closed |
+
+**The two mutants worth killing were both paging**: `startAt < total` → `<=`, and `Math.Max(1, maxResults)`
+→ `Math.Min`, which would turn a 1457-issue sweep into 1457 requests. Nothing in the suite had asserted how
+many requests a sweep issues; now something does. Five survivors are accepted, two of them because killing
+them would mean asserting the worse outcome — the mutant produces a query Jira accepts and the correct code
+one it rejects.
+
+**`scanned` is 1457 on both cycles, and that is the correctness signal**, more than the 225×. The sweep
+enumerated exactly the result set the full download enumerated, over roughly thirty offset pages. Removal
+is `stored − swept`, so a sweep that dropped a record on a page boundary would show a smaller `scanned` and
+would have deleted live work items.
+
+## Wave: DELIVER / [REF] DoD Check — slice 04
+
+| Item | Status |
+|---|---|
+| All acceptance criteria green | ✓ AC-4.1 … AC-4.4, including AC-4.3 written as guards with run positive controls |
+| Suite green, zero skips | ✓ 4944 / 0 / 0 |
+| Zero build warnings | ✓ |
+| Mutation gate | ✓ 90.91 % on changed lines |
+| Dogfooded on real data | ✓ The on-premise instance the epic was written about |
+| OQ-1 | ✓ Answered by probe before any DC code was written |
+| ADO | ✓ #5727 Closed, Bug #5755 Closed |
+
+One measurement is deliberately open: a third cycle after changing one issue, which should report
+`fetched=1`. The instance is live production and editing someone's real work item to watch a log line is
+not a reasonable thing to do to it — deferred to the next window on that instance (2026-08-17). The
+mechanism is shared code and the Cloud dogfood at slice 03 showed exactly that progression, so this is
+confirmation rather than an open question.
+
+## Wave: DELIVER / [REF] Per-Feature Checklist (slice 04)
+
+| Item | Answer |
+|---|---|
+| Public docs | Updated at epic close — `docs/settings/configuration.md` now names Jira Data Center alongside Jira Cloud |
+| Screenshots | N/A — no UI this epic |
+| Lighthouse-Clients CLI / MCP | N/A — no API contract changed |
+| Website | N/A |
+| Demo data | N/A |
+| RBAC | N/A |
+| Release notes | Bug #5755 tagged `Release Notes`; the delta itself is carried by the Epic at close |
+
+## Wave: DELIVER / [REF] Handoff — slice 04 → slice 06
+
+- **The D7 checkpoint was answered early**, ahead of this slice's close: Jira Cloud, Jira Data Center and
+  Azure DevOps are in scope; ServiceNow and Linear are deferred because nobody can show enough instances
+  running on them to earn the work. #5730 and #5731 were Removed, each with a note pointing at the kept
+  design. Both connectors keep running full updates, which is correct behaviour rather than a degradation.
+- **Slice 06 is the last slice.** Azure DevOps is structurally the smallest change of the three: a WIQL is
+  the same request on every deployment, so there is nothing for the connector to discover and no
+  first-cycle exception to make.
+
+---
+
 ## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 06
 
 - `docs/feature/epic-5687-faster-updates/slices/slice-06-azure-devops-delta.md` — read (goal, IN/OUT, learning
@@ -4422,3 +4663,83 @@ board whose settings had just been edited.
 
 One honest limit on this measurement: the durations come from one run of each mode on one board, not from a
 distribution. What it establishes is the shape of the win and the absence of data loss, not a benchmark.
+
+---
+
+## Wave: DELIVER / [REF] Mutation — slice 06
+
+Three runs 2026-08-13, ending at **93.33 % on the lines slice 06 changed** (14 killed of 15, one
+`NoCoverage`, zero survivors). Whole-file 24.45 % is the usual Stryker.NET scoping artefact — slice 06
+changed ~150 lines of a 1296-line connector whose remaining tests are the live `AdoIntegration` fixtures
+the run has to exclude.
+
+The two runs before it are the interesting part, because each was raised by a real gap rather than by a
+test written to the mutant:
+
+| Run | Changed-line score | What moved it |
+|---|---|---|
+| A | 80.00 % | — |
+| B | 86.67 % | The missing-result-set fix (below) |
+| C | **93.33 %** | Counting the request that hides — a sweep that issues an extra call nobody asserted on |
+
+## Wave: DELIVER / [WHY] Bug #5756 — a fetch that could not ask was read as a query that matched nothing
+
+Mutation on the sweep exposed a defect older than this epic. Both Azure DevOps fetches caught their own
+transport failures and returned an empty list. The caller cannot tell an empty list meaning *the tracker
+answered, nothing matched* from an empty list meaning *we never got an answer* — and removal is
+`stored − fetched`, so the second one **deletes every stored Work Item of that team**. Linear's two fetches
+carried the identical shape.
+
+Fixed as **Bug #5756**: a fetch that could not reach the tracker now says so instead of answering, and an
+Azure DevOps response carrying no result set at all is treated as a refusal rather than as a legitimate
+"nothing matched". Mutation on the lines the fix wrote: **100 %** (see
+`docs/feature/fix-5756-fetch-refusal/mutation/results.md`).
+
+**Deliberately left alone, and worth knowing**: Linear answers with no records when the configured team
+name cannot be resolved, and ServiceNow does the same for a missing query or work-type configuration.
+Those are configuration guards rather than swallowed failures — but the deletion they permit is the same
+one, so a team whose Linear identity was renamed still loses its stored Work Items quietly. Filed
+knowledge, not fixed here.
+
+A house rule came out of the same pass: `Assert.That(x, Is.Default)` rather than a hand-written default
+comparison, now failing the build rather than warning.
+
+## Wave: DELIVER / [REF] DoD Check — slice 06
+
+| Item | Status |
+|---|---|
+| All acceptance criteria green | ✓ AC-6.1 … AC-6.3, 18 of 18 specs |
+| Suite green, zero skips | ✓ 4714 / 0 / 0 at slice close, and green on every run since |
+| Zero build warnings | ✓ |
+| Mutation gate | ✓ 93.33 % on changed lines, plus 100 % on Bug #5756's lines |
+| Dogfooded on real data | ✓ Lighthouse's own Azure DevOps board — 21×, and per-item transition counts byte-identical before and after |
+| ADO | ✓ #5729 Closed, Bug #5756 Closed |
+
+## Wave: DELIVER / [REF] Per-Feature Checklist (slice 06)
+
+| Item | Answer |
+|---|---|
+| Public docs | ✓ `docs/settings/configuration.md` — the Faster Updates section now names Jira Cloud, Jira Data Center and Azure DevOps, says what a settings change costs, and records that editing a query no longer discards stored Work Items |
+| Screenshots | ✓ `assets/settings/optionalfeatures.png` regenerated at epic close — the seeded optional-feature list was empty when the shipped image was taken, so it showed a state no instance has. No other UI changed |
+| Lighthouse-Clients CLI / MCP | N/A — no API contract changed |
+| Website | N/A — no marketing surface for a preview toggle |
+| Demo data | N/A — the delta path is driven through connector fakes |
+| RBAC | N/A — no new endpoint, no new permission |
+| Release notes | Drafted from the Epic before the release, not per slice. Owed lines: the narrowed purge, the Data Center and Azure DevOps deltas, and Bug #5755 |
+
+## Wave: DELIVER / [REF] Handoff — slice 06 → epic close
+
+The epic ends here. `01 → 02 → 03 → 05 → 04 → 06`, with #5730 and #5731 Removed by the D7 checkpoint.
+
+- **AC-2.8's ≤10 % request target: accepted as measured** (maintainer, 2026-08-14). It is met with room on
+  the two instances that carry real volume — Data Center at 1457 records and Azure DevOps at 374 — and the
+  Jira Cloud progression was read directly at slice 03. A further Cloud reading on a ≥1000-issue project
+  would confirm a mechanism three instances have already shown, so it is closed rather than carried.
+- **The Data Center third cycle: accepted as measured** on the same grounds. The `fetched=1` step after a
+  change was read on Cloud at slice 03 over shared code, and editing a live production issue to watch a log
+  line was not a reasonable thing to do to that instance.
+- **ServiceNow and Linear keep running full updates.** That is the D7 decision behaving as intended, not a
+  degradation — and Bug #5756's still-open note above is the one thing about Linear worth revisiting.
+- **The toggle has a defined end.** Once enough real instances have run on it, delta becomes the normal
+  behaviour and `DeltaSync` goes away. Epic #5511 "Task Manager" owns any UI over update runs; this epic
+  deliberately shipped none.
