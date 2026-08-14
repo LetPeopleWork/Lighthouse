@@ -11,17 +11,22 @@ two others — without opening Azure DevOps.
 
 ## IN scope
 
-- A persisted dependency edge between two Features, in its own relation, **never** on a synced field
-  (D5). Additive migration generated with the `CreateMigration` script, all providers, expand-only.
+- A persisted **list of references** on the Feature — strings in `ReferenceId` space, resolved when
+  read, not a resolved foreign key (D5). Its own collection, **never** a synced scalar. Additive
+  migration generated with the `CreateMigration` script, all providers, expand-only.
 - ADO ingestion: read `System.LinkTypes.Dependency-Reverse` relations during the portfolio Feature
-  fetch. `WorkItemExpand.Relations` is already requested on the parent path
+  fetch and take the **trailing segment of the relation URL**, because ADO's `ReferenceId` is
+  `$"{workItem.Id}"` (`:870`). `WorkItemExpand.Relations` is already requested on the parent path
   (`AzureDevOpsWorkTrackingConnector.cs:1043`) and `WorkItemExtensions.cs:25-27` already walks
   `workItem.Relations` — extend that, do not add a second fetch shape.
 - Reconcile on every sync: stored edges for a Feature are replaced wholesale by what the tracker now
   says, so a link removed in ADO disappears here (AC-1.5). Because Lighthouse never authors an edge
   (D4), there is nothing to preserve and the reconcile stays a replace for the whole epic.
-- Resolve the relation target to a Feature Lighthouse knows. A relation to anything else is skipped
-  silently (AC-1.4) — the relation URL carries an id, not a type.
+- Resolution happens at read: a reference naming a Feature Lighthouse does not (yet) hold contributes
+  nothing to the count and no error (AC-1.4). The relation URL carries an id and not a type, so a
+  Predecessor pointing at a Bug or a Task is exactly this case rather than an exception — and a
+  reference to a Feature that simply has not been imported yet heals on the next read, which is the
+  whole reason D5 stores strings rather than foreign keys.
 - Additive `dependsOnCount` on `FeatureDto`, alongside `Position` / `CanMove` / `BlockingPortfolios`.
 - One new column factory in `FeatureListDataGrid/columns.tsx`, used by **both** `FeaturesView.tsx` and
   the Portfolio detail list — written once (AC-1.2).

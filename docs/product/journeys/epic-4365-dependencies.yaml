@@ -81,21 +81,47 @@ journeys:
         question: How does the forecast honour a dependency?
         decision: >
           By EXCLUDING the dependent from the eligible set inside each trial, not by shifting dates
-          afterwards. A Feature whose blockers still have remaining work in this trial cannot receive
-          throughput; the FeatureWIP window slides down to the Features below it. The post-hoc
-          max(own, blocker) alternative was considered and rejected because it never frees the
-          capacity, so every Feature ranked below a waiting one keeps a date that assumes work nobody
-          is doing.
+          afterwards. GetSimulationResultsOfFeatureToUpdate filters Where(x => x.HasWorkRemaining)
+          today and gains one predicate: Where(x => x.HasWorkRemaining && ready). A Feature whose
+          blockers still have remaining work in this trial cannot receive throughput; the FeatureWIP
+          window slides down to the Features below it. The post-hoc max(own, blocker) alternative was
+          considered and rejected because it never frees the capacity, so every Feature ranked below a
+          waiting one keeps a date that assumes work nobody is doing.
+
+          If every eligible Feature is waiting, that day's throughput is DISCARDED rather than carried
+          forward. An idle day is the honest outcome, and it is what makes D7 and D8 load-bearing:
+          with nothing able to unblock, the run would never end.
+
+          NO NEW PER-TRIAL STATE. Each closed item already re-draws independently from the top of the
+          eligible list, so a Feature becomes available again on the very next draw after its blocker
+          clears. Sticky WIP slots — a team holding a Feature until it finishes — were considered and
+          rejected (user, 2026-08-14): they would change dates for Features with no dependencies at
+          all, forfeiting D3's distribution-preserving property.
       - id: D3
         question: How are dependencies that cross teams handled?
         decision: >
-          One JOINT simulation replaces the per-team independent runs (user, 2026-08-14). One trial
-          advances a shared day clock; each day, every team with throughput draws and consumes from its
-          own rows. Distribution-preserving with no dependency present — each team only ever consumes
-          its own SimulationResult rows — so existing forecasts do not re-baseline beyond Monte Carlo
-          noise, asserted under a fixed seed. The cost is the parallelism shape: concurrency moves from
-          per-team to per-trial. The alternatives were same-team-only (ships sooner, ignores the
-          majority case) and a post-hoc date shift (cross-team capable but wrong per D2).
+          One JOINT simulation replaces the per-team independent runs (user, 2026-08-14). Concretely
+          the loop nesting swaps from team -> trial -> day to trial -> day -> team: one trial advances
+          a single day counter, and each day every team with throughput draws its own throughput and
+          consumes from its own rows. The per-day work is untouched.
+
+          That swap IS the mechanism. Today team A's "day 5" and team B's "day 5" are not the same
+          moment and not even the same trial, so "is A finished yet?" has no answer. Once the clock is
+          shared it means "finished by day 5 in this trial", and the dependency rule becomes one extra
+          predicate in one place (D2).
+
+          Distribution-preserving with no dependency present — a team only ever consumes its own
+          SimulationResult rows, so interleaving other teams between its days cannot change what
+          happens to any row. Existing forecasts do not re-baseline; asserted under a fixed seed.
+
+          Two consequences: teams need SEPARATE RNG STREAMS or a fixed-seed equality test fails on
+          draw order rather than on distribution; and concurrency moves from per-team to per-trial,
+          which is not a free Parallel.For, because ResetRemainingItems() mutates the shared rows and
+          AddSimulationResult writes a plain Dictionary — both safe today only because each team's
+          task owns its group exclusively.
+
+          The alternatives were same-team-only (ships sooner, ignores the majority case) and a
+          post-hoc date shift (cross-team capable but wrong per D2).
       - id: D4
         question: Where does a dependency come from?
         decision: >
@@ -111,22 +137,42 @@ journeys:
           everywhere else, and it would need a precedence rule against the tracker that this one does
           not. To change a dependency, change it in the tracker.
       - id: D15
-        question: How does one field express a LIST of dependencies?
+        question: How does one field express a LIST of dependencies, and what is in it?
         decision: >
-          Split on comma or semicolon, trim, resolve each entry against the same reference-id space
-          ParentReferenceId uses, skip entries that resolve to nothing while keeping the rest. This is
-          the only genuine difference from the parent override, which is 0..1 and can return a single
-          string (GetParentReference, :1095-1106). Skipping rather than failing matters because a
-          hand-maintained text field will contain typos, and one typo must not discard the three good
-          references beside it. Separator fixed, not configurable.
+          Split on comma or semicolon, trim, resolve each entry, skip entries that resolve to nothing
+          while keeping the rest. This is the only genuine difference from the parent override, which
+          is 0..1 and can return a single string (GetParentReference, :1095-1106).
+
+          An entry is a reference in the connector's OWN form (user, 2026-08-14) - Jira keys on Jira,
+          work item ids on ADO, identifiers on Linear. That is exactly ReferenceId space, so no
+          per-tracker normalisation layer is owed; the only transformation left is Linear's
+          lower-casing (D14).
+
+          Skipping rather than failing matters because a hand-maintained text field will contain
+          typos, and one typo must not discard the three good references beside it. Separator fixed,
+          not configurable.
+
+          REPLACE, NOT UNION (user, 2026-08-14): a Portfolio that names a field declares it
+          authoritative, and native links are not read for that Portfolio while it is set. Owner is
+          the PORTFOLIO only, not the Team, even though IWorkItemQueryOwner is implemented by both -
+          Features are fetched per Portfolio, so a Team-level setting would have no consumer.
       - id: D5
-        question: Where is the edge stored?
+        question: Where is the dependency stored?
         decision: >
-          Its own persisted relation, never on a synced field — WorkItemBase.Update overwrites every
-          synced field on every refresh, which is exactly why Feature.ManualRank sits outside it.
-          Because D4 makes every edge tracker-sourced, the store needs no origin discriminator and has
-          exactly one writer: the sync's reconcile, which replaces a Feature's edges wholesale with
-          whatever the current source — link or override field — now says.
+          A Feature stores the LIST OF REFERENCES it waits on, resolved when read — not a resolved
+          Feature-to-Feature foreign key (user, 2026-08-14, correcting the wave's first draft). The
+          stored form is strings in the same space as ReferenceId, exactly as
+          WorkItemBase.ParentReferenceId already works.
+
+          The reason is sync order: if Feature B references A and A has not been imported yet, a
+          resolved foreign key cannot be written at all and the link silently does not exist until a
+          later sync happens to fix it. A stored reference heals on its own. The graph the simulation
+          and the cycle detector want is derived at read time.
+
+          Its own persisted collection, never a synced scalar — WorkItemBase.Update overwrites every
+          synced field on every refresh, which is exactly why Feature.ManualRank sits outside it. One
+          writer: the sync's reconcile, replacing a Feature's references wholesale with whatever the
+          current source — link or override field — now says.
       - id: D6
         question: How far does a dependency reach?
         decision: >
@@ -183,15 +229,35 @@ journeys:
       - id: D13
         question: Which connectors?
         decision: >
-          ADO first, then Jira and Linear. ServiceNow and CSV are OUT — no standard dependency field
-          exists in either, so supporting them means inventing a convention, which is a different epic.
+          ADO first, then Jira and Linear. ServiceNow and CSV are OUT - no standard dependency field
+          exists in either.
+
+          They are ALSO not rescued by D4's field override, which is the obvious counter-argument and
+          was checked during this wave: every connector supports additional fields, so the mechanism
+          looks available to them, but ServiceNowWorkTrackingConnector.GetFeaturesForProject throws
+          NotSupportedException (:751-757). ServiceNow has no Features, so it has nothing for a
+          dependency to be BETWEEN - a dependency is Feature-to-Feature (D1) and Features live in
+          Portfolios (D6). The override changes where a reference is read from; it does not create the
+          objects the reference points at. Written down so the argument is not re-made.
       - id: D14
-        question: Which direction is fetched?
+        question: Which direction is fetched, and what exactly is stored?
         decision: >
-          Only "waiting on": ADO System.LinkTypes.Dependency-Reverse, Jira issuelinks where
-          type.inward = "is blocked by" AND an inwardIssue is present, Linear's dependencies
-          connection. The reverse direction is derived by inverting stored edges rather than fetched,
-          which would double the request cost to learn something already held.
+          Only "waiting on", extracted into ReferenceId space (D5) per connector:
+          ADO reads relation System.LinkTypes.Dependency-Reverse and takes the trailing segment of the
+          relation URL, because ReferenceId is $"{workItem.Id}" (:870).
+          Jira reads issuelinks where type.inward = "is blocked by" AND an inwardIssue is present, and
+          takes inwardIssue.key verbatim, because ReferenceId is issue.Key (:1348).
+          Linear reads the dependencies connection and takes identifier LOWER-CASED, because
+          ReferenceId is issue.Identifier?.ToLowerInvariant() (:343).
+
+          The Linear lower-casing is the trap in this feature: the connection returns identifiers
+          upper case and the connector stores them folded, so without the fold every Linear reference
+          resolves to nothing — silently, because D15 skips unresolvable entries by design. It fails
+          as "Linear simply has no dependencies", indistinguishable from the truth, so it carries its
+          own acceptance criterion.
+
+          The reverse direction is derived by inverting stored references rather than fetched, which
+          would double the request cost to learn something already held.
 
     shared_artifacts:
       - name: dependency edge

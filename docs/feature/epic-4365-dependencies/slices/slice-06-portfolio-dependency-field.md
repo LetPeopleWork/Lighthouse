@@ -22,7 +22,11 @@ gets the whole feature — column, dialog, warnings, forecast — by naming that
   optimisation to reconsider.
 - **List parsing (D15)** — the one genuine difference from the parent override, which returns 0..1.
   Split on comma or semicolon, trim, resolve each entry, skip entries that resolve to nothing while
-  keeping the rest. Unit-testable in isolation and where most of this slice's tests live.
+  keeping the rest. Entries are references in the connector's own form — Jira keys on Jira, work item
+  ids on ADO, identifiers on Linear — which is `ReferenceId` space, so no normalisation layer is owed
+  beyond Linear's lower-casing. Unit-testable in isolation, and where most of this slice's tests live.
+- **Replace, not union**: while the override is set the native link is not read at all for that
+  Portfolio.
 - The selector in Portfolio settings, offered only for additional fields defined on that Portfolio's
   connection, with the same permission the parent override requires.
 - `FetchFingerprint` gains the new setting, so changing it triggers a refetch exactly as changing the
@@ -41,24 +45,33 @@ gets the whole feature — column, dialog, warnings, forecast — by naming that
 
 ## Learning hypothesis
 
-**Disproves** "the parent-override mechanism generalises to a list" **if** the entries in a real
-dependency field turn out not to be reference ids. `ParentReferenceId` holds one canonical id because
-a connector wrote it; a field maintained by hand will hold ADO ids, Jira keys, full URLs and prose
-("blocked by the platform work") in the same column across a single Portfolio.
+**Disproves** "a hand-maintained field yields resolvable references" **if** what people actually put in
+such a column is not the tracker's reference form. The intended contract is settled (D15: Jira keys,
+ADO ids, Linear identifiers), but `ParentReferenceId` holds one canonical id because a *connector*
+wrote it, whereas this column is typed by a person — so full URLs, prose, and titles instead of keys
+are all plausible in the same column across one Portfolio.
 
-If it fails, the slice needs a normalisation step per connector — parse a URL down to an id, strip a
-project prefix — which is DESIGN's OQ-3 arriving in code rather than in a document, and probably a
-second slice.
+If it fails, the slice needs a normalisation step — parse a URL down to its id, strip a prefix — which
+is a second slice, not a bigger version of this one.
 
 **Confirms**, if it holds, that a third override of this shape is a copy of a known pattern.
+
+## Why this slice exists (and what it is NOT for)
+
+It serves ADO, Jira and Linear instances that record dependencies in a custom field rather than the
+tracker's native link type. **It does not bring ServiceNow or CSV into the feature**, however tempting
+that argument is: every connector supports additional fields, so the mechanism looks available to
+them, but `ServiceNowWorkTrackingConnector.GetFeaturesForProject` throws `NotSupportedException`
+(`:751-757`) — ServiceNow has no Features, so there is nothing for a dependency to be between. This
+was checked during DISCUSS and is written down so the argument is not re-made mid-slice.
 
 ## Verify the premise first (30 min, before the migration)
 
 Ask for one real example of such a field from an instance that uses one, and read what is actually in
-it. This slice is the only one in the epic serving a population the dogfood instance does not contain,
-so the premise cannot be checked against `:5169` — it has to be checked against a real user's data or
-it is not checked at all. If no example is available, say so in the verdict below rather than
-proceeding as though it were confirmed.
+it. This is the only slice in the epic serving a population the dogfood instance does not contain, so
+the premise cannot be checked against `:5169` — it has to be checked against a real user's data or it
+is not checked at all. If no example is available, say so in the verdict below rather than proceeding
+as though it were confirmed.
 
 ## Acceptance criteria
 

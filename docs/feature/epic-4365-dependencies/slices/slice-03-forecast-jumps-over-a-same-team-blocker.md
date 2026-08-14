@@ -12,13 +12,16 @@ Features behind it get the capacity, so their dates move **in**.
 
 ## IN scope
 
-- The eligibility rule, at **one** place (KPI-5, OQ-4): in
-  `GetSimulationResultsOfFeatureToUpdate`, a Feature whose honoured blockers still have remaining work
-  *in this trial* is not eligible to receive throughput. `featuresRemaining` narrows; the
-  `FeatureWIP` window slides down to the Features below it.
-- Per-trial state: "has this blocker finished **in this trial**", reset by
-  `ResetRemainingItems()` alongside the remaining counts. The existing loop already resets per trial —
-  this rides on it rather than adding a second reset.
+- The eligibility rule, at **one** place (KPI-5, OQ-4): `GetSimulationResultsOfFeatureToUpdate`
+  filters `Where(x => x.HasWorkRemaining)` today and gains one predicate,
+  `Where(x => x.HasWorkRemaining && ready)`. `featuresRemaining` narrows; the `FeatureWIP` window
+  slides down to the Features below it. One predicate, one call site.
+- **No new per-trial state.** "Has this blocker finished in this trial" is derived from the existing
+  remaining counts, which `ResetRemainingItems()` already resets per trial. Readiness must aggregate
+  across **all** of a blocker's rows — `InitializeSimulationResults` creates one per (Feature, Team)
+  pair, so a Feature worked by three teams is finished only when all three are at zero.
+- If every eligible Feature is waiting, the day's throughput is **discarded**, not carried forward.
+  The team simply has an idle day.
 - **Termination guards, both of them, in this slice** (D7, D8): a cycle member is never treated as
   blocked (slice 02 already excluded the closing edge); a blocker with no `SimulationResult` row, or
   on a team excluded from the run for having no throughput, is dropped for the run and the dependent

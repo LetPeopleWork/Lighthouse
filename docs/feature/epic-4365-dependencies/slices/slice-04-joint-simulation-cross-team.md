@@ -12,16 +12,41 @@ because the date now sits behind that Feature.
 
 ## IN scope
 
-**Precursor commit (US-07, `@infrastructure`, lands first and alone):**
+**Two precursor commits (US-07, `@infrastructure`), in this order** (user, 2026-08-14: get it right
+serially, then make it fast):
 
-- `RunMonteCarloSimulation` stops grouping into one `Task.Run` per team. One trial advances a shared
-  day clock; on each simulated day every team with throughput draws its own throughput and consumes
-  from its own `SimulationResult` rows.
-- Concurrency moves from per-team to per-trial (or trial batches — OQ-2).
+**Precursor commit 1 — the serial joint loop. Correctness only.**
+
+- `RunMonteCarloSimulation` swaps its loop nesting from **team → trial → day** to
+  **trial → day → team**. One trial advances a single day counter; on each day every team with
+  throughput draws its own throughput and consumes from its own `SimulationResult` rows. The per-day
+  work is untouched — only the nesting changes.
+- **Serial**: today's per-team `Task.Run` parallelism is removed and nothing replaces it yet. This is
+  deliberately slower than the current release — per-team concurrency is gone and per-trial
+  concurrency has not arrived. Acceptable because both precursor commits land before the slice ends;
+  it is never a released state.
+- **Separate RNG streams per team.** Interleaving teams changes the order draws are taken from a
+  shared random source, so AC-7.1's fixed-seed equality fails on draw order rather than on
+  distribution — a red test for a reason that is not a bug.
 - A team with no throughput stays excluded exactly as today (AC-7.3).
-- Verification is a fixed-seed equality assertion against the pre-change run (AC-7.1) plus a wall-clock
-  bound (AC-7.2). It ships no user-visible behaviour **by design** — that is the correctness argument,
-  not a gap.
+- Verified by **AC-7.1 alone** (fixed-seed equality against the pre-change run) plus AC-7.3. AC-7.2's
+  wall-clock bound is deliberately *not* asserted here — it cannot pass on a serial loop, and pretending
+  otherwise would either weaken the bound or block a correct commit.
+
+**Precursor commit 2 — per-trial parallelism.**
+
+- Concurrency returns as **per-trial** rather than per-team — 10,000 units of work instead of a
+  handful, which is the better unit anyway. It is not a free `Parallel.For`:
+  `ResetRemainingItems()` mutates the shared rows and `AddSimulationResult` writes a plain
+  `Dictionary`, both safe today only because each team's task owns its group exclusively. Each trial
+  needs its own remaining-count state and a thread-safe histogram.
+- **AC-7.1 must still pass unchanged** after this commit. If parallelising moves a percentile, the
+  state isolation is wrong — that is the whole reason correctness is proven serially first.
+- **AC-7.2** (wall clock) is asserted here, against the pre-epic baseline rather than against the
+  serial intermediate.
+
+Neither commit ships user-visible behaviour **by design** — that is D3's correctness argument, not a
+gap.
 
 **The story commit (US-08):**
 
@@ -54,11 +79,12 @@ Either way the fallback is known before the slice starts, which is why the probe
 
 ## Verify the premise first (2h probe, before any code change — REQUIRED)
 
-Prototype the joint loop behind the existing one on `:5169` and measure: wall-clock for the full
-Feature set, and a fixed-seed percentile diff against the current implementation. **Two outputs**: the
-number AC-7.2 asserts, and a go/no-go on the slice's shape. If the probe says the restructure is
-larger than a day, this brief is re-cut before dispatch rather than run over — DoR item 5 records this
-slice as the epic's one conditional estimate.
+Prototype the **serial** joint loop behind the existing one on `:5169` and measure two things: a
+fixed-seed percentile diff against the current implementation, and how slow serial actually is. The
+second number sets expectations for precursor commit 2 and tells you whether per-trial parallelism has
+to claw back 3× or 30×. **Two outputs**: the number AC-7.2 will assert, and a go/no-go on the slice's
+shape. If the probe says the work is larger than a day, this brief is re-cut before dispatch rather
+than run over — DoR item 5 records this slice as the epic's one conditional estimate.
 
 ## Acceptance criteria
 

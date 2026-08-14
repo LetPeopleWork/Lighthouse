@@ -18,6 +18,11 @@ nothing re-entered by hand.
 - **Linear**: add the `dependencies` connection to the existing GraphQL selection
   (`LinearWorkTrackingConnector.cs:660-726`), beside `parent`. `dependencies` = what blocks you;
   `blocking` = what you block, and is not fetched. Titles inline.
+  **Lower-case the `identifier`.** `ReferenceId` is stored as `issue.Identifier?.ToLowerInvariant()`
+  (`:343`) and the connection returns it upper case, so without the fold every Linear reference
+  resolves to nothing — silently, because unresolvable entries are skipped by design. It fails as
+  "Linear has no dependencies", which is indistinguishable from the truth. AC-9.2 asserts it against
+  an upper-case fixture.
 - Both go through the same connector-port method slice 01 introduced, so the ingestion, reconcile,
   honour-ability verdict, warnings and forecast rule are untouched.
 - ServiceNow and CSV return an empty edge set and warn about nothing — the absence of a dependency
@@ -60,7 +65,8 @@ configuration feature.
 
 AC-9.1 … AC-9.6 verbatim from `feature-delta.md`. The three that carry the slice:
 
-- A Jira link with `inwardIssue` yields an edge; one with only `outwardIssue` yields none (AC-9.1).
+- A Jira link with `inwardIssue` yields a reference; one with only `outwardIssue` yields none (AC-9.1).
+- An upper-case Linear `identifier` resolves to a Feature — the lower-casing trap (AC-9.2).
 - Adding `issuelinks` to the `fields=` list changes no existing mapped value (AC-9.3).
 - Slices 02-04's ACs pass parameterised over connector rather than duplicated (AC-9.5).
 

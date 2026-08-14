@@ -160,23 +160,53 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   ordering.
 
 - **[D2] The forecast honours a dependency by EXCLUDING the dependent from the eligible set inside each
-  trial, not by shifting its dates afterwards.** In `GetSimulationResultsOfFeatureToUpdate`, a Feature
-  whose blockers still have remaining work *in this trial* is not eligible to receive throughput; the
-  Features below it move up into the `FeatureWIP` window and consume that capacity instead. This is the
-  epic's own word — *jump* — and it is the entire difference between a feature and a cosmetic date
-  adjustment. The post-hoc alternative (`max(own, blocker)`) was considered and rejected: it never frees
-  the capacity, so every Feature ranked below a waiting one keeps a date that assumes work nobody is
-  doing. KPI-2 exists to prove this distinction actually materialises on real data.
+  trial, not by shifting its dates afterwards.** `GetSimulationResultsOfFeatureToUpdate` filters
+  `Where(x => x.HasWorkRemaining)` today; it gains one predicate and filters
+  `Where(x => x.HasWorkRemaining && ready)`. A Feature whose blockers still have remaining work *in
+  this trial* is not eligible to receive throughput; the Features below it move up into the
+  `FeatureWIP` window and consume that capacity instead. *Jump* is the epic's own word for it, and it
+  is the entire difference between a feature and a cosmetic date adjustment. The post-hoc alternative
+  (`max(own, blocker)`) was considered and rejected: it never frees the capacity, so every Feature
+  ranked below a waiting one keeps a date that assumes work nobody is doing. KPI-2 exists to prove
+  this distinction actually materialises on real data.
+
+  If every eligible Feature is waiting, the team's throughput for that day is **discarded** rather
+  than carried forward. An idle day is the honest outcome, and it is what makes D7 and D8 load-bearing
+  rather than tidy: with nothing able to unblock, the run would never end.
+
+  **No new per-trial state.** Each closed item already re-draws independently from the top of the
+  eligible list, so a Feature becomes available again on the very next draw after its blocker clears;
+  nothing needs to remember that a team was previously working on something. Modelling sticky WIP
+  slots — a team holding a Feature until it finishes — was considered and rejected (user,
+  2026-08-14): it would change dates for Features with no dependencies at all, which forfeits D3's
+  distribution-preserving property and turns a safe restructure into a re-baseline.
 
 - **[D3] One joint simulation across all teams, replacing the per-team independent runs**
-  (user, 2026-08-14). `RunMonteCarloSimulation` stops grouping into independent `Task.Run`s; one trial
-  advances a shared day clock, and on each day every team with throughput draws and consumes from its
-  own rows. **This is distribution-preserving when no dependency is present** — each team consumes only
-  its own `SimulationResult` rows, so interleaving them under a shared clock changes the order the RNG
-  is drawn in and nothing about the per-Feature completion-day distribution. Existing forecasts
-  therefore do not re-baseline beyond Monte Carlo noise, and DISTILL can assert that as a property.
-  What it does cost is the parallelism shape: concurrency moves from per-team to per-trial. Flagged to
-  DESIGN with the 10,000-trial × all-teams cost as an explicit budget question.
+  (user, 2026-08-14). Concretely, the loop nesting swaps from **team → trial → day** to
+  **trial → day → team**: one trial advances a single day counter, and on each day every team with
+  throughput draws its own throughput and consumes from its own rows. The per-day work itself — draw
+  throughput, close that many items, pick which Feature each comes from — is untouched.
+
+  That swap is the entire mechanism. Today team A's "day 5" and team B's "day 5" are not the same
+  moment and not even the same trial, so "is A finished yet?" has no answer; once the clock is shared
+  it means "finished by day 5 in this trial", and the dependency rule becomes one extra predicate in
+  one place (D2).
+
+  **Distribution-preserving when no dependency is present** — a team only ever consumes its own
+  `SimulationResult` rows, so interleaving other teams between its days cannot change what happens to
+  any row. Existing forecasts do not re-baseline, and DISTILL asserts it. Two consequences DESIGN must
+  carry: teams need **separate RNG streams**, or a fixed-seed equality test fails on draw order rather
+  than on distribution; and concurrency moves from per-team to **per-trial**, which is not a free
+  `Parallel.For` — `ResetRemainingItems()` mutates the shared rows and `AddSimulationResult` writes a
+  plain `Dictionary`, both safe today only because each team's task owns its group exclusively. Each
+  trial needs its own remaining-count state and thread-safe histogram accumulation.
+
+  **Correctness lands before speed** (user, 2026-08-14). The restructure ships as two commits: a
+  serial joint loop proved against a fixed seed, then per-trial parallelism proved to leave that
+  equality untouched. The intermediate is slower than today's release — per-team concurrency is gone
+  and per-trial concurrency has not arrived — which is why both land inside one slice and neither is
+  released alone. If parallelising moves a percentile, the state isolation is wrong, and proving it
+  serially first is what makes that diagnosable.
 
 - **[D4] Every dependency comes from the work tracking system. Lighthouse never authors one**
   (user, 2026-08-14, resolving the wave's one open question). The default source is the standard link
@@ -186,26 +216,48 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   `GetParentReferenceForWorkItems` (`AzureDevOpsWorkTrackingConnector.cs:1012-1018`) verbatim in shape:
   when the override is set, **skip the relations fetch entirely** — "no need to load stuff if we have
   an override anyway" — and read the value from `AdditionalFieldValues` instead.
+
+  **Replace, not union** (user, 2026-08-14: "if I set an override, just use the content from that
+  specific field"). A Portfolio that names a field is declaring that field authoritative; native links
+  on the same Feature are ignored while it is set. Union was considered — an ADO team could plausibly
+  have some Predecessors native and some in a custom field — and rejected as harder to explain than it
+  is worth, and inconsistent with the parent override it copies.
+
+  **The owner is the Portfolio only**, not the Team, even though `IWorkItemQueryOwner` is implemented
+  by both (user, 2026-08-14). Dependencies are between Features, and Features are fetched per
+  Portfolio — a Team-level setting would have no consumer.
   A per-Feature declaration made inside Lighthouse was considered during this wave and **rejected**:
   it would make Lighthouse an author of dependency data, which is a different product posture from the
   one it takes everywhere else, and it would need a precedence rule against the tracker that this one
   does not.
 
-- **[D15] The override field carries a LIST, and that is where it differs from the parent override.**
-  A parent is 0..1, so `GetParentReference` (`:1095-1106`) can return one string. Dependencies are
-  0..n, so the field's value is split on comma or semicolon, each entry trimmed, and each resolved
-  against the same reference-id space `ParentReferenceId` uses. An entry that resolves to nothing is
-  skipped exactly as an unresolvable relation is (AC-1.4) — a text field maintained by hand will
-  contain typos, and one typo must not discard the other three references beside it. The separator is
-  fixed rather than configurable in this epic; flagged to DESIGN as the one place a per-connection
-  setting might later be owed.
+- **[D15] The override field carries a LIST of references in the connector's own reference form, and
+  that is where it differs from the parent override** (user, 2026-08-14). A parent is 0..1, so
+  `GetParentReference` (`:1095-1106`) can return one string. Dependencies are 0..n, so the field's
+  value is split on comma or semicolon and each entry trimmed.
 
-- **[D5] Dependency edges are stored in their own persisted relation, never on a synced field.**
-  `WorkItemBase.Update` overwrites every synced field on every refresh, which is exactly why
-  `Feature.ManualRank` sits outside it. Because D4 makes every edge tracker-sourced, the store needs no
-  origin discriminator and has exactly one writer: the sync's reconcile, which replaces a Feature's
-  edges wholesale with whatever the current source — link or override field — now says. Expand-only,
-  generated with the `CreateMigration` script.
+  **What an entry looks like is settled: whatever that tracker calls a Feature.** Jira keys on a Jira
+  connection, work item ids on ADO, identifiers on Linear — which is exactly `ReferenceId` space, so
+  no per-tracker normalisation layer is owed. The one transformation that remains is Linear's
+  lower-casing (D14). An entry that resolves to nothing is skipped exactly as an unresolvable relation
+  is (AC-1.4) — a hand-maintained field will contain typos, and one typo must not discard the three
+  good references beside it. The separator is fixed rather than configurable in this epic.
+
+- **[D5] A Feature stores the LIST OF REFERENCES it waits on, resolved when read — not a resolved
+  Feature-to-Feature foreign key** (user, 2026-08-14, correcting this wave's first draft). The stored
+  form is strings in the same space as `ReferenceId`, exactly as `WorkItemBase.ParentReferenceId`
+  already works.
+
+  The reason is sync order. If Feature B references A and A has not been imported yet, a resolved
+  foreign key cannot be written at all, and the edge silently does not exist until some later sync
+  happens to fix it. A stored reference heals on its own: the next read resolves it. The graph the
+  simulation and the cycle detector want is derived at read time from those references, which also
+  keeps the stored form dumb and the derived form single-sourced (KPI-5).
+
+  It sits in its own persisted collection, never on a synced scalar — `WorkItemBase.Update` overwrites
+  every synced field on every refresh, which is why `Feature.ManualRank` sits outside it. One writer:
+  the sync's reconcile, replacing a Feature's references wholesale with whatever the current source —
+  link or override field — now says. Expand-only, generated with the `CreateMigration` script.
 
 - **[D6] A dependency changes the forecast only when both Features share at least one Portfolio**
   (epic's proposal, user-confirmed 2026-08-14). Feature ↔ Portfolio is many-to-many
@@ -260,16 +312,36 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   it is counter-intuitive — the board disagrees with the stated priority, and the warning is what
   explains that. Ordering stays the user's decision (epic #5375's whole premise).
 
-- **[D13] ADO first, then Jira and Linear. ServiceNow and CSV are out.** ADO is the thinnest first
-  connector because `WorkItemExpand.Relations` is already requested on the parent path, and it is the
-  bulk of the dogfood instance's data. ServiceNow and CSV have no standard dependency field, so
-  supporting them means inventing a convention — a different epic, not a slice of this one.
+- **[D13] ADO first, then Jira and Linear. ServiceNow and CSV are out, and cannot be rescued by D4's
+  field override.** ADO is the thinnest first connector because `WorkItemExpand.Relations` is already
+  requested on the parent path, and it is the bulk of the dogfood instance's data.
 
-- **[D14] Only the "waiting on" direction is fetched; the reverse is derived by inverting stored edges.**
-  Per ADO #4365's 2026-05-24 comment: ADO `System.LinkTypes.Dependency-Reverse` (Predecessor), Jira
-  `issuelinks` where `type.inward = "is blocked by"` **and** an `inwardIssue` is present, Linear's
-  `dependencies` connection. Fetching the forward direction too would double the request cost to learn
-  something the stored edge set already contains.
+  The tempting argument that the field override brings ServiceNow and CSV along — every connector
+  supports additional fields, so the mechanism is available to them — **does not hold, and was checked
+  during this wave**: `ServiceNowWorkTrackingConnector.GetFeaturesForProject` throws
+  `NotSupportedException` (`:751-757`). ServiceNow has no Features, so it has nothing for a dependency
+  to be *between*. A dependency is a Feature-to-Feature edge (D1), Features live in Portfolios (D6),
+  and ServiceNow supports neither. The field override changes where a reference is read from; it does
+  not create the objects the reference points at. Recorded here so the argument is not re-made.
+
+- **[D14] Only the "waiting on" direction is fetched; the reverse is derived by inverting stored
+  references.** Per ADO #4365's 2026-05-24 comment, and with the extraction each connector needs so
+  the stored string lands in `ReferenceId` space (D5):
+
+  | Connector | Source | `ReferenceId` is | Extraction |
+  |---|---|---|---|
+  | ADO | relation `System.LinkTypes.Dependency-Reverse` | `$"{workItem.Id}"` (`:870`) | trailing segment of the relation URL |
+  | Jira | `issuelinks` where `type.inward = "is blocked by"` **and** an `inwardIssue` is present | `issue.Key` (`:1348`) | `inwardIssue.key`, verbatim |
+  | Linear | `dependencies` connection | `issue.Identifier?.ToLowerInvariant()` (`:343`) | `identifier`, **lower-cased** |
+
+  **The Linear lower-casing is the trap in this feature.** The connector stores identifiers folded to
+  lower case and the GraphQL connection returns them upper case, so without the fold every Linear
+  reference resolves to nothing — silently, because D15 skips unresolvable entries by design. The
+  failure presents as "Linear simply has no dependencies", which is indistinguishable from the truth.
+  It gets its own acceptance criterion rather than being left to the mapper (AC-9.2).
+
+  Fetching the forward direction too would double the request cost to learn something the stored
+  reference set already contains.
 
 ---
 
@@ -570,8 +642,9 @@ needs it.
 - **AC-7.1** With no cross-team dependency present, every percentile for every Feature matches the
   pre-change run under a fixed random seed, within Monte Carlo noise.
 - **AC-7.2** Forecast wall-clock time for the dogfood instance's full Feature set stays within an
-  agreed multiple of the pre-change baseline; the number is set by DESIGN and recorded in the slice
-  brief before the commit lands.
+  agreed multiple of the **pre-epic** baseline; the number is set by DESIGN and recorded in the slice
+  brief before the commit lands. Asserted only after the parallelism commit — the serial intermediate
+  is deliberately slower and is never released (user, 2026-08-14: correctness first, speed second).
 - **AC-7.3** A team with no throughput is excluded exactly as before, and its Features' behaviour is
   unchanged.
 
@@ -625,8 +698,11 @@ Decision enabled: the same decisions as US-01 through US-08, on the tracker the 
 
 - **AC-9.1** A Jira issue with `issuelinks` containing `type.inward = "is blocked by"` **and** an
   `inwardIssue` yields one edge per such link; entries with only an `outwardIssue` yield none.
-- **AC-9.2** A Linear issue's `dependencies` connection yields one edge per node; its `blocking`
-  connection yields none.
+- **AC-9.2** A Linear issue's `dependencies` connection yields one reference per node, **lower-cased**
+  to match `ReferenceId` (`LinearWorkTrackingConnector.cs:343`), and each one resolves to a Feature.
+  Asserted on a fixture whose `identifier` is upper case — without the fold this passes ingestion and
+  yields zero resolved dependencies, which is indistinguishable from an instance that has none. Its
+  `blocking` connection yields nothing (D14).
 - **AC-9.3** Adding `issuelinks` to the Jira `fields=` list does not change any existing mapped value —
   asserted by an unchanged fixture comparison.
 - **AC-9.4** A ServiceNow or CSV Feature yields no edges and renders no dependency warning — the
@@ -850,14 +926,16 @@ Outcome KPIs section only.
   and the slice order were rewritten; D15 was added for the list-parsing difference. Kept here rather
   than deleted because DESIGN should know the per-Feature declaration was considered and dropped, not
   overlooked.
-- **OQ-2** — The trial-cost budget for D3. Ten thousand trials over all teams jointly, versus per-team
-  in parallel: what multiple of today's wall clock is acceptable, and does concurrency move to
-  per-trial or to trial batches? AC-7.2's number comes from this answer, and slice 04's estimate depends
-  on it.
-- **OQ-3** — Whether the override field's value is resolved against `ReferenceId` alone, or whether a
-  tracker-specific form (an ADO id, a Jira key, a URL) needs normalising first. D15 fixes the
-  separator; it does not fix what an entry between separators looks like, and a hand-maintained field
-  will contain all three.
+- **OQ-2** — How per-trial concurrency is made safe, and what it costs. Running the 10,000 trials in
+  parallel is the obvious replacement for today's per-team tasks (user, 2026-08-14), and it is a
+  better unit of work — 10,000 of them rather than a handful. The work is the state isolation:
+  `ResetRemainingItems()` mutates the shared `SimulationResult` rows and `AddSimulationResult` writes
+  a plain `Dictionary`, both safe today only because each team's task owns its group. Each trial needs
+  its own remaining counts and a thread-safe histogram. AC-7.2's wall-clock number comes out of this,
+  and slice 04's estimate depends on it.
+- **OQ-3 — RESOLVED** (user, 2026-08-14). An entry is a reference in the connector's own form — a Jira
+  key, an ADO id, a Linear identifier — which is `ReferenceId` space, so no normalisation layer is
+  owed beyond trim, split and Linear's lower-casing. Folded into D15.
 - **OQ-4** — Where the single eligibility decision lives so that KPI-5 is structurally true rather than
   defended by a grep: inside `SimulationResult`, in a small collaborator consulted by
   `GetSimulationResultsOfFeatureToUpdate`, or in the set handed to `InitializeSimulationResults`.
