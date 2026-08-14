@@ -12,8 +12,16 @@ because the date now sits behind that Feature.
 
 ## IN scope
 
-**Two precursor commits (US-07, `@infrastructure`), in this order** (user, 2026-08-14: get it right
-serially, then make it fast):
+**Three precursor commits (US-07, `@infrastructure`), in this order** (maintainer, 2026-08-14: get it
+right serially, then make it fast; DESIGN added the first):
+
+**Precursor commit 0 — the addressable draw stream.** `RandomNumberService` is
+`new Random().Next(maxValue)` — a fresh `Random` allocated per draw, seeded from nothing. So a
+fixed-seed test today can only assert *draw order*, which this slice changes on purpose. Making a draw
+a pure function of `(seed, trial, team, day, ordinal)` makes each team's sequence independent of how
+the teams are interleaved, which turns AC-5.3 / AC-7.1 / AC-8.6 into **exact equality** rather than
+"within Monte Carlo noise", and makes per-trial parallelism result-identical by construction rather
+than by test. Without it the rest of this slice cannot be proved. See ADR-154.
 
 **Precursor commit 1 — the serial joint loop. Correctness only.**
 
@@ -45,8 +53,16 @@ serially, then make it fast):
 - **AC-7.2** (wall clock) is asserted here, against the pre-epic baseline rather than against the
   serial intermediate.
 
-Neither commit ships user-visible behaviour **by design** — that is D3's correctness argument, not a
-gap.
+None of the three precursor commits ships user-visible behaviour **by design** — that is D3's
+correctness argument, not a gap.
+
+**Not in this slice: replacing the multi-team aggregation.** DESIGN proposed a fourth precursor
+replacing ADR-110's product of CDFs with an observed per-trial maximum, on the grounds that a
+dependency breaks its independence assumption. The maintainer **deferred** it (2026-08-14) on two
+counts: the bias it corrects points the safe way — the product *under*-states the joint CDF when a
+Feature's teams share a blocker, so such a Feature reads slightly late, not early — and it was the
+only change in the epic that would have moved a date on a Feature with no dependency at all. One
+change to forecasting at a time. ADR-156 holds it if it is ever wanted.
 
 **The story commit (US-08):**
 

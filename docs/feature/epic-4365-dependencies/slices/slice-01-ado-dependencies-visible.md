@@ -22,6 +22,13 @@ two others — without opening Azure DevOps.
 - Reconcile on every sync: stored edges for a Feature are replaced wholesale by what the tracker now
   says, so a link removed in ADO disappears here (AC-1.5). Because Lighthouse never authors an edge
   (D4), there is nothing to preserve and the reconcile stays a replace for the whole epic.
+- **The relations early return must test BOTH overrides.** `GetParentReferenceForWorkItems`
+  (`:1012-1018`) returns early when the *parent* override is set, and it is the only place
+  `WorkItemExpand.Relations` is requested — the fetch this slice rides. Left as-is, a Portfolio with a
+  parent override reports zero dependencies forever, silently. Skip only when both overrides are set.
+  Note the method takes the base owner type while the dependency override lives on `Portfolio`, and it
+  is called for a Team (`:87`) as well as a Portfolio (`:609`) — the Team path keeps today's behaviour
+  unchanged. Asserted by AC-1.9.
 - Resolution happens at read: a reference naming a Feature Lighthouse does not (yet) hold contributes
   nothing to the count and no error (AC-1.4). The relation URL carries an id and not a type, so a
   Predecessor pointing at a Bug or a Task is exactly this case rather than an exception — and a

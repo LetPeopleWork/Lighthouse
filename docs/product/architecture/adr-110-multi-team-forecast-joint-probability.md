@@ -1,6 +1,12 @@
 # ADR-110: A multi-team feature forecast is the product of its teams' completion CDFs, not the slowest team's distribution
 
-- **Status**: Accepted
+- **Status**: Accepted, and unchanged by epic-4365-dependencies. A successor
+  ([ADR-156](./adr-156-per-trial-max-replaces-product-of-cdfs.md)) was drafted and **deferred**: a
+  Feature that waits on another Feature does break the independence assumed below, but the resulting
+  bias is *conservative* — the true joint CDF is at least the product, so the product reports dates
+  slightly **later** than the truth, only for Features that are both multi-team and dependent. The
+  safe direction, and not worth a second change to the core forecast in one release. The "per-trial
+  max inside the Monte Carlo" door this ADR left open under *Alternatives considered* stays open.
 - **Date**: 2026-07-27
 - **Feature**: epic-5459-multi-team-forecasts (ADO Epic 5459, Story 5569)
 - **Deciders**: Benjamin Huser-Berta (maintainer)

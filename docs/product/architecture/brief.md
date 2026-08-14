@@ -5652,3 +5652,223 @@ three that change scope rather than wording:
 Plus two new open questions: the count of true legacy-plaintext rows on the `:5169` restored backup
 (OQ-4), and confirmation that an unreadable-secret failure produces a legible operator message on the
 background refresh path as well as on `ValidateConnection` (OQ-5).
+
+## Application Architecture — epic-4365-dependencies (DESIGN delta)
+
+Feature: `epic-4365-dependencies` (ADO Epic #4365 "Dependencies") · Wave: DESIGN · Date: 2026-08-14 ·
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE · Paradigm: OOP backend,
+functional-leaning React frontend
+
+### The one hard problem
+
+Not reading a Predecessor link. Reading it is nearly free — the Azure DevOps connector already fetches
+every Feature's relations in a batched call for the parent path, Jira sends an explicit field list that
+can be widened, and Linear's GraphQL document already selects a sibling of the connection wanted. Zero
+additional requests on all three.
+
+The hard problem is that **"jump over" has to happen inside the trial, and the trial does not know what
+time it is on another team**. `RunMonteCarloSimulation` runs each team's 10 000 trials in its own task
+with its own day counter, so "has the blocker finished?" is not merely unanswered — it is not a
+well-formed question. Everything else in this feature is downstream of restructuring that loop, and the
+restructure sits in the code path every date in the product comes from.
+
+The second-hardest problem is one the DISCUSS wave could not see: **ADR-110 computes a multi-team
+Feature's forecast as the product of its teams' CDFs, which is exact only under independence — and a
+dependency is precisely a thing that makes two teams dependent.** The product becomes optimistic in
+exactly the situation this epic exists to stop being optimistic about, invisibly. ADR-110 anticipated
+the door and deferred it; this epic walks through it.
+
+### Architectural Pattern
+
+Ports-and-adapters, unchanged. No new bounded context, no new architectural style, no new package, no
+new external dependency, no new outbound integration. One small **Feature Dependency** module joins two
+existing contexts — Work Tracking Connection, where an edge is read, and Forecasting, where it is
+honoured.
+
+### Key invariants introduced
+
+- **INV-1** — Exactly one type decides whether a dependency is honoured. Two ArchUnitNET rules make the
+  alternatives uncompilable, so the warnings and the dates cannot disagree.
+- **INV-2** — The simulation contains no cycle logic, no Portfolio logic, no licence logic and no
+  ordering logic. The trial asks one boolean: are this Feature's honoured blockers finished yet.
+- **INV-3** — Every trial terminates on every input. Non-terminating edges are excluded before the run;
+  a day-count ceiling aborts with a structured event if that is ever wrong.
+- **INV-4** — A draw is a pure function of `(seed, trial, team, day, ordinal)`. No stream state exists,
+  so per-trial parallelism is result-identical to the serial loop by construction rather than by test.
+- **INV-5** — Per-trial state is owned by the trial that allocated it. `SimulationResult` stops being
+  the mutable scratchpad of a hot loop and becomes output only.
+- **INV-6** — Exactly one writer of dependency references: the portfolio sync's reconcile. Lighthouse
+  never authors an edge, so no write endpoint exists anywhere in this epic.
+- **INV-7** — An unlicensed instance's forecast is byte-identical to a dependency-free run. The licence
+  is a field of the honour policy's input, not a branch around the mechanic, so "half-applied" is
+  unrepresentable.
+- **INV-8** — The word *blocked* does not appear in this feature, in any type, property, log line or
+  rendered string. It already names epic #5074's shipped concept and is renameable per instance.
+
+### Component Decomposition
+
+Full table with paths, change types and slice attribution:
+`docs/feature/epic-4365-dependencies/feature-delta.md` → *Wave: DESIGN / [REF] Component
+Decomposition*. The headline:
+
+- **EXTEND** — `ForecastService` (loop nesting, one eligibility predicate, the completion recorder),
+  `SimulationResult` (narrowed to output), `AggregatedWhenForecast` (fed the observed distribution),
+  `Feature` (one collection, outside `Update`), `Portfolio` (one nullable override field),
+  `FetchFingerprint`, the three work-tracking adapters and `WorkItemExtensions`, `FeatureDto`,
+  `FeaturesController`, `columns.tsx`, `WarningsIndicator`.
+- **CREATE NEW** — `FeatureDependencyReference`, `DependencySource`, `DependencyReconciler`,
+  `IDependencyHonourPolicy` / `DependencyHonourPolicy`, `DependencyCycleDetector`,
+  `HonouredDependencies` / `DependencyVerdict` / `NotHonouredReason`, `IDrawStreamFactory` /
+  `AddressableDrawStream`, `ForecastRunPlan`, `TrialState`, `TrialReadiness`, `FeatureDependencyDto`,
+  and the frontend dependency dialog. Justified because the product has never stored a Feature-to-Feature
+  relation, has never had a seeded or addressable draw, and has never expressed a per-trial working set
+  separate from its output.
+- **NO CHANGE** — `JointCompletionDistribution` (deleting it was proposed and deferred; see the
+  residual below), `IWorkTrackingConnector` (a Feature carries its own references; the existing call
+  already returns Features), `IRandomNumberService` (its other callers do not want coordinates),
+  `LicenseGuardAttribute` (no new premium route exists), `useLicenseRestrictions`, the ServiceNow and
+  CSV connectors.
+- **Nothing is deleted by this feature.**
+
+### Driving / Driven Ports
+
+**Driving (new):** one read-only route, `GET /api/{v1,latest}/features/{id}/dependencies`, free and
+RBAC-filtered; a blocker the caller may not read is a redacted row carrying the reason, never a silent
+omission. **There is deliberately no write route** — Lighthouse never authors a dependency, so "this
+action cannot write" is a compile-time fact rather than an authorization check.
+
+**Driving (extended):** the Feature list payload gains a count and a list of warning *reason codes*.
+The DTO never carries a rendered sentence, because every word around it resolves through the instance's
+own terminology. Lighthouse-Clients contract — version gate check owed.
+
+**Driven (new):** none. No new store, no new transport, no new outbound integration.
+
+**Driven (extended):** the three work-tracking adapters read a second thing out of a response they
+already fetch. **Zero additional requests on Azure DevOps, Jira and Linear** — the growth is payload,
+which is what KPI-3's 110 % budget measures. One trap, named: the existing Azure DevOps early return
+skips the relations fetch when the *parent* override is set, and copying it verbatim would silently
+yield zero dependencies for every Portfolio that has one. The condition becomes "unless both overrides
+are set".
+
+**External integration:** no new system, but a widened contract surface on all three trackers. Contract
+tests recommended to platform-architect for Azure DevOps (`System.LinkTypes.Dependency-Reverse` under
+`WorkItemExpand.Relations`), Jira (the `issuelinks` field and the **inward link-type name, which an
+administrator can rename per instance** — the highest-risk string in this feature) and Linear (the
+`dependencies` connection and the case of the identifier it returns), via consumer-driven contracts in
+the CI acceptance stage.
+
+### Reuse Analysis
+
+Full table in the feature delta. The rows worth repeating here:
+
+- **`IWorkTrackingConnector` → NO CHANGE**, against a DISCUSS statement that "a new method is owed".
+  `GetFeaturesForProject` already returns `List<Feature>` and a Feature now carries its own references,
+  exactly as `ParentReferenceId` arrives. A port method would be a second round trip for data the first
+  call already returns, in five implementations.
+- **`JointCompletionDistribution` → NO CHANGE.** DESIGN proposed deleting it in favour of an observed
+  per-trial maximum; deferred by the maintainer. ADR-110 is reconciled by leaving it alone, and the
+  residual is stated below rather than engineered away.
+- **`Feature.CanBeForecast` / `TeamsWithoutForecast` → REUSED AS IS.** They are precisely the "can this
+  Feature be simulated" predicate the honour policy needs, and a second one would be the
+  two-places-decide defect this epic is guarding against.
+- **Epic #5074's `IsBlocked` → DELIBERATE NON-REUSE.** The same word, a genuinely different concept: an
+  item blocked *now* by a board state, versus a Feature that cannot start until another finishes.
+
+### Quality Attribute Strategies
+
+| Attribute | Strategy |
+|---|---|
+| **Functional correctness** | The restructure's safety net is *exact* histogram equality under a fixed seed, made possible by landing the addressable draw stream before the loop change. **No commit in the epic breaks that equality** — the one that would have (replacing the aggregation) is deferred, so every commit is assertable against the pre-epic run |
+| **Reliability** | Three independent termination guarantees, in order: non-terminating edges excluded before the run, no dependency logic inside the loop, and a day-count ceiling that aborts with a structured event naming the trial coordinates. The third exists because a hang here stops a background refresh service rather than failing a request |
+| **Performance efficiency** | Sync: zero additional requests on all three connectors, growth in payload only, 110 % budget with a baseline captured before slice 01. Forecast: the parallel unit goes from a handful of teams to 10 000 trials and the per-draw allocation disappears; budget 1.5× the pre-epic wall clock, expectation ≤1.0× |
+| **Concurrency safety** | Achieved by removing shared mutable state, not by guarding it. Stateless addressable draws, per-trial counts owned by the trial, per-partition histogram accumulation folded once in row order. No lock and no concurrent collection is introduced |
+| **Maintainability** | One place decides whether an edge is honoured, enforced by architecture tests rather than review. One stored form, several derived views. A subtle floating-point path — canonical multiplication order, largest-remainder allocation — leaves the codebase |
+| **Testability** | The honour policy, the cycle detector and the draw function are pure, so most acceptance criteria need no database and no HTTP. Any single trial is reproducible from its coordinates alone, which turns "trial 4 217 hangs" from a bisect into a test |
+| **Security** | The dependency route reuses the RBAC portfolio filter and ADR-136's non-disclosing pattern. A hidden blocker is worse than an unnamed one |
+| **Portability** | No provider-specific SQL. One additive table, one additive nullable column, one additive forecast row shape, expand-only, generated with `CreateMigration` |
+
+### The residual risks, stated
+
+1. **A multi-team Feature that waits on another reads slightly late.** ADR-110's product of CDFs
+   assumes its contributing teams are independent; once they are all released by the same blocker they
+   are positively correlated, and the true joint CDF is then at least the product. A lower CDF at a
+   given day means a later date, so the bias is **conservative**, not optimistic — the safe direction,
+   and confined to Features that are both multi-team and dependent. Accepted and documented rather
+   than corrected: fixing it means a second change to the core forecast in the same release, and the
+   fix is the only change in the epic that would move a date on a Feature with no dependency at all.
+   ADR-156 holds the correction if it is ever wanted.
+2. **A dropped edge leaves an earliest-possible date that a reader may skim as a forecast.** The
+   mitigation is presentational and is therefore the weakest part of the design; the stricter
+   alternative — propagate ADR-112's unknown to the dependent — is kept live and costs one file.
+3. **Jira link-type names are editable per instance**, so recognising "is blocked by" is trusting a
+   string an administrator can rename. Mitigated by a structured event listing the inward names
+   actually observed, so the failure is diagnosable rather than presenting as "this instance has no
+   dependencies".
+4. **The read path evaluates the honour policy per request**, including a cycle pass over the edge set.
+   O(V+E) over data the request already loads, but unmeasured at instance scale until slice 02.
+5. **The dogfood instance cannot produce evidence for the Portfolio-named field.** No reachable
+   instance keeps dependencies in a custom field, so slice 06's acceptance is fixture-led with one
+   manual confirmation against a deliberately-created additional field.
+
+### ADR References (this feature)
+
+- [ADR-154](./adr-154-addressable-draw-streams-for-the-feature-forecast.md) — a draw is a pure function
+  of its coordinates, not a position in a sequence; this is what makes the restructure provable
+- [ADR-155](./adr-155-joint-trial-clock-replaces-per-team-simulation.md) — loop nesting swaps to
+  `trial → day → team`; the shared mutable row becomes per-trial state; AC-7.2's budget set at 1.5×
+- [ADR-156](./adr-156-per-trial-max-replaces-product-of-cdfs.md) — **Deferred.** Would observe the
+  multi-team completion day per trial instead of multiplying CDFs. A dependency does break ADR-110's
+  independence assumption, but conservatively; ADR-110 stands
+- [ADR-157](./adr-157-dependency-references-stored-on-the-feature.md) — a Feature stores the references
+  it waits on; ingestion rides the fetch that already happens; the override lives on `Portfolio`
+- [ADR-158](./adr-158-one-dependency-honour-policy-two-eligibility-layers.md) — one pure policy owns
+  honour-ability, a per-trial collaborator owns readiness; cycle detection writes nothing
+- [ADR-159](./adr-159-un-forecastable-blocker-drops-and-the-date-reads-as-a-floor.md) — a blocker that
+  cannot be simulated drops the edge and the dependent's date reads as an earliest-possible; the
+  reconciliation with ADR-112, and the one call most likely to be overruled
+
+### Architectural Enforcement (this feature)
+
+| Rule | Enforced by |
+|---|---|
+| Exactly one type decides whether a dependency is honoured | ArchUnitNET: one implementation of `IDependencyHonourPolicy`, and only it may depend on `DependencyCycleDetector`. **This is KPI-5** |
+| The forecast never constructs a verdict | ArchUnitNET: no type in `Services.Implementation.Forecast` may depend on `DependencyCycleDetector`, `IFeatureOrdering` or `ILicenseService` |
+| `SimulationResult` knows nothing about dependencies | ArchUnitNET: no dependency on `Models.Dependencies` |
+| Per-trial state cannot be shared between trials | ArchUnitNET: `TrialState` / `TrialReadiness` may not be a field of `ForecastService` or `SimulationResult` |
+| One writer of dependency references | Structural test over the write sites of `Feature.DependsOnReferences` |
+| Ingestion never touches a synced field | Gold test: a full refresh with dependency data leaves `ManualRank` and every `Update` field unchanged |
+| The word *blocked* does not enter this feature | Structural test over the new types and components, plus a rendered-string assertion on the warning texts |
+| The restructure changed nothing | Gold test: per-team histograms before and after, asserted **equal**, not "close" |
+| Parallelism changed nothing | The same gold test under the parallel executor. **This is the probe for the state isolation** |
+| The draw function is uniform and uncorrelated | Property test over the modulus and adjacent coordinates — it is hand-written, so it is asserted rather than trusted |
+| Every trial terminates | Gold test with a loop, a throughput-less blocker and a cross-Portfolio edge in one run (KPI-4) |
+| Unlicensed is byte-identical to dependency-free | Gold test comparing percentiles with the licence off against the same data with references removed |
+| Relations are still fetched when only the parent override is set | Request assertion on the outbound call — the regression that would otherwise present as "this Portfolio has no dependencies" |
+| Linear identifiers land in `ReferenceId` space | Gold test on a fixture whose identifier is upper case; without the fold this passes ingestion and yields zero resolved dependencies |
+
+### C4
+
+System Context (L1), Container (L2) and Component (L3 — the forecasting subsystem: plan, verdict,
+trials, output) are rendered in `docs/feature/epic-4365-dependencies/feature-delta.md` → *Wave: DESIGN
+/ [REF] C4*.
+
+### Open items carried into DISTILL
+
+Nine forks and upstream corrections are written out in the feature delta under *Forks and upstream
+corrections*. Two were settled by the maintainer on 2026-08-14; the rest still need confirmation
+before the affected slice is dispatched. The ones that change scope rather than wording:
+
+1. **Slice 04 is four commits (F-6, settled).** Addressable draw stream → serial joint loop →
+   per-trial parallelism → cross-team honouring. DESIGN proposed a fifth — replacing the multi-team
+   aggregation — which was deferred, and with it went the only commit that would have moved a
+   dependency-free date. "Existing forecasts must not re-baseline" now holds without exception.
+2. **D8 stands (F-7, settled)** — drop the edge for that run and warn clearly, with the dependent's
+   dates labelled earliest-possible. ADR-112's unknown was considered and not applied one level out.
+3. **The Azure DevOps early return must test both overrides (F-4)**, or every Portfolio with a parent
+   override silently reports no dependencies.
+4. **D7's "detected at ingestion" becomes "detected by the one policy" (F-5)** — a stored cycle flag
+   would be a second source of truth for half the verdict.
+
+Plus three new open questions: the read path's honour-policy cost at instance scale (OQ-6), the EF
+mapping of the aggregate forecast histogram (OQ-7), and whether `FeatureDto`'s two additive fields
+trip the Lighthouse-Clients version gate (OQ-8).
