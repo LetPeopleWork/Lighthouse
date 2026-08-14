@@ -49,6 +49,10 @@ primary_jobs:
   # epic-5687-faster-updates SYNC-COST jobs (both flavours)
   - job-operator-sync-without-hammering-the-tracker  # epic-5687 (2026-08-08, #5687): refresh a decades-deep tracker without refetching the whole of it
   - job-operator-read-an-update-log-that-says-something  # epic-5687 (2026-08-08, #5687): one legible line per update instead of a page of iteration
+  # epic-5775-secret-encryption-key-custody SECRET-CUSTODY jobs (both flavours)
+  - job-operator-unique-key-without-effort  # epic-5775 (2026-08-14, #5775): a credential-protecting key that is this instance's alone, with nothing to configure
+  - job-operator-know-the-key-is-actually-in-effect  # epic-5775 (2026-08-14, #5775): see which key is in use and whether every stored secret reads under it
+  - job-saas-operator-tenant-owned-encryption-key  # epic-5775 (2026-08-14, #5775): per-tenant key owned by the cluster's own secret store
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate

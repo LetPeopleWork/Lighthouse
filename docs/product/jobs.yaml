@@ -39,6 +39,7 @@ feature_context:
   - epic-5146-jira-forge-app
   - quiet-deliberate-choices
   - epic-5375-manual-sorting
+  - epic-5775-secret-encryption-key-custody
 
 jobs:
   - id: job-rbac-bootstrap
@@ -4971,3 +4972,228 @@ jobs:
         satisfaction: 1 — the data exists in RefreshLog and is never surfaced, while the log emits volume
         instead of signal. Gap: 2 — small, entirely additive, and load-bearing for the epic's other two
         jobs, which is why it ships first despite ranking below them on value.
+
+  # ---------------------------------------------------------------------------
+  # epic-5775-secret-encryption-key-custody (2026-08-14, Epic #5775)
+  # ---------------------------------------------------------------------------
+
+  - id: job-operator-unique-key-without-effort
+    title: Get a credential-protecting key that is mine alone, without doing anything
+    persona: platform-operator
+    job_story: >
+      When I install Lighthouse — a downloaded exe, one docker run, or one helm install —
+      I want the credentials it stores for my work tracking systems protected by a key that exists
+      only on my instance,
+      so I can be sure a copy of my database is worthless to whoever takes it, without having read a
+      configuration page first.
+    dimensions:
+      functional: >
+        The instance obtains a unique 32-byte key on first start — generated for itself, or supplied
+        by configuration or an external secret store — and uses it for every secret it writes.
+      emotional: >
+        Move from an unexamined assumption ("presumably it handles that") to a settled fact, without
+        ever having had to hold the worry in between.
+      social: >
+        Answer a colleague's or a security team's question about stored credentials without hedging or
+        going to read the source.
+    forces:
+      push: >
+        A single AES key ships in appsettings.json in a public repository and is used by every install
+        that has not overridden it. Anyone who obtains the database file obtains every stored token.
+        The documented override reads a configuration path no code consumes, so the operators who did
+        try to fix this are still on the published key and have no way to know.
+      pull: >
+        Correct by default with nothing to configure — the same shape the OAuth state secret already
+        uses, where first boot generates the value and every restart resolves the same one.
+      anxiety: >
+        "If it starts generating a key, will my existing connections stop working and will I have to
+        re-enter every token?" (No — the published default is retired into the key ring on upgrade, so
+        existing secrets stay readable while new writes move to the instance's own key.)
+        "What happens if I lose that file?" (Every stored secret becomes unreadable. That is the
+        correct security property and it has to be stated, not discovered.)
+      habit: >
+        Operators expect to set an environment variable and assume it took effect. That habit is
+        currently punished rather than rewarded, which is what makes the silent default so damaging.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — this is the finding that costs evaluations, and it undermines every other
+        security claim the product makes. Current satisfaction: 1 — a unique key is nominally possible
+        and practically unreachable, because the documented route to it does nothing. Gap: 4 — the
+        highest-leverage job in the epic: fixing it retires the whole class of criticism.
+
+  - id: job-operator-rotate-key-without-recredentialing
+    title: Move every stored secret onto a new key without asking anyone for a token
+    persona: platform-operator
+    job_story: >
+      When my encryption key may have been exposed — a leaked backup, a departing administrator, or a
+      compliance schedule that says so —
+      I want to move every stored secret onto a new key from inside Lighthouse,
+      so I can contain the exposure the same afternoon instead of asking every team to re-enter every
+      credential.
+    dimensions:
+      functional: >
+        Generate a new key, make it active, re-encrypt every readable stored secret under it, retire
+        the old key without discarding it, and report what moved and what did not.
+      emotional: >
+        Move from dread — a key change today means chasing a dozen people for tokens with every sync
+        down — to control, measured in a number on a report.
+      social: >
+        Demonstrate competent incident response to a security officer, rather than explaining why
+        rotating the key is technically possible but operationally never done.
+    forces:
+      push: >
+        The documented procedure for changing the key is to change it and then reconfigure every work
+        tracking system. That is a full outage of every sync plus a credential-collection exercise, so
+        the rational response to a suspected exposure is currently to postpone it indefinitely.
+      pull: >
+        One action, no credential re-entry, resumable if interrupted, and a report that says whether it
+        worked.
+      anxiety: >
+        "What if rotation half-finishes and I lose secrets I cannot recover?" (Both keys stay in the
+        ring, the pass is resumable, and a secret that cannot be read is left byte-for-byte untouched
+        and named rather than overwritten.)
+        "What if it collides with a sync that is running?" (An open question answered by a probe before
+        the work is committed to, not by hoping.)
+      habit: >
+        Treat a key change as a disaster to be avoided. The surface has to lead with the cost that is
+        NOT being paid, because that is the belief being overturned.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — without rotation, a key exposure has no remedy short of re-credentialing the
+        whole instance, and "we can rotate" is a routine procurement question. Current satisfaction:
+        1 — the only supported answer today is documented as reconfiguring every connection. Gap: 4.
+
+  - id: job-operator-know-the-key-is-actually-in-effect
+    title: Find out which key this instance uses and whether every secret can be read with it
+    persona: platform-operator
+    job_story: >
+      When I have installed, upgraded, or changed the encryption key,
+      I want Lighthouse to tell me plainly which key it is using and whether every stored secret is
+      readable under it,
+      so I stop finding out from a work tracking system rejecting a credential at three in the morning.
+    dimensions:
+      functional: >
+        The key source and active key id are visible at startup and in the app; a read-only check
+        reports every stored secret's state — active key, retired key, legacy plaintext, unreadable —
+        with the connection and field that own it.
+      emotional: >
+        Move from suspicion to proof, and specifically from "I think I set that" to "I can see what is
+        in effect".
+      social: >
+        Give an auditor a verifiable answer rather than an assurance.
+    forces:
+      push: >
+        Decrypt currently catches its own failures and returns the ciphertext as though it were the
+        secret, so a wrong key is indistinguishable from a right one until a connector fails — and
+        then it looks like an expired token, sending the operator to fix the wrong thing. Nothing
+        anywhere reports which key is in use.
+      pull: >
+        One line at startup, one panel in settings, one read-only check that writes nothing.
+      anxiety: >
+        "Will checking write something or lock something?" (No — the check is read-only by
+        construction, which is the reason it exists separately from rotation.)
+        "Will a report full of states I do not understand help?" (The four states are named for what
+        the operator does about each.)
+      habit: >
+        Verify by triggering a sync and watching the log, which conflates key problems with credential
+        problems and is the reason the two get confused.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — not a blocker on its own, but it is what makes the other jobs verifiable, and
+        the absence of it is what kept the configuration-path defect hidden. Current satisfaction: 1 —
+        silent by design. Gap: 3.
+
+  - id: job-saas-operator-tenant-owned-encryption-key
+    title: Give each tenant a key its own secret store owns
+    persona: platform-operator
+    job_story: >
+      When I run many Lighthouse tenants on a cluster,
+      I want each tenant's secrets encrypted with a key that only that tenant's instance uses and that
+      an external secret store owns,
+      so one compromised tenant or one leaked backup does not expose every customer's tokens.
+    dimensions:
+      functional: >
+        The chart accepts a Secret an external store populates, generates a unique one per release when
+        nothing is supplied, and never regenerates it on upgrade.
+      emotional: >
+        Move from shared-fate anxiety to isolation: a per-tenant blast radius the operator can describe.
+      social: >
+        Pass an enterprise security review of a hosted install, and answer a procurement questionnaire
+        about tenant isolation with a mechanism rather than a policy.
+    forces:
+      push: >
+        The chart provisions a database connection string and an OIDC client secret and no encryption
+        key at all, so every Kubernetes install — including every tenant — runs on the published
+        default, and one database dump is every tenant's credentials.
+      pull: >
+        Chart-native, compatible with External Secrets Operator and OpenBao, and usable by a
+        self-hoster who supplies nothing at all.
+      anxiety: >
+        "Will an upgrade regenerate the key and orphan the tenant?" (The single most likely way to ship
+        this broken; it carries a chart unit test of its own.)
+        "Do I now need N rotation runbooks?" (Rotation is an in-app action, so the platform automates
+        one procedure rather than authoring one per tenant.)
+      habit: >
+        Put secrets in a values file, where they end up in a repository. The chart has to make the
+        better path the default one.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — multi-tenant isolation is the hosted product's core promise, and shared key
+        material contradicts it directly. Current satisfaction: 1 — the chart provisions nothing.
+        Gap: 4.
+
+  - id: job-maintainer-answer-the-secret-storage-question
+    title: Answer a prospect's security team about stored credentials, specifically and truthfully
+    persona: lighthouse-maintainer
+    job_story: >
+      When a prospect's security team asks how Lighthouse protects the credentials it stores,
+      I want to answer with a link to public documentation that matches what the product actually does
+      by default,
+      so I win the evaluation on the merits instead of losing it to an unfalsifiable doubt.
+    dimensions:
+      functional: >
+        Documentation, compliance self-assessment and security policy describe the shipped custody
+        modes, the rotation procedure, and what an operator must back up.
+      emotional: >
+        Move from defensive — pushing back on a claim while the docs quietly undermine the rebuttal —
+        to confident.
+      social: >
+        Be the vendor who volunteers the limits, in a market where the competing tools are judged on
+        exactly this.
+    forces:
+      push: >
+        An evaluation was already lost to "credentials are stored in plain text". The claim names the
+        wrong mechanism and lands close enough to the truth to stick, because the configuration page
+        documents an override no code reads and the compliance self-assessment cites per-installation
+        unique keys as evidence of secure-by-default.
+      pull: >
+        A page a security reviewer can complete an assessment from, with no maintainer in the loop.
+      anxiety: >
+        "Does publishing this detail invite scrutiny of what is still weak?" (Yes, and that is the
+        point: the alternative is a reviewer inventing a worse answer.)
+        "Does an advisory alarm existing users?" (It publishes when the fixed version is installable,
+        so they learn about it at the moment they can act.)
+      habit: >
+        Answer ad hoc, per prospect, in a chat thread — which does not scale and leaves the public
+        surface stale.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 2
+      gap: 2
+      rationale: >
+        Importance: 4 — it decides evaluations, but only after the underlying behaviour is worth
+        describing. Current satisfaction: 2 — the docs describe the right intent and the wrong
+        mechanism, which is better than nothing and worse than silence. Gap: 2 — small, and it gates
+        the release, because an advisory is only honest once the fix is installable.
