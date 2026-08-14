@@ -19,9 +19,11 @@ type: application
 # 0.1.11: app.embed.enabled — opt a tenant into the embed surface the Jira app signs viewers in
 #         through. Off everywhere until set; the chart had no way to reach the setting at all
 #         before this (Epic #5674).
-version: 0.1.11
+# 0.1.12: track the v26.8.14.1 release — incremental work-tracking sync behind an opt-in toggle
+#         (Epic 5687) and quiet Jira write-back (Epic 5500).
+version: 0.1.12
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-appVersion: "26.8.8.2"
+appVersion: "26.8.14.1"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse
