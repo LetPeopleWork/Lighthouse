@@ -83,7 +83,7 @@ Turn *Faster Updates* on and an update runs in two steps instead of one: it firs
 - **What each update did is in the log**: `Update completed | Team 'X' | mode=delta | scanned=250 | fetched=3 | …`. `scanned` is how much of the query was read, `fetched` how much was actually downloaded. Turn the toggle off and the same line reads `mode=full` with the two numbers equal — which is how you see for yourself what it is saving you.
 
 {: .note}
-This is preview scaffolding with a defined end. Once it has run against enough real instances it becomes the normal behaviour and the toggle goes away.
+Faster Updates ships as an opt-in and will eventually become the default. Please turn it on and try it out — and if something does not work the way you expect, tell us, so we can improve it before it goes live for everyone.
 
 If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
 

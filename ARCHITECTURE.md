@@ -6,7 +6,7 @@
 > - [ADR-027](docs/product/architecture/adr-027-target-architecture-modular-monolith-domain-events-cqrs-lite.md) — the accepted target-architecture decision this overview realises (D1–D8 + concurrency).
 > - [`brief.md`](docs/product/architecture/brief.md) — the per-feature DESIGN deltas (component decompositions, driving/driven ports per feature). Accreted over time; consult per feature.
 > - [`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md) — C4 Context / Container / Component diagrams.
-> - `adr-001 … adr-145` — point decisions (in that folder). The index at the end maps the load-bearing ones.
+> - `adr-001 … adr-153` — point decisions (in that folder). The index at the end maps the load-bearing ones.
 >
 > **Status.** The dispatcher seam, the seven enforced module boundaries, optimistic-concurrency tokens, the config-gated cluster substrate (§2), and the embed surface (§10) described below are all **implemented**, not aspirational. Where something is deliberately *not* built, it says so.
 >
@@ -314,5 +314,6 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 132 – 136 | Feature ordering: a derived total order (no ordering aggregate), rank-change domain event, ordering-policy setting |
 | **138 – 141** | **Two-phase incremental sync: sweep-then-download, the per-connection capability probe, the fetch fingerprint, time-driven derivations over the stored set (§ background refresh)** |
 | 142 – 145 | Write-back: optimistic notification suppression with a 403 retry, per-item batching with an unbatched retry, the collection seam (145 superseded, never built) |
+| 146 – 153 | Secret encryption and key custody: the envelope wire format, stored-secret states classified by inspection, the key ring and its retired default, the key store beside the database, builder-time resolution, per-row compare-and-swap re-encryption, the custody-mode admin surface, operator-supplied custody on Kubernetes. **Designed, not yet built — nothing in this release implements them** |
 
-The full set (001–145), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
+The full set (001–153), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).

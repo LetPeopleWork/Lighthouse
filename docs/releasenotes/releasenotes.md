@@ -4,6 +4,46 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.8.14.1
+
+## Faster Updates
+
+Every update asks your work tracking system for the full details of every Work Item the query returns — including the ones nobody has touched in weeks. On a large query that is most of the time an update spends, and most of the load Lighthouse puts on your tracker. On an on-premise instance with years of history, it is the difference between a refresh interval you can afford and one you cannot.
+
+Turn *Faster Updates* on under [System Settings → Configuration](https://docs.lighthouse.letpeople.work/settings/configuration.html#faster-updates) and an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved. On one real Jira Data Center instance, a Team update went from **468 seconds to 2** — same query, same Work Items, same result.
+
+Nothing about your data changes. The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update, exactly as before. And anything Lighthouse cannot be certain about — a connector that cannot sweep, a sweep that failed, a Work Item with no recorded change stamp — falls back to downloading everything. There is no half-updated state.
+
+It applies to **Jira Cloud, Jira Data Center and Azure DevOps** today. ServiceNow, Linear and CSV keep running the update they always have, whether the toggle is on or off.
+
+A setting that changes *what* an update asks for still costs you one full update: change the query, the Work Item types, the states, the state mapping, the Done cutoff or the additional fields, and the next update downloads everything again — the Work Items you already have were read under the old settings. The update after that is fast again.
+
+Faster Updates ships as an opt-in and will eventually become the default. Please turn it on and try it out — and if something does not work the way you expect, tell us, so we can improve it before it goes live for everyone.
+
+## Quiet Write-Back
+
+When Lighthouse writes a forecast back to Jira, it changes the issue the way a person would — and everyone watching that issue gets an email about it. On a Portfolio with a few hundred Features, that is a lot of mail nobody asked for.
+
+Lighthouse now asks Jira not to notify anyone about the values it writes. Both Cloud and Data Center are covered.
+
+Suppression needs a permission your account may not have, so Lighthouse checks rather than assumes. If the account does have it, the write is quiet. If it does not, **the write still happens** — and you get a warning in the log instead of silence. See [Jira](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#check-whether-your-account-can-suppress-notifications) for how to check whether your account qualifies and how to grant the permission if it does not.
+
+Quiet covers **email notifications only**. Every write still appears in the issue's history and is still visible to anyone looking at the issue — this hides the mail, not the change.
+
+## Bugfixes and Improvements
+- **Lighthouse no longer goes blank after a browser refresh** — a leftover service worker from an older version could serve a stale, broken page to anyone who hit reload. Lighthouse now uninstalls it on the next load, and a page that fails to render shows an error you can act on instead of nothing at all. Reported by Chris Graves.
+- **Blocked Item rules no longer mark your whole board blocked** — an earlier upgrade could leave a Blocked Item rule with no value behind it, which matched every Work Item. Existing rules now repair themselves, and a half-finished rule can no longer be saved in the first place.
+- **A Jira query ending in `ORDER BY` now works** — a data retrieval query whose last clause was an ordering was sent to Jira as invalid JQL, and the update came back empty.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Manuel Opitz](https://www.linkedin.com/in/manuel-opitz-3812351a9/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.8.8.2...v26.8.14.1)
+
 # Lighthouse v26.8.8.2
 
 ## Order Your Features Yourself

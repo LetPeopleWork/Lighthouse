@@ -54,7 +54,7 @@ Update completed | Team 'Zenith' | mode=full | scanned=4013 | fetched=4013 | dur
 
 | Field | Meaning |
 |-------|---------|
-| `mode` | How much had to be fetched. Currently always `full` |
+| `mode` | How much had to be fetched. `full` downloads every record the query returned; `delta` downloads only the ones that changed since the last update. See [Faster Updates](configuration.html#faster-updates) |
 | `scanned` | How many records the work tracking system returned |
 | `fetched` | How many of those were downloaded in full |
 | `duration` | How long the update took, in milliseconds |
