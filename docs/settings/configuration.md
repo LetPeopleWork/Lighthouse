@@ -76,7 +76,9 @@ Every update asks your work tracking system for the full details of every Work I
 Turn *Faster Updates* on and an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved.
 
 - **Nothing about your data changes.** The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update, exactly as before.
-- **It applies to Jira Cloud today.** Other connectors keep running the update they always have, whether the toggle is on or not — support is being added connector by connector.
+- **It applies to Jira Cloud, Jira Data Center and Azure DevOps today.** ServiceNow, Linear and CSV keep running the update they always have, whether the toggle is on or not.
+- **A setting that changes what an update asks for costs you one full update.** Change the query, the Work Item types, the states, the state mapping, the Done cutoff or the additional fields, and the next update downloads everything again — the Work Items you already have were read under the old settings, so they cannot be trusted to still be right. The update after that is fast again.
+- **Editing a query no longer throws away what Lighthouse already stored** — and this holds whether the toggle is on or off. Before, changing anything about how a team or portfolio is fetched discarded its Work Items along with the state transitions recorded for them. Now only pointing a team or portfolio at a *different* work tracking connection does that, because that is the one edit where the same ID genuinely means a different Work Item.
 - **The toggle takes effect on the next update.** No restart.
 - **What each update did is in the log**: `Update completed | Team 'X' | mode=delta | scanned=250 | fetched=3 | …`. `scanned` is how much of the query was read, `fetched` how much was actually downloaded. Turn the toggle off and the same line reads `mode=full` with the two numbers equal — which is how you see for yourself what it is saving you.
 
