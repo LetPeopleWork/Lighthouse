@@ -405,8 +405,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var results = new List<WriteBackItemResult>();
 
-            // Grouped by work item first: one patch document per item carries every changed field on it
-            // (ADR-143). Chunking and the throttle still bound how many items are in flight at once.
+            // Grouped by work item first so every field changing on one item travels in a single patch
+            // document — Azure DevOps stamps a new revision per call, so writing six fields one at a time
+            // buries the item's history under six revisions of our own making. Chunking and the throttle
+            // still bound how many items are in flight at once.
             foreach (var batch in updates.GroupBy(update => update.WorkItemId).Chunk(MaxChunkSize))
             {
                 var batchTasks = batch.Select(async itemUpdates => await UpdateItem(url, witClient, itemUpdates.Key, [.. itemUpdates]));

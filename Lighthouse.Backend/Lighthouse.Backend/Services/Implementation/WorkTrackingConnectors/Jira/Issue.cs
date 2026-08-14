@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public DateTime? CreatedDate { get; set;}
 
-        /// <summary>When Jira says the issue last changed (Epic #5687, D6). Null when the tracker did not report it.</summary>
+        /// <summary>When Jira says the issue last changed — the stamp an incremental sweep compares to decide whether the issue needs downloading. Null when the tracker did not report it.</summary>
         public DateTime? Updated { get; set; }
 
         public DateTime? ClosedDate { get; set;}
