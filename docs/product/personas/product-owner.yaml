@@ -19,6 +19,7 @@ short_description: >
 
 primary_jobs:
   - job-po-deep-dive-item-state-time
+  - job-po-see-what-a-feature-is-waiting-on  # epic-4365-dependencies (2026-08-14, #4365): see what a Feature waits on without opening the tracker
 
 goals:
   - Explain where a slipped or escalated item spent its time, per workflow state, without

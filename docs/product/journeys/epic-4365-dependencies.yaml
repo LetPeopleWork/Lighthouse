@@ -1,0 +1,254 @@
+schema_version: 1
+feature_id: epic-4365-dependencies
+updated: 2026-08-14
+note: >
+  ADO Epic #4365 "Dependencies", created 2026-02-23, tagged Premium / Documentation / Release Notes.
+  The description was a sketch; this journey is the result of the DISCUSS dive-in on 2026-08-14 and is
+  grounded in a pre-DISCUSS code reality check (ForecastService.cs, Feature.cs, WorkItemBase.cs,
+  FeatureOrdering.cs, FeatureComparer.cs, ManualRankComparer.cs, FeatureRepository.cs, FeatureDto.cs,
+  FeaturesController.cs, IWorkTrackingConnector.cs, AzureDevOpsWorkTrackingConnector.cs +
+  WorkItemExtensions.cs, JiraWorkTrackingConnector.cs, LinearWorkTrackingConnector.cs,
+  WorkTrackingSystemOptionsOwner.cs, FeaturesView.tsx, FeatureListDataGrid/columns.tsx,
+  WarningsIndicator.tsx, useLicenseRestrictions.ts, TerminologyKeys.ts).
+
+  Six load-bearing finds the sketch did not carry:
+
+  (1) "Jump over" is NOT a date shift. GetSimulationResultsOfFeatureToUpdate (:201-209) draws each
+  simulated day's throughput from the first min(FeatureWIP, remaining) Features in order, so excluding
+  a waiting Feature hands its capacity to the Features BELOW it, which finish EARLIER. Computing
+  max(own, blocker) afterwards would get the waiting Feature roughly right and every other Feature
+  wrong. The mechanic must live inside the trial.
+
+  (2) The simulation is PER-TEAM and INDEPENDENT. RunMonteCarloSimulation (:108-131) groups by team
+  and runs each group's 10,000 trials in its own Task.Run with its own day counter. Cross-team
+  dependencies — most real ones — are unreachable without restructuring that loop. The user chose to
+  restructure it (D3).
+
+  (3) TERMINATION is the binding constraint, not any functional requirement. A cycle, or a blocker
+  whose team has no throughput, means the dependent is never eligible and
+  while (GetRemainingItems() > 0) never ends. D7 and D8 exist to prevent a hang, not to be tidy.
+
+  (4) The surface already exists and was built for this. Epic #5375's D17 says in as many words that
+  the general Features view is "the surface that will later host ADO Epic #4365 'Dependencies'". The
+  warnings column the epic asks for is WarningsIndicator.tsx. This epic writes a column and a dialog.
+
+  (5) "Blocked" is already taken. Epic #5074 shipped WorkItem.IsBlocked / BlockedSince, and
+  TerminologyKeys.ts:18 makes `blocked` renameable. The UI word here is "depends on" (D10).
+
+  (6) Only three connectors have a standard field, and they return three different shapes. ADO already
+  requests WorkItemExpand.Relations on the parent path (:1043) but its relation URL carries an id and
+  no title; Jira sends an explicit fields= list that must gain issuelinks, and returns the summary
+  inline; Linear returns titles inline via GraphQL. ServiceNow and CSV have no such field at all.
+
+journeys:
+
+  - name: forecast-in-the-order-work-can-happen
+    goal: >
+      A delivery forecaster whose Portfolio contains work that cannot start yet gets dates that say so:
+      the waiting Feature's percentiles move out, the Features behind it move in because they now get
+      the capacity, and every dependency the forecast could not honour is named on screen rather than
+      silently dropped.
+    persona: "delivery-forecaster (primary: consumes the dates); product-owner (declares the
+      dependency the tracker never had, and owns the order it interacts with); delivery-lead-rte
+      (scans for the edges Lighthouse cannot act on)"
+    jobs:
+      - job-forecast-honours-what-cannot-start-yet
+      - job-forecast-covers-dependencies-that-cross-teams
+      - job-forecaster-know-the-forecast-is-ignoring-a-dependency
+
+    emotional_arc:
+      start: >
+        Quietly uneasy — "this Feature cannot start until the platform team finishes theirs, and
+        Lighthouse gives me a date as though it could start tomorrow. I know the number is optimistic
+        and I cannot say by how much, so I add a caveat out loud and hope nobody writes the date down."
+      middle: >
+        Oriented — "the column says it waits on two. One of them is done, the other is in progress on
+        another team. And the warning tells me the third link points outside this Portfolio, so it is
+        not in the number."
+      end: >
+        Accountable — "this date already accounts for what we are waiting on, and the ones behind it
+        came in because that capacity went somewhere. If something was excluded, the row says which
+        and why."
+
+    design_decisions_resolved:
+      - id: D1
+        question: What grain carries a dependency?
+        decision: >
+          Features only, as a directed "cannot start until" edge. Straight from the epic. Work-item
+          dependencies have no consumer, because the simulation sequences Features — the same argument
+          epic-5375 used to keep manual ordering at Feature grain.
+      - id: D2
+        question: How does the forecast honour a dependency?
+        decision: >
+          By EXCLUDING the dependent from the eligible set inside each trial, not by shifting dates
+          afterwards. A Feature whose blockers still have remaining work in this trial cannot receive
+          throughput; the FeatureWIP window slides down to the Features below it. The post-hoc
+          max(own, blocker) alternative was considered and rejected because it never frees the
+          capacity, so every Feature ranked below a waiting one keeps a date that assumes work nobody
+          is doing.
+      - id: D3
+        question: How are dependencies that cross teams handled?
+        decision: >
+          One JOINT simulation replaces the per-team independent runs (user, 2026-08-14). One trial
+          advances a shared day clock; each day, every team with throughput draws and consumes from its
+          own rows. Distribution-preserving with no dependency present — each team only ever consumes
+          its own SimulationResult rows — so existing forecasts do not re-baseline beyond Monte Carlo
+          noise, asserted under a fixed seed. The cost is the parallelism shape: concurrency moves from
+          per-team to per-trial. The alternatives were same-team-only (ships sooner, ignores the
+          majority case) and a post-hoc date shift (cross-team capable but wrong per D2).
+      - id: D4
+        question: Where does a dependency come from?
+        decision: >
+          The work tracking system, always. Lighthouse never authors one (user, 2026-08-14). The
+          default source is the standard link per connector; a Portfolio may override WHICH FIELD
+          carries them, in the exact shape of ParentOverrideAdditionalFieldDefinitionId
+          (IWorkItemQueryOwner:27) — once per Portfolio. When the override is set the connector skips
+          the relation fetch entirely, copying the early return at
+          AzureDevOpsWorkTrackingConnector.cs:1014-1018.
+
+          A per-Feature declaration made inside Lighthouse was considered and rejected: it would make
+          Lighthouse an author of dependency data, which is a different posture from the one it takes
+          everywhere else, and it would need a precedence rule against the tracker that this one does
+          not. To change a dependency, change it in the tracker.
+      - id: D15
+        question: How does one field express a LIST of dependencies?
+        decision: >
+          Split on comma or semicolon, trim, resolve each entry against the same reference-id space
+          ParentReferenceId uses, skip entries that resolve to nothing while keeping the rest. This is
+          the only genuine difference from the parent override, which is 0..1 and can return a single
+          string (GetParentReference, :1095-1106). Skipping rather than failing matters because a
+          hand-maintained text field will contain typos, and one typo must not discard the three good
+          references beside it. Separator fixed, not configurable.
+      - id: D5
+        question: Where is the edge stored?
+        decision: >
+          Its own persisted relation, never on a synced field — WorkItemBase.Update overwrites every
+          synced field on every refresh, which is exactly why Feature.ManualRank sits outside it.
+          Because D4 makes every edge tracker-sourced, the store needs no origin discriminator and has
+          exactly one writer: the sync's reconcile, which replaces a Feature's edges wholesale with
+          whatever the current source — link or override field — now says.
+      - id: D6
+        question: How far does a dependency reach?
+        decision: >
+          The forecast honours it only when both Features share at least one Portfolio (Feature to
+          Portfolio is many-to-many). An edge pointing outside is detected, stored, shown and warned —
+          never silently dropped, never forecast. The epic's own reasoning: a Portfolio's forecast
+          should not depend on Features its viewers may not be able to read.
+      - id: D7
+        question: What happens to a dependency loop?
+        decision: >
+          Detected at ingestion; the edge that closes the loop is excluded from the honoured set and
+          every member is warned. Under D2 this is a termination guarantee: a cycle means no member is
+          ever eligible, so the simulation's while loop never ends. Detecting at ingestion keeps the
+          loop itself free of any cycle logic.
+      - id: D8
+        question: What happens when the blocker can never complete in this run?
+        decision: >
+          The edge is dropped for that run and the dependent is warned. Three cases, one rule: a
+          blocker already finished has no SimulationResult row and costs nothing; a blocker whose team
+          has no throughput is excluded from the run entirely; a blocker outside the run's Feature set
+          likewise never completes. The last two would otherwise make the dependent wait forever.
+      - id: D9
+        question: What does the premium licence gate?
+        decision: >
+          The forecast effect, and nothing else. Detection, the count, the dialog, the warnings and
+          the Portfolio's dependency-field setting are all FREE, and an unlicensed instance
+          additionally gets a hint saying the dependency is not in the forecast — verbatim from the
+          epic. Same posture as epic-5375: show the truth, gate the mechanism. The field setting is
+          free because it is what makes detection work at all on an instance whose tracker does not
+          use standard links.
+      - id: D10
+        question: What is this called in the UI?
+        decision: >
+          "Depends on", never "blocked". TERMINOLOGY_KEYS.BLOCKED and WorkItem.IsBlocked already name
+          epic-5074's shipped concept, and `blocked` is renameable per instance — two meanings of one
+          renameable word on the same row is a defect in waiting. Feature / Features / Portfolios /
+          Work Items resolve through getTerm as everywhere else. ADO's "Predecessor" and Jira's "is
+          blocked by" are read, not shown.
+      - id: D11
+        question: Where does the UI live?
+        decision: >
+          Two EXISTING surfaces: the instance-wide Features view built by epic-5375's D17 for exactly
+          this, and the existing Portfolio detail Feature list — both through the shared
+          FeatureListDataGrid and its columns factory, so the column is written once. The "which items
+          do we depend on" list is a dialog off the row. No new page.
+      - id: D12
+        question: What if the blocker is ranked BELOW its dependent?
+        decision: >
+          A warning, never an auto-reorder. The epic's "ordered lower will cause a mess". The forecast
+          still honours the edge and still terminates — the dependent is skipped, capacity flows past
+          it, the blocker eventually completes. So the situation is counter-intuitive rather than
+          broken, and the warning is what explains why the board disagrees with the stated priority.
+          Ordering stays the user's decision, which is epic-5375's whole premise.
+      - id: D13
+        question: Which connectors?
+        decision: >
+          ADO first, then Jira and Linear. ServiceNow and CSV are OUT — no standard dependency field
+          exists in either, so supporting them means inventing a convention, which is a different epic.
+      - id: D14
+        question: Which direction is fetched?
+        decision: >
+          Only "waiting on": ADO System.LinkTypes.Dependency-Reverse, Jira issuelinks where
+          type.inward = "is blocked by" AND an inwardIssue is present, Linear's dependencies
+          connection. The reverse direction is derived by inverting stored edges rather than fetched,
+          which would double the request cost to learn something already held.
+
+    shared_artifacts:
+      - name: dependency edge
+        source_of_truth: >
+          The new persisted relation (D5), with exactly ONE writer: the sync's reconcile. There is no
+          second writer anywhere in the product, because Lighthouse never authors an edge (D4). Never
+          written by WorkItemBase.Update.
+      - name: honour-ability verdict
+        source_of_truth: >
+          One decision point (D6, D7, D8 combined) consulted by both the warnings and the simulation's
+          eligibility rule. Two independent implementations — one for display, one for the forecast —
+          is the failure mode the "exactly one place decides" KPI exists to catch, because it would
+          show a warning that does not match what the dates actually did.
+      - name: Feature order
+        source_of_truth: >
+          IFeatureOrdering, owned by epic-5375. Read here for the ranked-below warning and for the
+          sequence the simulation walks. Never written by this feature.
+      - name: per-trial completion state
+        source_of_truth: >
+          The existing SimulationResult remaining count, reset by ResetRemainingItems() at the top of
+          each trial. "Has this blocker finished" is derived from it rather than tracked separately —
+          a second piece of per-trial state would need its own reset and is the obvious place for a
+          trial to leak into the next one.
+
+    error_paths:
+      - trigger: A dependency points at a Feature in no shared Portfolio
+        recovery: >
+          Stored and shown with a warning naming the other Feature and stating it is not included in
+          the forecast. No date changes.
+      - trigger: Dependencies form a loop
+        recovery: >
+          The closing edge is excluded at ingestion and every member is warned, naming the others. The
+          forecast completes in normal time. A declaration that would close a loop is refused at the
+          point of the action, with the loop named, rather than accepted and later warned about.
+      - trigger: The blocker's team has no throughput, or the blocker is absent from the run
+        recovery: >
+          The edge is dropped for that run and the dependent is warned that its date ignores it. The
+          run terminates. Without this the simulation hangs, and only on instances with a
+          throughput-less team — which is most of them, eventually.
+      - trigger: A relation points at a work item that is not a Feature Lighthouse stores
+        recovery: >
+          Skipped silently, excluded from the count. The ADO relation URL carries an id and not a
+          type, so this is the normal case rather than an exception.
+      - trigger: A link is removed in the tracker
+        recovery: >
+          The next sync reconciles a Feature's edges against what the tracker now says, so the count
+          drops. There is nothing to preserve across the reconcile, because every edge comes from the
+          tracker (D4).
+      - trigger: The Portfolio's dependency override names a field, and an entry in it is a typo
+        recovery: >
+          That entry is skipped and the rest of the list still yields edges (D15). Shown in the dialog
+          as unresolved rather than dropped in silence.
+      - trigger: The user cannot read a Feature that one of their Features waits on
+        recovery: >
+          Rendered as a redacted row naming the reason, never omitted. A hidden blocker is worse than
+          an unnamed one.
+      - trigger: The instance has no premium licence
+        recovery: >
+          Detection, count, dialog and warnings all still render, plus a hint naming what is withheld.
+          Forecast values are identical to a run with no dependency data — nothing half-applied.

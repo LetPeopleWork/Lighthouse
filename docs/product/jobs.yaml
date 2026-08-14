@@ -40,6 +40,7 @@ feature_context:
   - quiet-deliberate-choices
   - epic-5375-manual-sorting
   - epic-5775-secret-encryption-key-custody
+  - epic-4365-dependencies
 
 jobs:
   - id: job-rbac-bootstrap
@@ -5244,3 +5245,285 @@ jobs:
         satisfaction: 1 — the form is silent; the answer exists somewhere nobody is looking at the
         time. Gap: 3 — and unusually cheap: one notice, one string, no dependency on the key work,
         because every claim in it is already true.
+
+  - id: job-forecast-honours-what-cannot-start-yet
+    title: Forecast in the order work can actually happen
+    persona: delivery-forecaster
+    feature_context: epic-4365-dependencies
+    created: 2026-08-14
+    note: >
+      NEW in epic-4365-dependencies (ADO Epic #4365, created 2026-02-23, tagged Premium). The epic's
+      one-line ask — "in the forecast, jump over them until the dependent Features are forecasted to be
+      done" — turns out to be a statement about WHERE the mechanic lives.
+      ForecastService.GetSimulationResultsOfFeatureToUpdate (:201-209) draws each simulated day's
+      throughput from the first min(FeatureWIP, remaining) Features in order, so excluding a waiting
+      Feature does not merely push its own dates out: it hands its capacity to the Features BELOW it,
+      which finish EARLIER. The obvious cheap alternative — computing max(own date, blocker's date)
+      afterwards — gets the waiting Feature roughly right and every other Feature in the Portfolio
+      wrong, because the capacity is never freed. That is why this job is about the whole board's
+      dates rather than one Feature's.
+    job_story: >
+      When one Feature cannot start until another finishes, I want the forecast to simulate that
+      constraint rather than assume everything could start today, so the dates I present to
+      stakeholders describe an order the work can actually happen in.
+    dimensions:
+      functional: >
+        A waiting Feature stops consuming simulated throughput until its blockers are done within the
+        same trial, and the Features behind it consume it instead.
+      emotional: >
+        Move from "I know this date is optimistic and I cannot say by how much" to presenting a number
+        I would defend.
+      social: >
+        Answer "can we commit to that?" with a date that already accounts for what we are waiting on,
+        rather than with a caveat delivered verbally after the number.
+    forces:
+      push: >
+        There is no workaround inside Lighthouse and no partial one outside it. Nothing in the product
+        can express "not yet", so every forecast on every instance silently assumes every Feature is
+        startable today. The error is invisible and always in the optimistic direction.
+      pull: >
+        Dates that move when the thing you are waiting on moves, without anyone maintaining a
+        spreadsheet beside the tool.
+      anxiety: >
+        "If dependencies start moving my dates, will I still understand where a date came from?"
+        Answered by the warnings this feature ships alongside: every edge that does NOT count says so,
+        which is the job job-lead-see-where-the-dependency-chain-breaks.
+      habit: >
+        Teams already track dependencies — in the tracker, on a wall, in a risk log. The change is
+        that the forecast reads them, not that anyone starts recording them.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — this is the product's core output, and it is computed against an assumption
+        that is known to be false whenever a dependency exists. Current satisfaction: 0, not "poor":
+        there is no partial workaround, because nothing in the data model can represent the constraint
+        at all. Gap: 5, the joint highest in this feature.
+
+  - id: job-forecast-covers-dependencies-that-cross-teams
+    title: Count the dependency on the other team's Feature too
+    persona: delivery-forecaster
+    feature_context: epic-4365-dependencies
+    created: 2026-08-14
+    note: >
+      Scored separately from job-forecast-honours-what-cannot-start-yet despite sharing its importance,
+      because it is the half that costs a forecasting-engine change, and separating them is what lets
+      the cheaper half ship first. RunMonteCarloSimulation (ForecastService.cs:108-131) groups
+      simulationResults by team and runs each group's 10,000 trials in its own Task.Run with its own
+      day counter, so inside one trial of team T no other team's Features exist and no other team's
+      completion day is knowable. A dependency inside one Portfolio very often crosses teams, so this
+      is not an edge case — it is most of the population.
+    job_story: >
+      When the Feature I am waiting on is being built by another team, I want the forecast to account
+      for it just as it would a Feature of my own, so the most common kind of real dependency stops
+      being the one the tool ignores.
+    dimensions:
+      functional: >
+        One simulation trial covers every team against a shared day clock, so a blocker on any team
+        constrains its dependent on any other.
+      emotional: >
+        Move from "the tool handles the easy half" to trusting it with the coordination problem that
+        is actually hard.
+      social: >
+        Make a cross-team commitment in a planning forum with a number behind it, rather than with two
+        separate forecasts compared by hand in a spreadsheet.
+    forces:
+      push: >
+        Cross-team is where dependency pain actually lives; a same-team dependency is usually visible
+        to the person doing the work anyway.
+      pull: >
+        One forecast that spans the teams, instead of two forecasts and a manual reconciliation.
+      anxiety: >
+        "Does rewriting the simulation loop change every date I have already shown people?" Answered
+        by the design: with no dependency present the joint loop is distribution-preserving, because
+        each team only ever consumes its own simulation rows. Asserted under a fixed seed rather than
+        argued.
+      habit: >
+        Cross-team dependencies are already managed in planning events. The change is that the
+        forecast stops disagreeing with what those events concluded.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — same core output, and this is the majority case. Current satisfaction: 0 for
+        the same reason as the job above. Gap: 5. Kept as its own job because its cost profile is
+        completely different: the other half is an eligibility rule, this half is the simulation loop.
+
+  - id: job-po-see-what-a-feature-is-waiting-on
+    title: See what a Feature is waiting on without leaving Lighthouse
+    persona: product-owner
+    feature_context: epic-4365-dependencies
+    created: 2026-08-14
+    job_story: >
+      When a Feature looks stalled or late, I want to see which other Features it is waiting on and
+      what state they are in, so I can tell whether the wait is nearly over without opening the work
+      tracking system.
+    dimensions:
+      functional: >
+        A count on every Feature list and a dialog listing each Feature waited on, with its state, its
+        Portfolios and a link to the tracker record.
+      emotional: >
+        Move from discovering a dependency mid-review to knowing about it while reading the board.
+      social: >
+        Answer "why has that not started?" in the meeting rather than afterwards by email.
+    forces:
+      push: >
+        The answer exists, in the tracker, one context switch away — and nobody makes that switch
+        while reading a forecast, which is precisely when it matters.
+      pull: >
+        The fact and the dates on one screen.
+      anxiety: >
+        "Will another column make an already busy list unreadable?" Mitigated by shipping a count
+        rather than a list, and putting the detail behind a click.
+      habit: >
+        Product owners already check the tracker for links. The change is not having to.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — a diagnostic that precedes a decision rather than being one. Current
+        satisfaction: 1, not 0, because a real workaround exists: go and read the tracker. Gap: 3.
+
+  - id: job-config-admin-point-at-the-field-that-carries-dependencies
+    title: Name the field our dependencies actually live in
+    persona: config-admin
+    feature_context: epic-4365-dependencies
+    created: 2026-08-14
+    note: >
+      RESOLVED by the user on 2026-08-14: the epic's "potentially allow the user to override (similar
+      to parent override)" means the per-Portfolio pointer at a tracker field, in the shape of
+      ParentOverrideAdditionalFieldDefinitionId (IWorkItemQueryOwner:27) — once per Portfolio, not a
+      per-Feature value. A per-Feature declaration made inside Lighthouse was considered during the
+      DISCUSS wave and rejected: it would make Lighthouse an author of dependency data rather than a
+      reader of it.
+
+      One real difference from the parent override, and it is where the work is: a parent is 0..1, so
+      GetParentReference (AzureDevOpsWorkTrackingConnector.cs:1095-1106) returns one string. A
+      dependency list is 0..n, so the field's value has to be split and each entry resolved
+      independently, with an unresolvable entry skipped rather than discarding the list beside it.
+    job_story: >
+      When my teams record dependencies in a custom field rather than the tracker's built-in link
+      type, I want to tell Lighthouse which field that is, once, for the whole Portfolio, so our
+      instance gets dependency forecasting without anyone re-recording anything.
+    dimensions:
+      functional: >
+        A per-Portfolio setting naming an additional field; when set, the connector reads dependencies
+        from it and skips the relation fetch entirely.
+      emotional: >
+        Move from "this feature is not for us, our tracker is configured differently" to setting one
+        dropdown and having it work.
+      social: >
+        Avoid being the admin who has to tell a team their process is wrong for the tool.
+    forces:
+      push: >
+        Without it the instance gets nothing at all — not a degraded version, an empty column — and
+        the reason is invisible: the tracker holds the data, in a field the connector does not read.
+      pull: >
+        One dropdown beside the parent override the same person already set.
+      anxiety: >
+        "If I point it at the wrong field, does the forecast quietly go wrong?" Mitigated because an
+        entry that resolves to no Feature is skipped and shown as skipped, rather than guessed at.
+      habit: >
+        Config admins already map fields for this connection; this is one more row in a form they
+        have filled in before.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 rather than 5 because it is conditional on how a given tracker is configured:
+        for the instances it applies to it is worth 5, and for the rest it is worth nothing. Current
+        satisfaction: 0 — such an instance sees an empty column with no explanation. Gap: 4.
+
+  - id: job-lead-see-where-the-dependency-chain-breaks
+    title: Find the dependencies Lighthouse cannot act on
+    persona: delivery-lead-rte
+    feature_context: epic-4365-dependencies
+    created: 2026-08-14
+    note: >
+      Three distinct break kinds, deliberately kept as one job because the persona's need is one scan
+      rather than three: an edge pointing outside the Portfolio (Feature to Portfolio is many-to-many,
+      LighthouseAppContext.cs:217-219, so this means "shares no Portfolio"); a blocker ranked BELOW its
+      dependent, which is the epic's own "that will cause a mess"; and a loop, which the epic names as
+      the thing that must never hang the forecast.
+    job_story: >
+      When a dependency cannot be honoured — it points outside the Portfolio, its blocker is ranked
+      below it, or it forms a loop — I want to be told plainly, so I find the broken links by scanning
+      a list rather than by auditing every Feature.
+    dimensions:
+      functional: >
+        A warning per break kind on the Feature lists, each naming the other Feature involved, and no
+        warning at all on a dependency the forecast honours.
+      emotional: >
+        Move from suspecting the dates hide something to knowing exactly what was excluded and why.
+      social: >
+        Bring a specific finding to a planning forum — "these two are in a loop" — rather than a
+        general worry about data quality.
+    forces:
+      push: >
+        Today a healthy dependency and an unhonourable one are indistinguishable, because neither is
+        visible at all.
+      pull: >
+        One scan of a list, and the exceptions announce themselves.
+      anxiety: >
+        "Will this become another column of noise?" Answered by the rule that a dependency the
+        forecast honours produces NO warning — the presence of a dependency is not a problem.
+      habit: >
+        Delivery leads already scan boards for exceptions; this adds a kind rather than a ritual.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 0
+      gap: 3
+      rationale: >
+        Importance: 3 — a diagnostic rather than an outcome, which is why it scores below the forecast
+        jobs. But it is the job that stops the other five from being quietly wrong, and without it a
+        silently-excluded dependency is indistinguishable from an honoured one.
+
+  - id: job-forecaster-know-the-forecast-is-ignoring-a-dependency
+    title: Know when these dates do not account for a dependency
+    persona: delivery-forecaster
+    feature_context: epic-4365-dependencies
+    created: 2026-08-14
+    note: >
+      Straight from the epic: "If we don't have a premium license, you will see the warning that the
+      item has a dependency together with the hint that it's not taken into account in the forecasting
+      unless you have premium." Same posture as epic-5375's licensing decision — show the truth, gate
+      the mechanism — and for the same reason: withholding the fact would be withholding an
+      explanation for dates the user is already being shown.
+    job_story: >
+      When my instance is not licensed for dependency-aware forecasting, I want to be told that a
+      Feature has a dependency and that these dates do not account for it, so I do not present them as
+      though they did.
+    dimensions:
+      functional: >
+        The count, the dialog and a hint naming what is withheld, on an unlicensed instance, with
+        forecast values identical to a run with no dependency data at all.
+      emotional: >
+        Move from unknowing confidence to informed caution — the worst state is the one where the
+        number looks the same either way.
+      social: >
+        Present a date with an honest qualifier rather than discovering the omission after committing
+        to it.
+    forces:
+      push: >
+        An unlicensed instance is not merely unlicensed today, it is uninformed: its dates carry
+        exactly as much apparent authority as a licensed instance's.
+      pull: >
+        A one-line warning that changes how the number is presented.
+      anxiety: >
+        "Is this just an upsell in my board?" Mitigated by the hint naming the specific Feature and
+        the specific thing being ignored, so it is information first and an offer second.
+      habit: >
+        Nothing to unlearn — the behaviour is new information on a screen already being read.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — being wrong quietly is worse than being limited loudly, and this job is what
+        converts the first into the second. Current satisfaction: 0 — nothing on an unlicensed
+        instance hints that anything is missing. Cheap to satisfy: it rides entirely on the free
+        detection and display work.
