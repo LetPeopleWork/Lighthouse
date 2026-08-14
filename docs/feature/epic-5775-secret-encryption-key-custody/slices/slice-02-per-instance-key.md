@@ -17,7 +17,9 @@ an instance upgrading from the published default keeps reading every secret it a
 - Precedence: an operator-supplied key wins over a generated one, and is reported as such.
 - **The literal key is removed from `appsettings.json`** and enters the ring as a retired entry, so an
   upgrading instance reads its existing secrets while writing new ones under its own key.
-- Key source and active key id on the startup log and the System Info surface. Never the key material.
+- Key source and active key id on the startup log, and on Settings → System reading from the
+  System-Admin-guarded encryption endpoint — **not** from `GET /systeminfo`, which is `[Authorize]`
+  only and so reaches every embed viewer (DESIGN F-4). Never the key material.
 - **The key store resolves beside the database by default**, and the resolved path appears in the
   startup line. Today it defaults to `ContentRootPath/data-protection-keys` — `/app/data-protection-keys`
   in the container — while the documented Docker setup mounts a volume at `/app/Data` and puts the
@@ -27,6 +29,11 @@ an instance upgrading from the published default keeps reading every secret it a
   mounted their data volume keeps their key by doing nothing.
 - Fail fast when a key store exists and cannot be read — no silent regeneration, because a fresh key on
   an existing database looks like a successful boot and orphans every secret in it.
+- **Refuse to mint where durability cannot be argued** (DESIGN F-3, ADR-149). The standalone launcher
+  already colocates key store and database, so the Docker case is the one this fixes; a hand-rolled
+  Postgres install has no local database file to sit beside. An existing instance in that position
+  keeps running on the legacy key and says so loudly; a fresh one refuses to start with two one-line
+  remedies. Never mint a key you cannot promise to still have tomorrow.
 - A supplied key that is not 32 bytes of base64 stops startup and says what is wrong with it.
 
 ## OUT of scope

@@ -33,6 +33,7 @@ primary_jobs:
   - job-snow-admin-connect-servicenow  # epic-5513-servicenow-integration (2026-07-27, #5513): connect a ServiceNow instance with the rights the platform team will actually grant
   - job-config-admin-know-which-settings-cost-a-refetch  # epic-5687-faster-updates (2026-08-08, #5687): let Lighthouse decide whether an edit changes what has to be pulled
   - job-operator-rotate-key-without-recredentialing  # epic-5775-secret-encryption-key-custody (2026-08-14, #5775): move every stored secret onto a new key without re-entering a credential
+  - job-config-admin-paste-a-credential-with-confidence  # epic-5775-secret-encryption-key-custody (2026-08-14, #5775): know what happens to a token before pasting it, in plain words, at the form
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted

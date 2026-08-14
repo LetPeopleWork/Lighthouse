@@ -14,10 +14,18 @@ own that key instead, and an upgrade never takes it away.
 
 - `encryption.existingSecret` — the deployment reads the key from a Secret that External Secrets
   Operator or OpenBao populates, and the chart renders no key of its own.
-- Generate-if-absent — with nothing supplied, the chart creates a unique random key into its own Secret
-  on first install.
-- **Upgrade idempotence.** A `helm upgrade` with unchanged values must never regenerate a generated
-  key. This is the whole risk of the slice and it gets its own chart unit test.
+- **Fail at render with nothing supplied** (DESIGN F-1, ADR-153). With neither `encryption.key` nor
+  `encryption.existingSecret`, `helm install` fails immediately with a message naming both, reusing the
+  `required` precedent ADR-082 already set for `postgresql.auth.password`. The chart does **not**
+  generate a key: the only mechanism is Helm `lookup`, which returns empty on every `helm template`
+  render — and that is how ArgoCD renders, so a generator would mint a fresh key on every tenant sync
+  and orphan the tenant's whole credential set. Generate-if-absent was the original plan and is retired.
+- **Upgrade safety is now structural.** Nothing is minted, so nothing can be regenerated. The property
+  still gets its test: three consecutive `helm upgrade` runs with unchanged values leave every stored
+  secret readable.
+- **The ring reaches the container as a mounted file**, never an environment variable (DESIGN F-5). The
+  database password's `secretKeyRef` env route is readable in `/proc/<pid>/environ`. Mounting is also
+  what makes picking up an operator-added key without a restart possible.
 - Explicit `encryption.key` used verbatim and reported as configuration-supplied.
 - **The Secret carries a key ring, not a key** — one active entry and any number of retired ones. That
   is what makes the Kubernetes rotation work without Lighthouse ever writing to a Secret: the operator
@@ -39,12 +47,16 @@ own that key instead, and an upgrade never takes it away.
 
 ## Learning hypothesis
 
-**Disproves** "Helm can own key generation" if a `helm upgrade` regenerates the key and orphans every
-stored credential in the tenant's database. Helm templates re-render on every upgrade, and a random
-function in a template is the standard way to produce exactly this failure — so the hypothesis is
-aimed at a specific, likely, and catastrophic mistake rather than at a general worry.
-**Confirms**, if it holds, that a self-hoster gets a unique key from `helm install` with no values
-file, and that the platform can give each tenant a key its own secret store owns.
+**Resolved before the slice was written.** The original hypothesis — "Helm can own key generation,
+disproved if `helm upgrade` regenerates the key" — was answered in DESIGN without building anything:
+`lookup` returns empty under `helm template`, which is how ArgoCD renders, so generation is unsafe on
+the deployment path the platform itself uses. The chart refuses instead.
+
+**What this slice now stakes**: that refusing is affordable. Disproved if a self-hoster following the
+chart README cannot get to a working install as easily as before — the cost of the decision is one
+more required value, and if it turns out to be more than that, the README is the thing to fix.
+**Confirms**, if it holds, that each tenant gets a key its own secret store owns and no two installs
+share one.
 
 ## Open question carried
 
@@ -58,6 +70,7 @@ than the instance looping on work-tracking-system rejections.
 
 AC-5.1 through AC-5.11 in `feature-delta.md`. The three that carry the slice:
 
+- **AC-5.2** — an install supplying neither key nor `existingSecret` fails at render, naming both.
 - **AC-5.3** — three consecutive `helm upgrade` runs with unchanged values leave every stored secret
   readable.
 - **AC-5.7** — the standalone product is unchanged by this slice.

@@ -77,7 +77,7 @@ No DISCOVER evidence exists to contradict, so no contradiction check was possibl
 | Persona | Role in this feature |
 |---|---|
 | `platform-operator` | Primary, in both its flavours. The self-hoster who runs the exe or the container and should never have to read a page to get a unique key; and the platform operator who runs many tenants and needs custody to sit in the cluster's secret store. |
-| `config-admin` | The person who would otherwise pay for a key change by re-entering every token in every Connection. Rotation exists so this cost goes away. |
+| `config-admin` | Two roles. The person who would otherwise pay for a key change by re-entering every token in every Connection — rotation exists so that cost goes away. And, in the plainest sense, the person with a credential in their clipboard wondering whether pasting it here is a bad idea. Those two want completely different words, which is why the reassurance lives next to the field and the key truth lives on the encryption panel. |
 | `lighthouse-maintainer` | Has to answer "is it secure?" to a prospect's security team, in writing, without hedging. Currently cannot, because the compliance self-assessment's secure-by-default claim does not survive finding 2. |
 
 ---
@@ -91,6 +91,7 @@ No DISCOVER evidence exists to contradict, so no contradiction check was possibl
 | `job-operator-know-the-key-is-actually-in-effect` | Tell me plainly which key this instance is using and whether every stored secret can be read with it, so I stop finding out from a failed sync. |
 | `job-saas-operator-tenant-owned-encryption-key` | When I run many tenants, give each one a key its own cluster secret store owns, so one leaked backup is one tenant's problem. |
 | `job-maintainer-answer-the-secret-storage-question` | When a prospect's security team asks how credentials are protected, let me give a specific, true answer about the shipped defaults. |
+| `job-config-admin-paste-a-credential-with-confidence` | When I am about to paste a token into a tool I did not write, tell me plainly what happens to it, so I can proceed — or send someone a link — rather than stopping to ask around. |
 
 Full job stories, dimensions, four forces and opportunity scores are written to
 `docs/product/jobs.yaml`.
@@ -104,6 +105,7 @@ Full job stories, dimensions, four forces and opportunity scores are written to
 | `job-saas-operator-tenant-owned-encryption-key` | 5 | 1 | **4** | The chart provisions nothing; every tenant shares the published key. Blocks enterprise procurement. |
 | `job-operator-know-the-key-is-actually-in-effect` | 4 | 1 | **3** | Silent-by-design today: the decrypt fallback guarantees a wrong key is indistinguishable from a right one. |
 | `job-maintainer-answer-the-secret-storage-question` | 4 | 2 | **2** | Partly satisfied — the docs describe the intent correctly, they just describe a mechanism that does not run. |
+| `job-config-admin-paste-a-credential-with-confidence` | 4 | 1 | **3** | The form asks for a credential and says nothing. The reassurance exists on a connector page nobody reads mid-setup, so it never reaches the moment of the decision. Cheap to fix and it is the surface where doubt actually starts. |
 
 ---
 
@@ -163,12 +165,19 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   means creating it and persisting it; *re-encrypting* means walking every stored secret onto the
   active key. Re-encryption is always the application's job and is always available in the app.
   Minting depends on who owns custody:
-  - **App-owned custody** (standalone exe, Docker) — the application mints, activates, re-encrypts and
-    retires in one action. One button.
-  - **Operator-owned custody** (a Kubernetes Secret, whether the chart made it or External Secrets /
-    OpenBao owns it) — the operator adds the new key to the Secret *alongside* the existing one, the
-    pod picks up the ring with the new key active and the old one retired, and then the operator
-    triggers re-encryption. The application never mints a key it cannot persist.
+  - **App-owned custody** — *only* where the key was generated for this instance and the application
+    owns the store it lives in. The application mints, activates, re-encrypts and retires in one
+    action. One button.
+  - **Operator-owned custody** — a Kubernetes Secret (chart-made or External Secrets / OpenBao-owned)
+    **and also a key supplied through configuration**. The operator adds the new key alongside the
+    existing one, the pod or process picks up the ring with the new key active and the old one
+    retired, and then the operator triggers re-encryption. The application never mints a key it
+    cannot persist.
+
+  Configuration-supplied custody sits on the operator side and not the application side, which is not
+  where this decision first placed it (DESIGN F-2, 2026-08-14). A minted key would go to the generated
+  key store, and on the next restart the configured key would win the precedence order again — the
+  rotation would un-rotate itself and everything written under the minted key would be unreadable.
 
   Conflating the two is what would make the Kubernetes story impossible: an application that mints must
   also persist, and persisting into a Kubernetes Secret means granting Lighthouse write access to its
@@ -185,6 +194,16 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   database with a brand-new key and every stored secret unreadable. That is a worse failure than the
   one this epic fixes, and it would land on people who changed no setting. Anyone who already mounted
   their data volume must keep their key by doing nothing.
+
+  **Narrowed by DESIGN F-3 (2026-08-14).** The standalone launcher already colocates the two
+  (`StandaloneInitializer.cs:31-32` sets the connection string and the key-store path into the same
+  working directory), so this failure is **Docker-only**, not general. And "beside the database" has no
+  meaning for a hand-rolled Postgres install — there is no local database file to sit beside. The
+  resolver therefore works through ordered cases (ADR-149), and **where durability cannot be argued it
+  refuses to mint**: an existing instance keeps running on the legacy key and says so loudly, a fresh
+  one refuses to start. Lighthouse never mints a key it cannot promise to still have tomorrow.
+  Consequence, accepted by the maintainer: KPI-1 is not automatically satisfied for a hand-rolled
+  Postgres install by slice 02 alone — those operators supply a key or a key-store path explicitly.
 - **[D7] Bug #5776 ships first and separately.** Accepting the documented configuration path is a small
   change with a live audience — the operators who followed the documentation and believe they are not
   on the default key. It does not wait for the epic. User decision, 2026-08-14.
@@ -268,8 +287,11 @@ data.
 
 - Bug #5776 landed and released, so the documented configuration path works before slice 02 changes
   what happens when no key is supplied.
-- EF migrations generated with the `CreateMigration` script, additive only — column widths grow for
-  the envelope, nothing is dropped or renamed.
+- No EF migration is required for the envelope. `WorkTrackingSystemConnectionOption.Value`,
+  `OAuthCredential.AccessToken` and `.RefreshToken` carry no `HasMaxLength` and are unbounded
+  `text`/`TEXT` in both model snapshots, so the column-width migration this section originally assumed
+  does not exist (DESIGN F-6). One is owed only if the slice-03 probe forces a concurrency token onto
+  `OAuthCredential` — generated with the `CreateMigration` script, additive only, like every other.
 - The dev instance on `:5169` restored from a real backup, so slices 02 and 03 run against genuine
   history rather than seeded demo rows.
 - A premium licence on the verification instance where the epic touches licensed surfaces.
@@ -367,7 +389,10 @@ answer to "is this instance's data safe if the file leaks?".
 - AC-2.6 After the upgrade, newly written secrets use the instance's own key, not the retired one.
 - AC-2.7 A key store that exists but cannot be read stops startup with a message naming the key store.
   It does not generate a replacement.
-- AC-2.8 The startup log and System Info state the key source and the active key id, never the key.
+- AC-2.8 The startup log states the key source and the active key id, never the key. The Settings →
+  System page shows the same, reading it from the System-Admin-guarded encryption endpoint — **not**
+  from `GET /systeminfo`, which is `[Authorize]` only and therefore reaches every embed viewer
+  (DESIGN F-4).
 - AC-2.9 A supplied key that is not 32 bytes of base64 stops startup with a message that says what is
   wrong with it.
 - AC-2.10 The key store resolves by default to the directory the database file lives in, and the
@@ -414,10 +439,11 @@ by scheduling a week of credential re-entry.
   material.
 - AC-3.9 On an instance still on the published default key, rotation removes the last row referencing
   it and the default leaves the ring.
-- AC-3.10 Where the application owns the key, one action mints, activates, re-encrypts and retires.
-- AC-3.11 Where an operator owns the key, the panel offers re-encryption onto the already-active key
-  and does **not** offer to mint one. Lighthouse never writes to a Kubernetes Secret and needs no
-  permission to.
+- AC-3.10 Where the key was **generated for this instance**, one action mints, activates, re-encrypts
+  and retires.
+- AC-3.11 Where an operator owns the key — **supplied by configuration or by an external secret** —
+  the panel offers re-encryption onto the already-active key and does **not** offer to mint one.
+  Lighthouse never writes to a Kubernetes Secret and needs no permission to.
 - AC-3.12 The panel names the custody mode and lists the key ids the ring currently holds, so the
   operator can see the new key has arrived before triggering re-encryption.
 - AC-3.13 Re-encryption is the same code path in both custody modes. Only the minting step differs.
@@ -468,25 +494,32 @@ values file.
 Before: the chart provisions a database connection string and an OIDC secret and no encryption key at
 all, so every Kubernetes install — including every tenant on the platform — runs on the published
 default.
-After: run `helm install lighthouse letpeoplework/lighthouse` with no encryption values → sees the pod
-log `Encryption key: supplied by external secret`, and a `helm upgrade` afterwards leaves every stored
-credential readable.
+After: run `helm install lighthouse letpeoplework/lighthouse --set encryption.existingSecret=lh-keys`
+→ sees the pod log `Encryption key: supplied by external secret`, and a `helm upgrade` afterwards
+leaves every stored credential readable. Installing with neither `encryption.key` nor
+`encryption.existingSecret` fails at render, naming both — a refusal, not a default.
 Decision enabled: whether a security review of a Kubernetes install can be passed — and for the
 platform, whether one tenant's leaked backup is one tenant's problem.
 
 **Acceptance criteria**
 - AC-5.1 `encryption.existingSecret` points the deployment at a Secret an external store owns —
   External Secrets Operator or OpenBao — and the chart renders no key of its own.
-- AC-5.2 With no encryption values supplied, the chart generates a unique random key into its own
-  Secret on first install.
-- AC-5.3 **A `helm upgrade` never regenerates a generated key.** An upgrade with unchanged values
-  leaves every stored secret readable. This is the failure that would orphan a tenant's entire
-  credential set, and it has a chart unit test of its own.
+- AC-5.2 **RETIRED by DESIGN F-3 — replaced.** With neither `encryption.key` nor
+  `encryption.existingSecret` supplied, the chart **fails at render** with a message naming both, in
+  the manner ADR-082 already established for `postgresql.auth.password`. The chart does not generate a
+  key: the only mechanism available (`lookup`) returns empty on every `helm template` render, which is
+  how ArgoCD renders, so a generator would mint a fresh key on each tenant sync.
+- AC-5.3 **VACUOUS given the amended AC-5.2** — nothing is generated, so nothing can be regenerated.
+  The property it was protecting survives as its test: three consecutive `helm upgrade` runs with
+  unchanged values leave every stored secret readable.
 - AC-5.4 An explicitly supplied `encryption.key` is used verbatim and reported as configuration-supplied.
-- AC-5.5 The generated key never appears in a ConfigMap, in rendered values, or in a pod's environment
-  dump; it reaches the container the same way the database password already does.
-- AC-5.6 Chart unit tests cover: nothing supplied, `existingSecret` supplied, explicit key supplied,
-  and upgrade-idempotence.
+- AC-5.5 The key never appears in a ConfigMap, in rendered values, or in a pod's environment dump. It
+  reaches the container as a **mounted file**, not as an environment variable — the database password's
+  route is a `secretKeyRef` env var, readable in `/proc/<pid>/environ`, so the two halves of this
+  criterion as first written could not both hold (DESIGN F-5). Mounting is also what makes picking up
+  an operator-added key without a restart possible at all.
+- AC-5.6 Chart unit tests cover: nothing supplied (fails at render), `existingSecret` supplied,
+  explicit key supplied, and upgrade-idempotence.
 - AC-5.7 The standalone single-container product is byte-unchanged by this slice.
 - AC-5.8 Chart README and values schema document all three custody modes.
 - AC-5.9 The Secret carries a key **ring**, not a single key: one active entry and any number of
@@ -536,6 +569,65 @@ without asking — the exact conversation that lost the evaluation this epic cam
   never writes to the Secret itself.
 - AC-6.11 The Docker page states where the key store lives, that it must be on the mounted data
   volume, and what a container recreation without that volume costs.
+- AC-6.12 A single canonical **Security** page exists in the docs navigation — today the facts are
+  spread across a configuration reference, three connector concept pages, two compliance documents and
+  a repository-root `SECURITY.md` that has no presence in the docs site at all, and none of those is a
+  page anyone would paste into a conversation.
+- AC-6.13 That page is **two layers at one URL**. It opens with the plain answer — a few sentences, no
+  jargon, no algorithm names, matching the in-product notice from US-08 — for the person who searched
+  "is Lighthouse safe". Below it, a *verify our claims* section: what is encrypted and with what, what
+  is deliberately **hashed** instead and why (API keys, embed session secrets), where the key lives for
+  each deployment shape, and how to rotate. One URL, because the same link has to serve the person
+  asking and the person they forward it to.
+- AC-6.14 The page carries a **"what this does not protect against"** section — an attacker holding the
+  key, host or shell access, a malicious administrator. Volunteering the limits is what makes the rest
+  credible to a reviewer; a page without it reads as sales copy.
+- AC-6.15 The vulnerability reporting path appears in the docs, not only in the repository-root file,
+  and the connector concept pages replace their isolated one-line assertion with the plain-language
+  answer plus a link to the Security page. Per-connector specifics stay on the connector pages; the
+  in-product notice names no connector. Nothing is duplicated — the scattered mentions become links.
+- AC-6.16 US-08's link resolves to this page once it exists.
+
+---
+
+### US-08 — Knowing a credential is safe to paste, before pasting it
+
+`job_id: job-config-admin-paste-a-credential-with-confidence` · persona `config-admin` · **slice 01**
+
+As someone about to paste a personal access token into a tool I did not write, I want the form to tell
+me plainly what happens to it, so that I can proceed without stopping to ask my security team — and so
+that I have something to send them if I decide to ask anyway.
+
+#### Elevator Pitch
+Before: the form asks for a credential and says nothing about what becomes of it. The reassurance exists
+— in a one-line aside on a connector concept page nobody reads mid-setup — and never appears at the
+moment the person is deciding.
+After: open Settings → Connections → *(new or existing connection)* → sees, once in the form,
+`Secrets you enter here are encrypted before they are saved, are never shown again — not even to an
+administrator — and never leave this instance. You can revoke one wherever you created it to cut off
+access immediately.` with a link reading *How Lighthouse protects your credentials*.
+Decision enabled: paste it now, or send that link to whoever needs to approve it first — instead of
+abandoning the setup and asking around.
+
+**Acceptance criteria**
+- AC-8.1 One generic notice per connection form, not one per field. It carries no connector's name and
+  no algorithm name, so a single string serves every secret a connector defines now or later.
+- AC-8.2 The notice appears only when the form actually contains at least one field flagged as a secret.
+- AC-8.3 Every claim in it is true on every install regardless of key custody: encrypted before
+  storage, never returned to the browser for any role, never transmitted outside the instance,
+  revocable at the source. **None of these depend on which key the instance holds**, which is why this
+  story can ship in slice 01 rather than waiting for slice 02.
+- AC-8.4 "Never shown again" is verifiable by the user in seconds — reloading the form leaves the field
+  blank. This is existing behaviour and is asserted by `S2_ConnectionListPayloadShapeTests` for System
+  Admin; the notice states it rather than introducing it.
+- AC-8.5 The link points at the docs Security page (US-06). Until that page exists the link targets the
+  current credential-handling section, and slice 06 repoints it — the notice never ships with a dead
+  link.
+- AC-8.6 The notice makes **no** claim about key custody, and no claim of protection against an
+  attacker holding the key or with access to the host. Those belong on Settings → Encryption, for the
+  administrator who can act on them, and in the docs "what this does not protect against" section.
+- AC-8.7 The notice is not a warning and carries no severity styling. It answers a question; it does
+  not raise an alarm at a person who cannot act on one.
 
 ---
 
@@ -559,7 +651,7 @@ under the slice-composition gate.
 | Slice | Story | Backbone step | Ships | Learning hypothesis |
 |---|---|---|---|---|
 | — (precursor) | Bug #5776 | Discover / Use | The documented configuration path is accepted; startup states which key source is in effect | Disproves "the mismatch is the only thing hiding key state" if operators still cannot tell which key is active |
-| 01 · #5777 | US-01 (+US-07) | Use | Authenticated self-describing envelope; unreadable secrets named on their Connection; plaintext fallback deleted | Disproves "we can migrate the format in place" if real stored blobs turn out to be ambiguous between legacy and envelope |
+| 01 · #5777 | US-01, US-08 (+US-07) | Use / Paste | Authenticated self-describing envelope; unreadable secrets named on their Connection; plaintext fallback deleted; one generic secret-handling notice on the connection form | Disproves "we can migrate the format in place" if real stored blobs turn out to be ambiguous between legacy and envelope |
 | 02 · #5024 | US-02 | Install | Per-instance key generated on first boot; default key leaves `appsettings.json` and enters the ring retired | Disproves "the upgrade is invisible" if any existing install loses access to a secret |
 | 03 · #5778 | US-03 | Rotate | Operator-triggered rotation, no credential re-entry, resumable, reported | Disproves "in-place re-encryption is safe unlocked" if a concurrent token refresh corrupts a row (OQ-1) |
 | 04 · #5779 | US-04 | Prove | Read-only readability check, per-secret key attribution | Disproves "the rotation report is enough" if an operator cannot map an unreadable secret back to something they can fix |
@@ -604,12 +696,12 @@ published docs site for 06.
 
 | KPI | Target | Measurement | Scope |
 |---|---|---|---|
-| **KPI-1** Instances not on a shared key | 0 startups report a shipped default key after slice 02; 100% report `generated`, `configured` or `external` | Startup key-source log line (AC-2.8) | `per_instance` |
+| **KPI-1** Instances not on a shared key | 0 startups report a shipped default key after slice 02; 100% report `generated`, `configured` or `external`. **Not automatic for a hand-rolled Postgres install** — where durability cannot be argued the instance refuses to mint and keeps saying so, per D12 as narrowed by DESIGN F-3 | Startup key-source log line (AC-2.8) | `per_instance` |
 | **KPI-2** Rotation costs no credentials | 100% of rotations complete with 0 Connections requiring re-entry | Rotation report (AC-3.4), on `:5169` and Tenant Zero | `per_instance` + `vendor_demo_only` |
 | **KPI-3** Rotation completes promptly | < 60 s on a Tenant-Zero-sized secret set | Timed rotation, recorded in the slice 03 brief | `vendor_demo_only` |
 | **KPI-4** Silent decrypt failures | 0 — the code path returning ciphertext as plaintext no longer exists | Absence test asserting `Decrypt` raises on a bad tag (AC-1.4) | `per_instance` |
 | **KPI-5** Upgrade transparency | 0 secrets lost across an upgrade from the pre-epic version on a real restored database | Readability check before and after (AC-2.5, AC-4.6) | `vendor_demo_only` |
-| **KPI-6** Helm upgrade safety | 0 key regenerations across 3 consecutive `helm upgrade` runs with unchanged values | Chart unit test (AC-5.3) + Tenant Zero | `vendor_demo_only` |
+| **KPI-6** Helm upgrade safety | 0 stored secrets become unreadable across 3 consecutive `helm upgrade` runs with unchanged values. The chart mints nothing, so there is nothing to regenerate — the property is now structural rather than defended | Chart unit test (AC-5.3, AC-5.6) + Tenant Zero | `vendor_demo_only` |
 | **KPI-7** Question answerable from docs | The documentation answers key source, rotation, backup and threat model without a maintainer in the loop | Reviewed at release against the questionnaire that started this epic | `vendor_demo_only` |
 
 KPI-1 is unmeasurable before Bug #5776 makes the key source observable — which is the argument for
@@ -639,8 +731,8 @@ shipping it first.
 | # | Item | Verdict | Evidence |
 |---|---|---|---|
 | 1 | Business value articulated | ✅ | A named lost evaluation, plus five findings read from code during this wave; KPI-1 and KPI-2 carry the outcome |
-| 2 | Job traceability | ✅ | 5 jobs written to `docs/product/jobs.yaml`; every story carries a real `job_id` except US-07, which is `@infrastructure` and is a precursor commit inside slice 01 |
-| 3 | Acceptance criteria testable | ✅ | 63 ACs, each observable from a stored value, a report, a log line, a rendered chart template, or a documentation page |
+| 2 | Job traceability | ✅ | 6 jobs written to `docs/product/jobs.yaml`; every story carries a real `job_id` except US-07, which is `@infrastructure` and is a precursor commit inside slice 01 |
+| 3 | Acceptance criteria testable | ✅ | 75 ACs, each observable from a stored value, a report, a log line, a rendered chart template, a rendered form, or a documentation page |
 | 4 | Dependencies identified | ✅ | Bug #5776 released first; `:5169` restored from a real backup; Tenant Zero for slice 05; `CreateMigration`; premium licence on the verification instance |
 | 5 | Sliced ≤ 1 day each | ⚠️ | 6 briefs. Five are 4-6h. **Slice 03 is the exception** and is written with a timeboxed probe on OQ-1 first; if the probe says a lock is needed, the brief is re-cut before it is dispatched |
 | 6 | No known blockers | ✅ | None. OQ-1 is scheduled as a probe, OQ-2 is inside slice 05's acceptance, OQ-3 is explicitly deferred |
@@ -698,11 +790,11 @@ None. No DISCOVER or DIVERGE wave ran for this feature, so no prior assumption w
 
 ## Wave: DISCUSS / [REF] SSOT Updates
 
-- `docs/product/jobs.yaml` — 5 jobs appended, `epic-5775-secret-encryption-key-custody` added to
+- `docs/product/jobs.yaml` — 6 jobs appended, `epic-5775-secret-encryption-key-custody` added to
   `feature_context`.
-- `docs/product/journeys/epic-5775-secret-encryption-key-custody.yaml` — created; 4 journeys.
+- `docs/product/journeys/epic-5775-secret-encryption-key-custody.yaml` — created; 5 journeys.
 - `docs/product/personas/platform-operator.yaml` — 3 jobs appended to `primary_jobs`.
-- `docs/product/personas/config-admin.yaml` — 1 job appended.
+- `docs/product/personas/config-admin.yaml` — 2 jobs appended.
 - `docs/product/personas/lighthouse-maintainer.yaml` — 1 job appended.
 
 ---
@@ -743,3 +835,576 @@ an on-disk store beside the database, and a Kubernetes Secret carrying one activ
 retired ones; whether the re-encryption pass needs to hold off the sync pipeline (OQ-1); and how the
 application detects that an operator has added a key to the Secret without a restart, so the panel can
 show it has arrived before re-encryption is triggered.
+
+---
+---
+
+# Wave: DESIGN — application / component scope
+
+**Architect**: Morgan (Solution Architect) · **Interaction mode**: PROPOSE · **Date**: 2026-08-14
+**Paradigm**: OOP (C# .NET 10 backend, ports-and-adapters), functional-leaning React 18 + TypeScript
+**Scope**: application and component architecture. Infrastructure-level chart mechanics are designed to
+the boundary here and handed to `nw-platform-architect` for DEVOPS.
+
+All four handoff questions are answered. Two answers **correct an upstream decision** and three
+**propose retiring or restating an acceptance criterion**; every one of them is listed under *Forks and
+upstream corrections* below rather than applied silently.
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `docs/feature/epic-5775-secret-encryption-key-custody/feature-delta.md` — DISCUSS output in full:
+  12 locked decisions (D1-D12), 6 value stories + 1 `@infrastructure`, 63 ACs, 3 open questions.
+- ✓ `docs/feature/epic-5775-secret-encryption-key-custody/slices/slice-0{1..6}-*.md` — all six briefs.
+- ✓ `docs/product/journeys/epic-5775-secret-encryption-key-custody.yaml` — 4 journeys, 5 shared
+  artifacts. Every shared artifact is bound to exactly one owning component in the decomposition below.
+- ✓ `docs/product/architecture/brief.md` — `## Application Architecture` head section (pattern,
+  decomposition, driving/driven ports, technology stack, reuse analysis, enforcement) plus the
+  per-feature delta headings; read in detail: `epic-5306-k8s-productization`,
+  `viewer-identity-embed-session`, `quiet-jira-writeback`.
+- ✓ ADRs read: 004 (API-key scope storage — confirms hashed keys are out of scope), 006 (connection-list
+  payload shape — the one-route-one-shape rule), 008 (OAuth credential separation — defines the exact
+  encrypted set), 027 (target architecture: modular monolith, domain events, CQRS-lite), 082 (chart
+  required values fail fast — the precedent ADR-153 reuses), 087 (ESO/OpenBao), 137 (viewer identity —
+  the finding that moves key state off `GET /systeminfo`), 139 and 142 (house style, Earned Trust
+  format). ADR index read by filename, 145 existing, so this feature starts at 146.
+- ✓ `CLAUDE.md`, `docs/ci-learnings.md` — standing rules applied: expand-only migrations via
+  `CreateMigration`, zero-warning build, SonarQube no-new-issues including hotspots, comments written
+  for a stranger with no internal references, terminology from `TerminologySeeder`.
+- ✓ **Code read during this wave**: `Services/Implementation/CryptoService.cs` (whole),
+  `Services/Interfaces/ICryptoService.cs`, `Data/LighthouseAppContext.cs:520-612`,
+  `Data/DatabaseConfigurator.cs:1-100`, `Data/DatabaseConfiguration.cs`,
+  `Standalone/StandaloneInitializer.cs`, `Program.cs:370-500`, `:860-930`, `:1270-1330`,
+  `API/WorkTrackingSystemConnectionsController.cs` (whole),
+  `API/WorkTrackingSystemConnectionController.cs` (whole), `API/SystemInfoController.cs`,
+  `Models/SystemInfo.cs`, `Models/WorkTrackingSystemConnectionOption.cs`,
+  `Models/OAuth/OAuthCredential.cs`, `Services/Implementation/OAuth/OAuthService.cs:180-350`, the four
+  `WorkTrackingConnectors/Auth/*Strategy.cs`,
+  `WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs:620-650`, `appsettings.json:38-44`,
+  `Lighthouse.Migrations.Postgres/Migrations/LighthouseAppContextModelSnapshot.cs` (column types for
+  the three secret columns), `chart/templates/secret.yaml`, `chart/values.yaml`,
+  `chart/values.schema.json`.
+- ⊘ `docs/feature/epic-5775-secret-encryption-key-custody/discover/`, `.../diverge/` — not found; no
+  DISCOVER or DIVERGE wave ran, so no prior assumption is contradicted and none is claimed.
+- ⊘ `docs/product/vision.md`, `docs/project-brief.md`, `docs/stakeholders.yaml` — not present in this
+  repository; product SSOT lives under `docs/product/`.
+
+---
+
+## Wave: DESIGN / [REF] Domain-Driven Design decisions
+
+The feature sits inside the existing **Work Tracking Connection** context; it introduces no new bounded
+context. It does introduce a small, sharply bounded **Secret Custody** module inside it, because the
+ubiquitous language of custody (ring, key id, envelope, custody mode, readability state) has no overlap
+with the language of connections, teams or forecasts, and every one of its terms is new to the product.
+
+- **DDD-1 — Ubiquitous language, fixed here and used verbatim in code, API and documentation.**
+  *Key ring* (the resolved set), *active key* (the one entry writes use), *retired key* (readable, not
+  writable), *key id*, *envelope* (a stored secret in the current format), *custody mode* (who owns the
+  key), *secret state* (one of four: envelope, legacy CBC, legacy plaintext, unreadable), *mint*
+  (create and persist a key), *re-encrypt* (move stored secrets onto the active key), *rotate* (mint
+  then re-encrypt). **"Rotate" is never used for re-encryption alone**, in any surface or any log line —
+  that conflation is precisely the one D6 exists to prevent.
+- **DDD-2 — `EncryptionKeyRing` is a value object, not an entity.** It has no identity and no
+  lifecycle; it is replaced wholesale, never mutated. Two rings with the same entries in the same order
+  are the same ring. This is what makes a mid-rotation snapshot read safe (ADR-150).
+- **DDD-3 — The envelope is a value object with a total parser.** `SecretEnvelope.TryParse(string) →
+  ParseOutcome` never throws and never partially succeeds. The four secret states are a closed enum
+  (ADR-147), so no caller can invent a fifth or default to "probably fine".
+- **DDD-4 — Contract shape: `ISecretEnvelopeCodec` is pure, `ISecretCustodyService.InspectAsync` is a
+  read-only projection, `ReEncryptAsync` is the only member with a declared mutation set.** That set is
+  exactly `WorkTrackingSystemConnectionOption.Value` where `IsSecret`, `OAuthCredential.AccessToken`
+  and `OAuthCredential.RefreshToken` — three columns, named in an architecture test. The bug class
+  "the read-only check wrote something" is not testable-around here; it is unrepresentable, because
+  `InspectAsync` is on a driving port whose implementation takes a read-only repository facade.
+- **DDD-5 — Read and write are separate driving ports, not one port with a flag.** The readability
+  check (slice 04) and the re-encryption (slice 03) share **one component** and **two ports**. Sharing
+  the component is what keeps their vocabulary identical; splitting the ports is what makes "this
+  action cannot write" a compile-time fact rather than a code review.
+- **DDD-6 — No aggregate boundary changes.** `WorkTrackingSystemConnection` remains the root for its
+  options; `OAuthCredential` remains its own row per ADR-008. Re-encryption deliberately operates
+  *below* the aggregate — one column, one row, no invariant — which is why it needs no aggregate lock
+  and why it must not regenerate a connection's concurrency token (ADR-151).
+- **DDD-7 — No domain event is published.** The project defaults to the event bus for cross-component
+  facts and the default was tested here: secret readability is derivable from the stored value in
+  microseconds, so an event plus a projection would be a cache of something cheaper than the cache,
+  with an invalidation question whose only honest answer is "re-read it". Recorded so the omission is a
+  decision, not an oversight (ADR-147, *Alternatives*).
+- **DDD-8 — Hashed values stay out.** API keys (`ApiKeyService.HashKey`, PBKDF2-SHA256 + per-key salt +
+  constant-time compare) and embed session secrets/nonces are verifiers, not recoverable secrets. They
+  are correct as they are and no part of this design touches them.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+New components live under `Services/Implementation/Encryption/` and `Services/Interfaces/Encryption/`,
+mirroring the existing `Services/Implementation/OAuth/` layout.
+
+| Component | Path | Change | Summary | Slice |
+|---|---|---|---|---|
+| `ICryptoService` | `Services/Interfaces/ICryptoService.cs` | **EXTEND** | `Decrypt` now throws `UnreadableSecretException`; `Read(string) → SecretReadResult` added. Shared contract — grep usages and extend the test fake first | 01 |
+| `CryptoService` | `Services/Implementation/CryptoService.cs` | **EXTEND (rewritten body)** | Takes `IEncryptionKeyRingHolder` instead of `IConfiguration`. Writes envelopes under the active key. Deletes the catch-all fallback. Owns the once-per-secret warning dedup | 01 |
+| `SecretEnvelope` | `Services/Implementation/Encryption/SecretEnvelope.cs` | **CREATE NEW** | Pure value object: format, parse, AES-GCM encrypt/decrypt with the header as associated data. No existing type expresses a wire format | 01 |
+| `SecretStateClassifier` | `Services/Implementation/Encryption/SecretStateClassifier.cs` | **CREATE NEW** | Total function: value + ring → one of four states. Owns the legacy-CBC structural test and the PKCS7/printability check | 01 |
+| `UnreadableSecretException` | `Services/Implementation/Encryption/UnreadableSecretException.cs` | **CREATE NEW** | Carries state and key id, never material | 01 |
+| `EncryptionKeyRing`, `EncryptionKey`, `KeyCustody` | `Models/Encryption/` | **CREATE NEW** | Immutable ring value object; positional grammar enforces exactly one active key | 02 |
+| `IEncryptionKeyRingHolder` / `EncryptionKeyRingHolder` | `Services/Interfaces/Encryption/`, `Services/Implementation/Encryption/` | **CREATE NEW** | Singleton holding an immutable snapshot; atomic `Replace` for rotation and hot reload | 02 |
+| `KeyRingSerializer` | `Services/Implementation/Encryption/KeyRingSerializer.cs` | **CREATE NEW** | Parses and renders the one canonical `id:base64[,id:base64]*` form used by all three transports | 02 |
+| `EncryptionKeyRingBootstrapper` | `Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs` | **CREATE NEW** | Builder-time resolution: configuration → mounted file → generated file → mint. Fails fast per D10 | 02 |
+| `Program.ResolveKeyStoreDirectory` | `Program.cs` | **EXTEND** | Generalises `ResolveDataProtectionKeyStoreDir` to ADR-149's four cases; consumed by the OAuth state secret, the encryption ring and Data Protection alike | 02 |
+| `Program.EnsureEncryptionKeyRing` | `Program.cs` | **CREATE NEW (in an existing file)** | Step 4 of the bootstrap order; registers the holder singleton. Deliberately does **not** write to `IConfiguration` | 02 |
+| `Program.PrintSystemInfo` | `Program.cs:1276` | **EXTEND** | One line: source, active key id, resolved key store path. Never material | 02 |
+| `appsettings.json` | `Lighthouse.Backend/appsettings.json:43-44` | **EXTEND (deletion)** | `EncryptionSettings` block removed (AC-2.4) | 02 |
+| `LighthouseAppContext.EncryptSecrets` | `Data/LighthouseAppContext.cs:581-609` | **EXTEND** | Skips a value that is already a well-formed envelope under the active key, making the save path idempotent and closing the latent double-encrypt on a `Modified` option | 01 |
+| `ISecretCustodyService` (read) / (write) | `Services/Interfaces/Encryption/` | **CREATE NEW** | Two driving ports, one implementation. `InspectAsync` cannot write — enforced by the port, not by convention | 03, 04 |
+| `SecretCustodyService` | `Services/Implementation/Encryption/SecretCustodyService.cs` | **CREATE NEW** | The single traversal: candidate predicate, per-row `Read`, guarded `ExecuteUpdateAsync`, report assembly, mint-then-verify-then-activate | 03, 04 |
+| `SecretReadabilityReport` | `Models/Encryption/SecretReadabilityReport.cs` | **CREATE NEW** | The shared `${secret_readability_report}` artifact: per secret — owning Connection, field, key id, state | 03, 04 |
+| `EncryptionController` | `API/EncryptionController.cs` | **CREATE NEW** | Four System-Admin-guarded routes. Separate from `SystemInfoController`, which is `[Authorize]` only | 02, 03, 04 |
+| `KeyRingFileWatcher` | `Services/Implementation/Encryption/KeyRingFileWatcher.cs` | **CREATE NEW** | Hosted service, 30 s content poll of the mounted Secret; fail-safe-old on a bad reload | 05 |
+| `WorkTrackingSystemConnectionDto` | `API/DTO/WorkTrackingSystemConnectionDto.cs` | **EXTEND** | Per-option `secretState` (AC-1.6). Lighthouse-Clients contract — version-gate applies | 01 |
+| `EncryptionPanel.tsx` | `Lighthouse.Frontend/src/pages/Settings/Encryption/` | **CREATE NEW** | Custody-aware panel: key ids, readability table, Rotate **or** Re-encrypt. Gated on `useRbac().isSystemAdmin` | 03, 04 |
+| `EncryptionService.ts` | `Lighthouse.Frontend/src/services/Api/EncryptionService.ts` | **CREATE NEW** | HTTP adapter for the four routes | 03, 04 |
+| `SystemSettingsTab.tsx` | `Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx` | **EXTEND** | Renders key source + active key id from `GET /encryption`, not from `GET /systeminfo` | 02 |
+| Connection detail secret field | `Lighthouse.Frontend/src/…/WorkTrackingSystems/` | **EXTEND** | Renders `secretState` on the offending field (AC-1.6) | 01 |
+| `chart/templates/secret.yaml` | `chart/templates/secret.yaml` | **EXTEND** | Renders `keys` when `encryption.key` is supplied; renders nothing when `encryption.existingSecret` is | 05 |
+| `chart/templates/deployment.yaml` | `chart/templates/deployment.yaml` | **EXTEND** | Projects the Secret as a volume; sets `Encryption__KeysFile`. **No env var carries key material** | 05 |
+| `chart/values.yaml`, `values.schema.json`, chart README | `chart/` | **EXTEND** | `encryption.key`, `encryption.existingSecret`; required-value failure per ADR-082 | 05 |
+
+**Shared-artifact binding** (each of the journey YAML's five artifacts has exactly one owner):
+`${encryption_key_ring}` → `EncryptionKeyRingHolder`. `${active_key_id}` → `EncryptionKeyRing.Active.Id`.
+`${secret_envelope}` → `SecretEnvelope`. `${key_source_label}` → `EncryptionKeyRing.Custody`.
+`${secret_readability_report}` → `SecretCustodyService`.
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Surface | Guard | Slice |
+|---|---|---|---|
+| HTTP | `GET /api/{v1,latest}/encryption` → `{ custody, canMint, activeKeyId, keyIds[], keyStorePath, legacyDefaultPresent }` | `RbacGuard(SystemAdmin)` | 02 |
+| HTTP | `GET /api/{v1,latest}/encryption/secrets` → `SecretReadabilityReport` | `RbacGuard(SystemAdmin)` | 04 |
+| HTTP | `POST /api/{v1,latest}/encryption/rotate` → report. **409 when `canMint` is false** | `RbacGuard(SystemAdmin)` | 03 |
+| HTTP | `POST /api/{v1,latest}/encryption/reencrypt` → report | `RbacGuard(SystemAdmin)` | 03 |
+| HTTP (existing) | `GET /api/{v1,latest}/worktrackingsystemconnections` — each secret option gains `secretState` | unchanged (`SystemAdmin`) | 01 |
+| UI | Settings → Encryption panel; custody-aware, two shapes, never a disabled Rotate control | `useRbac().isSystemAdmin` | 03, 04 |
+| UI (existing) | Connection detail — an unreadable secret named on its own field | unchanged | 01 |
+| Startup log | One line: source, active key id, resolved key store path | n/a | 02 |
+| Application bootstrap | `EnsureEncryptionKeyRing` at builder time, step 4 of a fixed order | n/a | 02 |
+| Helm values | `encryption.key`, `encryption.existingSecret`; render fails when neither is set | n/a | 05 |
+| Mounted file | `Encryption:KeysFile` — the operator's Secret, polled every 30 s | n/a | 05 |
+
+**Explicitly not a driving port**: `GET /systeminfo`. It is `[Authorize]` only and after ADR-137 that
+includes embed viewers, so it carries no key state. This restates AC-2.8's surface; its intent is met.
+
+---
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | Technology | Purpose |
+|---|---|---|---|
+| Key ring source (generated) | `GeneratedKeyRingStore` | `System.IO` + `IDataProtectionProvider` | `encryption-keyring.protected`, written temp-then-move, **read back and unprotected before success is declared** |
+| Key ring source (configuration) | `ConfiguredKeyRingSource` | `IConfiguration` | `Encryption:Key` / `Encryption:Keys` |
+| Key ring source (external secret) | `MountedFileKeyRingSource` | `System.IO` | `Encryption:KeysFile`; the only source that can change while the process runs |
+| Secret persistence | `LighthouseAppContext` | EF Core, SQLite + Npgsql | `ExecuteUpdateAsync` with a ciphertext-guard predicate; **the only three columns this feature may write** |
+| Key wrapping | ASP.NET Data Protection | `Microsoft.AspNetCore.DataProtection` (MIT) | Existing dependency, already pinned to the same directory by `ConfigureDataProtection` |
+| Symmetric cipher | `System.Security.Cryptography.AesGcm` | .NET 10 BCL | AES-256-GCM, 12-byte nonce, 16-byte tag |
+| Legacy cipher (read only) | `System.Security.Cryptography.Aes` | .NET 10 BCL | CBC with `PaddingMode.None` so the unpad is arithmetic, never an exception |
+
+**No new external integration.** Nothing in this feature calls a third-party API, so no contract test is
+owed to `nw-platform-architect` on that axis. The pre-existing recommendation for Jira / Azure DevOps /
+ServiceNow / Linear contract tests is unchanged and unaffected.
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+| Choice | Version | Licence | Rationale | Alternatives rejected |
+|---|---|---|---|---|
+| AES-256-GCM via `AesGcm` | .NET 10 BCL | MIT | One primitive that cannot be composed wrongly; authenticated by construction; associated-data parameter binds the key id | AES-CBC + HMAC (more code, same guarantee, classic place to get ordering and constant-time comparison wrong); XChaCha20-Poly1305 (no BCL implementation, would add a dependency for no gain) |
+| ASP.NET Data Protection for wrapping | existing | MIT | Already a dependency, already pinned to the target directory, already the mechanism `EnsureOAuthStateSecret` trusts | DPAPI / `ProtectedData` (Windows only); a passphrase-derived KEK (moves the custody problem one level up and needs a passphrase nobody has) |
+| base64url, unpadded | — | — | No `.` and no `=`, so the four envelope fields cannot collide with the delimiter | standard base64 (contains `+`, `/`, `=`; would need escaping); hex (doubles the length) |
+| `ExecuteUpdateAsync` guarded on the old value | EF Core 9/10 | MIT | Provider-portable compare-and-swap with no schema change and no model-wide concurrency token | model-level `IsConcurrencyToken` (changes the ordinary save path to serve the exceptional one); raw SQL (two dialects to maintain) |
+| Content polling for the mounted Secret | — | — | The kubelet swaps a symlink, which defeats an inotify watch on the file | `FileSystemWatcher` (does not fire on a symlink swap; directory-watch workaround varies by container runtime); `IOptionsMonitor` file provider (same inotify problem underneath) |
+| ArchUnitNET for the enforcement rules | existing | Apache 2.0 | Already used in `Lighthouse.Backend.Tests/Architecture/` — five seam tests precede this one | new tooling (no reason; the idiom exists) |
+
+No proprietary technology and no new package. Every choice is either already in the solution or in the
+.NET base class library.
+
+---
+
+## Wave: DESIGN / [REF] Decisions
+
+| # | Decision | ADR | Implements |
+|---|---|---|---|
+| DD-1 | Stored secrets are `LH1.<keyId>.<b64url nonce>.<b64url ct‖tag>`; the header is AES-GCM associated data; the discriminator is prefix disjointness from base64, not probability | [146](../../product/architecture/adr-146-secret-envelope-wire-format.md) | D1 |
+| DD-2 | No EF migration is required — the three secret columns are unbounded `text`/`TEXT` in both model snapshots | 146 | — |
+| DD-3 | `Decrypt` throws; a separate total `Read` classifies into four states; the six consumers change by zero lines | [147](../../product/architecture/adr-147-stored-secret-states-classified-by-inspection.md) | D2 |
+| DD-4 | Connection readability is derived on read, not projected or evented; the log side is deduplicated on `SHA-256(storedValue)` inside `CryptoService` | 147 | D2 · AC-1.6, AC-1.8 |
+| DD-5 | One canonical ring string `id:base64[,…]`, first entry active, three transports, one parser. Indexed configuration binding is refused on the `AllowedOrigins` precedent | [148](../../product/architecture/adr-148-key-ring-canonical-form-and-retired-default.md) | D3 · AC-5.9 |
+| DD-6 | The published default is a compiled-in retired key `k-legacy-default`, never eligible to be active, with a narrow inline suppression at its declaration | 148 | D3 · AC-2.4, AC-2.5 |
+| DD-7 | One key-store resolver, four ordered cases; the container case derives the directory from the SQLite `DataSource`; a legacy store is migrated, never ignored | [149](../../product/architecture/adr-149-key-store-beside-the-database.md) | D12 · AC-2.10, AC-2.11 |
+| DD-8 | Where durability cannot be argued (Postgres with nothing configured), the app **refuses to mint**: an existing instance runs on the legacy key and says so; a fresh one refuses to start | 149 | D10 |
+| DD-9 | The ring is resolved at builder time into a singleton holder and **never written into `IConfiguration`** — a deliberate divergence from `EnsureOAuthStateSecret` | [150](../../product/architecture/adr-150-key-ring-resolved-at-builder-time-into-a-singleton.md) | D4, D9 |
+| DD-10 | Key state moves off `GET /systeminfo` onto the System-Admin-guarded encryption endpoint | 150, 152 | D9 · AC-2.8 restated |
+| DD-11 | Re-encryption is a per-row compare-and-swap on the ciphertext. **OQ-1: no lock.** Losing the race is a no-op because every write uses the active key | [151](../../product/architecture/adr-151-re-encryption-per-row-compare-and-swap.md) | OQ-1 · AC-3.7 |
+| DD-12 | The candidate predicate is the envelope prefix, so resumability and idempotence are properties of the data, not of bookkeeping. No cursor table, no background job | 151 | AC-3.6, AC-4.8 |
+| DD-13 | Slices 03 and 04 share one component and two ports; `InspectAsync` cannot write, by port shape | 151 | AC-3.13 |
+| DD-14 | Custody is derived from which source produced the active key; `CanMint` is `Custody == GeneratedForThisInstance`. **Configuration-supplied is operator-owned, not app-owned** | [152](../../product/architecture/adr-152-custody-mode-and-the-encryption-admin-surface.md) | D6 corrected |
+| DD-15 | The panel never renders a disabled Rotate control; it renders the other shape and one sentence saying who owns the key | 152 | AC-3.11, AC-3.12 |
+| DD-16 | Kubernetes custody is a mounted Secret carrying a ring, hot-reloaded by a 30 s content poll, fail-safe-old on a bad reload | [153](../../product/architecture/adr-153-kubernetes-key-custody-is-operator-supplied.md) | D5, D6 · AC-5.9, AC-5.11 |
+| DD-17 | **The chart never generates a key**; `helm install` with neither value fails at render, per ADR-082's existing precedent. Retires AC-5.2 and, vacuously, AC-5.3 | 153 | D5 · **fork** |
+| DD-18 | The key reaches the container as a mounted file, never an environment variable | 153 | AC-5.5 first clause |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis — MANDATORY HARD GATE
+
+Every component with any overlap against something that exists is classified. `CREATE NEW` requires
+evidence that extending is impossible, not merely inconvenient. Contract shape and mutation universe
+are stated per row.
+
+| Overlapping existing component | Verdict | Evidence | Contract shape · universe · assertion |
+|---|---|---|---|
+| `CryptoService` / `ICryptoService` | **EXTEND** | The port is already the single seam every secret read and write passes through; six consumers and one DbContext depend on it. A parallel service would give the product two answers to "what is a secret" | `Encrypt`/`Decrypt` pure over (value, ring); `Read` pure and total. Universe: none — no I/O. Asserted by an ArchUnitNET rule that the type depends on no repository and no `HttpClient` |
+| `LighthouseAppContext.EncryptSecrets` | **EXTEND** | The save-path hook already exists at exactly the right place and is the only writer of secret columns on the ordinary path. Adding an idempotence guard here also closes the latent double-encrypt when a `Modified` option's value was untouched | Bounded change. Universe: the three secret columns of entities already in the change tracker. Asserted by a test that a `Modified` option whose value is already an active-key envelope is left byte-identical |
+| `Program.ResolveDataProtectionKeyStoreDir` | **EXTEND** | One function already answers "where is the key store"; three consumers depend on it. Two resolvers would let the encryption blob and the keys that unwrap it land in different directories — an undiagnosable startup refusal | Pure over `builder.Configuration` + environment. Universe: creates one directory. Asserted by a table test over the four cases |
+| `Program.EnsureOAuthStateSecret` | **REUSE PATTERN, DO NOT EXTEND** | The idiom (transient mini-host, DP-pinned to the same directory, resolve-or-create) is copied; the method is not touched. Generalising it into one "ensure a secret" helper would couple two lifecycles — the state secret may be regenerated harmlessly, the encryption ring may never be | n/a |
+| `Program.PrintSystemInfo` | **EXTEND** | One startup banner; a second output stream for one line is not defensible | Bounded change: appends to a local list |
+| `SystemInfoController` / `ISystemInfoService` | **CREATE NEW (separate controller)** | **Extending is impossible without a security regression.** `GetSystemInfo` is `[Authorize]` only and, after ADR-137, every embed viewer satisfies it. Adding key source or key store path there discloses instance security posture to a framed viewer. Splitting the guard inside one payload would mean one route with two shapes, which ADR-006 forbids | Read-only. Universe: none |
+| `WorkTrackingSystemConnectionsController` | **CREATE NEW (separate controller)** | Encryption is not connection CRUD; the readability report spans OAuth credentials too, which that controller does not own. ADR-006's one-route-one-shape rule applies | Read + two commands, each with a declared mutation set |
+| `WorkTrackingSystemConnectionDto` | **EXTEND** | AC-1.6 requires the state on the field that owns it, and this DTO already carries the option list. A parallel per-field endpoint would double the round trips on a page that already has the data | Bounded change: one added property. Lighthouse-Clients contract — grep usages and extend the test builder first |
+| `IConcurrencyTokenEntity` + `ApplyConcurrencyTokenForEdit` | **REUSE ON FALLBACK ONLY** | The existing idiom is the designed fallback if the slice-03 probe finds the CAS unhonoured on a provider. Not used on the primary path because re-encryption is not a semantic edit and must not invalidate an administrator's open edit form | Bounded change, aggregate-scoped |
+| `OAuthService`'s per-connection `SemaphoreSlim` | **DO NOT REUSE** | In-process only, so it cannot coordinate replicas; and the CAS makes it unnecessary. Recorded so "just take the existing lock" is answered before it is proposed | n/a |
+| `chart/templates/secret.yaml` | **EXTEND** | The database connection string and OIDC client secret already travel this route; the encryption ring is one more `stringData` entry and one more `existingSecret` branch | Bounded change |
+| `chart/templates/deployment.yaml` | **EXTEND** | One volume, one mount, one env var naming a path | Bounded change |
+| ArchUnitNET seam tests | **EXTEND** | Five `*SeamArchUnitTest.cs` files already establish the idiom; this feature adds one more | Read-only |
+| `SecretEnvelope`, `SecretStateClassifier`, `KeyRingSerializer`, `EncryptionKeyRing*`, `SecretCustodyService`, `KeyRingFileWatcher`, `EncryptionController`, `EncryptionPanel.tsx`, `EncryptionService.ts` | **CREATE NEW** | **Evidence that extending is impossible**: `ctx_search` over the backend for `envelope`, `keyring`, `key ring`, `KeyId`, `custody`, `rotate`/`rotation` in a crypto sense, and `re-encrypt` returns nothing. The product has never had a wire format, a key ring, a custody concept, a key-state surface, or a secret traversal. There is no type whose responsibility could absorb any of them without becoming two things | `SecretEnvelope`, `SecretStateClassifier`, `KeyRingSerializer`: pure, universe none. `EncryptionKeyRingHolder`: bounded change, universe = one reference. `SecretCustodyService.InspectAsync`: read-only. `.ReEncryptAsync`: bounded change, universe = three named columns, asserted by ArchUnitNET. `KeyRingFileWatcher`: bounded change, universe = the holder |
+| `ApiKeyService`, `EmbedSessionTokenService` | **NO CHANGE** | Hashed verifiers, not recoverable secrets. Correct as they are and explicitly out of scope (DDD-8) | n/a |
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — secret encryption key custody (Epic 5775)
+  Person(selfhoster, "Self-hosting operator", "Runs the exe or one docker run; has not thought about the key and should not have to")
+  Person(admin, "Configuration Administrator", "Owns the Connections; would otherwise pay for a key change in re-entered tokens")
+  Person(platform, "Platform operator", "Runs many tenants; needs custody in the cluster's own secret store")
+  System(lighthouse, "Lighthouse", "Forecasts delivery; stores work-tracking credentials encrypted at rest")
+  System_Ext(store, "Cluster secret store", "External Secrets Operator or OpenBao; owns the key ring Secret")
+  System_Ext(tracker, "Work tracking systems", "Jira, Azure DevOps, ServiceNow, Linear; receive a decrypted credential on every sync")
+
+  Rel(selfhoster, lighthouse, "Reads the key source and active key id from the startup line of")
+  Rel(admin, lighthouse, "Checks secret readability and triggers rotation in")
+  Rel(platform, store, "Writes and rotates the key ring in")
+  Rel(store, lighthouse, "Projects the key ring into, as a mounted Secret")
+  Rel(lighthouse, tracker, "Authenticates to, with a credential it decrypted and verified")
+```
+
+## Wave: DESIGN / [REF] C4 — Container (L2)
+
+```mermaid
+C4Container
+  title Container Diagram — secret encryption key custody
+  Person(admin, "Configuration Administrator")
+  System_Ext(store, "Cluster secret store", "ESO / OpenBao")
+
+  Container_Boundary(lh, "Lighthouse") {
+    Container(spa, "Frontend SPA", "React 18 + TypeScript", "Settings → Encryption panel; Connection detail secret states")
+    Container(api, "Backend API", "C# .NET 10 ASP.NET Core", "Four System-Admin encryption routes; connection CRUD")
+    Container(boot, "Application bootstrap", "Program.cs, builder time", "Resolves the key store directory and the key ring BEFORE the host is built; refuses to start on an unreadable store")
+    Container(refresh, "Refresh background services", "UpdateServiceBase", "Decrypts credentials on every sync; a failed decrypt never reaches a tracker")
+    ContainerDb(db, "Lighthouse database", "SQLite or PostgreSQL via EF Core", "Connection options flagged IsSecret and OAuth access/refresh tokens — the entire encrypted set")
+    ComponentDb(keystore, "Key store directory", "Filesystem beside the database", "Data-Protection-wrapped key ring; generated custody only")
+  }
+
+  Rel(admin, spa, "Checks readability and triggers rotation in")
+  Rel(spa, api, "Calls the four encryption routes on", "HTTPS/JSON")
+  Rel(boot, keystore, "Resolves or mints the ring in, then reads it back to prove it")
+  Rel(store, boot, "Supplies a key ring to, as a mounted file")
+  Rel(boot, api, "Hands the resolved ring to, as a singleton holder")
+  Rel(api, db, "Re-encrypts stored secrets in, one guarded statement per row")
+  Rel(refresh, db, "Reads stored secrets from")
+```
+
+## Wave: DESIGN / [REF] C4 — Component (L3, the ring / envelope / re-encryption triangle)
+
+Rendered for this subsystem alone: it is the only part of the feature where three components carry a
+shared invariant — the ring names the key, the envelope names the ring entry, and the re-encryption
+moves rows between entries — and it is the part a reader is most likely to get wrong.
+
+```mermaid
+C4Component
+  title Component Diagram — key ring, envelope and re-encryption
+  Container_Boundary(boot, "Application bootstrap (builder time)") {
+    Component(resolver, "ResolveKeyStoreDirectory", "C# — PURE over configuration", "Four ordered cases; the container case derives the directory from the SQLite DataSource")
+    Component(bootstrapper, "EncryptionKeyRingBootstrapper", "C#", "Configuration, mounted file or generated file; mints only where custody is app-owned; fails startup on an unreadable store")
+  }
+  Container_Boundary(runtime, "Backend runtime") {
+    Component(holder, "EncryptionKeyRingHolder", "C# singleton", "Holds one immutable ring snapshot; Replace is an atomic reference swap")
+    Component(serializer, "KeyRingSerializer", "C# — PURE", "One canonical id:base64 grammar; first entry active, by position")
+    Component(codec, "SecretEnvelope", "C# — PURE", "AES-256-GCM; the LH1.keyId header is the associated data")
+    Component(classifier, "SecretStateClassifier", "C# — PURE, TOTAL", "Envelope / legacy CBC / legacy plaintext / unreadable, by inspection — no catch anywhere")
+    Component(crypto, "CryptoService", "C#", "Encrypt under the active key; Decrypt raises; Read classifies; one warning per secret per process")
+    Component(custody, "SecretCustodyService", "C#", "One traversal. InspectAsync reads. ReEncryptAsync writes three named columns with a ciphertext-guard predicate")
+    Component(watcher, "KeyRingFileWatcher", "C# hosted service", "30 s content poll of the mounted Secret; a bad reload keeps the previous ring")
+    Component(controller, "EncryptionController", "C# — SystemAdmin", "State, report, rotate, re-encrypt")
+  }
+  ContainerDb(db, "Lighthouse database", "EF Core")
+  ComponentDb(keystore, "Key store directory", "Filesystem")
+
+  Rel(resolver, bootstrapper, "Names the directory for")
+  Rel(bootstrapper, keystore, "Writes the wrapped ring to, then re-reads it to prove the write survived")
+  Rel(bootstrapper, serializer, "Parses and renders the ring through")
+  Rel(bootstrapper, holder, "Publishes the resolved ring into")
+  Rel(watcher, holder, "Swaps a reloaded ring into")
+  Rel(watcher, serializer, "Validates the reloaded file through")
+  Rel(crypto, holder, "Captures a ring snapshot from")
+  Rel(crypto, codec, "Writes and verifies envelopes through")
+  Rel(crypto, classifier, "Classifies a stored value through")
+  Rel(custody, crypto, "Reads every stored secret through, never with Decrypt")
+  Rel(custody, db, "Moves one verified row at a time in, guarded on the ciphertext it read")
+  Rel(controller, custody, "Invokes the read port or the write port of")
+```
+
+---
+
+## Wave: DESIGN / [REF] Quality Attribute Strategies
+
+| Attribute | Strategy |
+|---|---|
+| **Security** | The whole point. Per-instance keys; authenticated ciphertext; the key id bound as associated data so a relabelling attack fails its tag; no key material in configuration, logs, reports, ConfigMaps, rendered values, environment variables or telemetry; key state behind `SystemAdmin` rather than `[Authorize]`; the app holds no write permission on any Kubernetes Secret. |
+| **Reliability** | Every ambiguity is a refusal, never a guess: an unreadable key store stops startup rather than minting a replacement; a bad hot reload keeps the previous known-good ring; rotation never overwrites what it could not verify; an interrupted rotation leaves a working instance because both keys are in the ring. |
+| **Performance efficiency** | The encrypted set is bounded by the number of Connections, not by work items — low hundreds of rows at most. Candidate selection is a prefix predicate the database answers. AES-GCM is faster than the CBC it replaces. No background job, no streaming, no progress endpoint: KPI-3's 60 s budget has three orders of magnitude of headroom. |
+| **Maintainability** | One grammar, one parser, three transports. One traversal, two ports. One resolver for the key store, consumed by three callers. `CryptoService` reads no configuration, so Bug #5776's class of defect cannot recur. |
+| **Testability** | Every classification and every format decision is a pure function of a string and a ring, so 45 of the 63 ACs are unit-testable with no database and no HTTP. The three that need real substrate — container recreation, the CAS under concurrency, the ArgoCD render — each have a named gold test. |
+| **Portability** | No provider-specific SQL; `ExecuteUpdateAsync` is EF-level. The four key-store cases cover standalone (Windows/Linux/macOS), Docker, Docker-with-Postgres and Kubernetes without forking the code. |
+| **Observability** | Key source, active key id and resolved path on the startup line and on one guarded endpoint. One warning per unreadable secret per process, never per sync. `encryption.rotation.completed` and `encryption.keyring.reloaded` carry counts and ids and never material. |
+
+---
+
+## Wave: DESIGN / [REF] Architectural Enforcement
+
+| Rule | Enforced by |
+|---|---|
+| No `catch` in the secret read path | Structural test over the source of `SecretStateClassifier` and `SecretEnvelope`: no `catch`, no exception filter |
+| `Decrypt` never returns its input | Gold test: a corrupted envelope raises; a tampered tag raises; a wrong key raises. **KPI-4 is this test** |
+| No auth strategy handles a crypto failure | ArchUnitNET: no type in `WorkTrackingConnectors.Auth` may depend on `UnreadableSecretException` or on `SecretState` |
+| An unreadable secret never reaches a tracker | Gold test per strategy: corrupted value → `ApplyAsync` raises, `HttpRequestMessage` carries no `Authorization` header |
+| Re-encryption writes exactly three columns | ArchUnitNET + a structural test on `SecretCustodyService`: the only `ExecuteUpdateAsync` targets are `WorkTrackingSystemConnectionOption.Value`, `OAuthCredential.AccessToken`, `OAuthCredential.RefreshToken` |
+| The read port cannot write | Compile-enforced: the read driving port declares `InspectAsync` only, and the implementation's read path takes a read-only repository facade |
+| No key material in `IConfiguration` | Test walking `IConfigurationRoot.GetDebugView()` after boot; no value decodes to 32 bytes matching a ring entry |
+| No key material in any log | Test on the emitted structured properties of every `encryption.*` log event |
+| `CryptoService` reads no configuration | ArchUnitNET: the type may not depend on `IConfiguration` — the rule that makes Bug #5776's defect class unrepeatable |
+| `GET /systeminfo` discloses nothing about keys | Contract test asserting the serialised property set is exactly today's |
+| Bootstrap order is what the design says | Integration test that fails if steps 1 and 2 are transposed |
+| A key store that exists but cannot be read stops startup | Gold test: corrupt the ring file → boot raises **and no replacement file is written** |
+| The legacy default can never become active | Test: rotate on an instance holding only the legacy default → the minted key is active |
+| Lighthouse never writes to a Kubernetes Secret | ArchUnitNET: no type in the backend may reference a Kubernetes client type. Nothing to probe because nothing can compile |
+| The chart never renders a random key | Chart unit test: `helm template` with no encryption values → render **fails**; and no template references `randAlphaNum`, `randBytes` or `uuidv4` for an encryption value |
+| No key material in an environment variable | Test on the rendered Deployment: no env var name matches `Encryption__Key*` except `Encryption__KeysFile`, whose value is a path |
+| The published default constant is suppressed narrowly | Review gate: exactly one `#pragma warning disable` at the declaration, with an inline justification written in plain language |
+
+---
+
+## Wave: DESIGN / [REF] Forks and upstream corrections
+
+**All seven confirmed 2026-08-14.** F-1 and F-3 were the two carrying a product consequence and were
+decided explicitly by the maintainer; F-2, F-4, F-5, F-6 and F-7 are corrections of DISCUSS errors and
+were accepted as read. The DISCUSS sections above have been amended to match — see **Changed
+Assumptions** at the end of this document for the before/after of each.
+
+- **F-1 (fork, slice 05) — the chart should not generate a key at all.** AC-5.2 asks for
+  generate-if-absent and AC-5.3 asks that an upgrade never regenerate it. The standard mechanism
+  (`lookup`) returns empty on every `helm template` render, which is how **ArgoCD** renders — so a
+  `lookup`-guarded generator regenerates the key on every tenant sync, which is exactly the catastrophe
+  AC-5.3 names. **Recommendation: retire AC-5.2; AC-5.3 becomes vacuous.** `helm install` with neither
+  `encryption.key` nor `encryption.existingSecret` fails at render, reusing ADR-082's existing precedent
+  for `postgresql.auth.password`. If AC-5.2 is kept, the chart README must state that generation is
+  unsupported under ArgoCD and `helm template`, and Tenant Zero must use `existingSecret` regardless.
+- **F-2 (correction to D6) — configuration-supplied custody is operator-owned, not app-owned.** D6 and
+  the journey YAML put "supplied by configuration" on the side where the application mints. It cannot:
+  a minted key would go to the generated key store, and on the next restart the configured key would win
+  the precedence order again, making the minted key inaccessible and everything written under it
+  unreadable. **Recommendation: three custody modes, two panel shapes. `CanMint` is true only for
+  `GeneratedForThisInstance`.** AC-3.10 and AC-3.11 need one word changed each.
+- **F-3 (gap in D12) — "beside the database" is undefined for Postgres, and standalone already does it
+  right.** `StandaloneInitializer` already puts the key store in the same directory as the database, so
+  D12's failure is **Docker-only**. Postgres deployments have no database file. **Recommendation:** four
+  ordered cases (ADR-149), and where none can be argued durable the application **refuses to mint** —
+  an existing instance keeps working on the legacy key and says so loudly; a fresh one refuses to start
+  with two one-line remedies. Needs confirmation because it means KPI-1 is not automatically satisfied
+  for a hand-rolled Postgres install by slice 02 alone.
+- **F-4 (restatement of AC-2.8) — key state does not go on System Info.**
+  `SystemInfoController.GetSystemInfo` is `[Authorize]` only, and after ADR-137 that includes any viewer
+  who reaches an embedded frame. **Recommendation:** the Settings → System page keeps showing the key
+  source and active key id, reading them from the System-Admin-guarded `GET /encryption`. The operator's
+  experience is unchanged; the audience narrows to the people the AC meant.
+- **F-5 (contradiction inside AC-5.5).** "Never appears in a pod's environment dump" and "reaches the
+  container the same way the database password already does" cannot both hold — the database password is
+  an env var from a `secretKeyRef`, readable in `/proc/<pid>/environ`. **Recommendation:** honour the
+  first clause; the key ring is a mounted file. This is also what makes hot reload possible at all.
+- **F-6 (correction to the Pre-requisites) — no EF migration is required.**
+  `WorkTrackingSystemConnectionOption.Value`, `OAuthCredential.AccessToken` and `.RefreshToken` carry no
+  `HasMaxLength`; both model snapshots show unbounded `text`/`TEXT`. The anticipated column-width
+  migration does not exist. A migration is owed **only** if the slice-03 probe forces fallback B
+  (a `ConcurrencyToken` on `OAuthCredential`), and then it is generated with the `CreateMigration`
+  script like every other.
+- **F-7 (tension between AC-2.4 and AC-2.5).** Removing the literal from `appsettings.json` and keeping
+  every existing secret readable are only compatible if the default arrives from somewhere other than
+  configuration. **Recommendation:** a compiled-in retired constant `k-legacy-default`, never eligible
+  to be active, with a narrow inline SonarQube suppression at its declaration. Worth confirming because
+  it means the published key stays in the shipped binary until a rotation removes the last row using it.
+
+---
+
+## Wave: DESIGN / [REF] Open questions carried into DISTILL
+
+- **OQ-1 — answered, provisionally.** No lock. The slice-03 probe is still worth its two hours, and its
+  three measurements plus the designed fallback for each are in ADR-151. A negative result costs one
+  additive migration, not a redesign — which is a materially better position than the DISCUSS wave
+  feared.
+- **OQ-2 — closed by ADR-153.** The supported Kubernetes rotation is four operator actions; the
+  degenerate case (old key dropped before re-encryption) surfaces as unreadable secrets with a named
+  Connection and field, and no tracker call is attempted with an unreadable credential.
+- **OQ-3 — still deferred, and now sharper.** "Does the standalone key file need an export path?"
+  ADR-149 makes the key follow the database directory, so an operator who backs up their data directory
+  now backs up their key by construction — which is most of the answer. What remains is whether a
+  Kubernetes operator using generated-then-configured custody needs an explicit export. Not designed.
+- **OQ-4 (new) — how many rows of true legacy plaintext exist?** ADR-147's classifier reports a
+  CBC-shaped plaintext as unreadable rather than plaintext. `OAuthCredential` has been encrypted since
+  ADR-008, so the exposure is `WorkTrackingSystemConnectionOption.Value` on installs predating
+  `EncryptSecrets`. **Slice 01 owes a count from the `:5169` restored backup before it closes.** If the
+  count is zero the residual is academic; if it is not, the release note says so.
+- **OQ-5 (new) — where does an `UnreadableSecretException` surface during a background sync?** The six
+  consumers grow no error handling by design, so the exception travels each one's existing failure path.
+  `ValidateConnection` turns it into a `ConnectionValidationResult`; a background refresh should turn it
+  into the refresh-log entry the update surface already renders. **Slice 01 must confirm that second
+  path produces a legible operator message rather than a swallowed failure**, and add the mapping if it
+  does not. Named rather than asserted.
+
+---
+
+## Wave: DESIGN / [REF] Handoff
+
+**To `nw-acceptance-designer` (DISTILL)**: the full DESIGN set. The 63 ACs stand, with the four
+restatements in F-1, F-2, F-4 and F-5 applied once confirmed. The highest-value acceptance surfaces are
+the Earned Trust tables in ADRs 146-153 — each row is a gold test with its assertion already written.
+
+**To `nw-platform-architect` (DEVOPS)**: ADR-153 in full, plus the Outcome KPIs section from DISCUSS.
+Three items are infrastructure-owned: the chart's required-value failure and its unit tests
+(including the `helm template`-with-no-cluster render that stands in for an ArgoCD sync), the Secret
+volume projection, and the Tenant Zero rotation walkthrough. **No new external integration is
+introduced, so no new contract test is owed**; the standing Jira / Azure DevOps / ServiceNow / Linear
+recommendation is unchanged.
+
+**To `nw-software-crafter` (DELIVER)**: internal structure of every component named above is yours.
+This design fixes the wire format, the port shapes, the mutation universe and the bootstrap order, and
+nothing else.
+
+---
+
+## Wave: DESIGN / [REF] Peer Review
+
+`nw-solution-architect-reviewer`, 2026-08-14, iteration 1. **Verdict: conditionally approved.**
+0 critical issues, 0 architectural-bias findings, 0 decision-quality findings, 0 completeness gaps,
+0 feasibility findings, no implementation code leaked into the design.
+
+The five findings recorded at `high` severity are **the forks above**, raised because they gate slice
+dispatch, not because they are contested: F-1 (chart never generates a key), F-2 (configuration-supplied
+custody is operator-owned), F-3 (refuse to mint where durability cannot be argued), F-6 (no EF
+migration), F-7 (compiled-in retired default). The reviewer challenged F-1 specifically, as instructed,
+and upheld it on the ArgoCD-renders-with-`helm template` evidence.
+
+Priority validation: Q1 largest bottleneck **YES** (key custody, evidenced by a named lost evaluation and
+five findings read from code); Q2 simpler alternatives **ADEQUATE**; Q3 constraint prioritisation
+**CORRECT** (the envelope ships before the rotation that depends on it); Q4 data-justified **JUSTIFIED**.
+
+The reviewer independently surfaced OQ-4 and OQ-5 as the two things owed before slice 01 closes, which
+matches the open questions recorded above. No revisions were required and none were made.
+
+**Not run**: `nwave-ai outcomes check-delta` — the DESIGN agent in this session has no shell tool, so the
+CLI could not be invoked and no result is claimed either way. Worth running before DISTILL is dispatched.
+
+---
+
+## Changed Assumptions
+
+Seven DISCUSS assumptions were changed by DESIGN and confirmed by the maintainer on 2026-08-14. The
+DISCUSS sections above carry the amended text; this section is the record of what they said before.
+
+**1. Configuration-supplied custody (D6, AC-3.10, AC-3.11, journey `rotate-the-key-without-recredentialing`)**
+
+> Original (D6): "**App-owned custody** (standalone exe, Docker) — the application mints, activates,
+> re-encrypts and retires in one action."
+
+Configuration-supplied custody was placed on the application side. It cannot be: a minted key goes to
+the generated key store, and on the next restart the configured key wins the precedence order again —
+the rotation un-rotates itself and everything written under the minted key becomes unreadable. Minting
+is now permitted only where the key was generated for this instance.
+
+**2. Key-store location (D12)**
+
+> Original: "**The key store lives beside the database.** It resolves, by default, to the directory the
+> database file is in."
+
+True and sufficient for SQLite; undefined for a hand-rolled Postgres install, which has no local
+database file. `StandaloneInitializer.cs:31-32` already colocates the two, so the failure D12 was
+written against is Docker-only rather than general. The resolver now works through ordered cases and
+refuses to mint where durability cannot be argued. Accepted consequence: KPI-1 is not automatic for a
+hand-rolled Postgres install.
+
+**3. Chart key generation (AC-5.2, AC-5.3, US-05 elevator pitch, KPI-6)**
+
+> Original (AC-5.2): "With no encryption values supplied, the chart generates a unique random key into
+> its own Secret on first install."
+
+The only mechanism for this is Helm `lookup`, which returns empty on every `helm template` render —
+and that is how ArgoCD renders. A `lookup`-guarded generator would mint a fresh key on every tenant
+sync, which is precisely the catastrophe AC-5.3 was written to prevent, arriving through the door the
+mitigation leaves open. The chart now fails at render when neither key nor `existingSecret` is
+supplied, reusing the `required` precedent ADR-082 established for `postgresql.auth.password`.
+
+**4. Key state on System Info (AC-2.8)**
+
+> Original: "The startup log and System Info state the key source and the active key id, never the key."
+
+`SystemInfoController` is `[Authorize]` only, and after ADR-137 that includes any viewer who reaches an
+embedded frame. The Settings → System page still shows it; it reads from the System-Admin-guarded
+encryption endpoint instead.
+
+**5. How the key reaches the container (AC-5.5)**
+
+> Original: "never appears in … a pod's environment dump; it reaches the container the same way the
+> database password already does."
+
+Self-contradictory. The database password reaches the container as a `secretKeyRef` environment
+variable, readable in `/proc/<pid>/environ`. The first clause wins: the ring is a mounted file — which
+is also what makes picking up an operator-added key without a restart possible.
+
+**6. EF migration (Pre-requisites)**
+
+> Original: "column widths grow for the envelope, nothing is dropped or renamed."
+
+The three secret columns carry no `HasMaxLength` and are unbounded `text`/`TEXT` in both model
+snapshots. No width migration exists to write. One is owed only if the slice-03 probe forces a
+concurrency token onto `OAuthCredential`.
+
+**7. Removing the published default (AC-2.4 vs AC-2.5)**
+
+> Original: AC-2.4 "The literal default key is removed from `appsettings.json`" and AC-2.5 "an instance
+> upgrading … keeps reading every existing secret."
+
+Compatible only if the default arrives from somewhere other than configuration. It becomes a
+compiled-in retired constant, never eligible to be active. Accepted consequence: the published key
+stays in the shipped binary until a rotation drops the last row that uses it.
+
+**Not changed, and worth saying so:** D1 (authenticated envelope), D2 (the plaintext fallback is
+deleted), D3 (key ring with the default retired into it), D5 (Kubernetes custody is a Secret the
+cluster owns; OpenBao Transit remains the successor epic), D7 (Bug #5776 ships first), D8 (neutral
+commits, advisory at release), D9-D11. The slice order and the six slice boundaries are unchanged.
+OQ-1's answer improved rather than changed the design: no lock is needed, and the probe now risks one
+additive migration rather than a redesign.

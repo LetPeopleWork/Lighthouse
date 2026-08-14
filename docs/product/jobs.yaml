@@ -5197,3 +5197,50 @@ jobs:
         describing. Current satisfaction: 2 — the docs describe the right intent and the wrong
         mechanism, which is better than nothing and worse than silence. Gap: 2 — small, and it gates
         the release, because an advisory is only honest once the fix is installable.
+
+  - id: job-config-admin-paste-a-credential-with-confidence
+    title: Know what happens to a token before pasting it
+    persona: config-admin
+    job_story: >
+      When I am about to paste a personal access token into a tool I did not write,
+      I want the form to tell me plainly what becomes of it,
+      so I can proceed without stopping to ask my security team — and have something to send them if I
+      decide to ask anyway.
+    dimensions:
+      functional: >
+        One notice on the connection form, in plain words, saying the value is encrypted before it is
+        saved, never shown again to anyone including an administrator, never transmitted off the
+        instance, and revocable at the source. A link to the fuller explanation for whoever wants it.
+      emotional: >
+        Move from a small hesitation nobody voices — "is pasting this here a bad idea?" — to proceeding
+        without having had to find out.
+      social: >
+        Be able to answer a colleague or a security reviewer with a link rather than a shrug, without
+        having become the person who has to know how it works.
+    forces:
+      push: >
+        The form asks for a credential and says nothing about what happens to it. The reassurance does
+        exist — one line on a connector concept page — but it is nowhere near the moment of the
+        decision, so it reaches nobody who is actually deciding. Doubt at this exact point is what
+        turns into "we heard it stores credentials in plain text" three conversations later.
+      pull: >
+        A short, plain answer at the moment of pasting, and one link for the person who wants the
+        detail.
+      anxiety: >
+        "Is this a claim or a fact?" (Every claim in it is checkable: reload the form and the field is
+        blank.)
+        "Am I about to get told off by security?" (The link is the thing to forward, which is the
+        cheapest possible escalation.)
+      habit: >
+        Paste it and hope, or abandon the setup and ask someone — and the second is what loses the
+        evaluation, because it never comes back.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — not a blocker, but it is the surface where doubt about credential handling
+        actually starts, and doubt that starts here is what gets repeated second-hand as fact. Current
+        satisfaction: 1 — the form is silent; the answer exists somewhere nobody is looking at the
+        time. Gap: 3 — and unusually cheap: one notice, one string, no dependency on the key work,
+        because every claim in it is already true.

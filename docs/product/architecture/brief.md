@@ -5453,3 +5453,202 @@ applied:
 
 Carried to DISTILL as context rather than as questions: the Data Center behaviour stays unverified until
 after release, and string-typed custom-field write-back is unverified.
+
+## Application Architecture — epic-5775-secret-encryption-key-custody (DESIGN delta)
+
+Feature: `epic-5775-secret-encryption-key-custody` (ADO Epic #5775 "Secret Encryption: Unique Keys and
+Safe Rotation") · Wave: DESIGN · Date: 2026-08-14 · Architect: Morgan (Solution Architect), interaction
+mode = PROPOSE · Paradigm: OOP backend, functional-leaning React frontend
+
+### The one hard problem
+
+Not the cryptography. The cryptography is a call to `AesGcm`. The hard problem is that **three different
+things live in one string column** — a current envelope, a bare AES-CBC blob written before this epic,
+and a value that was never encrypted at all — and D2 deletes the catch-all that let a reader avoid
+telling them apart. Every other decision in this feature is downstream of "how does a reader classify a
+stored secret by inspection, and what does it do when it cannot?".
+
+The second-hardest problem is custody, and it is hard for a reason the DISCUSS wave named precisely:
+minting a key and persisting it are one act, so *whoever can persist is the only one who may mint*.
+Standalone and Docker can persist beside their database. Kubernetes cannot, without a permission the
+product should not hold. Postgres-without-a-configured-path cannot persist anywhere durable at all.
+
+### Architectural Pattern
+
+Ports-and-adapters, unchanged. One new module, `Secret Custody`, inside the existing Work Tracking
+Connection context. No new bounded context, no new architectural style, no new package, no new external
+dependency. Everything is either already in the solution or in the .NET base class library.
+
+### Key invariants introduced
+
+- **INV-1** — Every write uses the active key. Nothing else can write, in any custody mode. This is what
+  makes losing a concurrency race a no-op rather than a lost credential.
+- **INV-2** — A stored value's state is decided by inspection: prefix, then structural shape, then
+  fallthrough. There is no `catch` anywhere in the classification path.
+- **INV-3** — A secret that cannot be verified is never overwritten, never sent to a work tracking
+  system, and never returned as though it were plaintext.
+- **INV-4** — The key id in an envelope is authenticated (AES-GCM associated data), so a relabelled
+  ciphertext fails its tag rather than decrypting under the wrong ring entry.
+- **INV-5** — A key store that exists and cannot be read stops startup. No path in this design generates
+  a replacement key over an existing one.
+- **INV-6** — No key material exists in `IConfiguration`, in an environment variable, in a ConfigMap, in
+  rendered Helm values, in a log line, in a report, or in telemetry.
+- **INV-7** — Lighthouse never writes to a Kubernetes Secret. Enforced by the backend referencing no
+  Kubernetes client type at all.
+- **INV-8** — Re-encryption writes exactly three columns: `WorkTrackingSystemConnectionOption.Value`
+  where `IsSecret`, `OAuthCredential.AccessToken`, `OAuthCredential.RefreshToken`.
+
+### Component Decomposition
+
+Full table with paths, change types and slice attribution:
+`docs/feature/epic-5775-secret-encryption-key-custody/feature-delta.md` → *Wave: DESIGN / [REF]
+Component Decomposition*. The headline:
+
+- **EXTEND** — `ICryptoService` / `CryptoService` (the port every secret already passes through),
+  `LighthouseAppContext.EncryptSecrets` (gains an idempotence guard that also closes a latent
+  double-encrypt on a `Modified` option), `Program.ResolveDataProtectionKeyStoreDir` → four ordered
+  cases, `Program.PrintSystemInfo`, `WorkTrackingSystemConnectionDto`, the chart's Secret and Deployment
+  templates.
+- **CREATE NEW** — `SecretEnvelope`, `SecretStateClassifier`, `KeyRingSerializer`, `EncryptionKeyRing`,
+  `EncryptionKeyRingHolder`, `EncryptionKeyRingBootstrapper`, `SecretCustodyService`,
+  `KeyRingFileWatcher`, `EncryptionController`, and the frontend Encryption panel plus its HTTP adapter.
+  Justified because the product has never had a wire format, a key ring, a custody concept, a key-state
+  surface or a secret traversal — a search over the backend for `envelope`, `keyring`, `KeyId`,
+  `custody` and `re-encrypt` returns nothing.
+- **NO CHANGE** — `ApiKeyService`, `EmbedSessionTokenService`. Hashed verifiers, correct as they are.
+
+### Driving / Driven Ports
+
+**Driving (new):** one `EncryptionController` with four routes, every one
+`[RbacGuard(RbacGuardRequirement.SystemAdmin)]` — `GET /encryption` (state), `GET /encryption/secrets`
+(readability report), `POST /encryption/rotate` (mint + re-encrypt, **409 where the app cannot mint**),
+`POST /encryption/reencrypt` (available in every custody mode). A separate controller rather than a
+widening of `SystemInfoController`, because that one is `[Authorize]` only and after ADR-137 every embed
+viewer satisfies it.
+
+**Driving (extended):** the existing connection payload gains a per-option `secretState`, so an
+unreadable secret is named on the field that owns it. Lighthouse-Clients contract — version gate
+applies.
+
+**Driven (new):** three key-ring sources behind one grammar — generated file (Data-Protection-wrapped,
+beside the database), configuration, and a mounted Kubernetes Secret. One parser serves all three.
+
+**Driven (extended):** `LighthouseAppContext`, through a guarded `ExecuteUpdateAsync` rather than
+`SaveChanges` — the rotation writes its own envelope and must not regenerate a connection's concurrency
+token.
+
+**External integration:** none introduced. No new contract test is owed to platform-architect; the
+standing Jira / Azure DevOps / ServiceNow / Linear recommendation is unchanged.
+
+### Reuse Analysis
+
+Full table in the feature delta. The two rows worth repeating here, both `CREATE NEW` against an
+apparently-obvious `EXTEND`:
+
+- **`SystemInfoController` → separate controller.** Extending is impossible without a security
+  regression: `GetSystemInfo` is `[Authorize]` only, so adding key source or key store path there
+  discloses instance security posture to any framed viewer. Splitting the guard inside one payload would
+  be one route with two shapes, which ADR-006 forbids.
+- **`WorkTrackingSystemConnectionsController` → separate controller.** Encryption is not connection
+  CRUD, and the readability report spans `OAuthCredential` rows that controller does not own.
+
+And one deliberate non-reuse: `OAuthService`'s per-connection `SemaphoreSlim` is **not** extracted into a
+shared gate. It is in-process only, so it cannot coordinate replicas, and the compare-and-swap makes it
+unnecessary. Recorded so "just take the existing lock" is answered before it is proposed.
+
+### Quality Attribute Strategies
+
+| Attribute | Strategy |
+|---|---|
+| **Security** | Per-instance keys; authenticated ciphertext with the key id bound as associated data; no key material on any of the eight surfaces named in INV-6; key state behind System Admin, not `[Authorize]`; the app holds no write permission on any Secret. |
+| **Reliability** | Every ambiguity is a refusal: an unreadable key store stops startup rather than minting over it; a bad hot reload keeps the previous known-good ring; rotation never overwrites what it could not verify; an interruption leaves a working instance because both keys are in the ring. |
+| **Performance efficiency** | The encrypted set is bounded by the number of Connections, not by work items — low hundreds of rows. Candidate selection is a prefix predicate the database answers, so nothing is decrypted to find work. AES-GCM is faster than the CBC it replaces. No background job and no streaming: KPI-3's 60 s budget has three orders of magnitude of headroom. |
+| **Maintainability** | One grammar, one parser, three transports. One traversal, two ports. One key-store resolver, three callers. `CryptoService` reads no configuration, so Bug #5776's defect class cannot recur. |
+| **Testability** | Format and classification are pure functions of a string and a ring, so most acceptance criteria need no database and no HTTP. The three that need real substrate — container recreation, the CAS under concurrency, the ArgoCD render — each carry a named gold test. |
+| **Portability** | No provider-specific SQL. Four key-store cases cover standalone, Docker, Docker-with-Postgres and Kubernetes without forking the code. |
+
+### The residual risks, stated
+
+1. **A legacy plaintext value that is CBC-shaped is reported unreadable.** A 192-character alphanumeric
+   API token decodes to a multiple of 16 bytes and therefore enters the legacy-CBC branch, where no key
+   reads it. The operator re-enters one token. Bounded to
+   `WorkTrackingSystemConnectionOption.Value` on installs predating `EncryptSecrets`, because
+   `OAuthCredential` has been encrypted since ADR-008. Slice 01 owes a count from the `:5169` restored
+   backup.
+2. **Legacy CBC can never be verified, only decrypted plausibly.** There is no tag. The printability
+   check reduces a wrong read to roughly one in a thousand, not to zero. The answer is a shorter
+   exposure, not a better heuristic: every rotation moves rows off CBC permanently.
+3. **The published default key stays in the shipped binary** as a retired, never-active ring entry, until
+   a rotation removes the last row referencing it. Removing it sooner would orphan every secret written
+   before this release.
+4. **A hand-rolled Postgres deployment that configures nothing keeps writing under the published key.**
+   That is today, made visible rather than made worse — but it means KPI-1 is not automatically
+   satisfied for that population by slice 02 alone.
+5. **The concurrency decision is provisional on the slice-03 probe.** A negative result costs one
+   additive migration (a concurrency token on `OAuthCredential`, using the existing
+   `IConcurrencyTokenEntity` idiom), not a redesign.
+
+### ADR References (this feature)
+
+- [ADR-146](./adr-146-secret-envelope-wire-format.md) — `LH1.<keyId>.<nonce>.<ct‖tag>`; the header is
+  AES-GCM associated data; the discriminator is alphabet disjointness from base64, not probability
+- [ADR-147](./adr-147-stored-secret-states-classified-by-inspection.md) — `Decrypt` raises, a separate
+  total `Read` classifies into four states, and the six consumers change by zero lines
+- [ADR-148](./adr-148-key-ring-canonical-form-and-retired-default.md) — one canonical ring string,
+  three transports, first entry active by position; the published default as a compiled-in retired key
+- [ADR-149](./adr-149-key-store-beside-the-database.md) — four ordered key-store cases, and a refusal to
+  mint where durability cannot be argued
+- [ADR-150](./adr-150-key-ring-resolved-at-builder-time-into-a-singleton.md) — builder-time resolution
+  into a singleton holder, never into `IConfiguration`
+- [ADR-151](./adr-151-re-encryption-per-row-compare-and-swap.md) — per-row compare-and-swap on the
+  ciphertext; **OQ-1 answered: no lock**, because losing the race is a no-op
+- [ADR-152](./adr-152-custody-mode-and-the-encryption-admin-surface.md) — custody derived from the ring;
+  minting offered only where the app owns a durable store; configuration-supplied is operator-owned
+- [ADR-153](./adr-153-kubernetes-key-custody-is-operator-supplied.md) — a mounted Secret carrying a ring,
+  hot-reloaded by polling; the chart never generates a key
+
+### Architectural Enforcement (this feature)
+
+| Rule | Enforced by |
+|---|---|
+| No `catch` in the secret read path | Structural test over `SecretStateClassifier` and `SecretEnvelope` |
+| `Decrypt` never returns its input | Gold test: bad tag, wrong key, tampered byte — each raises. **KPI-4 is this test** |
+| No auth strategy handles a crypto failure | ArchUnitNET: no type in `WorkTrackingConnectors.Auth` may depend on `UnreadableSecretException` or `SecretState` |
+| An unreadable secret never reaches a tracker | Gold test per strategy: corrupted value → `ApplyAsync` raises, no `Authorization` header is set |
+| Re-encryption writes exactly three columns | ArchUnitNET + structural test on the only `ExecuteUpdateAsync` call sites |
+| The read port cannot write | Compile-enforced: the read driving port declares `InspectAsync` only |
+| `CryptoService` reads no configuration | ArchUnitNET: the type may not depend on `IConfiguration` — the rule that makes Bug #5776's defect class unrepeatable |
+| No key material in `IConfiguration` | Test walking `IConfigurationRoot.GetDebugView()` after boot |
+| No key material in any log | Test on the structured properties of every `encryption.*` event |
+| `GET /systeminfo` discloses nothing about keys | Contract test asserting the payload's property set is exactly today's |
+| Bootstrap order is what the design says | Integration test that fails if the key-store resolution and standalone path init are transposed |
+| An unreadable key store stops startup and writes no replacement | Gold test — the "writes no replacement" half is the assertion that matters |
+| Lighthouse never writes to a Kubernetes Secret | ArchUnitNET: no backend type may reference a Kubernetes client. Nothing to probe, because nothing can compile |
+| The chart never renders a random key | Chart unit test: `helm template` with no cluster and no encryption values → render **fails**; no template uses `randAlphaNum`/`randBytes`/`uuidv4` for an encryption value |
+| No key material in an environment variable | Rendered-Deployment test: no `Encryption__Key*` env var except `Encryption__KeysFile`, whose value is a path |
+
+### C4
+
+System Context (L1), Container (L2) and Component (L3 — the ring / envelope / re-encryption triangle,
+the only genuinely complex part) are rendered in
+`docs/feature/epic-5775-secret-encryption-key-custody/feature-delta.md` → *Wave: DESIGN / [REF] C4*.
+
+### Open items carried into DISTILL
+
+Seven forks and upstream corrections need the maintainer's confirmation before the affected slice is
+dispatched; all seven are written out in the feature delta under *Forks and upstream corrections*. The
+three that change scope rather than wording:
+
+1. **The chart should not generate a key (F-1).** `lookup` is empty on every `helm template` render,
+   which is how ArgoCD renders — so a `lookup`-guarded generator regenerates a tenant's key on every
+   sync, the exact catastrophe AC-5.3 names. Recommendation: retire AC-5.2, reuse ADR-082's
+   required-value failure. AC-5.3 then becomes vacuous.
+2. **Configuration-supplied custody is operator-owned, not app-owned (F-2).** A minted key would go to
+   the generated store and lose to the configured key on the next restart, un-rotating the instance.
+3. **No EF migration is required (F-6).** The three secret columns carry no `HasMaxLength` and appear as
+   unbounded `text`/`TEXT` in both model snapshots. A migration is owed only if the slice-03 probe forces
+   the concurrency-token fallback.
+
+Plus two new open questions: the count of true legacy-plaintext rows on the `:5169` restored backup
+(OQ-4), and confirmation that an unreadable-secret failure produces a legible operator message on the
+background refresh path as well as on `ValidateConnection` (OQ-5).

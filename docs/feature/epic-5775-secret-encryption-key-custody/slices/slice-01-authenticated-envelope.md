@@ -1,6 +1,6 @@
 # Slice 01 — A secret that cannot be read says so
 
-**Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story #5777 · **Story**: US-01 (+US-07 precursor) · **Estimate**: ~6h
+**Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story #5777 · **Story**: US-01, US-08 (+US-07 precursor) · **Estimate**: ~7h
 **Reference class**: `CryptoService` + `LighthouseAppContext.EncryptSecrets` — the write path and the
 five call sites that consume a decrypted secret already exist and are unchanged in shape. This slice
 changes what the stored bytes are and what happens when they do not verify.
@@ -24,7 +24,16 @@ handed to a work tracking system as a credential.
 - An unreadable-secret state surfaced on the owning Connection's field, and once per affected secret in
   the log rather than once per sync attempt.
 - Every auth strategy and the OAuth refresh path stop short rather than sending an unverified value.
-- Expand-only migration widening the stored columns for the envelope. Nothing renamed, nothing dropped.
+- **One generic secret-handling notice on the connection form** (US-08), rendered once where the form
+  contains at least one secret field — not once per field, and naming no connector, so a single string
+  serves every secret any connector defines now or later. It says what happens to a pasted credential
+  in plain words and links to the docs, and every claim in it is already true on every install
+  regardless of key custody, which is why it belongs here rather than waiting for slice 02. It makes no
+  claim about which key the instance holds and carries no warning styling — the person pasting a token
+  usually cannot configure a key, so alarm there is alarm without a remedy. Key truth lives on
+  Settings → Encryption instead.
+- No EF migration. The three secret columns are unbounded `text`/`TEXT` in both model snapshots with no
+  `HasMaxLength`, so envelope values need no width change.
 
 ## OUT of scope
 
@@ -43,10 +52,11 @@ a failed read is always a real failure rather than a format guess.
 
 ## Acceptance criteria
 
-AC-1.1 through AC-1.9 in `feature-delta.md`. The two that carry the slice:
+AC-1.1 through AC-1.9 and AC-8.1 through AC-8.7 in `feature-delta.md`. The three that carry the slice:
 
 - **AC-1.4** — a bad authentication tag raises. It does not return ciphertext, plaintext, or empty.
 - **AC-1.5** — any flipped byte fails to decrypt rather than producing altered plaintext.
+- **AC-8.3** — every claim in the notice is true on every install regardless of key custody.
 
 ## Dependencies
 
@@ -58,7 +68,9 @@ AC-1.1 through AC-1.9 in `feature-delta.md`. The two that carry the slice:
 ## Dogfood moment
 
 Same day: point a dev build at the restored `:5169` database, confirm every existing Connection still
-syncs, then corrupt one stored byte and watch the Connection say so instead of Jira saying 401.
+syncs, then corrupt one stored byte and watch the Connection say so instead of Jira saying 401. Then
+open a connection form as somebody who has never seen it, read the notice, and check that reloading
+leaves the secret field blank — the one claim in it a user can verify in four seconds.
 
 ## Pre-slice SPIKE
 

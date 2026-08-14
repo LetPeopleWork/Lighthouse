@@ -23,6 +23,18 @@ actually does, and the people running the affected versions are told at the mome
 - **What an operator must back up, and what is lost if they do not.** Losing the generated key loses
   every stored secret. That is the correct security property and it must not be discovered by a user.
 - `docs/compliance/cra-self-assessment.md` rows 1.3 and 1.5 re-evidenced against shipped behaviour.
+- **One canonical Security page in the docs navigation, two layers at one URL.** The plain answer first
+  — a few sentences, no jargon, no algorithm names, the same four facts as the in-product notice from
+  slice 01 — then a *verify our claims* section with what is encrypted and with what, what is
+  deliberately hashed instead and why, key custody per deployment shape, and a **"what this does not
+  protect against"** section. One URL, because the same link has to serve the person asking and the
+  security person they forward it to. Today those facts are spread across a configuration reference,
+  three connector pages, two compliance documents and a root `SECURITY.md` with no presence in the docs
+  site — the gap is not a missing claim, it is a missing address.
+- The connector concept pages swap their isolated "stored encrypted in its database" one-liner for the
+  plain-language answer plus a link. Per-connector specifics stay there; nothing is duplicated.
+- The vulnerability reporting path appears in the docs, not only in the repository-root file.
+- Slice 01's in-product link is repointed at the Security page.
 - `SECURITY.md`: reporting path, and what this epic changed.
 - A GitHub Security Advisory, published **when the fixed version is installable, not before**.
 - Release notes leading with what the operator should do.
@@ -46,10 +58,12 @@ public documentation — which is the conversation that lost the evaluation this
 
 ## Acceptance criteria
 
-AC-6.1 through AC-6.11 in `feature-delta.md`. The two that carry the slice:
+AC-6.1 through AC-6.16 in `feature-delta.md`. The three that carry the slice:
 
 - **AC-6.5** — the compliance self-assessment cites evidence that matches shipped behaviour.
 - **AC-6.7** — the advisory publishes when the fixed version is installable, not before.
+- **AC-6.13** — the Security page answers the plain question at the top and lets a reviewer verify the
+  claims below it, at one URL.
 
 ## Dependencies
 
