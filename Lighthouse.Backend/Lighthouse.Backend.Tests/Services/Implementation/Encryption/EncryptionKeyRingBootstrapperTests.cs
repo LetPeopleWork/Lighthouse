@@ -1,7 +1,9 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using System.Data;
 using System.Reflection;
 using System.Text;
 
@@ -15,9 +17,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             typeof(ConfiguredKeyRingSource),
             typeof(MountedFileKeyRingSource),
             typeof(GeneratedKeyRingStore),
+            typeof(DatabaseSecretPresenceProbe),
         ];
 
         private const string MountedSecretPath = "/etc/lighthouse/encryption/keyring";
+
+        private const string ConnectionOptionTable =
+            """CREATE TABLE "WorkTrackingSystemConnectionOption" ("Id" INTEGER PRIMARY KEY, "Key" TEXT, "Value" TEXT, "IsSecret" INTEGER, "IsOptional" INTEGER, "WorkTrackingSystemConnectionId" INTEGER)""";
+
+        private const string OAuthCredentialTable =
+            """CREATE TABLE "OAuthCredentials" ("Id" INTEGER PRIMARY KEY, "AccessToken" TEXT, "RefreshToken" TEXT, "WorkTrackingSystemConnectionId" INTEGER)""";
 
         private readonly List<ServiceProvider> dataProtectionHosts = [];
 
@@ -37,6 +46,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             dataProtectionHosts.ForEach(host => host.Dispose());
             dataProtectionHosts.Clear();
+
+            SqliteConnection.ClearAllPools();
 
             if (Directory.Exists(keyStoreDirectory))
             {
@@ -263,6 +274,200 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        [Test]
+        public void Resolve_NowhereDurableAndTheDatabaseAlreadyHoldsASecret_StartsOnThePublishedKeyRatherThanMinting()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+
+            var ring = BootstrapperFor(
+                staged,
+                keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.HoldsAtLeastOne)).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.NoDurableStore));
+                Assert.That(ring.CanMint, Is.False);
+                Assert.That(ring.ActiveKey.Id, Is.EqualTo(LegacyDefaultEncryptionKey.Id));
+                Assert.That(ring.TryGet(LegacyDefaultEncryptionKey.Id, out _), Is.True);
+                Assert.That(staged.Operations, Is.Empty);
+                Assert.That(staged.FileCount, Is.Zero);
+            }
+        }
+
+        [Test]
+        public void NoDurableKeyStore_WhatAnInstanceInThatPositionIsTold_NamesThePublishedKeyAndBothWaysOut()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(NoDurableKeyStore.Warning, Does.Contain("running on the key published with the product"));
+                Assert.That(NoDurableKeyStore.Warning, Does.Contain("Set Encryption__Key"));
+                Assert.That(NoDurableKeyStore.Warning, Does.Contain("set Encryption__KeyStorePath"));
+                Assert.That(NoDurableKeyStore.Refusal, Does.Contain("will not start on the key published with the product"));
+                Assert.That(NoDurableKeyStore.Refusal, Does.Contain("Set Encryption__Key"));
+                Assert.That(NoDurableKeyStore.Refusal, Does.Contain("set Encryption__KeyStorePath"));
+            }
+        }
+
+        [Test]
+        public void Resolve_NowhereDurableAndNothingStoredYet_RefusesToStartAndBeginsOnNoKeyAtAll()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var bootstrapper = BootstrapperFor(
+                staged,
+                keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone));
+
+            var refusal = Assert.Throws<InvalidOperationException>(() => bootstrapper.Resolve());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Is.EqualTo(NoDurableKeyStore.Refusal));
+                Assert.That(staged.Operations, Is.Empty);
+                Assert.That(staged.FileCount, Is.Zero);
+            }
+        }
+
+        [Test]
+        public void Resolve_NowhereDurableAndTheDatabaseCannotBeAsked_StartsWithTheWarningRatherThanRefusing()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+
+            var ring = BootstrapperFor(
+                staged,
+                keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.CannotTell)).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.NoDurableStore));
+                Assert.That(ring.ActiveKey.Id, Is.EqualTo(LegacyDefaultEncryptionKey.Id));
+            }
+        }
+
+        [TestCase(KeyStoreCase.ExplicitKeyStorePath)]
+        [TestCase(KeyStoreCase.ConfiguredDataProtectionPath)]
+        [TestCase(KeyStoreCase.BesideTheDatabaseFile)]
+        public void Resolve_AKeyStoreSomebodyVouchedFor_MintsWithoutAskingTheDatabaseAnything(KeyStoreCase keyStoreCase)
+        {
+            var storedSecrets = new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone);
+
+            var ring = BootstrapperFor(
+                new PhysicalKeyStoreFileSystem(),
+                keyStoreCase: keyStoreCase,
+                storedSecrets: storedSecrets).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.GeneratedForThisInstance));
+                Assert.That(storedSecrets.TimesAsked, Is.Zero);
+            }
+        }
+
+        [Test]
+        public void Look_ADatabaseThatCannotBeOpenedAtAll_CannotTellRatherThanClaimingItIsEmpty()
+        {
+            var unreachable = $"Data Source={Path.Combine(keyStoreDirectory, "no-such-directory", "lighthouse.db")}";
+
+            Assert.That(ProbeAgainst(unreachable).Look(), Is.EqualTo(StoredSecretPresence.CannotTell));
+        }
+
+        [Test]
+        public void Look_ADatabaseWithNoSchemaAtAll_CannotTellRatherThanClaimingItIsEmpty()
+        {
+            var beforeAnyMigrationRan = ADatabaseAt("before-migrations.db");
+
+            Assert.That(ProbeAgainst(beforeAnyMigrationRan).Look(), Is.EqualTo(StoredSecretPresence.CannotTell));
+        }
+
+        [Test]
+        public void Look_ADatabaseWhoseSecretCarryingTableIsAbsent_CannotTellRatherThanClaimingItIsEmpty()
+        {
+            var halfASchema = ADatabaseAt("half-a-schema.db", OAuthCredentialTable);
+
+            Assert.That(ProbeAgainst(halfASchema).Look(), Is.EqualTo(StoredSecretPresence.CannotTell));
+        }
+
+        [Test]
+        public void Look_ADatabaseHoldingASecretConnectionOption_SaysItHoldsAtLeastOne()
+        {
+            var withAStoredCredential = ADatabaseAt(
+                "with-a-credential.db",
+                ConnectionOptionTable,
+                OAuthCredentialTable,
+                """INSERT INTO "WorkTrackingSystemConnectionOption" ("Value", "IsSecret") VALUES ('an-envelope', 1)""");
+
+            Assert.That(ProbeAgainst(withAStoredCredential).Look(), Is.EqualTo(StoredSecretPresence.HoldsAtLeastOne));
+        }
+
+        [Test]
+        public void Look_ADatabaseHoldingAnOAuthToken_SaysItHoldsAtLeastOne()
+        {
+            var withAStoredToken = ADatabaseAt(
+                "with-a-token.db",
+                ConnectionOptionTable,
+                OAuthCredentialTable,
+                """INSERT INTO "OAuthCredentials" ("AccessToken") VALUES ('an-envelope')""");
+
+            Assert.That(ProbeAgainst(withAStoredToken).Look(), Is.EqualTo(StoredSecretPresence.HoldsAtLeastOne));
+        }
+
+        [Test]
+        public void Look_ADatabaseWhoseOnlyStoredValuesAreNotSecrets_SaysItHoldsNone()
+        {
+            var freshlyMigrated = ADatabaseAt(
+                "freshly-migrated.db",
+                ConnectionOptionTable,
+                OAuthCredentialTable,
+                """INSERT INTO "WorkTrackingSystemConnectionOption" ("Value", "IsSecret") VALUES ('https://example.com', 0)""");
+
+            Assert.That(ProbeAgainst(freshlyMigrated).Look(), Is.EqualTo(StoredSecretPresence.HoldsNone));
+        }
+
+        [Test]
+        public void Look_WhateverItFinds_OpensOneConnectionOfItsOwnAndLeavesNothingOpen()
+        {
+            var connectionString = ADatabaseAt("lifecycle.db", ConnectionOptionTable, OAuthCredentialTable);
+            var opened = new List<SqliteConnection>();
+
+            var presence = new DatabaseSecretPresenceProbe(() =>
+            {
+                var connection = new SqliteConnection(connectionString);
+                opened.Add(connection);
+
+                return connection;
+            }).Look();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(presence, Is.EqualTo(StoredSecretPresence.HoldsNone));
+                Assert.That(opened, Has.Count.EqualTo(1));
+                Assert.That(opened.TrueForAll(connection => connection.State == ConnectionState.Closed), Is.True);
+            }
+        }
+
+        private static DatabaseSecretPresenceProbe ProbeAgainst(string connectionString)
+        {
+            return new DatabaseSecretPresenceProbe(() => new SqliteConnection(connectionString));
+        }
+
+        private string ADatabaseAt(string fileName, params string[] statements)
+        {
+            var connectionString = $"Data Source={Path.Combine(keyStoreDirectory, fileName)}";
+
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+
+            foreach (var statement in statements)
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = statement;
+                command.ExecuteNonQuery();
+            }
+
+            return connectionString;
+        }
+
         private static bool TouchesConfiguration(MemberInfo member)
         {
             var involvedTypes = member switch
@@ -309,12 +514,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             IKeyStoreFileSystem fileSystem,
             string? suppliedRing = null,
             string? suppliedKey = null,
-            string? keysFilePath = null)
+            string? keysFilePath = null,
+            KeyStoreCase keyStoreCase = KeyStoreCase.BesideTheDatabaseFile,
+            StagedSecretPresenceProbe? storedSecrets = null)
         {
             return new EncryptionKeyRingBootstrapper(
                 new ConfiguredKeyRingSource(suppliedRing, suppliedKey),
                 new MountedFileKeyRingSource(keysFilePath, fileSystem),
-                StoreFor(fileSystem));
+                StoreFor(fileSystem),
+                new KeyStoreLocation(keyStoreDirectory, keyStoreCase),
+                storedSecrets ?? new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone));
         }
 
         private GeneratedKeyRingStore StoreFor(IKeyStoreFileSystem fileSystem)
@@ -332,6 +541,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 dataProtectionHost.GetRequiredService<IDataProtectionProvider>(),
                 fileSystem,
                 TimeProvider.System);
+        }
+
+        // The bootstrapper is told what the database holds rather than asking it, so a test can put all three
+        // answers in front of it - including the one a real database only gives when it is unreachable.
+        private sealed class StagedSecretPresenceProbe : IStoredSecretPresenceProbe
+        {
+            private readonly StoredSecretPresence answer;
+
+            public StagedSecretPresenceProbe(StoredSecretPresence answer)
+            {
+                this.answer = answer;
+            }
+
+            public int TimesAsked { get; private set; }
+
+            public StoredSecretPresence Look()
+            {
+                TimesAsked++;
+
+                return answer;
+            }
         }
 
         // Docker overlayfs and WSL2 DrvFs both accept a write, report success and can hand back something
