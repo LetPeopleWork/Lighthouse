@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
+﻿using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -12,6 +13,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public string Encrypt(string plainText)
         {
             return plainText;
+        }
+
+        public SecretReadResult Read(string storedValue)
+        {
+            return new SecretReadResult(SecretState.LegacyPlaintext, storedValue, null);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Text;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
@@ -89,6 +90,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
 
             public string Encrypt(string plainText) => plainText;
+
+            public SecretReadResult Read(string storedValue) => new(SecretState.LegacyPlaintext, storedValue, null);
         }
 
         private static ServiceNowBasicAuthStrategy CreateSubject()

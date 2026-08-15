@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
+﻿using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -44,5 +45,7 @@ namespace Lighthouse.Backend.Data
         public string Encrypt(string plainText) => plainText;
 
         public string Decrypt(string cipherText) => cipherText;
+
+        public SecretReadResult Read(string storedValue) => new(SecretState.LegacyPlaintext, storedValue, null);
     }
 }

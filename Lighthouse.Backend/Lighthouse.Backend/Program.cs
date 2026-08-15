@@ -3,12 +3,14 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
@@ -29,6 +31,7 @@ using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -90,6 +93,7 @@ namespace Lighthouse.Backend
                 }
 
                 EnsureOAuthStateSecret(builder);
+                EnsureEncryptionKeyRing(builder);
 
                 ConfigureLogging(builder);
                 Log.Information("Starting up Lighthouse!");
@@ -445,6 +449,36 @@ namespace Lighthouse.Backend
             });
         }
 
+        internal static void EnsureEncryptionKeyRing(WebApplicationBuilder builder)
+        {
+            var configuredKey = builder.Configuration[EncryptionKeyConfigKey]
+                ?? throw new InvalidOperationException("EncryptionKey is not configured.");
+
+            var material = Convert.FromBase64String(configuredKey);
+
+            if (material.Length != EncryptionKey.MaterialLength)
+            {
+                throw new InvalidOperationException($"Encryption key length is invalid. It must be {EncryptionKey.MaterialLength} bytes for AES-256.");
+            }
+
+            var ring = new EncryptionKeyRing(new EncryptionKey(DeriveConfiguredKeyId(material), material));
+
+            // The ring is registered as a singleton and never written back into configuration: every value
+            // in there is reachable from its debug view and from anything that enumerates a section, which
+            // is the last place a key belongs
+            builder.Services.AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring));
+        }
+
+        // The id is a fingerprint of the key itself rather than something fresh, so two instances sharing
+        // one configured key, and the same instance after a restart, label their stored secrets identically.
+        // A random id would leave everything written before a restart unreadable after it
+        private static string DeriveConfiguredKeyId(byte[] material)
+        {
+            var fingerprint = System.Security.Cryptography.SHA256.HashData(material);
+
+            return string.Concat(ConfiguredKeyIdPrefix, Convert.ToHexStringLower(fingerprint.AsSpan(0, ConfiguredKeyIdFingerprintBytes)));
+        }
+
         private static string ResolveDataProtectionKeyStoreDir(WebApplicationBuilder builder)
         {
             var configured = builder.Configuration[DataProtectionKeyStorePathConfigKey];
@@ -484,6 +518,12 @@ namespace Lighthouse.Backend
             File.WriteAllBytes(blobPath, protectedSecret);
             return Convert.ToBase64String(freshSecret);
         }
+
+        private const string EncryptionKeyConfigKey = "EncryptionSettings:EncryptionKey";
+
+        private const string ConfiguredKeyIdPrefix = "k-cfg-";
+
+        private const int ConfiguredKeyIdFingerprintBytes = 4;
 
         private const string UseStubOAuthProviderConfigKey = "Lighthouse:OAuth:UseStubProvider";
 
