@@ -1,816 +1,696 @@
 {
   "roadmap": {
     "project_id": "epic-5775-secret-encryption-key-custody",
+    "slice": "slice-02-per-instance-key",
     "created_at": "2026-08-15",
-    "total_steps": 19,
+    "total_steps": 14,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "goal": "Ship slice 01 of ADO Epic #5775 (Story #5777): every secret written from now on is stored as an authenticated, self-describing envelope `LH1.<keyId>.<b64url nonce>.<b64url ciphertext||tag>` (AES-256-GCM, header bound as associated data, ADR-146); a stored secret that cannot be read raises instead of being handed to a work tracking system as a credential (ADR-147, the deletion of `catch (CryptographicException or FormatException) => return cipherText`); the unreadable state is named on the Connection and the field that holds it and on the refresh record; and one generic secret-handling notice appears on every connection form that asks for a credential. Scope is US-01, US-08 and the US-07 `@infrastructure` precursor inside slice 01 — nothing from slices 02-06: no key generation, no minting, no rotation, no readability check, no chart, no Kubernetes, no docs site.",
-    "overview": "Six phases, 20 steps, one conventional commit each, sized so a single crafter dispatch completes one in roughly 30 turns.\n\nPhase 01 (6 steps) is the US-07 precursor plus the write path. It lands the pure pieces first — `SecretEnvelope`, the one-key `EncryptionKeyRing` with its holder, `SecretStateClassifier` + `SecretReadResult` + `UnreadableSecretException` — and only then rewires `CryptoService` onto the holder at step 01-04. Step 01-04 is deliberately behaviour-preserving: `Decrypt` starts delegating to the classifier but still returns its input on `Unreadable`, so the whole existing suite (including the live connector categories) stays green while the plumbing moves. Phase 01 closes with the `EncryptSecrets` idempotence guard and the long-credential provider round trip that turns 'the three secret columns are unbounded' from a model reading into evidence.\n\nPhase 02 (3 steps) is milestone 1 and the point of the slice: step 02-01 deletes the fallback and `Decrypt` starts throwing. That step carries the highest blast radius in the roadmap and has its own ci-learnings note. 02-02 adds the once-per-secret warning de-duplication and the no-material-in-logs assertion; 02-03 lands the architectural enforcement rules, including the ArchUnitNET rule that `CryptoService` may not depend on `IConfiguration`.\n\nPhase 03 (5 steps) is milestone 2 — the read model's `secretState`, the field-level rendering, and the four gold tests that keep an unreadable credential inside the instance. Phase 04 (2 steps) is milestone 3, the refresh-record wording. Phase 05 (2 steps) is milestone 4, the notice. Phase 06 (2 steps) is the Playwright walking skeleton and the slice close (OQ-4 count, dogfood verdict, per-feature Stryker).\n\n**Where this departs from the DISTILL Handoff order, and why.**\n\n1. **The precursor is six commits, not one.** DISTILL proposes 'US-07 precursor' as a single commit. Envelope, ring, classifier, `ICryptoService` widening + composition-root wiring, the save-path idempotence guard and the two-provider round trip are six distinct test surfaces with six distinct RED states; one commit would be several dispatches long and would make a bisect useless on the one component in the product where a bisect is most likely to be needed.\n2. **Deleting the fallback is split from moving onto AES-GCM.** DISTILL folds both into milestone 1. Splitting them means the commit that changes what the bytes are cannot also change what happens when they do not verify — so if a live connector test breaks, the commit that broke it is unambiguous. This is the only place the roadmap deliberately writes a line it deletes one commit later (`Decrypt`'s temporary `Unreadable -> return storedValue`), and 02-01 exists precisely to delete it.\n3. **Architectural enforcement is a step, placed at 02-03 rather than at the end.** DISTILL's Test Placement lists the structural rules so DELIVER does not rediscover them but assigns them no position. They land immediately after the change that makes them true, because a rule added later is a rule that documents the present rather than one that constrains the future.\n4. **Milestone 3 is two steps (Team, then Portfolio) sharing one helper on `UpdateServiceBase`.** DISTILL treats it as one unit. Splitting keeps the second commit to the parity assertion the scenario actually asks for.\n5. **Milestones 4 and the walking skeleton keep DISTILL's positions** (notice fifth, skeleton last).\n\n**Two things the roadmap had to decide that DESIGN and DISTILL leave open.**\n\n*The ring types are slice 01, not slice 02.* The DESIGN Component Decomposition table puts `EncryptionKeyRing`, `EncryptionKey` and `IEncryptionKeyRingHolder` in slice 02, but ADR-150 makes `CryptoService` take the holder and an ArchUnitNET rule forbids it from reading configuration, and DISTILL's own Pre-requisites say 'the ring holds exactly one key here, the configured one'. So the minimal types ship here; what stays in slice 02 is everything that makes a ring plural — `KeyRingSerializer`, the three sources, `EncryptionKeyRingBootstrapper`, minting, and the compiled-in retired `k-legacy-default`. Slice 01's single entry is resolved at builder time from the existing `EncryptionSettings:EncryptionKey` value, which on a default install is the published default — and it is the **active** key here, because writes need one and there is nothing else in the ring. The 'never eligible to be active' rule for `k-legacy-default` arrives in slice 02 with minting, exactly as ADR-148 describes.\n\n*'The record names the connection and the field' means the summary line, not a new column.* `RefreshLog` has no reason or message column, and adding one would need an EF migration this slice is barred from. The naming therefore travels on `SyncOutcome.Reason`, which `LogUpdateSummary` already appends to the one line an operator reads per completed update. `RefreshLog.Success` already goes to false through the existing `try`/`finally`, so scenarios 19 and 21's 'recorded as unsuccessful' is already true and is asserted rather than built.\n\n**Estimate.** The slice brief carries ~7h, written before DISTILL produced 31 scenarios. The step estimates below sum to ~31h. The brief's number is not corrected here; it is noted so the gap is a known disagreement rather than a surprise at slice close.",
+    "goal": "Ship slice 02 of ADO Epic #5775 (Story #5024, carrying Bug #5776): where the key ring comes from, where it is kept, what happens when it cannot be resolved, and who is told. An instance starting for the first time with nothing supplied generates 32 random bytes for itself, wraps them with ASP.NET Data Protection and keeps them beside its database; an operator who set the key the configuration page names gets that key, from any of four transports, parsed by one grammar (ADR-148); the published default leaves `appsettings.json` and becomes a compiled-in retired entry that can never be active, so an upgrading instance reads every secret it already had and writes new ones under its own key; every ambiguity — two disagreeing key stores, a store that will not unwrap, a write that does not read back, nowhere durable to keep a key on a fresh install — stops the boot with a message an operator can act on; and the key source, the active key id and the resolved key store path appear on the startup line and behind `GET /api/{v1,latest}/encryption` under `[RbacGuard(SystemAdmin)]`, never on `GET /systeminfo`. Slice 01 shipped the envelope, the ring value object, the holder, the four-state reader and a builder-time `EnsureEncryptionKeyRing` that reads `EncryptionSettings:EncryptionKey`; this slice EXTENDs that method, it does not create it.",
+    "overview": "Six phases, 14 steps, one conventional commit each, in the exact order the DISTILL Handoff names: ring grammar, key-store resolver, bootstrapper, upgrade, disclosure, documentation. A slice-close step follows the documentation.\n\n**Phase 01 (2 steps) is the grammar, and it is pure.** `KeyRingSerializer` parses and renders ADR-148's `id:base64[,id:base64]*`, with position as state and the five defects each naming the entry and never the material. Then `KeyCustody` and the compiled-in `k-legacy-default` land together, because both are changes to `EncryptionKeyRing` and splitting one file across two steps buys two verification cycles for one change. No I/O, no `Program.cs`, so these two are the cheapest steps in the slice and they are first for that reason.\n\n**Phase 02 (2 steps) is ADR-149's resolver, split along the I/O line rather than along the case list.** Step 02-01 is a pure `KeyStoreResolver` — the four ordered cases as a function of configuration, provider and connection string, table-tested with no filesystem and no boot. Step 02-02 is the one `Program.cs` touch: all three existing callers of `ResolveDataProtectionKeyStoreDir` move onto it, and the read-both/write-new migration branch with its refusal-on-disagreement lands beside it. Splitting this way keeps scenario 39's four-row table off the integration suite entirely.\n\n**Phase 03 (4 steps) is the point of the slice, and it opens with the substrate.** Step 03-01 is Upstream Issue 2 and nothing else: `TestWebApplicationFactory` gains a fixture `Encryption:Key` and `appsettings.Development.json` gains a local key store path, **before** anything reads the new name. `appsettings.json` ships `Database:ConnectionString = \"Data Source=LighthouseAppContext.db\"`, a bare relative filename and therefore ADR-149 case 4; the factory replaces the `DbContext` registration but leaves configuration alone, and `WebApplicationFactory` runs the real `Program` entry point. Without 03-01 first, the commit that lands the bootstrapper turns every `WebApplicationFactory` test in the backend suite into a fresh case-4 instance that refuses to start, and a clean `dotnet run` with it. CLAUDE.md's shared-contract rule says extend the helper first; this is that rule applied to a test helper every backend integration test depends on. Steps 03-02 and 03-03 are the bootstrapper and its case-4 probe, both testable without a boot. Step 03-04 is the second `Program.cs` touch, where `EnsureEncryptionKeyRing` stops reading `EncryptionSettings:EncryptionKey` and starts reading `Encryption:Key` / `Encryption:Keys` / `Encryption:KeysFile` — the commit that closes Bug #5776.\n\n**Phase 04 (1 step) is the upgrade, and it is deliberately one step.** Removing the literal from `appsettings.json` and appending the retired default to every resolved ring are two halves of one change: doing either alone leaves an install that cannot read its own secrets. It lands after phase 03 because until the ring can hold two keys the removal has nowhere to put the old one.\n\n**Phase 05 (3 steps) is disclosure, one step per surface** — the startup line, the guarded route, the Settings page — because the three have no files in common and different stacks.\n\n**Phase 06 (2 steps)**: the configuration page, which is wrong today and becomes right here rather than at finalization, and the slice close.\n\n**Three things this roadmap decided that the upstream waves leave open.**\n\n1. *The bootstrapper cannot log.* ADR-149 says the case-4 instance \"starts with the loud line\" and ADR-150 says the startup line is printed by `PrintSystemInfo`. But `EnsureEncryptionKeyRing` is called at `Program.cs:96` and `ConfigureLogging(builder)` at `:98`, so at the moment the bootstrapper decides, Serilog is not configured and there is no line to write to. The disclosure therefore travels **on the resolved ring** — custody, active key id, resolved path, and the remedy sentence for `NoDurableStore` — and `PrintSystemInfo` renders it. This is why scenario 58 is claimed twice: 03-03 asserts the bootstrap outcome (it starts, custody is `NoDurableStore`), 05-01 asserts the rendered sentence and its two remedies. Both are driving-port assertions; neither reaches into a private method.\n\n2. *The resolver is split into a pure function and a thin adapter.* DESIGN names `Program.ResolveKeyStoreDirectory` and ADR-149 says \"it is all in one function\". Four ordered cases plus a migration branch plus a refusal inside `Program.cs` would put scenario 39's table test behind a `WebApplicationBuilder`, and `Program.cs` edits force the full backend Integration suite. The decision logic moves to `KeyStoreResolver`; `Program.ResolveKeyStoreDirectory` stays as the named entry point ADR-150's bootstrap order calls, and becomes six lines.\n\n3. *Scenario 56 is already true and already asserted.* `Architecture/SecretCustodySeamArchUnitTest.SystemInfo_DisclosesExactlyThisPropertySetAndNothingAboutKeys` shipped in slice 01 and pins `SystemInfo`'s serialised property set exactly. Step 05-02 does not re-author that assertion; it confirms the list is unchanged after the slice and adds the one thing the existing test cannot see — that the new route, not `GET /systeminfo`, is where the Settings page gets its answer.\n\n**Estimate.** The slice brief carries ~6h, written before DISTILL produced 30 scenarios and before Upstream Issue 2 was found. The step estimates below sum to ~30h. The brief's number is not corrected here; the gap is recorded so it is a known disagreement rather than a surprise at slice close.",
     "slice_to_phase": {
-      "slice-01-authenticated-envelope / US-07 precursor + write path": "phase-01 (6 steps)",
-      "slice-01-authenticated-envelope / milestone 1 — the fallback is deleted": "phase-02 (3 steps, incl. architectural enforcement)",
-      "slice-01-authenticated-envelope / milestone 2 — the unreadable secret is named": "phase-03 (5 steps)",
-      "slice-01-authenticated-envelope / milestone 3 — the refresh record names the credential": "phase-04 (2 steps)",
-      "slice-01-authenticated-envelope / milestone 4 — the secret-handling notice (US-08)": "phase-05 (2 steps)",
-      "slice-01-authenticated-envelope / walking skeleton + slice close": "phase-06 (2 steps)",
-      "_not_in_this_roadmap_": "slices 02-06 (Stories #5024, #5778, #5779, #5780, #5781) — key generation and custody, rotation, the readability check, the chart, and the docs site. Each has its own ACs and its own DISTILL pass."
+      "slice-02-per-instance-key / 1. the ring grammar": "phase-01 (2 steps)",
+      "slice-02-per-instance-key / 2. the key-store resolver": "phase-02 (2 steps)",
+      "slice-02-per-instance-key / 3. the bootstrapper (opens with Upstream Issue 2)": "phase-03 (4 steps)",
+      "slice-02-per-instance-key / 4. the upgrade": "phase-04 (1 step)",
+      "slice-02-per-instance-key / 5. disclosure": "phase-05 (3 steps)",
+      "slice-02-per-instance-key / 6. documentation + slice close": "phase-06 (2 steps)",
+      "_not_in_this_roadmap_": "slice 01 (Story #5777, shipped at a69caf4a4) and slices 03-06 (Stories #5778, #5779, #5780, #5781) — rotation and re-encryption, the readability report and the count of secrets still on the published key, the Helm chart and the mounted-Secret watcher, and the public docs site pages and security advisory. Each has its own ACs and its own DISTILL pass."
     }
   },
   "validation": {
     "status": "approved",
     "reviewer": "nw-acceptance-designer-reviewer",
     "reviewed_at": "2026-08-15",
-    "review_verdict": "conditionally_approved — 0 blockers, 1 high, 2 low. The high finding (F1, a claimed mismatch of 33 scenarios against the roadmap's 31) was checked against the files and is a miscount: the acceptance directory holds 10 + 7 + 6 + 7 + 1 = 31 scenarios, and the reviewer read milestone-2 and milestone-4 as 8 each when both hold 7. The roadmap's count is correct and the mapping covers all 31 distinct scenarios (1-30 plus 23a). The two low findings asked for documentation rather than change and are applied in the step notes for 01-04 and 06-01. The reviewer independently endorsed both upstream resolutions — the ring types moving into this slice, and the refresh naming riding the existing sync-outcome reason rather than a new column.",
-    "notes": "Awaiting reviewer. Self-check recorded for the reviewer's convenience, not as an approval: (1) AC coupling — every criteria references a public surface (the `ICryptoService` port, the serialised connection DTO, DOM-observable UI, the emitted log line's structured properties, the persisted `RefreshLog` row, an HTTP response); no private-method references. (2) Decomposition ratio — 20 steps across 41 distinct production files-to-modify = 0.49, under the 2.5 gate. (3) Identical patterns — the four auth-strategy gold cases in 03-03 are one `Scenario Outline` and one step, not four; 04-01 and 04-02 share the same shape at two call sites and 04-02 exists only to prove the parity scenario 21 asks for; 05-01 and 05-02 split the notice by concern (render-once vs. sameness/link/tone) rather than by component. (4) Validation-only — zero steps with empty files_to_modify; step 06-02 writes the slice verdict and the two Stryker configs. (5) Step-ID format — all 20 match ^\\d{2}-\\d{2}$. (6) DISTILL linkage — all 31 slice-01 scenarios map to at least one step through `scenario_name`, which carries the scenario number and title verbatim from the DISTILL Scenario List so the mapping is greppable. Highest per-step scenario count is 5 (step 04-01); no step reaches the 8-scenario flag threshold. Enforcement steps (02-03) and the two infrastructure steps that carry no scenario of their own (01-02, and 01-03 in part) say so explicitly in `scenario_name` rather than borrowing one."
+    "review_verdict": "conditionally_approved -- 0 blockers, 2 high, 1 low. Adjudicated by the orchestrator: the low finding was upheld and fixed; both high findings were rejected. HIGH 1 (step 01-02, scenario 51) and HIGH 2 (step 03-03, scenario 58) both claimed the criteria state policy rather than an observable assertion. They do not: the observable assertions live in `red_to_green_tests`, which the review did not read. 01-02's fifth test is 'No construction path the type exposes puts the published default in the active position' -- stronger than the reviewer's proposed rewording, which would have named a serialisation detail instead. 03-03's ten tests name each of the three probe answers, both no-probe cases, and the connection lifetime. No change made. LOW (three new components absent from the DESIGN Component Decomposition table) was upheld: `KeyStoreResolver`, `KeyStoreMigration` and `DatabaseSecretPresenceProbe` have been added to that table in feature-delta.md and to the CREATE NEW list in docs/product/architecture/brief.md, each with its rationale. Scenario coverage verified independently: all 30 of scenarios 31-60 claimed, zero orphans, five deliberate two-step splits each confirmed as genuine halves.",
+    "notes": "Self-check recorded before review. (1) **AC coupling** — every criterion references a public surface: the application bootstrap (does it start, does it refuse, with what message), the rendered startup banner, an HTTP response and its status code, the serialised DTO, DOM-observable UI, a file on disk, or a shipped settings file. No criterion names a private method. (2) **Decomposition ratio** — 14 steps across 24 distinct production files-to-modify = 0.58, well under the 2.5 gate. (3) **Scenario coverage** — all 30 slice-02 scenarios (31-60) map to at least one step through `scenario_name`, which carries the scenario number and title verbatim from the DISTILL Scenario List so the mapping is greppable. Scenarios claimed by two steps and why: 38 (the resolver's decision at 02-01, the standalone boot-through at 02-02), 51 (the grammar half at 01-02, the every-custody-mode half at 04-01), 58 (the bootstrap outcome at 03-03, the rendered sentence at 05-01), 40 (the code at 03-04, the page it has to agree with at 06-01), 48 and 50 (the fixture-backed test at 04-01, the real-backup evidence at 06-02). Highest per-step scenario count is 5 (step 04-01); no step reaches an 8-scenario flag threshold. (4) **No validation-only steps** — every step carries production or shipped-artifact files. Step 03-01 ships a test helper and a settings file; step 06-01 ships a documentation page; step 06-02 ships two Stryker configs and the slice verdict. (5) **Step-ID format** — all 14 match `^\\d{2}-\\d{2}$`. (6) **Every `files_to_modify` path was checked against the filesystem before it was written.** Existing files confirmed present: `Program.cs`, `appsettings.json`, `appsettings.Development.json`, `Models/Encryption/EncryptionKeyRing.cs`, `Services/Implementation/Encryption/` (5 files), `Services/Interfaces/Encryption/IEncryptionKeyRingHolder.cs`, `Tests/TestHelpers/TestWebApplicationFactory.cs`, `Tests/Startup/` (2 files), `Tests/StartupBannerAuthVisibilityTest.cs`, `Tests/API/Integration/` (124 files), `Tests/Architecture/SecretCustodySeamArchUnitTest.cs`, `API/DTO/`, `Frontend/src/services/Api/ApiServiceContext.ts`, `Frontend/src/tests/MockApiServiceProvider.ts`, `Frontend/src/pages/Settings/System/SystemSettingsTab.tsx` + `.test.tsx`, `docs/Installation/configuration.md`, `docs/feature/.../mutation/`, `docs/feature/.../slices/slice-02-per-instance-key.md`. New paths follow the naming DISTILL's Test Placement table specifies. (7) **Test-file naming** — this repository is inconsistent between `*Test.cs` and `*Tests.cs`. The rule applied here is DISTILL's Test Placement table, which names plural `Tests` for all five new backend test files and singular `Test` for `StartupBannerEncryptionKeyLineTest.cs`, matching its sibling `StartupBannerAuthVisibilityTest.cs`. Note that `Tests/Startup/` currently holds two singular-`Test` files (`LoggingConfiguratorTest.cs`, `ServiceProviderValidationTest.cs`) while the two new files there are plural; that is DISTILL's choice and is followed rather than silently corrected."
   },
   "ssot_inputs": {
-    "feature_delta": "docs/feature/epic-5775-secret-encryption-key-custody/feature-delta.md",
+    "feature_delta": "docs/feature/epic-5775-secret-encryption-key-custody/feature-delta.md (US-02 AC-2.1..AC-2.11; Wave: DESIGN Component Decomposition / Driving Ports / Driven Ports; Wave: DISTILL — acceptance specification, slice 02)",
     "gherkin_specifications": [
-      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/walking-skeleton.feature",
-      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-1-authenticated-stored-secret.feature",
-      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-2-unreadable-secret-is-named.feature",
-      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-3-background-refresh-names-the-credential.feature",
-      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-4-secret-handling-notice.feature"
+      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-5-a-key-this-instance-generated.feature",
+      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-6-the-documented-override-is-the-one-that-is-read.feature",
+      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-7-upgrading-costs-the-operator-nothing.feature",
+      "docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-8-say-which-key-and-refuse-when-unsure.feature"
     ],
     "slice_briefs": [
-      "docs/feature/epic-5775-secret-encryption-key-custody/slices/slice-01-authenticated-envelope.md"
+      "docs/feature/epic-5775-secret-encryption-key-custody/slices/slice-02-per-instance-key.md"
     ],
     "adrs": [
       "docs/product/architecture/adr-146-secret-envelope-wire-format.md",
       "docs/product/architecture/adr-147-stored-secret-states-classified-by-inspection.md",
       "docs/product/architecture/adr-148-key-ring-canonical-form-and-retired-default.md",
-      "docs/product/architecture/adr-150-key-ring-resolved-at-builder-time-into-a-singleton.md"
+      "docs/product/architecture/adr-149-key-store-beside-the-database.md",
+      "docs/product/architecture/adr-150-key-ring-resolved-at-builder-time-into-a-singleton.md",
+      "docs/product/architecture/adr-152-custody-mode-and-the-encryption-admin-surface.md"
     ],
     "architecture_brief": "docs/product/architecture/brief.md (## Application Architecture — epic-5775-secret-encryption-key-custody (DESIGN delta))",
     "environments": "docs/feature/epic-5775-secret-encryption-key-custody/environments.yaml",
     "ci_learnings": "docs/ci-learnings.md",
-    "playwright_page_objects": [
-      "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/WorkTrackingSystemCreateWizard.ts",
-      "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/WorkTrackingSystemEditPage.ts"
-    ]
+    "prior_slice_roadmap": "docs/feature/epic-5775-secret-encryption-key-custody/deliver/slice-01/roadmap.json",
+    "documentation_page": "docs/Installation/configuration.md (§ Encryption Key, lines 172-188)"
   },
   "quality_gates_every_step_inherits": [
-    "`cd Lighthouse.Backend && dotnet build` — zero errors AND zero warnings (`TreatWarningsAsErrors`).",
+    "`cd Lighthouse.Backend && dotnet build` — zero errors AND zero warnings (`TreatWarningsAsErrors` makes any warning a failure).",
     "`cd Lighthouse.Backend && dotnet test` — all NUnit suites green. Never `--no-build` off a piped build; assert ` 0 Error(s)` and ` 0 Warning(s)` from the captured build output first (ci-learnings 2026-08-12).",
     "`cd Lighthouse.Backend && dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` — run before `git push`, not before `git commit` and not after. This is the only thing that surfaces the INFO-severity rules the Sonar `new_violations = 0` gate counts and `dotnet build` cannot see. For a brand-new file the per-file grep filter does not work — read the whole findings list (ci-learnings, Recurrence 3).",
     "`cd Lighthouse.Frontend && pnpm test` green; `pnpm build` zero errors and zero warnings (a clean build implies a clean Biome check via the `prebuild` hook).",
-    "SonarQube Cloud: no new issues of any severity. Standing rule families that bite this slice specifically are named per-step.",
-    "Never push red. Un-ignore one `[Ignore(\"pending — DELIVER (epic-5775 slice 01)\")]` scenario at a time.",
-    "Comments are rare and explain why, never what. No internal reference (`AC-1.4`, `F-6`, `D8`, `DDD-3`) may appear in a code comment — a cold reader cannot resolve it. Naming an ADR file is acceptable. A `#pragma warning disable` carries its justification inline, in plain language.",
+    "SonarQube Cloud: no new issues of any severity. Rule families that bite this slice specifically are named per-step.",
+    "Never push red. Un-ignore one `[Ignore(\"pending — DELIVER (epic-5775 slice 02)\")]` scenario at a time. `TreatWarningsAsErrors` makes a test referencing a not-yet-existent type a BROKEN build rather than a RED test, so the RED mechanism is the ignore attribute beside a minimal type skeleton.",
+    "Any step that edits `Program.cs` forces the full backend Integration suite to run, which raises flake exposure and wall-clock. Three flakes are known and unrelated and must not be chased: `JiraIssuesPerRequestTest`, `JiraIncrementalSyncTest`, `DeliveryCreateModal.test.tsx`. Re-run rather than investigate.",
+    "Comments are rare and explain why, never what. No internal reference (`AC-2.7`, `F-3`, `D10`, `DD-8`) may appear in a code comment — a cold reader cannot resolve it. Naming an ADR file is acceptable. A `#pragma warning disable` carries its justification inline, in plain language; the published-default constant at step 01-02 is the one place in this slice that needs one.",
+    "No key material, ciphertext or plaintext in any log line, exception message, startup line, HTTP response or test assertion message, at any level.",
     "User-facing strings use the configurable terminology defaults — Feature / Work Item / Team / Portfolio — never Epic, Initiative or Story."
   ],
   "out_of_scope": [
-    "Any EF migration. The three secret columns (`WorkTrackingSystemConnectionOption.Value`, `OAuthCredential.AccessToken`, `.RefreshToken`) carry no `HasMaxLength` and are unbounded `text` / `TEXT` in both model snapshots; the column-widening migration an earlier draft assumed does not exist. If a step concludes a migration IS needed, STOP and report rather than adding one — and note that the project rule requires the existing `CreateMigration` PowerShell script, never `dotnet ef migrations add` directly.",
-    "Key generation, minting, the generated key store, `ResolveKeyStoreDirectory`, `EncryptionKeyRingBootstrapper`, `KeyRingSerializer`, the three key-ring sources, and the compiled-in retired `k-legacy-default` constant — all slice 02 (Story #5024).",
-    "Removing the `EncryptionSettings` block from `appsettings.json` — slice 02 owns it, because removing it before the ring can retire the default would break existing installs.",
-    "Bug #5776 (`--Encryption:Key` / `Encryption__Key` reaching nothing) — absorbed into slice 02 when D7 was retired. Slice 01 reads no configuration inside `CryptoService`, so the key in effect during acceptance is whatever the instance already had.",
-    "Rotation and re-encryption (`ISecretCustodyService`, `SecretCustodyService`, `EncryptionController`, `EncryptionPanel.tsx`, `EncryptionService.ts`) — slices 03 and 04.",
-    "The chart, the mounted-Secret transport, `KeyRingFileWatcher` — slice 05.",
-    "The docs Security page and repointing the notice's link at it — slice 06. Until then the link targets the published Encryption Key section of the configuration page, which exists today.",
-    "ADO Bug #5788 — the live update status still reporting a failed periodic refresh as completed over SignalR, because `UpdateServiceBase.TriggerUpdate` catches and swallows after the updater's `finally`. Verified 2026-08-15 and deliberately excluded: the disagreement is not credential-specific (a work tracking system outage produces exactly the same split), so fixing it for unreadable secrets alone would make the status honest about one failure kind and dishonest about every other.",
-    "Any change to `ApiKeyService` or `EmbedSessionTokenService`. Those are PBKDF2 / hashed verifiers, not recoverable secrets; they are correct as they are.",
-    "Parametrising the application-side tests over `docker-with-data-volume` vs `docker-no-data-volume`. Correct instruction, wrong slice — it belongs to slice 02 where minting first exists; here it would produce two identical runs."
+    "Any EF migration. The three secret columns (`WorkTrackingSystemConnectionOption.Value`, `OAuthCredential.AccessToken`, `.RefreshToken`) are unbounded `text` / `TEXT` in both model snapshots, and nothing in slice 02 touches a column at all. If a step concludes a migration IS needed, STOP and report rather than adding one — and note that the project rule requires the existing `CreateMigration` PowerShell script, never `dotnet ef migrations add` directly.",
+    "Re-encrypting anything. D13: upgrading does not re-encrypt. No step in this roadmap walks the stored secrets, and scenario 52 is the assertion that none does.",
+    "Measuring OQ-4. It is zero, measured 2026-08-15 against a real backup during slice 01. Not re-derived.",
+    "Rotation, minting-on-demand, `ISecretCustodyService`, `SecretCustodyService`, `POST /encryption/rotate`, `POST /encryption/reencrypt` — slice 03 (Story #5778).",
+    "`GET /encryption/secrets`, the readability report, the count of secrets still on the published key, `EncryptionPanel.tsx` — slice 04 (Story #5779). `Encryption:AllowLegacyDefault=false` is specified in ADR-148, carried by no AC, and deferred to slice 04 where readability is the surface it would be observed on.",
+    "`KeyRingFileWatcher`, the 30-second content poll, the Helm chart's `encryption.key` / `encryption.existingSecret`, `chart/templates/secret.yaml`, `chart/templates/deployment.yaml` — slice 05 (Story #5780). `MountedFileKeyRingSource` is *parsed* here (scenario 41's fourth example) and *watched* there.",
+    "The docs site Security page, the security advisory, and repointing the secret-handling notice's link at it — slice 06 (Story #5781). Until then the notice's link targets the Encryption Key section of the configuration page, which this slice rewrites and which therefore stays live.",
+    "Making `EnsureOAuthStateSecret` stop writing into `IConfiguration`. ADR-150 records that doing to the OAuth state secret what this slice does to the encryption ring is worth doing and is explicitly not in this epic's scope.",
+    "Any change to `ApiKeyService` or `EmbedSessionTokenService`. Those are PBKDF2 / hashed verifiers, not recoverable secrets.",
+    "Introducing an alias for the old `EncryptionSettings:EncryptionKey` name. A second accepted name would have to be honoured forever and would recreate the ambiguity Bug #5776 exists to remove. Scenario 47 is the assertion that the old name decides nothing."
   ],
   "phases": [
     {
       "id": "01",
-      "name": "US-07 precursor — the envelope, the one-key ring, and the write path",
-      "description": "The `@infrastructure` precursor plus the write path it enables. No user-visible behaviour changes in this phase: step 01-04 moves `CryptoService` onto AES-GCM and the key-ring holder while deliberately preserving `Decrypt`'s existing return-the-input behaviour on an unreadable value, so every existing test — including the live connector categories — stays green. The three pure components land first (01-01 envelope, 01-02 ring, 01-03 classifier) because each is a pure function of a string and a ring and is therefore unit-testable with no database and no HTTP. The phase closes with the save-path idempotence guard and the two-provider long-credential round trip that turns the no-migration reading into evidence.",
+      "name": "The ring grammar — one canonical string, and a published default that can only ever read",
+      "description": "Pure, no I/O, no `Program.cs`, and therefore first. `KeyRingSerializer` is a total function from a string to either a ring or a named defect; the compiled-in `k-legacy-default` and the `KeyCustody` label are changes to the ring value object itself. Nothing in this phase is wired into anything — that happens in phase 03 — so both steps are unit-testable in milliseconds and neither can break an existing test. The two steps are separate because they touch disjoint files; step 01-02 folds the custody enum in with the retired default precisely because both are edits to `EncryptionKeyRing.cs` and splitting one file across two steps buys two verification cycles for one change.",
       "steps": [
         {
           "id": "01-01",
-          "name": "SecretEnvelope — the wire format, AES-256-GCM, and the header bound as associated data",
-          "description": "RED: author `SecretEnvelopeTests.cs` and drive it from a minimal type skeleton so the build stays green while the assertions are red — a NUnit test referencing a non-existent type fails to compile, and `dotnet build` red is BROKEN rather than RED, so the project's RED mechanism is `[Ignore(\"pending — DELIVER (epic-5775 slice 01)\")]` un-ignored one case at a time. Cases: a round trip through `Format` then `TryParse` returns the four fields unchanged; the rendered value matches `LH1.<keyId>.<b64url nonce>.<b64url ct||tag>` with unpadded base64url (no `+`, `/` or `=`); a key id outside `[a-z0-9-]{1,32}` is refused at format time; flipping one bit of each of the four fields in turn makes decryption fail (four cases); a valid envelope whose `keyId` field is rewritten to name a different ring key fails its tag when decrypted under that key; encrypting the same plaintext 100 000 times under one key yields 100 000 distinct nonces. GREEN: create `Services/Implementation/Encryption/SecretEnvelope.cs` — a sealed value object with a total `TryParse` that never throws and never partially succeeds, `AesGcm` with a 12-byte nonce from `RandomNumberGenerator` and a 16-byte tag, the UTF-8 bytes of `LH1.<keyId>` passed as associated data to both `Encrypt` and `Decrypt`, and unpadded base64url encoding. No `catch` anywhere in the file. Do not use `new Regex(...)` for the key-id charset — SYSLIB1045 is a standing Sonar rule here; prefer a character loop or `[GeneratedRegex]`. COMMIT: `feat(encryption): add authenticated secret envelope with the key id bound as associated data`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretEnvelopeTests.cs",
-          "scenario_name": "Scenario 6 — A single altered byte fails to be read rather than producing an altered credential; Scenario 7 — A stored secret relabelled with another key's name is refused rather than believed; Scenario 10 — Two secrets holding the same credential are never stored identically",
+          "name": "KeyRingSerializer — one canonical `id:base64[,id:base64]*`, first entry active by position",
+          "description": "RED: author `KeyRingSerializerTests.cs` against a minimal type skeleton so the build stays green while the assertions are red; un-ignore one case at a time. Cases, drawn from ADR-148's grammar and its Earned Trust table: a single `id:base64` parses to a one-entry ring whose entry is active; several comma-separated entries parse in order with the first active and the rest retired; whitespace around entries and around the separator is trimmed so a Kubernetes Secret written across lines parses; rendering a ring and re-parsing it returns an equal ring; and the five defects, each naming the entry at fault and saying what is wrong with it — a 31-byte key says how long it is and how long it has to be, a non-base64 value says it could not be decoded, a ring naming the same id twice says which name is repeated, an empty or whitespace-only value says no key was supplied under a name that was set, and an id outside `[a-z0-9-]{1,32}` (uppercase, a dot, 33 characters) says which name is not allowed. Two further cases carry scenarios of their own: no defect message contains any byte of the supplied material, whole or in fragments — assert by searching every thrown message for the base64 text, for its unpadded form, and for every 8-character substring of it; and a bare key with no id gets the derived id `k-cfg-` + the first eight lowercase hex characters of `SHA-256(material)`, so the same key parsed twice, and parsed in two processes, yields the same id. GREEN: create `Services/Implementation/Encryption/KeyRingSerializer.cs` — a static class with `TryParse(string, out EncryptionKeyRing, out string defect)` that is total and throws for nothing, and `Format(EncryptionKeyRing)`. Position is state: the serializer never sees an `active` token because the grammar cannot express one. Move `DeriveConfiguredKeyId` out of `Program.cs` and into this class, since it is grammar rather than bootstrap; `Program.EnsureEncryptionKeyRing` keeps compiling because it calls the new location. Do not use `new Regex(...)` for the id charset — SYSLIB1045 is a standing rule here; prefer a character loop or `[GeneratedRegex]`. Watch S3776 (cognitive complexity) on the parse loop and CA1861 on any constant array. COMMIT: `feat(encryption): parse and render the one canonical key ring string`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyRingSerializerTests.cs",
+          "scenario_name": "Scenario 43 — A supplied key that cannot be used stops startup and says what is wrong with it (5 defects); Scenario 44 — The complaint about a bad key never contains the key; Scenario 45 — One supplied key gives every instance holding it the same name for it; Scenario 46 — An operator can supply more than one key, and the first one is the one that writes",
           "red_to_green_tests": [
-            "Format then TryParse returns the four fields unchanged",
-            "A rendered envelope is `LH1.` + key id + unpadded base64url nonce + unpadded base64url ciphertext||tag, and contains no `+`, `/` or `=`",
-            "A key id outside [a-z0-9-]{1,32} is refused at format time",
-            "Flipping one bit of the version field makes decryption fail",
-            "Flipping one bit of the key-id field makes decryption fail",
-            "Flipping one bit of the nonce field makes decryption fail",
-            "Flipping one bit of the ciphertext||tag field makes decryption fail",
-            "Rewriting a valid envelope's key id to another key's id and decrypting under that key fails the tag",
-            "100 000 encrypts of the same plaintext under one key yield 100 000 distinct nonces"
+            "A single `id:base64` entry parses to a one-entry ring whose entry is the active key",
+            "Several comma-separated entries parse in order, first active and the rest retired",
+            "Whitespace around entries and around the separator is trimmed",
+            "Format then TryParse returns an equal ring",
+            "A 31-byte key is refused, and the message names the entry and says how long it is and how long it has to be",
+            "A value that is not base64 is refused, and the message says it could not be decoded",
+            "A ring naming the same id twice is refused, and the message says which name is repeated",
+            "An empty or whitespace-only value is refused, and the message says no key was supplied under a name that was set",
+            "An id with an uppercase letter, a dot, or 33 characters is refused, and the message says which name is not allowed",
+            "No defect message contains the supplied material, its unpadded form, or any 8-character substring of it",
+            "A bare key with no id derives `k-cfg-` + eight lowercase hex characters of SHA-256(material)",
+            "The same bare key parsed twice, and in two separate processes, derives the same id",
+            "TryParse is total: it returns a parse outcome for every input string and throws for none"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretEnvelope.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretEnvelopeTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/KeyRingSerializer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyRingSerializerTests.cs"
           ],
           "dependencies": [],
           "criteria": [
-            "A stored secret produced by this type is `LH1.<keyId>.<base64url nonce>.<base64url ciphertext||tag>` with no padding characters.",
-            "Decryption of an envelope whose header has been altered in any field fails; it does not return the ciphertext, the plaintext, or an empty string.",
-            "Decryption of an envelope relabelled with another ring key's id fails its tag under that key.",
-            "`TryParse` is total: it returns a parse outcome for every input string and throws for none.",
-            "The file contains no `catch` and no exception filter.",
-            "The same plaintext encrypted twice under one key produces two different stored values.",
-            "`dotnet build` zero warnings; the analyzer sweep is clean for this file."
+            "One string form parses identically however it arrived; there is no second parser and no second accepted shape.",
+            "The first entry is the active key because of its position, not because of a field or a validator.",
+            "Each of the five defects is refused with a message that names the entry at fault and states what is wrong with it.",
+            "No refusal message contains any part of the supplied key material, whole or in fragments.",
+            "The derived id for a bare key is a function of the key alone, so two instances holding one key label their stored secrets identically.",
+            "`TryParse` returns an outcome for every input string and throws for none.",
+            "`dotnet build` zero warnings; the analyzer sweep is clean for the new file."
           ],
-          "estimated_hours": 2.0,
+          "estimated_hours": 2.5,
           "deliverables": [
-            "SecretEnvelope.cs (new)",
-            "SecretEnvelopeTests.cs (new)"
+            "KeyRingSerializer.cs (new)",
+            "Program.cs (modified — `DeriveConfiguredKeyId` moves out; the `k-cfg-` constants move with it)",
+            "KeyRingSerializerTests.cs (new)"
           ]
         },
         {
           "id": "01-02",
-          "name": "EncryptionKey, EncryptionKeyRing and IEncryptionKeyRingHolder — the one-key ring, positional grammar only",
-          "description": "RED: author `EncryptionKeyRingTests.cs` and `EncryptionKeyRingHolderTests.cs`. Cases: a ring built from one entry reports that entry as active; a ring built from several reports the first as active and the rest as retired; a ring cannot be constructed empty; a duplicate key id is refused; a key whose material is not 32 bytes is refused and the failure names the entry and never the material; `TryGet(keyId)` finds a retired key as readily as the active one; the holder's `Current` returns the ring it was constructed with; `Replace` swaps it atomically; 1 000 reads of `Current` racing 100 `Replace` calls never observe a torn or null ring. GREEN: create `Models/Encryption/EncryptionKey.cs` and `Models/Encryption/EncryptionKeyRing.cs` — immutable value objects where position is state (first entry active, every later entry retired), so a ring with two active keys or none is unrepresentable rather than validated; `Services/Interfaces/Encryption/IEncryptionKeyRingHolder.cs` (`EncryptionKeyRing Current { get; }` as a volatile read, `void Replace(EncryptionKeyRing ring)` as an atomic reference swap) and `Services/Implementation/Encryption/EncryptionKeyRingHolder.cs`. Nothing is registered in DI yet and nothing consumes these types — that is step 01-04. **Explicitly NOT in this step**: `KeyRingSerializer`, the canonical `id:base64[,...]` parser, the three key-ring sources, the bootstrapper, minting, and the compiled-in retired default. Those are slice 02; building them here would ship a plural ring with nothing to put in it. COMMIT: `feat(encryption): add the immutable key ring and its singleton holder`.",
+          "name": "KeyCustody and the compiled-in retired default — the published key can only ever read",
+          "description": "RED: extend `EncryptionKeyRingTests.cs`. Cases: a ring carries a custody label and reports it; appending the published default to a ring built from any custody mode leaves it retired and leaves the previously-active key active; appending it to a ring that already holds it is a no-op rather than a duplicate-id refusal; there is no constructor, no factory and no ordering of arguments that puts the published default in the active position — assert by exhausting every construction path the type exposes, so the property holds by the shape of the type rather than by a guard; and the published default's id is exactly `k-legacy-default` and its material is exactly the 32 bytes currently at `appsettings.json:43-44`, so a secret written by a pre-epic build resolves under it. GREEN: create `Models/Encryption/KeyCustody.cs` with the four values ADR-152 names — `GeneratedForThisInstance`, `SuppliedByConfiguration`, `SuppliedByExternalSecret`, `NoDurableStore` — and a derived `CanMint => Custody == GeneratedForThisInstance` expressed once, on the ring, so the endpoint and the panel cannot disagree about it. Extend `Models/Encryption/EncryptionKeyRing.cs` with a `Custody` property and a `WithLegacyDefault()` that returns a new ring with the published key appended last, or the same ring if it is already present. Create `Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs` holding the id constant and the material constant. The material constant will be flagged by SonarQube as a hard-coded credential and takes **one narrow inline suppression at the declaration** whose justification says in plain language that this key is already published with the product, that it exists only so secrets written before this release stay readable, and that it can never encrypt anything — this is the single place in the slice where CLAUDE.md permits a rationale in code, and it belongs there because that is where a reviewer meets it. Adding `Custody` changes the `EncryptionKeyRing` constructor, which slice 01's tests and `Program.EnsureEncryptionKeyRing` both call; grep both spellings and both projects before changing the signature, per the ci-learnings rule harvested when `ICryptoService` turned out to have a fourth implementation nobody had counted. Prefer a defaulted parameter or an additional constructor so no slice-01 call site has to move. COMMIT: `feat(encryption): carry custody on the ring and append the published key as retired`.",
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingTests.cs",
-          "scenario_name": "No scenario of its own — the US-07 precursor is observable only through scenarios 1 and 2, which land at steps 01-04 and 06-01. This step is the ring those two stand on.",
+          "scenario_name": "Scenario 51 — The published key can never become the key new secrets are written under (grammar half; the every-custody-mode half is re-asserted at step 04-01)",
           "red_to_green_tests": [
-            "A one-entry ring reports that entry as the active key",
-            "A multi-entry ring reports the first entry active and the rest retired",
-            "An empty ring cannot be constructed",
-            "A duplicate key id is refused and the failure names the id",
-            "A key whose material is not 32 bytes is refused and the message contains no part of the material",
-            "TryGet resolves a retired key id as readily as the active one",
-            "The holder returns the ring it was constructed with",
-            "Replace swaps the ring atomically and subsequent reads see the new one",
-            "1 000 concurrent reads of Current racing 100 Replace calls observe no torn or null ring"
+            "A ring reports the custody it was built with",
+            "CanMint is true for GeneratedForThisInstance and false for the other three",
+            "Appending the published default leaves it retired and leaves the previously-active key active",
+            "Appending the published default twice yields one entry, not a duplicate-id refusal",
+            "No construction path the type exposes puts the published default in the active position",
+            "The published default's id is exactly `k-legacy-default`",
+            "The published default's material is exactly the 32 bytes shipped in appsettings.json before this slice",
+            "Every existing EncryptionKeyRing test still compiles and passes unchanged"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/EncryptionKey.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/KeyCustody.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/EncryptionKeyRing.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Encryption/IEncryptionKeyRingHolder.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingHolder.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingHolderTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingTests.cs"
           ],
           "dependencies": [
             "01-01"
           ],
           "criteria": [
-            "The ring is immutable and replaced wholesale; two rings with the same entries in the same order are equal.",
-            "Exactly one active key is a property of the grammar (first position), not of a validator.",
-            "A ring can never be constructed empty, with a duplicate id, or with a key whose material is not 32 bytes.",
-            "No validation failure message contains any part of a key's material.",
-            "The holder's `Current` is a volatile read of an immutable snapshot; a reader that captured it sees a consistent ring for the whole operation.",
-            "No key-ring source, serializer, bootstrapper or minting code is introduced.",
+            "A resolved ring states which of the four custody modes produced it, and whether this instance is able to mint at all, from one expression.",
+            "The published key is present in a ring only ever as a retired entry; no ordering, no configuration and no construction path makes it the key that writes.",
+            "Appending it is idempotent.",
+            "Its id and material match what pre-epic builds wrote, so an existing secret resolves under it.",
+            "The declaration of the published material carries exactly one narrow inline suppression, justified in plain language, naming no internal reference.",
+            "Every slice-01 caller of the ring constructor compiles unchanged.",
             "`dotnet build` zero warnings."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "EncryptionKey.cs (new)",
-            "EncryptionKeyRing.cs (new)",
-            "IEncryptionKeyRingHolder.cs (new)",
-            "EncryptionKeyRingHolder.cs (new)",
-            "EncryptionKeyRingTests.cs (new)",
-            "EncryptionKeyRingHolderTests.cs (new)"
-          ]
-        },
-        {
-          "id": "01-03",
-          "name": "SecretStateClassifier — four states by inspection, no catch anywhere in the path",
-          "description": "RED: author `SecretStateClassifierTests.cs`. Cases, in the ADR-147 classification order: a value starting `LH1.` that parses and whose tag verifies under the named ring key classifies `Envelope` and yields its plaintext; a value starting `LH1.` whose key id is not in the ring classifies `Unreadable` and reports the claimed key id; a value starting `LH1.` whose tag fails classifies `Unreadable`; a bare AES-CBC blob written by the previous implementation classifies `LegacyCbc` and yields its plaintext; a CBC-shaped value no ring key reads classifies `Unreadable`, never `LegacyPlaintext` — this is the rule that stops step 3 resurrecting the deleted fallback under a new name; a short or non-base64 value classifies `LegacyPlaintext`; and the disjointness property — 10 000 randomly generated legacy CBC blobs, none of which starts `LH1.`, none of which classifies `Envelope`. GREEN: create `Services/Implementation/Encryption/SecretStateClassifier.cs`, `Models/Encryption/SecretState.cs` (`Envelope`, `LegacyCbc`, `LegacyPlaintext`, `Unreadable` — a closed enum, so no caller can invent a fifth or default to 'probably fine'), `Models/Encryption/SecretReadResult.cs` (`record SecretReadResult(SecretState State, string? PlainText, string? KeyId)`) and `Services/Implementation/Encryption/UnreadableSecretException.cs`, which carries the state and the claimed key id and never any material. The CBC branch decrypts with `PaddingMode.None` so the unpad is an arithmetic test on the last byte, then validates the PKCS7 trailer and checks the result is well-formed UTF-8 with no control characters — the padding and printability checks are computed, never caught. The file contains no `catch` and no exception filter. COMMIT: `feat(encryption): classify a stored secret into four states by inspection`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretStateClassifierTests.cs",
-          "scenario_name": "Scenario 4 — A value that was never encrypted at all is recognised as such, by inspection; Scenario 9 — A secret stored in the previous form can never be mistaken for the current one",
-          "red_to_green_tests": [
-            "An envelope whose tag verifies under the named ring key classifies Envelope and yields the original plaintext",
-            "An envelope naming a key id the ring does not hold classifies Unreadable and reports the claimed key id",
-            "An envelope whose tag fails classifies Unreadable",
-            "A bare AES-CBC blob from the previous implementation classifies LegacyCbc and yields its plaintext",
-            "A CBC-shaped value no ring key reads classifies Unreadable, never LegacyPlaintext",
-            "A short or non-base64 value classifies LegacyPlaintext through a positive structural test",
-            "Property: 10 000 random legacy CBC blobs never classify as Envelope",
-            "The classifier never throws for any input string",
-            "UnreadableSecretException carries the state and claimed key id and no material"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/SecretState.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/SecretReadResult.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretStateClassifier.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/UnreadableSecretException.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretStateClassifierTests.cs"
-          ],
-          "dependencies": [
-            "01-01",
-            "01-02"
-          ],
-          "criteria": [
-            "Classification is a total function of a stored value and a ring; it returns for every input and throws for none.",
-            "The four states are a closed enum.",
-            "A never-encrypted value is recognised by a deliberate positive check on its shape, not because something failed and was caught.",
-            "A CBC-shaped value that no ring key reads is Unreadable, never LegacyPlaintext.",
-            "`SecretStateClassifier.cs` and `SecretEnvelope.cs` contain no `catch` and no exception filter.",
-            "`UnreadableSecretException` exposes the state and the claimed key id and carries no key material, ciphertext or plaintext.",
-            "The property assertion over 10 000 generated CBC blobs passes with zero Envelope classifications."
           ],
           "estimated_hours": 2.0,
           "deliverables": [
-            "SecretState.cs (new)",
-            "SecretReadResult.cs (new)",
-            "SecretStateClassifier.cs (new)",
-            "UnreadableSecretException.cs (new)",
-            "SecretStateClassifierTests.cs (new)"
-          ]
-        },
-        {
-          "id": "01-07",
-          "name": "Move tag verification into SecretEnvelope.TryUnprotect and delete the classifier's duplicated envelope knowledge",
-          "description": "Inserted 2026-08-15 after step 01-03 shipped, by orchestrator decision. Numbered 01-07 because step ids must match two-digit-dash-two-digit, but placed here in the file and gated by its dependency because it runs immediately after 01-03 and before 01-04. WHY: ADR-147 forbids `catch` in the read path, but .NET's `AesGcm` exposes no `TryDecrypt` — verified against the .NET 10 reference assembly — so `Decrypt` throws on a bad tag. To honour the rule literally, 01-03 verified tags in the encrypt direction: encrypt zeroes to recover the CTR keystream, XOR out the candidate plaintext, re-encrypt to reproduce the tag, compare in fixed time. That is mathematically correct and its tests pass, but it calls `AesGcm.Encrypt` twice under a nonce already present in the database, and it forces `SecretStateClassifier` to rebuild the associated-data header and re-declare the tag length — envelope knowledge duplicated into a second file, where the two can drift. ADR-147's `no catch` was a proxy for its real intent: a failed read must be a real failure, never silently degraded into returning ciphertext as plaintext. A narrowly-scoped catch that returns false honours that intent exactly, and unorthodox cryptography is a liability the next maintainer pays. RED: extend `SecretEnvelopeTests.cs` with cases for the new API — a valid envelope round-trips through `TryUnprotect` returning true with the plaintext; a tampered tag returns false without throwing; a tampered header field returns false; a wrong key returns false; `TryUnprotect` throws for no input at all. Extend `SecretStateClassifierTests.cs` only if a case is missing; the existing 17 must stay green unchanged, which is the proof this is behaviour-preserving. GREEN: add `bool TryUnprotect(EncryptionKey key, out string? plainText)` (or the equivalent shape) to `SecretEnvelope`, wrapping exactly one `catch (AuthenticationTagMismatchException)` that returns false — catch that type alone, never `CryptographicException` and never a bare `catch`, and carry an inline comment giving the reason in plain language: the platform offers no non-throwing decrypt, and a wider catch would hide a real fault. Rewrite `SecretStateClassifier` to call it, deleting the keystream reconstruction, the rebuilt header and the re-declared tag length. COMMIT: `refactor(encryption): verify the envelope tag inside SecretEnvelope, not in the classifier`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretEnvelopeTests.cs",
-          "scenario_name": "No scenario of its own — behaviour-preserving. Scenarios 5, 6, 7 and 9 must stay green through it, which is the acceptance bar.",
-          "red_to_green_tests": [
-            "A valid envelope round-trips through TryUnprotect, returning true and the original plaintext",
-            "An envelope with a flipped bit in the tag returns false and does not throw",
-            "An envelope whose header field has been altered returns false and does not throw",
-            "An envelope decrypted under the wrong ring key returns false and does not throw",
-            "The classifier's existing 17 cases pass unchanged against the rewritten implementation"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretEnvelope.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretStateClassifier.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretEnvelopeTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretStateClassifierTests.cs"
-          ],
-          "dependencies": [
-            "01-03"
-          ],
-          "criteria": [
-            "`SecretEnvelope` owns tag verification; the classifier holds no copy of the associated-data header and no tag-length constant.",
-            "The only catch in the encryption path is a single `AuthenticationTagMismatchException` inside `SecretEnvelope`, justified inline in plain language.",
-            "No key material or plaintext is reachable from any failure path.",
-            "`AesGcm.Encrypt` is called exactly once per stored secret written, and never during a read.",
-            "The 17 classifier cases from step 01-03 pass unchanged.",
-            "`dotnet build` zero warnings; the analyzer sweep is clean for all four files."
-          ],
-          "estimated_hours": 1.0,
-          "deliverables": [
-            "SecretEnvelope.TryUnprotect (new API)",
-            "SecretStateClassifier simplified — keystream reconstruction deleted"
-          ]
-        },
-        {
-          "id": "01-04",
-          "name": "CryptoService takes the key ring, writes envelopes, and gains Read — behaviour deliberately preserved",
-          "description": "RED: extend `CryptoServiceTests.cs`. Cases: a newly encrypted value is an envelope naming the active key's id and reads back byte-identical to the input; a value written by the previous AES-CBC implementation still reads back correctly through the same `Decrypt`; `Read` returns the four-state result the classifier produces. **`Decrypt_InvalidCipherText_ShouldReturnOriginalText` stays green in this step** — that is the whole point of splitting it from 02-01. GREEN: widen `Services/Interfaces/ICryptoService.cs` with `SecretReadResult Read(string storedValue)`. Before touching any consumer, grep for `ICryptoService` and extend all three implementations — `CryptoService`, `Lighthouse.Backend.Tests/TestHelpers/FakeCryptoService.cs`, and `DesignTimeCryptoService` inside `Data/LighthouseAppContextFactory.cs`; this is a shared contract and the project rule is to bound the blast radius before widening it. Rewrite `CryptoService`'s body: the constructor takes `IEncryptionKeyRingHolder` instead of `IConfiguration` and the `configuration[\"EncryptionSettings:EncryptionKey\"]` lookup is deleted; `Encrypt` writes an envelope under the ring's active key; `Decrypt` delegates to the classifier and returns the plaintext for `Envelope`, `LegacyCbc` and `LegacyPlaintext`. For `Unreadable` it **temporarily** returns the stored value, with a comment saying in plain language that this is the last commit in which an unreadable secret is handed back and that the next one makes it a failure. Add `Program.EnsureEncryptionKeyRing(builder)` running at builder time before `builder.Build()`: it reads the existing `EncryptionSettings:EncryptionKey`, derives the key id as `k-cfg-` plus the first eight hex characters of `SHA-256(material)` (derived, never random — two pods of one Deployment and the same pod after a restart must label envelopes identically), builds a one-entry ring and registers `AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring))`. Nothing resolved is written back into `IConfiguration`. Update the DI registration at `Program.cs` so `CryptoService` resolves the holder. Note: editing `Program.cs` forces the full backend Integration suite in CI, so budget for the longer run. COMMIT: `refactor(encryption): resolve the key ring at builder time and write authenticated envelopes`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs",
-          "scenario_name": "Scenario 2 — A newly saved secret is stored in the current format and reads back unchanged; Scenario 3 — A secret saved before this change is still read correctly, with no migration and no user action",
-          "red_to_green_tests": [
-            "Encrypt produces a value starting `LH1.` and naming the active key's id",
-            "Encrypt then Decrypt returns the original credential unchanged",
-            "A value written by the previous AES-CBC implementation decrypts correctly through the new Decrypt",
-            "Read returns Envelope with the plaintext and the key id for a freshly written value",
-            "Read returns LegacyCbc with the plaintext for a previous-form value",
-            "The one-entry ring resolved at builder time reports the configured key as active with a k-cfg- derived id",
-            "The derived key id is stable across two independent resolutions of the same material",
-            "Decrypt_InvalidCipherText_ShouldReturnOriginalText — unchanged and still green in this step"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ICryptoService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/CryptoService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContextFactory.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FakeCryptoService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs"
-          ],
-          "dependencies": [
-            "01-03"
-          ],
-          "criteria": [
-            "`CryptoService`'s constructor takes `IEncryptionKeyRingHolder`; the `EncryptionSettings:EncryptionKey` lookup is gone from the class.",
-            "`Encrypt` writes an envelope under the ring's active key; `Decrypt` reads envelopes, previous-form blobs and never-encrypted values correctly.",
-            "`ICryptoService.Read` exists and is implemented by all three implementations, including the test fake and the design-time service.",
-            "The ring is resolved once, at builder time, before `builder.Build()`; nothing resolved is written into `IConfiguration`.",
-            "The derived key id for a configured key is a pure function of the material, so two processes holding the same key label envelopes identically.",
-            "This commit changes no observable behaviour for an unreadable value — the entire existing suite, including the live connector categories, stays green.",
-            "`dotnet build` zero warnings; the analyzer sweep is clean for every touched file."
-          ],
-          "estimated_hours": 2.5,
-          "deliverables": [
-            "ICryptoService.cs (modified — +Read)",
-            "CryptoService.cs (modified — rewritten body, holder-injected)",
-            "Program.cs (modified — +EnsureEncryptionKeyRing, holder registration)",
-            "LighthouseAppContextFactory.cs (modified — DesignTimeCryptoService.Read)",
-            "FakeCryptoService.cs (modified — Read)",
-            "CryptoServiceTests.cs (modified)"
-          ]
-        },
-        {
-          "id": "01-05",
-          "name": "EncryptSecrets skips a value that is already an envelope under the active key",
-          "description": "RED: add a save-path test under `Lighthouse.Backend.Tests/Data/`. Cases: saving a connection whose secret option is `Modified` but whose value was not re-entered leaves the stored value byte-identical and still reading back as the original credential; saving an `Added` option encrypts it once; an `OAuthCredential` whose `AccessToken` was not re-entered is left byte-identical while a re-entered one is encrypted; a value that is a well-formed envelope under a *retired* key is still skipped, because re-wrapping it would double-encrypt rather than re-encrypt (moving it onto the active key is slice 03's job, not the save path's). GREEN: guard the two loops in `LighthouseAppContext.EncryptSecrets` on whether the value already parses as a well-formed envelope under the active key, using the classifier rather than a string prefix test — a prefix test would also skip a corrupted envelope. This closes the latent double-encrypt that has always existed when a `Modified` option's value was untouched. COMMIT: `fix(encryption): stop re-encrypting a secret that is already an envelope on save`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/SecretEncryptionOnSaveTests.cs",
-          "scenario_name": "Scenario 8 — Saving a connection again does not encrypt an already-protected secret a second time",
-          "red_to_green_tests": [
-            "A Modified secret option whose value was not re-entered is left byte-identical on save",
-            "A Modified secret option whose value WAS re-entered is encrypted once",
-            "An Added secret option is encrypted exactly once",
-            "An OAuthCredential access token that was not re-entered is left byte-identical",
-            "An OAuthCredential refresh token that WAS re-entered is encrypted once",
-            "A value that reads back as the original credential before the save still does so after it"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Data/SecretEncryptionOnSaveTests.cs"
-          ],
-          "dependencies": [
-            "01-04"
-          ],
-          "criteria": [
-            "Saving a connection twice without re-entering its credential leaves the stored value unchanged and still readable.",
-            "A re-entered credential is encrypted exactly once.",
-            "The guard is a classifier result, not a string prefix test, so a corrupted envelope is not silently skipped.",
-            "Both loops in `EncryptSecrets` — connection options and OAuth credentials — carry the guard.",
-            "The only columns this step writes are the three secret columns already in the save path."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "LighthouseAppContext.cs (modified — idempotence guard in EncryptSecrets)",
-            "SecretEncryptionOnSaveTests.cs (new)"
-          ]
-        },
-        {
-          "id": "01-06",
-          "name": "A long credential survives a real save and read on SQLite and PostgreSQL",
-          "description": "RED: add a Testcontainers-backed integration test beside the existing `Integration/Containers/` fixtures (the `BlockedCountSnapshotMigrationTests` provider-pair pattern is the model — it already builds both a SQLite and a Postgres provider, but with `FakeCryptoService`; here the real `CryptoService` and a real one-key ring are needed instead). Save a credential far longer than any work tracking system issues — 100 KB — into a connection secret option and into an `OAuthCredential`, on both providers, and read it back. GREEN: no production change is expected. This step exists to turn 'the three secret columns carry no `HasMaxLength` and are unbounded `text` / `TEXT` in both model snapshots' from a reading of the model into evidence. **If this test fails because a column truncates, STOP and report** — do not add a migration. A migration would be generated with the existing `CreateMigration` PowerShell script and never with `dotnet ef migrations add`, and its necessity is a finding that contradicts the DESIGN wave and belongs in front of the maintainer before any schema change. Note that `Integration/Containers/*` fixtures are known to flake under parallel container load; re-run the class alone before treating a failure as real. COMMIT: `test(encryption): prove the secret columns hold a 100 KB envelope on both providers`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/LongSecretRoundTripTests.cs",
-          "scenario_name": "Scenario 11 — An unusually long credential survives a real save and read on both database providers",
-          "red_to_green_tests": [
-            "A 100 KB credential saved into a connection secret option on SQLite reads back unchanged",
-            "A 100 KB credential saved into a connection secret option on PostgreSQL reads back unchanged",
-            "A 100 KB OAuth access token reads back unchanged on both providers",
-            "The stored value is an envelope in every case"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/LongSecretRoundTripTests.cs"
-          ],
-          "dependencies": [
-            "01-05"
-          ],
-          "criteria": [
-            "A 100 KB credential round-trips unchanged through a real save on SQLite and on PostgreSQL.",
-            "No EF migration is added. If the test cannot be made to pass without one, the step stops and reports rather than adding it.",
-            "The test uses the real `CryptoService` and a real one-key ring, not `FakeCryptoService` — a fake would make the assertion vacuous.",
-            "A failure is re-run in isolation before being treated as real (Testcontainers parallel-load flake)."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "LongSecretRoundTripTests.cs (new)"
+            "KeyCustody.cs (new)",
+            "EncryptionKeyRing.cs (modified — Custody, CanMint, WithLegacyDefault)",
+            "LegacyDefaultEncryptionKey.cs (new)",
+            "EncryptionKeyRingTests.cs (extended)"
           ]
         }
       ]
     },
     {
       "id": "02",
-      "name": "Milestone 1 — the fallback is deleted and a failed read becomes a real failure",
-      "description": "The point of the slice. Step 02-01 removes `catch (CryptographicException or FormatException) => return cipherText` and makes `Decrypt` throw `UnreadableSecretException`. It carries the largest blast radius of any step in this roadmap and its own ci-learnings note. 02-02 adds the once-per-secret log de-duplication inside `CryptoService`, so that no caller passes an identity and no caller changes. 02-03 lands the architectural enforcement rules immediately after the changes that make them true.",
+      "name": "The key-store resolver — four ordered cases, and a legacy store that is migrated rather than ignored",
+      "description": "ADR-149's rule, split along the I/O line rather than along the case list. Step 02-01 is the decision as a pure function of configuration, provider and connection string, table-tested with no filesystem and no boot — which is what keeps scenario 39's four rows off the integration suite. Step 02-02 is the single `Program.cs` touch: `ResolveDataProtectionKeyStoreDir` becomes `ResolveKeyStoreDirectory`, all three existing callers move onto it, and the read-both/write-new migration branch lands with its refusal-on-disagreement. **Where this departs from DESIGN**: the Component Decomposition puts the whole resolver in `Program.cs` and ADR-149 says \"it is all in one function\". Four cases plus a migration plus a refusal inside `Program.cs` would put every one of those assertions behind a `WebApplicationBuilder`, and `Program.cs` edits force the full backend Integration suite. `Program.ResolveKeyStoreDirectory` survives as the named entry point ADR-150's bootstrap order calls; it becomes a six-line adapter.",
       "steps": [
         {
           "id": "02-01",
-          "name": "Delete the plaintext fallback — Decrypt throws UnreadableSecretException",
-          "description": "RED: rewrite `CryptoServiceTests.Decrypt_InvalidCipherText_ShouldReturnOriginalText` into `Decrypt_UnreadableValue_Throws` and add: an envelope whose tag does not verify throws; an envelope naming an unknown key id throws; a CBC-shaped value no ring key reads throws; and in none of those cases is the stored value, the plaintext, or an empty string returned. GREEN: delete the `catch` and the temporary `Unreadable -> return storedValue` branch from `CryptoService.Decrypt`; throw `UnreadableSecretException` carrying the state and the claimed key id. **This is the step the 2026-08-13 ci-learnings entry is about.** Before deleting, run each work tracking connector's live category locally — `dotnet test --filter \"TestCategory=AdoIntegration\"`, then `JiraIntegration`, `LinearIntegration`, `ServiceNowIntegration` — because a swallow can be pinned as behaviour by a live test and nowhere else, and the usual `TestCategory!=Integration` filter excludes exactly those. Never read a Stryker `NoCoverage` on a catch as 'nothing asserts this' when the run's test-case-filter excludes the integration categories. The six consumers of `Decrypt` change by zero lines: the four auth strategies, the Linear GraphQL client factory and `OAuthService` keep calling it and the exception travels the failure path each already has. COMMIT: `fix(encryption): make an unreadable secret a failure instead of returning the ciphertext`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs",
-          "scenario_name": "Scenario 5 — A stored secret whose proof of integrity does not verify is refused; Scenario 6 — A single altered byte fails to be read rather than producing an altered credential (at the service boundary)",
+          "name": "KeyStoreResolver — the four ordered cases as a pure decision",
+          "description": "RED: author `KeyStoreResolverTests.cs`. The table, in ADR-149's stated order: (1) `Encryption:KeyStorePath` set → that directory, whatever else is configured; (2) `Lighthouse:DataProtection:KeyStorePath` set → that directory, which is what `StandaloneInitializer.InitializePaths` already writes, so standalone resolves exactly where it resolved before this epic; (3) provider is SQLite and the connection string's `DataSource` resolves to an absolute path with a directory → `<that directory>/keys`; (4) otherwise → `<ContentRootPath>/data-protection-keys`, **and minting is refused**. Case 3's parsing is its own sub-table and is the substrate lie ADR-149 catalogues: a relative `Data Source=LighthouseAppContext.db` lands in case 4, an absolute POSIX path and an absolute Windows path land in case 3, `:memory:` lands in case 4, a Postgres connection string never reaches case 3 at all, and a `DataSource=` spelled with and without the space parses the same. Assert the *ordering* too, not only the outcomes: with cases 1 and 2 both configured, case 1 wins; with 2 and 3 both available, 2 wins. The resolver returns the directory **and** which case produced it, because the caller needs the case to decide whether minting is permitted and the startup line needs it to say where the key came from. GREEN: create `Services/Implementation/Encryption/KeyStoreResolver.cs` — a pure static function of (encryption key store path, data-protection key store path, database provider, database connection string, content root path) returning a small record carrying the resolved directory and the case. It touches no `WebApplicationBuilder`, creates no directory and reads no file, so the whole table runs with no substrate. Use `Path.IsPathRooted` / `Path.GetDirectoryName` rather than string surgery so Windows and POSIX agree. Watch S3776 on the ordered if-chain and CA1861 on any constant array. COMMIT: `feat(encryption): resolve the key store by one rule applied in a stated order`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyStoreResolverTests.cs",
+          "scenario_name": "Scenario 39 — Where the key store lands is decided by one rule, applied in a stated order (4 cases); Scenario 38 — The standalone application is unchanged by this slice (the resolver half; the boot-through half is at step 02-02)",
           "red_to_green_tests": [
-            "An envelope whose authentication tag does not verify makes Decrypt throw",
-            "An envelope naming a key id the ring does not hold makes Decrypt throw",
-            "A CBC-shaped value no ring key reads makes Decrypt throw",
-            "Decrypt never returns the stored value, the plaintext, or an empty string for an unreadable value",
-            "The thrown exception carries the state and the claimed key id",
-            "The four auth strategies, the Linear GraphQL client factory and OAuthService compile and pass unchanged"
+            "An explicit encryption key store path resolves to the path the operator named",
+            "No encryption key store path, a data-protection key store path set: resolves to that directory — the standalone case, unchanged",
+            "No key store path, SQLite with a DataSource at an absolute path: resolves to a keys directory beside that database file",
+            "No key store path, SQLite with a bare relative filename: resolves to the default location and minting is refused",
+            "No key store path, Postgres: resolves to the default location and minting is refused",
+            "No key store path, SQLite `:memory:`: resolves to the default location and minting is refused",
+            "An absolute Windows path and an absolute POSIX path both reach case 3",
+            "`Data Source=` and `DataSource=` parse identically",
+            "Cases 1 and 2 both configured: case 1 wins",
+            "Cases 2 and 3 both available: case 2 wins",
+            "The resolver reports which case produced the answer, not only the directory"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/CryptoService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/KeyStoreResolver.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyStoreResolverTests.cs"
           ],
           "dependencies": [
-            "01-06"
+            "01-02"
           ],
           "criteria": [
-            "`catch (Exception ex) when (ex is CryptographicException || ex is FormatException)` no longer exists in `CryptoService`.",
-            "`Decrypt` throws `UnreadableSecretException` for an unreadable value and returns the credential for the three readable states.",
-            "No consumer of `Decrypt` gained a try/catch — the six call sites change by zero lines.",
-            "Each work tracking connector's live test category was run locally before the deletion and its result recorded in the commit body.",
-            "`dotnet test` green on the full non-Integration suite AND on each live connector category."
+            "One rule decides where the key store lands, and the four cases are applied in the stated order for every deployment shape the product ships.",
+            "An operator who already mounted a data volume and put the database on it resolves to that volume without configuring anything.",
+            "The standalone profile resolves to the same directory it resolved to before this slice.",
+            "A deployment with no local database file resolves to the default location and is reported as one where minting is refused.",
+            "The answer carries which case produced it, so the caller can decide about minting and the startup line can say where the key came from.",
+            "The whole table runs with no filesystem, no builder and no database.",
+            "`dotnet build` zero warnings."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 2.5,
           "deliverables": [
-            "CryptoService.cs (modified — fallback deleted)",
-            "CryptoServiceTests.cs (modified — the swallow test becomes a throw test)"
+            "KeyStoreResolver.cs (new)",
+            "KeyStoreResolverTests.cs (new)"
           ]
         },
         {
           "id": "02-02",
-          "name": "One warning per unreadable secret per process, carrying no material",
-          "description": "RED: extend `CryptoServiceTests.cs` with a captured-logger fixture. Cases: 50 consecutive reads of the same unreadable value emit exactly one `Warning`; two different unreadable values emit two; 5 000 distinct unreadable values leave the de-duplication dictionary at its cap of 1 000 with the oldest evicted; the emitted line's structured properties are exactly the state and the claimed key id, and contain no part of the key, the stored value or the credential. GREEN: add an `ILogger<CryptoService>` and a bounded de-duplication dictionary keyed on `SHA-256(storedValue)` — the hash is a dictionary key and is never logged. Because the key is derived from the argument the method already has, no call site passes an identity and no call site changes, which is the whole reason this lives here and not in a caller. Watch CA1869 (never `new` a `JsonSerializerOptions` per call) if any serialisation creeps into the log line — it should not; the line carries two scalars. COMMIT: `feat(encryption): report an unreadable secret once per process and never its material`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs",
-          "scenario_name": "Scenario 16 — An unreadable secret is reported once, not once for every attempt to use it; Scenario 17 — Nothing about the secret or the key itself is written down when the failure is reported",
+          "name": "Program.ResolveKeyStoreDirectory and the legacy-store migration — read both, write new, refuse when they disagree",
+          "description": "RED: author `Startup/KeyStoreDirectoryResolutionTests.cs`. Cases: booting with a SQLite `DataSource` at an absolute path and no key store path configured puts the key store beside that database — the assertion that fails if anyone reorders the bootstrap so the resolver runs before `StandaloneInitializer.InitializePaths`; booting the standalone profile resolves to the same directory it resolved to before this slice; a legacy `ContentRootPath/data-protection-keys` populated and the newly-resolved directory empty copies the legacy contents across, once, and reports both locations so the move is visible rather than silent; re-running with both now populated and identical is a no-op rather than a second copy; and both populated and **different** refuses to start, names both locations, and neither picks one nor merges them. GREEN: extend `Program.cs` — rename `ResolveDataProtectionKeyStoreDir` to `ResolveKeyStoreDirectory`, have it delegate the decision to `KeyStoreResolver` and then perform the I/O the decision implies (create the directory, run the migration branch, surface the case to its caller). All three existing callers move onto it: `EnsureOAuthStateSecret`, `EnsureEncryptionKeyRing` and `ConfigureDataProtection`. Per ADR-150 the resolver becomes step 2 of the bootstrap order, ahead of `EnsureOAuthStateSecret`, so it is resolved once rather than three times. Create `Services/Implementation/Encryption/KeyStoreMigration.cs` for the read-both/write-new branch, so the copy and the refusal are testable against a temp directory without a builder. **Three stores, one directory, deliberately** (ADR-149): the encryption ring file is Data-Protection-wrapped, so splitting the directories would produce a deployment where the wrapped blob survives and the keys that unwrap it do not. Do not split them. This is the first of three `Program.cs` steps; expect the full backend Integration suite and re-run rather than investigate `JiraIssuesPerRequestTest`, `JiraIncrementalSyncTest` and `DeliveryCreateModal.test.tsx`. COMMIT: `feat(encryption): keep the key store beside the database and migrate the old location once`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/KeyStoreDirectoryResolutionTests.cs",
+          "scenario_name": "Scenario 33 — The key is kept beside the data, and the startup line says exactly where (the resolution half; the rendered line is at step 05-01); Scenario 35 — An instance whose key was kept in the old place keeps it, rather than starting over; Scenario 36 — Two key stores that disagree stop startup rather than one of them winning; Scenario 38 — The standalone application is unchanged by this slice",
           "red_to_green_tests": [
-            "50 consecutive reads of the same unreadable value emit exactly one Warning",
-            "Two different unreadable values emit two Warnings",
-            "5 000 distinct unreadable values leave the dedup dictionary at its cap",
-            "The emitted structured properties are exactly the state and the claimed key id",
-            "No emitted property contains any part of the key material, the stored value or the credential",
-            "The dedup key is never itself logged"
+            "A boot with a SQLite DataSource at an absolute path and no key store path puts the key store in that database's directory",
+            "Reordering the resolver ahead of the standalone path initialisation fails this test",
+            "The standalone profile resolves to the same directory it resolved to before this slice",
+            "The OAuth state secret, the encryption ring and the Data Protection ring all resolve to the same directory",
+            "Legacy directory populated and resolved directory empty: contents are copied across and both locations are reported",
+            "Running again with both populated and identical copies nothing a second time",
+            "Both populated and different: startup stops, names both locations, and neither directory is modified",
+            "No existing key store is ever ignored and replaced with a fresh one"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/CryptoService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/KeyStoreMigration.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/KeyStoreDirectoryResolutionTests.cs"
           ],
           "dependencies": [
             "02-01"
           ],
           "criteria": [
-            "An unreadable secret produces exactly one Warning per distinct stored value per process lifetime.",
-            "The de-duplication cache is bounded and cannot grow without limit.",
-            "The emitted line's structured property set is exactly {state, key id}.",
-            "No call site of `Decrypt` or `Read` changed to enable this.",
-            "No key material, ciphertext or plaintext appears in any log line at any level."
+            "One resolved directory serves the OAuth state secret, the encryption ring and the Data Protection ring; they are never split.",
+            "An instance whose database is on a mounted volume keeps its key store on that volume with no configuration.",
+            "A key store in the location earlier versions used is carried across once, and both locations are named so the move is visible.",
+            "Two populated locations that disagree stop startup and name both; neither is picked, merged or modified.",
+            "The standalone application's resolved directory is byte-identical to what it was before this slice.",
+            "Reordering the bootstrap so the resolver runs before the standalone path initialisation fails a test rather than shipping.",
+            "`dotnet build` zero warnings; full backend suite green."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 3.0,
           "deliverables": [
-            "CryptoService.cs (modified — logger + bounded dedup)",
-            "CryptoServiceTests.cs (modified)"
-          ]
-        },
-        {
-          "id": "02-03",
-          "name": "Architectural enforcement — the rules that keep this from eroding",
-          "description": "RED then GREEN in one pass, since each rule is expected to pass the moment it is written; a rule that fails is a finding to report, not a bug to code around. Add `Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs` following the five existing `*SeamArchUnitTest.cs` files in that directory: (a) **`CryptoService` may not depend on `IConfiguration`** — the rule that makes the defect class behind Bug #5776 unrepeatable, and the one ADR-150 names explicitly; (b) no type in `WorkTrackingConnectors.Auth` may depend on `UnreadableSecretException` or on `SecretState`, so no auth strategy learns anything about cryptography; (c) `CryptoService` may depend on no repository type and no `HttpClient`. Add a structural source test asserting that `SecretStateClassifier.cs` and `SecretEnvelope.cs` contain no `catch` and no exception filter — three semantically orthogonal layers, so a single-layer bypass is caught by another. Add a contract test asserting the serialised property set of `GET /systeminfo` is exactly what it is today, since key state must not appear there. Import-graph linters were considered upstream and rejected: they cannot express method-presence or dependency rules on classes. Note NUnit1028 (only test methods should be public) on any `TestCaseSource` provider added here — it is promoted to `warning` in `.editorconfig` and will fail the build. COMMIT: `test(encryption): enforce the crypto seam with architecture and structural rules`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs",
-          "scenario_name": "Not a scenario — the DISTILL Test Placement section lists these as enforcement rather than acceptance, and says so explicitly so DELIVER does not have to rediscover them.",
-          "red_to_green_tests": [
-            "ArchUnitNET: CryptoService does not depend on IConfiguration",
-            "ArchUnitNET: no type in WorkTrackingConnectors.Auth depends on UnreadableSecretException or SecretState",
-            "ArchUnitNET: CryptoService depends on no repository type and no HttpClient",
-            "Structural: SecretStateClassifier.cs contains no catch and no exception filter",
-            "Structural: SecretEnvelope.cs contains no catch and no exception filter",
-            "Contract: the serialised property set of GET /systeminfo is unchanged and carries no key state"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretReadPathSourceStructureTest.cs"
-          ],
-          "dependencies": [
-            "02-02"
-          ],
-          "criteria": [
-            "An attempt to reintroduce `IConfiguration` into `CryptoService` fails the build's test run.",
-            "An attempt to make an auth strategy handle a crypto failure fails the architecture test.",
-            "An attempt to add a `catch` to the secret read path fails the structural test.",
-            "`GET /systeminfo` discloses nothing about keys, asserted by property set rather than by review.",
-            "The new tests follow the existing `*SeamArchUnitTest.cs` idiom in `Architecture/` rather than introducing new tooling."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "SecretCustodySeamArchUnitTest.cs (new)",
-            "SecretReadPathSourceStructureTest.cs (new)"
+            "Program.cs (modified — ResolveKeyStoreDirectory replaces ResolveDataProtectionKeyStoreDir at all three call sites and moves to bootstrap step 2)",
+            "KeyStoreMigration.cs (new)",
+            "KeyStoreDirectoryResolutionTests.cs (new)"
           ]
         }
       ]
     },
     {
       "id": "03",
-      "name": "Milestone 2 — the unreadable secret is named on its own Connection and never leaves the instance",
-      "description": "How the failure surfaces. The read model gains a per-secret state derived on read — nothing persisted, nothing projected, no event published, because readability is derivable from the stored value in microseconds and a projection would be a cache of something cheaper than the cache. The four gold tests then prove that a credential the instance could not read never reaches a work tracking system.",
+      "name": "The bootstrapper — three sources, one precedence, a durability proof, and every refusal",
+      "description": "The point of the slice, and it opens with the substrate rather than with the change. Step 03-01 is Upstream Issue 2 alone: `appsettings.json` ships a bare relative `Data Source=LighthouseAppContext.db`, which is ADR-149 case 4 by its own table; `TestWebApplicationFactory` replaces the `DbContext` registration but leaves configuration untouched; and `WebApplicationFactory` runs the real `Program` entry point. So the moment the bootstrapper lands, every `WebApplicationFactory` test in the backend suite is a fresh case-4 instance that refuses to start, and a clean local `dotnet run` with it. The fix sits inside ADR-149's own escape hatches — a fixture key for tests, a key store path for development — and it lands first because CLAUDE.md's shared-contract rule says extend the helper before the things that boot through it. Steps 03-02 and 03-03 are the bootstrapper and its case-4 probe, both testable without a boot. Step 03-04 is the `Program.cs` touch that closes Bug #5776.",
       "steps": [
         {
           "id": "03-01",
-          "name": "The connection read model carries a per-secret state",
-          "description": "RED: add a `WebApplicationFactory` integration test beside the existing connection-payload-shape tests. Cases: `GET /api/{v1,latest}/worktrackingsystemconnections` for a connection whose stored credential can no longer be read carries the unreadable state on that option and only that option; a connection whose credentials all read carries the readable state on every option and is otherwise byte-identical to today's payload; a non-secret option carries no state at all; and the secret option's `value` is still the empty string for every role, unchanged. GREEN: add a state property to `WorkTrackingSystemConnectionOptionDto`, derived from `ICryptoService.Read` at construction, and thread the crypto service into the DTO construction path in `WorkTrackingSystemConnectionsController`. Two Sonar rules bite here: **S6964** — a value-type property on a `[FromBody]` DTO must be opt-in, and this DTO is bound from the body on the save and validate routes, so the new property must be modelled so it cannot silently default (a recurrence-3 rule in the ledger); and **CA1859** if a private helper returns an interface for a single concrete type. This is a Lighthouse-Clients contract: grep for usages and extend the relevant test builder before changing the shape, and record the version gate in the commit body. COMMIT: `feat(encryption): report per-secret readability on the connection read model`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionSecretStatePayloadTests.cs",
-          "scenario_name": "Scenario 12 — A connection holding a secret that cannot be read shows that state on the field that holds it (read-model half); Scenario 13 — A connection whose secrets all read shows no unreadable state anywhere",
+          "name": "The integration substrate — a fixture key for every WebApplicationFactory boot, and a local key store for development",
+          "description": "**Upstream Issue 2, and this step exists for no other reason.** RED: author `Startup/EncryptionBootstrapOrderTests.cs` with the guard case only — a `TestWebApplicationFactory` boot exposes `Encryption:Key` at the fixture value, and the boot succeeds. At this point in the roadmap nothing reads that name yet, so the assertion is about the substrate rather than about behaviour; it is the thing that fails loudly if someone later deletes the fixture and cannot work out why 124 integration tests went red at once. GREEN: extend `Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs` — add a `ConfigureAppConfiguration` block supplying a fixed, checked-in `Encryption:Key` (32 base64 bytes, obviously a fixture, never the published default and never a real key), so custody in every integration test is `SuppliedByConfiguration`, minting is skipped entirely, and every integration test's key id is deterministic. Note that `WithTestAuthentication` already uses `ConfigureAppConfiguration` + `AddInMemoryCollection`, so the idiom is in the file already; put the encryption fixture in `ConfigureWebHost` so **every** derived factory gets it, not only the authenticated ones. Extend `Lighthouse.Backend/appsettings.Development.json` with an `Encryption` block carrying a `KeyStorePath` under the developer's own working directory, so a clean `dotnet run` on a fresh checkout resolves case 1 rather than case 4 — a key store path rather than a key, so local development exercises the generated-custody path the shipped product uses rather than the configuration path the tests use. Grep for other `WebApplicationFactory` subclasses and for `ViewerEmbedTestHost` before assuming one file covers it; if a second host builds its own configuration, it needs the same fixture. Do not touch `appsettings.json` here — the literal leaves it at step 04-01, after the ring can hold two keys. COMMIT: `test(encryption): give every integration boot a fixture key and development a local key store`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs",
+          "scenario_name": "No scenario of its own. This is the DISTILL Upstream Issue 2 substrate step: without it the commit at 03-04 turns every WebApplicationFactory test in the backend suite red for a reason that has nothing to do with the change. It is the ground scenarios 32, 40, 41, 48, 50 and 52 stand on.",
           "red_to_green_tests": [
-            "A connection with an unreadable stored credential returns the unreadable state on that option",
-            "The other options on the same connection are unaffected",
-            "A connection whose credentials all read returns no unreadable state anywhere",
-            "A non-secret option carries no readability state",
-            "A secret option's value is still the empty string in the payload for every role",
-            "The rest of the connection payload is unchanged"
+            "A TestWebApplicationFactory boot exposes Encryption:Key at the fixture value",
+            "A TestWebApplicationFactory boot succeeds",
+            "Every derived factory, authenticated or not, sees the fixture key",
+            "Any second WebApplicationFactory host in the test project sees it too",
+            "The fixture key is not the key published in appsettings.json",
+            "A clean `dotnet run` on the Development profile resolves an explicit key store path rather than the default location"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionOptionDto.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionDto.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionSecretStatePayloadTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/appsettings.Development.json",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs"
           ],
           "dependencies": [
-            "02-03"
+            "02-02"
           ],
           "criteria": [
-            "The readability state is derived on read; nothing is persisted, projected or evented.",
-            "The state appears on the option that holds the secret, not on the connection as a whole.",
-            "A connection whose credentials all read produces a payload otherwise identical to today's.",
-            "The DTO's new property does not trip S6964 on the body-bound routes.",
-            "The Lighthouse-Clients version gate is recorded in the commit body and the shared test builder was extended before the shape changed."
+            "Every backend integration boot supplies its own key, so no integration test depends on what the shipped settings file happens to contain.",
+            "The fixture key is deterministic, checked in, and visibly a fixture; it is never the key published with the product.",
+            "A developer cloning the repository and running the backend gets a working instance with a key store of its own, without editing anything.",
+            "Deleting the fixture fails a named test rather than turning the whole integration suite red at once.",
+            "No production behaviour changes in this step.",
+            "`dotnet build` zero warnings; full backend suite green and unchanged in count."
           ],
-          "estimated_hours": 2.0,
+          "estimated_hours": 1.5,
           "deliverables": [
-            "WorkTrackingSystemConnectionOptionDto.cs (modified)",
-            "WorkTrackingSystemConnectionDto.cs (modified)",
-            "WorkTrackingSystemConnectionsController.cs (modified)",
-            "ConnectionSecretStatePayloadTests.cs (new)"
+            "TestWebApplicationFactory.cs (modified — fixture Encryption:Key in ConfigureWebHost)",
+            "appsettings.Development.json (modified — Encryption:KeyStorePath)",
+            "EncryptionBootstrapOrderTests.cs (new — guard case only; extended at 03-04 and 04-01)"
           ]
         },
         {
           "id": "03-02",
-          "name": "The connection form marks the field whose secret cannot be read",
-          "description": "RED: extend the colocated Vitest tests for `ModifyConnectionSettings`. Cases: an option carrying the unreadable state renders a message naming the encryption key as the cause against that field; the other fields on the same connection render unchanged; a connection whose options all read renders no such marking anywhere and looks exactly as it does today. GREEN: extend `IWorkTrackingSystemOption` with the state, and render the marking on the field in `ModifyConnectionSettings.tsx`. The create wizard is deliberately untouched — a connection being created has no stored secret to be unreadable. Wording is the operator's, not the implementation's: the field says the secret cannot be read with the current encryption key. `ModifyConnectionSettings.tsx` is already flagged as a complexity hotspot, so watch typescript:S3776 — if adding the branch pushes cognitive complexity past the threshold, extract the marking into a small colocated component rather than nesting another ternary. COMMIT: `feat(encryption): mark the connection field whose secret cannot be read`.",
-          "test_file": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx",
-          "scenario_name": "Scenario 12 — A connection holding a secret that cannot be read shows that state on the field that holds it (rendering half); Scenario 13 — A connection whose secrets all read shows no unreadable state anywhere",
+          "name": "EncryptionKeyRingBootstrapper — three sources, one precedence, and a write that has to read back",
+          "description": "RED: author `EncryptionKeyRingBootstrapperTests.cs` against a temp directory. Cases: with nothing supplied and a durable key store, the bootstrapper generates 32 cryptographically random bytes, wraps them with Data Protection and writes `encryption-keyring.protected` — and the ring it returns has custody `GeneratedForThisInstance` and that key active; running again against the same directory resolves the same key rather than a second one, so a restart is not a rotation; a key supplied by configuration wins over a generated one, is labelled `SuppliedByConfiguration`, and **no file is written** — the assertion that matters for scenario 42, because an instance that mints over a supplied key would un-rotate itself on the next restart; a key supplied by mounted file is labelled `SuppliedByExternalSecret` and wins over generation but loses to configuration; the write is temp-then-move, so a process killed between write and activation leaves the previous ring intact; **the write is read back and unprotected and compared byte-for-byte before success is declared**, and a substrate that accepts the write and returns something else stops startup rather than being trusted — inject a filesystem that lies rather than trying to find one, because Docker overlayfs and WSL2 DrvFs are catalogued liars about durability and neither is available in CI; and a key store file that exists and will not unprotect stops startup naming the file, writes **no replacement**, and leaves the stored secrets exactly as they are. GREEN: create `Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs` and the three sources — `ConfiguredKeyRingSource` (reads `Encryption:Key` / `Encryption:Keys` through `KeyRingSerializer`), `MountedFileKeyRingSource` (reads the whole content of the file at `Encryption:KeysFile` through the same parser — parsed here, watched in slice 05), and `GeneratedKeyRingStore` (the Data-Protection-wrapped file, temp-then-`File.Move`, read-back-and-compare). The bootstrapper takes its filesystem and its `IDataProtectionProvider` as injected capabilities rather than reaching for `File` and a static provider, so the lying-substrate case is expressible; it returns a ring or raises, and it never catches to continue. Precedence is configuration, then mounted file, then generated, then mint — one ordered list in one place. No `Program.cs` in this step; wiring is 03-04. COMMIT: `feat(encryption): resolve the key ring from three sources and prove the write is durable`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs",
+          "scenario_name": "Scenario 31 — A first start with nothing supplied gives the instance a key of its own; Scenario 37 — A key that cannot be read back the moment after it was written is not accepted; Scenario 42 — An instance given a key does not go and make one of its own; Scenario 57 — A key store that exists and cannot be read stops the instance rather than starting over",
           "red_to_green_tests": [
-            "An option carrying the unreadable state renders the message against that field",
-            "The message names the encryption key as the cause",
-            "The other fields on the same connection are unaffected",
-            "A connection whose options all read renders no marking anywhere",
-            "The form is otherwise unchanged when nothing is unreadable"
+            "Nothing supplied and a durable store: 32 random bytes are generated, wrapped, and written, and the ring reports custody generated-for-this-instance",
+            "Running again against the same directory resolves the same key, not a second one",
+            "A key supplied by configuration wins, is labelled supplied-by-configuration, and no key file is written",
+            "A key supplied by mounted file is labelled supplied-by-external-secret and beats generation",
+            "Configuration beats a mounted file",
+            "The write is temp-then-move, so an interruption before activation leaves the previous ring intact",
+            "The written ring is read back and unprotected and compared before success is declared",
+            "A filesystem that accepts the write and returns something else stops startup",
+            "A key store file that will not unprotect stops startup, names the file, and writes no replacement",
+            "No refusal message contains any key material",
+            "Nothing the bootstrapper resolves is written into configuration"
           ],
           "files_to_modify": [
-            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemOption.ts",
-            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/ConfiguredKeyRingSource.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/MountedFileKeyRingSource.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/GeneratedKeyRingStore.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs"
           ],
           "dependencies": [
             "03-01"
           ],
           "criteria": [
-            "The unreadable state is shown against the field that holds the credential, naming the encryption key as the cause.",
-            "No other field on the connection is affected.",
-            "A connection whose secrets all read is visually unchanged from today.",
-            "`pnpm test` green, `pnpm build` zero warnings, Biome clean.",
-            "Cognitive complexity of the touched component did not increase past the Sonar threshold."
+            "An instance starting with nothing supplied ends up with a key of its own, kept where only that instance can read it, and uses it for new secrets.",
+            "Starting again resolves the same key; a restart is never a rotation.",
+            "An operator-supplied key wins, and the instance generates nothing — no file appears in the key store.",
+            "A key written and then not readable back stops startup; the instance never carries on as though it had a key it will still have tomorrow.",
+            "A key store that exists and cannot be read stops startup, names the store, writes no replacement, and leaves the stored secrets untouched.",
+            "No key material appears in any message, and nothing resolved is written back into configuration.",
+            "`dotnet build` zero warnings."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 4.0,
           "deliverables": [
-            "WorkTrackingSystemOption.ts (modified)",
-            "ModifyConnectionSettings.tsx (modified)",
-            "ModifyConnectionSettings.test.tsx (modified)"
+            "EncryptionKeyRingBootstrapper.cs (new)",
+            "ConfiguredKeyRingSource.cs (new)",
+            "MountedFileKeyRingSource.cs (new)",
+            "GeneratedKeyRingStore.cs (new)",
+            "EncryptionKeyRingBootstrapperTests.cs (new)"
           ]
         },
         {
           "id": "03-03",
-          "name": "Gold tests — no auth strategy hands a work tracking system a credential it could not read",
-          "description": "RED then GREEN: no production change is expected, because the four strategies and the Linear GraphQL client factory each call `Decrypt` and let the exception travel the failure path they already have. This step proves that rather than assuming it. Add one case per strategy to the existing `*StrategyTests.cs` files — `PatAuthStrategy`, `JiraCloudBasicAuthStrategy`, `LinearApiKeyAuthStrategy`, `ServiceNowBasicAuthStrategy` — plus one for the Linear GraphQL client factory: given a connection whose stored credential is corrupted, `ApplyAsync` raises and the `HttpRequestMessage` carries no `Authorization` header at all. The header assertion is the one that matters: 'it threw' is not the same fact as 'nothing went out'. If any strategy turns out to need a production change to satisfy this, that is a finding worth reporting, because the architecture rule added at 02-03 forbids a strategy from knowing about the crypto failure. NUnit2045 (the assert-pair rule) is a standing recurrence here and is promoted to `warning`; use `Assert.EnterMultipleScope`, never `Assert.Multiple`. COMMIT: `test(encryption): prove no auth strategy sends a credential the instance could not read`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategyTests.cs",
-          "scenario_name": "Scenario 14 (Scenario Outline, four credential styles) — No work tracking system is ever handed a credential the instance could not read",
+          "name": "The case-4 durability decision — three answers, and the one that cannot tell warns rather than refuses",
+          "description": "RED: extend `EncryptionKeyRingBootstrapperTests.cs`. **ADR-149's amendment of 2026-08-15 is binding and is not re-litigated here.** The probe is three-valued and the third answer behaves as the first. Cases: an existing instance holding at least one encrypted secret, with nowhere durable to keep a key, **starts** — custody `NoDurableStore`, the ring holds the published default so every stored credential keeps working, and the ring carries the sentence saying so together with the two remedies (`Encryption__Key`, or `Encryption__KeyStorePath` on a mounted volume); a fresh instance with no stored secrets and nowhere durable **refuses to start**, with the same two remedies, and does not quietly begin on the published key; and each of the three cannot-tell shapes — connection refused, no schema at all, and the table present but absent — behaves as *holds secrets*, that is, starts with the warning. That last row is the one that guards against an instance refusing to boot because Postgres was slow to come up, which would be a new outage mode introduced by a security improvement. Two structural properties are asserted alongside: **the probe opens only once the resolver has already landed on case 4**, so cases 1-3 gain no startup dependency on database availability — assert by giving a case-1 and a case-3 resolution a probe that throws if called; and the probe opens and closes its own connection at builder time, using the same connection string `ConfigureDatabase` will later use, because at that moment no `DbContext` exists. GREEN: create `Services/Implementation/Encryption/DatabaseSecretPresenceProbe.cs` behind a small interface the bootstrapper takes, returning one of three answers rather than a bool — a bool would force the caller to invent a meaning for the third case, which is the defect the amendment exists to prevent. The query asks whether any of the three secret columns holds a value; it must survive a missing schema and a missing table, so it catches the provider's *no such table* and *no such schema* shapes and returns cannot-tell rather than propagating. This is the one place in the slice where catching is correct, and it needs a comment saying why in plain language: a database that cannot be reached is not an empty one, and reading it as one would refuse to boot a working instance. COMMIT: `feat(encryption): refuse to mint where durability cannot be argued, and warn where it cannot be told`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs",
+          "scenario_name": "Scenario 58 — An existing instance with nowhere durable to keep a key keeps working, and says so (the bootstrap outcome; the rendered sentence is at step 05-01); Scenario 59 — A fresh instance with nowhere durable to keep a key refuses to start",
           "red_to_green_tests": [
-            "PatAuthStrategy: a corrupted stored value makes ApplyAsync raise and the request carries no Authorization header",
-            "JiraCloudBasicAuthStrategy: same",
-            "LinearApiKeyAuthStrategy: same",
-            "ServiceNowBasicAuthStrategy: same",
-            "The Linear GraphQL client factory raises rather than building a client with an unread key",
-            "No strategy catches or inspects the crypto failure"
+            "Nowhere durable and at least one encrypted secret present: the instance starts, custody is no-durable-store, and every stored credential keeps working",
+            "That ring carries the sentence naming the published key and the two remedies",
+            "Nowhere durable and no stored secrets at all: the instance refuses to start",
+            "The refusal names the two remedies and does not begin on the published key",
+            "Connection refused: behaves as holds-secrets — starts with the warning",
+            "No schema at all: behaves as holds-secrets — starts with the warning",
+            "Table absent: behaves as holds-secrets — starts with the warning",
+            "A case-1 resolution never calls the probe",
+            "A case-3 resolution never calls the probe",
+            "The probe opens and closes its own connection and leaves nothing open"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/PatAuthStrategyTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/JiraCloudBasicAuthStrategyTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/LinearApiKeyAuthStrategyTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Auth/ServiceNowBasicAuthStrategyTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnectorTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/DatabaseSecretPresenceProbe.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs"
           ],
           "dependencies": [
             "03-02"
           ],
           "criteria": [
-            "For each of the four credential styles, a corrupted stored credential makes the strategy raise before any request is built.",
-            "The outgoing `HttpRequestMessage` carries no `Authorization` header in every case.",
-            "No auth strategy gained a try/catch or any reference to the crypto failure type.",
-            "The Linear GraphQL client factory is covered alongside the four strategies."
+            "An existing instance with nowhere durable to keep a key starts, keeps every stored credential working, and says plainly that it is on the key published with the product, naming the two things the operator can do about it.",
+            "A fresh instance in the same position refuses to start, with the same two remedies, and never quietly begins on the published key.",
+            "An unreachable database, a missing schema and a missing table each start with the warning rather than refusing; the database being slow is never read as the database being empty.",
+            "The probe runs only where the resolver has already landed on the case that needs it; every other deployment's startup gains no dependency on database availability.",
+            "The probe's answer has three values, so no caller has to invent a meaning for the third.",
+            "`dotnet build` zero warnings."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 3.0,
           "deliverables": [
-            "Four *StrategyTests.cs (modified — one gold case each)",
-            "LinearWorkTrackingConnectorTests.cs (modified — client-factory gold case)"
+            "DatabaseSecretPresenceProbe.cs (new)",
+            "EncryptionKeyRingBootstrapper.cs (modified — case-4 branch)",
+            "EncryptionKeyRingBootstrapperTests.cs (extended)"
           ]
         },
         {
           "id": "03-04",
-          "name": "A token refresh stops rather than sending a refresh token the instance could not read",
-          "description": "RED: extend `OAuthServiceTests.cs`. Cases: a connection authorised earlier whose stored refresh token can no longer be read makes the refresh raise before any HTTP call is made — assert on the message handler that no request was sent, not merely that the method threw; the operator-facing outcome says the stored token could not be read rather than that the authorisation expired; and the credential's status is not silently moved to a state that reads as 'the provider refused us', because that would be the same misattribution the slice exists to remove. GREEN: expected to be no production change at the `OAuthService` decrypt sites — the exception travels the path already there. A change is likely needed only where `OAuthService` maps a refresh failure onto a credential status; make that mapping distinguish an unreadable stored token from a provider rejection. Keep this step out of `Program.cs` — edits there force the full backend Integration suite, which is a longer run and a wider flake surface for no gain here. COMMIT: `fix(oauth): stop a token refresh that could not read its stored refresh token`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
-          "scenario_name": "Scenario 15 — A token refresh stops rather than sending a refresh token the instance could not read",
+          "name": "EnsureEncryptionKeyRing reads the name the documentation says — Bug #5776 closed",
+          "description": "RED: extend `Startup/EncryptionBootstrapOrderTests.cs` with real boots through `TestWebApplicationFactory`. Cases: a key supplied the way the configuration page describes is the key new secrets are written under, and the instance reports it as supplied by the operator rather than generated; the same key supplied four ways — on the command line, as an environment variable, in the settings file, and in a file the instance was pointed at — resolves to the same key with the same identity in every case, each through the **real** configuration provider rather than a pre-populated dictionary, because the environment provider's list-binding behaviour is exactly what ADR-148's grammar exists to route around; a boot, a saved credential, a restart and a read returns the same plaintext under the same key id, so restarting is not a rotation; and an instance where **only** the previously-read `EncryptionSettings:EncryptionKey` carries a key behaves as though no key had been supplied at all — that value does not become the key the instance writes under. That last case is Bug #5776's regression and the reason no alias is introduced. GREEN: extend `Program.EnsureEncryptionKeyRing` to delegate to `EncryptionKeyRingBootstrapper`, passing the directory and case that `ResolveKeyStoreDirectory` produced at bootstrap step 2. Delete the `EncryptionSettings:EncryptionKey` constant and its read; add `Encryption:Key`, `Encryption:Keys`, `Encryption:KeysFile` and `Encryption:KeyStorePath` as the four names this slice introduces. The method still registers `IEncryptionKeyRingHolder` as a singleton and still writes nothing into `IConfiguration` — that property is what makes \"no key material in a debug view or a diagnostics endpoint\" structural rather than a review habit, and it is already asserted by `Architecture/SecretCustodySeamArchUnitTest`. Extend that ArchUnit file with the two rules DISTILL assigns to this slice: no value reachable from `IConfigurationRoot.GetDebugView()` after boot decodes to 32 bytes matching a ring entry, and no `encryption.*` structured log event carries key material in its properties. The existing rule that `CryptoService` may not depend on `IConfiguration` already ships and is the rule that makes this defect class unrepeatable; confirm it still passes rather than re-authoring it. **This is the commit with the highest blast radius in the slice** — second `Program.cs` touch, full Integration suite, and the first boot that reads a name nothing read before. Step 03-01's fixture is what keeps it green. COMMIT: `fix(encryption): read the encryption key from the setting the documentation names`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs",
+          "scenario_name": "Scenario 32 — Restarting is not a rotation; Scenario 40 — A key supplied the way the documentation says is the key the instance uses; Scenario 41 — The same key is understood the same way however it was supplied (4 transports); Scenario 47 — The setting the code used to read no longer decides anything",
           "red_to_green_tests": [
-            "An unreadable stored refresh token makes the refresh raise",
-            "No HTTP request is sent to the identity provider in that case",
-            "The reported outcome says the stored token could not be read",
-            "The reported outcome does not say the authorisation expired or was refused",
-            "A readable refresh token still refreshes exactly as it does today"
+            "A key supplied as the configuration page describes is the key new secrets are written under",
+            "The instance reports that key as supplied by the operator rather than generated",
+            "The same key on the command line, in an environment variable, in the settings file and in a pointed-at file resolves to one key with one identity",
+            "Each of the four transports goes through the real configuration provider, not a pre-populated dictionary",
+            "Boot, save a credential, restart, read: same plaintext, same key id",
+            "An instance where only the previously-read setting name carries a key behaves as though none was supplied",
+            "That previously-read value never becomes the key the instance writes under",
+            "No value reachable from the configuration debug view after boot decodes to 32 bytes matching a ring entry",
+            "No encryption log event carries key material in its structured properties",
+            "CryptoService still depends on no configuration type"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs"
           ],
           "dependencies": [
             "03-03"
           ],
           "criteria": [
-            "An unreadable refresh token stops the refresh before any network call.",
-            "The operator-facing outcome attributes the failure to an unreadable stored credential, not to an expired or refused authorisation.",
-            "A readable refresh token behaves exactly as it does today — the regression is asserted, not assumed.",
-            "`Program.cs` is untouched by this step."
+            "The setting an operator was told to set is the setting that decides, from any of the four transports, with one identity for one key.",
+            "The setting the code used to read decides nothing; an instance carrying only that name behaves as though no key had been supplied, and no alias is introduced.",
+            "A restart resolves the same key and reads back every credential saved before it.",
+            "No key material is reachable from the configuration debug view after boot.",
+            "No encryption log event carries key material in its structured properties.",
+            "The ring is resolved once, at builder time, before anything could have used the wrong key.",
+            "`dotnet build` zero warnings; full backend suite green."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 3.0,
           "deliverables": [
-            "OAuthService.cs (modified — failure attribution)",
-            "OAuthServiceTests.cs (modified)"
-          ]
-        },
-        {
-          "id": "03-05",
-          "name": "Validating a connection reports a key problem, not a rejected credential",
-          "description": "RED: add a `WebApplicationFactory` integration test on the connection-validation route. Cases: validating a connection whose stored credential can no longer be read returns a result saying the secret cannot be read with the current encryption key; it does not say the work tracking system rejected the credential; validating a connection whose credentials all read is unchanged; and the response body carries no part of the stored value or the key. GREEN: `ValidateConnection` already has the failure path — the change is where it turns an exception into a `ConnectionValidationResult`, so that an unreadable stored credential produces its own message rather than the generic remote-rejection one. Keep the message in the operator's words. Watch S2139: do not log-and-rethrow here, because a higher layer already logs. COMMIT: `fix(encryption): report a key problem when validating a connection with an unreadable secret`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionValidationUnreadableSecretTests.cs",
-          "scenario_name": "Scenario 18 — Validating a connection with an unreadable secret reports a key problem, not a rejected credential",
-          "red_to_green_tests": [
-            "Validating a connection with an unreadable stored credential says the secret cannot be read with the current encryption key",
-            "The result does not say the work tracking system rejected the credential",
-            "Validating a connection whose credentials all read is unchanged",
-            "The response body carries no part of the stored value or the key"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionValidationUnreadableSecretTests.cs"
-          ],
-          "dependencies": [
-            "03-04"
-          ],
-          "criteria": [
-            "A validation against an unreadable stored credential names the encryption key as the cause.",
-            "The result never presents the failure as a remote rejection.",
-            "Validation of a healthy connection is byte-identical to today.",
-            "No part of the stored value or the key appears in the response."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "WorkTrackingSystemConnectionsController.cs (modified — validation failure mapping)",
-            "ConnectionValidationUnreadableSecretTests.cs (new)"
+            "Program.cs (modified — EnsureEncryptionKeyRing delegates to the bootstrapper; the four Encryption:* names replace EncryptionSettings:EncryptionKey)",
+            "EncryptionBootstrapOrderTests.cs (extended)",
+            "SecretCustodySeamArchUnitTest.cs (extended — debug-view and log-property rules)"
           ]
         }
       ]
     },
     {
       "id": "04",
-      "name": "Milestone 3 — the refresh record names the credential it could not read",
-      "description": "Wording, not plumbing. Verified 2026-08-15: both updaters wrap their work in `try`/`finally` rather than `try`/`catch`, so the `finally` runs before the exception propagates — a failed refresh already persists a refresh-log row marked unsuccessful and already emits its summary line, and that record is already served to the operator. What slice 01 owes is that the record names the Connection and the field and says the credential could not be read rather than reading as a rejected credential. **`RefreshLog` gains no column**: it has no reason or message field and adding one would need an EF migration this slice is barred from, so the naming travels on `SyncOutcome.Reason`, which `LogUpdateSummary` already appends to the one line an operator reads per completed update. The separate defect — the run still being reported as completed to the browser — is ADO Bug #5788 and is explicitly out of this slice.",
+      "name": "The upgrade — the literal leaves the settings file and enters every ring as retired",
+      "description": "One step, deliberately. Removing the published key from `appsettings.json` and appending it to every resolved ring are two halves of one change: doing either alone ships an install that cannot read its own secrets. It lands after phase 03 because until the ring can hold two keys the removal has nowhere to put the old one, and it is the commit where AC-2.4 and AC-2.5 stop being in tension because the two facts now live in different places. Nothing here walks the stored secrets — D13 — and scenario 52 is the assertion that nothing does.",
       "steps": [
         {
           "id": "04-01",
-          "name": "A Team refresh names the Connection and the field whose credential could not be read",
-          "description": "RED: extend `UpdateServiceBaseTests.cs` and the Team updater tests. Cases: a Team whose connection holds an unreadable credential produces a refresh-log row with success false — already true today, asserted here so a later change cannot quietly lose it; the emitted summary line's reason names the Connection and the field holding the unreadable credential; the reason says the stored credential could not be read and does not present the failure as the work tracking system rejecting it; no request is sent to the work tracking system for that connection; a Team whose credentials all read is recorded successful and its record says nothing about encryption; and a Team whose refresh fails because the work tracking system is unreachable is recorded unsuccessful with the reason attributing it to the work tracking system being unreachable and saying nothing about a credential. GREEN: add a protected helper on `UpdateServiceBase` that turns an `UnreadableSecretException` plus the entity's `WorkTrackingSystemConnection` into a reason naming the Connection and the field. The field is found by asking `ICryptoService.Read` for each secret option on that connection and naming the ones that classify unreadable — the same total, read-only classification the connection read model uses, so the two surfaces cannot drift. In `TeamUpdater.Update`, catch `UnreadableSecretException`, set `outcome = outcome with { Reason = ... }`, and **rethrow** so the existing propagation is unchanged; do not log in the catch — S2139 (log-and-rethrow when a higher layer already logs) is a standing rule and `TriggerUpdate` already logs. The reason is written in the operator's words and uses the configurable terminology defaults. COMMIT: `feat(encryption): name the Connection and field when a Team refresh cannot read a credential`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
-          "scenario_name": "Scenario 19 — The refresh record for an unreadable credential names the connection and the field; Scenario 20 — The record says the credential could not be read, not that it was refused; Scenario 22 — No call is made to the work tracking system with a credential that could not be read; Scenario 23 — A refresh whose credentials all read still succeeds and records nothing about encryption; Scenario 23a — A refresh that fails for a reason unrelated to credentials reads as it does today",
+          "name": "Remove the published key from the shipped settings and append it, retired, to every resolved ring",
+          "description": "RED: extend `EncryptionKeyRingBootstrapperTests.cs` and `Startup/EncryptionBootstrapOrderTests.cs`. Cases: the shipped settings file holds no key material — assert against the actual `appsettings.json` content, searching for any base64 value that decodes to 32 bytes, rather than for the one string that is being deleted, because the next one would be added by someone who did not read this test; every resolved ring, in all four custody modes, holds the published key as its last entry and never as its active one; a database of credentials written under the published key reads every one of them after the upgrade, with nothing re-entered — a fixture-backed test where the fixture is a set of envelopes written under the published key id, since that is the only shape CI can produce; a credential saved after the upgrade names the instance's own key, not the published one; and every credential stored before the upgrade is byte-for-byte as it was, still naming the published key — assert the stored bytes, not just readability, and assert that the boot performed no read of the secret columns beyond the case-4 presence probe, so \"nothing walked the stored secrets during startup\" is checked rather than assumed. GREEN: delete the `EncryptionSettings` block from `Lighthouse.Backend/appsettings.json`; have `EncryptionKeyRingBootstrapper` call `WithLegacyDefault()` on every ring it returns, in every custody mode, as the last thing it does before handing it back. Check whether any other shipped artifact still names `EncryptionSettings` — the chart's values, the examples directory, `appsettings.Development.json` — and if one does, it is either updated here or it is out of scope and named as such in the commit body. This step ships the behaviour AC-2.5 measures on real data, and the real-data half of the evidence is owed at step 06-02 against the `:5169` restored backup, because demo secrets were written by the same build that reads them. COMMIT: `feat(encryption): retire the published key out of the settings file and into every ring`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs",
+          "scenario_name": "Scenario 48 — An instance upgrading from the published key reads every secret it already had; Scenario 49 — The published key is gone from the shipped settings and the upgrade still works; Scenario 50 — After the upgrade, a newly saved credential is written under this instance's own key; Scenario 51 — The published key can never become the key new secrets are written under; Scenario 52 — Upgrading moves no secret that was already stored",
           "red_to_green_tests": [
-            "A Team refresh that cannot read a credential is recorded unsuccessful",
-            "The summary line's reason names the Connection holding the unreadable credential",
-            "The reason names the field holding it",
-            "The reason says the stored credential could not be read",
-            "The reason does not present the failure as the work tracking system rejecting the credential",
-            "No request is sent to the work tracking system for that connection",
-            "A Team whose credentials all read is recorded successful and says nothing about encryption",
-            "A Team whose refresh fails because the work tracking system is unreachable is recorded unsuccessful, attributes it to the work tracking system, and says nothing about a credential",
-            "The field is identified by the same read-only classification the connection read model uses"
+            "The shipped settings file holds no base64 value that decodes to 32 bytes",
+            "A ring resolved with custody generated-for-this-instance holds the published key last and never active",
+            "The same holds for supplied-by-configuration, supplied-by-external-secret and no-durable-store",
+            "Credentials written under the published key all read after the upgrade",
+            "Nobody is asked to re-enter anything, and every connection still validates",
+            "A credential saved after the upgrade names the instance's own key id",
+            "Credentials stored before the upgrade are byte-for-byte unchanged and still name the published key",
+            "Startup reads no secret column beyond the case-4 presence probe",
+            "No other shipped artifact still names the removed settings block"
           ],
           "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend/appsettings.json",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs"
           ],
           "dependencies": [
-            "03-05"
+            "03-04"
           ],
           "criteria": [
-            "The refresh record for a Team whose credential could not be read names the Connection and the field.",
-            "It says the stored credential could not be read; it never reads as a remote rejection.",
-            "No work tracking system call is made with a credential the instance could not read.",
-            "A healthy refresh and an unrelated failure both read exactly as they do today.",
-            "`RefreshLog` gains no column and no EF migration is added.",
-            "Nothing is logged in the new catch — the exception is enriched and rethrown.",
-            "User-facing wording uses the configurable terminology defaults (Team, Work Item, Feature, Portfolio)."
+            "The shipped settings file carries no key material, asserted by shape rather than by the one string being removed.",
+            "Every resolved ring, in every custody mode, can read a secret written under the published key and can never write one under it.",
+            "An instance upgrading from the published key reads every credential it already had, with no user action and no re-entry.",
+            "A credential saved after the upgrade names the instance's own key.",
+            "Every credential stored before the upgrade is unchanged, and startup walked none of them.",
+            "The operator waits on no migration work before the instance is usable.",
+            "`dotnet build` zero warnings; full backend suite green."
           ],
-          "estimated_hours": 2.0,
+          "estimated_hours": 3.0,
           "deliverables": [
-            "UpdateServiceBase.cs (modified — shared reason helper)",
-            "TeamUpdater.cs (modified — enrich and rethrow)",
-            "TeamUpdaterTests.cs (modified)",
-            "UpdateServiceBaseTests.cs (modified)"
-          ]
-        },
-        {
-          "id": "04-02",
-          "name": "A Portfolio refresh names its unreadable credential the same way a Team refresh does",
-          "description": "RED: extend the Portfolio updater tests with the parity cases: a Portfolio whose connection holds an unreadable credential is recorded unsuccessful, and its summary line's reason names the Connection and the field in exactly the same words a Team refresh uses. Assert the sameness directly — two surfaces that say the same thing in two different phrasings are two surfaces an operator has to learn. GREEN: call the same protected helper from the Portfolio updater's `Update`, catching and rethrowing exactly as the Team updater does. No new wording is authored in this step; if a phrasing difference appears, the helper is wrong, not the caller. COMMIT: `feat(encryption): name the Connection and field when a Portfolio refresh cannot read a credential`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
-          "scenario_name": "Scenario 21 — A Portfolio refresh names its unreadable credential the same way a Team refresh does",
-          "red_to_green_tests": [
-            "A Portfolio refresh that cannot read a credential is recorded unsuccessful",
-            "The reason names the Connection and the field holding the unreadable credential",
-            "The Portfolio wording is identical to the Team wording for the same failure",
-            "A Portfolio whose credentials all read is recorded successful and says nothing about encryption"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
-          ],
-          "dependencies": [
-            "04-01"
-          ],
-          "criteria": [
-            "A Portfolio refresh names the Connection and the field exactly as a Team refresh does.",
-            "The wording comes from one shared helper; no phrasing is authored twice.",
-            "A healthy Portfolio refresh is unchanged.",
-            "The user-facing term is Portfolio, per the configurable terminology defaults."
-          ],
-          "estimated_hours": 1.0,
-          "deliverables": [
-            "PortfolioUpdater.cs (modified — enrich and rethrow)",
-            "PortfolioUpdaterTests.cs (modified)"
+            "appsettings.json (modified — EncryptionSettings block deleted)",
+            "EncryptionKeyRingBootstrapper.cs (modified — WithLegacyDefault on every returned ring)",
+            "EncryptionKeyRingBootstrapperTests.cs (extended)",
+            "EncryptionBootstrapOrderTests.cs (extended — the upgrade boot-through)"
           ]
         }
       ]
     },
     {
       "id": "05",
-      "name": "Milestone 4 — one generic secret-handling notice on the connection form (US-08)",
-      "description": "Independent of the other four milestones and the cheapest thing in the slice. One generic notice per connection form, rendered once where the form contains at least one secret field — not once per field, and naming no connector and no algorithm, so a single string serves every secret any connector defines now or later. Every claim in it is already true on every install regardless of which key the instance holds, which is why it ships here rather than waiting for key custody. **A gap DISTILL recorded rather than silently filled**: the DESIGN Component Decomposition names a component for every slice-01 surface except this notice. It is named here.",
+      "name": "Disclosure — the startup line, the guarded route, and the System settings page",
+      "description": "Three surfaces, three steps, no files in common and two different stacks. Independent of each other and the cheapest work in the slice once the ring carries what it needs. **A wrinkle neither ADR records**: `EnsureEncryptionKeyRing` runs at `Program.cs:96` and `ConfigureLogging(builder)` at `:98`, so at the moment the bootstrapper decides, Serilog is not configured and there is nothing to log to. The disclosure therefore rides on the resolved ring — custody, active key id, key ids held, resolved path, and the remedy sentence where custody is no-durable-store — and `PrintSystemInfo` renders it. That is why scenario 58's rendered half is here rather than at 03-03.",
       "steps": [
         {
           "id": "05-01",
-          "name": "SecretHandlingNotice — one per form, only where the form asks for a credential",
-          "description": "RED: author `SecretHandlingNotice.test.tsx` plus cases in the two form test files. Cases: a connection form that asks for at least one credential shows exactly one notice; a form with no secret field shows none; a form asking for more than one credential still shows exactly one, and it is not repeated beside each field. GREEN: create `Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx` — a presentational component with no props beyond an optional link target, carrying the notice text in one place. Render it once in `ModifyConnectionSettings.tsx` and once in `CreateConnectionWizard.tsx`'s step 2, guarded on whether any option on the form is flagged as a secret. The text says, in plain words, that secrets entered here are encrypted before they are saved, are never shown again to anyone, never leave this instance, and can be revoked wherever they were created. It names no work tracking system and no algorithm. Watch typescript:S7764 (prefer `globalThis` over `window`) and S3776 in the two host components. **Merged with the former step 05-02 on 2026-08-15, because the two touched the same three files and splitting them bought two verification cycles for one change.** Also therefore in scope: rendering the form for every supported work tracking system produces the same notice word for word, naming no particular system and no particular way of protecting the credential; the notice is presented as information and carries **no severity styling**, because the person pasting a token usually cannot configure a key and alarm there is alarm without a remedy; it makes no claim about which encryption key this instance holds and no claim of protection against someone who already holds the key or the host; its link points at `https://docs.lighthouse.letpeople.work/Installation/configuration.html#encryption-key`, which exists today so the notice never ships with a dead link, and a later slice repoints it at the Security page once that exists; and reopening a saved connection leaves the credential field blank, asserted at the surface a user actually checks rather than restating the backend payload test. COMMIT: `feat(connections): show one uniform, linked, informational secret-handling notice`.",
-          "test_file": "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx",
-          "scenario_name": "Scenario 24 — Someone pasting a credential is told, once on the form, what happens to it; Scenario 25 — A form that asks for no credential shows no notice; Scenario 26 — A form asking for several credentials still shows exactly one notice",
+          "name": "The startup line — where the key came from, what it is called, where it is kept",
+          "description": "RED: author `StartupBannerEncryptionKeyLineTest.cs` beside its sibling `StartupBannerAuthVisibilityTest.cs`, which is the existing file at the same level and of the same shape. Cases: one line states the key source, the name of the active key and the resolved key store location; that line contains no part of the key material — assert by searching the whole rendered banner for the base64 form, the unpadded form and every 8-character substring of the active key's material; each of the four custody modes renders its own source wording, so an operator can tell a key they supplied from one the instance made; and where custody is no-durable-store the line says plainly that the instance is still on the key published with the product and names the two things the operator can do about it, in one sentence rather than a paragraph. GREEN: extend `PrintSystemInfo` in `Program.cs` with one `Line(...)` entry in the existing style, e.g. `Encryption : generated for this instance (k-2026-08-14-01) · /app/Data/keys`, reading from the ring the holder carries rather than from configuration. Keep the existing label column width; the helper already pads to 13. The no-durable-store variant is a second line only where that custody applies. Third and last `Program.cs` touch. Watch S1192 (duplicated literals) if the four source labels are written inline — put them on `KeyCustody` or in one switch, not scattered. COMMIT: `feat(encryption): say on startup which key this instance is on and where it is kept`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerEncryptionKeyLineTest.cs",
+          "scenario_name": "Scenario 53 — The startup line says where the key came from, what it is called, and where it is kept; Scenario 58 — An existing instance with nowhere durable to keep a key keeps working, and says so (the rendered sentence; the bootstrap outcome is at step 03-03)",
           "red_to_green_tests": [
-            "A form with at least one secret field renders exactly one notice",
-            "A form with no secret field renders no notice",
-            "A form with several secret fields renders exactly one notice",
-            "The notice is not repeated beside each field",
-            "The notice states: encrypted before saving, never shown again to anyone, never leaves this instance, revocable at the source",
-            "Both the create wizard and the edit form render it under the same condition"
+            "One line states the key source, the active key name and the resolved key store location",
+            "That line contains no part of the key material, in any encoding or fragment",
+            "Custody generated-for-this-instance renders its own source wording",
+            "Custody supplied-by-configuration renders its own source wording",
+            "Custody supplied-by-external-secret renders its own source wording",
+            "Custody no-durable-store says plainly that the instance is on the key published with the product",
+            "That case names the two things the operator can do about it",
+            "Every other line of the banner is unchanged"
           ],
           "files_to_modify": [
-            "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx"
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerEncryptionKeyLineTest.cs"
           ],
           "dependencies": [
-            "04-02"
+            "04-01"
           ],
           "criteria": [
-            "Exactly one notice per connection form that contains at least one secret field.",
-            "No notice on a form with no secret field.",
-            "The notice text lives in one place and is rendered by both form surfaces.",
-            "The notice names no work tracking system and no algorithm.",
-            "`pnpm test` green, `pnpm build` zero warnings, Biome clean."
+            "An operator reading the startup output learns where the key came from, what it is called and where it is kept — which is also what they would have to back up.",
+            "No part of the key appears in the banner in any form.",
+            "The four custody modes are distinguishable from the wording alone.",
+            "An instance with nowhere durable to keep a key says so in one sentence and names the two ways out.",
+            "The rest of the banner is unchanged.",
+            "`dotnet build` zero warnings; full backend suite green."
           ],
-          "estimated_hours": 1.5,
+          "estimated_hours": 2.0,
           "deliverables": [
-            "SecretHandlingNotice.tsx (new)",
-            "SecretHandlingNotice.test.tsx (new)",
-            "ModifyConnectionSettings.tsx + test (modified)",
-            "CreateConnectionWizard.tsx + test (modified)"
+            "Program.cs (modified — PrintSystemInfo gains the encryption line)",
+            "StartupBannerEncryptionKeyLineTest.cs (new)"
+          ]
+        },
+        {
+          "id": "05-02",
+          "name": "GET /api/{v1,latest}/encryption — the one route this slice owns, System Admin only",
+          "description": "RED: author `API/Integration/EncryptionControllerTests.cs` beside `SystemInfoAuthVisibilityCrossLayerTest.cs`, over real HTTP through `TestWebApplicationFactory` and the real guard. Cases: a System Administrator gets `200` and a payload saying where the key came from, which key is active, which keys are held, where they are kept, whether this instance is able to make a new key at all, and whether the key published with the product is still one of the keys held; that payload carries **no key material of any kind** — assert by searching the serialised response for the base64 form of every ring key and for every 8-character substring of each; a signed-in principal without System Administrator rights gets `403` and a body that names no key source, no active key name and no key store location; an embed-session principal gets `403` on the same route, since `[Authorize]` alone would admit it after ADR-137; and `GET /systeminfo` on this version carries exactly the property set it carried before this slice and names no key, key source or key store location. GREEN: create `API/EncryptionController.cs` with `[RbacGuard(RbacGuardRequirement.SystemAdmin)]` at the class level, following `LogsController` and `OAuthHealthController`, which guard at the class rather than per-action; and `API/DTO/EncryptionStateDto.cs` carrying `custody`, `canMint`, `activeKeyId`, `keyIds[]`, `keyStorePath`, `legacyDefaultPresent`. `canMint` is read off the ring's derived predicate, never off a configuration value, so the endpoint and the panel it will feed in slice 03 cannot disagree. `legacyDefaultPresent` is a statement about the **ring**, not about the stored secrets — counting secrets still on the published key is slice 04's readability report and this route must not imply it. Register the controller for both `v1` and `latest` following the existing versioning convention. **Scenario 56 is already asserted**: `Architecture/SecretCustodySeamArchUnitTest.SystemInfo_DisclosesExactlyThisPropertySetAndNothingAboutKeys` shipped in slice 01 and pins the whole serialised property set. Confirm it still passes and add the over-HTTP counterpart in the new file; do not re-author the ArchUnit assertion. COMMIT: `feat(encryption): expose key state on a System-Admin-guarded route`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs",
+          "scenario_name": "Scenario 55 — Someone who is not a System Administrator learns nothing about the key; Scenario 56 — The system information surface says nothing about keys that it did not say before; Scenario 60 — A System Administrator can see who owns the key and whether this instance may make a new one",
+          "red_to_green_tests": [
+            "A System Administrator gets 200 with custody, active key id, the key ids held, and the key store path",
+            "The payload says whether this instance is able to make a new key at all",
+            "The payload says whether the key published with the product is still one of the keys held",
+            "The payload carries no key material in any encoding or fragment",
+            "A signed-in non-administrator gets 403",
+            "An embed-session principal gets 403",
+            "Neither refusal body names the key source, the active key name or the key store location",
+            "GET /systeminfo carries exactly the property set it carried before this slice",
+            "Nothing in the system information response names a key, a key source or a key store location",
+            "The route answers on both the versioned and the latest path"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/EncryptionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/EncryptionStateDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "criteria": [
+            "A System Administrator can answer \"which key am I on, and may this instance make a new one?\" from one response.",
+            "The response carries no key material of any kind.",
+            "A non-administrator and an embed viewer are each refused, and neither learns the key source, the active key name or where the key is kept.",
+            "The system information surface an embed viewer can already reach gained nothing.",
+            "`canMint` derives from the same fact that decides whether minting is possible; no configuration value can contradict it.",
+            "`legacyDefaultPresent` is a statement about the ring, not about the stored secrets.",
+            "The route answers on both `/api/v1/encryption` and `/api/latest/encryption`.",
+            "`dotnet build` zero warnings; full backend suite green."
+          ],
+          "estimated_hours": 2.5,
+          "deliverables": [
+            "EncryptionController.cs (new)",
+            "EncryptionStateDto.cs (new)",
+            "EncryptionControllerTests.cs (new)"
+          ]
+        },
+        {
+          "id": "05-03",
+          "name": "Settings → System reads key state from the guarded surface",
+          "description": "RED: author `EncryptionService.test.ts` and extend `SystemSettingsTab.test.tsx`. Cases: the System settings page shows where the key came from and the name of the active key; it obtains them from the encryption endpoint and **not** from `/systeminfo` — assert on the request the service adapter makes, which is what pins the surface rather than the wording; the section renders only for a System Administrator, gated on `useRbac().isSystemAdmin` following the `OAuthHealthIcon` precedent, so a non-administrator neither sees the section nor issues a request that would be refused; the four custody modes each render their own human wording rather than the enum name; and a failed fetch leaves the rest of the System settings page working, following the page's existing treatment of the license status fetch. GREEN: create `Lighthouse.Frontend/src/models/Encryption/EncryptionKeyState.ts` with a zod schema, following `models/SystemInfo/SystemInfo.ts` and its `SystemInfoSchema`, since the surrounding services already parse through `BaseApiService.parse`. Create `src/services/Api/EncryptionService.ts` extending `BaseApiService`, exporting `IEncryptionService` with a single `getKeyState()` — one method, because this slice owns one route and the other three belong to slices 03 and 04. Register it in `ApiServiceContext.ts` (interface member plus `defaultServices` entry) and in `src/tests/MockApiServiceProvider.ts`, both of which are shared contracts every frontend test renders through — extend them first, then the page. Render the section in `SystemSettingsTab.tsx` inside an `InputGroup`, matching the surrounding style. Watch S6606 and the Biome no-unused rules; a clean `pnpm build` implies a clean Biome check via the `prebuild` hook. COMMIT: `feat(encryption): show key source and active key on the System settings page`.",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx",
+          "scenario_name": "Scenario 54 — The System settings page shows the same, and only a System Administrator can see it",
+          "red_to_green_tests": [
+            "The System settings page shows where the key came from",
+            "The page shows the name of the active key",
+            "The values come from the encryption endpoint, asserted on the request the adapter makes",
+            "No part of the page reads key state from the system information endpoint",
+            "The section renders for a System Administrator",
+            "The section does not render for a non-administrator, and no request is issued",
+            "Each of the four custody modes renders human wording rather than an enum name",
+            "A failed fetch leaves the rest of the System settings page working",
+            "The service parses the response through its schema and rejects a malformed one"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Encryption/EncryptionKeyState.ts",
+            "Lighthouse.Frontend/src/services/Api/EncryptionService.ts",
+            "Lighthouse.Frontend/src/services/Api/EncryptionService.test.ts",
+            "Lighthouse.Frontend/src/services/Api/ApiServiceContext.ts",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "criteria": [
+            "A System Administrator opening Settings → System sees where the key came from and the name of the active key.",
+            "Those values come from the surface only System Administrators can reach; nothing on the page reads key state from the system information endpoint.",
+            "A person without System Administrator rights sees no key section and issues no request for one.",
+            "Custody is shown in words a self-hoster reads, not as an enum value.",
+            "A failed fetch degrades to the rest of the page rather than blanking it.",
+            "`pnpm test` green, `pnpm build` zero errors and zero warnings, Biome clean."
+          ],
+          "estimated_hours": 2.5,
+          "deliverables": [
+            "EncryptionKeyState.ts (new)",
+            "EncryptionService.ts (new)",
+            "EncryptionService.test.ts (new)",
+            "ApiServiceContext.ts (modified)",
+            "MockApiServiceProvider.ts (modified)",
+            "SystemSettingsTab.tsx + test (modified)"
           ]
         }
       ]
     },
     {
       "id": "06",
-      "name": "Walking skeleton and slice close",
-      "description": "**The walking skeleton moved to slice 04 on 2026-08-15, by maintainer decision.** Its setup could not be expressed through the product — reaching around the application into the database to damage a stored secret — and a scenario whose fixture fights the product is evidence the test belongs elsewhere. Slice 04 builds the readability check, which gives the same backbone a real operator flow with a real entry point and needs no state fabricated behind the application's back. Playwright is the expensive layer here: the suite runs single-worker and twice per CI run, so it stays smoke tests on happy paths, and error and edge cases live where they run in milliseconds. Scenario 1 stays in the acceptance set, unimplemented in this slice. What remains here is the slice's own evidence: the OQ-4 count from the `:5169` restored backup, the dogfood run, and per-feature mutation testing at 80% or better on the changed backend surface.",
+      "name": "Documentation and slice close",
+      "description": "The configuration page names `Encryption:Key` / `Encryption__Key` today while the code reads `EncryptionSettings:EncryptionKey`. That is the other half of Bug #5776 and it becomes true in this slice, at the commit that makes the name true — not at finalization. The page also promises the wrong thing about what happens when an operator changes the key, and that promise stops being true here too. Then the slice's own evidence: the dogfood on a restored real backup and on a real container recreate, and per-feature mutation testing.",
       "steps": [
         {
-          "id": "06-02",
-          "name": "Slice close — the OQ-4 count, the dogfood verdict, and per-feature mutation testing",
-          "description": "Three pieces of evidence the slice owes, and the artifacts that record them. **OQ-4**: the count of true legacy-plaintext rows in `WorkTrackingSystemConnectionOption.Value`, taken on the development instance on `:5169` restored from a real backup — seeded demo rows cannot answer it, and `OAuthCredential` has been encrypted since the OAuth credential separation so those two columns are not part of the count. If the count is zero, the residual the four-state reader documents (a CBC-shaped plaintext token reported unreadable) is academic; if it is not, the release note says so and the affected operators re-enter one credential each. **Dogfood**: point a dev build at that restored database, confirm every existing Connection still syncs, corrupt one stored byte, and watch the Connection say so instead of the work tracking system returning a 401. Then open a connection form cold, read the notice, and check that reloading leaves the credential field blank. **Mutation**: add `docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5777.backend.json` and `.frontend.json` following the existing per-story configs, scoped to the changed surface — `SecretEnvelope`, `SecretStateClassifier`, `CryptoService`, the `EncryptSecrets` guard, the updater reason helper — and drive the kill rate to 80% or better. Two known traps: the .NET runner ignores line spans and whole-file mutate globs, so scope by explicit file list or the run explodes into thousands of mutants; and a surviving mutant on the crypto surface is a real hole rather than a metric. Never read a Stryker `NoCoverage` on the read path as 'nothing asserts this' when the run's filter excludes the integration categories. Record the outcome in the slice brief's Verdict section — confirmed or disproved — against its learning hypothesis: the format can migrate in place unless a real stored blob turns out to be ambiguous between the two forms. COMMIT: `test(encryption): record the slice-01 verdict and per-feature mutation coverage`.",
-          "test_file": "docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5777.backend.json",
-          "scenario_name": "Slice close — no new scenario. OQ-4 is a measurement rather than a behaviour and is deliberately given no Gherkin; the learning hypothesis is tested against every secret in the restored database, not against fixtures.",
+          "id": "06-01",
+          "name": "docs/Installation/configuration.md § Encryption Key becomes true",
+          "description": "The page at lines 172-188 says three things that this slice changes. **First**, it advertises `--Encryption:Key` and `Encryption__Key`, which reached nothing before step 03-04 and reach the key ring after it; the section stays as written and becomes accurate, so this is a change of surrounding prose rather than of the two names. **Second**, \"Default Value: Built-in default key (not recommended for production)\" is no longer true — an instance that supplies nothing now generates a key of its own on first start, and the built-in key survives only as one it can read with. Rewrite that to say what actually happens, in the order an operator meets it: by default the instance makes a key for itself on first start and keeps it beside the database; supplying `Encryption__Key` overrides that and makes the key yours to manage; and there are deployments — a database that is not a local file, or a container with no mounted data directory — where the instance cannot promise to keep a key it made, says so on startup, and names the two ways out. **Third**, \"Lighthouse will still start if you change your key, but the sensitive data will not be properly decrypted, meaning you have to reconfigure your work tracking systems\" is now wrong twice over: a supplied key that cannot be used stops startup rather than starting, and a secret written under a key the ring no longer holds is now reported as unreadable on the connection and the field that holds it rather than silently failing at the work tracking system. Correct both. Add the ring form — `id:key[,id:key]`, first entry active — and the `Encryption__KeysFile` and `Encryption__KeyStorePath` names, since an operator who meets the startup warning is told to use one of them and needs somewhere to read what it does. Keep the existing base64/32-byte guidance and the generator link. Use the configurable terminology defaults — Work Item, Team, Portfolio — and never \"Epic\" or \"Story\". Do not document rotation, the encryption panel, the readability report or the Helm values; those are slices 03-05 and documenting them here would ship a page describing software that does not exist. COMMIT: `docs(configuration): describe the key an instance makes for itself and the setting that overrides it`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs",
+          "scenario_name": "Scenario 40 — A key supplied the way the documentation says is the key the instance uses (the documentation half; the code half is at step 03-04). The page has no automated test — its verification is that the names it prints are the names `EncryptionBootstrapOrderTests` boots with, checked by reading the two side by side.",
           "red_to_green_tests": [
-            "Stryker.NET kill rate on the changed backend surface is at least 80%",
-            "StrykerJS kill rate on the changed frontend surface is at least 80%",
-            "Every surviving mutant on the crypto surface is either killed or explained",
-            "The OQ-4 legacy-plaintext row count is taken on the :5169 restored instance and recorded",
-            "The dogfood run confirms every existing Connection still syncs before the byte is corrupted",
-            "After the byte is corrupted the Connection names the field rather than the work tracking system returning a 401"
+            "Every configuration name the page prints is a name the bootstrap tests actually supply",
+            "The page no longer says the built-in default key is the default",
+            "The page no longer says the instance still starts when a supplied key cannot be used",
+            "The page no longer says a changed key silently costs the operator their work tracking system configuration",
+            "The ring form and the first-entry-active rule are described",
+            "The mounted-file and key-store-path names are described",
+            "No rotation, panel, readability or chart behaviour is documented",
+            "Terminology defaults are used throughout"
           ],
           "files_to_modify": [
-            "docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5777.backend.json",
-            "docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5777.frontend.json",
-            "docs/feature/epic-5775-secret-encryption-key-custody/slices/slice-01-authenticated-envelope.md"
+            "docs/Installation/configuration.md"
+          ],
+          "dependencies": [
+            "05-03"
+          ],
+          "criteria": [
+            "Every configuration name the page prints is a name the shipped code reads.",
+            "The page describes what an operator who supplies nothing actually gets, and what supplying a key changes.",
+            "The page describes the deployments where the instance cannot keep a key it made, and the two ways out.",
+            "The page no longer promises a start where the code now refuses, nor a silent failure the code now names.",
+            "Nothing from slices 03-06 is documented.",
+            "Terminology follows the configurable defaults."
+          ],
+          "estimated_hours": 1.5,
+          "deliverables": [
+            "docs/Installation/configuration.md (modified — § Encryption Key rewritten)"
+          ]
+        },
+        {
+          "id": "06-02",
+          "name": "Slice close — the restored-backup upgrade, the container recreate, and per-feature mutation testing",
+          "description": "Three pieces of evidence the slice owes and cannot get from CI, plus the artifacts that record them. **The restored-backup upgrade** (scenarios 48 and 50): take a copy of the `:5169` database restored from a real backup and written by a pre-epic build, start the new build against it, confirm every Connection still syncs with nothing touched, then save one credential and confirm the stored value names this instance's own key id rather than the published one. Demo data cannot prove either, because demo secrets were written by the same build that reads them. **The container recreate** (scenario 34, the slice's end-to-end demo proof and deliberately not a second walking skeleton — the feature has exactly one, authored in slice 01): run the documented Docker command with its data volume, save a credential, `docker rm` the container, recreate it against the same volume, and confirm the new container resolves the same key and every stored secret is still readable. This is the only evidence that the volume actually keeps the key, and it is the whole reason the resolver moved the key store beside the database. **Mutation**: add `docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5024.backend.json` and `.frontend.json` beside the existing `stryker.5777.*` configs, scoped by **explicit file list** to the changed surface — `KeyRingSerializer`, `KeyStoreResolver`, `KeyStoreMigration`, `EncryptionKeyRingBootstrapper`, the three sources, `DatabaseSecretPresenceProbe`, `LegacyDefaultEncryptionKey`, `EncryptionKeyRing`, `EncryptionController` — and drive the kill rate to 80% or better. Two standing traps: the .NET runner ignores line spans **and** whole-file mutate globs, so a config scoped any other way explodes into thousands of mutants; and StrykerJS has been observed leaving `@ts-nocheck` behind in hundreds of files, so check `git status` before committing. A surviving mutant on this surface is a real hole rather than a metric. Record the outcome in the slice brief's Verdict section against its learning hypothesis — *disproves \"the upgrade is invisible\" if any existing install loses access to a single secret when the default key moves from configuration into the ring as a retired entry* — confirmed or disproved, on real data. COMMIT: `test(encryption): record the slice-02 verdict and per-feature mutation coverage`.",
+          "test_file": "docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5024.backend.json",
+          "scenario_name": "Scenario 34 — Replacing the container against the same mounted data directory keeps every secret readable; Scenario 48 — An instance upgrading from the published key reads every secret it already had (real-backup evidence); Scenario 50 — After the upgrade, a newly saved credential is written under this instance's own key (real-backup evidence)",
+          "red_to_green_tests": [
+            "The restored real backup starts on the new build and every Connection syncs untouched",
+            "A credential saved on that instance names the instance's own key id",
+            "The documented Docker command with a data volume survives docker rm and recreate with the same key",
+            "Every secret in the recreated container is still readable, with nothing re-entered",
+            "Stryker.NET kill rate on the changed backend surface is at least 80%",
+            "StrykerJS kill rate on the changed frontend surface is at least 80%",
+            "Every surviving mutant on the key-custody surface is either killed or explained",
+            "The Stryker configs scope by explicit file list, not by a whole-file glob or a line span",
+            "No @ts-nocheck survives the frontend run"
+          ],
+          "files_to_modify": [
+            "docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5024.backend.json",
+            "docs/feature/epic-5775-secret-encryption-key-custody/mutation/stryker.5024.frontend.json",
+            "docs/feature/epic-5775-secret-encryption-key-custody/slices/slice-02-per-instance-key.md"
           ],
           "dependencies": [
             "06-01"
           ],
           "criteria": [
+            "An instance restored from a real backup and started on the new build reads every credential it had, and a newly saved one lands on its own key.",
+            "A container recreated against the same mounted data directory resolves the same key and keeps every secret readable.",
             "Per-feature mutation testing runs on both stacks and reaches at least an 80% kill rate on the changed surface.",
-            "Every surviving mutant on the crypto surface is killed or has a written explanation for why it is not a hole.",
-            "The OQ-4 count is taken on the `:5169` restored instance and written down, with the release-note consequence stated if it is non-zero.",
-            "The dogfood run is completed and its result recorded.",
-            "The slice brief's Verdict section says confirmed or disproved against the learning hypothesis.",
-            "The Stryker configs scope by explicit file list, not by a whole-file mutate glob or a line span."
+            "Every surviving mutant on the key-custody surface is killed or has a written explanation for why it is not a hole.",
+            "The Stryker configs scope by explicit file list.",
+            "The slice brief's Verdict section says confirmed or disproved against the learning hypothesis, on real data."
           ],
-          "estimated_hours": 2.0,
+          "estimated_hours": 3.0,
           "deliverables": [
-            "stryker.5777.backend.json (new)",
-            "stryker.5777.frontend.json (new)",
-            "slice-01-authenticated-envelope.md (modified — Verdict + OQ-4 count)"
+            "stryker.5024.backend.json (new)",
+            "stryker.5024.frontend.json (new)",
+            "slice-02-per-instance-key.md (modified — Verdict + dogfood record)"
           ]
         }
       ]

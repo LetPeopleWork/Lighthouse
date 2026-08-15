@@ -5510,7 +5510,8 @@ Component Decomposition*. The headline:
   cases, `Program.PrintSystemInfo`, `WorkTrackingSystemConnectionDto`, the chart's Secret and Deployment
   templates.
 - **CREATE NEW** — `SecretEnvelope`, `SecretStateClassifier`, `KeyRingSerializer`, `EncryptionKeyRing`,
-  `EncryptionKeyRingHolder`, `EncryptionKeyRingBootstrapper`, `SecretCustodyService`,
+  `EncryptionKeyRingHolder`, `EncryptionKeyRingBootstrapper`, `KeyStoreResolver`, `KeyStoreMigration`,
+  `DatabaseSecretPresenceProbe`, `SecretCustodyService`,
   `KeyRingFileWatcher`, `EncryptionController`, and the frontend Encryption panel plus its HTTP adapter.
   Justified because the product has never had a wire format, a key ring, a custody concept, a key-state
   surface or a secret traversal — a search over the backend for `envelope`, `keyring`, `KeyId`,
