@@ -23,13 +23,11 @@ namespace Lighthouse.Backend.Models.Encryption
                 throw new ArgumentException("An encryption key ring must hold at least one key, because its first entry is the key secrets are written under.", nameof(keys));
             }
 
-            var duplicateId = keys
-                .GroupBy(key => key.Id, StringComparer.Ordinal)
-                .FirstOrDefault(namesake => namesake.Count() > 1)?.Key;
+            var repeatedId = RepeatedKeyIdDefect(keys);
 
-            if (duplicateId is not null)
+            if (repeatedId is not null)
             {
-                throw new ArgumentException($"The encryption key ring names '{duplicateId}' more than once, so a secret written under it could not be attributed to one key.", nameof(keys));
+                throw new ArgumentException(repeatedId, nameof(keys));
             }
 
             Custody = custody;
@@ -68,6 +66,19 @@ namespace Lighthouse.Backend.Models.Encryption
             key = Array.Find(keys, candidate => string.Equals(candidate.Id, keyId, StringComparison.Ordinal));
 
             return key is not null;
+        }
+
+        // Both the rule and the sentence live here, because the two places that enforce it refuse in
+        // different ways - one throws, the other hands the sentence back to be quoted - and spelling the
+        // same refusal twice is how they come to disagree about what is wrong with a ring.
+        internal static string? RepeatedKeyIdDefect(EncryptionKey[] keys)
+        {
+            var seen = new HashSet<string>(keys.Length, StringComparer.Ordinal);
+            var repeated = Array.Find(keys, key => !seen.Add(key.Id))?.Id;
+
+            return repeated is null
+                ? null
+                : $"The encryption key ring names '{repeated}' more than once, so a secret written under it could not be attributed to one key.";
         }
 
         public bool Equals(EncryptionKeyRing? other)

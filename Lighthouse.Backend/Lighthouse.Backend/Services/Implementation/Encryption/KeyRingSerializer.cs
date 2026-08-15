@@ -43,11 +43,10 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 keys[index] = key;
             }
 
-            var repeatedId = FirstRepeatedId(keys);
+            defect = EncryptionKeyRing.RepeatedKeyIdDefect(keys);
 
-            if (repeatedId is not null)
+            if (defect is not null)
             {
-                defect = $"The encryption key ring names '{repeatedId}' more than once, so a secret written under it could not be attributed to one key.";
                 return false;
             }
 
@@ -142,13 +141,6 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         private static bool IsUsableKeyIdCharacter(char character)
         {
             return character is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-';
-        }
-
-        private static string? FirstRepeatedId(EncryptionKey[] keys)
-        {
-            var seen = new HashSet<string>(keys.Length, StringComparer.Ordinal);
-
-            return Array.Find(keys, key => !seen.Add(key.Id))?.Id;
         }
 
         private static string FormatEntry(EncryptionKey key)
