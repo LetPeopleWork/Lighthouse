@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5775-secret-encryption-key-custody",
     "created_at": "2026-08-15",
-    "total_steps": 20,
+    "total_steps": 19,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Ship slice 01 of ADO Epic #5775 (Story #5777): every secret written from now on is stored as an authenticated, self-describing envelope `LH1.<keyId>.<b64url nonce>.<b64url ciphertext||tag>` (AES-256-GCM, header bound as associated data, ADR-146); a stored secret that cannot be read raises instead of being handed to a work tracking system as a credential (ADR-147, the deletion of `catch (CryptographicException or FormatException) => return cipherText`); the unreadable state is named on the Connection and the field that holds it and on the refresh record; and one generic secret-handling notice appears on every connection form that asks for a credential. Scope is US-01, US-08 and the US-07 `@infrastructure` precursor inside slice 01 — nothing from slices 02-06: no key generation, no minting, no rotation, no readability check, no chart, no Kubernetes, no docs site.",
@@ -774,44 +774,8 @@
     {
       "id": "06",
       "name": "Walking skeleton and slice close",
-      "description": "The skeleton goes last, once the backbone underneath it exists. Then the slice's own evidence: the OQ-4 count from the `:5169` restored backup, the dogfood run, and per-feature mutation testing at 80% or better on the changed backend surface.",
+      "description": "**The walking skeleton moved to slice 04 on 2026-08-15, by maintainer decision.** Its setup could not be expressed through the product — reaching around the application into the database to damage a stored secret — and a scenario whose fixture fights the product is evidence the test belongs elsewhere. Slice 04 builds the readability check, which gives the same backbone a real operator flow with a real entry point and needs no state fabricated behind the application's back. Playwright is the expensive layer here: the suite runs single-worker and twice per CI run, so it stays smoke tests on happy paths, and error and edge cases live where they run in milliseconds. Scenario 1 stays in the acceptance set, unimplemented in this slice. What remains here is the slice's own evidence: the OQ-4 count from the `:5169` restored backup, the dogfood run, and per-feature mutation testing at 80% or better on the changed backend surface.",
       "steps": [
-        {
-          "id": "06-01",
-          "name": "Playwright walking skeleton — save a credential, use it, damage it, be told",
-          "description": "RED: author the spec in `Lighthouse.EndToEndTests/tests/specs/settings/` driving the whole thin vertical through the existing Page Objects — `WorkTrackingSystemCreateWizard.ts` to create the connection and paste the credential, `WorkTrackingSystemEditPage.ts` to reopen it. Extend those POMs with the locators the new assertions need; a spec never calls `page.locator()` inline. Steps: the administrator creates a connection and pastes a valid credential; the connection reports it is working; the stored credential is then damaged; the administrator reopens the connection; the field holding it is marked unreadable with the encryption key named as the cause; the connection reports a key problem rather than a rejected credential; and no request carrying that credential is sent to the work tracking system. GREEN: expected to be assertions only — every production behaviour it exercises landed in phases 01-05. **Run the spec locally against a running Lighthouse before committing it or the POM.** Two standing Playwright traps apply: `getByRole({ name })` is case-insensitive substring matching by default, so a marking whose text is a substring of another element's will match twice under strict mode; and a MUI `<Select>` without `labelId`/`id` wiring has no `aria-labelledby`, so its `InputLabel` text is unreachable. Widen a timeout if a step is slow; never eat a retry. COMMIT: `test(e2e): walking skeleton for a credential that stops being readable`.",
-          "test_file": "Lighthouse.EndToEndTests/tests/specs/settings/SecretReadability.spec.ts",
-          "scenario_name": "Scenario 1 — An administrator saves a credential, uses it, and is told plainly when it stops being readable (walking skeleton)",
-          "red_to_green_tests": [
-            "The administrator creates a connection and pastes a valid credential",
-            "The connection reports that it is working",
-            "The stored credential names the key it was written with",
-            "After the stored credential is damaged, reopening the connection shows the unreadable state on the field holding it",
-            "The connection reports a problem with the encryption key rather than a rejected credential",
-            "No request carrying that credential is sent to the work tracking system"
-          ],
-          "files_to_modify": [
-            "Lighthouse.EndToEndTests/tests/specs/settings/SecretReadability.spec.ts",
-            "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/WorkTrackingSystemEditPage.ts",
-            "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/WorkTrackingSystemCreateWizard.ts"
-          ],
-          "dependencies": [
-            "05-02"
-          ],
-          "criteria": [
-            "The scenario passes end to end against a running instance with demo data, through the production composition root.",
-            "Every locator lives in a Page Object; the spec calls no `page.locator()` inline.",
-            "The spec was actually run locally before being committed.",
-            "No retry is consumed to make it pass; a slow step gets a wider timeout, not a retry.",
-            "One walking skeleton for this flow — the spec stays a thin sanity check, not a second functional suite."
-          ],
-          "estimated_hours": 2.0,
-          "deliverables": [
-            "SecretReadability.spec.ts (new)",
-            "WorkTrackingSystemEditPage.ts (modified — unreadable-state locators)",
-            "WorkTrackingSystemCreateWizard.ts (modified — secret-field locators)"
-          ]
-        },
         {
           "id": "06-02",
           "name": "Slice close — the OQ-4 count, the dogfood verdict, and per-feature mutation testing",
