@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Lighthouse.Backend.Models.Encryption
@@ -9,6 +10,11 @@ namespace Lighthouse.Backend.Models.Encryption
         private readonly EncryptionKey[] keys;
 
         public EncryptionKeyRing(params EncryptionKey[] keys)
+            : this(KeyCustody.NoDurableStore, keys)
+        {
+        }
+
+        public EncryptionKeyRing(KeyCustody custody, params EncryptionKey[] keys)
         {
             ArgumentNullException.ThrowIfNull(keys);
 
@@ -26,12 +32,36 @@ namespace Lighthouse.Backend.Models.Encryption
                 throw new ArgumentException($"The encryption key ring names '{duplicateId}' more than once, so a secret written under it could not be attributed to one key.", nameof(keys));
             }
 
+            Custody = custody;
             this.keys = [.. keys];
         }
+
+        public KeyCustody Custody { get; }
+
+        public bool CanMint => Custody == KeyCustody.GeneratedForThisInstance;
 
         public EncryptionKey ActiveKey => keys[0];
 
         public IReadOnlyList<EncryptionKey> RetiredKeys => keys[1..];
+
+        // Appending is the only way this type grows, and it appends to the end, so nothing added after a ring
+        // exists can become the key secrets are written under.
+        public EncryptionKeyRing WithRetired(EncryptionKey key)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+
+            if (Array.Exists(keys, present => present.Equals(key)))
+            {
+                return this;
+            }
+
+            return new EncryptionKeyRing(Custody, [.. keys, key]);
+        }
+
+        public EncryptionKeyRing WithLegacyDefault()
+        {
+            return LegacyDefaultEncryptionKey.AppendedTo(this);
+        }
 
         public bool TryGet(string keyId, [NotNullWhen(true)] out EncryptionKey? key)
         {
