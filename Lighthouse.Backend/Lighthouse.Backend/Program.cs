@@ -87,12 +87,9 @@ namespace Lighthouse.Backend
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture;
 
-                if (isStandalone)
-                {
-                    StandaloneInitializer.InitializePaths(builder);
-                }
+                var (keyStore, _) = InitializeKeyStore(builder, isStandalone, StandaloneInitializer.InitializePaths);
 
-                EnsureOAuthStateSecret(builder);
+                EnsureOAuthStateSecret(builder, keyStore);
                 EnsureEncryptionKeyRing(builder);
 
                 ConfigureLogging(builder);
@@ -106,7 +103,7 @@ namespace Lighthouse.Backend
                     ConfigureHttps(builder);
                 }
 
-                ConfigureServices(builder);
+                ConfigureServices(builder, keyStore);
                 ConfigureDatabase(builder);
 
                 var app = builder.Build();
@@ -284,13 +281,13 @@ namespace Lighthouse.Backend
         private const string RedisIdentifier = "Redis";
 
 
-        private static void ConfigureServices(WebApplicationBuilder builder)
+        private static void ConfigureServices(WebApplicationBuilder builder, KeyStoreLocation keyStore)
         {
             var authConfig = LoadAuthenticationConfiguration(builder);
 
             ConfigureCors(builder, authConfig);
             ForwardedHeadersConfigurator.Configure(builder.Services, builder.Configuration, authConfig);
-            ConfigureDataProtection(builder);
+            ConfigureDataProtection(builder, keyStore);
             ConfigureAuthentication(builder, authConfig);
             ConfigureRateLimiting(builder);
             ConfigureHealthChecks(builder);
@@ -392,6 +389,10 @@ namespace Lighthouse.Backend
 
         private const string OAuthStateSecretConfigKey = "Lighthouse:OAuth:StateSecret";
         private const string DataProtectionKeyStorePathConfigKey = "Lighthouse:DataProtection:KeyStorePath";
+        private const string EncryptionKeyStorePathConfigKey = "Encryption:KeyStorePath";
+        private const string DatabaseProviderConfigKey = "Database:Provider";
+        private const string DatabaseConnectionStringConfigKey = "Database:ConnectionString";
+        private const string LegacyKeyStoreDirectoryName = "data-protection-keys";
         private const string OAuthStateSecretProtectorPurpose = "Lighthouse.OAuth.StateSecret.v1";
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
@@ -430,7 +431,7 @@ namespace Lighthouse.Backend
             return profile is not null;
         }
 
-        private static void EnsureOAuthStateSecret(WebApplicationBuilder builder)
+        internal static void EnsureOAuthStateSecret(WebApplicationBuilder builder, KeyStoreLocation keyStore)
         {
             var existing = builder.Configuration[OAuthStateSecretConfigKey];
             if (!string.IsNullOrWhiteSpace(existing))
@@ -438,10 +439,7 @@ namespace Lighthouse.Backend
                 return;
             }
 
-            var keyStoreDir = ResolveDataProtectionKeyStoreDir(builder);
-            Directory.CreateDirectory(keyStoreDir);
-
-            var resolvedSecret = ResolveOrCreateProtectedOAuthStateSecret(keyStoreDir);
+            var resolvedSecret = ResolveOrCreateProtectedOAuthStateSecret(keyStore.Directory);
 
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -469,15 +467,40 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring));
         }
 
-        private static string ResolveDataProtectionKeyStoreDir(WebApplicationBuilder builder)
+        // Standalone initialisation writes the database path and the key store path that the resolution
+        // below then reads. Keeping both in one method is what stops the two from being swapped by someone
+        // reading Main, and taking the standalone step as an argument is what lets a test run this exact
+        // sequence and fail if it ever is.
+        internal static (KeyStoreLocation Location, KeyStoreMigrationOutcome Migration) InitializeKeyStore(
+            WebApplicationBuilder builder,
+            bool isStandalone,
+            Action<WebApplicationBuilder> initializeStandalonePaths)
         {
-            var configured = builder.Configuration[DataProtectionKeyStorePathConfigKey];
-            if (!string.IsNullOrWhiteSpace(configured))
+            if (isStandalone)
             {
-                return configured;
+                initializeStandalonePaths(builder);
             }
 
-            return Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
+            return ResolveKeyStoreDirectory(builder);
+        }
+
+        internal static (KeyStoreLocation Location, KeyStoreMigrationOutcome Migration) ResolveKeyStoreDirectory(
+            WebApplicationBuilder builder)
+        {
+            var location = KeyStoreResolver.Resolve(
+                builder.Configuration[EncryptionKeyStorePathConfigKey],
+                builder.Configuration[DataProtectionKeyStorePathConfigKey],
+                builder.Configuration[DatabaseProviderConfigKey],
+                builder.Configuration[DatabaseConnectionStringConfigKey],
+                builder.Environment.ContentRootPath);
+
+            Directory.CreateDirectory(location.Directory);
+
+            var migration = KeyStoreMigration.CarryOverLegacyKeyStore(
+                location.Directory,
+                Path.Combine(builder.Environment.ContentRootPath, LegacyKeyStoreDirectoryName));
+
+            return (location, migration);
         }
 
         private static string ResolveOrCreateProtectedOAuthStateSecret(string keyStoreDir)
@@ -907,7 +930,7 @@ namespace Lighthouse.Backend
             builder.Services.AddHostedService<GracefulShutdownService>();
         }
 
-        private static void ConfigureDataProtection(WebApplicationBuilder builder)
+        internal static void ConfigureDataProtection(WebApplicationBuilder builder, KeyStoreLocation keyStore)
         {
             // Auth cookies and the OIDC correlation cookie are encrypted with Data Protection keys.
             // When more than one replica runs, every pod has to share the same key ring, otherwise a
@@ -922,9 +945,7 @@ namespace Lighthouse.Backend
             var redisConnectionString = builder.Configuration.GetConnectionString(RedisIdentifier);
             if (string.IsNullOrWhiteSpace(redisConnectionString))
             {
-                var keyStoreDir = ResolveDataProtectionKeyStoreDir(builder);
-                Directory.CreateDirectory(keyStoreDir);
-                dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyStoreDir));
+                dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyStore.Directory));
                 return;
             }
 
