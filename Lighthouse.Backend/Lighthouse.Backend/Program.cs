@@ -41,6 +41,9 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Data.Sqlite;
+using Npgsql;
+using System.Data.Common;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -90,7 +93,7 @@ namespace Lighthouse.Backend
                 var (keyStore, _) = InitializeKeyStore(builder, isStandalone, StandaloneInitializer.InitializePaths);
 
                 EnsureOAuthStateSecret(builder, keyStore);
-                EnsureEncryptionKeyRing(builder);
+                EnsureEncryptionKeyRing(builder, keyStore);
 
                 ConfigureLogging(builder);
                 Log.Information("Starting up Lighthouse!");
@@ -447,24 +450,46 @@ namespace Lighthouse.Backend
             });
         }
 
-        internal static void EnsureEncryptionKeyRing(WebApplicationBuilder builder)
+        internal static void EnsureEncryptionKeyRing(WebApplicationBuilder builder, KeyStoreLocation keyStore)
         {
-            var configuredKey = builder.Configuration[EncryptionKeyConfigKey]
-                ?? throw new InvalidOperationException("EncryptionKey is not configured.");
+            ArgumentNullException.ThrowIfNull(keyStore);
 
-            var material = Convert.FromBase64String(configuredKey);
+            var fileSystem = new PhysicalKeyStoreFileSystem();
 
-            if (material.Length != EncryptionKey.MaterialLength)
-            {
-                throw new InvalidOperationException($"Encryption key length is invalid. It must be {EncryptionKey.MaterialLength} bytes for AES-256.");
-            }
+            using var keyStoreProtection = DataProtectionKeptIn(keyStore.Directory);
 
-            var ring = new EncryptionKeyRing(new EncryptionKey(KeyRingSerializer.DeriveConfiguredKeyId(material), material));
+            var ring = new EncryptionKeyRingBootstrapper(
+                new ConfiguredKeyRingSource(
+                    builder.Configuration[ConfiguredKeyRingSource.RingSettingKey],
+                    builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey]),
+                new MountedFileKeyRingSource(
+                    builder.Configuration[MountedFileKeyRingSource.PathSettingKey], fileSystem),
+                new GeneratedKeyRingStore(
+                    keyStore.Directory,
+                    keyStoreProtection.GetRequiredService<IDataProtectionProvider>(),
+                    fileSystem,
+                    TimeProvider.System),
+                keyStore,
+                new DatabaseSecretPresenceProbe(() => DatabaseConnectionFor(builder)))
+                .Resolve();
 
             // The ring is registered as a singleton and never written back into configuration: every value
             // in there is reachable from its debug view and from anything that enumerates a section, which
             // is the last place a key belongs
             builder.Services.AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring));
+        }
+
+        // Asked for lazily, and only on the one path that has nowhere durable to keep a key: every other
+        // deployment starts without the database having to be reachable at all.
+        private static DbConnection DatabaseConnectionFor(WebApplicationBuilder builder)
+        {
+            var connectionString = builder.Configuration[DatabaseConnectionStringConfigKey] ?? string.Empty;
+
+            return builder.Configuration[DatabaseProviderConfigKey]?.ToLowerInvariant() switch
+            {
+                "postgresql" or "postgres" => new NpgsqlConnection(connectionString),
+                _ => new SqliteConnection(connectionString),
+            };
         }
 
         // Standalone initialisation writes the database path and the key store path that the resolution
@@ -505,15 +530,7 @@ namespace Lighthouse.Backend
 
         private static string ResolveOrCreateProtectedOAuthStateSecret(string keyStoreDir)
         {
-            // EnsureOAuthStateSecret runs at builder-time, BEFORE builder.Build(), so no app-wide
-            // DI container exists yet. Build a transient mini-host that pins the data-protection
-            // key ring to the same on-disk location every boot will use, so the protector is
-            // deterministic across restarts.
-            using var transientServices = new ServiceCollection()
-                .AddDataProtection()
-                .PersistKeysToFileSystem(new DirectoryInfo(keyStoreDir))
-                .Services
-                .BuildServiceProvider();
+            using var transientServices = DataProtectionKeptIn(keyStoreDir);
 
             var dataProtectionProvider = transientServices.GetRequiredService<IDataProtectionProvider>();
             var protector = dataProtectionProvider.CreateProtector(OAuthStateSecretProtectorPurpose);
@@ -532,7 +549,18 @@ namespace Lighthouse.Backend
             return Convert.ToBase64String(freshSecret);
         }
 
-        private const string EncryptionKeyConfigKey = "EncryptionSettings:EncryptionKey";
+        // Both the OAuth state secret and the encryption key ring are resolved at builder time, BEFORE
+        // builder.Build(), so no application-wide container exists yet. A transient mini-host pins the
+        // data-protection keys to the same on-disk location every boot uses, so what one boot wrote the
+        // next boot can still read.
+        private static ServiceProvider DataProtectionKeptIn(string keyStoreDirectory)
+        {
+            return new ServiceCollection()
+                .AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(keyStoreDirectory))
+                .Services
+                .BuildServiceProvider();
+        }
 
         private const string UseStubOAuthProviderConfigKey = "Lighthouse:OAuth:UseStubProvider";
 

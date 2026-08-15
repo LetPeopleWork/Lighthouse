@@ -1,5 +1,14 @@
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Services.Interfaces.Encryption;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
@@ -23,7 +32,23 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string HttpNamespace = "System.Net.Http.";
 
+        private const string EncryptionNamespacePrefix = "Lighthouse.Backend.Services.Implementation.Encryption.";
+
+        private const string LoggingNamespace = "Microsoft.Extensions.Logging";
+
+        private const string StoredCredential = "a stored credential";
+
+        private const string KeyOnTheRing = "key-on-the-ring";
+
+        private const string KeyNotOnTheRing = "key-not-on-the-ring";
+
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
+
+        private static readonly byte[] MaterialOnTheRing = RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength);
+
+        private static readonly byte[] MaterialOffTheRing = RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength);
+
+        private static readonly char[] SettingValueSeparators = [',', ';', ' '];
 
         private static readonly string[] EverythingSystemInfoDiscloses =
         [
@@ -84,6 +109,150 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "make the answer depend on something none of the rules are written in terms of, and would make " +
                 "every test of those rules need a database or a transport stub to run at all. Found: " +
                 string.Join(", ", reachesOut));
+        }
+
+        /// <summary>
+        /// Resolving a key deliberately puts nothing back into configuration, and this is what makes that
+        /// structural rather than a habit reviewers have to remember. Every value in configuration is
+        /// readable from its debug view and from anything that enumerates a section, so a key written back
+        /// would be one support request away from being pasted into an issue.
+        /// </summary>
+        [Test]
+        public void NoValueLeftInConfigurationAfterTheKeyIsResolved_IsAKeyOnTheRing()
+        {
+            var keyStore = Directory.CreateTempSubdirectory("SecretCustodySeam_");
+
+            try
+            {
+                var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions());
+
+                Backend.Program.EnsureEncryptionKeyRing(
+                    builder, new KeyStoreLocation(keyStore.FullName, KeyStoreCase.ExplicitKeyStorePath));
+
+                Assert.That(
+                    KeyMaterialReadableFromConfiguration(builder),
+                    Is.Empty,
+                    "A key the instance resolved is readable straight out of its own settings. Nothing puts " +
+                    "it there except code that writes what it resolved back, and there is no way to take it " +
+                    "out again once something has read the debug view.");
+            }
+            finally
+            {
+                keyStore.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// The cheapest way to guarantee that no log line carries key material is for the code that handles
+        /// key material to have no way of writing one. Every source, the store and the bootstrapper raise
+        /// what goes wrong instead, so the sentence an operator reads is written once, where the caller
+        /// decides what to do about it.
+        /// </summary>
+        [Test]
+        public void NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll()
+        {
+            var ableToLog = Architecture.Types
+                .Where(type => type.FullName.StartsWith(EncryptionNamespacePrefix, StringComparison.Ordinal))
+                .Where(type => type.Dependencies.Any(
+                    dependency => dependency.Target.FullName.StartsWith(LoggingNamespace, StringComparison.Ordinal)))
+                .Select(type => type.FullName)
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList();
+
+            Assert.That(ableToLog, Is.Empty,
+                "A type that handles key material can now write to a log, so whether a key ends up in one is " +
+                "decided line by line from here on. Raise what went wrong instead and let the caller say it. " +
+                "Found: " + string.Join(", ", ableToLog));
+        }
+
+        [Test]
+        public void TheOneTypeThatBothHoldsKeysAndLogs_PutsNoKeyMaterialInAnyStructuredProperty()
+        {
+            var logger = new Mock<ILogger<CryptoService>>();
+            var ring = new EncryptionKeyRing(new EncryptionKey(KeyOnTheRing, MaterialOnTheRing));
+
+            new CryptoService(new EncryptionKeyRingHolder(ring), logger.Object)
+                .Read(SecretEnvelope.Protect(StoredCredential, KeyNotOnTheRing, MaterialOffTheRing).Format());
+
+            var logged = EverythingHandedToTheLoggingPipeline(logger);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(logged, Is.Not.Empty,
+                    "Nothing was logged at all, so this test would pass no matter what the log carried. A " +
+                    "secret naming a key the ring does not hold is what makes this type write a line.");
+                Assert.That(logged.Where(HoldsKeyMaterial).ToList(), Is.Empty,
+                    "Key material reached the logging pipeline. A structured property is the way it gets " +
+                    "there unnoticed: the rendered sentence looks harmless while the property beside it " +
+                    "carries the key into every sink the log is shipped to.");
+            }
+        }
+
+        private static bool HoldsKeyMaterial(string logged)
+        {
+            return EveryWayKeyMaterialCouldBeWrittenDown().Exists(
+                rendering => logged.Contains(rendering, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static List<string> EveryWayKeyMaterialCouldBeWrittenDown()
+        {
+            return
+            [
+                Convert.ToBase64String(MaterialOnTheRing),
+                Convert.ToHexString(MaterialOnTheRing),
+                Convert.ToBase64String(MaterialOffTheRing),
+                Convert.ToHexString(MaterialOffTheRing),
+            ];
+        }
+
+        // The rendered line and each structured property separately: key material in a property would never
+        // show up in a test that only read the sentence.
+        private static List<string> EverythingHandedToTheLoggingPipeline(Mock<ILogger<CryptoService>> logger)
+        {
+            return [.. logger.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log))
+                .SelectMany(invocation => Rendered(invocation.Arguments[2]))];
+        }
+
+        private static List<string> Rendered(object? state)
+        {
+            var written = new List<string> { state?.ToString() ?? string.Empty };
+
+            if (state is IReadOnlyList<KeyValuePair<string, object?>> properties)
+            {
+                written.AddRange(properties.Select(property => $"{property.Key}={property.Value}"));
+            }
+
+            return written;
+        }
+
+        // Every setting is broken back into the pieces a key ring is spelled in, so a key hidden inside a
+        // longer value is found too rather than only one stored on its own.
+        private static List<string> KeyMaterialReadableFromConfiguration(WebApplicationBuilder builder)
+        {
+            var ringMaterial = KeysOn(RingResolvedInto(builder));
+
+            return [.. builder.Configuration.AsEnumerable()
+                .Select(setting => setting.Value)
+                .OfType<string>()
+                .SelectMany(value => value.Split(SettingValueSeparators, StringSplitOptions.RemoveEmptyEntries))
+                .Where(piece => ringMaterial.Contains(piece.Trim(), StringComparer.Ordinal))];
+        }
+
+        private static List<string> KeysOn(EncryptionKeyRing ring)
+        {
+            return [.. ring.RetiredKeys
+                .Prepend(ring.ActiveKey)
+                .Select(key => Convert.ToBase64String(key.Material.Span))];
+        }
+
+        private static EncryptionKeyRing RingResolvedInto(WebApplicationBuilder builder)
+        {
+            var holder = (IEncryptionKeyRingHolder)builder.Services
+                .Single(descriptor => descriptor.ServiceType == typeof(IEncryptionKeyRingHolder))
+                .ImplementationInstance!;
+
+            return holder.Current;
         }
 
         // Read off the dependency graph rather than asked as a NotDependOnAny rule, because only the

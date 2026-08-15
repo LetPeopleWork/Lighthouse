@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private const string AnotherKeyBase64 = "jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg=";
 
-        private const string EncryptionKeyConfigKey = "EncryptionSettings:EncryptionKey";
+        private const string EncryptionKeyConfigKey = "Encryption:Key";
 
         private const string DerivedKeyIdPrefix = "k-cfg-";
 
@@ -307,7 +307,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void EnsureEncryptionKeyRing_ConfiguredKeyIsNotBase64_ShouldThrow()
         {
-            Assert.Throws<FormatException>(() => ResolveInto("short_key"));
+            Assert.That(
+                () => ResolveInto("short_key"),
+                Throws.InvalidOperationException.With.Message.Contains("could not be decoded as base64"));
         }
 
         [Test]
@@ -315,7 +317,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var tooShort = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
 
-            Assert.Throws<InvalidOperationException>(() => ResolveInto(tooShort));
+            Assert.That(
+                () => ResolveInto(tooShort),
+                Throws.InvalidOperationException.With.Message.Contains("carries 16 bytes of key material"));
         }
 
         private List<object> WarningStates()
@@ -406,9 +410,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 [EncryptionKeyConfigKey] = configuredKey,
             });
 
-            Backend.Program.EnsureEncryptionKeyRing(builder);
+            Backend.Program.EnsureEncryptionKeyRing(builder, ADurableKeyStore());
 
             return builder;
+        }
+
+        // Somewhere the instance would be allowed to keep a key of its own. Every case here supplies one
+        // through configuration instead, which wins outright, so nothing is ever written there.
+        private static KeyStoreLocation ADurableKeyStore()
+        {
+            return new KeyStoreLocation(
+                Directory.CreateTempSubdirectory("CryptoServiceTests_").FullName,
+                KeyStoreCase.ExplicitKeyStorePath);
         }
 
         private static EncryptionKeyRing RingOf(WebApplicationBuilder builder)
