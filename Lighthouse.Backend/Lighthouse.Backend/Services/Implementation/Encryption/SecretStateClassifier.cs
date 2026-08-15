@@ -2,7 +2,6 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using System.Buffers;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Unicode;
 
 namespace Lighthouse.Backend.Services.Implementation.Encryption
@@ -10,11 +9,11 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     // Every question this class asks about a stored value is answered by looking at the value, never by
     // running something and seeing whether it blew up. That is the whole point: a decrypt that failed and
     // was quietly caught is what let a wrong key look like an expired token for years, so there is no
-    // catch and no exception filter anywhere below, and any change that adds one has undone the fix.
+    // catch and no exception filter anywhere below, and any change that adds one has undone the fix. The
+    // sole exception lives in SecretEnvelope, which has no other way to learn that a tag failed and is
+    // careful to catch that one failure and nothing else.
     public sealed class SecretStateClassifier
     {
-        private const int GcmTagLength = 16;
-
         private const int CbcBlockLength = 16;
 
         private const int CbcIvLength = 16;
@@ -49,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private static SecretReadResult ClassifyEnvelope(SecretEnvelope envelope, EncryptionKeyRing ring)
         {
-            if (ring.TryGet(envelope.KeyId, out var key) && TryUnprotect(envelope, key.Material, out var plainText))
+            if (ring.TryGet(envelope.KeyId, out var key) && envelope.TryUnprotect(key, out var plainText))
             {
                 return new SecretReadResult(SecretState.Envelope, plainText, envelope.KeyId);
             }
@@ -70,42 +69,6 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             return read.PlainText is null
                 ? new SecretReadResult(SecretState.Unreadable, null, null)
                 : new SecretReadResult(SecretState.LegacyCbc, read.PlainText, read.Id);
-        }
-
-        // AesGcm offers no decrypt that reports a bad tag by returning rather than throwing, so the tag is
-        // verified the other way round. Encrypting a run of zero bytes hands back the counter-mode
-        // keystream, which recovers the candidate plaintext, and encrypting that candidate reproduces the
-        // tag the stored value would have to carry to be authentic. What is left is comparing two tags.
-        private static bool TryUnprotect(SecretEnvelope envelope, ReadOnlyMemory<byte> keyMaterial, out string plainText)
-        {
-            plainText = string.Empty;
-
-            var ciphertextAndTag = envelope.CiphertextAndTag.Span;
-            var ciphertextLength = ciphertextAndTag.Length - GcmTagLength;
-            var header = Encoding.UTF8.GetBytes(string.Concat(SecretEnvelope.Prefix, envelope.KeyId));
-            var nonce = envelope.Nonce.Span;
-
-            using var aes = new AesGcm(keyMaterial.Span, GcmTagLength);
-
-            var keystream = new byte[ciphertextLength];
-            aes.Encrypt(nonce, new byte[ciphertextLength], keystream, new byte[GcmTagLength], header);
-
-            var candidate = new byte[ciphertextLength];
-            for (var index = 0; index < ciphertextLength; index++)
-            {
-                candidate[index] = (byte)(ciphertextAndTag[index] ^ keystream[index]);
-            }
-
-            var authenticTag = new byte[GcmTagLength];
-            aes.Encrypt(nonce, candidate, new byte[ciphertextLength], authenticTag, header);
-
-            if (!CryptographicOperations.FixedTimeEquals(authenticTag, ciphertextAndTag[ciphertextLength..]))
-            {
-                return false;
-            }
-
-            plainText = Encoding.UTF8.GetString(candidate);
-            return true;
         }
 
         // Only a value that is standard base64 over at least an IV and one whole block can be something the

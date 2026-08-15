@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Encryption;
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
@@ -122,6 +123,28 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 Header(KeyId));
 
             return Encoding.UTF8.GetString(plainBytes);
+        }
+
+        public bool TryUnprotect(EncryptionKey key, [NotNullWhen(true)] out string? plainText)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+
+            try
+            {
+                plainText = Unprotect(key.Material.Span);
+                return true;
+            }
+
+            // A value that fails its authentication tag is the ordinary answer to "can this key read this
+            // secret?", but the platform offers no decrypt that reports it by returning rather than
+            // throwing, so the throw is turned into a no here. Nothing wider may be caught: a key of the
+            // wrong size or a fault in the platform is a real failure, and swallowing it would hide the
+            // very thing this method exists to report.
+            catch (AuthenticationTagMismatchException)
+            {
+                plainText = null;
+                return false;
+            }
         }
 
         // The version and the key id authenticate the ciphertext without being encrypted by it, so a stored

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using System.Buffers.Text;
 using System.Security.Cryptography;
@@ -28,6 +29,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         private static readonly byte[] KeyOneMaterial = Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg=");
 
         private static readonly byte[] KeyTwoMaterial = Convert.FromBase64String("BdurmHjAsvICR2wy2rjw3ao+2NW/s0TOIf85FOdjx+c=");
+
+        private static readonly EncryptionKey KeyOne = new(KeyOneId, KeyOneMaterial);
+
+        private static readonly EncryptionKey KeyOneIdWithKeyTwosMaterial = new(KeyOneId, KeyTwoMaterial);
 
         private static readonly string[] InvalidKeyIds =
         [
@@ -209,6 +214,53 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
 
             Assert.That(nonces, Has.Count.EqualTo(encryptions));
+        }
+
+        [Test]
+        public void TryUnprotect_EnvelopeUnderTheKeyThatWroteIt_ReportsSuccessAndReturnsThePlainText()
+        {
+            var envelope = SecretEnvelope.Protect(Credential, KeyOneId, KeyOneMaterial);
+
+            var read = envelope.TryUnprotect(KeyOne, out var plainText);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read, Is.True);
+                Assert.That(plainText, Is.EqualTo(Credential));
+            }
+        }
+
+        // Every way a stored envelope can fail to authenticate, answered without an exception escaping and
+        // without a plaintext coming back. The pristine value is read alongside them so that a change which
+        // made everything unreadable could not pass this test.
+        [Test]
+        public void TryUnprotect_EnvelopeThatDoesNotAuthenticate_ReportsFailureAndReturnsNoPlainText()
+        {
+            var stored = SecretEnvelope.Protect(Credential, KeyOneId, KeyOneMaterial).Format();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TryRead(stored, KeyOne), Is.EqualTo(Credential));
+                Assert.That(TryRead(WithDecodedByteFlipped(stored, CiphertextField), KeyOne), Is.Null);
+                Assert.That(TryRead(WithDecodedByteFlipped(stored, NonceField), KeyOne), Is.Null);
+                Assert.That(TryRead(WithKeyIdRewritten(stored, KeyTwoId), KeyOne), Is.Null);
+                Assert.That(TryRead(stored, KeyOneIdWithKeyTwosMaterial), Is.Null);
+            }
+        }
+
+        [Test]
+        public void TryUnprotect_NoKey_IsRefused()
+        {
+            var envelope = SecretEnvelope.Protect(Credential, KeyOneId, KeyOneMaterial);
+
+            Assert.That(() => envelope.TryUnprotect(null!, out _), Throws.ArgumentNullException);
+        }
+
+        private static string? TryRead(string stored, EncryptionKey key)
+        {
+            return SecretEnvelope.TryParse(stored, out var envelope) && envelope.TryUnprotect(key, out var plainText)
+                ? plainText
+                : null;
         }
 
         private static string ReadStrict(string stored, byte[] key)
