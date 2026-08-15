@@ -286,7 +286,7 @@ data.
 | UI | Settings → an encryption panel showing key source, active key id, the key ids the ring holds, and secret readability. **Custody-aware**: it offers **Rotate key** where the application owns the key, and **Re-encrypt onto the active key** where an operator does. It never offers to mint a key it cannot persist. | slice 03, slice 04 |
 | UI (existing) | Connection detail — an unreadable secret is named on the Connection that owns it | slice 01 |
 | Startup log | One line naming the key source; never the key | slice 02 |
-| Helm values | `encryption.existingSecret`, `encryption.key`, plus the generate-if-absent behaviour | slice 05 |
+| Helm values | `encryption.existingSecret`, `encryption.key`, `encryption.secretKey`, `encryption.mountPath` — and a render that **refuses** when neither key nor `existingSecret` is supplied, naming both. The chart generates nothing | slice 05 |
 | Docs | Installation configuration page, compliance self-assessment, `SECURITY.md`, security advisory | slice 06 |
 
 ---
@@ -1284,12 +1284,31 @@ Assumptions** at the end of this document for the before/after of each.
   ADR-008, so the exposure is `WorkTrackingSystemConnectionOption.Value` on installs predating
   `EncryptSecrets`. **Slice 01 owes a count from the `:5169` restored backup before it closes.** If the
   count is zero the residual is academic; if it is not, the release note says so.
-- **OQ-5 (new) — where does an `UnreadableSecretException` surface during a background sync?** The six
-  consumers grow no error handling by design, so the exception travels each one's existing failure path.
-  `ValidateConnection` turns it into a `ConnectionValidationResult`; a background refresh should turn it
-  into the refresh-log entry the update surface already renders. **Slice 01 must confirm that second
-  path produces a legible operator message rather than a swallowed failure**, and add the mapping if it
-  does not. Named rather than asserted.
+- **OQ-5 (new) — ANSWERED 2026-08-15, and the answer is worse than this question assumed.** The
+  question was where an `UnreadableSecretException` surfaces during a background sync, on the
+  assumption that "the exception travels each consumer's existing failure path" and slice 01 merely has
+  to confirm the message is legible. Read end to end, **there is no failure path, and the refresh
+  reports success**:
+
+  1. `UpdateServiceBase.TriggerUpdate` enqueues the work inside its own `catch (Exception)`. It logs
+     `"An exception occurred while updating {Entity} with ID {Id}"` at Error and swallows.
+  2. The lambda therefore returns normally, so `UpdateQueueService.ExecuteUpdateAsync` never enters its
+     own catch and sets `terminalProgress = UpdateProgress.Completed`.
+  3. `NotifyListeners` pushes `Status=Completed` over SignalR. The browser is told the refresh
+     succeeded, over credentials the instance could not read.
+  4. `LogUpdateSummary` is never reached either, so there is not even a `success=False` line.
+
+  `UpdateProgress.Failed` exists in the enum but is unreachable from any periodic refresh — the only
+  two callers that bypass `TriggerUpdate` are the Portfolio and Team delete endpoints, and neither
+  decrypts a secret.
+
+  **What slice 01 owes is therefore not a message, it is the path.** Minimum shape: classify
+  `UnreadableSecretException` at `TriggerUpdate` so the key advances to `Failed` rather than
+  `Completed`, and carry the Connection name and field on the exception so the log line and the status
+  both name what the operator has to fix. This is the same silent-success family as the `Decrypt` that
+  returns ciphertext: the system's current answer to "I cannot read your credential" is to look like it
+  worked. Fixing one and leaving the other would close the reported half of the defect and keep the
+  half nobody has reported yet.
 
 ---
 
@@ -1414,3 +1433,571 @@ absorbed into slice 02 rather than shipped first, since it will not be released 
 commits, advisory at release), D9-D11. The slice order and the six slice boundaries are unchanged.
 OQ-1's answer improved rather than changed the design: no lock is needed, and the probe now risks one
 additive migration rather than a redesign.
+
+---
+
+# Wave: DEVOPS — delivery infrastructure
+
+**Platform architect**: Apex · **Date**: 2026-08-15 · **Density**: lean (Tier-1 rendered; Tier-2 catalogued, not written)
+**Scope**: the three items the DESIGN handoff named as infrastructure-owned — the chart's required-value
+failure and its unit tests, the Secret volume projection, and the Tenant Zero rotation walkthrough.
+No application component is designed here. The chart is the only surface this wave owns.
+
+Everything below was verified by running the real chart and a scratch copy of it against `helm lint`,
+`helm template` and `helm unittest`, not reasoned about. Where a verified result contradicts what was
+handed down, the contradiction is recorded under *Changed Assumptions* rather than quietly absorbed.
+
+---
+
+## Wave: DEVOPS / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `feature-delta.md` — DISCUSS Outcome KPIs; DESIGN Handoff, Quality Attribute Strategies,
+  Architectural Enforcement; the AC-5.1…AC-5.11 block inside US-05; Changed Assumptions.
+- ✓ `slices/slice-05-cluster-owned-key.md` — read in full. Three stale statements found and corrected;
+  see *Changed Assumptions*.
+- ✓ `docs/product/architecture/adr-153-kubernetes-key-custody-is-operator-supplied.md` — in full.
+- ✓ `docs/product/architecture/adr-082-chart-required-values-fail-fast.md` — the precedent reused.
+- ✓ `docs/product/architecture/adr-149-key-store-beside-the-database.md`,
+  `adr-150-key-ring-resolved-at-builder-time-into-a-singleton.md` — the Docker/standalone key-store
+  path and the holder the file watcher swaps.
+- ✓ `chart/templates/secret.yaml`, `chart/templates/deployment-api.yaml`, `chart/templates/_helpers.tpl`,
+  `chart/templates/NOTES.txt`, `chart/values.yaml`, `chart/values.schema.json`,
+  `chart/values-enterprise.yaml`, `chart/README.md.gotmpl`, `chart/scripts/version-guard.sh`.
+- ✓ `chart/tests/unit/{render,configure,full-stack,reload,standalone-gate}_test.yaml` — all five.
+- ✓ `.github/workflows/ci_chart.yml` — in full, including the `Release`-gated publish job.
+- ✓ `docs/product/kpi-contracts.yaml` — exists; the `measurement_scope` convention is inherited.
+- ✓ `Dockerfile` — the runtime stage ends on `USER app`. Load-bearing for the volume file mode below.
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- **Slice 02 landed.** The application reads `Encryption:KeysFile`, resolves a ring from it, and
+  reports custody. Without that, the chart would mount a file nothing consumes.
+- **Slice 03 landed.** Re-encryption is the third of the four operator actions in the rotation
+  walkthrough; the walkthrough cannot be dogfooded before it exists.
+- **A chart version bump.** `chart/scripts/version-guard.sh` refuses to republish an existing version,
+  and `detect-publish` only opens the `Release` gate when `Chart.yaml`'s version is absent from
+  `docs/charts/index.yaml`. New values keys without a bump ship nothing.
+- **`helm-docs` v1.14.2 run locally before pushing.** New `# --` comments in `values.yaml` regenerate
+  `chart/README.md`; the drift gate fails on a stale README and it is the cheapest CI cycle to burn.
+- **A base64 32-byte CI key fixture.** Four workflow steps need a value that the application will
+  actually parse, not a placeholder string.
+- **Tenant Zero, plus write access to the private `lighthouse-platform` repository**, for the half of
+  the rotation walkthrough that is GitOps rather than product documentation.
+- No new secret store, no new cluster permission, no new external service. Lighthouse holds no write
+  permission on any Kubernetes Secret at any point, before or after this epic.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+| Environment | Platform | Key custody | Precondition that matters |
+|---|---|---|---|
+| `standalone-exe` | linux/macos/windows | generated for this instance | `Lighthouse:DataProtection:KeyStorePath` is already set by the standalone initializer, so the key store resolves beside the database with no change (ADR-149 case 2) |
+| `docker-with-data-volume` | docker | generated for this instance | SQLite database on the mounted volume → the ring follows it onto the same volume (ADR-149 case 3). `docker rm` and recreate must return the same key id |
+| `docker-no-data-volume` | docker | **refuses to mint** | No durable directory can be argued (ADR-149 case 4). An existing instance keeps running on the retired published default and says so; a fresh one refuses to start. This is a first-class environment, not an error path |
+| `k8s-explicit-key` | kubernetes | configuration-supplied | `encryption.key` rendered into a chart-owned Secret and projected as a file. Minting is never possible here (operator-owned custody) |
+| `k8s-existing-secret` | kubernetes | external store | `encryption.existingSecret` names a Secret External Secrets Operator or OpenBao owns. The chart renders no key material at all. The named Secret must exist before the pod schedules |
+| `upgrade-from-pre-epic` | all of the above | mixed | Database holds secrets written under the published default key. The retired default must stay in the ring or every one of them becomes unreadable |
+| `ci-chart` | GitHub Actions | fixture key | `ci_chart.yml` — lint, unittest, standalone render gate, helm-docs drift gate |
+| `kind-install-smoke` | GitHub Actions + kind | fixture key | `ci_chart.yml install-smoke`. The only place a real kubelet projects the Secret into a real non-root container |
+| `tenant-zero` | kubernetes + ArgoCD | external store | The proving ground for the rotation walkthrough, and the only environment that renders through `helm template` rather than `helm install` |
+
+Full inventory, coexistence matrix and deployment assumptions: `environments.yaml`.
+
+---
+
+## Wave: DEVOPS / [REF] Chart Custody Surface
+
+### New values keys
+
+| Key | Type | Default | Purpose |
+|---|---|---|---|
+| `encryption.key` | string | `""` | Base64 32-byte active key, rendered into the chart-owned Secret |
+| `encryption.existingSecret` | string | `""` | Name of a Secret an external store owns; the chart renders no key |
+| `encryption.secretKey` | string | `keys` | The key *within* the Secret that holds the ring |
+| `encryption.mountPath` | string | `/etc/lighthouse/encryption` | Directory the ring is projected into |
+
+### Where the required-value rule lives, and why it is not in the schema
+
+ADR-082 splits validation: `values.schema.json` owns structure, types and **unconditional** required;
+`{{ required }}` / `{{ fail }}` in a template owns **cross-field conditionals**. "`encryption.key` OR
+`encryption.existingSecret`" is a disjunction over two sibling keys — neither is required on its own,
+so there is no unconditional required to declare. It belongs in the template.
+
+A reviewer will observe that JSON Schema draft-07 *can* express the disjunction with `anyOf`, and ask
+why the schema is not used anyway. It was tried on a scratch copy of the chart and the answer is
+concrete: **`helm lint` validates the chart's own `values.yaml` against the schema**, and `values.yaml`
+must ship both keys empty. An `anyOf` therefore makes the chart's shipped defaults invalid against the
+chart's own schema, and `helm lint ./chart` — the first step of `ci_chart.yml`, which passes no
+override — fails:
+
+```
+[ERROR] values.yaml: - at '/encryption': 'anyOf' failed
+  - at '/encryption/key': minLength: got 0, want 1
+  - at '/encryption/existingSecret': minLength: got 0, want 1
+```
+
+`{{ fail }}` has the opposite behaviour, and this is the second half of the answer: `helm lint` renders
+in lint mode, where `required` and `fail` are neutralised. The chart already relies on this — today
+`helm lint ./chart` passes with **no** `postgresql.auth.password` set, while `helm template` on the same
+values fails naming that key. So the ADR-082 split is not a stylistic preference here. It is the only
+placement under which both existing `helm lint` steps stay green **without being changed**.
+
+Adding `--set encryption.key=…` to the lint step does make an `anyOf` schema pass — that was checked
+too — but it is the wrong fix twice over: it stops the step from linting the defaults an operator
+actually starts from, and it leaves the chart shipping a `values.yaml` that its own schema rejects.
+
+The schema still earns its place, and it earns more of it than type checking. It declares the
+`encryption` object and its four string properties, with `minLength: 1` on `secretKey` and `mountPath`
+(both have non-empty defaults and an empty value is always a mistake) — and, on `key`, a **pattern that
+rejects a value which is not a base64-encoded 32 bytes**:
+
+```json
+"key": { "type": "string", "pattern": "^$|^[A-Za-z0-9+/]{43}=$" }
+```
+
+The leading `^$` alternative is what makes it work: the empty default stays valid, so `helm lint ./chart`
+is untouched, while a malformed key fails at **render**, naming the key, instead of at pod startup as a
+crash loop. Verified on the real chart — empty passes, a fresh `openssl rand -base64 32` passes,
+`not-base64` fails both `helm lint` and `helm template` with
+`at '/encryption/key': 'not-base64' does not match pattern`.
+
+This is unconditional and structural, which is exactly the half of ADR-082's split the schema owns.
+The conditional disjunction still cannot go there; a well-formedness rule on a single key always can.
+
+### The failure, and the shape it has to have to be testable
+
+A single `lighthouse.assertEncryptionCustody` helper, included at the **top of
+`templates/deployment-api.yaml` immediately after `assertScaling`** — unconditionally, outside every
+`if`. Two placements were rejected:
+
+- *Inside `templates/secret.yaml`.* That template is wrapped in `{{- if or $renderDbKeys $renderOidcKey }}`,
+  so with both `postgresql.auth.existingSecret` and `oidc.existingSecret` set it renders **zero**
+  documents — and an install with no encryption values would then succeed silently with no key. The
+  chart's most security-conscious configuration would be the one that skips the check.
+- *Before `assertScaling`.* Two existing unit tests assert an exact `failedTemplate` message from
+  `assertFrontendMode` and `assertScaling`. Ordering the new guard after both leaves those messages
+  first, so neither test changes meaning.
+
+The message is **one line**. ADR-153 point 1 writes it as three lines with a copy-pasteable
+`openssl rand`; that layout cannot be asserted. Verified on the real plugin: given a multi-line `fail`,
+helm-unittest reports only the trailing lines as the actual error — the first line is consumed along
+with Helm's `execution error at (…):` prefix, so both `errorMessage` and `errorPattern` compare against
+text that does not contain the sentence a reader cares about. Folded onto one line, both matchers pass:
+
+```
+encryption.key or encryption.existingSecret is required (ADR-153): generate one with
+--set encryption.key=$(openssl rand -base64 32), or point at a Secret your own store owns with
+--set encryption.existingSecret=<name>
+```
+
+(one physical line in the template; wrapped here for reading). Supplying **both** keys also fails, with
+`set EITHER encryption.key OR encryption.existingSecret, not both` — an ambiguity the operator should
+resolve rather than have the chart resolve for them.
+
+### The Secret volume projection
+
+A dedicated `templates/secret-encryption.yaml` rendering `<fullname>-encryption`, not an extra key on
+the existing shared `<fullname>-db` Secret. Two reasons: the shared Secret's render guard is already a
+two-term `or` and adding encryption to it couples the key's lifecycle to the database's; and a volume
+projecting the shared Secret would put the database connection string and the OIDC client secret on the
+pod's filesystem too, unless an `items` list is maintained forever. A dedicated Secret makes the
+projection total and safe by construction.
+
+A `lighthouse.encryption.secretName` helper returns `encryption.existingSecret` when set, otherwise the
+chart-owned name — mirroring `lighthouse.db.secretName` and `lighthouse.oidc.secretName` exactly.
+
+Rendered contract on the API Deployment (this is the assertion target, not the template):
+
+```yaml
+volumes:
+  - name: encryption-keys
+    secret:
+      secretName: l8e-lighthouse-encryption   # or encryption.existingSecret
+      defaultMode: 0444
+      items:
+        - key: keys
+          path: keys
+volumeMounts:
+  - name: encryption-keys
+    mountPath: /etc/lighthouse/encryption
+    readOnly: true
+```
+
+Four things about that block are load-bearing:
+
+- **`defaultMode: 0444`, not `0400`.** The runtime image ends on `USER app` and the chart sets no
+  `podSecurityContext`, so a projected Secret file is owned by `root:root` with no `fsGroup` to change
+  that. At `0400` the application cannot open its own key ring and the pod crash-loops on a permission
+  error. The file is readable by every process in a container that has exactly one; the trust boundary
+  is the pod, not the file mode. If a `podSecurityContext.fsGroup` is ever added to this chart, `0440`
+  becomes available and should be taken.
+- **No `optional: true`.** A missing `existingSecret` must leave the pod unschedulable and visible in
+  `kubectl describe`, not boot an instance with no ring.
+- **`Encryption__KeysFile` goes in the ConfigMap, not the Deployment `env:` list**, alongside
+  `Kestrel__*`, `Database__Provider` and `Lighthouse__TimeZone`. Its value is an absolute path, not key
+  material, and the ConfigMap is where this chart puts non-secret configuration. The enforcement test
+  from DESIGN is therefore written against **both** surfaces: no ConfigMap data key and no container
+  env name matches `^Encryption__Key`, except `Encryption__KeysFile`, whose value must start with `/`.
+- **`encryption.existingSecret` must NOT join `lighthouse.reloadSecrets`.** The reloader annotation
+  rolls the pod when a watched Secret changes; the whole reason the ring is a mounted file is that the
+  application notices a new key by polling the file's content without a restart. Adding it to the watch
+  would trade the property the mount was chosen for against nothing. A unit test asserts that a tenant
+  whose *only* managed credential is the encryption Secret carries no reload annotations at all.
+
+### Chart unit tests (AC-5.6, and the ArgoCD stand-in)
+
+helm-unittest renders with **no cluster connection, by construction** — it is `helm template`, not
+`helm install`. So a `failedTemplate` test here is not a stand-in for an ArgoCD sync by analogy; it is
+literally the same render path ArgoCD uses. Seven cases:
+
+| # | Case | Assertion |
+|---|---|---|
+| 1 | Nothing supplied | `failedTemplate` naming both keys (the ArgoCD-render probe) |
+| 2 | Both supplied | `failedTemplate`, "not both" |
+| 3 | `encryption.key` supplied | `<fullname>-encryption` Secret carries `stringData.keys`; volume `secretName` is the chart-owned name |
+| 4 | `encryption.existingSecret` supplied | **zero** encryption Secret documents; volume `secretName` is the named Secret |
+| 5 | Either mode | `Encryption__KeysFile` in the ConfigMap equals `<mountPath>/keys`; no ConfigMap key and no container env name matches `^Encryption__Key` other than that one; the mount is `readOnly: true` with mode `0444` |
+| 6 | `existingSecret` only | no `secret.reloader.stakater.com/reload` and no `checksum/config` annotation |
+| 7 | DB **and** OIDC `existingSecret`, no encryption values | still `failedTemplate` — the guard is outside the shared Secret's render condition |
+
+Upgrade idempotence (AC-5.3, KPI-6) is not a helm-unittest case, because the property is now structural
+rather than behavioural: nothing is minted, so nothing can be regenerated. It gets two shell gates in
+`ci_chart.yml validate` instead — a grep asserting no template references `randAlphaNum`, `randBytes`,
+`uuidv4`, `genPrivateKey` or `lookup` anywhere near an encryption value, and a render-determinism check
+rendering the chart twice with identical values and diffing the two outputs byte for byte.
+
+---
+
+## Wave: DEVOPS / [REF] CI Parity Remediation (`ci_chart.yml`)
+
+The DESIGN handoff flagged four steps as broken by a required `encryption.*`. Each was run against a
+scratch copy of the chart carrying the guard. **Two of the four are not affected**, one is, one is, and
+a fifth — much larger — item was not on the list.
+
+| Step | Verified verdict | Remediation |
+|---|---|---|
+| `helm lint ./chart` | **Not broken.** Lint mode neutralises `required`/`fail`; confirmed green on a chart carrying the guard, and already true today for the unset Postgres password | None. Do **not** "fix" it by adding `--set` — that would hide the fact that lint never enforced this |
+| `helm lint ./chart -f values-enterprise.yaml --set …` | **Not broken**, same mechanism | None to the step. `values-enterprise.yaml` gains a commented `encryption:` block with `key: ""` marked REQUIRED, matching how `postgresql.auth.password` and `oidc.clientSecret` are already presented there |
+| Standalone render gate (`helm template l8e ./chart --set postgresql.auth.password=ci`) | **Broken.** Render fails at `deployment-api.yaml` before the Deployment count is grepped | Add `--set encryption.key=<base64 fixture>` |
+| `install-smoke` (`helm install … --wait --timeout 5m` into kind) | **Broken**, same cause | Add `--set encryption.key=<base64 fixture>`. This turns the step into the gold test for the file-mode question — a real kubelet projecting a real Secret into the real non-root `app` user is the only place `0444` versus `0400` is decided by evidence rather than by reading |
+| `install-smoke`, **`existingSecret` variant** | Missing entirely — a gap, not a break | Add a second install into the same kind cluster: `kubectl create secret generic`, then `helm install --set encryption.existingSecret=… --wait`. Without it, the path Tenant Zero actually uses is the one path no CI substrate ever exercises against a real kubelet, and the two modes project the volume through different `secretName` resolutions |
+| **`helm unittest -f 'tests/unit/*.yaml' ./chart`** | **Broken far harder than the handoff anticipated: 46 of 56 existing tests fail.** helm-unittest renders every template in the chart and *then* selects the document under `template:`, so an unconditional `fail` in `deployment-api.yaml` poisons suites that never mention that template — ingress, ConfigMap, MCP and StatefulSet tests all go red | **One suite-level `set:` block per test file — five lines total**, supplying a fixture `encryption.key`. Verified: all 56 tests return green, including every existing `failedTemplate` message assertion. Per-test `set:` overrides still work, so the seven new cases opt out individually |
+| `helm-docs` README drift gate | **Broken by the new values keys**, as expected | Run `helm-docs` v1.14.2 locally and commit `chart/README.md` in the same change. The quick-start snippets live in `README.md.gotmpl` and need the new flag added by hand |
+| `publish` / `version-guard.sh` | Not broken, but blocking | Bump `Chart.yaml` `version`. The guard also asserts `appVersion` equals `values-enterprise.yaml` `image.tag`, so if the app image is re-pinned in the same change both move together |
+
+A change is not done until `ci_chart.yml` is green end to end. The suite-level `set:` is the single
+highest-leverage line in this whole remediation and it is the one most likely to be discovered the
+expensive way.
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+No new workflow. The slice rides `ci_chart.yml` (chart) and the existing backend workflows (the
+application side of slices 01-04, already designed). Chart-relevant stages:
+
+- **Commit stage** — `helm lint` ×2 (default + enterprise values); `helm unittest` on all five suites
+  plus the seven new encryption cases; the standalone render gate; the two new shell gates (no
+  generation primitive anywhere in the templates; render determinism across two identical renders); the
+  `helm-docs` README drift gate.
+- **Acceptance stage** — `install-smoke`: kind cluster, `helm install --wait --timeout 5m`, rollout
+  status, `/health/ready`, SPA title. With a key fixture supplied this now also proves the mounted ring
+  is readable by the non-root runtime user.
+- **Production stage** — the `Release`-environment-gated `publish` job packages and indexes the chart
+  into `docs/charts/`, checked out with the maintainer token because the default token cannot bypass
+  main's ruleset.
+
+Local quality gates mirroring the commit stage, for anyone touching `chart/`: `helm lint ./chart`,
+`helm unittest -f 'tests/unit/*.yaml' ./chart`, and `helm-docs --chart-search-root chart
+--skip-version-footer -s file --ignore-non-descriptions` followed by `git diff --exit-code -- chart/README.md`.
+All three run in under two seconds and are exactly what CI runs.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+Four of the seven outcome KPIs have an infrastructure surface. The other three (KPI-4 silent decrypt
+failures, KPI-5 upgrade transparency, KPI-7 question answerable from docs) are owned by the application
+slices and the release review, and are not restated here.
+
+| KPI | Instrument | Scope | Gate |
+|---|---|---|---|
+| **KPI-1** Instances not on a shared key | Chart unit test case 1 — a render with no encryption value **fails**, so no Kubernetes install can reach a shipped default key by construction. Corroborated per instance by the startup line `Encryption : <source> (<key-id>) · <path>` | `per_instance` (startup log) + CI (render) | **hard** — CI red on a render that succeeds without a key |
+| **KPI-2** Rotation costs no credentials | The four-action walkthrough run end to end on Tenant Zero, with the rotation report showing 0 Connections requiring re-entry | `vendor_demo_only` | **soft** — dogfood at slice close, verdict recorded in the slice brief |
+| **KPI-3** Rotation completes promptly | Wall-clock on the same Tenant Zero run, against the 60 s budget | `vendor_demo_only` | **soft** — recorded, not gated |
+| **KPI-6** Helm upgrade safety | Render-determinism shell gate (two identical renders, byte-identical output) + the no-generation-primitive grep, plus three consecutive `helm upgrade` runs on Tenant Zero with every Connection still syncing after each | CI (hard half) + `vendor_demo_only` (Tenant Zero half) | **hard** in CI, **soft** on Tenant Zero |
+
+One new signal has no KPI but is the only way an operator learns a rotation reached the pod:
+`encryption.keyring.reloaded`, carrying the key ids and never any material, emitted by the file watcher
+on an accepted reload. A rejected reload emits at Error with the reason and the previous ring stays in
+force. Both are per-instance log events; there is no central collection and this epic adds none.
+
+**Owed, not done here**: appending these four as outcome entries to `docs/product/kpi-contracts.yaml`,
+following the append-never-rewrite convention that file states.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+**Rolling / ArgoCD sync.** Unchanged from the platform's existing model, and deliberately so — nothing
+in this slice justifies a canary. The population at risk is a single-workload API with a small replica
+count, and the failure this slice is defending against is not a bad code path that shows up under
+traffic; it is a wrong or missing key, which is decided before the pod ever serves a request.
+
+**Rollback, designed first, in the order it would be executed:**
+
+1. *The chart render fails.* Nothing is applied, no release exists, no rollback is needed. This is the
+   normal failure and the whole point of the design.
+2. *The pod will not start* (Secret missing, key unparseable, file unreadable). The previous ReplicaSet
+   is still serving; `kubectl rollout undo` or an ArgoCD sync back to the prior revision restores it.
+   No data has changed, because a pod that cannot resolve a ring never writes.
+3. *The pod starts and secrets read as unreadable.* The retired published default is still in the ring
+   on any instance that has not completed a rotation, so this means the wrong key was supplied, not
+   that data was lost. Fix the Secret; the watcher picks it up within one poll interval, or roll the
+   pod. Nothing was overwritten.
+4. *A rotation ran and the outcome is wrong.* This is the only case with a persistence consequence, and
+   it is bounded by the ring: both keys are present throughout, so re-encryption can be run again in the
+   other direction. The irreversible step is the operator dropping the old key from the Secret, which is
+   deliberately the **last** of the four actions and never automated.
+
+There is no forward-only step anywhere in the chart's part of this slice. No migration, no data
+transformation, nothing that a `helm rollback` cannot undo.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**per-feature** — inherited from `CLAUDE.md`, already recorded, not restated. Stryker.NET at ≥ 80% kill
+on the changed backend surface. Nothing in this section changes that, but two boundary notes belong to
+the platform side:
+
+- The chart carries no mutable code, so Stryker has nothing to say about it. The chart's equivalent of
+  mutation coverage is the seven-case unit suite plus the two shell gates, and the honest statement is
+  that the render tests are the only thing standing between the templates and a silent regression.
+- The DoR already treats a surviving mutant on the crypto surface as a real hole rather than a metric.
+  The file watcher's two fail-safe-old guards (a reload that does not parse is rejected; a reload that
+  drops a key is applied at Warning) are the highest-value mutation targets in the slice, because both
+  are conditionals whose inverted form still produces a running instance.
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+Existing Serilog (structured, `ILogger<T>`) and existing OpenTelemetry (AspNetCore instrumentation +
+Prometheus exporter, off by default via `telemetry.enabled`). Extended, never replaced. No new tool, no
+dashboard, no exporter, no collection endpoint.
+
+- **Startup line** — one line from the system-info print: source, active key id, resolved path, never
+  material. This is the whole of KPI-1's per-instance instrument.
+- **`encryption.keyring.reloaded`** — Information. Properties: the key ids before, the key ids after,
+  and the resolved path. Emitted only when the polled content hash changes and the new ring parses.
+- **Reload rejected** — Error, naming the path and the parse failure, stating that the previous ring
+  remains in force. An operator scanning for `level=Error` with an `Encryption` property finds it.
+- **Key removed from the ring** — Warning, naming the ids that disappeared. Applied rather than
+  rejected, because custody is the operator's; the readability check is what turns it into something
+  actionable.
+- **Unreadable secret** — one warning per affected secret per process, never per sync. Naming the
+  Connection and the field. The "per process" bound is what stops a degenerate rotation from producing
+  a log line per sync cycle forever.
+- **Metrics/traces** — no new instrument. Key state is not a metric; it is a posture, reported once at
+  startup and on one System-Admin-guarded endpoint.
+
+Lighthouse does not phone home and this epic does not change that. Every signal above lands in the
+operator's own logs and nowhere else.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+**Trunk-based on `main`.** Direct pushes, no branches, no PRs. `ci_chart.yml` triggers on any push to
+`main` touching `chart/**` or the workflow itself. Focused commit per step, push at slice end, wait for
+CI green, then transition the tracker item.
+
+One interaction specific to this slice: chart publication is gated on the `Release` GitHub environment
+and the job checks out with the maintainer token, because the default Actions token is not a bypass
+actor for main's ruleset. A push that bumps `Chart.yaml`'s version auto-requests the gate; a chart edit
+that does not bump the version is published by nothing and needs no approval.
+
+---
+
+## Wave: DEVOPS / [REF] Tenant Zero Rotation Walkthrough
+
+ADR-153 point 7's four operator actions, split by which repository owns each half. The platform's
+infrastructure and GitOps manifests live in the **private `lighthouse-platform`** repository; the
+specifications, the product documentation and the chart itself stay in this public one.
+
+| # | Action | Where the instruction lives |
+|---|---|---|
+| 1 | Add the new key as the **first** entry of the ring, alongside the existing one, in the tenant's own secret store | Public: the ring's one-line grammar and the "first entry is active" rule, in `docs/Installation/kubernetes.md`. Private: the tenant's ExternalSecret / OpenBao template and the concrete path |
+| 2 | Wait for the pod to log the reload — up to one poll interval — or roll it | Public: the log event name and the interval. Private: nothing |
+| 3 | Trigger **Re-encrypt onto the active key** from the encryption panel, and read the report | Public: entirely — this is a product feature, documented once for every deployment model |
+| 4 | Drop the old key from the Secret, only after the report shows nothing left on it | Public: the rule and its consequence. Private: the manifest edit and the sync |
+
+**Public half — this repository.** A rotation section in `docs/Installation/kubernetes.md` covering all
+four actions in the seeded terminology, plus the two custody modes and the failure message an operator
+meets when they supply neither key. Written for any Kubernetes operator, not for the platform. One
+sentence in `chart/README.md.gotmpl` explaining why the encryption key travels as a mounted file while
+the database password travels as an environment variable — without it, someone will helpfully align the
+two and silently undo the reason the mount exists.
+
+**Private half — `lighthouse-platform`.** The Tenant Zero ExternalSecret that emits the ring line, the
+ArgoCD `Application` values carrying `encryption.existingSecret`, and a per-tenant runbook naming the
+concrete secret-store paths. Per-tenant rotation automation is out of scope for this epic and stays out
+of scope for the private repository too; the four actions are deliberately manual, with a visible
+confirmation between each.
+
+**Dogfood, same day as the slice.** Install into Tenant Zero with `encryption.existingSecret`, save a
+Connection, run three `helm upgrade`s and confirm the Connection still syncs after each. Then run the
+four actions end to end and confirm nothing was re-entered. That single run produces the evidence for
+KPI-2, KPI-3 and the Tenant Zero half of KPI-6.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+Must not break alongside this deployment (full list in `environments.yaml`):
+
+- **The 56 existing chart unit tests** — five suites gain one suite-level `set:` line each and must
+  otherwise be untouched, including every existing exact `failedTemplate` message assertion.
+- **`postgresql.auth.existingSecret` and `oidc.existingSecret`** — the two established existingSecret
+  idioms. Encryption adds a third that deliberately behaves differently (mounted, not env; not watched
+  by the reloader), and neither existing one may change shape.
+- **The stakater reloader wiring** — `lighthouse.reloadSecrets` must keep returning exactly the DB and
+  OIDC secrets, so a tenant whose only managed credential is the encryption Secret still renders no
+  reload annotations.
+- **The standalone single-container product** — byte-unchanged. Nothing in this section reaches it;
+  `Encryption:KeysFile` is unset there and the resolver never looks for a mounted file.
+- **`helm-docs` / `chart/README.md`** — the generated Values table and the hand-written quick-start in
+  `README.md.gotmpl` must agree after regeneration.
+- **`version-guard.sh`'s four-way consistency check** — `Chart.yaml` version and appVersion,
+  `README.md`, `NOTES.txt`, `values-enterprise.yaml` `image.tag`.
+- **The existing ArgoCD sync for every live tenant** — a tenant synced before this chart version must
+  not be rendered by the new chart until its `encryption.existingSecret` exists, or the render fails and
+  the sync stops. The order is: create the Secret, then bump the tenant's chart version.
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+Three, all verified against the running tooling rather than reasoned about.
+
+**1. Two of the four named CI steps are not broken.**
+
+> Handed down: making `encryption.*` required breaks `helm lint ./chart`, `helm lint ./chart -f
+> values-enterprise.yaml …`, the standalone render gate, and `install-smoke`.
+
+The two `helm lint` steps are unaffected. Helm renders in lint mode, where `required` and `fail` are
+neutralised; a chart carrying the guard lints green on both invocations. The chart already depends on
+this today — `helm lint ./chart` passes with no Postgres password while `helm template` on the same
+values fails naming it. The two render/install steps are broken exactly as described.
+
+**2. The unaffected list was incomplete in the other direction: `helm unittest` breaks 46 of 56 tests.**
+
+Not named in the handoff at all. helm-unittest renders every template in the chart before selecting the
+one under test, so an unconditional `fail` in `deployment-api.yaml` fails suites that never reference
+it. The fix is small — one suite-level `set:` per test file — but the failure is large and would have
+been discovered in CI rather than locally.
+
+**3. ADR-153's three-line failure message cannot be asserted.**
+
+> ADR-153 point 1: a three-line message with a copy-pasteable `openssl rand` on its own line.
+
+helm-unittest compares against a truncated form of a multi-line Helm error in which the first line is
+consumed with the `execution error at (…):` prefix, so neither `errorMessage` nor `errorPattern` can
+match the sentence that names the two keys. The message is folded onto one line, keeping both hints and
+losing only the layout. The copy-pasteable `openssl rand` survives intact.
+
+**Stale prior-wave text corrected in place**, rather than recorded as changes, because every one was
+already contradicted by a decision written down elsewhere and simply never back-propagated. DESIGN's
+corrections were captured in *Changed Assumptions* above and the sections they invalidated were left
+standing; these are those sections.
+
+| File | What it still said | Now |
+|---|---|---|
+| `slices/slice-05-cluster-owned-key.md` — Goal | A Helm install "gets a unique encryption key without anyone supplying one" | It refuses to render without one, naming both ways to supply it |
+| `slices/slice-05-cluster-owned-key.md` — Reference class | The encryption key "follows the identical route" as the database password, and "the only genuinely new behaviour is generate-if-absent" | It reuses the values-or-`existingSecret` shape but arrives as a mounted file; the two new behaviours are the mounted projection and the refusal |
+| `slices/slice-05-cluster-owned-key.md` — Dogfood moment | "Install into Tenant Zero with no encryption values" — which is now a render failure, so the dogfood as written could not start | Confirm the refusal first, then install with `existingSecret` |
+| `docs/product/architecture/adr-153-…` — Status, and two body sentences | "Accepted — with one fork carried to the maintainer", "proposed for retirement", "the fork the maintainer has to confirm" | Accepted outright; the fork was confirmed on 2026-08-14 and the date is recorded |
+| `feature-delta.md` — DISCUSS Driving Ports | Helm values listed "plus the generate-if-absent behaviour" | The four values keys and the refusal; the chart generates nothing |
+| `docs/product/jobs.yaml` — `job-saas-operator-tenant-owned-encryption-key`, functional dimension | The chart "generates a unique one per release when nothing is supplied, and never regenerates it on upgrade" | It generates nothing, so there is nothing an upgrade or a sync can regenerate |
+
+The last two were not on the list this wave was handed; they were found by searching the documentation
+tree for the retired phrasing. The jobs entry is the one that matters most, because it is product SSOT
+and a future wave reads it as fact rather than as history.
+
+---
+
+## Wave: DEVOPS / [REF] Peer Review
+
+`nw-platform-architect-reviewer`, 2026-08-15, iteration 1. **Verdict: rejected pending revisions** on a
+premise this wave does not accept, plus two findings that were correct and are applied.
+
+**Rejected — four blocker/critical findings, all one observation.** The reviewer's findings 1-4 and part
+of 6 reduce to "none of the designed chart artifacts exist in the repository": no
+`secret-encryption.yaml`, no values keys, no schema entry, no helper, no guard in the Deployment, no
+volume, no `Encryption__KeysFile`, no unit tests, no CI fixture. That is correct as an observation and
+wrong as a finding. DEVOPS designs the delivery infrastructure; DELIVER writes it. Writing chart
+templates in this wave would put implementation ahead of the acceptance tests that are supposed to
+drive it, and would leave DISTILL specifying tests against code that already exists. The reviewer was
+given this boundary and applied a completeness bar meant for a post-implementation readiness review.
+Priority validation in the same report reads largest-bottleneck **YES**, alternatives **ADEQUATE**,
+constraint prioritisation **CORRECT**, verdict **PASS**, and the four design decisions it singles out as
+strengths are the four that carry the slice.
+
+**Accepted, and applied — two findings.**
+
+- *No CI substrate exercises `encryption.existingSecret` against a real kubelet.* Correct, and it is the
+  path Tenant Zero actually uses. The two custody modes resolve the volume's `secretName` differently,
+  so covering one does not cover the other. `install-smoke` gains a second install: create the Secret
+  with `kubectl`, then install against it. Added to the remediation table and to `environments.yaml`.
+- *A malformed key is caught too late.* The reviewer asked for pre-deployment validation of the key's
+  well-formedness. A `pattern` on `encryption.key` in `values.schema.json` does it, and the empty
+  alternative keeps the chart's own default valid so `helm lint ./chart` is untouched. Verified against
+  the real chart. This moves a crash loop to a render failure that names the key.
+
+**Acknowledged, already recorded — one finding.** The reviewer asks for KPI entries in
+`docs/product/kpi-contracts.yaml`. That gap is real and this wave already records it as owed. Its
+proposed remedy is not taken: it renumbers KPI-1 through KPI-4 as custody modes, which would collide
+with the seven KPIs the DISCUSS wave already defines and which the monitoring-contracts table above maps
+against. The entries owed are for the existing KPI-1, KPI-2, KPI-3 and KPI-6.
+
+**No action — one finding.** The `helm-docs` drift gate needing a local regeneration is already in
+*Pre-requisites* and in the remediation table.
+
+DORA assessment returned "partial" on all four measures, with the note that the new required value is a
+deployment prerequisite not yet tracked in a runbook. That is fair and it belongs to slice 06's
+documentation work rather than to the chart.
+
+---
+
+## Wave: DEVOPS / [REF] Handoff
+
+**To `nw-acceptance-designer` (DISTILL)**: `environments.yaml` for Mandate 4 — six product environments
+plus three CI substrates, the coexistence matrix, and the deployment assumptions. The highest-value
+acceptance surfaces on the infrastructure side are the seven chart unit cases above, each of which
+already carries its assertion. Case 1 is the one that matters most and the one whose value is easiest to
+miss: helm-unittest renders without a cluster, which is exactly how ArgoCD renders, so that single test
+is the whole defence against a tenant's key being regenerated on sync. Parametrize the application-side
+acceptance tests over `docker-with-data-volume` and `docker-no-data-volume` — refuse-to-mint is a first
+class outcome, not an error path, and it behaves differently on a fresh database than on one that
+already holds an encrypted secret.
+
+**To `nw-software-crafter` (DELIVER)**: every design decision on the chart surface is fixed above —
+values keys and their defaults, where the guard lives and in what order, the exact failure message, the
+rendered volume contract including the file mode and why it is `0444`, which surface carries
+`Encryption__KeysFile`, and the seven test cases. What is left is writing it. The CI remediation table
+is the definition of done for the chart workflow; the suite-level `set:` line is the one to apply first.
+
+**Owed and explicitly not done in this wave**: the four KPI entries appended to
+`docs/product/kpi-contracts.yaml`, the public rotation section in `docs/Installation/kubernetes.md`, and
+the private-repository half of the walkthrough.
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: rendered pipeline diagram ·
+per-environment promotion matrix · SLO/error-budget definitions and burn-rate alert rules · runbook per
+failure mode · rollback rehearsal script · secret-store migration plan for existing tenants ·
+capacity-stage design · per-tenant rotation automation design (out of scope for this epic).

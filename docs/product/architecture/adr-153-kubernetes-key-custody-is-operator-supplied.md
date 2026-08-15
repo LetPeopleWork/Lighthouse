@@ -1,10 +1,13 @@
 # ADR-153: Kubernetes key custody is a mounted Secret the operator owns, hot-reloaded by polling; the chart never generates a key
 
-**Status**: Accepted — with one fork carried to the maintainer (AC-5.2)
+**Status**: **Accepted** — the fork this ADR carried (retire the chart's generate-if-absent acceptance
+criterion, and with it the upgrade-regeneration criterion that only existed to guard it) was confirmed
+by the maintainer on 2026-08-14, together with the other six DESIGN forks. Nothing in this ADR is now
+provisional; the retired criteria are marked as such in the feature delta.
 **Date**: 2026-08-14
 **Feature**: `epic-5775-secret-encryption-key-custody` (ADO Epic #5775, slice 05 / Story #5780)
 **Decider**: Morgan (Solution Architect), DESIGN application layer, interaction mode = PROPOSE
-**Implements**: D5, D6 · AC-5.1, AC-5.4, AC-5.5, AC-5.7, AC-5.9, AC-5.10, AC-5.11 · **Proposes retiring AC-5.2 and AC-5.3**
+**Implements**: D5, D6 · AC-5.1, AC-5.4, AC-5.5, AC-5.7, AC-5.9, AC-5.10, AC-5.11 · **Retires AC-5.2 and AC-5.3** (confirmed by the maintainer 2026-08-14)
 
 ---
 
@@ -54,8 +57,9 @@ that a chart invents is a value nobody owns. The encryption key is more conseque
 password, so it gets the same treatment or a stricter one — not a weaker one.
 
 You cannot regenerate what you never generate. **AC-5.3 becomes vacuous and AC-5.2 is retired**, and the
-class of failure the slice was most afraid of stops existing rather than being tested for. This is the
-fork carried to the maintainer; the alternative that keeps AC-5.2 is designed below.
+class of failure the slice was most afraid of stops existing rather than being tested for. This was the
+fork carried to the maintainer, confirmed on 2026-08-14; the alternative that keeps AC-5.2 is designed
+below and was not taken.
 
 **2. The key ring reaches the container as a mounted file, not an environment variable.** The Secret's
 `Encryption__Keys` entry is projected as a volume at `/etc/lighthouse/encryption`, and the pod gets
@@ -156,8 +160,8 @@ looking at a panel.
 - **`helm install` gains a required value.** A self-hoster's first command grows one flag. Mitigated by
   the failure message carrying a copy-pasteable `openssl rand`, and justified by the ADR-082 precedent
   the chart already sets for a less consequential secret.
-- **AC-5.2 is proposed for retirement** and AC-5.3 with it. That is an upstream change and it is the
-  fork the maintainer has to confirm; it is not applied silently.
+- **AC-5.2 is retired** and AC-5.3 with it. That is an upstream change, so it was carried to the
+  maintainer rather than applied silently, and confirmed on 2026-08-14.
 - Up to 30 seconds between an operator's Secret edit and the panel showing the new key id. Documented,
   and shorter than the time to notice the panel.
 - Encryption travels differently from the database password, so the chart has two Secret-consumption

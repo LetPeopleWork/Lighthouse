@@ -5123,8 +5123,8 @@ jobs:
       so one compromised tenant or one leaked backup does not expose every customer's tokens.
     dimensions:
       functional: >
-        The chart accepts a Secret an external store populates, generates a unique one per release when
-        nothing is supplied, and never regenerates it on upgrade.
+        The chart accepts a Secret an external store populates, or an explicit key, and refuses to render
+        when given neither. It generates nothing, so there is nothing an upgrade or a sync can regenerate.
       emotional: >
         Move from shared-fate anxiety to isolation: a per-tenant blast radius the operator can describe.
       social: >

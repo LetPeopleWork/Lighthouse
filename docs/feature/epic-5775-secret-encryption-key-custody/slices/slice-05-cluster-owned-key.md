@@ -3,12 +3,16 @@
 **Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story #5780 · **Story**: US-05 · **Estimate**: ~5h
 **Reference class**: `chart/templates/secret.yaml` — the database connection string and the OIDC client
 secret already travel from values or an `existingSecret` into the pod without landing in a ConfigMap.
-The encryption key follows the identical route; the only genuinely new behaviour is generate-if-absent.
+The encryption key reuses that values-or-`existingSecret` shape but **not** the last step of it: it
+reaches the container as a mounted file rather than an environment variable, because an environment
+variable is readable in a process dump and cannot change under a running process. The two genuinely new
+behaviours are the mounted projection and the refusal to render without a key.
 
 ## Goal
 
-A Helm install gets a unique encryption key without anyone supplying one, an external secret store can
-own that key instead, and an upgrade never takes it away.
+A Helm install cannot be made to run on a key nobody owns: with neither `encryption.key` nor
+`encryption.existingSecret` it refuses to render, naming both. An external secret store can own the key,
+the pod reads it from a mounted file, and nothing in the chart can ever regenerate it.
 
 ## IN scope
 
@@ -85,7 +89,8 @@ AC-5.1 through AC-5.11 in `feature-delta.md`. The three that carry the slice:
 
 ## Dogfood moment
 
-Same day: install into Tenant Zero with no encryption values, save a Connection, run three
+Same day: confirm first that an install with no encryption values **refuses to render**, naming both
+keys. Then install into Tenant Zero with `encryption.existingSecret`, save a Connection, run three
 `helm upgrade`s, and confirm the Connection still syncs after each one. Then walk the documented
 Kubernetes rotation end to end — add a second key to the Secret, roll the pod, re-encrypt, drop the
 old key — and confirm nothing was re-entered.
