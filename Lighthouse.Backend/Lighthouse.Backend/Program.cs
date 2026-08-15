@@ -396,6 +396,7 @@ namespace Lighthouse.Backend
         private const string DatabaseProviderConfigKey = "Database:Provider";
         private const string DatabaseConnectionStringConfigKey = "Database:ConnectionString";
         private const string LegacyKeyStoreDirectoryName = "data-protection-keys";
+        private const string BannerRule = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
         private const string OAuthStateSecretProtectorPurpose = "Lighthouse.OAuth.StateSecret.v1";
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
@@ -512,12 +513,7 @@ namespace Lighthouse.Backend
         internal static (KeyStoreLocation Location, KeyStoreMigrationOutcome Migration) ResolveKeyStoreDirectory(
             WebApplicationBuilder builder)
         {
-            var location = KeyStoreResolver.Resolve(
-                builder.Configuration[EncryptionKeyStorePathConfigKey],
-                builder.Configuration[DataProtectionKeyStorePathConfigKey],
-                builder.Configuration[DatabaseProviderConfigKey],
-                builder.Configuration[DatabaseConnectionStringConfigKey],
-                builder.Environment.ContentRootPath);
+            var location = KeyStoreLocationFor(builder);
 
             Directory.CreateDirectory(location.Directory);
 
@@ -526,6 +522,18 @@ namespace Lighthouse.Backend
                 Path.Combine(builder.Environment.ContentRootPath, LegacyKeyStoreDirectoryName));
 
             return (location, migration);
+        }
+
+        // Resolution is a pure reading of settings, so asking a second time to describe the key store in the
+        // startup banner cannot land on a different answer than the one the key was actually resolved under.
+        private static KeyStoreLocation KeyStoreLocationFor(WebApplicationBuilder builder)
+        {
+            return KeyStoreResolver.Resolve(
+                builder.Configuration[EncryptionKeyStorePathConfigKey],
+                builder.Configuration[DataProtectionKeyStorePathConfigKey],
+                builder.Configuration[DatabaseProviderConfigKey],
+                builder.Configuration[DatabaseConnectionStringConfigKey],
+                builder.Environment.ContentRootPath);
         }
 
         private static string ResolveOrCreateProtectedOAuthStateSecret(string keyStoreDir)
@@ -1377,53 +1385,14 @@ namespace Lighthouse.Backend
                 "           -----------------------------------           "
             };
 
-            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
-            var urls = app.Urls
-                .Select(url => url
-                    .Replace("http://[::]:", "http://localhost:")
-                    .Replace("https://[::]:", "https://localhost:")
-                    .Replace("http://0.0.0.0:", "http://localhost:")
-                    .Replace("https://0.0.0.0:", "https://localhost:"))
-                .ToList();
-
-            var logFilePath = TryGetLogFilePath(builder.Configuration);
-
-            var dbProvider = builder.Configuration.GetValue<string>("Database:Provider") ?? "Unknown";
-
-            string Line(string emoji, string label, string value)
-            {
-                return $"{emoji}  {label,-13} : {value}";
-            }
-
-            var info = new List<string>
-            {
-                "",
-                "",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-                $"        Lighthouse {version}",
-                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-                ""
-            };
-
-            info.AddRange(urls.Select(url => Line("🌐", "Url", url)));
-
-            info.Add("");
-
-            info.Add(Line("🖥️", "OS", RuntimeInformation.OSDescription.Trim()));
-            info.Add(Line("⚙️", "Runtime", RuntimeInformation.FrameworkDescription));
-            info.Add(Line("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
-            info.Add(Line("🔢", "Process ID", Environment.ProcessId.ToString()));
-            info.Add(Line("💾", "Database", dbProvider));
-
-            if (!string.IsNullOrEmpty(logFilePath))
-            {
-                info.Add(Line("📝", "Logs", logFilePath));
-            }
-
-            info.AddRange(AuthPostureBanner.BuildAuthPostureLines(builder.Configuration));
-
-            info.Add("");
+            var info = BuildStartupInfoLines(new StartupBannerFacts(
+                Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown",
+                [.. app.Urls.Select(AsSeenFromTheMachineItRunsOn)],
+                builder.Configuration.GetValue<string>(DatabaseProviderConfigKey) ?? "Unknown",
+                TryGetLogFilePath(builder.Configuration),
+                builder.Configuration,
+                app.Services.GetRequiredService<IEncryptionKeyRingHolder>().Current,
+                KeyStoreLocationFor(builder)));
 
             var startupBannerBuilder = new StringBuilder();
 
@@ -1438,6 +1407,93 @@ namespace Lighthouse.Backend
             }
 
             Log.Logger.Information("\n{StartupBanner}", startupBannerBuilder.ToString());
+        }
+
+        public static IReadOnlyList<string> BuildStartupInfoLines(StartupBannerFacts facts)
+        {
+            ArgumentNullException.ThrowIfNull(facts);
+
+            var info = new List<string>
+            {
+                "",
+                "",
+                "",
+                BannerRule,
+                $"        Lighthouse {facts.Version}",
+                BannerRule,
+                ""
+            };
+
+            info.AddRange(facts.Urls.Select(url => BannerLine("🌐", "Url", url)));
+
+            info.Add("");
+
+            info.Add(BannerLine("🖥️", "OS", RuntimeInformation.OSDescription.Trim()));
+            info.Add(BannerLine("⚙️", "Runtime", RuntimeInformation.FrameworkDescription));
+            info.Add(BannerLine("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
+            info.Add(BannerLine("🔢", "Process ID", Environment.ProcessId.ToString(CultureInfo.InvariantCulture)));
+            info.Add(BannerLine("💾", "Database", facts.DatabaseProvider));
+
+            if (!string.IsNullOrEmpty(facts.LogFilePath))
+            {
+                info.Add(BannerLine("📝", "Logs", facts.LogFilePath));
+            }
+
+            info.AddRange(AuthPostureBanner.BuildAuthPostureLines(facts.Configuration));
+            info.AddRange(BuildEncryptionCustodyLines(facts.KeyRing, facts.KeyStore));
+
+            info.Add("");
+
+            return info;
+        }
+
+        // What an operator has to know to keep their secrets readable: whose key this is, which name it
+        // answers to, and the directory that has to survive for it to still be there tomorrow - which is
+        // also the directory they would have to back up. The key itself never appears; it is read off the
+        // ring rather than out of configuration, so the sentence cannot disagree with the key in force.
+        public static IReadOnlyList<string> BuildEncryptionCustodyLines(EncryptionKeyRing keyRing, KeyStoreLocation keyStore)
+        {
+            ArgumentNullException.ThrowIfNull(keyRing);
+            ArgumentNullException.ThrowIfNull(keyStore);
+
+            var lines = new List<string>
+            {
+                BannerLine("🔑", "Encryption", $"{WhereTheKeyCameFrom(keyRing.Custody)} ({keyRing.ActiveKey.Id}) · {keyStore.Directory}")
+            };
+
+            if (keyRing.Custody == KeyCustody.NoDurableStore)
+            {
+                lines.Add(BannerLine("⚠️", "Warning", NoDurableKeyStore.Warning));
+            }
+
+            return lines;
+        }
+
+        // A custody nobody named claims the least, which is the same thing having nowhere to keep a key
+        // means: the instance is on the key that ships inside every copy of the product.
+        private static string WhereTheKeyCameFrom(KeyCustody custody)
+        {
+            return custody switch
+            {
+                KeyCustody.GeneratedForThisInstance => "generated for this instance",
+                KeyCustody.SuppliedByConfiguration => "supplied by configuration",
+                KeyCustody.SuppliedByExternalSecret => "supplied by a mounted secret file",
+                _ => "the key published with the product",
+            };
+        }
+
+        private static string BannerLine(string emoji, string label, string value)
+        {
+            return $"{emoji}  {label,-13} : {value}";
+        }
+
+        private static string AsSeenFromTheMachineItRunsOn(string url)
+        {
+            return url
+                .Replace("http://[::]:", "http://localhost:", StringComparison.Ordinal)
+                .Replace("https://[::]:", "https://localhost:", StringComparison.Ordinal)
+                .Replace("http://0.0.0.0:", "http://localhost:", StringComparison.Ordinal)
+                .Replace("https://0.0.0.0:", "https://localhost:", StringComparison.Ordinal);
         }
 
         private static string? TryGetLogFilePath(ConfigurationManager configuration)
@@ -1468,4 +1524,13 @@ namespace Lighthouse.Backend
             return null;
         }
     }
+
+    public sealed record StartupBannerFacts(
+        string Version,
+        IReadOnlyList<string> Urls,
+        string DatabaseProvider,
+        string? LogFilePath,
+        IConfiguration Configuration,
+        EncryptionKeyRing KeyRing,
+        KeyStoreLocation KeyStore);
 }
