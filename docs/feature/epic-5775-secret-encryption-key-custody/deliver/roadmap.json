@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5775-secret-encryption-key-custody",
     "created_at": "2026-08-15",
-    "total_steps": 21,
+    "total_steps": 20,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Ship slice 01 of ADO Epic #5775 (Story #5777): every secret written from now on is stored as an authenticated, self-describing envelope `LH1.<keyId>.<b64url nonce>.<b64url ciphertext||tag>` (AES-256-GCM, header bound as associated data, ADR-146); a stored secret that cannot be read raises instead of being handed to a work tracking system as a credential (ADR-147, the deletion of `catch (CryptographicException or FormatException) => return cipherText`); the unreadable state is named on the Connection and the field that holds it and on the refresh record; and one generic secret-handling notice appears on every connection form that asks for a credential. Scope is US-01, US-08 and the US-07 `@infrastructure` precursor inside slice 01 — nothing from slices 02-06: no key generation, no minting, no rotation, no readability check, no chart, no Kubernetes, no docs site.",
@@ -732,7 +732,7 @@
         {
           "id": "05-01",
           "name": "SecretHandlingNotice — one per form, only where the form asks for a credential",
-          "description": "RED: author `SecretHandlingNotice.test.tsx` plus cases in the two form test files. Cases: a connection form that asks for at least one credential shows exactly one notice; a form with no secret field shows none; a form asking for more than one credential still shows exactly one, and it is not repeated beside each field. GREEN: create `Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx` — a presentational component with no props beyond an optional link target, carrying the notice text in one place. Render it once in `ModifyConnectionSettings.tsx` and once in `CreateConnectionWizard.tsx`'s step 2, guarded on whether any option on the form is flagged as a secret. The text says, in plain words, that secrets entered here are encrypted before they are saved, are never shown again to anyone, never leave this instance, and can be revoked wherever they were created. It names no work tracking system and no algorithm. Watch typescript:S7764 (prefer `globalThis` over `window`) and S3776 in the two host components. COMMIT: `feat(connections): show one secret-handling notice on forms that ask for a credential`.",
+          "description": "RED: author `SecretHandlingNotice.test.tsx` plus cases in the two form test files. Cases: a connection form that asks for at least one credential shows exactly one notice; a form with no secret field shows none; a form asking for more than one credential still shows exactly one, and it is not repeated beside each field. GREEN: create `Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx` — a presentational component with no props beyond an optional link target, carrying the notice text in one place. Render it once in `ModifyConnectionSettings.tsx` and once in `CreateConnectionWizard.tsx`'s step 2, guarded on whether any option on the form is flagged as a secret. The text says, in plain words, that secrets entered here are encrypted before they are saved, are never shown again to anyone, never leave this instance, and can be revoked wherever they were created. It names no work tracking system and no algorithm. Watch typescript:S7764 (prefer `globalThis` over `window`) and S3776 in the two host components. **Merged with the former step 05-02 on 2026-08-15, because the two touched the same three files and splitting them bought two verification cycles for one change.** Also therefore in scope: rendering the form for every supported work tracking system produces the same notice word for word, naming no particular system and no particular way of protecting the credential; the notice is presented as information and carries **no severity styling**, because the person pasting a token usually cannot configure a key and alarm there is alarm without a remedy; it makes no claim about which encryption key this instance holds and no claim of protection against someone who already holds the key or the host; its link points at `https://docs.lighthouse.letpeople.work/Installation/configuration.html#encryption-key`, which exists today so the notice never ships with a dead link, and a later slice repoints it at the Security page once that exists; and reopening a saved connection leaves the credential field blank, asserted at the surface a user actually checks rather than restating the backend payload test. COMMIT: `feat(connections): show one uniform, linked, informational secret-handling notice`.",
           "test_file": "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx",
           "scenario_name": "Scenario 24 — Someone pasting a credential is told, once on the form, what happens to it; Scenario 25 — A form that asks for no credential shows no notice; Scenario 26 — A form asking for several credentials still shows exactly one notice",
           "red_to_green_tests": [
@@ -767,45 +767,6 @@
             "SecretHandlingNotice.test.tsx (new)",
             "ModifyConnectionSettings.tsx + test (modified)",
             "CreateConnectionWizard.tsx + test (modified)"
-          ]
-        },
-        {
-          "id": "05-02",
-          "name": "The notice is the same everywhere, links somewhere real, and answers rather than alarms",
-          "description": "RED: extend the notice tests. Cases: rendering the connection form for every work tracking system Lighthouse supports produces the same notice word for word, and it names no particular system and no particular way of protecting the credential; the notice is presented as information and carries no severity styling — it is not a warning, because the person pasting a token usually cannot configure a key and alarm there is alarm without a remedy; it makes no claim about which encryption key this instance holds and no claim of protection against someone who already holds the key or the host; its link resolves to the published explanation of how Lighthouse handles credentials; and reopening a saved connection leaves the credential field blank, with the credential not sent to the browser for any role — the one claim a person can check in four seconds. GREEN: parametrise the notice test over the supported systems; set the link to `https://docs.lighthouse.letpeople.work/Installation/configuration.html#encryption-key`, the current published credential-handling explanation, which exists today so the notice never ships with a dead link — slice 06 repoints it at the Security page when that page exists. Assert the informational (not warning) presentation. The blank-field claim is existing behaviour already asserted on the backend by the connection payload shape tests; assert it here at the surface a user actually checks rather than restating the backend test. COMMIT: `feat(connections): make the secret-handling notice uniform, linked and informational`.",
-          "test_file": "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx",
-          "scenario_name": "Scenario 27 — The same notice serves every kind of connection; Scenario 28 — The one claim a person can check in four seconds holds (reopening leaves the credential field blank); Scenario 29 — The notice never ships with a link that goes nowhere; Scenario 30 — The notice answers a question rather than raising an alarm",
-          "red_to_green_tests": [
-            "Every supported work tracking system's form shows the same notice word for word",
-            "The notice names no particular work tracking system",
-            "The notice names no particular way of protecting the credential",
-            "The notice is presented as information and carries no severity styling",
-            "The notice makes no claim about which encryption key the instance holds",
-            "The notice makes no claim of protection against someone holding the key or the host",
-            "The notice's link points at the current published credential-handling explanation",
-            "Reopening a saved connection leaves the credential field blank",
-            "The credential is not sent to the browser for any role"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx",
-            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx"
-          ],
-          "dependencies": [
-            "05-01"
-          ],
-          "criteria": [
-            "One string, identical across every supported work tracking system.",
-            "No connector name, no algorithm name, no claim about key custody, no claim of protection against an attacker holding the key or the host.",
-            "Informational presentation; no warning or error severity styling.",
-            "The link resolves to a page that exists today; the notice never ships with a dead link.",
-            "Reopening a saved connection leaves the credential field blank, asserted at the surface the user checks."
-          ],
-          "estimated_hours": 1.5,
-          "deliverables": [
-            "SecretHandlingNotice.tsx (modified — link + presentation)",
-            "SecretHandlingNotice.test.tsx (modified — parametrised over supported systems)",
-            "ModifyConnectionSettings.test.tsx (modified — blank-field claim)"
           ]
         }
       ]
