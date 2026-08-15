@@ -461,22 +461,12 @@ namespace Lighthouse.Backend
                 throw new InvalidOperationException($"Encryption key length is invalid. It must be {EncryptionKey.MaterialLength} bytes for AES-256.");
             }
 
-            var ring = new EncryptionKeyRing(new EncryptionKey(DeriveConfiguredKeyId(material), material));
+            var ring = new EncryptionKeyRing(new EncryptionKey(KeyRingSerializer.DeriveConfiguredKeyId(material), material));
 
             // The ring is registered as a singleton and never written back into configuration: every value
             // in there is reachable from its debug view and from anything that enumerates a section, which
             // is the last place a key belongs
             builder.Services.AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring));
-        }
-
-        // The id is a fingerprint of the key itself rather than something fresh, so two instances sharing
-        // one configured key, and the same instance after a restart, label their stored secrets identically.
-        // A random id would leave everything written before a restart unreadable after it
-        private static string DeriveConfiguredKeyId(byte[] material)
-        {
-            var fingerprint = System.Security.Cryptography.SHA256.HashData(material);
-
-            return string.Concat(ConfiguredKeyIdPrefix, Convert.ToHexStringLower(fingerprint.AsSpan(0, ConfiguredKeyIdFingerprintBytes)));
         }
 
         private static string ResolveDataProtectionKeyStoreDir(WebApplicationBuilder builder)
@@ -520,10 +510,6 @@ namespace Lighthouse.Backend
         }
 
         private const string EncryptionKeyConfigKey = "EncryptionSettings:EncryptionKey";
-
-        private const string ConfiguredKeyIdPrefix = "k-cfg-";
-
-        private const int ConfiguredKeyIdFingerprintBytes = 4;
 
         private const string UseStubOAuthProviderConfigKey = "Lighthouse:OAuth:UseStubProvider";
 
