@@ -20,9 +20,9 @@ namespace Lighthouse.Backend.Tests.Startup
 
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
 
-        // What appsettings.json ships: a bare file name, which names no directory and so resolves to the
-        // default location. It is the input that tells a resolution that ran too early apart from one that
-        // ran after the standalone profile wrote its own paths.
+        // What appsettings.json ships: a bare file name, resolved against the content root. It is the
+        // input that tells a resolution that ran too early apart from one that ran after the standalone
+        // profile wrote its own paths.
         private const string ShippedConnectionString = "Data Source=LighthouseAppContext.db";
 
         private string contentRoot = string.Empty;
