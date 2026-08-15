@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(key.Equals(namesake), Is.False);
+                Assert.That(key, Is.Not.EqualTo(namesake));
                 Assert.That(key.GetHashCode(), Is.Not.EqualTo(namesake.GetHashCode()));
             }
         }
@@ -175,7 +175,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(key.Equals(renamed), Is.False);
+                Assert.That(key, Is.Not.EqualTo(renamed));
                 Assert.That(key.GetHashCode(), Is.Not.EqualTo(renamed.GetHashCode()));
             }
         }
@@ -185,6 +185,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             var key = KeyWith(ActiveKeyId);
 
+            // Both Equals overloads are called by hand on purpose: the typed one and the object one
+            // can diverge, and a wrong answer from either is how a retired key silently stops matching
+            // the value it was stored under. Routing these through Is.EqualTo would exercise NUnit's
+            // comparer instead, and would collapse the two null cases into the same assertion.
+#pragma warning disable NUnit2010
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(key.Equals(null), Is.False);
@@ -192,6 +197,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(key.Equals((object?)ActiveKeyId), Is.False);
                 Assert.That(key.Equals((object?)KeyWith(ActiveKeyId)), Is.True);
             }
+#pragma warning restore NUnit2010
         }
 
         [TestCase(null, TestName = "Key_BuiltWithNoIdAtAll_IsRefused")]
@@ -212,12 +218,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             var ring = new EncryptionKeyRing(KeyWith(ActiveKeyId));
 
+            // Called by hand for the same reason as the key comparison above — the object overload is
+            // the one a dictionary or a set would reach for, so it is the one worth pinning directly.
+#pragma warning disable NUnit2010
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(ring.Equals((object?)null), Is.False);
                 Assert.That(ring.Equals((object?)ActiveKeyId), Is.False);
                 Assert.That(ring.Equals((object?)new EncryptionKeyRing(KeyWith(ActiveKeyId))), Is.True);
             }
+#pragma warning restore NUnit2010
         }
 
         [Test]
