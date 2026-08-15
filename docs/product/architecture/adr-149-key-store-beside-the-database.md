@@ -81,6 +81,25 @@ public key is indefensible — so a fresh case-4 instance **does** refuse to sta
 one-line remedies. The discriminator is "does this database already hold an encrypted secret?", which
 is a query, not a flag.
 
+**Amended 2026-08-15 — that query has three answers, not two, and the third one warns.** The
+discriminator runs at builder time, where ADR-150 places the ring resolution: before the `DbContext`
+exists, before migrations have created a schema, and on a Postgres deployment possibly before the
+server is reachable at all. So the probe opens its own connection, using the connection string
+`ConfigureDatabase` will later use, and it can come back three ways:
+
+| Answer | Behaviour |
+|---|---|
+| Holds at least one encrypted secret | Start, on the published default, with the loud line and the two remedies |
+| Holds none, and the probe could see that for itself | Refuse to start, with the same two remedies |
+| **Cannot tell** — connection refused, timeout, no schema, no such table | Treat as *holds secrets*: start with the loud line |
+
+Reading "the database was not up yet" as "this database is empty" would refuse to boot a working
+instance because its database was slow, which is a new outage mode introduced by a security
+improvement — the same trade this ADR already declined when it chose a warning over a refusal for
+existing instances. **The probe is opened only once the resolver has landed on case 4**, so cases 1-3
+gain no startup dependency on database availability. Maintainer decision, 2026-08-15, on a gap found
+during the slice-02 DISTILL wave.
+
 ## Alternatives Considered
 
 **Leave the key store where it is and document a volume mount.** Zero code. **Rejected**: it converts a
@@ -138,6 +157,7 @@ one is not available on most clusters, and the answer for Kubernetes is a Secret
 | The old key store is empty when it is not | Test: legacy directory populated, new directory empty → contents migrated and the startup line names both; both populated and different → startup stops |
 | SQLite `DataSource` parses the same on Windows, Linux and macOS | Table test over relative, absolute, `:memory:`, and a UNC-style path — `:memory:` and relative land in case 4, absolute in case 3 |
 | A fresh instance can be told apart from an upgraded one | Test: empty database → refuse; database holding one encrypted option → start with the warning |
+| A database that cannot be reached is not an empty one | Test over the three probe answers: unreachable server, missing schema, and missing table each start with the warning rather than refusing. The failure this guards is an instance that refuses to boot because its database was slow |
 
 ## Cross-reference
 

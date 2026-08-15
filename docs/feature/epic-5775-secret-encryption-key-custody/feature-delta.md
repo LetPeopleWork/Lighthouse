@@ -2690,6 +2690,12 @@ warning rather than refuse. Refusing to boot because Postgres was slow to come u
 mode introduced by a security improvement, which is the same trade ADR-149 already made when it declined
 to refuse for existing instances.
 
+**RESOLVED 2026-08-15, maintainer decision: the recommendation is adopted.** ADR-149 is amended with the
+three-answer table, the rule that the probe opens only once the resolver has landed on case 4, and an
+Earned Trust row asserting that an unreachable server, a missing schema and a missing table each start
+with the warning rather than refusing. Scenarios 58 and 59 are unchanged by this — they were written at
+the level of what an operator observes, which is exactly why they did not need to wait for the answer.
+
 **2. Every integration test, and a clean local `dotnet run`, is a case-4 fresh instance today.**
 
 `appsettings.json` ships `Database:ConnectionString = "Data Source=LighthouseAppContext.db"` — a bare
