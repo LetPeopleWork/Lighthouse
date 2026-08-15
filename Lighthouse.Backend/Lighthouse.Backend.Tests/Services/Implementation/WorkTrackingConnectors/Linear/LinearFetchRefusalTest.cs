@@ -1,10 +1,14 @@
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Moq.Protected;
 
@@ -22,6 +26,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [TestFixture]
     public class LinearFetchRefusalTest
     {
+        private const string ActiveKeyId = "key-active";
+
+        private const string OffRingKeyId = "key-not-on-the-ring";
+
+        private const string StoredApiKey = "key";
+
+        private static readonly byte[] ActiveKeyMaterial = Convert.FromBase64String("aXhZdXd5+OeT8kjKP2gB7UdqMEB3RY4LQMI2yffxDEw=");
+
+        private static readonly byte[] OffRingKeyMaterial = Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg=");
+
         [Test]
         public void GetWorkItemsForTeam_RefusesWhenLinearWillNotAnswer()
         {
@@ -89,6 +103,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        // The Linear client is built with the key already on it as a default header, so "it threw" and
+        // "nothing went out" are two different facts here as much as they are on the strategies. A client
+        // built from a key nobody could read would carry that unreadable value on every request it makes.
+        [Test]
+        public void GetWorkItemsForTeam_AStoredApiKeyNobodyCanRead_StopsWithoutSendingAnythingToLinear()
+        {
+            var requestsSentToLinear = new List<HttpRequestMessage>();
+            var subject = ALinearWhoseCryptoHoldsOnlyTheActiveKey(AHandlerRecordingInto(requestsSentToLinear));
+
+            Assert.ThrowsAsync<UnreadableSecretException>(
+                () => subject.GetWorkItemsForTeam(ATeamOnLinear(ACredentialTheInstanceCannotRead())));
+
+            Assert.That(requestsSentToLinear, Is.Empty,
+                "No request may reach Linear at all, because every one the client makes would carry the key it could not read.");
+        }
+
         private static HttpMessageHandler WillNotAnswer()
         {
             return HandlerReturning(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError)
@@ -122,18 +152,53 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return mock.Object;
         }
 
+        private static HttpMessageHandler AHandlerRecordingInto(List<HttpRequestMessage> requests)
+        {
+            var mock = new Mock<HttpMessageHandler>();
+            mock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    requests.Add(request);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(NoProjects(), Encoding.UTF8, "application/json"),
+                    });
+                });
+
+            return mock.Object;
+        }
+
+        // A well-formed envelope naming a key the ring does not hold cannot be read on any run. Random
+        // bytes would not do: garbage clears the padding and printability checks by chance roughly once in
+        // a thousand tries, and a test that fails one run in a thousand teaches a reader to ignore it.
+        private static string ACredentialTheInstanceCannotRead()
+        {
+            return SecretEnvelope.Protect("whatever-was-stored-here", OffRingKeyId, OffRingKeyMaterial).Format();
+        }
+
+        private static CryptoService ACryptoServiceHoldingOnlyTheActiveKey()
+        {
+            var ring = new EncryptionKeyRing(new EncryptionKey(ActiveKeyId, ActiveKeyMaterial));
+
+            return new CryptoService(new EncryptionKeyRingHolder(ring), NullLogger<CryptoService>.Instance);
+        }
+
         private static string NoProjects()
         {
             return @"{ ""data"": { ""projects"": { ""nodes"": [], ""pageInfo"": { ""hasNextPage"": false, ""endCursor"": null } } } }";
         }
 
-        private static Team ATeamOnLinear()
+        private static Team ATeamOnLinear(string storedApiKey = StoredApiKey)
         {
             var team = new Team
             {
                 Name = "Demo Team",
                 DataRetrievalValue = "Demo",
-                WorkTrackingSystemConnection = ALinearConnection(),
+                WorkTrackingSystemConnection = ALinearConnection(storedApiKey),
             };
 
             team.WorkItemTypes.Clear();
@@ -166,7 +231,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return portfolio;
         }
 
-        private static WorkTrackingSystemConnection ALinearConnection()
+        private static WorkTrackingSystemConnection ALinearConnection(string storedApiKey = StoredApiKey)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -177,7 +242,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.Options.Add(new WorkTrackingSystemConnectionOption
             {
                 Key = LinearWorkTrackingOptionNames.ApiKey,
-                Value = "key",
+                Value = storedApiKey,
                 IsSecret = true,
             });
 
@@ -189,6 +254,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return new LinearWorkTrackingConnector(
                 Mock.Of<ILogger<LinearWorkTrackingConnector>>(),
                 new FakeCryptoService(),
+                handler);
+        }
+
+        private static LinearWorkTrackingConnector ALinearWhoseCryptoHoldsOnlyTheActiveKey(HttpMessageHandler handler)
+        {
+            return new LinearWorkTrackingConnector(
+                Mock.Of<ILogger<LinearWorkTrackingConnector>>(),
+                ACryptoServiceHoldingOnlyTheActiveKey(),
                 handler);
         }
     }

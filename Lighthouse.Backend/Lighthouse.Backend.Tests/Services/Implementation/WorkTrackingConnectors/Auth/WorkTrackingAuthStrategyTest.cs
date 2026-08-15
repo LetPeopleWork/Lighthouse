@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
 using System.Text;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth;
@@ -26,6 +29,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string EncryptedPat = "encrypted-pat";
         private const string EncryptedJiraToken = "encrypted-jira-token";
         private const string EncryptedLinearKey = "encrypted-linear-key";
+
+        private const string AuthorizationHeaderName = "Authorization";
+
+        private const string ActiveKeyId = "key-active";
+
+        private const string OffRingKeyId = "key-not-on-the-ring";
+
+        // Throwing and sending nothing are two different facts. A strategy that put the header on the
+        // request and only then failed would satisfy a test that asked no more than "did it throw", and it
+        // would still have handed the work tracking system a credential nobody here could read.
+        private const string NothingWentOut =
+            "The request must carry no Authorization header at all, not merely a failed call afterwards.";
+
+        private static readonly byte[] ActiveKeyMaterial = Convert.FromBase64String("aXhZdXd5+OeT8kjKP2gB7UdqMEB3RY4LQMI2yffxDEw=");
+
+        private static readonly byte[] OffRingKeyMaterial = Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg=");
 
         private Mock<ICryptoService> cryptoServiceMock = null!;
 
@@ -103,6 +122,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(request.Headers.TryGetValues("Authorization", out var values), Is.True);
                 Assert.That(values!.Single(), Is.EqualTo(PlaintextLinearKey));
             }
+        }
+
+        [Test]
+        public void PatAuthStrategy_ApplyAsync_AStoredPatNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        {
+            var strategy = new PatAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
+            var connection = CreateAdoConnection(ACredentialTheInstanceCannotRead());
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://dev.azure.com/org");
+
+            Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
+
+            Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False, NothingWentOut);
+        }
+
+        [Test]
+        public void JiraCloudBasicAuthStrategy_ApplyAsync_AStoredApiTokenNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        {
+            var strategy = new JiraCloudBasicAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
+            var connection = CreateJiraConnection(AuthenticationMethodKeys.JiraCloud, includeUsername: true, ACredentialTheInstanceCannotRead());
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.atlassian.net");
+
+            Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
+
+            Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False, NothingWentOut);
+        }
+
+        [Test]
+        public void LinearApiKeyAuthStrategy_ApplyAsync_AStoredApiKeyNobodyCanRead_StopsWithTheRequestStillCarryingNoCredential()
+        {
+            var strategy = new LinearApiKeyAuthStrategy(ACryptoServiceHoldingOnlyTheActiveKey());
+            var connection = CreateLinearConnection(ACredentialTheInstanceCannotRead());
+            using var request = new HttpRequestMessage(HttpMethod.Post, LinearWorkTrackingOptionNames.ApiUrl);
+
+            Assert.ThrowsAsync<UnreadableSecretException>(() => strategy.ApplyAsync(request, connection, CancellationToken.None));
+
+            Assert.That(request.Headers.Contains(AuthorizationHeaderName), Is.False, NothingWentOut);
         }
 
         [Test]
@@ -220,6 +275,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new OAuthBearerAuthStrategy(Mock.Of<IOAuthService>()));
         }
 
+        // A well-formed envelope naming a key the ring does not hold cannot be read on any run. Random
+        // bytes would not do: garbage clears the padding and printability checks by chance roughly once in
+        // a thousand tries, and a test that fails one run in a thousand teaches a reader to ignore it.
+        private static string ACredentialTheInstanceCannotRead()
+        {
+            return SecretEnvelope.Protect("whatever-was-stored-here", OffRingKeyId, OffRingKeyMaterial).Format();
+        }
+
+        private static CryptoService ACryptoServiceHoldingOnlyTheActiveKey()
+        {
+            var ring = new EncryptionKeyRing(new EncryptionKey(ActiveKeyId, ActiveKeyMaterial));
+
+            return new CryptoService(new EncryptionKeyRingHolder(ring), NullLogger<CryptoService>.Instance);
+        }
+
         private static WorkTrackingSystemConnection CreateOAuthConnection(int id)
         {
             return new WorkTrackingSystemConnection
@@ -231,7 +301,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
         }
 
-        private static WorkTrackingSystemConnection CreateAdoConnection()
+        private static WorkTrackingSystemConnection CreateAdoConnection(string storedPat = EncryptedPat)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -248,13 +318,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.Options.Add(new WorkTrackingSystemConnectionOption
             {
                 Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken,
-                Value = EncryptedPat,
+                Value = storedPat,
                 IsSecret = true,
             });
             return connection;
         }
 
-        private static WorkTrackingSystemConnection CreateJiraConnection(string authMethodKey, bool includeUsername)
+        private static WorkTrackingSystemConnection CreateJiraConnection(string authMethodKey, bool includeUsername, string storedApiToken = EncryptedJiraToken)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -280,13 +350,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.Options.Add(new WorkTrackingSystemConnectionOption
             {
                 Key = JiraWorkTrackingOptionNames.ApiToken,
-                Value = EncryptedJiraToken,
+                Value = storedApiToken,
                 IsSecret = true,
             });
             return connection;
         }
 
-        private static WorkTrackingSystemConnection CreateLinearConnection()
+        private static WorkTrackingSystemConnection CreateLinearConnection(string storedApiKey = EncryptedLinearKey)
         {
             var connection = new WorkTrackingSystemConnection
             {
@@ -297,7 +367,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.Options.Add(new WorkTrackingSystemConnectionOption
             {
                 Key = LinearWorkTrackingOptionNames.ApiKey,
-                Value = EncryptedLinearKey,
+                Value = storedApiKey,
                 IsSecret = true,
             });
             return connection;
