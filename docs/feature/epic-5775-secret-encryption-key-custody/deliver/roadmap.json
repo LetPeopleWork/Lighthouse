@@ -582,7 +582,7 @@
           "id": "03-04",
           "name": "A token refresh stops rather than sending a refresh token the instance could not read",
           "description": "RED: extend `OAuthServiceTests.cs`. Cases: a connection authorised earlier whose stored refresh token can no longer be read makes the refresh raise before any HTTP call is made — assert on the message handler that no request was sent, not merely that the method threw; the operator-facing outcome says the stored token could not be read rather than that the authorisation expired; and the credential's status is not silently moved to a state that reads as 'the provider refused us', because that would be the same misattribution the slice exists to remove. GREEN: expected to be no production change at the `OAuthService` decrypt sites — the exception travels the path already there. A change is likely needed only where `OAuthService` maps a refresh failure onto a credential status; make that mapping distinguish an unreadable stored token from a provider rejection. Keep this step out of `Program.cs` — edits there force the full backend Integration suite, which is a longer run and a wider flake surface for no gain here. COMMIT: `fix(oauth): stop a token refresh that could not read its stored refresh token`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTests.cs",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs",
           "scenario_name": "Scenario 15 — A token refresh stops rather than sending a refresh token the instance could not read",
           "red_to_green_tests": [
             "An unreadable stored refresh token makes the refresh raise",
@@ -593,7 +593,7 @@
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/OAuth/OAuthService.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTest.cs"
           ],
           "dependencies": [
             "03-03"
@@ -652,7 +652,7 @@
           "id": "04-01",
           "name": "A Team refresh names the Connection and the field whose credential could not be read",
           "description": "RED: extend `UpdateServiceBaseTests.cs` and the Team updater tests. Cases: a Team whose connection holds an unreadable credential produces a refresh-log row with success false — already true today, asserted here so a later change cannot quietly lose it; the emitted summary line's reason names the Connection and the field holding the unreadable credential; the reason says the stored credential could not be read and does not present the failure as the work tracking system rejecting it; no request is sent to the work tracking system for that connection; a Team whose credentials all read is recorded successful and its record says nothing about encryption; and a Team whose refresh fails because the work tracking system is unreachable is recorded unsuccessful with the reason attributing it to the work tracking system being unreachable and saying nothing about a credential. GREEN: add a protected helper on `UpdateServiceBase` that turns an `UnreadableSecretException` plus the entity's `WorkTrackingSystemConnection` into a reason naming the Connection and the field. The field is found by asking `ICryptoService.Read` for each secret option on that connection and naming the ones that classify unreadable — the same total, read-only classification the connection read model uses, so the two surfaces cannot drift. In `TeamUpdater.Update`, catch `UnreadableSecretException`, set `outcome = outcome with { Reason = ... }`, and **rethrow** so the existing propagation is unchanged; do not log in the catch — S2139 (log-and-rethrow when a higher layer already logs) is a standing rule and `TriggerUpdate` already logs. The reason is written in the operator's words and uses the configurable terminology defaults. COMMIT: `feat(encryption): name the Connection and field when a Team refresh cannot read a credential`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTests.cs",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
           "scenario_name": "Scenario 19 — The refresh record for an unreadable credential names the connection and the field; Scenario 20 — The record says the credential could not be read, not that it was refused; Scenario 22 — No call is made to the work tracking system with a credential that could not be read; Scenario 23 — A refresh whose credentials all read still succeeds and records nothing about encryption; Scenario 23a — A refresh that fails for a reason unrelated to credentials reads as it does today",
           "red_to_green_tests": [
             "A Team refresh that cannot read a credential is recorded unsuccessful",
@@ -668,8 +668,8 @@
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTests.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateServiceBaseTest.cs"
           ],
           "dependencies": [
             "03-05"
@@ -695,7 +695,7 @@
           "id": "04-02",
           "name": "A Portfolio refresh names its unreadable credential the same way a Team refresh does",
           "description": "RED: extend the Portfolio updater tests with the parity cases: a Portfolio whose connection holds an unreadable credential is recorded unsuccessful, and its summary line's reason names the Connection and the field in exactly the same words a Team refresh uses. Assert the sameness directly — two surfaces that say the same thing in two different phrasings are two surfaces an operator has to learn. GREEN: call the same protected helper from the Portfolio updater's `Update`, catching and rethrowing exactly as the Team updater does. No new wording is authored in this step; if a phrasing difference appears, the helper is wrong, not the caller. COMMIT: `feat(encryption): name the Connection and field when a Portfolio refresh cannot read a credential`.",
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTests.cs",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
           "scenario_name": "Scenario 21 — A Portfolio refresh names its unreadable credential the same way a Team refresh does",
           "red_to_green_tests": [
             "A Portfolio refresh that cannot read a credential is recorded unsuccessful",
@@ -705,7 +705,7 @@
           ],
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTests.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
           ],
           "dependencies": [
             "04-01"
