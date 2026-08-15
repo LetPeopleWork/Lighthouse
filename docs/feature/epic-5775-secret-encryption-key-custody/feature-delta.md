@@ -1279,11 +1279,24 @@ Assumptions** at the end of this document for the before/after of each.
   ADR-149 makes the key follow the database directory, so an operator who backs up their data directory
   now backs up their key by construction — which is most of the answer. What remains is whether a
   Kubernetes operator using generated-then-configured custody needs an explicit export. Not designed.
-- **OQ-4 (new) — how many rows of true legacy plaintext exist?** ADR-147's classifier reports a
-  CBC-shaped plaintext as unreadable rather than plaintext. `OAuthCredential` has been encrypted since
-  ADR-008, so the exposure is `WorkTrackingSystemConnectionOption.Value` on installs predating
-  `EncryptSecrets`. **Slice 01 owes a count from the `:5169` restored backup before it closes.** If the
-  count is zero the residual is academic; if it is not, the release note says so.
+- **OQ-4 (new) — ANSWERED 2026-08-15. The count is zero, so the residual is academic.** The question
+  was how many rows of true legacy plaintext exist, since ADR-147's classifier reports a CBC-shaped
+  plaintext as unreadable rather than as plaintext, and `OAuthCredential` has been encrypted since
+  ADR-008 — which leaves `WorkTrackingSystemConnectionOption.Value` on installs predating
+  `EncryptSecrets` as the whole exposure.
+
+  Measured against the real backup in `Lighthouse.Backend/DB_Backup`, read through a throwaway copy
+  that was deleted afterwards because it holds live credentials. Five connections, 28 options, of which
+  **4 are marked secret**. All four decode cleanly from base64 to 112, 224, 80 and 32 bytes, and every
+  one of those is 16 bytes of initialisation vector followed by a whole number of 16-byte blocks — the
+  exact shape AES-CBC produces and a shape no plaintext credential would land on by accident. Zero rows
+  are plaintext. `OAuthCredentials` holds no rows at all, so there is nothing to classify there either.
+
+  **The caveat is the population, not the method.** This is one instance's database, and it is the
+  maintainer's own, so it says nothing certain about an install that has been upgrading since before
+  `EncryptSecrets` landed. What it does establish is that the migration path has no known plaintext to
+  carry, so the release note owes no warning unless a customer's own readability check finds one — which
+  is precisely the surface slice 04 exists to give them.
 - **OQ-5 (new) — ANSWERED 2026-08-15. The assumption behind the question was right; one surface out of
   two is missing.** The question was where an `UnreadableSecretException` surfaces during a background
   sync, assuming it travels an existing failure path and that slice 01 only has to confirm the message
