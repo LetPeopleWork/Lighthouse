@@ -35,11 +35,19 @@ Feature: Upgrading onto an instance's own key costs the operator nothing (Epic 5
     And the credentials stored before the upgrade are untouched
 
   @property @edge @us-02 @slice-02
-  Scenario: The published key can never become the key new secrets are written under
-    Given any way an instance can arrive at its key ring
+  Scenario: Wherever an instance has a key of its own, the published key only ever reads
+    Given an instance that resolved a key of its own, by any of the ways it can
     When the ring is resolved
-    Then the published key is only ever one the instance can read with
-    And no configuration, no ordering and no rotation can make it the key that writes
+    Then the published key is present only as one the instance can read with
+    And nothing about how the ring was assembled can promote it to the key that writes
+
+  @edge @us-02 @slice-02 @docker-no-data-volume
+  Scenario: An instance with no key of its own keeps writing under the published key, and is told so
+    Given an instance with nowhere durable to keep a key, already holding credentials
+    When the ring is resolved
+    Then the published key is the only key it has, so new secrets are written under it too
+    And this is what the instance did before this change, not something this change introduced
+    And the operator is told, which is what this change adds
 
   @regression @us-02 @slice-02 @upgrade-from-pre-epic
   Scenario: Upgrading moves no secret that was already stored

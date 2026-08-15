@@ -2527,7 +2527,8 @@ EF migration is required (DESIGN F-6); D13 says upgrading does not re-encrypt.
 | 48 | An instance upgrading from the published key reads every secret it already had | milestone-7 | `@real-io @driving_port @upgrade-from-pre-epic @us-02` |
 | 49 | The published key is gone from the shipped settings and the upgrade still works | milestone-7 | `@edge @upgrade-from-pre-epic @us-02` |
 | 50 | After the upgrade, a newly saved credential is written under this instance's own key | milestone-7 | `@real-io @driving_port @upgrade-from-pre-epic @us-02` |
-| 51 | The published key can never become the key new secrets are written under | milestone-7 | `@property @edge @us-02` |
+| 51 | Wherever an instance has a key of its own, the published key only ever reads | milestone-7 | `@property @edge @us-02` |
+| 51a | An instance with no key of its own keeps writing under the published key, and is told so | milestone-7 | `@edge @docker-no-data-volume @us-02` |
 | 52 | Upgrading moves no secret that was already stored | milestone-7 | `@regression @upgrade-from-pre-epic @us-02` |
 | 53 | The startup line says where the key came from, what it is called, and where it is kept | milestone-8 | `@driving_adapter @us-02` |
 | 54 | The System settings page shows the same, and only a System Administrator can see it | milestone-8 | `@real-io @driving_adapter @us-02` |
@@ -2932,6 +2933,23 @@ instance starts, mints beside its database, and names the key on the startup lin
 stated in the ADR: a throwaway container that stores credentials and is then destroyed loses them,
 which is what "throwaway" means and what happens today. **Step 02-03 was added to the roadmap** to flip
 the two `KeyStoreResolver` cases 02-01 shipped; the roadmap is now fifteen steps.
+
+**8. Scenario 51 was written too absolutely, and step 04-01 caught it against shipped behaviour.** As
+authored it said the published key "can never become the key new secrets are written under", *in any
+way an instance can arrive at its ring*. That is false for one custody mode, and deliberately so:
+ADR-149's case 4 says an instance with nowhere durable to keep a key starts on the published key,
+because it has no other and cannot mint one — and the ADR states the consequence in as many words,
+**"writes continue under the legacy default, which is exactly today's behaviour and therefore not a
+regression"**. Step 03-03 pinned that, so satisfying scenario 51 as written would have meant deleting
+an earlier step's contract.
+
+The crafter split the claim rather than choosing a side, which was right. **Resolved 2026-08-15**: the
+scenario is narrowed to the three modes where the instance has a key of its own, and a new **scenario
+51a** states what is true in the fourth — the published key is the only key it has, new secrets go under
+it too, that is what the instance already did before this change, and what the change adds is that the
+operator is told. The property that survives across *all four* modes is the grammar one, and it is the
+stronger claim anyway: appending the published key can never promote it, so `ring.WithLegacyDefault()`
+equals `ring`. Slice-02 scenario count is now 31.
 
 **6. Writing the resolved key store path back into `IConfiguration` would silently grant minting.** Found
 at step 02-02, which had to thread a `KeyStoreLocation` from `Main` through `ConfigureServices` to
