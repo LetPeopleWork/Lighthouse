@@ -3,6 +3,7 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -132,6 +133,15 @@ namespace Lighthouse.Backend.API
                     "Write-back mappings are not available on your current plan."));
             }
 
+            var lostCredentialField = FirstSecretThatCannotBeRead(connection);
+            if (lostCredentialField != null)
+            {
+                return BadRequest(ConnectionValidationResult.Failure(
+                    "secret_cannot_be_read",
+                    $"The stored {lostCredentialField} cannot be read with the current encryption key. Enter it again to store it under the key this instance uses now.",
+                    fieldName: lostCredentialField));
+            }
+
             var validationResult = await workItemService.ValidateConnection(connection);
             if (!validationResult.IsValid)
             {
@@ -139,6 +149,18 @@ namespace Lighthouse.Backend.API
             }
 
             return Ok(validationResult);
+        }
+
+        // Sending a credential the instance can no longer read would have the work tracking system answer by
+        // refusing it, and an operator reads that as an expired token and re-issues one that was never the
+        // problem. Asking the same question the connection screen asks costs one read per stored secret and
+        // stops the request before it leaves the machine.
+        private string? FirstSecretThatCannotBeRead(WorkTrackingSystemConnection connection)
+        {
+            return connection.Options
+                .Where(option => option.IsSecret && !string.IsNullOrEmpty(option.Value))
+                .FirstOrDefault(option => cryptoService.Read(option.Value) is { State: SecretState.Unreadable })
+                ?.Key;
         }
 
         private void EncryptSecretValuesIfNeeded(WorkTrackingSystemConnectionDto connectionDto)
