@@ -88,4 +88,42 @@ None. `EnsureOAuthStateSecret` is the working precedent.
 
 ## Verdict
 
-_To be recorded at slice close: confirmed / disproved._
+**Confirmed, on real data. The upgrade is invisible.** Nothing was disproved, and the hypothesis had a
+falsifying case available: a backup written by a pre-epic build, restored and upgraded in place.
+
+**The restored backup.** `DB_Backup/LighthouseAppContext.db` — 5 connections, 4 stored secrets, no OAuth
+credentials — was copied outside the working tree and the new build was started against the copy with a
+key store path of its own. It resolved a key it made for itself, `k-2026-08-15-01`, on a ring of
+`[k-2026-08-15-01, k-legacy-default]`. All four secrets written months ago read back: not one of them
+came out unreadable, so no operator upgrading from a pre-epic build is asked to retype anything. They
+read as `LegacyCbc` rather than `Envelope`, which is the finding worth writing down — the retired entry
+that keeps them readable is the published default doing exactly the job the slice put it on the ring
+for, and nothing rewrote them in place. A credential saved after the upgrade landed under
+`k-2026-08-15-01`, the instance's own key, not the published one. AC-2.5 holds against data the build
+reading it did not write.
+
+**The container recreate.** The image was built from this commit's tree and run with the documented
+command and its data volume. The key store resolved to `/app/Data/keys` — on the volume, beside the
+database, which is the change this slice exists for; before it, the key would have gone into the
+container's writable layer. A credential was saved, the container was `docker rm`-ed, and a new one was
+created against the same volume: same active key `k-2026-08-15-01`, and the stored secret still read.
+That the id matched is weak evidence on its own, since the id is derived from the date it was minted;
+the load-bearing part is the secret reading, because an envelope is authenticated and a wrong key
+cannot produce a successful read. AC-2.11 holds.
+
+**Owed.** The mutation run for Story #5024 has not been performed. Its two configs are committed beside
+this brief (`mutation/stryker.5024.backend.json`, `mutation/stryker.5024.frontend.json`) and the kill
+rates go into `mutation/results.md` after the push. One scoping gap to record with them: `Program.cs`
+is deliberately absent from the backend mutate list, because Stryker.NET ignores line spans and the
+whole file is 1500 lines of unrelated startup — so `EnsureEncryptionKeyRing`, `InitializeKeyStore` and
+the custody banner lines carry integration tests but will carry no mutation score.
+
+**Also closed here.** `Encryption:Keys`, the plural spelling the bootstrapper reads ahead of the
+singular one, was supplied by no test in the repository. Two tests in `EncryptionBootstrapOrderTests`
+now cover it through a real configuration provider: a multi-entry ring writes under its first entry and
+only reads with the rest, and the ring wins when both spellings are set. `Encryption__KeysFile` is
+still asserted only through the command-line provider and not the environment one — the test assembly
+is `Parallelizable(ParallelScope.Fixtures)` and the environment provider reads process-global state, so
+setting that variable for one test would hand it to every host booting concurrently in another fixture.
+The double-underscore translation itself is a property of the provider and is already proved by the
+`Encryption__Key` route, so what is left uncovered is that one setting name, not the binding rule.

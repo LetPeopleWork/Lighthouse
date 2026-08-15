@@ -1,0 +1,23 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/services/Api/EncryptionService.ts",
+    "src/models/Encryption/EncryptionKeyState.ts",
+    "src/pages/Settings/System/SystemSettingsTab.tsx:31-54",
+    "src/pages/Settings/System/SystemSettingsTab.tsx:100-111",
+    "src/pages/Settings/System/SystemSettingsTab.tsx:214-214"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-5024.json" },
+  "tempDirName": ".stryker-tmp-5024"
+}

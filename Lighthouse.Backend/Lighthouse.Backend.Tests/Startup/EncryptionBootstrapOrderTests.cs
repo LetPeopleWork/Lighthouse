@@ -63,6 +63,18 @@ namespace Lighthouse.Backend.Tests.Startup
 
         private const string KeyMeantForTheSettingTheCodeUsedToRead = "T2xkU2V0dGluZ05hbWVLZXlOb3RJblVzZUFueW1vcmU=";
 
+        // Encryption:Keys is the plural spelling of the key setting, and it is read ahead of the singular
+        // one. Whoever has both set is part-way through adding a second key, and quietly putting them back
+        // on the single key they were leaving behind is the one outcome they cannot afford.
+        private static readonly string[] KeysOfAnInstanceMidMigration =
+        [
+            IntegrationTestEncryptionKey.Value,
+            "QUtleUtlcHRPbmx5VG9SZWFkT2xkZXJTZWNyZXRzISE=",
+            "QVRoaXJkS2V5S2VwdE9ubHlGb3JSZWFkaW5nT2xkISE=",
+        ];
+
+        private const string KeyTheRingSettingCarries = "VGhlUmluZ1NldHRpbmdXaW5zT3ZlclRoZVNpbmdsZSE=";
+
         // Each route names the setting that carries it and the provider that has to be the one parsing that
         // setting. Naming the provider is the point: the environment provider has binding rules of its own,
         // and a key only ever handed over in a dictionary would never have to meet them.
@@ -356,6 +368,63 @@ namespace Lighthouse.Backend.Tests.Startup
                 "a key nothing in the documentation ever told anyone to set.");
         }
 
+        [Test]
+        public void ARingSuppliedThroughThePluralSetting_WritesUnderItsFirstEntryAndStillReadsWhatTheLaterOnesWrote()
+        {
+            var ring = RingResolvedFromTheRingSetting(string.Join(',', KeysOfAnInstanceMidMigration));
+            var writtenSeparatelyUnderEachKey = SeparatelyWrittenUnderEveryKeyOn(ring);
+
+            var read = writtenSeparatelyUnderEachKey.ConvertAll(CryptoServiceHolding(ring).Read);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    Convert.ToBase64String(ring.ActiveKey.Material.Span),
+                    Is.EqualTo(KeysOfAnInstanceMidMigration[0]),
+                    "The instance is writing under something other than the first key it was given. Which " +
+                    "entry is the active one is the only thing the order of this setting says, so getting it " +
+                    "wrong means secrets are written under a key the operator listed to read with.");
+                Assert.That(
+                    EveryKeyOn(ring).GetRange(0, KeysOfAnInstanceMidMigration.Length),
+                    Is.EqualTo(KeysOfAnInstanceMidMigration),
+                    "The keys did not reach the ring in the order they were listed in.");
+                Assert.That(
+                    read.ConvertAll(result => result.State),
+                    Is.All.EqualTo(SecretState.Envelope),
+                    "A secret written under one of the listed keys no longer reads as a readable secret, so " +
+                    "an operator part-way through adding a key would be asked to retype credentials that are " +
+                    "still perfectly readable.");
+                Assert.That(read.ConvertAll(result => result.PlainText), Is.All.EqualTo(Credential));
+            }
+        }
+
+        [Test]
+        public void AnInstanceCarryingBothSpellingsOfTheKeySetting_WritesUnderTheRingRatherThanTheSingleKey()
+        {
+            var ring = RingResolvedWith(
+                configuration => configuration.AddCommandLine(
+                [
+                    $"--{ConfiguredKeyRingSource.RingSettingKey}={KeyTheRingSettingCarries}",
+                    $"--{ConfiguredKeyRingSource.SingleKeySettingKey}={IntegrationTestEncryptionKey.Value}",
+                ]),
+                ADurableKeyStore());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    Convert.ToBase64String(ring.ActiveKey.Material.Span),
+                    Is.EqualTo(KeyTheRingSettingCarries),
+                    "The single-key setting decided the key while the ring setting was also set, which is the " +
+                    "one direction this precedence must never run: it puts an operator adding a second key " +
+                    "back onto the one key they were leaving behind.");
+                Assert.That(
+                    EveryKeyOn(ring),
+                    Does.Not.Contain(IntegrationTestEncryptionKey.Value),
+                    "The key from the single-key setting reached the ring anyway, so it is not being ignored " +
+                    "but merged - and the ring an operator wrote down is not the ring they got.");
+            }
+        }
+
         private static EncryptionKeyRing RingHeldBy(WebApplicationFactory<Backend.Program> factory)
         {
             return factory.Services.GetRequiredService<IEncryptionKeyRingHolder>().Current;
@@ -379,6 +448,23 @@ namespace Lighthouse.Backend.Tests.Startup
                 configuration => configuration.AddCommandLine(
                     [$"--{SettingTheCodeUsedToRead}={KeyMeantForTheSettingTheCodeUsedToRead}"]),
                 ADurableKeyStore());
+        }
+
+        private EncryptionKeyRing RingResolvedFromTheRingSetting(string ring)
+        {
+            return RingResolvedWith(
+                configuration => configuration.AddCommandLine(
+                    [$"--{ConfiguredKeyRingSource.RingSettingKey}={ring}"]),
+                ADurableKeyStore());
+        }
+
+        // One secret per key, each written under that key alone, so what the assertions afterwards show is
+        // that the ring reads every key on it - not that the first one happened to be enough.
+        private static List<string> SeparatelyWrittenUnderEveryKeyOn(EncryptionKeyRing ring)
+        {
+            return [.. ring.RetiredKeys
+                .Prepend(ring.ActiveKey)
+                .Select(key => CryptoServiceHolding(new EncryptionKeyRing(ring.Custody, key)).Encrypt(Credential))];
         }
 
         private EncryptionKeyRing RingResolvedWithNothingSupplied(KeyStoreLocation keyStore)
