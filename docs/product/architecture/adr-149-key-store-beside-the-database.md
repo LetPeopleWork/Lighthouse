@@ -46,12 +46,13 @@ secret and the Data Protection ring alike, with four ordered cases:**
 2. `Lighthouse:DataProtection:KeyStorePath` explicitly configured → that directory. This is what
    standalone already sets, so **standalone changes by nothing** and AC-5.7's byte-unchanged sibling
    holds for slice 02 too.
-3. Provider is SQLite **and** the connection string's `DataSource` resolves to an absolute path with a
-   directory → `<that directory>/keys`. This is the container case, and it is what makes AC-2.10 and
-   AC-2.11 true: an operator who already mounted `/app/Data` keeps their key by doing nothing, because
-   the key follows the database onto the volume they already have.
-4. Otherwise — Postgres, or SQLite with a bare relative filename → `ContentRootPath/data-protection-keys`,
-   today's behaviour, **and minting is refused**. See below.
+3. Provider is SQLite **and** the connection string names a database file → `<that file's directory>/keys`.
+   This is the container case, and it is what makes AC-2.10 and AC-2.11 true: an operator who already
+   mounted `/app/Data` keeps their key by doing nothing, because the key follows the database onto the
+   volume they already have. **A relative `DataSource` resolves against the content root and reaches
+   this case** (amended 2026-08-15 — see below).
+4. Otherwise — Postgres, or SQLite `:memory:` → `ContentRootPath/data-protection-keys`, today's
+   behaviour, **and minting is refused**. See below.
 
 **Three stores, one directory, deliberately.** The encryption ring file is wrapped with Data Protection,
 so it is only readable where the Data Protection ring is. Splitting the two directories would produce a
@@ -80,6 +81,31 @@ install with an empty database the calculus reverses — nothing is at stake and
 public key is indefensible — so a fresh case-4 instance **does** refuse to start, with the same two
 one-line remedies. The discriminator is "does this database already hold an encrypted secret?", which
 is a query, not a flag.
+
+**Amended 2026-08-15 (second amendment) — the invariant is durability *parity*, not durability, and case 4
+narrows accordingly.** As first written, case 3 required an *absolute* `DataSource`, so the relative
+`Data Source=LighthouseAppContext.db` that `appsettings.json` ships fell to case 4. That made a
+first-ever `docker run ghcr.io/letpeoplework/lighthouse:latest` with no environment a fresh case-4
+instance, which the rule below refuses to start — while US-02's own Elevator Pitch promises that exact
+command prints `Encryption key: generated for this instance`. The epic's headline demo would have
+printed a refusal.
+
+The reasoning that fixes it is that **the property worth protecting is not "the key store is durable"
+but "the key store is exactly as durable as the database"**. Those two come apart only when the key and
+the database live in different places — which is precisely D12's Docker failure, where the database sits
+on a mounted volume and the key would sit in the container's writable layer, so `docker rm` leaves the
+database intact and every secret in it unreadable.
+
+When the database is *itself* in the writable layer, a key beside it is equally ephemeral. `docker rm`
+takes both, the next run is a genuine fresh install with an empty database and a fresh key, and **no
+secret is ever orphaned** — nothing survives to be orphaned. So a relative `DataSource` resolves against
+the content root and reaches case 3, and case 4 keeps only the shapes with genuinely no local database
+file to sit beside: Postgres, and `:memory:`. The refusal then lands only where durability truly cannot
+be argued, which is where it was always meant to land.
+
+One consequence worth stating plainly: a throwaway container that stores credentials and is then
+destroyed loses them. That is correct, it is what "throwaway" means, and it is what happens today.
+Maintainer decision, 2026-08-15.
 
 **Amended 2026-08-15 — that query has three answers, not two, and the third one warns.** The
 discriminator runs at builder time, where ADR-150 places the ring resolution: before the `DbContext`
@@ -155,7 +181,8 @@ one is not available on most clusters, and the answer for Kubernetes is a Secret
 | A container filesystem accepts a write and loses it on recreate | Gold test: write the ring, recreate the container against the same mounted data directory, read the same key id (AC-2.11) — the only test that actually proves D12 |
 | Docker overlayfs and WSL2 DrvFs no-op `fsync` | The bootstrapper re-reads and unprotects the ring file after writing; a mismatch fails startup rather than being assumed |
 | The old key store is empty when it is not | Test: legacy directory populated, new directory empty → contents migrated and the startup line names both; both populated and different → startup stops |
-| SQLite `DataSource` parses the same on Windows, Linux and macOS | Table test over relative, absolute, `:memory:`, and a UNC-style path — `:memory:` and relative land in case 4, absolute in case 3 |
+| SQLite `DataSource` parses the same on Windows, Linux and macOS | Table test over relative, absolute, `:memory:`, and a UNC-style path — `:memory:` lands in case 4; relative and absolute both land in case 3, relative by resolving against the content root. **`Path.IsPathRooted` and `Path.GetDirectoryName` cannot serve this table**: both are platform-dependent, and on Linux a backslash is a legal filename character, so a Windows path is neither rooted nor splittable. Recognise rootedness textually |
+| A fresh `docker run` with no environment starts and says which key it is on | Gold test: empty database, shipped relative connection string, no key store path → the instance starts, mints a key beside its database, and the startup line names it. This is US-02's Elevator Pitch executed verbatim, and it is the assertion the second 2026-08-15 amendment exists for |
 | A fresh instance can be told apart from an upgraded one | Test: empty database → refuse; database holding one encrypted option → start with the warning |
 | A database that cannot be reached is not an empty one | Test over the three probe answers: unreachable server, missing schema, and missing table each start with the warning rather than refusing. The failure this guards is an instance that refuses to boot because its database was slow |
 

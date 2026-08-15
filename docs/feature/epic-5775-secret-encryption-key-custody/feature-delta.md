@@ -2863,3 +2863,103 @@ operator-authored rings arrive through a mounted Secret.
 
 Neither blocks the slice. Both are cheap to close while the grammar has exactly one caller.
 
+**3. A ring's custody does not participate in its equality, and two rings differing only in custody
+compare equal.** Found at step 01-02, which added `Custody` to `EncryptionKeyRing` without touching
+`Equals`/`GetHashCode` — deliberately, because no assertion required it and including it would have put
+the `KeyRingSerializer` round-trip test at risk (the serialised form carries no custody, so a parsed
+ring cannot know the custody of the ring it was formatted from). Harmless today, because every
+construction in the codebase is still `NoDurableStore`. It stops being harmless at steps 03-02 and
+03-03, which are the first to produce rings in several custody modes, and at slice 03, where a rotation
+compares a ring before and after. The honest options are to exclude custody from equality on the
+grounds that a ring *is* its keys — in which case `WithCustody`-style transitions must never be compared
+for change detection — or to include it and give the round-trip test an explicit custody. **This wants
+deciding before step 03-02, not after.**
+
+**RESOLVED 2026-08-15, maintainer decision: custody stays out of equality.** This is what DDD-2 already
+says — "two rings with the same entries in the same order are the same ring" — so the code as shipped at
+01-02 is already correct and what was missing was the intent, written down where someone would meet it.
+Step 03-02 adds a test pinning it, so a later reader does not "fix" the omission. The standing
+consequence, which belongs in slice 03's rotation work: **change detection compares key ids, never ring
+equality**, because a ring whose custody changed while its keys did not is genuinely the same ring.
+
+**5. A bare `docker run` with no environment falls into case 4, so under ADR-149's fresh-install rule
+the epic's own headline demo refuses to boot. This one needs deciding before step 03-03.**
+
+Found at step 02-01, while building the resolver's table. `appsettings.json` ships
+`Data Source=LighthouseAppContext.db` — relative, therefore case 4, therefore minting refused. The
+*documented* Docker command is fine: `docs/Installation/server.md:81` passes
+`Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db` with a volume, which is
+absolute, case 3, and lands the key on the mounted volume exactly as D12 intends. But US-02's own
+Elevator Pitch reads:
+
+> After: run `docker run ghcr.io/letpeoplework/lighthouse:latest` → sees `Encryption key: generated for
+> this instance` in the startup log.
+
+That invocation passes no environment at all. It keeps the shipped relative connection string, lands in
+case 4, and — on a first run, with an empty database — meets ADR-149's *fresh instances refuse to
+start* rule. The epic's headline demo would print a refusal instead of the line the story promises. The
+DELIVER wave has a gate that executes exactly this command, so it would be caught, but at implementation
+time rather than now.
+
+ADR-149's Negative section names one population that meets the fresh-install refusal: "someone
+hand-rolling a Postgres deployment". A naive `docker run` is a second, and it is the persona US-02
+opens with — "a self-hoster who downloaded the exe or ran one `docker run`".
+
+**Recommended resolution, for the maintainer rather than for a crafter.** The invariant ADR-149 is
+reaching for is not *the key store is durable*. It is **the key store is exactly as durable as the
+database**. Those come apart only when the two live in different places — which is the whole of D12's
+Docker failure, where the database is on a mounted volume and the key would be in the writable layer.
+When the database itself is in the container's writable layer, a key beside it is equally ephemeral, so
+`docker rm` destroys both together, the next run is a genuine fresh install, and **no secret is ever
+orphaned**. Nothing is lost that was not already lost.
+
+Under that reading, case 3 should be reached by resolving a relative `DataSource` against the content
+root rather than by refusing it, and case 4 should narrow to the shapes where there is genuinely no
+local database file to sit beside — Postgres, and `:memory:`. The refusal then lands only on
+deployments that really cannot argue durability, and the naive `docker run` gets the line US-02
+promises.
+
+Step 02-01 deliberately did **not** implement this: it did not call `Path.GetFullPath` on a relative
+`DataSource`, on the grounds that "beside the database" would otherwise point into the writable layer,
+which is what D12 exists to avoid. That reasoning is correct under the ADR as written. The question is
+whether the ADR is written correctly, and that is not a crafter's call.
+
+**RESOLVED 2026-08-15, maintainer decision: narrow case 4.** ADR-149 carries a second amendment stating
+the durability-parity invariant, a corrected case 3 that resolves a relative `DataSource` against the
+content root, a case 4 reduced to Postgres and `:memory:`, and a new Earned Trust row asserting US-02's
+Elevator Pitch command verbatim — empty database, shipped connection string, no key store path → the
+instance starts, mints beside its database, and names the key on the startup line. The accepted cost is
+stated in the ADR: a throwaway container that stores credentials and is then destroyed loses them,
+which is what "throwaway" means and what happens today. **Step 02-03 was added to the roadmap** to flip
+the two `KeyStoreResolver` cases 02-01 shipped; the roadmap is now fifteen steps.
+
+**6. Writing the resolved key store path back into `IConfiguration` would silently grant minting.** Found
+at step 02-02, which had to thread a `KeyStoreLocation` from `Main` through `ConfigureServices` to
+`ConfigureDataProtection` and considered the alternative of writing the resolved path back into
+configuration instead. It must not: the resolver reads `Lighthouse:DataProtection:KeyStorePath` as its
+**case 2**, so a resolution that landed on case 4 — the no-durable-store case, where minting is refused —
+would be re-read on any later resolution as an explicitly configured path, flipping
+`MintingIsPermitted` from false to true. An instance that had correctly declined to mint would mint on
+the next pass. ADR-150 already forbids writing key *material* into `IConfiguration`; this is the same
+hazard one level out, for the *path*, and the ADR does not mention it. **Step 03-04 is the next place
+someone might reach for that shortcut.**
+
+**7. Two smaller facts about the bootstrap, both worth knowing before step 03-04.** The resolver was
+called **twice**, not three times as the design assumed — `EnsureOAuthStateSecret` and
+`ConfigureDataProtection` called it; `EnsureEncryptionKeyRing` never touched the key store at all,
+because it reads a key out of configuration and nothing else. The ring becomes the third consumer at
+03-04, and only then does "the OAuth state secret, the encryption ring and the Data Protection ring all
+resolve to the same directory" become fully observable; step 02-02's test asserts the two that exist.
+And `ResolveDataProtectionKeyStoreDir` never created the directory — each caller did, separately and
+conditionally. Moving creation into the resolver, as ADR-150 step 2 specifies, means the directory is
+now created on **every** boot, including boots where the OAuth secret was already configured and boots
+where Data Protection persists to Redis rather than the filesystem. Harmless in every topology the
+product ships, and the migration is a no-op when resolved and legacy are the same path, but it is not
+byte-identical prior behaviour for a Redis deployment.
+
+**4. `EncryptionKeyRing` (in `Models/`) now references `Services.Implementation.Encryption`**, so that
+`WithLegacyDefault()` can live on the ring. Checked before it was done: 20+ files under `Models/`
+already reference `Services`, and no ArchUnit rule forbids it. Recorded as a deliberate choice rather
+than an oversight — the alternative was to drop `WithLegacyDefault()` from the ring and leave only
+`LegacyDefaultEncryptionKey.AppendedTo(ring)`, which reads worse at the call site.
+

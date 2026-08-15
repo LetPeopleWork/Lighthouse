@@ -3,7 +3,7 @@
     "project_id": "epic-5775-secret-encryption-key-custody",
     "slice": "slice-02-per-instance-key",
     "created_at": "2026-08-15",
-    "total_steps": 14,
+    "total_steps": 15,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Ship slice 02 of ADO Epic #5775 (Story #5024, carrying Bug #5776): where the key ring comes from, where it is kept, what happens when it cannot be resolved, and who is told. An instance starting for the first time with nothing supplied generates 32 random bytes for itself, wraps them with ASP.NET Data Protection and keeps them beside its database; an operator who set the key the configuration page names gets that key, from any of four transports, parsed by one grammar (ADR-148); the published default leaves `appsettings.json` and becomes a compiled-in retired entry that can never be active, so an upgrading instance reads every secret it already had and writes new ones under its own key; every ambiguity — two disagreeing key stores, a store that will not unwrap, a write that does not read back, nowhere durable to keep a key on a fresh install — stops the boot with a message an operator can act on; and the key source, the active key id and the resolved key store path appear on the startup line and behind `GET /api/{v1,latest}/encryption` under `[RbacGuard(SystemAdmin)]`, never on `GET /systeminfo`. Slice 01 shipped the envelope, the ring value object, the holder, the four-state reader and a builder-time `EnsureEncryptionKeyRing` that reads `EncryptionSettings:EncryptionKey`; this slice EXTENDs that method, it does not create it.",
@@ -251,6 +251,41 @@
             "Program.cs (modified — ResolveKeyStoreDirectory replaces ResolveDataProtectionKeyStoreDir at all three call sites and moves to bootstrap step 2)",
             "KeyStoreMigration.cs (new)",
             "KeyStoreDirectoryResolutionTests.cs (new)"
+          ]
+        },
+        {
+          "id": "02-03",
+          "name": "Narrow case 4 to the shapes with no database file at all — ADR-149 second amendment",
+          "description": "**A corrective step, added 2026-08-15 after a maintainer decision, not part of the original fourteen.** Step 02-01 implemented ADR-149's case 3 as written: an *absolute* `DataSource` only. That sent the relative `Data Source=LighthouseAppContext.db` shipped in `appsettings.json` to case 4, which makes a first-ever `docker run` with no environment a fresh case-4 instance — refused at startup by the rule step 03-03 implements, while US-02's Elevator Pitch promises that exact command prints the generated-key line. ADR-149 has been amended: the invariant is durability *parity* (the key store is exactly as durable as the database), not durability, so a relative `DataSource` resolves against the content root and reaches case 3, and case 4 keeps only Postgres and `:memory:`. RED: flip the two `KeyStoreResolverTests` cases that assert a bare relative filename lands in case 4 and that minting is refused there, so they assert case 3 and a keys directory beside the resolved database file; add the Elevator-Pitch case explicitly — shipped relative connection string, no key store path, SQLite — resolving to `<ContentRootPath>/keys` with minting permitted; keep `:memory:` and Postgres asserting case 4 unchanged. GREEN: in `KeyStoreResolver`, resolve a relative `DataSource` against the supplied content root before taking its directory, leaving the textual rootedness recognition from 02-01 in place for absolute paths (`Path.GetFullPath` is platform-dependent in the same way `Path.IsPathRooted` is, so combine textually rather than reaching for it). `:memory:` must still reach case 4 — it names no file. COMMIT: `fix(encryption): let a relative database path keep its key beside it`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyStoreResolverTests.cs",
+          "scenario_name": "Scenario 39 — Where the key store lands is decided by one rule, applied in a stated order (the fourth example row, 'a database that is not a file at all', narrows to Postgres and :memory:; a bare relative filename moves from the default location to beside the database)",
+          "red_to_green_tests": [
+            "A bare relative DataSource resolves against the content root and lands beside that database file",
+            "Minting is permitted for a bare relative DataSource",
+            "The shipped connection string with no other configuration resolves to a keys directory under the content root",
+            "`:memory:` still lands in the default location with minting refused",
+            "Postgres still lands in the default location with minting refused",
+            "An absolute DataSource is unchanged by this step",
+            "Cases 1 and 2 still win over the widened case 3"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/KeyStoreResolver.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyStoreResolverTests.cs"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "A deployment whose database is a plain relative filename keeps its key beside that database, wherever the database turns out to live.",
+            "The refusal to mint reaches only deployments with no local database file at all — Postgres and an in-memory database.",
+            "A first-ever `docker run` with no environment resolves a key store it is permitted to mint into, so the Elevator Pitch command can print the line it promises.",
+            "Cases 1 and 2 still take precedence over the widened case 3.",
+            "`dotnet build` zero warnings; full backend suite green."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "KeyStoreResolver.cs (modified — relative DataSource resolves against the content root)",
+            "KeyStoreResolverTests.cs (modified — two cases flip, one added)"
           ]
         }
       ]
