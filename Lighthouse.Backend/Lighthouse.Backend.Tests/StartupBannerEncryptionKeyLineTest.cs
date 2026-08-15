@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Startup;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 
@@ -33,7 +34,7 @@ namespace Lighthouse.Backend.Tests
         [Test]
         public void EncryptionLine_NamesWhereTheKeyCameFromWhatItIsCalledAndWhereItIsKept()
         {
-            var lines = Backend.Program.BuildEncryptionCustodyLines(
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
                 RingUnder(KeyCustody.GeneratedForThisInstance), KeptIn());
 
             Assert.That(lines, Has.Some.Contains(EncryptionLabel)
@@ -68,7 +69,7 @@ namespace Lighthouse.Backend.Tests
         [TestCase(KeyCustody.NoDurableStore, "the key published with the product")]
         public void EncryptionLine_TellsEachCustodyApartByItsWordingAlone(KeyCustody custody, string expectedSource)
         {
-            var lines = Backend.Program.BuildEncryptionCustodyLines(RingUnder(custody), KeptIn());
+            var lines = StartupBanner.BuildEncryptionCustodyLines(RingUnder(custody), KeptIn());
 
             Assert.That(lines[0], Does.Contain(expectedSource));
         }
@@ -76,7 +77,7 @@ namespace Lighthouse.Backend.Tests
         [Test]
         public void NowhereDurableToKeepAKey_SaysSoInASecondLineThatNamesBothWaysOut()
         {
-            var lines = Backend.Program.BuildEncryptionCustodyLines(RingUnder(KeyCustody.NoDurableStore), KeptIn());
+            var lines = StartupBanner.BuildEncryptionCustodyLines(RingUnder(KeyCustody.NoDurableStore), KeptIn());
 
             using (Assert.EnterMultipleScope())
             {
@@ -127,7 +128,7 @@ namespace Lighthouse.Backend.Tests
 
         private static IReadOnlyList<string> WholeBannerUnder(KeyCustody custody)
         {
-            return Backend.Program.BuildStartupInfoLines(new StartupBannerFacts(
+            return StartupBanner.BuildInfoLines(new StartupBannerFacts(
                 "1.2.3.4",
                 ["http://localhost:8080"],
                 "sqlite",

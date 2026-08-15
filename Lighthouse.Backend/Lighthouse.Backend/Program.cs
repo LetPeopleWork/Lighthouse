@@ -3,7 +3,6 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -53,7 +52,6 @@ using System.Globalization;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
-using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -396,7 +394,6 @@ namespace Lighthouse.Backend
         private const string DatabaseProviderConfigKey = "Database:Provider";
         private const string DatabaseConnectionStringConfigKey = "Database:ConnectionString";
         private const string LegacyKeyStoreDirectoryName = "data-protection-keys";
-        private const string BannerRule = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
         private const string OAuthStateSecretProtectorPurpose = "Lighthouse.OAuth.StateSecret.v1";
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
@@ -1385,7 +1382,7 @@ namespace Lighthouse.Backend
                 "           -----------------------------------           "
             };
 
-            var info = BuildStartupInfoLines(new StartupBannerFacts(
+            var info = StartupBanner.BuildInfoLines(new StartupBannerFacts(
                 Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown",
                 [.. app.Urls.Select(AsSeenFromTheMachineItRunsOn)],
                 builder.Configuration.GetValue<string>(DatabaseProviderConfigKey) ?? "Unknown",
@@ -1407,84 +1404,6 @@ namespace Lighthouse.Backend
             }
 
             Log.Logger.Information("\n{StartupBanner}", startupBannerBuilder.ToString());
-        }
-
-        public static IReadOnlyList<string> BuildStartupInfoLines(StartupBannerFacts facts)
-        {
-            ArgumentNullException.ThrowIfNull(facts);
-
-            var info = new List<string>
-            {
-                "",
-                "",
-                "",
-                BannerRule,
-                $"        Lighthouse {facts.Version}",
-                BannerRule,
-                ""
-            };
-
-            info.AddRange(facts.Urls.Select(url => BannerLine("🌐", "Url", url)));
-
-            info.Add("");
-
-            info.Add(BannerLine("🖥️", "OS", RuntimeInformation.OSDescription.Trim()));
-            info.Add(BannerLine("⚙️", "Runtime", RuntimeInformation.FrameworkDescription));
-            info.Add(BannerLine("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
-            info.Add(BannerLine("🔢", "Process ID", Environment.ProcessId.ToString(CultureInfo.InvariantCulture)));
-            info.Add(BannerLine("💾", "Database", facts.DatabaseProvider));
-
-            if (!string.IsNullOrEmpty(facts.LogFilePath))
-            {
-                info.Add(BannerLine("📝", "Logs", facts.LogFilePath));
-            }
-
-            info.AddRange(AuthPostureBanner.BuildAuthPostureLines(facts.Configuration));
-            info.AddRange(BuildEncryptionCustodyLines(facts.KeyRing, facts.KeyStore));
-
-            info.Add("");
-
-            return info;
-        }
-
-        // What an operator has to know to keep their secrets readable: whose key this is, which name it
-        // answers to, and the directory that has to survive for it to still be there tomorrow - which is
-        // also the directory they would have to back up. The key itself never appears; it is read off the
-        // ring rather than out of configuration, so the sentence cannot disagree with the key in force.
-        public static IReadOnlyList<string> BuildEncryptionCustodyLines(EncryptionKeyRing keyRing, KeyStoreLocation keyStore)
-        {
-            ArgumentNullException.ThrowIfNull(keyRing);
-            ArgumentNullException.ThrowIfNull(keyStore);
-
-            var lines = new List<string>
-            {
-                BannerLine("🔑", "Encryption", $"{WhereTheKeyCameFrom(keyRing.Custody)} ({keyRing.ActiveKey.Id}) · {keyStore.Directory}")
-            };
-
-            if (keyRing.Custody == KeyCustody.NoDurableStore)
-            {
-                lines.Add(BannerLine("⚠️", "Warning", NoDurableKeyStore.Warning));
-            }
-
-            return lines;
-        }
-
-        // A custody nobody named claims the least, which is the same thing having nowhere to keep a key
-        // means: the instance is on the key that ships inside every copy of the product.
-        private static string WhereTheKeyCameFrom(KeyCustody custody)
-        {
-            return custody switch
-            {
-                KeyCustody.GeneratedForThisInstance => "generated for this instance",
-                KeyCustody.SuppliedByConfiguration => "supplied by configuration",
-                KeyCustody.SuppliedByExternalSecret => "supplied by a mounted secret file",
-                _ => "the key published with the product",
-            };
-        }
-
-        private static string BannerLine(string emoji, string label, string value)
-        {
-            return $"{emoji}  {label,-13} : {value}";
         }
 
         private static string AsSeenFromTheMachineItRunsOn(string url)
@@ -1524,13 +1443,4 @@ namespace Lighthouse.Backend
             return null;
         }
     }
-
-    public sealed record StartupBannerFacts(
-        string Version,
-        IReadOnlyList<string> Urls,
-        string DatabaseProvider,
-        string? LogFilePath,
-        IConfiguration Configuration,
-        EncryptionKeyRing KeyRing,
-        KeyStoreLocation KeyStore);
 }
