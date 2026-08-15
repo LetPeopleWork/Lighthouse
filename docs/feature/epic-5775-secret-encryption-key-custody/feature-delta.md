@@ -1284,31 +1284,38 @@ Assumptions** at the end of this document for the before/after of each.
   ADR-008, so the exposure is `WorkTrackingSystemConnectionOption.Value` on installs predating
   `EncryptSecrets`. **Slice 01 owes a count from the `:5169` restored backup before it closes.** If the
   count is zero the residual is academic; if it is not, the release note says so.
-- **OQ-5 (new) — ANSWERED 2026-08-15, and the answer is worse than this question assumed.** The
-  question was where an `UnreadableSecretException` surfaces during a background sync, on the
-  assumption that "the exception travels each consumer's existing failure path" and slice 01 merely has
-  to confirm the message is legible. Read end to end, **there is no failure path, and the refresh
-  reports success**:
+- **OQ-5 (new) — ANSWERED 2026-08-15. The assumption behind the question was right; one surface out of
+  two is missing.** The question was where an `UnreadableSecretException` surfaces during a background
+  sync, assuming it travels an existing failure path and that slice 01 only has to confirm the message
+  is legible. Read end to end, the failure record exists and the status does not.
 
-  1. `UpdateServiceBase.TriggerUpdate` enqueues the work inside its own `catch (Exception)`. It logs
-     `"An exception occurred while updating {Entity} with ID {Id}"` at Error and swallows.
-  2. The lambda therefore returns normally, so `UpdateQueueService.ExecuteUpdateAsync` never enters its
-     own catch and sets `terminalProgress = UpdateProgress.Completed`.
-  3. `NotifyListeners` pushes `Status=Completed` over SignalR. The browser is told the refresh
-     succeeded, over credentials the instance could not read.
-  4. `LogUpdateSummary` is never reached either, so there is not even a `success=False` line.
+  **What already works.** Both updaters wrap their work in `try`/`finally`, not `try`/`catch`. The
+  `finally` runs before the exception propagates, so a failed refresh already persists a `RefreshLog`
+  row with `Success = false` — carrying the entity, the mode, the duration and the counts — and already
+  emits the `Update completed | … | success=False` summary line. `RefreshLog` is served to the
+  operator through `SystemInfoController`. This is precisely "the refresh-log entry the update surface
+  already renders", so the original assumption holds and the exception does reach an operator-visible
+  record.
 
-  `UpdateProgress.Failed` exists in the enum but is unreachable from any periodic refresh — the only
-  two callers that bypass `TriggerUpdate` are the Portfolio and Team delete endpoints, and neither
-  decrypts a secret.
+  **What does not work, and is broader than this epic.** After the `finally`, the exception reaches
+  `UpdateServiceBase.TriggerUpdate`'s own `catch (Exception)`, which logs one line and swallows. The
+  enqueued lambda therefore returns normally, `UpdateQueueService.ExecuteUpdateAsync` never enters its
+  own catch, and the run is recorded as `UpdateProgress.Completed`. `NotifyListeners` then pushes
+  `Status=Completed` over SignalR, so the browser is told the refresh succeeded. `UpdateProgress.Failed`
+  exists in the enum and is unreachable from any periodic refresh — the only two callers that bypass
+  `TriggerUpdate` are the Portfolio and Team delete endpoints.
 
-  **What slice 01 owes is therefore not a message, it is the path.** Minimum shape: classify
-  `UnreadableSecretException` at `TriggerUpdate` so the key advances to `Failed` rather than
-  `Completed`, and carry the Connection name and field on the exception so the log line and the status
-  both name what the operator has to fix. This is the same silent-success family as the `Decrypt` that
-  returns ciphertext: the system's current answer to "I cannot read your credential" is to look like it
-  worked. Fixing one and leaving the other would close the reported half of the defect and keep the
-  half nobody has reported yet.
+  **This second half is not credential-specific.** A work tracking system outage produces exactly the
+  same mismatch: a `RefreshLog` row saying the refresh failed, beside a live status saying it
+  completed. Fixing it only for unreadable secrets would make the status honest about one failure kind
+  and dishonest about every other, which is worse than the uniform behaviour it replaces. It is
+  therefore recorded here as a **pre-existing defect in its own right, outside slice 01**, and is owed
+  an ADO Bug rather than a place in this epic's acceptance set.
+
+  **What slice 01 actually owes is the message.** The `RefreshLog` entry and the summary line for an
+  unreadable credential must name the Connection and the field, and must say the credential could not
+  be read rather than reading as a work tracking system rejection — which is the same confusion the
+  ciphertext-returning `Decrypt` creates today, one layer up.
 
 ---
 
@@ -2003,3 +2010,296 @@ the private-repository half of the walkthrough.
 per-environment promotion matrix · SLO/error-budget definitions and burn-rate alert rules · runbook per
 failure mode · rollback rehearsal script · secret-store migration plan for existing tenants ·
 capacity-stage design · per-tenant rotation automation design (out of scope for this epic).
+
+---
+
+# Wave: DISTILL — acceptance specification, slice 01 only
+
+**Acceptance designer**: Quinn · **Date**: 2026-08-15 · **Density**: lean (Tier-1 rendered; Tier-2 catalogued, not written)
+**Scope**: slice 01 alone — US-01, US-08 and the US-07 `@infrastructure` precursor inside it. Nothing
+from slices 02-06: no key generation, no rotation, no readability check, no chart, no docs site. Those
+have their own ACs and writing their scenarios now would leave them stale before they are read.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation
+
+This repository keeps one narrative file rather than per-wave `wave-decisions.md`, so the gate was run
+across the DISCUSS, DESIGN and DEVOPS sections of this document. **0 contradictions — reconciliation
+passed.** What was checked, and why each near-miss is not one:
+
+- **DESIGN F-1 … F-7 override DISCUSS.** Every one is dated 2026-08-14, confirmed by the maintainer,
+  and recorded in *Changed Assumptions* with its before/after. A recorded, dated override is a
+  decision, not a contradiction. None of the seven touches slice 01: F-1, F-3 and F-5 are chart and
+  custody (slices 02 and 05), F-2 and F-4 are the encryption panel (slices 02-04), F-7 is the retired
+  default (slice 02). **F-6 is the only one slice 01 inherits** — no EF migration is required — and
+  slice 01's own scope statement already says so.
+- **DEVOPS Changed Assumptions (three, 2026-08-15)** are corrections of chart and CI statements
+  verified against the running tooling. All three land in slice 05. Nothing in them reaches slice 01.
+- **D7 retired 2026-08-15.** Bug #5776 is absorbed into slice 02. Slice 01 reads no configuration, so
+  the key in effect during acceptance is whatever the instance already had. No effect here.
+- **ADR-147 vs DESIGN OQ-5** is the one genuine supersession and it is recorded below rather than
+  blocked, because the later statement is dated and explicit about what it replaces. See *Changed
+  Assumptions* at the end of this wave.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports consumed by this slice** (from `Wave: DESIGN / [REF] Driving Ports`): the
+  existing connection list read model, which gains a per-secret `secretState`; the existing Connection
+  detail UI, which renders it on the offending field; and the existing connection-validation action.
+  Slice 01 introduces no new route, no new page and no new bootstrap step.
+- **Driven ports in scope** (from `Wave: DESIGN / [REF] Driven Ports and Adapters`): the symmetric
+  cipher (`AesGcm`), the legacy read-only cipher (`Aes` in CBC with `PaddingMode.None`), and secret
+  persistence through `LighthouseAppContext` on SQLite and Npgsql. The three key-ring *sources* are
+  slice 02 and are out of scope — the ring holds exactly one key here, the configured one.
+- **No EF migration.** The three secret columns carry no `HasMaxLength` and are unbounded
+  `text`/`TEXT` in both model snapshots (DESIGN F-6). The `@adapter-integration` long-credential
+  scenario is what turns that reading into evidence.
+- **OQ-4 is owed before this slice closes, and it is a measurement rather than a behaviour**, so it
+  gets no Gherkin scenario. **Owed**: the count of true legacy-plaintext rows in
+  `WorkTrackingSystemConnectionOption.Value`. **Environment it must be taken in**: the development
+  instance on `:5169`, restored from a real backup — seeded demo rows cannot answer it.
+  `OAuthCredential` has been encrypted since ADR-008, so those two columns are not part of the count.
+  If the count is zero the residual ADR-147 documents (a CBC-shaped plaintext token reported
+  unreadable) is academic; if it is not, the release note says so and the affected operators re-enter
+  one token each.
+- **The `:5169` restored instance** is also the only honest substrate for the legacy-blob scenario —
+  the slice's learning hypothesis is disproved if any real stored blob turns out to be ambiguous
+  between the two forms.
+- **KPI-4 already has its instrument**: `Wave: DESIGN / [REF] Architectural Enforcement` names "gold
+  test: a corrupted envelope raises; a tampered tag raises; a wrong key raises" and says KPI-4 *is*
+  that test. It is scenarios 5, 6 and 7 below. No separate `@kpi` scenario is authored.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags)
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 1 | Administrator saves a credential, uses it, and is told plainly when it stops being readable | walking-skeleton | `@walking_skeleton @real-io @driving_adapter @us-01 @us-07` |
+| 2 | A newly saved secret is stored in the current format and reads back unchanged | milestone-1 | `@real-io @driving_port @us-01 @us-07` |
+| 3 | A secret saved before this change is still read correctly, no migration, no user action | milestone-1 | `@real-io @driving_port @us-01 @upgrade-from-pre-epic` |
+| 4 | A never-encrypted value is recognised as such, by inspection | milestone-1 | `@edge @us-01 @upgrade-from-pre-epic` |
+| 5 | A stored secret whose proof of integrity does not verify is refused | milestone-1 | `@error @us-01` |
+| 6 | A single altered byte fails to be read rather than producing an altered credential | milestone-1 | `@error @us-01` |
+| 7 | A stored secret relabelled with another key's name is refused rather than believed | milestone-1 | `@error @us-01` |
+| 8 | Saving again does not protect an already-protected secret a second time | milestone-1 | `@edge @us-01` |
+| 9 | A previous-form secret can never be mistaken for the current one | milestone-1 | `@property @edge @us-01` |
+| 10 | Two secrets holding the same credential are never stored identically | milestone-1 | `@property @edge @us-01` |
+| 11 | An unusually long credential survives a real save and read on both providers | milestone-1 | `@real-io @adapter-integration @us-01` |
+| 12 | An unreadable secret is shown on the field that holds it | milestone-2 | `@real-io @driving_adapter @us-01` |
+| 13 | A connection whose secrets all read shows no unreadable state anywhere | milestone-2 | `@regression @us-01` |
+| 14 | No work tracking system is handed a credential the instance could not read (4 credential styles) | milestone-2 | `@error @real-io @us-01` |
+| 15 | A token refresh stops rather than sending an unreadable refresh token | milestone-2 | `@error @real-io @us-01` |
+| 16 | Reported once per secret, not once per attempt | milestone-2 | `@error @us-01` |
+| 17 | Nothing about the secret or the key is written down when the failure is reported | milestone-2 | `@error @us-01` |
+| 18 | Validating a connection reports a key problem, not a rejected credential | milestone-2 | `@error @driving_adapter @us-01` |
+| 19 | The refresh record for an unreadable credential names the connection and the field | milestone-3 | `@error @real-io @driving_port @us-01` |
+| 20 | The record says the credential could not be read, not that it was refused | milestone-3 | `@error @driving_port @us-01` |
+| 21 | A Portfolio refresh names its unreadable credential the same way a Team refresh does | milestone-3 | `@error @driving_port @us-01` |
+| 22 | No call is made to the work tracking system with a credential that could not be read | milestone-3 | `@error @driving_port @us-01` |
+| 23 | A refresh whose credentials all read still succeeds and says nothing about encryption | milestone-3 | `@regression @us-01` |
+| 23a | A refresh failing for an unrelated reason still reads as it does today | milestone-3 | `@regression @us-01` |
+| 24 | Someone pasting a credential is told, once on the form, what happens to it | milestone-4 | `@driving_adapter @us-08` |
+| 25 | A form asking for no credential shows no notice | milestone-4 | `@edge @us-08` |
+| 26 | A form asking for several credentials still shows exactly one notice | milestone-4 | `@edge @us-08` |
+| 27 | The same notice serves every kind of connection | milestone-4 | `@edge @us-08` |
+| 28 | Reopening a saved connection leaves the credential field blank | milestone-4 | `@regression @us-08` |
+| 29 | The notice never ships with a link that goes nowhere | milestone-4 | `@edge @us-08` |
+| 30 | The notice answers a question rather than raising an alarm | milestone-4 | `@edge @us-08` |
+
+Every scenario also carries `@slice-01`. Scenario 14 is a `Scenario Outline` over the four credential
+styles the four auth strategies cover; it counts as one scenario.
+
+**Error / edge / regression coverage = 25 of 31 (81%)**, against the ≥40% target. That weighting is
+deliberate rather than accidental: this slice is almost entirely about what happens when a read fails,
+so a happy-path-heavy set would be a misread of it. The six happy paths are the walking skeleton, the
+two write/read round trips, the long-credential provider check, the field-level rendering, and the
+notice itself.
+
+**AC traceability**: AC-1.1 → 2 · AC-1.2 → 3, 11 · AC-1.3 → 4 · AC-1.4 → 5, 7 · AC-1.5 → 6 ·
+AC-1.6 → 1, 12, 13 · AC-1.7 → 1, 14, 15 · AC-1.8 → 16 · AC-1.9 → 17 · AC-8.1 → 24, 26 · AC-8.2 → 25 ·
+AC-8.3 → 27 · AC-8.4 → 28 · AC-8.5 → 29 · AC-8.6 → 30 · AC-8.7 → 30. US-07 has no AC of its own and is
+observable only through 1 and 2, exactly as its `infrastructure_rationale` says.
+
+**ADR Earned Trust rows covered**: ADR-146 — tag rejection (6), key-id binding (7), legacy
+disjointness (9), nonce uniqueness (10), unbounded column (11). ADR-147 — no `catch` in the read path
+(4, structural companion), unreadable never reaches a remote system (14, 15), one log line per secret
+(16), no material in any log (17).
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+**`.feature` files here are specification SSOT documents, not executable tests.** No Gherkin runner
+exists in this repository — no SpecFlow, no Reqnroll, in any `.csproj` — so these files are read by
+humans and translated in DELIVER into NUnit, Vitest and Playwright. The precedent is the direct sibling
+`epic-5427-percentiles-over-time`, whose DISTILL wave committed `.feature` specs plus `[REF]` sections
+and authored the executable tests per slice in DELIVER. For the same reason **no `src/` RED scaffolds
+are written**: the backend builds with `TreatWarningsAsErrors`, a NUnit test referencing a
+not-yet-existent type fails to compile, and `dotnet build` red is BROKEN rather than RED. The project's
+established RED mechanism is RED-by-skip — `[Ignore("pending — DELIVER")]` authored in DELIVER
+alongside the minimal type skeletons, un-ignored one scenario at a time.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5775-secret-encryption-key-custody/acceptance/*.feature` | `epic-5427` / `api-keys-for-all-users` acceptance dirs |
+| Envelope + classifier unit | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/{SecretEnvelope,SecretStateClassifier}Tests.cs` | `Services/Implementation/OAuth/` test layout |
+| Crypto service unit (incl. the once-per-secret de-duplication) | `Lighthouse.Backend.Tests/Services/Implementation/CryptoServiceTests.cs` | existing file, extended |
+| Auth strategy gold tests (scenario 14) | `Lighthouse.Backend.Tests/WorkTrackingConnectors/Auth/*StrategyTests.cs` | existing files, one case each |
+| OAuth refresh gold test (scenario 15) | `Lighthouse.Backend.Tests/Services/Implementation/OAuth/OAuthServiceTests.cs` | existing file, extended |
+| Update-pipeline failure path (scenarios 19-23) | `Lighthouse.Backend.Tests/Services/Implementation/Update/UpdateServiceBaseTests.cs` + queue tests | existing files, extended |
+| Connection read model + validation (scenarios 12, 13, 18) | `Lighthouse.Backend.Tests/API/Integration/…` with `WebApplicationFactory` | `S2_ConnectionListPayloadShapeTests` |
+| Provider round trip (scenario 11) | `Lighthouse.Backend.Tests/…/Integration/Containers/` | `BlockedCountSnapshotMigrationTests` |
+| Notice + field state (scenarios 12, 24-30) | `Lighthouse.Frontend/src/…/WorkTrackingSystems/**/*.test.tsx` | existing colocated Vitest tests |
+| Walking skeleton (scenario 1) | `Lighthouse.EndToEndTests/tests/specs/…` through a Page Object Model | `AgingPacePercentiles.spec.ts` |
+
+Structural rules from `Wave: DESIGN / [REF] Architectural Enforcement` that belong to this slice — no
+`catch` in the read path, `CryptoService` may not depend on `IConfiguration`, no auth strategy may
+depend on the unreadable-secret type — are ArchUnitNET and source-structure tests in
+`Lighthouse.Backend.Tests/Architecture/`. They are enforcement, not scenarios, and are listed here so
+DELIVER does not have to rediscover them.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter (DESIGN, slice 01) | Exercised via its protocol by |
+|---|---|
+| Connection detail UI — the field carrying the unreadable state | Scenarios 1 (Playwright, real UI through a POM) and 12 (Vitest rendering) |
+| Connection form — the secret-handling notice | Scenarios 24-30 (Vitest, the real form component) |
+| `GET /worktrackingsystemconnections` — the read model gaining `secretState` | Scenarios 12, 13 (`WebApplicationFactory`, real HTTP) |
+| Connection validation action | Scenario 18 (`WebApplicationFactory`, real HTTP) |
+| Periodic update pipeline (the entry an operator never invokes by hand) | Scenarios 19, 20, 22, 23 |
+| Update status pushed to the browser | Scenario 21 |
+
+Zero uncovered entry points. Slice 01 adds no new route, so the DESIGN table's four new encryption
+routes are correctly absent here — they belong to slices 02-04.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `AesGcm` write/read path | YES | Scenarios 2, 5, 6, 7 |
+| Legacy `Aes` CBC read-only path | YES | Scenarios 3, 4, 9 |
+| Secret persistence via `LighthouseAppContext` (SQLite) | YES | Scenarios 2, 8, 11 |
+| Secret persistence via `LighthouseAppContext` (Npgsql) | YES | Scenario 11 |
+| The four work tracking system auth strategies | YES | Scenario 14 (one example per style, real request construction) |
+| OAuth token refresh path | YES | Scenario 15 |
+| Update queue + SignalR status notification | YES | Scenarios 19-23 |
+
+Zero "NO — MISSING" rows. The three key-ring source adapters (`GeneratedKeyRingStore`,
+`ConfiguredKeyRingSource`, `MountedFileKeyRingSource`) carry no row because they arrive in slices 02
+and 05; the ring in slice 01 holds one configured key.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage
+
+Against `environments.yaml`. Slice 01 is custody-agnostic by construction — the ring holds exactly one
+key and nothing reads configuration — so most of the custody matrix is genuinely not exercised here
+rather than skipped.
+
+| Environment | Slice-01 coverage | Note |
+|---|---|---|
+| `standalone-exe` | Indirect | Behaviour is identical to every other custody mode in this slice; no scenario parametrises over it |
+| `docker-with-data-volume` | Indirect | Same. The volume question is slice 02's |
+| `docker-no-data-volume` | **Not exercised** | Refuse-to-mint is slice 02. Nothing here mints |
+| `k8s-explicit-key` | **Not exercised** | Slice 05 |
+| `k8s-existing-secret` | **Not exercised** | Slice 05 |
+| `upgrade-from-pre-epic` | **Exercised** | Scenarios 3 and 4 carry the tag. This is the only custody environment slice 01 genuinely distinguishes, and the only one whose failure would disprove the slice's hypothesis |
+| Database providers (SQLite, PostgreSQL) | **Exercised** | Scenario 11 parametrises over both, which is what turns "the columns are unbounded" from a model reading into evidence |
+| `:5169` restored from a real backup | **Required, manual** | The legacy-blob evidence and the OQ-4 count. Not a CI substrate; it is the slice's dogfood moment |
+| `ci-chart`, `kind-install-smoke`, `tenant-zero` | **Not exercised** | Chart substrates, slice 05 |
+
+The DEVOPS handoff asks DISTILL to parametrise the application-side tests over
+`docker-with-data-volume` and `docker-no-data-volume`. That instruction is correct and belongs to
+**slice 02**, where minting first exists — parametrising slice 01 over it would produce two identical
+runs. Recorded here so it is picked up rather than lost.
+
+---
+
+## Wave: DISTILL / [REF] Changed Assumptions
+
+One, and it is the reason milestone 3 exists.
+
+**ADR-147's account of what happens on a background refresh is confirmed in part and narrowed in part
+by OQ-5 (answered 2026-08-15).**
+
+> ADR-147, *Decision*: "The six consumers change by zero lines. They keep calling `Decrypt`. The
+> exception travels the failure path each of them already has — `ValidateConnection` turns it into a
+> `ConnectionValidationResult`, a background refresh turns it into the refresh-log entry the update
+> surface already renders."
+
+**Confirmed.** The four auth strategies, the GraphQL client factory and the OAuth service do change by
+zero lines; `ValidateConnection` does have the path described; and the background refresh does produce
+the refresh-log entry claimed. Both updaters wrap their work in `try`/`finally` rather than
+`try`/`catch`, so the `finally` runs before the exception propagates: a failed refresh already persists
+a refresh-log row marked unsuccessful, already emits its summary line, and that record is already
+served to the operator through the system-information surface.
+
+**Narrowed.** After that `finally`, the exception reaches `UpdateServiceBase.TriggerUpdate`'s own
+`catch (Exception)`, which logs one line and swallows. The enqueued lambda therefore returns normally,
+`UpdateQueueService.ExecuteUpdateAsync` records the run as `Completed`, and the browser is told over
+SignalR that the refresh succeeded. `UpdateProgress.Failed` exists in the enum and is unreachable from
+any periodic refresh. So the *record* is honest and the *live status* is not, and they disagree.
+
+That disagreement is **not credential-specific** — a work tracking system outage produces exactly the
+same split — so fixing it for unreadable secrets alone would make the status honest about one failure
+kind and dishonest about every other. It is recorded as a pre-existing defect in its own right, owed an
+ADO Bug, and is deliberately out of this slice.
+
+**Slice 01 therefore owes the wording, not the path**, and milestone 3 specifies it: the refresh record
+names the Connection and the field, says the stored credential could not be read rather than reading as
+a rejected credential, does the same for a Portfolio as for a Team, and attempts no work-tracking-system
+call with a credential it could not read. Scenarios 23 and 23a guard against over-reach — a refresh
+whose credentials all read still succeeds and says nothing about encryption, and a refresh failing for
+an unrelated reason still reads as it does today.
+
+**A gap, not a contradiction**: `Wave: DESIGN / [REF] Component Decomposition` names a component for
+every slice-01 surface except the US-08 notice — the Connection-detail secret field is there, the
+notice is not. DELIVER names one when it lands; nothing in DESIGN argues against it, and AC-8.1 through
+AC-8.7 fully specify its behaviour.
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To `nw-software-crafter` (DELIVER)**: five `.feature` files in
+`docs/feature/epic-5775-secret-encryption-key-custody/acceptance/`, 31 scenarios, slice 01 only.
+Suggested order, which is also the commit order:
+
+1. **US-07 precursor** — the envelope reader/writer and the one-key ring. Observable only through
+   scenarios 2, 5, 6, 7, 9, 10. No user-visible behaviour; ships first inside the slice, never as a
+   slice.
+2. **Milestone 1** — the write path, the three recognised stored forms, and the deletion of the
+   `catch (CryptographicException | FormatException) → return cipherText` fallback. This is the point
+   of the slice; everything else is how the failure surfaces.
+3. **Milestone 2** — the read model's `secretState`, the field-level rendering, and the six gold tests
+   that keep an unreadable credential inside the instance.
+4. **Milestone 3** — the update-pipeline failure path. Do not skip it because the reported symptom is
+   already fixed by milestone 2; this is the half nobody has reported yet.
+5. **Milestone 4** — the notice. Independent of the other four and the cheapest thing in the slice.
+6. **The walking skeleton** last, once the backbone underneath it exists.
+
+Per-slice discipline as usual: `[Ignore("pending — DELIVER (epic-5775 slice 01)")]` on the scenarios
+not yet reached, un-ignore one at a time, never push red, run Playwright locally before committing the
+spec or the POM. Per-feature Stryker ≥ 80% on the changed backend surface at slice end — DEVOPS already
+records that a surviving mutant on the crypto surface is a real hole rather than a metric.
+
+**Owed before the slice closes**: the OQ-4 count from the `:5169` restored backup, and the dogfood
+described in `slices/slice-01-authenticated-envelope.md` — point a dev build at that database, confirm
+every existing Connection still syncs, corrupt one stored byte, and watch the Connection say so instead
+of the work tracking system returning a 401.
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered (Gherkin phrasings weighed and rejected) · fixture design discussion for the corrupted-value
+and legacy-blob fixtures · full edge-case enumeration for the four stored-secret states · error-path
+rationale per `@error` scenario · tagging cookbook · property-based testing notes for scenarios 9 and
+10 · domain-language fact-to-step table.
