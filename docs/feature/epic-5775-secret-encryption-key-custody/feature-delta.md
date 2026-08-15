@@ -2355,6 +2355,25 @@ interface fully qualified and is invisible to a grep phrased against the short n
 only as a compile error. Harvested into `docs/ci-learnings.md` as a rule about grepping both spellings
 and both projects before widening any cross-cutting contract.
 
+**Restoring a backup taken before a rotation costs the operator their credentials — accepted, 2026-08-15.**
+Lighthouse's own backup writes the database dump and a manifest carrying provider, creation time and
+versions. It contains no key and no key id, and restore never looks at one. So a backup taken under one
+key, restored after the key was rotated and the old one dropped, yields a database whose every secret
+names a key the ring no longer holds: all of them classify unreadable, and the restore itself reports
+success while doing it.
+
+Note this slice **improves** that path rather than causing it. Before, the same restore handed
+ciphertext to a work tracking system as though it were a password, so the failure arrived as "invalid
+credentials" and sent the operator after the wrong problem. It now says the credential cannot be read.
+
+The maintainer's decision is to accept it: re-entering credentials after restoring across a rotation is
+a fair cost on a rare path, and the general fix belongs to Story #5019 — a warning when **any**
+connection's authentication breaks, not only OAuth — rather than to a restore-specific mechanism. One
+notification path for every way a credential stops working is the better shape than a special case for
+one of them. Considered and deliberately not built: recording the distinct key ids in the backup
+manifest so restore could warn before overwriting anything, and putting the key ring inside the archive,
+which would make every backup a key-exfiltration target protected only by the operator's password.
+
 **`SecretEnvelope.Unprotect` has no production caller left.** After step 01-07 the only callers are
 `TryUnprotect` and two assertions in `SecretEnvelopeTests`. Making it private is the tidier end state
 and costs one visibility change plus rehoming those two call sites; it is deliberately not done inside
