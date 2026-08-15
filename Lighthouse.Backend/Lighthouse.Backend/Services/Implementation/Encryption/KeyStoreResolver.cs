@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private const string DirectoryNameBesideTheDatabase = "keys";
 
+        private const string InMemoryDataSource = ":memory:";
+
         private static readonly char[] PathSeparators = ['/', '\\'];
 
         public static KeyStoreLocation Resolve(
@@ -45,7 +47,8 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 return new KeyStoreLocation(dataProtectionKeyStorePath, KeyStoreCase.ConfiguredDataProtectionPath);
             }
 
-            var databaseDirectory = DirectoryHoldingTheDatabaseFile(databaseProvider, databaseConnectionString);
+            var databaseDirectory = DirectoryHoldingTheDatabaseFile(
+                databaseProvider, databaseConnectionString, contentRootPath);
 
             return databaseDirectory is null
                 ? new KeyStoreLocation(
@@ -56,10 +59,12 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                     KeyStoreCase.BesideTheDatabaseFile);
         }
 
-        // Null whenever the deployment has no database file to sit beside: anything that is not SQLite, an
-        // in-memory database, and a bare filename, which is what the shipped configuration contains and
-        // which says nothing about where the file will actually be written.
-        private static string? DirectoryHoldingTheDatabaseFile(string? databaseProvider, string? databaseConnectionString)
+        // Null whenever the deployment has no database file to sit beside at all: anything that is not
+        // SQLite, and an in-memory database.
+        private static string? DirectoryHoldingTheDatabaseFile(
+            string? databaseProvider,
+            string? databaseConnectionString,
+            string contentRootPath)
         {
             if (!string.Equals(databaseProvider, SqliteProvider, StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(databaseConnectionString))
@@ -71,12 +76,31 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             // application never opens.
             var dataSource = new SqliteConnectionStringBuilder(databaseConnectionString).DataSource;
 
-            return IsAbsolute(dataSource) ? ParentDirectoryOf(dataSource) : null;
+            if (string.IsNullOrWhiteSpace(dataSource) || IsHeldInMemory(dataSource))
+            {
+                return null;
+            }
+
+            // A path that names no directory is written wherever the application runs from, which for a
+            // container is a filesystem that dies with the container. A key beside such a database is exactly
+            // as short-lived as the database, so destroying one destroys the other and no secret is ever left
+            // behind unreadable - which is the only thing keeping the key elsewhere would protect against.
+            var databaseFilePath = IsAbsolute(dataSource)
+                ? dataSource
+                : Path.Combine(contentRootPath, dataSource);
+
+            return ParentDirectoryOf(databaseFilePath);
+        }
+
+        private static bool IsHeldInMemory(string dataSource)
+        {
+            return string.Equals(dataSource, InMemoryDataSource, StringComparison.OrdinalIgnoreCase);
         }
 
         // Both path conventions are recognised by reading the text rather than by asking the operating
         // system, which only knows its own. Asking would let one configuration resolve differently on two
-        // machines, and the answer it would fall back to is the one where Lighthouse creates no key at all.
+        // machines: a Windows path read on Linux is not recognised as absolute, so it would be joined onto
+        // the content root and the key would land beside a database that is not there.
         private static bool IsAbsolute(string dataSource)
         {
             return dataSource.StartsWith('/')

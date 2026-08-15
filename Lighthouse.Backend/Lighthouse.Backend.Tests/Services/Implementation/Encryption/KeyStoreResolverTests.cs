@@ -10,8 +10,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
         private const string ContentRoot = "/srv/lighthouse";
 
-        // The connection string appsettings.json actually ships. It names no directory, so it is the input
-        // that must land in the case where Lighthouse will not create a key it cannot promise to keep.
+        // The connection string appsettings.json actually ships, and the whole of what a first-ever
+        // `docker run` with no environment supplies.
         private const string ShippedConnectionString = "Data Source=LighthouseAppContext.db";
 
         private const string MountedVolumeDatabase = "/app/Data/LighthouseAppContext.db";
@@ -66,16 +66,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        // A first-ever `docker run` with no environment at all. The database will be written under the
+        // content root, and a key beside it is exactly as ephemeral as that database: destroying the
+        // container takes both, so the next run is a genuine fresh install with nothing left to orphan.
         [Test]
-        public void Resolve_SqliteDatabaseNamedByABareFileName_ResolvesToTheDefaultLocationAndRefusesMinting()
+        public void Resolve_TheShippedRelativeConnectionStringAlone_ResolvesBesideThatDatabaseUnderTheContentRoot()
         {
             var location = Resolve(databaseConnectionString: ShippedConnectionString);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(location.Directory, Is.EqualTo(DefaultLocation));
-                Assert.That(location.Case, Is.EqualTo(KeyStoreCase.DefaultLocationNoDurableStore));
-                Assert.That(location.MintingIsPermitted, Is.False);
+                Assert.That(location.Directory, Is.EqualTo(Path.Combine(ContentRoot, KeysDirectoryName)));
+                Assert.That(location.Case, Is.EqualTo(KeyStoreCase.BesideTheDatabaseFile));
+                Assert.That(location.MintingIsPermitted, Is.True);
+            }
+        }
+
+        [TestCase("Data/LighthouseAppContext.db", "Data")]
+        [TestCase(@"Data\LighthouseAppContext.db", "Data")]
+        public void Resolve_ARelativeDatabasePathInEitherConvention_ResolvesAgainstTheContentRoot(
+            string databasePath, string expectedRelativeDirectory)
+        {
+            var location = Resolve(databaseConnectionString: $"Data Source={databasePath}");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    location.Directory,
+                    Is.EqualTo(Path.Combine(ContentRoot, expectedRelativeDirectory, KeysDirectoryName)));
+                Assert.That(location.Case, Is.EqualTo(KeyStoreCase.BesideTheDatabaseFile));
+                Assert.That(location.MintingIsPermitted, Is.True);
             }
         }
 
