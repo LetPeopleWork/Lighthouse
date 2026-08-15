@@ -22,6 +22,7 @@ import {
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import ModifyConnectionSettings from "./ModifyConnectionSettings";
+import { SECRET_HANDLING_NOTICE_TEST_ID } from "./SecretHandlingNotice";
 
 const createLicensingService = (
 	canUsePremiumFeatures: boolean,
@@ -847,6 +848,158 @@ describe("ModifyConnectionSettings", () => {
 				);
 			});
 			expect(screen.queryByText(unreadableMessage)).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Secret-handling notice", () => {
+		const systemWithTwoCredentials = new WorkTrackingSystemConnection({
+			id: 0,
+			name: "Jira",
+			workTrackingSystem: "Jira",
+			options: [],
+			availableAuthenticationMethods: [
+				{
+					key: "jira.cloud",
+					displayName: "Jira Cloud",
+					options: [
+						{
+							key: "ApiToken",
+							displayName: "API Token",
+							isSecret: true,
+							isOptional: false,
+						},
+						{
+							key: "WebhookSecret",
+							displayName: "Webhook Secret",
+							isSecret: true,
+							isOptional: false,
+						},
+					],
+				},
+			],
+			additionalFieldDefinitions: [],
+			authenticationMethodKey: "jira.cloud",
+		});
+
+		const systemWithoutCredentials = new WorkTrackingSystemConnection({
+			id: 0,
+			name: "Azure DevOps",
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			availableAuthenticationMethods: [
+				{
+					key: "ado.anonymous",
+					displayName: "No Credential",
+					options: [
+						{
+							key: "Organization Url",
+							displayName: "Organization URL",
+							isSecret: false,
+							isOptional: false,
+						},
+					],
+				},
+			],
+			additionalFieldDefinitions: [],
+			authenticationMethodKey: "ado.anonymous",
+		});
+
+		const savedConnectionCarryingItsCredential =
+			new WorkTrackingSystemConnection({
+				id: 7,
+				name: "My Existing Connection",
+				workTrackingSystem: "AzureDevOps",
+				options: [
+					{
+						key: "AccessToken",
+						value: "a-token-somebody-pasted",
+						isSecret: true,
+						isOptional: false,
+					},
+				],
+				availableAuthenticationMethods:
+					mockSystem.availableAuthenticationMethods,
+				additionalFieldDefinitions: [],
+				authenticationMethodKey: "ado.pat",
+			});
+
+		const renderFormFor = (system: WorkTrackingSystemConnection) =>
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([system]),
+			});
+
+		it("shows one notice on a form that asks for a credential", async () => {
+			renderFormFor(mockSystem);
+
+			await waitFor(() => {
+				expect(
+					screen.getAllByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+				).toHaveLength(1);
+			});
+		});
+
+		it("shows no notice on a form that asks for no credential", async () => {
+			renderFormFor(systemWithoutCredentials);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows exactly one notice on a form asking for several credentials", async () => {
+			renderFormFor(systemWithTwoCredentials);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("API Token")).toBeInTheDocument();
+			});
+			expect(screen.getByLabelText("Webhook Secret")).toBeInTheDocument();
+			expect(
+				screen.getAllByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).toHaveLength(1);
+		});
+
+		it("shows the same notice word for word for every work tracking system", async () => {
+			const wording: string[] = [];
+
+			for (const system of [
+				mockSystem,
+				mockJiraSystem,
+				systemWithTwoCredentials,
+			]) {
+				const { unmount } = renderFormFor(system);
+				await waitFor(() => {
+					expect(
+						screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+					).toBeInTheDocument();
+				});
+				wording.push(
+					screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID).textContent ?? "",
+				);
+				unmount();
+			}
+
+			expect(wording).toHaveLength(3);
+			expect(new Set(wording).size).toBe(1);
+			expect(wording[0]).not.toBe("");
+		});
+
+		it("leaves the credential field blank when a saved connection is reopened", async () => {
+			renderComponent({
+				getSupportedSystems: vi.fn().mockResolvedValue([mockSystem]),
+				getConnectionSettings: vi
+					.fn()
+					.mockResolvedValue(savedConnectionCarryingItsCredential),
+			});
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
+			});
+			expect(
+				screen.getByLabelText<HTMLInputElement>("Access Token").value,
+			).toBe("");
 		});
 	});
 });

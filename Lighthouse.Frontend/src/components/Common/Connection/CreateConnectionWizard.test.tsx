@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +21,7 @@ import {
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import CreateConnectionWizard from "./CreateConnectionWizard";
+import { SECRET_HANDLING_NOTICE_TEST_ID } from "./SecretHandlingNotice";
 
 vi.mock("../../../pages/Settings/Connections/AdditionalFieldsEditor", () => ({
 	default: () => <div data-testid="additional-fields-editor" />,
@@ -1201,6 +1202,161 @@ describe("CreateConnectionWizard", () => {
 			expect(
 				screen.queryByRole("button", { name: /^Validate$/i }),
 			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Secret-handling notice", () => {
+		const systemWithTwoCredentials = new WorkTrackingSystemConnection({
+			id: 0,
+			name: "Jira",
+			workTrackingSystem: "Jira",
+			options: [],
+			availableAuthenticationMethods: [
+				{
+					key: "jira.cloud",
+					displayName: "Jira Cloud",
+					options: [
+						{
+							key: "ApiToken",
+							displayName: "API Token",
+							isSecret: true,
+							isOptional: false,
+						},
+						{
+							key: "WebhookSecret",
+							displayName: "Webhook Secret",
+							isSecret: true,
+							isOptional: false,
+						},
+					],
+				},
+			],
+			additionalFieldDefinitions: [],
+			authenticationMethodKey: "jira.cloud",
+		});
+
+		const systemWithoutCredentials = new WorkTrackingSystemConnection({
+			id: 0,
+			name: "Azure DevOps",
+			workTrackingSystem: "AzureDevOps",
+			options: [],
+			availableAuthenticationMethods: [
+				{
+					key: "ado.anonymous",
+					displayName: "No Credential",
+					options: [
+						{
+							key: "Url",
+							displayName: "Organization URL",
+							isSecret: false,
+							isOptional: false,
+						},
+					],
+				},
+			],
+			additionalFieldDefinitions: [],
+			authenticationMethodKey: "ado.anonymous",
+		});
+
+		const openConfigurationStepFor = async (
+			system: WorkTrackingSystemConnection,
+			firstFieldLabel: string,
+		) => {
+			const user = userEvent.setup();
+			const mocks = renderWizard({ supportedSystems: [system] });
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: system.name }),
+				).toBeInTheDocument();
+			});
+			await user.click(screen.getByRole("button", { name: system.name }));
+			await waitFor(() => {
+				expect(screen.getByLabelText(firstFieldLabel)).toBeInTheDocument();
+			});
+			return { user, ...mocks };
+		};
+
+		it("shows no notice before the wizard asks for anything", async () => {
+			renderWizard();
+
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: /Azure DevOps/i }),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows one notice on the step that asks for a credential", async () => {
+			await openConfigurationStepFor(mockAdoSystem, "Access Token");
+
+			expect(
+				screen.getAllByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).toHaveLength(1);
+		});
+
+		it("shows no notice on a step that asks for no credential", async () => {
+			await openConfigurationStepFor(
+				systemWithoutCredentials,
+				"Organization URL",
+			);
+
+			expect(
+				screen.queryByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows exactly one notice on a step asking for several credentials", async () => {
+			await openConfigurationStepFor(systemWithTwoCredentials, "API Token");
+
+			expect(screen.getByLabelText("Webhook Secret")).toBeInTheDocument();
+			expect(
+				screen.getAllByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).toHaveLength(1);
+		});
+
+		it("stops showing the notice once the wizard stops asking for a credential", async () => {
+			const { user } = await openConfigurationStepFor(
+				mockAdoSystem,
+				"Access Token",
+			);
+			await user.type(
+				screen.getByLabelText("Organization URL"),
+				"https://dev.azure.com/acme",
+			);
+			await user.type(screen.getByLabelText("Access Token"), "a-token");
+
+			await user.click(screen.getByRole("button", { name: /^Next$/i }));
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Connection Name")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+			).not.toBeInTheDocument();
+		});
+
+		it("shows the same notice word for word for every work tracking system", async () => {
+			const wording: string[] = [];
+
+			for (const [system, firstFieldLabel] of [
+				[mockAdoSystem, "Access Token"],
+				[mockJiraSystem, "API Token"],
+				[mockLinearSystem, "API Key"],
+				[systemWithTwoCredentials, "API Token"],
+			] as const) {
+				await openConfigurationStepFor(system, firstFieldLabel);
+				wording.push(
+					screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID).textContent ?? "",
+				);
+				cleanup();
+			}
+
+			expect(wording).toHaveLength(4);
+			expect(new Set(wording).size).toBe(1);
+			expect(wording[0]).not.toBe("");
 		});
 	});
 });

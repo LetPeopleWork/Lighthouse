@@ -37,6 +37,9 @@ import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
+import SecretHandlingNotice, {
+	containsSecretField,
+} from "./SecretHandlingNotice";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
 
@@ -237,7 +240,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					for (const option of existingConnection.options) {
 						const mappedOption: IWorkTrackingSystemOption = {
 							key: option.key,
-							value: option.value,
+							value: option.isSecret ? "" : option.value,
 							isSecret: option.isSecret,
 							isOptional: option.isOptional,
 							secretState: option.secretState,
@@ -464,6 +467,19 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		}
 	};
 
+	const usesOAuth = isOAuthMethod(selectedAuthMethod);
+	const showAuthFields =
+		showAuthSection &&
+		(!usesOAuth || canUsePremiumFeatures) &&
+		authOptions.length > 0;
+	const showOAuthUpgradeNotice =
+		showAuthSection && usesOAuth && !canUsePremiumFeatures;
+	const showOAuthConnectForm =
+		showAuthSection && usesOAuth && canUsePremiumFeatures;
+	const showSecretHandlingNotice = containsSecretField(
+		showAuthFields ? allOptions : otherOptions,
+	);
+
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
@@ -540,95 +556,95 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						</Grid>
 					)}
 
-					{showAuthSection &&
-						isOAuthMethod(selectedAuthMethod) &&
-						!canUsePremiumFeatures && (
-							<Grid size={{ xs: 12 }}>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									sx={{ mb: 1 }}
-								>
-									Authentication
-								</Typography>
-								<Alert
-									severity="info"
-									data-testid="oauth-premium-upgrade-affordance"
-								>
-									<Typography variant="body2">
-										OAuth 2.0 authentication is a Premium feature. Upgrade to
-										Premium to connect via OAuth.{" "}
-										<Link component={RouterLink} to="/settings/license">
-											View license options
-										</Link>
-									</Typography>
-								</Alert>
-							</Grid>
-						)}
+					{showSecretHandlingNotice && (
+						<Grid size={{ xs: 12 }}>
+							<SecretHandlingNotice />
+						</Grid>
+					)}
 
-					{showAuthSection &&
-						(!isOAuthMethod(selectedAuthMethod) || canUsePremiumFeatures) &&
-						authOptions.length > 0 && (
-							<Grid size={{ xs: 12 }}>
-								<Typography
-									variant="subtitle2"
-									color="text.secondary"
-									sx={{ mb: 1 }}
-								>
-									Authentication
+					{showOAuthUpgradeNotice && (
+						<Grid size={{ xs: 12 }}>
+							<Typography
+								variant="subtitle2"
+								color="text.secondary"
+								sx={{ mb: 1 }}
+							>
+								Authentication
+							</Typography>
+							<Alert
+								severity="info"
+								data-testid="oauth-premium-upgrade-affordance"
+							>
+								<Typography variant="body2">
+									OAuth 2.0 authentication is a Premium feature. Upgrade to
+									Premium to connect via OAuth.{" "}
+									<Link component={RouterLink} to="/settings/license">
+										View license options
+									</Link>
 								</Typography>
-								<Grid container spacing={2}>
-									{authOptions.map((option) => {
-										const displayName =
-											selectedAuthMethod?.options.find(
-												(o) => o.key === option.key,
-											)?.displayName ?? option.key;
-										const lockOAuthField =
-											isEditMode && isOAuthMethod(selectedAuthMethod);
-										return (
-											<Grid size={{ xs: 12, md: 6 }} key={option.key}>
-												<TextField
-													label={displayName}
-													type={option.isSecret ? "password" : "text"}
-													fullWidth
-													value={option.value}
-													placeholder={
-														isEditMode && option.isSecret && option.value === ""
-															? "Leave empty to keep existing value"
-															: ""
-													}
-													slotProps={
-														lockOAuthField
-															? { input: { readOnly: true } }
-															: undefined
-													}
-													error={secretCannotBeRead(option)}
-													helperText={resolveAuthOptionHelperText(
-														option,
-														lockOAuthField,
-													)}
-													onChange={(e) =>
-														handleAuthOptionChange(option, e.target.value)
-													}
-												/>
-											</Grid>
-										);
-									})}
-								</Grid>
-							</Grid>
-						)}
+							</Alert>
+						</Grid>
+					)}
 
-					{showAuthSection &&
-						isOAuthMethod(selectedAuthMethod) &&
-						canUsePremiumFeatures && (
-							<Grid size={{ xs: 12 }}>
-								<OAuthAuthForm
-									connectionId={selectedWorkTrackingSystem?.id ?? 0}
-									providerKey={selectedAuthMethod?.key ?? ""}
-									baseUrl={baseUrl}
-								/>
+					{showAuthFields && (
+						<Grid size={{ xs: 12 }}>
+							<Typography
+								variant="subtitle2"
+								color="text.secondary"
+								sx={{ mb: 1 }}
+							>
+								Authentication
+							</Typography>
+							<Grid container spacing={2}>
+								{authOptions.map((option) => {
+									const displayName =
+										selectedAuthMethod?.options.find(
+											(o) => o.key === option.key,
+										)?.displayName ?? option.key;
+									const lockOAuthField =
+										isEditMode && isOAuthMethod(selectedAuthMethod);
+									return (
+										<Grid size={{ xs: 12, md: 6 }} key={option.key}>
+											<TextField
+												label={displayName}
+												type={option.isSecret ? "password" : "text"}
+												fullWidth
+												value={option.value}
+												placeholder={
+													isEditMode && option.isSecret && option.value === ""
+														? "Leave empty to keep existing value"
+														: ""
+												}
+												slotProps={
+													lockOAuthField
+														? { input: { readOnly: true } }
+														: undefined
+												}
+												error={secretCannotBeRead(option)}
+												helperText={resolveAuthOptionHelperText(
+													option,
+													lockOAuthField,
+												)}
+												onChange={(e) =>
+													handleAuthOptionChange(option, e.target.value)
+												}
+											/>
+										</Grid>
+									);
+								})}
 							</Grid>
-						)}
+						</Grid>
+					)}
+
+					{showOAuthConnectForm && (
+						<Grid size={{ xs: 12 }}>
+							<OAuthAuthForm
+								connectionId={selectedWorkTrackingSystem?.id ?? 0}
+								providerKey={selectedAuthMethod?.key ?? ""}
+								baseUrl={baseUrl}
+							/>
+						</Grid>
+					)}
 
 					{/* Additional Fields */}
 					<Grid size={{ xs: 12 }}>

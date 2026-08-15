@@ -26,6 +26,9 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
+import SecretHandlingNotice, {
+	containsSecretField,
+} from "./SecretHandlingNotice";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
 
@@ -433,6 +436,11 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		const showOAuthFields = isOAuthSelected && canUsePremiumFeatures;
 		const showOAuthUpgrade = isOAuthSelected && !canUsePremiumFeatures;
 		const showSchemaAuthFields = !isOAuthSelected || showOAuthFields;
+		const showSecretHandlingNotice = containsSecretField(
+			showSchemaAuthFields
+				? [...authOptions, ...requiredOtherOptions]
+				: requiredOtherOptions,
+		);
 
 		return (
 			<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
@@ -466,6 +474,8 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 						</Typography>
 					</Alert>
 				)}
+
+				{showSecretHandlingNotice && <SecretHandlingNotice />}
 
 				{showSchemaAuthFields &&
 					authOptions.map((option) => {
