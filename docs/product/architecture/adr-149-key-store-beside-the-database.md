@@ -162,6 +162,9 @@ one is not available on most clusters, and the answer for Kubernetes is a Secret
   refusal that names both paths, and every non-durable case is a loud, actionable startup line.
 - Postgres and Kubernetes are handled by being told the truth — *this instance is on the shared key* —
   rather than by a location that only looks durable.
+- The simplest possible first run — `docker run` with no environment at all — mints a key beside its own
+  database and says so, which is what US-02 promises. It reaches case 3 after the second amendment;
+  before it, it was a fresh case-4 instance and would have been refused.
 
 **Negative / accepted**
 
@@ -172,7 +175,8 @@ one is not available on most clusters, and the answer for Kubernetes is a Secret
   satisfied for that population by slice 02 alone. The release notes and the panel are what close it.
 - A fresh case-4 install refuses to start, which is a new failure for someone hand-rolling a Postgres
   deployment. Two one-line remedies are in the message, and the chart (ADR-153) always supplies a key,
-  so no chart user meets it.
+  so no chart user meets it. After the second amendment this is the **only** population that meets the
+  refusal: every SQLite deployment, however casually configured, now has a database file to sit beside.
 
 ## Earned Trust — the substrate lies, and the probe exercises the lie
 
