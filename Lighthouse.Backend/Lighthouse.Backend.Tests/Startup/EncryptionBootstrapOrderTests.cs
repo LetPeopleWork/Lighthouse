@@ -27,6 +27,16 @@ namespace Lighthouse.Backend.Tests.Startup
     /// </summary>
     public class EncryptionBootstrapOrderTests
     {
+        private const string AMisspeltProviderName = "postgre";
+
+        private const string TheDatabaseHostName = "db.example.internal";
+
+        // Shaped like a Postgres connection string on purpose. SQLite's parser rejects a Host keyword
+        // outright, and its complaint about that keyword is what an operator used to be shown in place of
+        // the one thing that was actually wrong: the provider name they misspelt.
+        private const string ADatabaseServerAddressedByHost =
+            $"Host={TheDatabaseHostName};Database=lighthouse;Username=lighthouse";
+
         private const string FixtureRemovedExplanation =
             "A booted test host did not see the fixture encryption key. Every backend integration test " +
             "starts the real application, so all of them depend on this one arrangement in " +
@@ -425,6 +435,31 @@ namespace Lighthouse.Backend.Tests.Startup
             }
         }
 
+        [Test]
+        public void AnInstanceNamingADatabaseProviderNobodyRecognises_RefusesToStartAndSaysWhichNameItWasGiven()
+        {
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => RingResolvedWith(
+                    SupplyingTheDatabase(AMisspeltProviderName, ADatabaseServerAddressedByHost),
+                    AKeyStoreWithNowhereDurableToKeepAKey()));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain(AMisspeltProviderName),
+                    "The refusal does not repeat the provider name it was given, so an operator who typed it " +
+                    "wrong is left comparing what they meant to write against nothing.");
+                Assert.That(refusal.Message, Does.Contain("sqlite"),
+                    "The refusal does not list SQLite among the provider names that are accepted, which is " +
+                    "the one thing that turns it from a complaint into an instruction.");
+                Assert.That(refusal.Message, Does.Contain("postgres"),
+                    "The refusal does not list Postgres among the provider names that are accepted.");
+                Assert.That(refusal.Message, Does.Not.Contain(TheDatabaseHostName),
+                    "The refusal quotes the connection string. That string carries the database password on " +
+                    "most deployments, and startup messages are the part of Lighthouse most likely to be " +
+                    "pasted into a public issue.");
+            }
+        }
+
         private static EncryptionKeyRing RingHeldBy(WebApplicationFactory<Backend.Program> factory)
         {
             return factory.Services.GetRequiredService<IEncryptionKeyRingHolder>().Current;
@@ -542,6 +577,22 @@ namespace Lighthouse.Backend.Tests.Startup
         private KeyStoreLocation ADurableKeyStore()
         {
             return new KeyStoreLocation(ATemporaryDirectory(), KeyStoreCase.ExplicitKeyStorePath);
+        }
+
+        // The one arrangement in which the database is opened at all during startup: nowhere durable to keep
+        // a key means the only remaining question is whether anything is already stored.
+        private KeyStoreLocation AKeyStoreWithNowhereDurableToKeepAKey()
+        {
+            return new KeyStoreLocation(ATemporaryDirectory(), KeyStoreCase.DefaultLocationNoDurableStore);
+        }
+
+        private static Action<IConfigurationBuilder> SupplyingTheDatabase(string provider, string connectionString)
+        {
+            return configuration => configuration.AddCommandLine(
+            [
+                $"--Database:Provider={provider}",
+                $"--Database:ConnectionString={connectionString}",
+            ]);
         }
 
         private string ATemporaryDirectory()

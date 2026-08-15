@@ -393,6 +393,9 @@ namespace Lighthouse.Backend
         private const string EncryptionKeyStorePathConfigKey = "Encryption:KeyStorePath";
         private const string DatabaseProviderConfigKey = "Database:Provider";
         private const string DatabaseConnectionStringConfigKey = "Database:ConnectionString";
+        private const string PostgresqlProviderName = "postgresql";
+        private const string PostgresProviderName = "postgres";
+        private const string SqliteProviderName = "sqlite";
         private const string LegacyKeyStoreDirectoryName = "data-protection-keys";
         private const string OAuthStateSecretProtectorPurpose = "Lighthouse.OAuth.StateSecret.v1";
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
@@ -482,12 +485,28 @@ namespace Lighthouse.Backend
         private static DbConnection DatabaseConnectionFor(WebApplicationBuilder builder)
         {
             var connectionString = builder.Configuration[DatabaseConnectionStringConfigKey] ?? string.Empty;
+            var provider = builder.Configuration[DatabaseProviderConfigKey];
 
-            return builder.Configuration[DatabaseProviderConfigKey]?.ToLowerInvariant() switch
+            // Every name Lighthouse knows is spelled out, and anything else stops startup here. Handing an
+            // unknown name to one of the providers anyway means a misspelt "postgres" is answered with a
+            // complaint about a SQLite keyword, which names neither the setting that is wrong nor the fact
+            // that a setting is wrong at all.
+            return provider?.ToLowerInvariant() switch
             {
-                "postgresql" or "postgres" => new NpgsqlConnection(connectionString),
-                _ => new SqliteConnection(connectionString),
+                PostgresqlProviderName or PostgresProviderName => new NpgsqlConnection(connectionString),
+                SqliteProviderName => new SqliteConnection(connectionString),
+                _ => throw new InvalidOperationException(UnrecognisedDatabaseProvider(provider)),
             };
+        }
+
+        // The connection string is deliberately left out: it carries the database password on most
+        // deployments, and a message printed at startup is the one most likely to be pasted in public.
+        private static string UnrecognisedDatabaseProvider(string? provider)
+        {
+            var given = string.IsNullOrWhiteSpace(provider) ? "not set" : $"set to '{provider}'";
+
+            return $"{DatabaseProviderConfigKey} is {given}. Lighthouse can only use " +
+                $"{PostgresqlProviderName}, {PostgresProviderName} or {SqliteProviderName}.";
         }
 
         // Standalone initialisation writes the database path and the key store path that the resolution
