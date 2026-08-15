@@ -1,6 +1,6 @@
 # Slice 02 — This install's key belongs to this install
 
-**Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story #5024 · **Story**: US-02 · **Estimate**: ~6h
+**Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story #5024, carrying Bug #5776 · **Story**: US-02 · **Estimate**: ~6h
 **Reference class**: `Program.cs:429-486` (`EnsureOAuthStateSecret`) — first-boot generation, Data
 Protection wrapping, and stable resolution across restarts are already solved there and in production.
 This slice applies the same shape to the encryption key. Story #5024 asks for exactly this.
@@ -14,7 +14,13 @@ an instance upgrading from the published default keeps reading every secret it a
 
 - First-boot generation: 32 cryptographically random bytes, wrapped with ASP.NET Data Protection,
   persisted to the existing key-store directory. Resolved identically on every later start.
-- Precedence: an operator-supplied key wins over a generated one, and is reported as such.
+- Precedence: an operator-supplied key wins over a generated one, and is reported as such. **This is
+  where Bug #5776 is fixed** (D7 retired 2026-08-15). Today the documentation advertises one
+  configuration name and `CryptoService` reads another, so the documented override silently does
+  nothing and the operator stays on the published default believing otherwise. The ring parser gives
+  the setting one name across all three transports, and a supplied key that cannot be used stops
+  startup instead of being ignored — AC-2.3, AC-2.8 and AC-2.9 between them. No alias is introduced,
+  so no second name has to be honoured forever.
 - **The literal key is removed from `appsettings.json`** and enters the ring as a retired entry, so an
   upgrading instance reads its existing secrets while writing new ones under its own key.
 - Key source and active key id on the startup log, and on Settings → System reading from the
@@ -64,6 +70,8 @@ AC-2.1 through AC-2.11 in `feature-delta.md`. The three that carry the slice:
 ## Dependencies
 
 - Slice 01 landed: the ring and the envelope exist, and a failed read is a real failure.
+- The documentation change for the configuration name ships with this slice, since the name only
+  becomes true here.
 - `:5169` restored from a real backup, upgraded in place from a pre-epic build. Demo data cannot prove
   AC-2.5, because demo secrets were written by the same build that reads them.
 

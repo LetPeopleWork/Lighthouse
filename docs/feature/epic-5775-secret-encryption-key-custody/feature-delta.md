@@ -3,8 +3,8 @@
 **ADO**: Epic #5775 "Secret Encryption: Unique Keys and Safe Rotation" (New, created 2026-08-14) ·
 child Stories #5777 (slice 01), #5024 (slice 02, re-parented from Epic #5511 during this wave), #5778
 (slice 03), #5779 (slice 04), #5780 (slice 05), #5781 (slice 06) — five created at wave close ·
-related Bug #5776 "Encryption key override does not apply the configured key" (ships independently,
-before the epic) · **Feature type**: cross-cutting (crypto + persistence + bootstrap +
+related Bug #5776 "Encryption key override does not apply the configured key" (absorbed into slice 02
+by D7's retirement, 2026-08-15) · **Feature type**: cross-cutting (crypto + persistence + bootstrap +
 chart + docs) · **Density**: lean · **DISCUSS run**: 2026-08-14
 
 The epic starts from a lost evaluation. A prospect's team looked at Lighthouse, concluded "credentials
@@ -204,9 +204,17 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   one refuses to start. Lighthouse never mints a key it cannot promise to still have tomorrow.
   Consequence, accepted by the maintainer: KPI-1 is not automatically satisfied for a hand-rolled
   Postgres install by slice 02 alone — those operators supply a key or a key-store path explicitly.
-- **[D7] Bug #5776 ships first and separately.** Accepting the documented configuration path is a small
-  change with a live audience — the operators who followed the documentation and believe they are not
-  on the default key. It does not wait for the epic. User decision, 2026-08-14.
+- **[D7] ~~Bug #5776 ships first and separately.~~ Retired 2026-08-15.** The original decision rested
+  entirely on shipping a small fix quickly to a live audience — the operators who followed the
+  documentation and believe they are not on the default key. The maintainer has since decided the fix
+  will not be released on its own, which removes the only thing the separation bought. Bug #5776 is
+  absorbed into slice 02, where AC-2.3 (a supplied key takes precedence and is reported as such),
+  AC-2.8 (startup states the key source) and AC-2.9 (a malformed supplied key stops startup) already
+  cover it with no scope added. Absorbing it also avoids shipping a configuration-name alias that the
+  ring parser would then have to honour permanently: one grammar, one name, introduced once.
+  Consequence, accepted by the maintainer: the exposure described in these artifacts — public on
+  `main` since 2026-08-14 — stays live for the length of the epic rather than a week. D8's advisory
+  timing is unchanged, since it was already pinned to the release. User decision, 2026-08-15.
 - **[D8] Neutral commits, advisory at release.** Commit messages describe the change without narrating
   the exposure. A GitHub Security Advisory and a release-notes entry land when the fixed version is
   available to install, so the people affected learn about it at the same moment they can act on it.
@@ -254,7 +262,7 @@ Oversized signals present (2 or more triggers the gate; four are present):
   protection key store, DbContext save path, every auth strategy, the OAuth refresh path, the chart).
 
 **Split**: six thin slices, each shipping end to end, ordered so the abstraction ships before anything
-depends on it. Bug #5776 lands before slice 01 as an independent precursor. The OpenBao Transit driver
+depends on it. Bug #5776 is carried by slice 02 rather than preceding the epic (D7, retired). The OpenBao Transit driver
 becomes a successor epic rather than a slice.
 
 ---
@@ -285,8 +293,6 @@ data.
 
 ## Wave: DISCUSS / [REF] Pre-requisites
 
-- Bug #5776 landed and released, so the documented configuration path works before slice 02 changes
-  what happens when no key is supplied.
 - No EF migration is required for the envelope. `WorkTrackingSystemConnectionOption.Value`,
   `OAuthCredential.AccessToken` and `.RefreshToken` carry no `HasMaxLength` and are unbounded
   `text`/`TEXT` in both model snapshots, so the column-width migration this section originally assumed
@@ -650,12 +656,11 @@ under the slice-composition gate.
 
 | Slice | Story | Backbone step | Ships | Learning hypothesis |
 |---|---|---|---|---|
-| — (precursor) | Bug #5776 | Discover / Use | The documented configuration path is accepted; startup states which key source is in effect | Disproves "the mismatch is the only thing hiding key state" if operators still cannot tell which key is active |
 | 01 · #5777 | US-01, US-08 (+US-07) | Use / Paste | Authenticated self-describing envelope; unreadable secrets named on their Connection; plaintext fallback deleted; one generic secret-handling notice on the connection form | Disproves "we can migrate the format in place" if real stored blobs turn out to be ambiguous between legacy and envelope |
-| 02 · #5024 | US-02 | Install | Per-instance key generated on first boot; default key leaves `appsettings.json` and enters the ring retired | Disproves "the upgrade is invisible" if any existing install loses access to a secret |
+| 02 · #5024 (+ Bug #5776) | US-02 | Install | Per-instance key generated on first boot; the documented configuration path is finally honoured and the key source is stated at startup; default key leaves `appsettings.json` and enters the ring retired | Disproves "the upgrade is invisible" if any existing install loses access to a secret |
 | 03 · #5778 | US-03 | Rotate | Operator-triggered rotation, no credential re-entry, resumable, reported | Disproves "in-place re-encryption is safe unlocked" if a concurrent token refresh corrupts a row (OQ-1) |
 | 04 · #5779 | US-04 | Prove | Read-only readability check, per-secret key attribution | Disproves "the rotation report is enough" if an operator cannot map an unreadable secret back to something they can fix |
-| 05 · #5780 | US-05 | Install (k8s) | Chart custody: `existingSecret`, generate-if-absent, upgrade-safe | Disproves "Helm can own key generation" if `helm upgrade` regenerates the key and orphans the tenant |
+| 05 · #5780 | US-05 | Install (k8s) | Chart custody: `existingSecret` or a supplied key, required at render, upgrade-safe — the chart never generates (DESIGN F-1) | Disproves "Helm can own key generation" if `helm upgrade` regenerates the key and orphans the tenant |
 | 06 · #5781 | US-06 | Answer for it | Docs, compliance evidence, `SECURITY.md`, advisory, release notes | Disproves "the doc gap was the only false claim" if writing the threat model surfaces further mismatches |
 
 ### Carpaccio taste tests
@@ -672,19 +677,19 @@ under the slice-composition gate.
 
 ## Wave: DISCUSS / [REF] Prioritization
 
-1. **Bug #5776 first, outside the epic.** Smallest change, live audience, and it makes the key source
-   observable — which every later slice is verified against.
-2. **Slice 01 before everything.** Rotation without an authentication tag is unverifiable, and a
+1. **Slice 01 before everything.** Rotation without an authentication tag is unverifiable, and a
    re-encryption pass over a decrypt that cannot fail is a way to lose every secret in one command. The
    highest-consequence uncertainty in the epic is retired first, when it is still cheap.
-3. **Slice 02 next** because it is the epic's headline outcome and the one that answers the criticism
-   the epic came from. It also produces the first real upgrade evidence, on genuine data.
-4. **Slice 03, with a timeboxed probe on OQ-1 before the brief is committed to.** Highest
+2. **Slice 02 next** because it is the epic's headline outcome and the one that answers the criticism
+   the epic came from. It also produces the first real upgrade evidence, on genuine data, and it
+   carries Bug #5776 — the key source becomes observable here, which is what every later slice is
+   verified against.
+3. **Slice 03, with a timeboxed probe on OQ-1 before the brief is committed to.** Highest
    implementation risk left; the probe is cheap and its answer changes the design rather than the code.
-5. **Slice 04** immediately after, so the "prove it" surface exists in the same release as rotation.
-6. **Slice 05** once the application side is settled — the chart can only hand over a key the
+4. **Slice 04** immediately after, so the "prove it" surface exists in the same release as rotation.
+5. **Slice 05** once the application side is settled — the chart can only hand over a key the
    application knows how to accept.
-7. **Slice 06 last, and it gates the release.** The advisory is only honest once the fix is installable
+6. **Slice 06 last, and it gates the release.** The advisory is only honest once the fix is installable
    (D8).
 
 Dogfood moment per slice: `:5169` restored from a real backup for 01-04, Tenant Zero for 05, the
@@ -704,8 +709,8 @@ published docs site for 06.
 | **KPI-6** Helm upgrade safety | 0 stored secrets become unreadable across 3 consecutive `helm upgrade` runs with unchanged values. The chart mints nothing, so there is nothing to regenerate — the property is now structural rather than defended | Chart unit test (AC-5.3, AC-5.6) + Tenant Zero | `vendor_demo_only` |
 | **KPI-7** Question answerable from docs | The documentation answers key source, rotation, backup and threat model without a maintainer in the loop | Reviewed at release against the questionnaire that started this epic | `vendor_demo_only` |
 
-KPI-1 is unmeasurable before Bug #5776 makes the key source observable — which is the argument for
-shipping it first.
+KPI-1 becomes measurable at slice 02, which is where it is targeted and where Bug #5776's key-source
+reporting now lands (AC-2.8). Nothing before slice 02 can report against it.
 
 ---
 
@@ -733,7 +738,7 @@ shipping it first.
 | 1 | Business value articulated | ✅ | A named lost evaluation, plus five findings read from code during this wave; KPI-1 and KPI-2 carry the outcome |
 | 2 | Job traceability | ✅ | 6 jobs written to `docs/product/jobs.yaml`; every story carries a real `job_id` except US-07, which is `@infrastructure` and is a precursor commit inside slice 01 |
 | 3 | Acceptance criteria testable | ✅ | 75 ACs, each observable from a stored value, a report, a log line, a rendered chart template, a rendered form, or a documentation page |
-| 4 | Dependencies identified | ✅ | Bug #5776 released first; `:5169` restored from a real backup; Tenant Zero for slice 05; `CreateMigration`; premium licence on the verification instance |
+| 4 | Dependencies identified | ✅ | `:5169` restored from a real backup; Tenant Zero for slice 05; premium licence on the verification instance. No EF migration is owed unless the slice-03 probe forces a concurrency token (DESIGN F-6) |
 | 5 | Sliced ≤ 1 day each | ⚠️ | 6 briefs. Five are 4-6h. **Slice 03 is the exception** and is written with a timeboxed probe on OQ-1 first; if the probe says a lock is needed, the brief is re-cut before it is dispatched |
 | 6 | No known blockers | ✅ | None. OQ-1 is scheduled as a probe, OQ-2 is inside slice 05's acceptance, OQ-3 is explicitly deferred |
 | 7 | Observable surface defined | ✅ | Driving Ports table — every slice names the surface an operator reads |
@@ -1404,7 +1409,8 @@ stays in the shipped binary until a rotation drops the last row that uses it.
 
 **Not changed, and worth saying so:** D1 (authenticated envelope), D2 (the plaintext fallback is
 deleted), D3 (key ring with the default retired into it), D5 (Kubernetes custody is a Secret the
-cluster owns; OpenBao Transit remains the successor epic), D7 (Bug #5776 ships first), D8 (neutral
+cluster owns; OpenBao Transit remains the successor epic), D7 (retired 2026-08-15 — Bug #5776 is
+absorbed into slice 02 rather than shipped first, since it will not be released on its own), D8 (neutral
 commits, advisory at release), D9-D11. The slice order and the six slice boundaries are unchanged.
 OQ-1's answer improved rather than changed the design: no lock is needed, and the probe now risks one
 additive migration rather than a redesign.

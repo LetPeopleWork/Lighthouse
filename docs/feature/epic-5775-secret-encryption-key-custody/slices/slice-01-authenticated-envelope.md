@@ -60,10 +60,14 @@ AC-1.1 through AC-1.9 and AC-8.1 through AC-8.7 in `feature-delta.md`. The three
 
 ## Dependencies
 
-- Bug #5776 released, so the key in effect during acceptance is the one the operator meant.
 - `:5169` restored from a real backup — the only place AC-1.2 (legacy blobs still read) can be
   honestly tested.
-- `CreateMigration` for the column widening.
+- No EF migration. The three secret columns are unbounded `text`/`TEXT` with no `HasMaxLength` in
+  either model snapshot, so the column widening this slice originally assumed does not exist
+  (DESIGN F-6).
+- Bug #5776 is **not** a dependency of this slice. It moved to slice 02 when D7 was retired, and
+  nothing here reads configuration, so the key in effect during acceptance is whatever the instance
+  already had.
 
 ## Dogfood moment
 
