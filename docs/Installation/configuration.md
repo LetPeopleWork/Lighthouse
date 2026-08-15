@@ -144,6 +144,9 @@ By default, that file is next to the executable and called *LighthouseAppContext
 {: .note}
 The folder you specify must exist - if it's not existing, the startup will fail.
 
+{: .important}
+Wherever you put this file, Lighthouse keeps its [encryption key](#encryption-key) in a folder beside it. The two belong together: back them up together, and if you move the database onto a mounted volume, that is what keeps the key across a container being recreated. A database file written inside a container rather than onto a volume takes the key with it when the container goes.
+
 ### Postgres
 Postgres is an open-source, relational database. It's widely used and very powerful.  
 
@@ -197,6 +200,14 @@ Lighthouse.exe --Encryption:Key="current:<base64 key>,previous:<base64 key>"
 ```
 
 The **first entry is the one new secrets are written under**; every later entry is only ever used to read what was stored earlier. A name may use lowercase letters, digits and hyphens and be at most 32 characters long; if you leave the `id:` off, Lighthouse derives a name from the key itself. A single key is simply a ring of one, which is why the same setting takes both.
+
+There is also a plural spelling that holds exactly the same thing:
+
+**Override Options:**
+- Command Line: `--Encryption:Keys`
+- Environment Variable: `Encryption__Keys`
+
+Use whichever reads better to you. If both are set, the plural one wins — so set one or the other rather than leaving an old value behind in the one you stopped using.
 
 ### Providing the key from a file
 
