@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.OAuth;
@@ -583,29 +584,46 @@ namespace Lighthouse.Backend.Data
             logger.LogDebug("Encrypting secrets");
             foreach (var option in ChangeTracker.Entries<WorkTrackingSystemConnectionOption>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-                .Select(e => e.Entity))
+                .Select(e => e.Entity)
+                .Where(option => option.IsSecret && NeedsProtecting(option.Value)))
             {
-                if (option.IsSecret)
-                {
-                    option.Value = cryptoService.Encrypt(option.Value);
-                    logger.LogDebug("Encrypted secret for option {OptionId}", option.Id);
-                }
+                option.Value = cryptoService.Encrypt(option.Value);
+                logger.LogDebug("Encrypted secret for option {OptionId}", option.Id);
             }
 
             foreach (var entry in ChangeTracker.Entries<OAuthCredential>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified))
             {
-                var credential = entry.Entity;
-                if (entry.State == EntityState.Added || entry.Property(c => c.AccessToken).IsModified)
-                {
-                    credential.AccessToken = cryptoService.Encrypt(credential.AccessToken);
-                }
-                if (entry.State == EntityState.Added || entry.Property(c => c.RefreshToken).IsModified)
-                {
-                    credential.RefreshToken = cryptoService.Encrypt(credential.RefreshToken);
-                }
-                logger.LogDebug("Encrypted OAuth tokens for credential {CredentialId}", credential.Id);
+                EncryptOAuthTokens(entry);
             }
+        }
+
+        private void EncryptOAuthTokens(EntityEntry<OAuthCredential> entry)
+        {
+            var credential = entry.Entity;
+
+            if ((entry.State == EntityState.Added || entry.Property(c => c.AccessToken).IsModified) && NeedsProtecting(credential.AccessToken))
+            {
+                credential.AccessToken = cryptoService.Encrypt(credential.AccessToken);
+            }
+
+            if ((entry.State == EntityState.Added || entry.Property(c => c.RefreshToken).IsModified) && NeedsProtecting(credential.RefreshToken))
+            {
+                credential.RefreshToken = cryptoService.Encrypt(credential.RefreshToken);
+            }
+
+            logger.LogDebug("Encrypted OAuth tokens for credential {CredentialId}", credential.Id);
+        }
+
+        // Saving a connection hands back every secret it holds, including the ones nobody retyped, so a
+        // value that is already protected would otherwise be encrypted a second time and the real secret
+        // buried under a layer no reader ever unwraps. The question has to be answered by actually reading
+        // the value rather than by matching the text it starts with: a value that merely looks protected
+        // but that no key can open is one nobody can recover, and skipping it would report a clean save
+        // over a secret that is already lost.
+        private bool NeedsProtecting(string storedValue)
+        {
+            return cryptoService.Read(storedValue) is not { State: SecretState.Envelope };
         }
 
     }
