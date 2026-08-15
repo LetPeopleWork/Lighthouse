@@ -54,12 +54,10 @@ const EncryptionKeySection: React.FC<{ keyState: EncryptionKeyState }> = ({
 );
 
 const SystemSettingsTab: React.FC = () => {
-	// Optional Features state
 	const [optionalFeatures, setOptionalFeatures] = useState<IOptionalFeature[]>(
 		[],
 	);
 
-	// License status state
 	const [licenseStatus, setLicenseStatus] = useState<ILicenseStatus | null>(
 		null,
 	);
@@ -78,7 +76,6 @@ const SystemSettingsTab: React.FC = () => {
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
-	// Optional Features functions
 	const fetchOptionalFeatures = useCallback(async () => {
 		const optionalFeatureData = await optionalFeatureService.getAllFeatures();
 		if (optionalFeatureData) {
@@ -86,7 +83,6 @@ const SystemSettingsTab: React.FC = () => {
 		}
 	}, [optionalFeatureService]);
 
-	// License status functions
 	const fetchLicenseStatus = useCallback(async () => {
 		try {
 			const licenseData = await licensingService.getLicenseStatus();
@@ -124,7 +120,6 @@ const SystemSettingsTab: React.FC = () => {
 				enabled: !toggledFeature.enabled,
 			});
 		} catch {
-			// Revert the local state in case of error
 			await fetchOptionalFeatures();
 		}
 	};
