@@ -23,13 +23,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private const string ActiveKeyId = "key-active";
 
+        private const string UnknownKeyId = "key-not-on-the-ring";
+
         private const string Credential = "Hello, World!";
 
         private const int KeyIdField = 1;
 
         private const int IvLength = 16;
 
+        private const int CiphertextField = 3;
+
         private static readonly byte[] ActiveKeyMaterial = Convert.FromBase64String(ConfiguredKeyBase64);
+
+        private static readonly byte[] OffRingKeyMaterial = Convert.FromBase64String(AnotherKeyBase64);
+
+        // Everywhere else in this file the initialisation vector is random, but here it is fixed so the
+        // bytes are identical on every run. A wrong key's garbage clears the padding and printability
+        // checks by chance roughly once in a thousand tries, and a test that fails one run in a thousand
+        // teaches a reader to ignore it.
+        private static readonly byte[] UnreadableBlobInitialisationVector = new byte[IvLength];
 
         private CryptoService subject;
 
@@ -82,14 +94,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(decryptedText, Is.EqualTo(Credential));
         }
 
-        [Test]
-        public void Decrypt_InvalidCipherText_ShouldReturnOriginalText()
+        [TestCaseSource(nameof(UnreadableStoredValues))]
+        public void Decrypt_UnreadableValue_Throws(string storedValue, string? claimedKeyId)
         {
-            var invalidCipherText = "invalid_base64_string";
+            var exception = Assert.Throws<UnreadableSecretException>(() => subject.Decrypt(storedValue));
 
-            var result = subject.Decrypt(invalidCipherText);
-
-            Assert.That(result, Is.EqualTo(invalidCipherText));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(exception.State, Is.EqualTo(SecretState.Unreadable));
+                Assert.That(exception.ClaimedKeyId, Is.EqualTo(claimedKeyId));
+                Assert.That(exception.Message, Does.Not.Contain(Credential));
+                Assert.That(exception.Message, Does.Not.Contain(storedValue));
+                Assert.That(exception.Message, Does.Not.Contain(ConfiguredKeyBase64));
+            }
         }
 
         [Test]
@@ -186,6 +203,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.Throws<InvalidOperationException>(() => ResolveInto(tooShort));
         }
 
+        private static TestCaseData[] UnreadableStoredValues()
+        {
+            return
+            [
+                new TestCaseData(EnvelopeWithABrokenTag(), ActiveKeyId)
+                    .SetName("Decrypt_UnreadableValue_Throws(an envelope whose tag does not verify)"),
+                new TestCaseData(EncryptedUnder(UnknownKeyId, OffRingKeyMaterial), UnknownKeyId)
+                    .SetName("Decrypt_UnreadableValue_Throws(an envelope naming a key the ring does not hold)"),
+                new TestCaseData(LegacyCbcBlob(Credential, OffRingKeyMaterial, UnreadableBlobInitialisationVector), null)
+                    .SetName("Decrypt_UnreadableValue_Throws(a legacy blob no key on the ring reads)"),
+            ];
+        }
+
+        // The tag authenticates the ciphertext, so changing one character of it is the shortest way to
+        // write down "this stored value is no longer what was sealed". The first character is chosen
+        // because every one of its bits is significant, whereas the last one carries padding bits that a
+        // strict base64url decoder would reject outright, turning the value into something that never
+        // reaches the tag check at all.
+        private static string EnvelopeWithABrokenTag()
+        {
+            var fields = EncryptedUnder(ActiveKeyId, ActiveKeyMaterial).Split('.');
+
+            fields[CiphertextField] = AlterFirstCharacter(fields[CiphertextField]);
+
+            return string.Join('.', fields);
+        }
+
+        private static string EncryptedUnder(string keyId, byte[] keyMaterial)
+        {
+            return SecretEnvelope.Protect(Credential, keyId, keyMaterial).Format();
+        }
+
+        private static string AlterFirstCharacter(string field)
+        {
+            var altered = field.ToCharArray();
+            altered[0] = altered[0] == 'A' ? 'B' : 'A';
+
+            return new string(altered);
+        }
+
         private static EncryptionKeyRing ResolveRing(string configuredKey)
         {
             return RingOf(ResolveInto(configuredKey));
@@ -219,10 +276,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         // authentication tag.
         private static string LegacyCbcBlob(string plainText, byte[] keyMaterial)
         {
+            return LegacyCbcBlob(plainText, keyMaterial, RandomNumberGenerator.GetBytes(IvLength));
+        }
+
+        private static string LegacyCbcBlob(string plainText, byte[] keyMaterial, byte[] initialisationVector)
+        {
             using var aes = Aes.Create();
             aes.Key = keyMaterial;
 
-            var initialisationVector = RandomNumberGenerator.GetBytes(IvLength);
             var cipher = aes.EncryptCbc(Encoding.UTF8.GetBytes(plainText), initialisationVector);
 
             return Convert.ToBase64String([.. initialisationVector, .. cipher]);

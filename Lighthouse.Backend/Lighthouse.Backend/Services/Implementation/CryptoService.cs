@@ -26,12 +26,14 @@ namespace Lighthouse.Backend.Services.Implementation
             return SecretEnvelope.Protect(plainText, activeKey.Id, activeKey.Material.Span).Format();
         }
 
+        // A secret nobody can read is not a secret, and handing the stored bytes back in its place is how a
+        // wrong encryption key came to look like a work tracking system rejecting an expired token. Callers
+        // get a failure they cannot mistake for a credential.
         public string Decrypt(string cipherText)
         {
-            // This is the last version in which a stored secret nobody can decrypt is still handed back
-            // exactly as it was found, which is what keeps this change invisible to everything already
-            // working. The next one turns that same case into a failure instead of a credential
-            return Read(cipherText).PlainText ?? cipherText;
+            var secret = Read(cipherText);
+
+            return secret.PlainText ?? throw new UnreadableSecretException(secret.State, secret.KeyId);
         }
 
         public SecretReadResult Read(string storedValue)
