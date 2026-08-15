@@ -2316,3 +2316,46 @@ considered (Gherkin phrasings weighed and rejected) · fixture design discussion
 and legacy-blob fixtures · full edge-case enumeration for the four stored-secret states · error-path
 rationale per `@error` scenario · tagging cookbook · property-based testing notes for scenarios 9 and
 10 · domain-language fact-to-step table.
+
+---
+
+# Wave: DELIVER — slice 01
+
+Running record, written as the slice is built. The implementation summary, files-modified list,
+scenarios-green count and quality-gate outcomes are appended when the slice closes.
+
+## Wave: DELIVER / [REF] Upstream Issues
+
+Things the implementation found that the earlier waves did not say, recorded here rather than left in
+a commit message.
+
+**A malformed encryption key now stops the boot instead of failing at first use.** Before this slice, a
+missing or malformed `EncryptionSettings:EncryptionKey` surfaced lazily, the first time anything
+resolved `CryptoService`. Resolving the ring at builder time moves that to startup: the instance
+refuses to come up, with the same exception types as before. This is the direction ADR-150 argues for
+and it is strictly better — an instance that cannot read its own secrets should not accept traffic —
+but **no wave document says it**, and it is a behaviour change an operator can notice. It belongs in
+the release note for whichever release carries slice 01, and slice 02 should know it is already true
+before it touches the same configuration block.
+
+**Tag verification moved out of the classifier after step 01-03 shipped.** The classifier originally
+verified an envelope's authentication tag by reconstructing the counter-mode keystream, because the
+architecture forbids a `catch` in the read path and the platform's AES-GCM type offers no non-throwing
+decrypt. Correct, tested, and unorthodox enough to be a liability — it also called encrypt twice under
+a nonce already in the database. Step 01-07 was inserted to move verification into `SecretEnvelope`
+behind a single narrowly-scoped catch of the tag-mismatch type. The seventeen classifier cases passed
+unchanged through the move, which is what makes it a refactor rather than a rewrite. The architecture's
+"no catch" rule should be read as what it was for — a failed read must be a real failure, never
+silently degraded into handing back ciphertext as plaintext — rather than as a literal ban that the
+platform makes unachievable.
+
+**`ICryptoService` had a fourth implementation nobody had counted.** The step that widened the contract
+enumerated three; a file-private test double inside `ServiceNowBasicAuthStrategyTest.cs` spells the
+interface fully qualified and is invisible to a grep phrased against the short name, so it surfaced
+only as a compile error. Harvested into `docs/ci-learnings.md` as a rule about grepping both spellings
+and both projects before widening any cross-cutting contract.
+
+**`SecretEnvelope.Unprotect` has no production caller left.** After step 01-07 the only callers are
+`TryUnprotect` and two assertions in `SecretEnvelopeTests`. Making it private is the tidier end state
+and costs one visibility change plus rehoming those two call sites; it is deliberately not done inside
+a behaviour-preserving step.
