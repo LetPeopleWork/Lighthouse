@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -97,6 +98,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
                     itemCount = project.Features.Count;
                     success = true;
+                }
+                catch (UnreadableSecretException exception)
+                {
+                    outcome = outcome with
+                    {
+                        Reason = BuildUnreadableSecretReason(
+                            exception,
+                            project.WorkTrackingSystemConnection,
+                            serviceProvider.GetRequiredService<ICryptoService>()),
+                    };
+
+                    throw;
                 }
                 finally
                 {

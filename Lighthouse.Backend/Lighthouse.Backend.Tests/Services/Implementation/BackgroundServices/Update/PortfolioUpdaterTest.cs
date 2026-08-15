@@ -1,13 +1,16 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.TeamData;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -17,6 +20,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 {
     public class PortfolioUpdaterTest : UpdateServiceTestBase
     {
+        private const string ConnectionName = "Company Jira";
+
+        private const string SecretFieldKey = "Personal Access Token";
+
+        private const string UnreadableValue = "unreadable-stored-value";
+
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
@@ -28,6 +37,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IOrphanedFeatureCleanupService> cleanupServiceMock;
+        private Mock<ICryptoService> cryptoServiceMock;
+        private Mock<ILogger<PortfolioUpdater>> loggerMock;
+
+        private Mock<IRepository<Team>> teamRepoMock;
+        private Mock<ITeamDataService> teamDataServiceMock;
+        private Mock<ILogger<TeamUpdater>> teamLoggerMock;
+
+        private RefreshLog? recordedRefresh;
 
         private int idCounter;
 
@@ -56,7 +73,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             cleanupServiceMock = new Mock<IOrphanedFeatureCleanupService>();
+            loggerMock = new Mock<ILogger<PortfolioUpdater>>();
+            teamLoggerMock = new Mock<ILogger<TeamUpdater>>();
+            teamRepoMock = new Mock<IRepository<Team>>();
+            teamDataServiceMock = new Mock<ITeamDataService>();
+            teamRepoMock.Setup(x => x.GetAll()).Returns([]);
 
+            // A crypto double with no Read set up hands back null, and null is not what the port promises -
+            // the code under test would then be exercised against a shape production can never produce.
+            cryptoServiceMock = new Mock<ICryptoService>();
+            cryptoServiceMock
+                .Setup(x => x.Read(It.IsAny<string>()))
+                .Returns((string storedValue) => new SecretReadResult(SecretState.Envelope, storedValue, "current"));
+
+            recordedRefresh = null;
+            refreshLogServiceMock
+                .Setup(x => x.LogRefreshAsync(It.IsAny<RefreshLog>()))
+                .Callback((RefreshLog entry) => recordedRefresh = entry)
+                .Returns(Task.CompletedTask);
+
+            SetupServiceProviderMock(cryptoServiceMock.Object);
+            SetupServiceProviderMock(teamRepoMock.Object);
+            SetupServiceProviderMock(teamDataServiceMock.Object);
             SetupServiceProviderMock(projectRepoMock.Object);
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
@@ -318,6 +356,180 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             cleanupServiceMock.Verify(c => c.CleanupAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        [Test]
+        public void TriggerUpdate_CredentialCannotBeRead_RecordsTheRefreshAsUnsuccessful()
+        {
+            var project = SetupPortfolioWhoseCredentialCannotBeRead();
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(recordedRefresh?.Success, Is.False,
+                "A refresh that never reached the work tracking system is not a refresh that worked.");
+        }
+
+        [Test]
+        public void TriggerUpdate_CredentialCannotBeRead_TheReasonNamesTheConnectionAndTheField()
+        {
+            var project = SetupPortfolioWhoseCredentialCannotBeRead();
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var summary = ReadUpdateSummary(loggerMock);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(summary, Does.Contain(ConnectionName),
+                    "An operator running several connections needs the reason to say which one to open.");
+                Assert.That(summary, Does.Contain(SecretFieldKey),
+                    "Without the field, the operator re-enters credentials until the refresh stops failing.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_CredentialCannotBeRead_ThePortfolioAndTheTeamSurfacesSayTheSameThing()
+        {
+            var project = SetupPortfolioWhoseCredentialCannotBeRead();
+            var team = SetupTeamWhoseCredentialCannotBeRead();
+
+            CreateSubject().TriggerUpdate(project.Id);
+            CreateTeamSubject().TriggerUpdate(team.Id);
+
+            // Derived, never transcribed: a sentence copied into two test files is exactly the thing that drifts,
+            // and an operator who meets two phrasings for one failure has two things to learn instead of one.
+            var expected = ReasonProbe.Build(
+                CreateUnreadableSecretException(),
+                project.WorkTrackingSystemConnection,
+                cryptoServiceMock.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ReadReason(loggerMock), Is.EqualTo(expected));
+                Assert.That(ReadReason(teamLoggerMock), Is.EqualTo(expected));
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_CredentialCannotBeRead_TheFailureStillPropagatesAndIsReportedOnce()
+        {
+            var project = SetupPortfolioWhoseCredentialCannotBeRead();
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var errors = ReadErrors(loggerMock);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(errors, Has.One.Contains("An exception occurred while updating"),
+                    "Swallowing the failure to attach a reason would leave the refresh looking like it merely returned nothing.");
+                Assert.That(errors, Has.Count.EqualTo(1),
+                    "Logging where the reason is attached prints the same failure twice for one broken credential.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_EveryCredentialReads_RecordsSuccessAndSaysNothingAboutEncryption()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            SetupProjects(project);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var summary = ReadUpdateSummary(loggerMock);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedRefresh?.Success, Is.True);
+                Assert.That(summary, Does.Not.Contain("reason="),
+                    "A healthy refresh has nothing to explain, and a reason on every line is what made these logs unreadable.");
+                Assert.That(summary, Does.Not.Contain("encryption").IgnoreCase);
+                Assert.That(summary, Does.Not.Contain("credential").IgnoreCase);
+            }
+        }
+
+        private Portfolio SetupPortfolioWhoseCredentialCannotBeRead()
+        {
+            var project = CreateProject(DateTime.Now.AddDays(-1));
+            AddUnreadableCredential(project.WorkTrackingSystemConnection);
+            SetupProjects(project);
+
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ThrowsAsync(CreateUnreadableSecretException());
+
+            return project;
+        }
+
+        private Team SetupTeamWhoseCredentialCannotBeRead()
+        {
+            var team = CreateTeam();
+            team.UpdateTime = DateTime.Now.AddDays(-1);
+            AddUnreadableCredential(team.WorkTrackingSystemConnection);
+
+            teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
+            teamRepoMock.Setup(x => x.GetById(team.Id)).Returns(team);
+
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ThrowsAsync(CreateUnreadableSecretException());
+
+            return team;
+        }
+
+        private void AddUnreadableCredential(WorkTrackingSystemConnection connection)
+        {
+            connection.Name = ConnectionName;
+            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            {
+                Key = SecretFieldKey,
+                Value = UnreadableValue,
+                IsSecret = true,
+            });
+
+            cryptoServiceMock
+                .Setup(x => x.Read(UnreadableValue))
+                .Returns(new SecretReadResult(SecretState.Unreadable, null, "retired"));
+        }
+
+        private static UnreadableSecretException CreateUnreadableSecretException()
+        {
+            return new UnreadableSecretException(SecretState.Unreadable, "retired");
+        }
+
+        private static string ReadUpdateSummary(Mock loggerMock)
+        {
+            var summary = loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
+                .SingleOrDefault(message => message.Contains("Update completed", StringComparison.Ordinal));
+
+            Assert.That(summary, Is.Not.Null, "The summary line is the record an operator reads for a finished refresh.");
+
+            return summary!;
+        }
+
+        private static string ReadReason(Mock loggerMock)
+        {
+            const string marker = "reason=";
+
+            var summary = ReadUpdateSummary(loggerMock);
+            var reasonStart = summary.IndexOf(marker, StringComparison.Ordinal);
+
+            Assert.That(reasonStart, Is.GreaterThanOrEqualTo(0),
+                "A refresh that stopped because a stored credential could not be read has something to explain.");
+
+            return summary[(reasonStart + marker.Length)..];
+        }
+
+        private static List<string> ReadErrors(Mock loggerMock)
+        {
+            return loggerMock.Invocations
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Error)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
+                .ToList();
+        }
+
+        private TeamUpdater CreateTeamSubject()
+        {
+            return new TeamUpdater(teamLoggerMock.Object, ServiceScopeFactory, UpdateQueueService);
+        }
+
         private Task WaitForEnqueue(int projectId)
         {
             return WaitUntilVerified(() => Mock.Get(UpdateQueueService).Verify(x => x.EnqueueUpdate(UpdateType.Features, projectId, It.IsAny<Func<IServiceProvider, Task>>())));
@@ -383,7 +595,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private PortfolioUpdater CreateSubject()
         {
-            return new PortfolioUpdater(Mock.Of<ILogger<PortfolioUpdater>>(), ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object);
+            return new PortfolioUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object);
         }
     }
 }
