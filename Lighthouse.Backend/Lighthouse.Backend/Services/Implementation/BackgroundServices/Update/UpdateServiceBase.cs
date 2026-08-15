@@ -1,5 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
@@ -67,6 +69,37 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             Logger.LogInformation(
                 "Update completed | {EntityType:l} '{EntityName:l}' | mode={Mode} | scanned={RecordsScanned} | fetched={RecordsFetched} | duration={DurationMs}ms | success={Success}{Reason:l}",
                 typeof(TEntity).Name, entityName, outcome.Mode, outcome.RecordsScanned, outcome.RecordsFetched, durationMs, success, reason);
+        }
+
+        /// <summary>
+        /// What an operator reads when a refresh stopped because this instance could not decrypt a credential
+        /// it had stored. Without the connection and the field, the only plausible reading is that the work
+        /// tracking system rejected a token - and that sends someone off to reissue a credential that was
+        /// never the problem. The field is found by asking the same total reader the connection screen asks,
+        /// so the two surfaces can never name different fields for the same connection.
+        /// </summary>
+        protected static string BuildUnreadableSecretReason(
+            UnreadableSecretException exception,
+            WorkTrackingSystemConnection connection,
+            ICryptoService cryptoService)
+        {
+            var unreadableFields = connection.Options
+                .Where(option => option.IsSecret && !string.IsNullOrEmpty(option.Value))
+                .Where(option => cryptoService.Read(option.Value) is { State: SecretState.Unreadable })
+                .Select(option => option.Key)
+                .ToList();
+
+            var subject = unreadableFields.Count > 0
+                ? $"The stored {string.Join(", ", unreadableFields)}"
+                : "A stored credential";
+
+            var namedKey = string.IsNullOrEmpty(exception.ClaimedKeyId)
+                ? string.Empty
+                : $" (it names encryption key '{exception.ClaimedKeyId}')";
+
+            return $"{subject} on connection '{connection.Name}' cannot be read with the current encryption key{namedKey}, " +
+                "so this refresh stopped before contacting the work tracking system. " +
+                "Enter the credential again to store it under the key this instance uses now.";
         }
 
         protected static T GetServiceFromServiceScope<T>(IServiceScope scope) where T : notnull
