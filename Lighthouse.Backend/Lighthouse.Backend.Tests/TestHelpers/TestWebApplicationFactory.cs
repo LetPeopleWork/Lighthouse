@@ -9,9 +9,48 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
+    /// <summary>
+    /// Every backend integration test starts the real application, and the real application needs an
+    /// encryption key. Handing one to each test host means no integration test depends on what the
+    /// settings file shipped with the product happens to contain, so an edit to that file cannot turn
+    /// the whole integration suite red at once for a reason unrelated to the change being made.
+    ///
+    /// The value is checked into a public repository deliberately. Decoded it reads
+    /// "LighthouseTestFixtureKeyNotReal!", so nobody can mistake it for a secret worth keeping or
+    /// paste it into a running instance by accident.
+    /// </summary>
+    public static class IntegrationTestEncryptionKey
+    {
+        public const string ConfigurationKey = "Encryption:Key";
+
+        public const string EnvironmentVariableName = "Encryption__Key";
+
+        public const string Value = "TGlnaHRob3VzZVRlc3RGaXh0dXJlS2V5Tm90UmVhbCE=";
+
+        public static Dictionary<string, string?> AsConfiguration()
+        {
+            return new Dictionary<string, string?>
+            {
+                [ConfigurationKey] = Value,
+            };
+        }
+
+        // Not every host in this test project is built by TestWebApplicationFactory - a handful of tests
+        // stand up their own. An environment variable is the one channel all of them read, and it has to
+        // be set before the first of them starts, which is what running at module load guarantees.
+#pragma warning disable CA2255 // Test assembly, not a library anyone references: nothing here is imported into another program.
+        [ModuleInitializer]
+#pragma warning restore CA2255
+        internal static void SupplyToEveryHostInThisProcess()
+        {
+            Environment.SetEnvironmentVariable(EnvironmentVariableName, Value);
+        }
+    }
+
     public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {
         private readonly string databaseFileName = $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
@@ -20,7 +59,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             // Set test environment to skip migrations in Program.cs
             builder.UseEnvironment("Testing");
-            
+
+            builder.ConfigureAppConfiguration((_, configurationBuilder) =>
+            {
+                configurationBuilder.AddInMemoryCollection(IntegrationTestEncryptionKey.AsConfiguration());
+            });
+
             builder.ConfigureServices(services =>
             {
                 RemoveServices(services);
