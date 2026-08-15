@@ -172,20 +172,60 @@ In a similar way, you can adjust the provider and connection string postgres. If
 ## Encryption Key
 In order to connect to Jira, Azure DevOps, etc., sensitive information (tokens) are needed. While we need to store them (as otherwise the continuous updating will not work), we don't want to keep those values in clear text.
 
-**Default Value:** Built-in default key (not recommended for production)
+**Default Value:** none required. On its first start, Lighthouse creates an encryption key for itself and keeps it in a folder next to the database, so the same key is still there after a restart and after an upgrade.
 
 **Override Options:**
 - Command Line: `--Encryption:Key`
 - Environment Variable: `Encryption__Key`
 
-Sensitive data is encrypted using the encryption key that is specified. While there is a default key provided, you should adjust this to be unique for your setup.
-
-Lighthouse will still start if you change your key, but the sensitive data will not be properly decrypted, meaning you have to reconfigure your work tracking systems to enable any updates.
+Setting `Encryption__Key` overrides the key Lighthouse would create for itself. From that point on the key is yours to manage: Lighthouse will never create one of its own while the setting is present, and whatever holds that value is what stands between someone else and your stored tokens. If you don't set it, back up the key folder together with the database — losing one without the other leaves the stored tokens unreadable.
 
 You have to specify a base64 encoded key that is 32 bytes long. You can generate a new random key via [https://generate.plus/en/base64](https://generate.plus/en/base64).  
 
 {: .important}
 Set the length to 32 as otherwise it will not work.
+
+{: .note}
+Instances created before this version encrypted with a key that ships inside the product. After an upgrade, Lighthouse keeps that key for reading only, so everything already stored keeps working, and writes anything new under a key of its own.
+
+### Supplying more than one key
+
+`Encryption__Key` also accepts several keys at once, written as `id:key` and separated by commas:
+
+```bash
+Lighthouse.exe --Encryption:Key="current:<base64 key>,previous:<base64 key>"
+```
+
+The **first entry is the one new secrets are written under**; every later entry is only ever used to read what was stored earlier. A name may use lowercase letters, digits and hyphens and be at most 32 characters long; if you leave the `id:` off, Lighthouse derives a name from the key itself. A single key is simply a ring of one, which is why the same setting takes both.
+
+### Providing the key from a file
+
+If a secret store already owns your key and mounts it into the container as a file, point Lighthouse at that file instead of putting the value into a setting.
+
+**Override Options:**
+- Command Line: `--Encryption:KeysFile`
+- Environment Variable: `Encryption__KeysFile`
+
+The file holds exactly what the setting would hold — one key, or several in the form above. If the setting names a file that isn't there, Lighthouse does not start: it won't fall back to a key of its own, because the mounted file would win again as soon as it reappeared and everything written in the meantime would be unreadable.
+
+### When Lighthouse has nowhere to keep a key
+
+Some deployments leave Lighthouse nowhere to put a key it would still find tomorrow — a database that is not a local file (Postgres, for example), or a container whose database file is written inside the container rather than onto a mounted volume. Lighthouse says so on startup and names the two ways out:
+
+- set `Encryption__Key` to a key of your own, or
+- set `Encryption__KeyStorePath` to a directory on a volume that outlives the container.
+
+**Override Options:**
+- Command Line: `--Encryption:KeyStorePath`
+- Environment Variable: `Encryption__KeyStorePath`
+
+If nothing sensitive is stored yet, Lighthouse **stops instead of starting**: a key it cannot keep would make every token entered afterwards unreadable at the next restart. If something is already stored, it starts and keeps working, and repeats the warning on every start until you do one of the two things above.
+
+### What happens if the key changes
+
+A key that Lighthouse cannot use — not base64, not 32 bytes, or an entry it cannot read — **stops startup**, and the log names the entry at fault. Lighthouse will not quietly start on some other key.
+
+A key that is valid but isn't the one a stored secret was written under is a different matter: Lighthouse starts, and it tells you which connection holds a value it can no longer read and which field that value sits in. You retype that one value rather than working out for yourself why a work tracking system stopped updating.
 
 ## Certificate
 In order to run Lighthouse via secure https connection, we need to specify a certificate.
