@@ -228,6 +228,25 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   look like a successful boot and would silently orphan every stored secret.
 - **[D11] No vendor telemetry.** Every KPI below is `per_instance` or `vendor_demo_only`, per the
   standing convention in `kpi-contracts.yaml`. Nothing about key state leaves a customer's instance.
+- **[D13] Upgrading does not re-encrypt, and the product says so twice — in the docs and in the
+  product.** Added 2026-08-15, maintainer decision, after the question was asked directly: does an
+  existing install re-encrypt with a new key on upgrade? It does not. Slice 02 mints a key and makes it
+  active, so everything written *from then on* is protected, but every secret already stored stays under
+  the previously published key until a rotation runs. That split is deliberate — an unattended
+  re-encryption of every secret during startup, with nobody watching, no report and no readability check
+  first, has a failure mode of losing every credential at once, which is why slice 03 makes it operator
+  triggered, resumable and reported.
+
+  The consequence, though, is that the epic's headline outcome is reached by upgrading **and then
+  rotating**, and an operator who upgrades and does nothing is left exposed by inaction rather than by
+  choice. Two things close that gap and both are now in scope. AC-6.17 makes the docs and the release
+  note say plainly that upgrading re-encrypts nothing. AC-4.9 and AC-4.10 make the product say it
+  unprompted: while any secret is still readable only under the retired default, the encryption surface
+  reports the count and offers the re-encryption action beside it, and the notice disappears once no
+  secret references that key — and never appears on a fresh install, which has no such problem to fix.
+
+  Rejected: re-encrypting automatically on upgrade. It closes the window without asking, and the reasons
+  against it are the same ones that made rotation an explicit operator action in the first place.
 
 ### Open questions
 
@@ -484,6 +503,14 @@ rotation and a report full of skipped rows.
 - AC-4.6 Running it immediately after a rotation shows every readable secret on the active key.
 - AC-4.7 The check is restricted to a System Admin.
 - AC-4.8 It completes within the request timeout on a Tenant-Zero-sized instance, or streams progress.
+- AC-4.9 When any secret is still readable only under the previously published default key, the
+  encryption surface says so **unprompted**, with a count, and offers the re-encryption action beside
+  it. An operator who upgrades and reads no release note still learns that their stored credentials are
+  on a key anyone can obtain, and can act on it without going to look for the control. Added 2026-08-15
+  by maintainer decision.
+- AC-4.10 That notice disappears once no secret references the retired default, and does not appear at
+  all on an install that never held it — a fresh install must not be told to fix a problem it does not
+  have.
 
 ---
 
@@ -593,6 +620,12 @@ without asking — the exact conversation that lost the evaluation this epic cam
   answer plus a link to the Security page. Per-connector specifics stay on the connector pages; the
   in-product notice names no connector. Nothing is duplicated — the scattered mentions become links.
 - AC-6.16 US-08's link resolves to this page once it exists.
+- AC-6.17 The release note and the Security page state plainly that **upgrading does not re-encrypt
+  anything**. An install that upgrades and does nothing else writes new secrets under its own key while
+  every secret it already held stays under the previously published one, and stays readable by anyone
+  with the source, until a rotation is run. Saying "we fixed the encryption" without that sentence
+  would let a reader conclude the upgrade closed a window it did not close. Added 2026-08-15 by
+  maintainer decision, alongside AC-4.9.
 
 ---
 
