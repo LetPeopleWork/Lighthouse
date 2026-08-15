@@ -455,6 +455,11 @@ social-posts/*
 # ASP.NET Core DataProtection key store + protected blobs (runtime state)
 **/data-protection-keys/
 
+# The key store now follows the database file, so it lands in a `keys` directory
+# beside whatever the connection string points at rather than in a fixed location.
+# Everything in it is private key material.
+**/keys/
+
 # Playwright artifacts (per-run, never committed)
 test-results/
 
