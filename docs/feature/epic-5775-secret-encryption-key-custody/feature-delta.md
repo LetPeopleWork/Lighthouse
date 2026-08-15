@@ -2411,3 +2411,414 @@ which would make every backup a key-exfiltration target protected only by the op
 `TryUnprotect` and two assertions in `SecretEnvelopeTests`. Making it private is the tidier end state
 and costs one visibility change plus rehoming those two call sites; it is deliberately not done inside
 a behaviour-preserving step.
+
+---
+
+# Wave: DISTILL — acceptance specification, slice 02
+
+Story #5024, carrying Bug #5776. Slice 01 shipped at `a69caf4a4`; the envelope, the ring value object,
+the holder and the four-state reader all exist and are green. This wave specifies what slice 02 adds:
+where the ring comes from, where it is kept, what happens when it cannot be resolved, and who is told.
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `slices/slice-02-per-instance-key.md` — in full.
+- ✓ `feature-delta.md` — DISCUSS Locked Decisions (D3, D4, D7 retired, D9, D10, D12, D13), US-02's
+  eleven ACs, DESIGN Component Decomposition / Driving Ports / Driven Ports / Decisions / Reuse
+  Analysis / Architectural Enforcement / Forks / Open questions, DEVOPS Environment Matrix, Coexistence
+  Matrix, Deployment Strategy and Handoff.
+- ✓ `docs/product/architecture/adr-148`, `adr-149`, `adr-150`, `adr-152` — in full. `adr-146` and
+  `adr-147` were read in the slice-01 wave and are unchanged.
+- ✓ `environments.yaml` — in full, including the coexistence matrix and deployment assumptions.
+- ✓ Code as it stands after slice 01: `Program.cs` (bootstrap order, `EnsureOAuthStateSecret`,
+  `EnsureEncryptionKeyRing`, `ResolveDataProtectionKeyStoreDir`, `ConfigureDataProtection`,
+  `PrintSystemInfo`), `CryptoService.cs`, `Models/Encryption/{EncryptionKey,EncryptionKeyRing}.cs`,
+  `Services/Implementation/Encryption/EncryptionKeyRingHolder.cs`, `Standalone/StandaloneInitializer.cs`,
+  `appsettings.json`, `Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs`.
+- ✓ `docs/Installation/configuration.md` § Encryption Key — the documented name, which is the other
+  half of Bug #5776.
+- ✓ `acceptance/*.feature` from slice 01 — for the conventions this slice continues.
+- `docs/product/kpi-contracts.yaml` — inherited unchanged; slice 02 authors no new `@kpi` scenario
+  (see Pre-requisites).
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation
+
+Run across the DISCUSS, DESIGN and DEVOPS sections of this document, plus the DISTILL and DELIVER
+sections slice 01 left behind. **0 contradictions — reconciliation passed.** The four near-misses:
+
+- **D6 vs DESIGN F-2 / DD-14.** DISCUSS puts configuration-supplied custody on the side where the
+  application mints; DESIGN moves it to the operator side. Dated, confirmed, and recorded in *Changed
+  Assumptions*. Slice 02 inherits the corrected version: an instance handed a key never generates one
+  (scenario 42), and the guarded surface reports that this instance cannot mint (scenario 60).
+- **D12 vs DESIGN F-3 / ADR-149.** DISCUSS says the key store lives beside the database, full stop;
+  DESIGN narrows it to four ordered cases and adds refuse-to-mint where durability cannot be argued.
+  A narrowing with a dated confirmation, not a contradiction. Scenario 39 is the table, 58 and 59 are
+  the two halves of the refusal.
+- **AC-2.8 vs DESIGN F-4.** The AC names System Info as the surface; F-4 moves it to the
+  System-Admin-guarded encryption endpoint because `[Authorize]` includes embed viewers after ADR-137.
+  The AC's *intent* is met and its *surface* is corrected — scenarios 54, 55 and 56 pin all three
+  halves of that, including that System Info gained nothing.
+- **D7 retired 2026-08-15.** Bug #5776 lands here rather than ahead of the epic. AC-2.3, AC-2.8 and
+  AC-2.9 already covered it, so the absorption adds scope of one kind only: the documentation change
+  ships with this slice, because the configuration name only becomes true here.
+
+**Not re-derived, per the wave brief**: OQ-4 is zero (measured 2026-08-15 against the real backup); no
+EF migration is required (DESIGN F-6); D13 says upgrading does not re-encrypt.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports consumed by this slice**: application bootstrap (`EnsureEncryptionKeyRing` at
+  step 4 of a fixed order, ADR-150); the startup log line; `GET /api/{v1,latest}/encryption` under
+  `RbacGuard(SystemAdmin)` — the first of the four encryption routes, and the only one in this slice;
+  and the existing Settings → System page, which starts reading key state from that route instead of
+  from `GET /systeminfo`.
+- **Driven ports in scope**: the three key-ring sources (`ConfiguredKeyRingSource`,
+  `GeneratedKeyRingStore`, `MountedFileKeyRingSource` — the last one is *parsed* here and *watched* in
+  slice 05), ASP.NET Data Protection for wrapping, and the filesystem the key store resolves onto.
+  `KeyRingFileWatcher` is slice 05 and carries no scenario here.
+- **Slice 01 landed**: the envelope, the ring value object, the holder and the four-state reader. The
+  ring already exists and already holds exactly one key; this slice decides *which* key, from *where*,
+  and what to do when the answer is not available.
+- **No EF migration** (DESIGN F-6, not re-derived). Nothing in slice 02 touches a column.
+- **OQ-4 is answered and needs no scenario** (count is zero, not re-derived). It mattered to slice 01's
+  classifier; it changes nothing here.
+- **KPI instruments**: KPI-1 — the share of instances not on the published key — is the outcome of this
+  slice and is measured per instance from the startup line and the guarded surface, so scenarios 53 and
+  60 are its instrument. No separate `@kpi` scenario is authored, matching slice 01's treatment of
+  KPI-4. ADR-149 records that KPI-1 is **not** automatically satisfied for a hand-rolled Postgres
+  install by this slice, and scenario 58 is what makes that population visible to itself.
+- **Substrate owed before the slice closes**: `:5169` restored from a real backup and upgraded in place
+  from a pre-epic build (scenarios 48 and 50 are only honest evidence there), and a real Docker
+  recreate against a mounted volume (scenario 34). Demo data cannot prove either.
+- **Documentation ships with this slice**, not after it: `docs/Installation/configuration.md`
+  § Encryption Key names `Encryption:Key` / `Encryption__Key` today while the code reads
+  `EncryptionSettings:EncryptionKey`. The page becomes true at the same commit that makes the name true.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags)
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 31 | A first start with nothing supplied gives the instance a key of its own | milestone-5 | `@real-io @driving_port @us-02` |
+| 32 | Restarting is not a rotation | milestone-5 | `@real-io @driving_port @regression @us-02` |
+| 33 | The key is kept beside the data, and the startup line says exactly where | milestone-5 | `@real-io @driving_adapter @us-02` |
+| 34 | Replacing the container against the same mounted data directory keeps every secret readable | milestone-5 | `@real-io @adapter-integration @docker-with-data-volume @us-02` |
+| 35 | An instance whose key was kept in the old place keeps it, rather than starting over | milestone-5 | `@edge @upgrade-from-pre-epic @us-02` |
+| 36 | Two key stores that disagree stop startup rather than one of them winning | milestone-5 | `@error @us-02` |
+| 37 | A key that cannot be read back the moment after it was written is not accepted | milestone-5 | `@error @us-02` |
+| 38 | The standalone application is unchanged by this slice | milestone-5 | `@regression @standalone-exe @us-02` |
+| 39 | Where the key store lands is decided by one rule, applied in a stated order (4 cases) | milestone-5 | `@edge @us-02` |
+| 40 | A key supplied the way the documentation says is the key the instance uses | milestone-6 | `@driving_port @bug-5776 @us-02` |
+| 41 | The same key is understood the same way however it was supplied (4 transports) | milestone-6 | `@driving_port @bug-5776 @us-02` |
+| 42 | An instance given a key does not go and make one of its own | milestone-6 | `@edge @us-02` |
+| 43 | A supplied key that cannot be used stops startup and says what is wrong with it (5 defects) | milestone-6 | `@error @us-02` |
+| 44 | The complaint about a bad key never contains the key | milestone-6 | `@error @us-02` |
+| 45 | One supplied key gives every instance holding it the same name for it | milestone-6 | `@property @edge @us-02` |
+| 46 | An operator can supply more than one key, and the first one is the one that writes | milestone-6 | `@edge @us-02` |
+| 47 | The setting the code used to read no longer decides anything | milestone-6 | `@regression @bug-5776 @us-02` |
+| 48 | An instance upgrading from the published key reads every secret it already had | milestone-7 | `@real-io @driving_port @upgrade-from-pre-epic @us-02` |
+| 49 | The published key is gone from the shipped settings and the upgrade still works | milestone-7 | `@edge @upgrade-from-pre-epic @us-02` |
+| 50 | After the upgrade, a newly saved credential is written under this instance's own key | milestone-7 | `@real-io @driving_port @upgrade-from-pre-epic @us-02` |
+| 51 | The published key can never become the key new secrets are written under | milestone-7 | `@property @edge @us-02` |
+| 52 | Upgrading moves no secret that was already stored | milestone-7 | `@regression @upgrade-from-pre-epic @us-02` |
+| 53 | The startup line says where the key came from, what it is called, and where it is kept | milestone-8 | `@driving_adapter @us-02` |
+| 54 | The System settings page shows the same, and only a System Administrator can see it | milestone-8 | `@real-io @driving_adapter @us-02` |
+| 55 | Someone who is not a System Administrator learns nothing about the key | milestone-8 | `@error @driving_adapter @us-02` |
+| 56 | The system information surface says nothing about keys that it did not say before | milestone-8 | `@regression @driving_adapter @us-02` |
+| 57 | A key store that exists and cannot be read stops the instance rather than starting over | milestone-8 | `@error @us-02` |
+| 58 | An existing instance with nowhere durable to keep a key keeps working, and says so | milestone-8 | `@edge @docker-no-data-volume @us-02` |
+| 59 | A fresh instance with nowhere durable to keep a key refuses to start | milestone-8 | `@error @docker-no-data-volume @us-02` |
+| 60 | A System Administrator can see who owns the key and whether this instance may make a new one | milestone-8 | `@real-io @driving_adapter @us-02` |
+
+Every scenario also carries `@slice-02`. Scenarios 39, 41 and 43 are `Scenario Outline`s (four, four and
+five examples); each counts as one scenario. Numbering continues from slice 01's 1-30.
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01, and WS Strategy B —
+extend an existing skeleton — means slice 02 does not build a second. Scenario 34 is the slice's
+end-to-end demo proof and is deliberately tagged `@adapter-integration` rather than `@walking_skeleton`:
+it is the same vertical, exercised on a different substrate.
+
+**Error / edge / regression coverage = 20 of 30 (67%)**, against the ≥40% target. The ten happy paths
+are the two ways a ring can arrive (31, 40, 41), the three disclosure surfaces (53, 54, 60), the two
+halves of the upgrade (48, 50), the location rule (33) and the container recreate (34). The weighting
+again reflects the slice: an epic about key custody is mostly about what happens when custody is
+ambiguous.
+
+**AC traceability**: AC-2.1 → 31 · AC-2.2 → 32 · AC-2.3 → 40, 41, 42, 47 · AC-2.4 → 49 · AC-2.5 → 48,
+51 · AC-2.6 → 50 · AC-2.7 → 57 · AC-2.8 → 53, 54, 55, 56, 60 · AC-2.9 → 43, 44 · AC-2.10 → 33, 38, 39 ·
+AC-2.11 → 34. Beyond the ACs: D13 → 52 · ADR-149 case 4 → 58, 59 · ADR-149 migration branch → 35, 36 ·
+ADR-148 grammar and derived id → 45, 46 · ADR-148/149 write-then-read-back → 37.
+
+**ADR Earned Trust rows covered**: ADR-148 — invalid ring stops startup and says why (43), the legacy
+default can never become active (51), every legacy secret reads after the default leaves the settings
+file (48, 49), Data Protection can unwrap what it wrapped (37). ADR-149 — container recreate against a
+mounted volume (34), `fsync` no-op substrates (37), old key store populated and new one empty (35), both
+populated and different (36), `DataSource` parses the same everywhere (39), fresh told apart from
+upgraded (58, 59). ADR-150 — a restart is not a rotation (32), an unreadable store stops startup with no
+replacement written (57), key state is not readable by a non-admin (55). ADR-152 — non-admin and embed
+principals refused (55), `GET /systeminfo` discloses nothing (56).
+
+**Rows deliberately not covered here**: ADR-148's "a rotation cannot leave a half-written ring" and
+ADR-150's "a ring swap mid-decrypt does not tear" both need a rotation or a reload to exist — slices 03
+and 05. ADR-152's "the mint refusal is a contract" is the `409` on `POST /encryption/rotate`, which is
+slice 03; slice 02 owes only the `canMint` that refusal will be derived from (scenario 60).
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from slice
+01, and for the same reason: no Gherkin runner exists in any `.csproj`. They are translated in DELIVER
+into NUnit and Vitest. **No `src/` RED scaffolds**: `TreatWarningsAsErrors` makes a test referencing a
+not-yet-existent type a BROKEN build rather than a RED test. The project's RED mechanism is
+`[Ignore("pending — DELIVER (epic-5775 slice 02)")]`, authored in DELIVER beside the minimal type
+skeletons and un-ignored one scenario at a time.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-{5,6,7,8}-*.feature` | slice 01's `milestone-{1..4}` in the same directory |
+| Ring grammar unit (scenarios 43, 44, 45, 46, 51) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyRingSerializerTests.cs` | `SecretEnvelopeTests.cs`, `EncryptionKeyRingTests.cs` — same directory, established in slice 01 |
+| Key-store resolver table (scenarios 33, 38, 39) | `Lighthouse.Backend.Tests/Startup/KeyStoreDirectoryResolutionTests.cs` | `Startup/LoggingConfiguratorTest.cs`, `Startup/ServiceProviderValidationTest.cs` |
+| Bootstrapper unit + refusals (scenarios 31, 35, 36, 37, 42, 57, 58, 59) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs` | same directory as the slice-01 encryption tests |
+| Bootstrap order + boot-through (scenarios 32, 40, 41, 48, 50, 52) | `Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs` with `TestWebApplicationFactory` | `API/Integration/SystemInfoWireFormatRegressionTests.cs` |
+| Startup line (scenario 53) | `Lighthouse.Backend.Tests/StartupBannerEncryptionKeyLineTest.cs` | `StartupBannerAuthVisibilityTest.cs` — existing file at the same level and the same shape |
+| Encryption endpoint + guards (scenarios 55, 56, 60) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` | `API/Integration/SystemInfoAuthVisibilityCrossLayerTest.cs` |
+| Settings → System reading the guarded surface (scenario 54) | `Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx` + `src/services/Api/EncryptionService.test.ts` | existing colocated Vitest tests; `LicensingService.test.ts` for the service shape |
+| Container recreate (scenario 34) | Manual dogfood, recorded in the slice verdict — no CI substrate | `docker-with-data-volume` in `environments.yaml`; the treatment slice 01 gave its legacy-blob evidence |
+| Upgrade from a real backup (scenarios 48, 50) | Manual pass on `:5169` restored from a real backup, plus a fixture-backed NUnit equivalent | slice 01's OQ-4 measurement |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`.
+They are enforcement, not scenarios, and are listed so DELIVER does not rediscover them:
+
+| Rule | Where it lands |
+|---|---|
+| No key material reaches `IConfiguration` — walk `IConfigurationRoot.GetDebugView()` after boot, assert no value decodes to 32 bytes matching a ring entry | `Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs` (extend) |
+| `CryptoService` may not depend on `IConfiguration` — the rule that makes Bug #5776's defect class unrepeatable | same file (extend) |
+| No key material in any `encryption.*` log event's structured properties | same file (extend) |
+| Bootstrap order is what ADR-150 says — transposing steps 1 and 2 fails the test | `Startup/EncryptionBootstrapOrderTests.cs` |
+| The published-default constant carries exactly one narrow inline suppression with a plain-language justification | review gate at the declaration, per CLAUDE.md's one permitted exception |
+
+**Per-feature Stryker ≥ 80%** on the changed backend surface at slice end, with a
+`stryker-config.epic-5775-slice-02.json` beside the slice-01 configs. DEVOPS already records that a
+surviving mutant on this surface is a real hole rather than a metric.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter (DESIGN, slice 02) | Exercised via its protocol by |
+|---|---|
+| Application bootstrap — `EnsureEncryptionKeyRing` at step 4 of a fixed order | Scenarios 31, 32, 35, 36, 37, 40, 41, 42, 57, 58, 59 — real boots, not a direct call to the bootstrapper alone |
+| Startup log line | Scenarios 33, 53, 58 — the case-4 warning is a startup-line assertion, not a panel one |
+| `GET /api/{v1,latest}/encryption` under `RbacGuard(SystemAdmin)` | Scenarios 55, 60 (`WebApplicationFactory`, real HTTP, real guard) |
+| Settings → System page | Scenario 54 (Vitest, the real component against the real service adapter) |
+| `GET /systeminfo` — the surface that must gain nothing | Scenario 56 (`WebApplicationFactory`, real HTTP) |
+| Configuration transports — command line, environment, settings file, mounted file | Scenario 41's four examples, each through the real configuration provider rather than a pre-populated dictionary |
+
+Zero uncovered entry points. The three remaining encryption routes (`/encryption/secrets`,
+`/encryption/rotate`, `/encryption/reencrypt`) belong to slices 03 and 04 and are correctly absent.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `ConfiguredKeyRingSource` (`Encryption:Key` / `Encryption:Keys`) | YES | Scenarios 40, 41, 43, 46, 47 |
+| `GeneratedKeyRingStore` (wrapped file in the resolved key store) | YES | Scenarios 31, 32, 35, 36, 37, 57 |
+| `MountedFileKeyRingSource` (`Encryption:KeysFile`) | YES | Scenario 41's fourth example — parsed here, *watched* in slice 05 |
+| ASP.NET Data Protection (wrap / unwrap) | YES | Scenarios 31, 37, 57 — 37 is the one that proves the unwrap round trip on the real filesystem |
+| The filesystem the key store resolves onto | YES | Scenarios 33, 34, 35, 36, 39 |
+| Secret persistence via `LighthouseAppContext` | YES | Scenarios 32, 48, 50, 52 — slice 01's adapter, exercised here for key attribution rather than for format |
+| The database emptiness probe that tells a fresh instance from an existing one | YES | Scenarios 58, 59 — and see *Upstream Issues*, which is where this adapter's shape is still open |
+
+Zero "NO — MISSING" rows. `KeyRingFileWatcher` carries no row: it arrives in slice 05.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage
+
+Against `environments.yaml`. Slice 02 is the slice the custody matrix exists for, so unlike slice 01
+almost every product environment is genuinely distinguished here.
+
+| Environment | Slice-02 coverage | Note |
+|---|---|---|
+| `standalone-exe` | **Exercised** | Scenario 38. The point is that it changes by nothing — it already resolved case 2 before this epic existed, and a regression here would be invisible without the scenario |
+| `docker-with-data-volume` | **Exercised** | Scenarios 33, 34. Scenario 34 is manual and is the only evidence that the volume actually keeps the key across `docker rm` |
+| `docker-no-data-volume` | **Exercised** | Scenarios 58 and 59 — the DEVOPS handoff's request to parametrise over both Docker environments, honoured here rather than in slice 01, and split in two because the outcome genuinely differs between a fresh database and one already holding a secret |
+| `upgrade-from-pre-epic` | **Exercised** | Scenarios 35, 48, 49, 50, 52. The `:5169` restored backup is the substrate; demo rows were written by the build that reads them |
+| `k8s-explicit-key` | Indirect | Scenarios 40-42 cover configuration-supplied custody at the application level. The chart half is slice 05 |
+| `k8s-existing-secret` | Indirect | Scenario 41's mounted-file example parses the same ring the chart will project. The projection, the file mode and the reload are slice 05 |
+| Database providers (SQLite, PostgreSQL) | **Exercised, asymmetrically** | Scenario 39 distinguishes them: a SQLite `DataSource` with an absolute path reaches case 3, Postgres never does. That is a custody difference rather than a persistence one, so no provider-parametrised round trip is owed here |
+| `ci-chart`, `kind-install-smoke`, `tenant-zero` | **Not exercised** | Chart substrates, slice 05 |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues
+
+Two things this wave found that the earlier waves did not say. Neither blocks scenario writing — the
+Gherkin above is stated at the level of what an operator observes, so it stands whichever way each is
+resolved — but both change what DELIVER has to build, and neither should be discovered in an editor.
+
+**1. The fresh-versus-existing discriminator needs a database, and at that point in the bootstrap there
+is not one yet.**
+
+ADR-149 makes case 4's behaviour turn on "does this database already hold an encrypted secret?", and
+says pointedly that this is "a query, not a flag". ADR-150 then fixes the bootstrap order:
+`EnsureEncryptionKeyRing` is step 4, and `ConfigureDatabase` and `builder.Build()` come after it. So at
+the moment the decision is made, no `DbContext` exists, no connection has been opened, and for Postgres
+the server may not even be reachable. Three consequences neither ADR addresses:
+
+- The probe needs its own connection, opened and closed at builder time, using the same connection
+  string `ConfigureDatabase` will use later. That is a new startup dependency on database availability
+  in a code path whose whole purpose is to fail loudly, and "the database was not up yet" must not be
+  read as "this database is empty" — the two answers lead to opposite outcomes.
+- The probe has to survive a database with no schema at all, which is the ordinary first-boot state
+  before migrations run.
+- Only case 4 needs the probe. Cases 1-3 resolve or mint without asking, so the connection should be
+  opened only once the resolver has already landed on case 4 — which keeps the new dependency off every
+  other deployment's startup path.
+
+**Recommendation**: make the probe's contract three-valued — *holds encrypted secrets* / *holds none* /
+*cannot tell* — and have *cannot tell* behave as *holds encrypted secrets*, that is, start with the loud
+warning rather than refuse. Refusing to boot because Postgres was slow to come up would be a new outage
+mode introduced by a security improvement, which is the same trade ADR-149 already made when it declined
+to refuse for existing instances.
+
+**2. Every integration test, and a clean local `dotnet run`, is a case-4 fresh instance today.**
+
+`appsettings.json` ships `Database:ConnectionString = "Data Source=LighthouseAppContext.db"` — a bare
+relative filename, which is ADR-149 case 4 by its own table. `TestWebApplicationFactory` replaces the
+`DbContext` registration inside `ConfigureServices` but leaves configuration untouched, and
+`WebApplicationFactory` runs the real `Program` entry point, so `EnsureEncryptionKeyRing` sees the
+shipped connection string. Under the rule as written, every `WebApplicationFactory` test in the backend
+suite — and a first `dotnet run` on a fresh checkout — is a fresh case-4 instance and **refuses to
+start**.
+
+This is not an argument against the rule; it is a substrate consequence of it, and the fix sits inside
+ADR-149's own escape hatches rather than being an exception to them:
+
+- `TestWebApplicationFactory` supplies a fixture `Encryption:Key`, which makes custody
+  configuration-supplied, skips minting entirely, and has the side benefit of making every integration
+  test's key deterministic.
+- Local development supplies `Encryption:KeyStorePath`, or a key, in `appsettings.Development.json`.
+
+Recorded here rather than left to DELIVER because it touches a shared test helper every backend
+integration test depends on, and because CLAUDE.md's rule about shared contracts applies: extend the
+factory first, then the scenarios that boot through it.
+
+---
+
+## Wave: DISTILL / [REF] Changed Assumptions
+
+One, and it is small.
+
+**`EnsureEncryptionKeyRing` already exists, and slice 01 left it reading the wrong configuration name.**
+DESIGN's Component Decomposition lists `Program.EnsureEncryptionKeyRing` as **CREATE NEW (in an existing
+file)** for slice 02. It was in fact created during slice 01, because resolving the ring at builder time
+was the only way to give `CryptoService` a holder instead of an `IConfiguration`. What exists reads
+`EncryptionSettings:EncryptionKey`, derives a `k-cfg-` id from the material, and builds a one-key ring.
+So slice 02's change to it is **EXTEND**, not create: the name becomes `Encryption:Key` /
+`Encryption:Keys`, the parser becomes ADR-148's grammar, the three sources and the four resolver cases
+arrive, and the compiled-in retired default is appended.
+
+This also means slice 01 already shipped the behaviour change its own DELIVER section recorded — a
+malformed key now stops the boot rather than failing at first use — so scenario 43 tightens an existing
+refusal rather than introducing one. The slice-01 note asked that slice 02 know this before touching the
+same block; it does.
+
+---
+
+## Wave: DISTILL / [REF] Peer Review
+
+`nw-acceptance-designer-reviewer`, 2026-08-15, iteration 1. **Verdict as returned: rejected pending
+revisions** — 2 blockers, 2 high, 1 low. **Verdict after adjudication: two findings upheld and fixed,
+two rejected with the citation that contradicts them.** The three scale-sensitive reviewers were not
+dispatched: DISCUSS, DESIGN and DEVOPS each carry a recorded peer review, and slice 02 changed none of
+those sections.
+
+**Upheld and fixed.**
+
+- *Scenario 60 asserted a slice-04 outcome.* The step read "it says whether any secret is still readable
+  only under the key published with the product" — a statement about **secrets**, which can only be made
+  by walking the stored data, and that is AC-4.9's readability report. ADR-152's slice-02 payload carries
+  `legacyDefaultPresent`, a statement about the **ring**. The step now reads "whether the key published
+  with the product is still one of the keys held". Correct catch, and the distinction is exactly the one
+  D13 turns on.
+- *"Guarded surface" is jargon in a scenario name.* Scenarios 54 and 60 were renamed to say who can see
+  the thing rather than how it is protected, and scenario 55's `When` lost the same phrase. No behaviour
+  changed.
+
+**Rejected, with the source that contradicts each.**
+
+- *"It names the two things the operator can do about it" (scenarios 58, 59) belongs to slice 06.* It does
+  not. ADR-149 puts the two remedies on the **startup line**: "The startup line and the encryption panel
+  say, in one sentence, that this instance is on the published shared key and name the two ways out", and
+  again "a fresh one refuses to start, with the same two one-line remedies". `slices/slice-02-per-instance-key.md`
+  repeats it. Slice 06 is the public documentation and the security advisory — a different surface with a
+  different audience. Removing this would delete the only thing that makes the case-4 population able to
+  act, which is the whole reason ADR-149 chose a loud warning over a silent default.
+- *No AC traceability table exists.* One does, in the *Scenario List* section above, mapping AC-2.1
+  through AC-2.11 plus the decisions and ADR rows that no AC carries. The reviewer reported it as
+  unverifiable rather than as absent, which reads as not having reached that part of the file.
+
+**Also noted, not actioned**: the review counted 33-34 scenarios across the four files. There are 30;
+the three `Scenario Outline`s were counted by their example rows. The counts in the *Scenario List*
+section are the ones checked against the files.
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To `nw-software-crafter` (DELIVER)**: four `.feature` files in
+`docs/feature/epic-5775-secret-encryption-key-custody/acceptance/`, 30 scenarios, slice 02 only.
+Suggested order, which is also the commit order:
+
+1. **The ring grammar** — `KeyRingSerializer` and the compiled-in retired default. Pure, no I/O,
+   observable through scenarios 43-46 and 51. Ships first inside the slice, never as a slice.
+2. **The key-store resolver** — ADR-149's four ordered cases plus the migration branch, generalising
+   `ResolveDataProtectionKeyStoreDir` and consumed by all three of its callers. Scenarios 33, 35, 36,
+   38, 39.
+3. **The bootstrapper** — the three sources, the precedence order, the write-then-read-back proof, and
+   the refusals. This is the point of the slice. Scenarios 31, 32, 37, 40, 41, 42, 47, 57, 58, 59.
+   **Extend `TestWebApplicationFactory` with a fixture key before this step**, per Upstream Issue 2, or
+   the whole integration suite goes red for a reason that has nothing to do with the change.
+4. **The upgrade** — remove the literal from `appsettings.json`, append the retired default to every
+   resolved ring. Scenarios 48-52. After step 3, not before: until the ring can hold two keys the
+   removal has nowhere to put the old one.
+5. **Disclosure** — the startup line, `EncryptionController`'s first route, and Settings → System
+   reading it. Scenarios 53-56 and 60. Independent of the rest and the cheapest thing in the slice.
+6. **Documentation** — `docs/Installation/configuration.md` § Encryption Key, in the same commit range
+   as step 3. The page is wrong today and becomes right here; it is not a finalization task.
+
+Per-slice discipline as usual: `[Ignore("pending — DELIVER (epic-5775 slice 02)")]` on scenarios not yet
+reached, un-ignore one at a time, never push red. Per-feature Stryker ≥ 80% on the changed backend
+surface at slice end.
+
+**Owed before the slice closes**: the dogfood in `slices/slice-02-per-instance-key.md` — a copy of the
+`:5169` restored database started against the new build, every Connection syncing untouched, a newly
+saved secret landing on the instance's own key id; then the documented Docker command with its data
+volume, `docker rm`, recreate, every secret still readable. Scenarios 34, 48 and 50 have no CI substrate
+and this is their evidence.
+
+**Owed to DESIGN, not to DELIVER**: a decision on Upstream Issue 1's three-valued probe contract. The
+scenarios stand either way; the implementation does not.
+
+**Not in this slice, and deliberately**: rotation and re-encryption (03), the readability report and the
+count of secrets still on the published key (04), the chart and the mounted-Secret watcher (05), the
+advisory and the compliance pages (06). `Encryption:AllowLegacyDefault=false` is specified in ADR-148,
+carried by no AC, and deferred to slice 04, where readability is the surface it would be observed on.
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered (Gherkin phrasings weighed and rejected, including a `@walking_skeleton` framing for
+scenario 34) · fixture design discussion for the corrupted-key-store, two-key-stores and
+no-durable-store fixtures · full edge-case enumeration for the four resolver cases and the five ring
+defects · error-path rationale per `@error` scenario · tagging cookbook · property-based testing notes
+for scenarios 45 and 51 · domain-language fact-to-step table.
