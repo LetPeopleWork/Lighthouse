@@ -922,3 +922,86 @@ outcomes:
       the score describes the wrong code. All three were stale at the start of slice-03b close-out and were
       re-anchored again for slice-04. Whoever runs mutation on this surface next must re-anchor first.
     alerting: []
+
+  # --- epic-5775-secret-encryption-key-custody (DEVOPS wave, appended 2026-08-15) ---
+  # Only the four KPIs with an infrastructure surface are contracted here. KPI-4 (silent decrypt
+  # failures), KPI-5 (upgrade transparency) and KPI-7 (documentation answers the question) are owned by
+  # the application slices and the release review.
+
+  - id: OUT-5775-no-shared-encryption-key
+    feature: epic-5775-secret-encryption-key-custody
+    title: No install runs on a key anyone else has
+    target: "0 installs report a shipped default encryption key; every instance reports generated, configured or external"
+    measurement_scope: per_instance   # startup log line; CI proves the Kubernetes half by construction
+    measured_by: >
+      Two halves. In CI, a chart unit case asserting that a render supplying neither a key nor an
+      existing Secret FAILS — which makes a Kubernetes install on a shared key impossible rather than
+      unlikely, and covers ArgoCD too because the test renders with no cluster connection, exactly as
+      ArgoCD does. Per instance, one startup line naming the key source, the active key id and the
+      resolved key-store path, and never any key material.
+    measurement_window: every chart CI run (render half) + every process start (instance half)
+    rationale: >
+      The epic exists because a published default key ships in the repository and every install that
+      did not override it shares one key. A count of affected instances cannot be collected — the
+      product is self-hosted and phones home about nothing — so the target is stated as a property the
+      software enforces locally rather than a number a vendor observes.
+      Not automatic everywhere: an install with no local database file to sit beside cannot be promised
+      a durable key store, and there the instance refuses to mint and says so rather than generating a
+      key it may lose. Those operators supply a key or a key-store path explicitly.
+    alerting:
+      - condition: "a chart render succeeds with no encryption value supplied"
+        action: "chart CI fails (red) — blocks publish"
+      - condition: "an instance logs a key source of `default` at startup"
+        action: "operator-facing only; no vendor alert exists or is wanted"
+
+  - id: OUT-5775-rotation-costs-no-credentials
+    feature: epic-5775-secret-encryption-key-custody
+    title: Rotating the key asks nobody for a token
+    target: "100% of rotations complete with 0 connections requiring credential re-entry"
+    measurement_scope: per_instance + vendor_demo_only
+    measured_by: >
+      The rotation report the operator triggers the pass from: secrets walked, secrets moved, failures,
+      and connections needing attention. Dogfooded on the development instance restored from a real
+      backup, and on the vendor's own tenant for the Kubernetes flow, where rotation is four operator
+      actions against their own secret store and the product never writes to it.
+    measurement_window: each rotation; recorded at slice close
+    rationale: >
+      Rotation that costs credential re-entry is rotation nobody performs, which is how an install ends
+      up on the same key for years. The number that matters is not how fast it ran but whether anyone
+      had to go and find a token again.
+    alerting:
+      - condition: "a rotation reports any connection requiring re-entry"
+        action: "surfaced in the report the operator is already reading; no automated alert"
+
+  - id: OUT-5775-rotation-completes-promptly
+    feature: epic-5775-secret-encryption-key-custody
+    title: Rotation finishes while the operator is still watching
+    target: "< 60 s for a secret set the size of the vendor's own tenant"
+    measurement_scope: vendor_demo_only
+    measured_by: "wall-clock on the tenant rotation walkthrough, recorded in the slice brief"
+    measurement_window: per-slice dogfood
+    rationale: >
+      Directional, not gated. The population is one tenant, so the figure says whether the design is in
+      the right order of magnitude for an operator who triggered it and is waiting — not what any
+      customer will see.
+    alerting: []
+
+  - id: OUT-5775-upgrade-never-orphans-a-secret
+    feature: epic-5775-secret-encryption-key-custody
+    title: Upgrading never costs a stored secret
+    target: "0 stored secrets become unreadable across 3 consecutive upgrades with unchanged values"
+    measurement_scope: per_instance + vendor_demo_only
+    measured_by: >
+      In CI, a render-determinism gate (two identical renders produce byte-identical output) and a grep
+      asserting no generation primitive exists anywhere in the templates. On the vendor's own tenant,
+      three consecutive upgrades with unchanged values, confirming every connection still syncs after
+      each one.
+    measurement_window: every chart CI run (CI half) + per-slice dogfood (tenant half)
+    rationale: >
+      This was the failure the work was most afraid of: a chart that mints a key regenerating it on
+      every sync and orphaning a tenant's whole credential set. The design removes it by never
+      generating rather than by guarding against it, so the property is structural — but the tests stay,
+      because the thing they defend is the absence of a generator, and absences are easy to reintroduce.
+    alerting:
+      - condition: "two identical renders differ, or a generation primitive appears in any template"
+        action: "chart CI fails (red) — blocks publish"

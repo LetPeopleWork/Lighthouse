@@ -1735,8 +1735,10 @@ One new signal has no KPI but is the only way an operator learns a rotation reac
 on an accepted reload. A rejected reload emits at Error with the reason and the previous ring stays in
 force. Both are per-instance log events; there is no central collection and this epic adds none.
 
-**Owed, not done here**: appending these four as outcome entries to `docs/product/kpi-contracts.yaml`,
-following the append-never-rewrite convention that file states.
+**Done**: the four are appended to `docs/product/kpi-contracts.yaml` as
+`OUT-5775-no-shared-encryption-key`, `OUT-5775-rotation-costs-no-credentials`,
+`OUT-5775-rotation-completes-promptly` and `OUT-5775-upgrade-never-orphans-a-secret`, following the
+append-never-rewrite convention that file states. The file parses; it now carries 35 outcomes.
 
 ---
 
