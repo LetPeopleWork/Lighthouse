@@ -23,7 +23,10 @@ import type {
 	IAuthenticationMethod,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
+import {
+	type IWorkTrackingSystemOption,
+	SecretStates,
+} from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import type { IWriteBackMappingDefinition } from "../../../models/WorkTracking/WriteBackMappingDefinition";
 import AdditionalFieldsEditor from "../../../pages/Settings/Connections/AdditionalFieldsEditor";
 import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBackMappingsEditor";
@@ -41,8 +44,32 @@ const CONCURRENCY_CONFLICT_STATUS = 409;
 const CONCURRENCY_CONFLICT_COPY =
 	"This connection was changed by someone else since you opened it. Reload to get the latest values, then re-apply your change.";
 
+const OAUTH_LOCKED_COPY =
+	"Locked after the OAuth connect handshake. Reconnect to rotate.";
+
+const UNREADABLE_SECRET_COPY =
+	"This secret cannot be read with the current encryption key. Enter it again to store it under the key this instance uses now.";
+
 const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
 	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
+
+const secretCannotBeRead = (option: IWorkTrackingSystemOption): boolean =>
+	option.secretState === SecretStates.Unreadable;
+
+const resolveAuthOptionHelperText = (
+	option: IWorkTrackingSystemOption,
+	lockOAuthField: boolean,
+): string | undefined => {
+	if (secretCannotBeRead(option)) {
+		return UNREADABLE_SECRET_COPY;
+	}
+
+	if (lockOAuthField) {
+		return OAUTH_LOCKED_COPY;
+	}
+
+	return undefined;
+};
 
 function resolveValidationErrorMessage(
 	error: unknown,
@@ -213,6 +240,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							value: option.value,
 							isSecret: option.isSecret,
 							isOptional: option.isOptional,
+							secretState: option.secretState,
 						};
 						if (currentAuthKeys.has(option.key)) {
 							existingAuthOptions.push(mappedOption);
@@ -574,11 +602,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 															? { input: { readOnly: true } }
 															: undefined
 													}
-													helperText={
-														lockOAuthField
-															? "Locked after the OAuth connect handshake. Reconnect to rotate."
-															: undefined
-													}
+													error={secretCannotBeRead(option)}
+													helperText={resolveAuthOptionHelperText(
+														option,
+														lockOAuthField,
+													)}
 													onChange={(e) =>
 														handleAuthOptionChange(option, e.target.value)
 													}

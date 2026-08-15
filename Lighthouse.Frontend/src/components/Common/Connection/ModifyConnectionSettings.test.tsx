@@ -5,6 +5,10 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	type SecretState,
+	SecretStates,
+} from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
@@ -205,6 +209,62 @@ const mockExistingConnection = new WorkTrackingSystemConnection({
 	additionalFieldDefinitions: [],
 	authenticationMethodKey: "ado.pat",
 });
+
+const mockSystemWithSecretAndPlainField = new WorkTrackingSystemConnection({
+	id: 0,
+	name: "Azure DevOps",
+	workTrackingSystem: "AzureDevOps",
+	options: [],
+	availableAuthenticationMethods: [
+		{
+			key: "ado.pat",
+			displayName: "Personal Access Token",
+			options: [
+				{
+					key: "AccessToken",
+					displayName: "Access Token",
+					isSecret: true,
+					isOptional: false,
+				},
+				{
+					key: "Organization Url",
+					displayName: "Organization URL",
+					isSecret: false,
+					isOptional: false,
+				},
+			],
+		},
+	],
+	additionalFieldDefinitions: [],
+	authenticationMethodKey: "ado.pat",
+});
+
+const connectionWithSecretState = (secretState: SecretState | null) =>
+	new WorkTrackingSystemConnection({
+		id: 7,
+		name: "My Existing Connection",
+		workTrackingSystem: "AzureDevOps",
+		options: [
+			{
+				key: "AccessToken",
+				value: "",
+				isSecret: true,
+				isOptional: false,
+				secretState,
+			},
+			{
+				key: "Organization Url",
+				value: "https://dev.azure.com/acme",
+				isSecret: false,
+				isOptional: false,
+				secretState: null,
+			},
+		],
+		availableAuthenticationMethods:
+			mockSystemWithSecretAndPlainField.availableAuthenticationMethods,
+		additionalFieldDefinitions: [],
+		authenticationMethodKey: "ado.pat",
+	});
 
 const createQueryClient = () =>
 	new QueryClient({
@@ -720,6 +780,73 @@ describe("ModifyConnectionSettings", () => {
 			});
 			expect(screen.queryByLabelText("Client ID")).not.toBeInTheDocument();
 			expect(screen.queryByText(/Upgrade to Premium/i)).not.toBeInTheDocument();
+		});
+	});
+
+	describe("Stored secret that can no longer be read", () => {
+		const unreadableMessage = /cannot be read with the current encryption key/i;
+
+		const renderConnection = (secretState: SecretState | null) =>
+			renderComponent({
+				getSupportedSystems: vi
+					.fn()
+					.mockResolvedValue([mockSystemWithSecretAndPlainField]),
+				getConnectionSettings: vi
+					.fn()
+					.mockResolvedValue(connectionWithSecretState(secretState)),
+			});
+
+		it("marks the field whose stored secret can no longer be read", async () => {
+			renderConnection(SecretStates.Unreadable);
+
+			await waitFor(() => {
+				expect(
+					screen.getByLabelText("Access Token"),
+				).toHaveAccessibleDescription(unreadableMessage);
+			});
+		});
+
+		it("says what an operator can do about it, without naming any internal state", async () => {
+			renderConnection(SecretStates.Unreadable);
+
+			const message = await screen.findByText(unreadableMessage);
+			expect(message).toHaveTextContent(/enter it again/i);
+			expect(message.textContent).not.toMatch(
+				/unreadable|envelope|classifier|cipher/i,
+			);
+		});
+
+		it("leaves the other fields on the same connection unmarked", async () => {
+			renderConnection(SecretStates.Unreadable);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
+			});
+			expect(
+				screen.getByLabelText("Organization URL"),
+			).not.toHaveAccessibleDescription(unreadableMessage);
+			expect(screen.getAllByText(unreadableMessage)).toHaveLength(1);
+		});
+
+		it("marks nothing when every stored secret still reads", async () => {
+			renderConnection(SecretStates.Envelope);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
+			});
+			expect(screen.queryByText(unreadableMessage)).not.toBeInTheDocument();
+		});
+
+		it("leaves the secret field exactly as it is today when no state is reported", async () => {
+			renderConnection(null);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Access Token")).toHaveAttribute(
+					"placeholder",
+					"Leave empty to keep existing value",
+				);
+			});
+			expect(screen.queryByText(unreadableMessage)).not.toBeInTheDocument();
 		});
 	});
 });
