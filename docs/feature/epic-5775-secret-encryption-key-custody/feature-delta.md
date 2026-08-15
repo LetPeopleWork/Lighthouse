@@ -2831,3 +2831,35 @@ scenario 34) · fixture design discussion for the corrupted-key-store, two-key-s
 no-durable-store fixtures · full edge-case enumeration for the four resolver cases and the five ring
 defects · error-path rationale per `@error` scenario · tagging cookbook · property-based testing notes
 for scenarios 45 and 51 · domain-language fact-to-step table.
+
+---
+
+# Wave: DELIVER — slice 02
+
+Running record, written as the slice is built.
+
+## Wave: DELIVER / [REF] Upstream Issues — slice 02
+
+Two gaps in ADR-148's grammar, both found while step 01-01 wrote the parser, both resolved by the
+implementation in the direction that keeps the parser one code path. Recorded because each is a
+decision the ADR could reasonably have made the other way, and neither should be rediscovered by
+someone reading the ADR alone.
+
+**1. A bare, id-less entry inside a *multi*-entry ring is undefined.** ADR-148 introduces the bare form
+only as sugar for the `Encryption:Key` scalar — that is, a one-entry ring — and says nothing about
+whether `<base64>,k-old:<base64>` is legal. The parser accepts a bare entry at any position, because
+the derived id is a deterministic function of the material, so the entry is attributable wherever it
+sits and allowing it costs nothing while forbidding it would need a second code path and a sixth defect
+message. **If the intent was to permit the bare form only as a lone entry, that is a deliberate
+restriction someone should state**, and steps 03-02 and 03-04 are where it would start to matter.
+
+**2. The id charset admits shapes nobody meant.** `[a-z0-9-]{1,32}` as written permits an id that is
+entirely hyphens (`---`), and one that begins with a digit (`0`). Both parse today, because the charset
+was implemented exactly as the ADR states it. Minted ids are specified as `k-YYYY-MM-DD-NN` and derived
+configuration ids as `k-cfg-<8 hex>`, so every id the product itself produces starts with `k-`; the
+looseness only reaches a hand-written ring. Tightening it later would be a breaking change for anyone
+who had used a legal-but-unintended id, which argues for deciding now rather than at slice 05, when
+operator-authored rings arrive through a mounted Secret.
+
+Neither blocks the slice. Both are cheap to close while the grammar has exactly one caller.
+
