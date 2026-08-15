@@ -1,6 +1,10 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.OAuth;
+using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
@@ -12,6 +16,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
+using System.Net;
+using System.Text;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 {
@@ -26,6 +32,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
         private const string PlaintextClientSecret = "client-secret-xyz";
         private const string BaseUrl = "https://lighthouse.example.com";
         private const string ValidStateToken = "valid.state.token";
+
+        private const string ActiveKeyId = "key-active";
+
+        private const string OffRingKeyId = "key-not-on-the-ring";
+
+        // Throwing and sending nothing are two different facts. A refresh that posted the stored bytes to
+        // the identity provider and only then failed would satisfy a test that asked no more than "did it
+        // throw", and it would still have put a value nobody here could read on the wire.
+        private const string NothingWentOut =
+            "The refresh must reach the identity provider with no request at all, not merely fail after one.";
+
+        // Marking the credential failed here would tell the operator the provider turned us away, which is
+        // the misattribution that sends them off to re-issue a token that was never the problem.
+        private const string NotARefusedCredential =
+            "A stored token the instance cannot read is a key problem, so the credential must not be recorded as one the provider refused.";
+
+        private static readonly byte[] ActiveKeyMaterial = Convert.FromBase64String("aXhZdXd5+OeT8kjKP2gB7UdqMEB3RY4LQMI2yffxDEw=");
+
+        private static readonly byte[] OffRingKeyMaterial = Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg=");
+
+        private const string RenewedAccessToken = "access-token-from-the-identity-provider";
+
+        private const string RenewedRefreshToken = "refresh-token-from-the-identity-provider";
 
         private static readonly string[] DefaultProviderScopes = ["read:jira-work"];
 
@@ -697,16 +726,159 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
             return credential;
         }
 
+        [Test]
+        public void EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_ReachesTheIdentityProviderWithNothingSent()
+        {
+            using var identityProvider = new RequestCountingHandler();
+            ArrangeRefreshThroughARealIdentityProvider(ARefreshTokenTheInstanceCannotRead(), identityProvider);
+            var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
+
+            Assert.ThrowsAsync<UnreadableSecretException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            Assert.That(identityProvider.RequestCount, Is.Zero, NothingWentOut);
+        }
+
+        [Test]
+        public void EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_SaysTheStoredTokenCannotBeReadRatherThanThatTheAuthorisationLapsed()
+        {
+            using var identityProvider = new RequestCountingHandler();
+            ArrangeRefreshThroughARealIdentityProvider(ARefreshTokenTheInstanceCannotRead(), identityProvider);
+            var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
+
+            var thrown = Assert.ThrowsAsync<UnreadableSecretException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(thrown!.Message, Does.Contain("cannot be read"));
+                Assert.That(thrown.Message, Does.Not.Contain("expired").IgnoreCase);
+                Assert.That(thrown.Message, Does.Not.Contain("revoked").IgnoreCase);
+                Assert.That(thrown.Message, Does.Not.Contain("reconnect").IgnoreCase);
+                Assert.That(thrown.Message, Does.Not.Contain("refresh failed").IgnoreCase);
+            }
+        }
+
+        [Test]
+        public void EnsureFreshTokenAsync_AStoredRefreshTokenNobodyCanRead_LeavesTheCredentialAsItWasRatherThanRecordingARefusal()
+        {
+            using var identityProvider = new RequestCountingHandler();
+            var credential = ArrangeRefreshThroughARealIdentityProvider(ARefreshTokenTheInstanceCannotRead(), identityProvider);
+            var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
+
+            Assert.ThrowsAsync<UnreadableSecretException>(
+                () => sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None));
+
+            Assert.That(credential.Status, Is.EqualTo(OAuthCredentialStatus.Valid), NotARefusedCredential);
+            credentialRepositoryMock.Verify(r => r.Update(It.IsAny<OAuthCredential>()), Times.Never);
+            credentialRepositoryMock.Verify(r => r.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task EnsureFreshTokenAsync_AStoredRefreshTokenThatReads_StillRenewsAgainstTheIdentityProvider()
+        {
+            using var identityProvider = new RequestCountingHandler();
+            var credential = ArrangeRefreshThroughARealIdentityProvider(AStoredValueTheInstanceCanRead("plain-rt-old"), identityProvider);
+            var sut = CreateService(cryptoService: ACryptoServiceHoldingOnlyTheActiveKey());
+
+            var token = await sut.EnsureFreshTokenAsync(ConnectionId, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(token, Is.EqualTo(RenewedAccessToken));
+                Assert.That(identityProvider.RequestCount, Is.EqualTo(1));
+                Assert.That(credential.Status, Is.EqualTo(OAuthCredentialStatus.Valid));
+                Assert.That(credential.AccessToken, Is.EqualTo(RenewedAccessToken));
+                Assert.That(credential.RefreshToken, Is.EqualTo(RenewedRefreshToken));
+            }
+            credentialRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        private OAuthCredential ArrangeRefreshThroughARealIdentityProvider(string storedRefreshToken, HttpMessageHandler identityProvider)
+        {
+            var connection = CreateOAuthConnection(ConnectionId, ProviderKey);
+            connection.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientId).Value =
+                AStoredValueTheInstanceCanRead(PlaintextClientId);
+            connection.Options.Single(o => o.Key == OAuthWorkTrackingOptionNames.ClientSecret).Value =
+                AStoredValueTheInstanceCanRead(PlaintextClientSecret);
+            connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
+
+            providerRegistryMock
+                .Setup(r => r.GetByKey(ProviderKey))
+                .Returns(new JiraOAuthProvider(new HttpClient(identityProvider), timeProvider, NullLogger<JiraOAuthProvider>.Instance));
+
+            var credential = new OAuthCredential
+            {
+                Id = 53,
+                WorkTrackingSystemConnectionId = ConnectionId,
+                AccessToken = AStoredValueTheInstanceCanRead("plain-at-old"),
+                RefreshToken = storedRefreshToken,
+                ExpiresAt = timeProvider.GetUtcNow().AddMinutes(1),
+                Status = OAuthCredentialStatus.Valid,
+                UpdatedAt = timeProvider.GetUtcNow().AddMinutes(-10),
+            };
+            credentialRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<OAuthCredential, bool>>()))
+                .Returns<Func<OAuthCredential, bool>>(predicate => predicate(credential) ? credential : null);
+
+            return credential;
+        }
+
+        private static string AStoredValueTheInstanceCanRead(string plainText)
+        {
+            return SecretEnvelope.Protect(plainText, ActiveKeyId, ActiveKeyMaterial).Format();
+        }
+
+        // A well-formed envelope naming a key the ring does not hold cannot be read on any run. Random
+        // bytes would not do: garbage clears the padding and printability checks by chance roughly once in
+        // a thousand tries, and a test that fails one run in a thousand teaches a reader to ignore it.
+        private static string ARefreshTokenTheInstanceCannotRead()
+        {
+            return SecretEnvelope.Protect("whatever-was-stored-here", OffRingKeyId, OffRingKeyMaterial).Format();
+        }
+
+        private static CryptoService ACryptoServiceHoldingOnlyTheActiveKey()
+        {
+            var ring = new EncryptionKeyRing(new EncryptionKey(ActiveKeyId, ActiveKeyMaterial));
+
+            return new CryptoService(new EncryptionKeyRingHolder(ring), NullLogger<CryptoService>.Instance);
+        }
+
+        private sealed class RequestCountingHandler : HttpMessageHandler
+        {
+            private int requestCount;
+
+            public int RequestCount => Volatile.Read(ref requestCount);
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                Interlocked.Increment(ref requestCount);
+
+                var body = "{"
+                    + $"\"access_token\":\"{RenewedAccessToken}\","
+                    + $"\"refresh_token\":\"{RenewedRefreshToken}\","
+                    + "\"expires_in\":3600,"
+                    + "\"token_type\":\"Bearer\""
+                    + "}";
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                });
+            }
+        }
+
         private OAuthService CreateService(
             IHttpContextAccessor? httpContextAccessor = null,
             OAuthRefreshOptions? refreshOptions = null,
-            ILogger<OAuthService>? logger = null)
+            ILogger<OAuthService>? logger = null,
+            ICryptoService? cryptoService = null)
         {
             return new OAuthService(
                 providerRegistryMock.Object,
                 connectionRepositoryMock.Object,
                 credentialRepositoryMock.Object,
-                cryptoServiceMock.Object,
+                cryptoService ?? cryptoServiceMock.Object,
                 stateTokenIssuerMock.Object,
                 serviceConfigMock.Object,
                 timeProvider,
