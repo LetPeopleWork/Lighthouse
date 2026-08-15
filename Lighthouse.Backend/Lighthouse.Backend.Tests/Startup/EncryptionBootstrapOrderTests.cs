@@ -34,6 +34,21 @@ namespace Lighthouse.Backend.Tests.Startup
 
         private const string Credential = "a stored credential";
 
+        // The block the published key used to live in. Nothing shipped may name it any more, and it is spelled
+        // out here rather than derived so that deleting it from a settings file cannot also delete the check.
+        private const string TheBlockThePublishedKeyLivedIn = "EncryptionSettings";
+
+        private static readonly string[] ShippedSettingsFileNames = ["appsettings.json", "appsettings.Development.json"];
+
+        private static readonly string[] CredentialsStoredBeforeTheUpgrade =
+        [
+            "a personal access token",
+            "another instance's client secret",
+        ];
+
+        private static readonly SecretState[] EveryOneAReadableEnvelope =
+            [.. Enumerable.Repeat(SecretState.Envelope, CredentialsStoredBeforeTheUpgrade.Length)];
+
         private const string CommandLineRoute = "the command line";
 
         private const string EnvironmentRoute = "an environment variable";
@@ -130,10 +145,81 @@ namespace Lighthouse.Backend.Tests.Startup
         public void FixtureEncryptionKey_IsNotAKeyPublishedWithTheProduct()
         {
             Assert.That(
-                KeysPublishedInTheShippedSettings(),
+                EveryValueInTheShippedSettings(),
                 Does.Not.Contain(IntegrationTestEncryptionKey.Value),
                 "The fixture key is the same value the product ships with. A key checked into a public " +
                 "repository as test scaffolding must never be one an instance could actually be running.");
+        }
+
+        // Deliberately asked by shape rather than by looking for the one value that was removed. Whatever the
+        // next such value would be called, it would still be a key, and it would still be in every copy of the
+        // product and in the public source - which is the whole reason no key can ship in a settings file.
+        [Test]
+        public void TheShippedSettingsFile_CarriesNoValueThatCouldBeAnEncryptionKey()
+        {
+            Assert.That(
+                SettingsWhoseValueDecodesToAKey(),
+                Is.Empty,
+                "A value in the shipped settings file decodes to exactly the length of an encryption key. " +
+                "A key that ships with the product is one every copy of it shares, so it protects nothing, " +
+                "whatever the setting it sits under happens to be called.");
+        }
+
+        [Test]
+        public void NoShippedSettingsFile_StillNamesTheBlockThePublishedKeyLivedIn()
+        {
+            var stillNamingIt = ShippedSettingsFileNames
+                .Where(name => File.ReadAllText(Path.Combine(BackendProjectDirectory(), name))
+                    .Contains(TheBlockThePublishedKeyLivedIn, StringComparison.Ordinal))
+                .ToList();
+
+            Assert.That(
+                stillNamingIt,
+                Is.Empty,
+                "A shipped settings file still carries the block the published key used to live in. Nothing " +
+                "reads that name any more, so anything left under it is a setting an operator can change " +
+                "without changing anything.");
+        }
+
+        [Test]
+        public void AnInstanceUpgradingFromThePublishedKey_ReadsEveryCredentialItHadAndAsksForNothing()
+        {
+            var upgraded = RingResolvedWithNothingSupplied(ADurableKeyStore());
+            var storedBeforeTheUpgrade = WrittenUnderThePublishedKeyOn(upgraded);
+
+            var read = storedBeforeTheUpgrade.ConvertAll(CryptoServiceHolding(upgraded).Read);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(upgraded.ActiveKey.Id, Is.Not.EqualTo(LegacyDefaultEncryptionKey.Id),
+                    "The upgraded instance is still writing under the published key, so the upgrade moved it " +
+                    "nowhere.");
+                Assert.That(read.ConvertAll(result => result.State), Is.EqualTo(EveryOneAReadableEnvelope),
+                    "A credential stored before the upgrade no longer reads as a readable secret, which is " +
+                    "the state that puts an operator in front of a field asking them to type it in again.");
+                Assert.That(read.ConvertAll(result => result.PlainText), Is.EqualTo(CredentialsStoredBeforeTheUpgrade));
+            }
+        }
+
+        [Test]
+        public void AfterTheUpgrade_ACredentialSavedNowNamesTheInstancesOwnKeyAndTheOlderOnesStillNameThePublishedOne()
+        {
+            var upgraded = RingResolvedWithNothingSupplied(ADurableKeyStore());
+            var storedBeforeTheUpgrade = WrittenUnderThePublishedKeyOn(upgraded);
+
+            var savedAfterTheUpgrade = CryptoServiceHolding(upgraded).Encrypt(Credential);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(savedAfterTheUpgrade, Does.Contain(upgraded.ActiveKey.Id));
+                Assert.That(savedAfterTheUpgrade, Does.Not.Contain(LegacyDefaultEncryptionKey.Id));
+                Assert.That(
+                    storedBeforeTheUpgrade.TrueForAll(
+                        stored => stored.Contains(LegacyDefaultEncryptionKey.Id, StringComparison.Ordinal)),
+                    Is.True,
+                    "A credential stored before the upgrade stopped naming the key it was written under, so " +
+                    "something rewrote it.");
+            }
         }
 
         [Test]
@@ -407,19 +493,45 @@ namespace Lighthouse.Backend.Tests.Startup
             return factory.Services.GetRequiredService<IConfiguration>()[IntegrationTestEncryptionKey.ConfigurationKey];
         }
 
-        private static List<string> KeysPublishedInTheShippedSettings()
+        // The published key is compiled in with no accessor of its own, so the only way to hold it is the way
+        // production does: take it off the end of a ring it has been appended to.
+        private static List<string> WrittenUnderThePublishedKeyOn(EncryptionKeyRing upgraded)
+        {
+            var published = new EncryptionKeyRing(KeyCustody.NoDurableStore, upgraded.RetiredKeys[^1]);
+
+            Assert.That(published.ActiveKey.Id, Is.EqualTo(LegacyDefaultEncryptionKey.Id),
+                "The last key on the resolved ring is not the published one, so these fixtures were not " +
+                "written under the key an upgrading instance would have used.");
+
+            return [.. CredentialsStoredBeforeTheUpgrade.Select(CryptoServiceHolding(published).Encrypt)];
+        }
+
+        private static List<string> SettingsWhoseValueDecodesToAKey()
+        {
+            return [.. EveryShippedSetting()
+                .Where(setting => DecodesToTheLengthOfAKey(setting.Value))
+                .Select(setting => setting.Key)];
+        }
+
+        private static List<string> EveryValueInTheShippedSettings()
+        {
+            return [.. EveryShippedSetting().Select(setting => setting.Value!)];
+        }
+
+        private static List<KeyValuePair<string, string?>> EveryShippedSetting()
         {
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile(Path.Combine(BackendProjectDirectory(), "appsettings.json"))
                 .Build();
 
-            return new[]
-            {
-                configuration[IntegrationTestEncryptionKey.ConfigurationKey],
-                configuration["EncryptionSettings:EncryptionKey"],
-            }
-            .OfType<string>()
-            .ToList();
+            return [.. configuration.AsEnumerable().Where(setting => setting.Value is not null)];
+        }
+
+        private static bool DecodesToTheLengthOfAKey(string? value)
+        {
+            return value is not null
+                && Convert.TryFromBase64String(value, new byte[value.Length], out var decodedLength)
+                && decodedLength == EncryptionKey.MaterialLength;
         }
 
         // The shipped settings files are not copied into the test output, so they are read from the

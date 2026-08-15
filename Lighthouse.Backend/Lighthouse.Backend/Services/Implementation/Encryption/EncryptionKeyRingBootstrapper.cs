@@ -78,12 +78,17 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         // the key it made would be unreadable.
         // Anything that goes wrong on the way out is raised, never swallowed: an instance carrying on
         // without the key it believes it has fails later, somewhere unrelated, with nothing to point at.
+        // Whichever line answered, the key published with the product goes on the end afterwards. Every
+        // Lighthouse before this release encrypted with it, so an instance that upgrades has to be able to
+        // read what it already stored; the end of the ring is a place it can only ever read from.
         public EncryptionKeyRing Resolve()
         {
-            return configuration.Resolve()
+            var resolved = configuration.Resolve()
                 ?? mountedFile.Resolve()
                 ?? generated.ReadExisting()
                 ?? NoKeyAnywhereYet();
+
+            return resolved.WithLegacyDefault();
         }
 
         // The last resort, and the only branch that asks the database anything. A key made where nothing

@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private const string EncryptionKeyConfigKey = "Encryption:Key";
 
+        private static readonly string[] OnlyThePublishedKey = [LegacyDefaultEncryptionKey.Id];
+
         private const string DerivedKeyIdPrefix = "k-cfg-";
 
         private const int DerivedKeyIdLength = 14;
@@ -271,7 +273,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(ring.ActiveKey.Material.ToArray(), Is.EqualTo(ActiveKeyMaterial));
-                Assert.That(ring.RetiredKeys, Is.Empty);
+                Assert.That(ring.RetiredKeys.Select(key => key.Id), Is.EqualTo(OnlyThePublishedKey));
+                Assert.That(ring.ActiveKey.Id, Is.Not.EqualTo(LegacyDefaultEncryptionKey.Id));
                 Assert.That(ring.ActiveKey.Id, Does.StartWith(DerivedKeyIdPrefix));
                 Assert.That(ring.ActiveKey.Id, Has.Length.EqualTo(DerivedKeyIdLength));
             }

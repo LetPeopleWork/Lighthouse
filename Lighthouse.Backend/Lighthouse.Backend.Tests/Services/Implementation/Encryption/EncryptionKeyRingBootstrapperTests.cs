@@ -1,8 +1,10 @@
 using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Data;
 using System.Reflection;
 using System.Text;
@@ -21,6 +23,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         ];
 
         private const string MountedSecretPath = "/etc/lighthouse/encryption/keyring";
+
+        private static readonly string[] CredentialsStoredBeforeTheUpgrade =
+        [
+            "a personal access token",
+            "another instance's client secret",
+            "one more, long enough that padding is not what makes this work: " + new string('x', 400),
+        ];
 
         private const string ConnectionOptionTable =
             """CREATE TABLE "WorkTrackingSystemConnectionOption" ("Id" INTEGER PRIMARY KEY, "Key" TEXT, "Value" TEXT, "IsSecret" INTEGER, "IsOptional" INTEGER, "WorkTrackingSystemConnectionId" INTEGER)""";
@@ -65,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(ring.Custody, Is.EqualTo(KeyCustody.GeneratedForThisInstance));
                 Assert.That(ring.CanMint, Is.True);
                 Assert.That(ring.ActiveKey.Material.Length, Is.EqualTo(EncryptionKey.MaterialLength));
-                Assert.That(ring.RetiredKeys, Is.Empty);
+                Assert.That(ring.RetiredKeys, Is.EqualTo(OnlyThePublishedKey()));
                 Assert.That(File.Exists(Path.Combine(keyStoreDirectory, GeneratedKeyRingStore.RingFileName)), Is.True);
             }
         }
@@ -446,6 +455,222 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        [TestCase(KeyCustody.GeneratedForThisInstance)]
+        [TestCase(KeyCustody.SuppliedByConfiguration)]
+        [TestCase(KeyCustody.SuppliedByExternalSecret)]
+        public void Resolve_AnInstanceThatHasAKeyOfItsOwn_KeepsThePublishedKeyLastAndNeverWritesUnderIt(KeyCustody custody)
+        {
+            var ring = RingResolvedInCustody(custody);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(custody));
+                Assert.That(ring.ActiveKey.Id, Is.Not.EqualTo(LegacyDefaultEncryptionKey.Id));
+                Assert.That(ring.RetiredKeys[^1], Is.EqualTo(ThePublishedKey()));
+                Assert.That(ring.TryGet(LegacyDefaultEncryptionKey.Id, out _), Is.True);
+            }
+        }
+
+        // The one position in which the published key is the key that writes, because it is the only key the
+        // instance has: nothing here can keep one of its own, so this is the state it was already in before
+        // the upgrade. It cannot mint a replacement, which is why the warning tells the operator to supply one.
+        [Test]
+        public void Resolve_NowhereDurableToKeepAKey_HoldsThePublishedKeyAndNothingElse()
+        {
+            var ring = RingResolvedInCustody(KeyCustody.NoDurableStore);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.ActiveKey, Is.EqualTo(ThePublishedKey()));
+                Assert.That(ring.RetiredKeys, Is.Empty);
+                Assert.That(ring.CanMint, Is.False);
+            }
+        }
+
+        [TestCase(KeyCustody.GeneratedForThisInstance)]
+        [TestCase(KeyCustody.SuppliedByConfiguration)]
+        [TestCase(KeyCustody.SuppliedByExternalSecret)]
+        [TestCase(KeyCustody.NoDurableStore)]
+        public void ThePublishedKey_AppendedAgainToAnAlreadyResolvedRing_ChangesNothingAboutIt(KeyCustody custody)
+        {
+            var ring = RingResolvedInCustody(custody);
+
+            Assert.That(ring.WithLegacyDefault(), Is.EqualTo(ring));
+        }
+
+        [Test]
+        public void Resolve_AnInstanceUpgradingOntoAKeyOfItsOwn_StillReadsEverythingWrittenUnderThePublishedKey()
+        {
+            var writtenBeforeTheUpgrade = EncryptedUnderThePublishedKey();
+
+            var upgraded = CryptoServiceHolding(BootstrapperFor(new PhysicalKeyStoreFileSystem()).Resolve());
+
+            Assert.That(
+                writtenBeforeTheUpgrade.ConvertAll(upgraded.Decrypt),
+                Is.EqualTo(CredentialsStoredBeforeTheUpgrade));
+        }
+
+        [Test]
+        public void Resolve_ACredentialSavedAfterTheUpgrade_NamesThisInstancesOwnKeyRatherThanThePublishedOne()
+        {
+            var ring = BootstrapperFor(new PhysicalKeyStoreFileSystem()).Resolve();
+
+            var savedAfterTheUpgrade = CryptoServiceHolding(ring).Encrypt(CredentialsStoredBeforeTheUpgrade[0]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(savedAfterTheUpgrade, Does.Contain(ring.ActiveKey.Id));
+                Assert.That(savedAfterTheUpgrade, Does.Not.Contain(LegacyDefaultEncryptionKey.Id));
+            }
+        }
+
+        [Test]
+        public void Resolve_ADatabaseOfCredentialsWrittenUnderThePublishedKey_IsLeftExactlyAsItWas()
+        {
+            var storedBeforeTheUpgrade = EncryptedUnderThePublishedKey();
+            var connectionString = ADatabaseHolding("upgraded.db", storedBeforeTheUpgrade);
+
+            var ring = BootstrapperFor(
+                new StagedKeyStoreFileSystem(),
+                keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                storedSecrets: null,
+                probe: ProbeAgainst(connectionString)).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(SecretValuesIn(connectionString), Is.EqualTo(storedBeforeTheUpgrade));
+                Assert.That(
+                    storedBeforeTheUpgrade.TrueForAll(
+                        stored => stored.Contains(LegacyDefaultEncryptionKey.Id, StringComparison.Ordinal)),
+                    Is.True);
+                Assert.That(
+                    storedBeforeTheUpgrade.ConvertAll(stored => CryptoServiceHolding(ring).Read(stored).KeyId),
+                    Is.EqualTo(EveryOneNamingThePublishedKey));
+            }
+        }
+
+        // What "nothing walked the stored secrets during startup" is checked against rather than assumed: the
+        // only statement anything in key resolution can put to a database asks whether a secret is there, and
+        // reads back a literal 1 rather than anything a secret column holds.
+        [Test]
+        public void Resolution_TheOnlyThingItCanAskADatabase_IsWhetherASecretIsThereAndNeverWhatOneSays()
+        {
+            var everyStatementItCanIssue = ResolutionTypes
+                .SelectMany(type => type.GetFields(
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly))
+                .Where(field => field.FieldType == typeof(string[]))
+                .SelectMany(field => (string[])field.GetValue(null)!)
+                .Where(value => value.Contains("SELECT", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(everyStatementItCanIssue, Is.Not.Empty);
+                Assert.That(
+                    everyStatementItCanIssue.TrueForAll(
+                        query => query.StartsWith("SELECT 1 FROM", StringComparison.Ordinal)
+                            && query.EndsWith("LIMIT 1", StringComparison.Ordinal)),
+                    Is.True);
+            }
+        }
+
+        private static readonly string[] EveryOneNamingThePublishedKey =
+            [.. Enumerable.Repeat(LegacyDefaultEncryptionKey.Id, CredentialsStoredBeforeTheUpgrade.Length)];
+
+        // The published key's material is compiled in with no accessor of its own, so the only way to hold it
+        // is the way production does: append it to a ring and take it back off the end.
+        private static EncryptionKey ThePublishedKey()
+        {
+            var scaffold = new EncryptionKeyRing(
+                new EncryptionKey("k-not-the-published-one", new byte[EncryptionKey.MaterialLength]));
+
+            return scaffold.WithLegacyDefault().RetiredKeys[0];
+        }
+
+        private static EncryptionKey[] OnlyThePublishedKey()
+        {
+            return [ThePublishedKey()];
+        }
+
+        private static CryptoService CryptoServiceHolding(EncryptionKeyRing ring)
+        {
+            return new CryptoService(new EncryptionKeyRingHolder(ring), NullLogger<CryptoService>.Instance);
+        }
+
+        private static List<string> EncryptedUnderThePublishedKey()
+        {
+            var published = CryptoServiceHolding(
+                new EncryptionKeyRing(KeyCustody.NoDurableStore, ThePublishedKey()));
+
+            return [.. CredentialsStoredBeforeTheUpgrade.Select(published.Encrypt)];
+        }
+
+        private EncryptionKeyRing RingResolvedInCustody(KeyCustody custody)
+        {
+            var staged = new StagedKeyStoreFileSystem();
+
+            if (custody == KeyCustody.SuppliedByConfiguration)
+            {
+                return BootstrapperFor(staged, suppliedKey: Convert.ToBase64String(MaterialOf(31))).Resolve();
+            }
+
+            if (custody == KeyCustody.SuppliedByExternalSecret)
+            {
+                staged.Place(MountedSecretPath, RingTextFor("k-mounted-01", MaterialOf(37)));
+
+                return BootstrapperFor(staged, keysFilePath: MountedSecretPath).Resolve();
+            }
+
+            if (custody == KeyCustody.NoDurableStore)
+            {
+                return BootstrapperFor(
+                    staged,
+                    keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                    storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.HoldsAtLeastOne)).Resolve();
+            }
+
+            return BootstrapperFor(new PhysicalKeyStoreFileSystem()).Resolve();
+        }
+
+        private string ADatabaseHolding(string fileName, List<string> secretValues)
+        {
+            var connectionString = ADatabaseAt(fileName, ConnectionOptionTable, OAuthCredentialTable);
+
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+
+            foreach (var secretValue in secretValues)
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText =
+                    """INSERT INTO "WorkTrackingSystemConnectionOption" ("Value", "IsSecret") VALUES ($value, 1)""";
+                command.Parameters.AddWithValue("$value", secretValue);
+                command.ExecuteNonQuery();
+            }
+
+            return connectionString;
+        }
+
+        private static List<string> SecretValuesIn(string connectionString)
+        {
+            using var connection = new SqliteConnection(connectionString);
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                """SELECT "Value" FROM "WorkTrackingSystemConnectionOption" WHERE "IsSecret" = 1 ORDER BY "Id" """;
+
+            using var reader = command.ExecuteReader();
+            var stored = new List<string>();
+
+            while (reader.Read())
+            {
+                stored.Add(reader.GetString(0));
+            }
+
+            return stored;
+        }
+
         private static DatabaseSecretPresenceProbe ProbeAgainst(string connectionString)
         {
             return new DatabaseSecretPresenceProbe(() => new SqliteConnection(connectionString));
@@ -516,14 +741,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             string? suppliedKey = null,
             string? keysFilePath = null,
             KeyStoreCase keyStoreCase = KeyStoreCase.BesideTheDatabaseFile,
-            StagedSecretPresenceProbe? storedSecrets = null)
+            StagedSecretPresenceProbe? storedSecrets = null,
+            DatabaseSecretPresenceProbe? probe = null)
         {
             return new EncryptionKeyRingBootstrapper(
                 new ConfiguredKeyRingSource(suppliedRing, suppliedKey),
                 new MountedFileKeyRingSource(keysFilePath, fileSystem),
                 StoreFor(fileSystem),
                 new KeyStoreLocation(keyStoreDirectory, keyStoreCase),
-                storedSecrets ?? new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone));
+                probe ?? storedSecrets ?? (IStoredSecretPresenceProbe)new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone));
         }
 
         private GeneratedKeyRingStore StoreFor(IKeyStoreFileSystem fileSystem)
