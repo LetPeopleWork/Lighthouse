@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
@@ -30,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private static readonly EncryptionKey ActiveKey = new("key-active", Convert.FromBase64String("jcZatOnLrOP2HUMH4s43VB5Ci7uiCipa3odpR0edbKg="));
 
-        private static readonly CryptoService Crypto = new(new EncryptionKeyRingHolder(new EncryptionKeyRing(ActiveKey)));
+        private static readonly CryptoService Crypto = new(new EncryptionKeyRingHolder(new EncryptionKeyRing(ActiveKey)), NullLogger<CryptoService>.Instance);
 
         [Test]
         public async Task LongCredentials_OnSqlite_ReadBackUnchanged()

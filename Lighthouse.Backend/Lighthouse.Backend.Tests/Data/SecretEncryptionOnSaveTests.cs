@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Tests
 
         private static CryptoService CryptoUnder(params EncryptionKey[] keys)
         {
-            return new CryptoService(new EncryptionKeyRingHolder(new EncryptionKeyRing(keys)));
+            return new CryptoService(new EncryptionKeyRingHolder(new EncryptionKeyRing(keys)), Mock.Of<ILogger<CryptoService>>());
         }
 
         private LighthouseAppContext NewContext(CryptoService cryptoService)

@@ -4,6 +4,8 @@ using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -33,6 +35,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private const int CiphertextField = 3;
 
+        private const string StateProperty = "SecretState";
+
+        private const string ClaimedKeyIdProperty = "ClaimedKeyId";
+
+        private const string MessageTemplateProperty = "{OriginalFormat}";
+
+        private const int RepeatedReads = 50;
+
+        private const int RememberedSecretsLimit = 1000;
+
+        private const int DistinctValuesFarBeyondTheLimit = 5000;
+
+        private static readonly string[] ExpectedWarningProperties = [StateProperty, ClaimedKeyIdProperty];
+
         private static readonly byte[] ActiveKeyMaterial = Convert.FromBase64String(ConfiguredKeyBase64);
 
         private static readonly byte[] OffRingKeyMaterial = Convert.FromBase64String(AnotherKeyBase64);
@@ -45,12 +61,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private CryptoService subject;
 
+        private Mock<ILogger<CryptoService>> loggerMock;
+
         [SetUp]
         public void SetUp()
         {
             var ring = new EncryptionKeyRing(new EncryptionKey(ActiveKeyId, ActiveKeyMaterial));
+            loggerMock = new Mock<ILogger<CryptoService>>();
 
-            subject = new CryptoService(new EncryptionKeyRingHolder(ring));
+            subject = new CryptoService(new EncryptionKeyRingHolder(ring), loggerMock.Object);
         }
 
         [Test]
@@ -149,6 +168,102 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void Read_TheSameUnreadableValueOverAndOver_ShouldReportItOnce()
+        {
+            var storedValue = EnvelopeWithABrokenTag();
+
+            for (var attempt = 0; attempt < RepeatedReads; attempt++)
+            {
+                subject.Read(storedValue);
+            }
+
+            Assert.That(WarningStates(), Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void Read_TwoDifferentUnreadableValues_ShouldReportBoth()
+        {
+            subject.Read(EnvelopeWithABrokenTag());
+            subject.Read(EncryptedUnder(UnknownKeyId, OffRingKeyMaterial));
+
+            Assert.That(WarningStates(), Has.Count.EqualTo(2));
+        }
+
+        [Test]
+        public void Read_MoreUnreadableValuesThanItCanRemember_ShouldForgetTheOldestAndKeepTheNewest()
+        {
+            var storedValues = Enumerable.Range(0, DistinctValuesFarBeyondTheLimit)
+                .Select(index => EncryptedUnder($"key-off-ring-{index}", OffRingKeyMaterial))
+                .ToList();
+
+            foreach (var storedValue in storedValues)
+            {
+                subject.Read(storedValue);
+            }
+
+            subject.Read(storedValues[^1]);
+            subject.Read(storedValues[DistinctValuesFarBeyondTheLimit - RememberedSecretsLimit]);
+            var afterRereadingWhatIsStillRemembered = WarningStates().Count;
+
+            subject.Read(storedValues[DistinctValuesFarBeyondTheLimit - RememberedSecretsLimit - 1]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(afterRereadingWhatIsStillRemembered, Is.EqualTo(DistinctValuesFarBeyondTheLimit));
+                Assert.That(WarningStates(), Has.Count.EqualTo(DistinctValuesFarBeyondTheLimit + 1));
+            }
+        }
+
+        [Test]
+        public void Read_UnreadableValue_ShouldReportOnlyTheStateAndTheKeyTheValueClaims()
+        {
+            subject.Read(EncryptedUnder(UnknownKeyId, OffRingKeyMaterial));
+
+            var properties = TheOnlyWarningsProperties();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    properties.Select(property => property.Key).Where(name => name != MessageTemplateProperty),
+                    Is.EqualTo(ExpectedWarningProperties));
+                Assert.That(properties.Single(property => property.Key == StateProperty).Value, Is.EqualTo(SecretState.Unreadable));
+                Assert.That(properties.Single(property => property.Key == ClaimedKeyIdProperty).Value, Is.EqualTo(UnknownKeyId));
+            }
+        }
+
+        [Test]
+        public void Read_UnreadableValue_ShouldWriteDownNothingAboutTheKeyTheStoredValueOrTheCredential()
+        {
+            var storedValue = EncryptedUnder(UnknownKeyId, OffRingKeyMaterial);
+
+            subject.Read(storedValue);
+
+            var everythingWritten = string.Join(" | ", EverythingLogged());
+            var fingerprint = SHA256.HashData(Encoding.UTF8.GetBytes(storedValue));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(everythingWritten, Does.Not.Contain(Credential));
+                Assert.That(everythingWritten, Does.Not.Contain(storedValue));
+                Assert.That(everythingWritten, Does.Not.Contain(storedValue.Split('.')[CiphertextField]));
+                Assert.That(everythingWritten, Does.Not.Contain(ConfiguredKeyBase64));
+                Assert.That(everythingWritten, Does.Not.Contain(AnotherKeyBase64));
+                Assert.That(everythingWritten, Does.Not.Contain(Convert.ToHexString(fingerprint)));
+                Assert.That(everythingWritten, Does.Not.Contain(Convert.ToBase64String(fingerprint)));
+            }
+        }
+
+        [Test]
+        public void Read_ValueItCanRead_ShouldReportNothing()
+        {
+            subject.Read(subject.Encrypt(Credential));
+            subject.Read(LegacyCbcBlob(Credential, ActiveKeyMaterial));
+            subject.Read(Credential);
+
+            Assert.That(WarningStates(), Is.Empty);
+        }
+
+        [Test]
         public void EnsureEncryptionKeyRing_ShouldRegisterTheConfiguredKeyAsTheOnlyActiveKey()
         {
             var ring = ResolveRing(ConfiguredKeyBase64);
@@ -201,6 +316,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var tooShort = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
 
             Assert.Throws<InvalidOperationException>(() => ResolveInto(tooShort));
+        }
+
+        private List<object> WarningStates()
+        {
+            return [.. loggerMock.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log) && (LogLevel)invocation.Arguments[0] == LogLevel.Warning)
+                .Select(invocation => invocation.Arguments[2])];
+        }
+
+        private List<KeyValuePair<string, object?>> TheOnlyWarningsProperties()
+        {
+            return [.. (IReadOnlyList<KeyValuePair<string, object?>>)WarningStates().Single()];
+        }
+
+        // Everything the service handed the logging pipeline, at any level: the rendered line and each
+        // structured property separately, because a credential that leaked into a property would never
+        // show up in a test that only read the rendered line.
+        private List<string> EverythingLogged()
+        {
+            return [.. loggerMock.Invocations
+                .Where(invocation => invocation.Method.Name == nameof(ILogger.Log))
+                .SelectMany(invocation => Rendered(invocation.Arguments[2]))];
+        }
+
+        private static List<string> Rendered(object? state)
+        {
+            var written = new List<string> { state?.ToString() ?? string.Empty };
+
+            if (state is IReadOnlyList<KeyValuePair<string, object?>> properties)
+            {
+                written.AddRange(properties.Select(property => $"{property.Key}={property.Value}"));
+            }
+
+            return written;
         }
 
         private static TestCaseData[] UnreadableStoredValues()
