@@ -1,6 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -83,11 +82,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             WorkTrackingSystemConnection connection,
             ICryptoService cryptoService)
         {
-            var unreadableFields = connection.Options
-                .Where(option => option.IsSecret && !string.IsNullOrEmpty(option.Value))
-                .Where(option => cryptoService.Read(option.Value) is { State: SecretState.Unreadable })
-                .Select(option => option.Key)
-                .ToList();
+            var unreadableFields = ConnectionSecrets.FieldsThatCannotBeRead(connection, cryptoService).ToList();
 
             var subject = unreadableFields.Count > 0
                 ? $"The stored {string.Join(", ", unreadableFields)}"

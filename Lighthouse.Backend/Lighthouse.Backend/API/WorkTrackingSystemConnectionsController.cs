@@ -3,10 +3,10 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -157,10 +157,7 @@ namespace Lighthouse.Backend.API
         // stops the request before it leaves the machine.
         private string? FirstSecretThatCannotBeRead(WorkTrackingSystemConnection connection)
         {
-            return connection.Options
-                .Where(option => option.IsSecret && !string.IsNullOrEmpty(option.Value))
-                .FirstOrDefault(option => cryptoService.Read(option.Value) is { State: SecretState.Unreadable })
-                ?.Key;
+            return ConnectionSecrets.FieldsThatCannotBeRead(connection, cryptoService).FirstOrDefault();
         }
 
         private void EncryptSecretValuesIfNeeded(WorkTrackingSystemConnectionDto connectionDto)

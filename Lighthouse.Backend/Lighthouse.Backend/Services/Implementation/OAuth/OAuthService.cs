@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
+using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
@@ -247,9 +248,13 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth
             {
                 refreshed = await provider.RefreshTokenAsync(refreshContext, cancellationToken);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            // Cancellation must propagate without marking the credential failed. So must a stored secret
+            // this instance cannot decrypt: marking the credential RefreshFailed would tell the operator the
+            // provider turned the token down, and they would go and reissue a credential that was never the
+            // problem. The three decrypts above already sit outside this block, but naming the type here
+            // means moving one of them inside can no longer quietly restore that misattribution.
+            catch (Exception ex) when (ex is not OperationCanceledException and not UnreadableSecretException)
             {
-                // Cancellation must propagate without marking the credential failed.
                 await MarkRefreshFailedAndThrowAsync(connectionId, credential, connection.AuthenticationMethodKey, ex);
                 throw; // unreachable — MarkRefreshFailedAndThrowAsync always throws
             }

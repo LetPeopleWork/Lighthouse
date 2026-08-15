@@ -159,7 +159,8 @@ namespace Lighthouse.Backend.Data
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasIndex(t => t.HandshakeNonceHash);
 
-            // Subject is deliberately not a foreign key: profiles are created lazily (ADR-137 D52).
+            // Subject is deliberately not a foreign key: a session token can name someone who has no profile
+            // row yet, because profiles are only created the first time that person actually arrives.
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasIndex(t => t.Subject);
 
@@ -169,7 +170,8 @@ namespace Lighthouse.Backend.Data
                     """("TokenId" IS NOT NULL AND "SecretHash" IS NOT NULL AND "RefusalCode" IS NULL) OR ("TokenId" IS NULL AND "SecretHash" IS NULL AND "RefusalCode" IS NOT NULL)"""));
 
             // Explicit: ApiKeyId is optional now, and EF's default for an optional relationship is
-            // ClientSetNull — which would silently delete ADR-131's revocation lever 1.
+            // ClientSetNull, which would null the link instead of removing the sessions. Deleting an API key
+            // has to cut off the embed sessions it opened, or revoking a key stops meaning anything.
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasOne<ApiKey>()
                 .WithMany()

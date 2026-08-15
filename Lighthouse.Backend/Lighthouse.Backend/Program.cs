@@ -396,10 +396,10 @@ namespace Lighthouse.Backend
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
         private const int OAuthStateSecretByteLength = 32;
 
-        // Security review F3, carried to ADR-137 D58: an embed cookie is otherwise believed on sight,
-        // leaving live frames running for the rest of the window after the key or the person behind
-        // them is gone - making "delete them" advice that is not true when an administrator reaches
-        // for it. Whoever the cookie names is re-resolved on every request instead.
+        // An embed cookie is otherwise believed on sight, leaving live frames running for the rest of the
+        // window after the key or the person behind them is gone - making "delete them" advice that is not
+        // true when an administrator reaches for it. Whoever the cookie names is re-resolved on every
+        // request instead.
         private static async Task RejectEmbedPrincipalWhoseIdentityIsGone(
             Microsoft.AspNetCore.Authentication.Cookies.CookieValidatePrincipalContext context)
         {
@@ -422,7 +422,7 @@ namespace Lighthouse.Backend
                 return false;
             }
 
-            // D57: a read-only port on purpose. GetOrCreateFromPrincipalAsync would re-create the
+            // A read-only port on purpose. GetOrCreateFromPrincipalAsync would re-create the
             // profile an administrator has just deleted, on that person's very next request.
             var profile = await services.GetRequiredService<IUserProfileLookup>()
                 .FindBySubjectAsync(subject, context.HttpContext.RequestAborted);

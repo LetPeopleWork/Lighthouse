@@ -479,6 +479,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const showSecretHandlingNotice = containsSecretField(
 		showAuthFields ? allOptions : otherOptions,
 	);
+	const lockOAuthField = isEditMode && usesOAuth;
 
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
@@ -601,8 +602,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 										selectedAuthMethod?.options.find(
 											(o) => o.key === option.key,
 										)?.displayName ?? option.key;
-									const lockOAuthField =
-										isEditMode && isOAuthMethod(selectedAuthMethod);
 									return (
 										<Grid size={{ xs: 12, md: 6 }} key={option.key}>
 											<TextField

@@ -10,19 +10,13 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class CryptoService : ICryptoService
     {
-        private const int RememberedSecretsLimit = 1000;
-
         private readonly IEncryptionKeyRingHolder keyRingHolder;
 
         private readonly SecretStateClassifier classifier;
 
         private readonly ILogger<CryptoService> logger;
 
-        private readonly HashSet<string> reportedSecrets = [];
-
-        private readonly Queue<string> reportedSecretsOldestFirst = new();
-
-        private readonly object reportedSecretsGate = new();
+        private readonly SecretReportLog reportLog = new();
 
         public CryptoService(IEncryptionKeyRingHolder keyRingHolder, ILogger<CryptoService> logger)
         {
@@ -54,7 +48,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             var secret = classifier.Classify(storedValue);
 
-            if (secret.State == SecretState.Unreadable && NotReportedYet(storedValue))
+            if (secret.State == SecretState.Unreadable && reportLog.NotReportedYet(storedValue))
             {
                 logger.LogWarning(
                     "A stored secret cannot be read. State: {SecretState}. Key it names: {ClaimedKeyId}.",
@@ -69,25 +63,36 @@ namespace Lighthouse.Backend.Services.Implementation
         // thousand copies of one sentence and bury everything else. What is remembered is a hash, because
         // the stored value itself must never be held anywhere it could be read out or written down, and
         // the count is capped because the values arriving here are whatever is in the database.
-        private bool NotReportedYet(string storedValue)
+        private sealed class SecretReportLog
         {
-            var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(storedValue)));
+            private const int RememberedSecretsLimit = 1000;
 
-            lock (reportedSecretsGate)
+            private readonly HashSet<string> reported = [];
+
+            private readonly Queue<string> reportedOldestFirst = new();
+
+            private readonly object gate = new();
+
+            public bool NotReportedYet(string storedValue)
             {
-                if (!reportedSecrets.Add(fingerprint))
+                var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(storedValue)));
+
+                lock (gate)
                 {
-                    return false;
+                    if (!reported.Add(fingerprint))
+                    {
+                        return false;
+                    }
+
+                    reportedOldestFirst.Enqueue(fingerprint);
+
+                    if (reportedOldestFirst.Count > RememberedSecretsLimit)
+                    {
+                        reported.Remove(reportedOldestFirst.Dequeue());
+                    }
+
+                    return true;
                 }
-
-                reportedSecretsOldestFirst.Enqueue(fingerprint);
-
-                if (reportedSecretsOldestFirst.Count > RememberedSecretsLimit)
-                {
-                    reportedSecrets.Remove(reportedSecretsOldestFirst.Dequeue());
-                }
-
-                return true;
             }
         }
     }

@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
 
-            // Stryker disable once all: AC-1.4's skip trace — Slice01SkippedEntityLogTest pins it by level (nothing at Information names the team), never by wording.
+            // Stryker disable once all: what the tests pin about a skipped team is that nothing at Information level names it. That is a claim about the level, not about this wording, so a mutant that rewrites the message kills nothing.
             Logger.LogDebug("Last Refresh of team {TeamName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;

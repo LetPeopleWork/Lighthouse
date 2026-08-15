@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
 
-            // Stryker disable once all: the portfolio half of AC-1.4's skip trace — what is pinned is that nothing about a skipped entity is operator-visible, which is a claim about level, not wording.
+            // Stryker disable once all: what the tests pin about a skipped portfolio is that nothing naming it reaches an operator-visible log level. That is a claim about the level, not about this wording, so a mutant that rewrites the message kills nothing.
             Logger.LogDebug("Last Refresh of Work Items for Project {ProjectName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
 
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
