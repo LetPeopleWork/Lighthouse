@@ -3,6 +3,7 @@ import type { IApiKeyService } from "../services/Api/ApiKeyService";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IBlackoutPeriodService } from "../services/Api/BlackoutPeriodService";
 import type { IDeliveryService } from "../services/Api/DeliveryService";
+import type { IEncryptionService } from "../services/Api/EncryptionService";
 import type { IFeatureService } from "../services/Api/FeatureService";
 import type { ILicensingService } from "../services/Api/LicensingService";
 import type { ILogService } from "../services/Api/LogService";
@@ -65,7 +66,21 @@ export const createMockApiServiceContext = (
 		databaseManagementService:
 			null as unknown as IApiServiceContext["databaseManagementService"],
 		oauthService: createMockOAuthService(),
+		encryptionService: createMockEncryptionService(),
 		...overrides,
+	};
+};
+
+export const createMockEncryptionService = (): IEncryptionService => {
+	return {
+		getKeyState: vi.fn().mockResolvedValue({
+			custody: "GeneratedForThisInstance",
+			canMint: true,
+			activeKeyId: "lighthouse-instance",
+			keyIds: ["lighthouse-instance"],
+			keyStorePath: "/app/data/keys",
+			legacyDefaultPresent: false,
+		}),
 	};
 };
 

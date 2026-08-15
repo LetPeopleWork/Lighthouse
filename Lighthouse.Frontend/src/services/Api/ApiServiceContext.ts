@@ -16,6 +16,10 @@ import {
 } from "./DatabaseManagementService";
 import { DeliveryService, type IDeliveryService } from "./DeliveryService";
 import { DemoDataService } from "./DemoDataService";
+import {
+	EncryptionService,
+	type IEncryptionService,
+} from "./EncryptionService";
 import { FeatureService, type IFeatureService } from "./FeatureService";
 import { ForecastService, type IForecastService } from "./ForecastService";
 import { type ILicensingService, LicensingService } from "./LicensingService";
@@ -90,6 +94,7 @@ export interface IApiServiceContext {
 	recurringBlackoutRuleService: IRecurringBlackoutRuleService;
 	databaseManagementService: IDatabaseManagementService;
 	oauthService: IOAuthService;
+	encryptionService: IEncryptionService;
 }
 
 const defaultServices: IApiServiceContext = {
@@ -120,6 +125,7 @@ const defaultServices: IApiServiceContext = {
 	recurringBlackoutRuleService: new RecurringBlackoutRuleService(),
 	databaseManagementService: new DatabaseManagementService(),
 	oauthService: new OAuthService(),
+	encryptionService: new EncryptionService(),
 };
 
 export function getApiServices(): IApiServiceContext {

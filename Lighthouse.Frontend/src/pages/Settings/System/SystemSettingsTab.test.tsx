@@ -2,21 +2,52 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
+import {
+	KEY_CUSTODY_VALUES,
+	KEY_CUSTODY_WORDING,
+	type KeyCustody,
+} from "../../../models/Encryption/EncryptionKeyState";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import type { IEncryptionService } from "../../../services/Api/EncryptionService";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { ISettingsService } from "../../../services/Api/SettingsService";
+import type { ISystemInfoService } from "../../../services/Api/SystemInfoService";
 import type { ITerminologyService } from "../../../services/Api/TerminologyService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
+	createMockEncryptionService,
 	createMockLicensingService,
 	createMockOptionalFeatureService,
 	createMockSettingsService,
+	createMockSystemInfoService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import SystemSettingsTab from "./SystemSettingsTab";
+
+const rbac = vi.hoisted(() => ({ isSystemAdmin: true }));
+
+vi.mock("../../../hooks/useRbac", () => ({
+	useRbac: () => ({
+		isLoading: false,
+		isRbacEnabled: true,
+		isSystemAdmin: rbac.isSystemAdmin,
+		canCreateTeam: true,
+		canCreatePortfolio: true,
+		isTeamAdmin: () => true,
+		isPortfolioAdmin: () => true,
+		summary: {
+			isRbacEnabled: true,
+			isSystemAdmin: rbac.isSystemAdmin,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+			adminTeamIds: [],
+			adminPortfolioIds: [],
+		},
+	}),
+}));
 
 const mockOptionalFeatureService: IOptionalFeatureService =
 	createMockOptionalFeatureService();
@@ -45,6 +76,23 @@ const mockBlackoutPeriodService = createMockBlackoutPeriodService();
 const mockGetAllBlackoutPeriods = vi.fn();
 mockBlackoutPeriodService.getAll = mockGetAllBlackoutPeriods;
 
+const mockGetKeyState = vi.fn();
+const mockEncryptionService: IEncryptionService = createMockEncryptionService();
+mockEncryptionService.getKeyState = mockGetKeyState;
+
+const mockGetSystemInfo = vi.fn();
+const mockSystemInfoService: ISystemInfoService = createMockSystemInfoService();
+mockSystemInfoService.getSystemInfo = mockGetSystemInfo;
+
+const keyStateFor = (custody: KeyCustody) => ({
+	custody,
+	canMint: custody === "GeneratedForThisInstance",
+	activeKeyId: "instance-2026-08-15",
+	keyIds: ["instance-2026-08-15"],
+	keyStorePath: "/app/data/keys",
+	legacyDefaultPresent: false,
+});
+
 const MockApiServiceProvider = ({
 	children,
 }: {
@@ -56,6 +104,8 @@ const MockApiServiceProvider = ({
 		terminologyService: mockTerminologyService,
 		licensingService: mockLicensingService,
 		blackoutPeriodService: mockBlackoutPeriodService,
+		encryptionService: mockEncryptionService,
+		systemInfoService: mockSystemInfoService,
 	});
 
 	const queryClient = new QueryClient({
@@ -85,6 +135,9 @@ const renderWithMockApiProvider = () => {
 describe("SystemSettingsTab Component", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
+
+		rbac.isSystemAdmin = true;
+		mockGetKeyState.mockResolvedValue(keyStateFor("GeneratedForThisInstance"));
 
 		mockGetAllBlackoutPeriods.mockResolvedValue([]);
 
@@ -252,6 +305,98 @@ describe("SystemSettingsTab Component", () => {
 			const premiumSwitch = screen.getByTestId("premium-feat-toggle");
 			// The Material UI Switch input is nested, so we check the 'disabled' attribute
 			expect(premiumSwitch.querySelector("input")).toBeDisabled();
+		});
+	});
+
+	describe("secret encryption key", () => {
+		it("should show where the key came from", async () => {
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(screen.getByTestId("encryption-key-custody")).toHaveTextContent(
+					"generated for this instance",
+				);
+			});
+		});
+
+		it("should show the name of the active key", async () => {
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("encryption-active-key-id"),
+				).toHaveTextContent("instance-2026-08-15");
+			});
+		});
+
+		it("should read key state from the encryption surface", async () => {
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(mockGetKeyState).toHaveBeenCalledTimes(1);
+			});
+		});
+
+		it("should never read key state from the system information surface", async () => {
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(mockGetKeyState).toHaveBeenCalled();
+			});
+			expect(mockGetSystemInfo).not.toHaveBeenCalled();
+		});
+
+		it("should render the key section for a System Administrator", async () => {
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(screen.getByTestId("encryption-key-state")).toBeInTheDocument();
+			});
+		});
+
+		it("should neither render the key section nor request key state without System Administrator rights", async () => {
+			rbac.isSystemAdmin = false;
+
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(screen.getByText("Feature 1")).toBeVisible();
+			});
+			expect(
+				screen.queryByTestId("encryption-key-state"),
+			).not.toBeInTheDocument();
+			expect(mockGetKeyState).not.toHaveBeenCalled();
+		});
+
+		it.each(KEY_CUSTODY_VALUES)(
+			"should describe custody %s in words rather than as an enum name",
+			async (custody) => {
+				mockGetKeyState.mockResolvedValue(keyStateFor(custody));
+
+				renderWithMockApiProvider();
+
+				await waitFor(() => {
+					expect(
+						screen.getByTestId("encryption-key-custody"),
+					).toHaveTextContent(KEY_CUSTODY_WORDING[custody]);
+				});
+				expect(
+					screen.queryByText(custody, { exact: false }),
+				).not.toBeInTheDocument();
+			},
+		);
+
+		it("should leave the rest of the page working when the key state fetch fails", async () => {
+			mockGetKeyState.mockRejectedValue(new Error("forbidden"));
+
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(screen.getByText("Feature 1")).toBeVisible();
+			});
+			expect(
+				screen.queryByTestId("encryption-key-state"),
+			).not.toBeInTheDocument();
 		});
 	});
 });
