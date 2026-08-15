@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
@@ -13,13 +14,21 @@ namespace Lighthouse.Backend.API.DTO
 
 
         public WorkTrackingSystemConnectionDto(WorkTrackingSystemConnection workTrackingSystemConnection)
-            : this(workTrackingSystemConnection, oAuthCredential: null)
+            : this(workTrackingSystemConnection, oAuthCredential: null, secretReader: null)
         {
         }
 
         public WorkTrackingSystemConnectionDto(
             WorkTrackingSystemConnection workTrackingSystemConnection,
             OAuthCredential? oAuthCredential)
+            : this(workTrackingSystemConnection, oAuthCredential, secretReader: null)
+        {
+        }
+
+        public WorkTrackingSystemConnectionDto(
+            WorkTrackingSystemConnection workTrackingSystemConnection,
+            OAuthCredential? oAuthCredential,
+            ICryptoService? secretReader)
         {
             Id = workTrackingSystemConnection.Id;
             Name = workTrackingSystemConnection.Name;
@@ -32,7 +41,7 @@ namespace Lighthouse.Backend.API.DTO
                 .GetMethodsForSystem(workTrackingSystemConnection.WorkTrackingSystem)
                 .Select(AuthenticationMethodDto.FromSchema)
                 .ToList();
-            Options.AddRange(workTrackingSystemConnection.Options.Select(o => new WorkTrackingSystemConnectionOptionDto(o)));
+            Options.AddRange(workTrackingSystemConnection.Options.Select(o => new WorkTrackingSystemConnectionOptionDto(o, secretReader)));
             AdditionalFieldDefinitions.AddRange(
                 workTrackingSystemConnection.AdditionalFieldDefinitions.Select(f => new AdditionalFieldDefinitionDto(f)));
             WriteBackMappingDefinitions.AddRange(

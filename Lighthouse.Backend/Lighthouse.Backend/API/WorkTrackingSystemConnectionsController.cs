@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.API
             var connectionDtos = existingConnections.Select(c =>
             {
                 credentialsByConnectionId.TryGetValue(c.Id, out var credential);
-                return new WorkTrackingSystemConnectionDto(c, credential);
+                return new WorkTrackingSystemConnectionDto(c, credential, cryptoService);
             });
             return Ok(connectionDtos);
         }
