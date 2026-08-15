@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "epic-5775-secret-encryption-key-custody",
     "created_at": "2026-08-15",
-    "total_steps": 20,
+    "total_steps": 21,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Ship slice 01 of ADO Epic #5775 (Story #5777): every secret written from now on is stored as an authenticated, self-describing envelope `LH1.<keyId>.<b64url nonce>.<b64url ciphertext||tag>` (AES-256-GCM, header bound as associated data, ADR-146); a stored secret that cannot be read raises instead of being handed to a work tracking system as a credential (ADR-147, the deletion of `catch (CryptographicException or FormatException) => return cipherText`); the unreadable state is named on the Connection and the field that holds it and on the refresh record; and one generic secret-handling notice appears on every connection form that asks for a credential. Scope is US-01, US-08 and the US-07 `@infrastructure` precursor inside slice 01 — nothing from slices 02-06: no key generation, no minting, no rotation, no readability check, no chart, no Kubernetes, no docs site.",
@@ -206,6 +206,42 @@
             "SecretStateClassifier.cs (new)",
             "UnreadableSecretException.cs (new)",
             "SecretStateClassifierTests.cs (new)"
+          ]
+        },
+        {
+          "id": "01-07",
+          "name": "Move tag verification into SecretEnvelope.TryUnprotect and delete the classifier's duplicated envelope knowledge",
+          "description": "Inserted 2026-08-15 after step 01-03 shipped, by orchestrator decision. Numbered 01-07 because step ids must match two-digit-dash-two-digit, but placed here in the file and gated by its dependency because it runs immediately after 01-03 and before 01-04. WHY: ADR-147 forbids `catch` in the read path, but .NET's `AesGcm` exposes no `TryDecrypt` — verified against the .NET 10 reference assembly — so `Decrypt` throws on a bad tag. To honour the rule literally, 01-03 verified tags in the encrypt direction: encrypt zeroes to recover the CTR keystream, XOR out the candidate plaintext, re-encrypt to reproduce the tag, compare in fixed time. That is mathematically correct and its tests pass, but it calls `AesGcm.Encrypt` twice under a nonce already present in the database, and it forces `SecretStateClassifier` to rebuild the associated-data header and re-declare the tag length — envelope knowledge duplicated into a second file, where the two can drift. ADR-147's `no catch` was a proxy for its real intent: a failed read must be a real failure, never silently degraded into returning ciphertext as plaintext. A narrowly-scoped catch that returns false honours that intent exactly, and unorthodox cryptography is a liability the next maintainer pays. RED: extend `SecretEnvelopeTests.cs` with cases for the new API — a valid envelope round-trips through `TryUnprotect` returning true with the plaintext; a tampered tag returns false without throwing; a tampered header field returns false; a wrong key returns false; `TryUnprotect` throws for no input at all. Extend `SecretStateClassifierTests.cs` only if a case is missing; the existing 17 must stay green unchanged, which is the proof this is behaviour-preserving. GREEN: add `bool TryUnprotect(EncryptionKey key, out string? plainText)` (or the equivalent shape) to `SecretEnvelope`, wrapping exactly one `catch (AuthenticationTagMismatchException)` that returns false — catch that type alone, never `CryptographicException` and never a bare `catch`, and carry an inline comment giving the reason in plain language: the platform offers no non-throwing decrypt, and a wider catch would hide a real fault. Rewrite `SecretStateClassifier` to call it, deleting the keystream reconstruction, the rebuilt header and the re-declared tag length. COMMIT: `refactor(encryption): verify the envelope tag inside SecretEnvelope, not in the classifier`.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretEnvelopeTests.cs",
+          "scenario_name": "No scenario of its own — behaviour-preserving. Scenarios 5, 6, 7 and 9 must stay green through it, which is the acceptance bar.",
+          "red_to_green_tests": [
+            "A valid envelope round-trips through TryUnprotect, returning true and the original plaintext",
+            "An envelope with a flipped bit in the tag returns false and does not throw",
+            "An envelope whose header field has been altered returns false and does not throw",
+            "An envelope decrypted under the wrong ring key returns false and does not throw",
+            "The classifier's existing 17 cases pass unchanged against the rewritten implementation"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretEnvelope.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/SecretStateClassifier.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretEnvelopeTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretStateClassifierTests.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "`SecretEnvelope` owns tag verification; the classifier holds no copy of the associated-data header and no tag-length constant.",
+            "The only catch in the encryption path is a single `AuthenticationTagMismatchException` inside `SecretEnvelope`, justified inline in plain language.",
+            "No key material or plaintext is reachable from any failure path.",
+            "`AesGcm.Encrypt` is called exactly once per stored secret written, and never during a read.",
+            "The 17 classifier cases from step 01-03 pass unchanged.",
+            "`dotnet build` zero warnings; the analyzer sweep is clean for all four files."
+          ],
+          "estimated_hours": 1.0,
+          "deliverables": [
+            "SecretEnvelope.TryUnprotect (new API)",
+            "SecretStateClassifier simplified — keystream reconstruction deleted"
           ]
         },
         {
