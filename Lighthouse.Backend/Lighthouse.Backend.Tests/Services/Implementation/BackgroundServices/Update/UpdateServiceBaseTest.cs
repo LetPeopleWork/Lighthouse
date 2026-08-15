@@ -106,6 +106,66 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        public void BuildUnreadableSecretReason_SeveralUnreadableFields_SeparatesThemSoBothCanBeRead()
+        {
+            var connection = CreateConnection((SecretFieldKey, UnreadableValue), ("Client Secret", UnreadableValue));
+
+            var reason = ReasonProbe.Build(CreateException(), connection, cryptoServiceMock.Object);
+
+            Assert.That(reason, Does.Contain($"{SecretFieldKey}, Client Secret"),
+                "Run together, two field names read as one field nobody has.");
+        }
+
+        // A refresh token lives on the OAuth credential rather than on a connection option, so the read that
+        // failed leaves nothing on the connection to name. Saying "The stored " and then nothing at all is
+        // worse than saying less: it reads as a truncated message and tells the operator to look for a field
+        // that does not exist.
+        [Test]
+        public void BuildUnreadableSecretReason_NoConnectionFieldIsUnreadable_StillNamesACredentialRatherThanNothing()
+        {
+            var connection = CreateConnection((SecretFieldKey, ReadableValue));
+
+            var reason = ReasonProbe.Build(CreateException(), connection, cryptoServiceMock.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reason, Does.StartWith("A stored credential"));
+                Assert.That(reason, Does.Contain(ConnectionName));
+            }
+        }
+
+        [Test]
+        public void BuildUnreadableSecretReason_ExceptionNamingAKey_RepeatsThatKeyIdSoTheOperatorCanTellWhichOneIsMissing()
+        {
+            var connection = CreateConnection((SecretFieldKey, UnreadableValue));
+
+            var reason = ReasonProbe.Build(new UnreadableSecretException(SecretState.Unreadable, "key-retired"), connection, cryptoServiceMock.Object);
+
+            Assert.That(reason, Does.Contain("it names encryption key 'key-retired'"));
+        }
+
+        // A legacy blob carries no key id at all, and neither does an empty one. Either way there is no key to
+        // name, and printing an empty pair of quotes claims the secret names a key called nothing.
+        [TestCase(null, TestName = "BuildUnreadableSecretReason_ExceptionWithNoKeyId")]
+        [TestCase("", TestName = "BuildUnreadableSecretReason_ExceptionWithABlankKeyId")]
+        public void BuildUnreadableSecretReason_ExceptionNamingNoKey_MentionsNoKeyAtAll(string? claimedKeyId)
+        {
+            var connection = CreateConnection((SecretFieldKey, UnreadableValue));
+
+            var reason = ReasonProbe.Build(new UnreadableSecretException(SecretState.LegacyCbc, claimedKeyId), connection, cryptoServiceMock.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reason, Does.Not.Contain("it names encryption key"));
+                Assert.That(reason, Does.Not.Contain("''"));
+                Assert.That(reason, Does.EndWith(
+                    "cannot be read with the current encryption key, so this refresh stopped before contacting the work tracking system. " +
+                    "Enter the credential again to store it under the key this instance uses now."),
+                    "The sentence has to survive whole: it is the only place the operator is told what happened and what to do about it.");
+            }
+        }
+
         private static WorkTrackingSystemConnection CreateConnection(params (string Key, string Value)[] secrets)
         {
             var connection = new WorkTrackingSystemConnection { Name = ConnectionName };

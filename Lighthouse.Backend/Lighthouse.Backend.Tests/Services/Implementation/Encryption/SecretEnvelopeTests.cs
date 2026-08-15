@@ -256,6 +256,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             Assert.That(() => envelope.TryUnprotect(null!, out _), Throws.ArgumentNullException);
         }
 
+        // The longest key id the format admits, and the one letter at the far end of the allowed range. Both
+        // sit one character away from being refused, and a key id refused at write time is a secret that
+        // cannot be stored at all.
+        [TestCase("abcdefghijklmnopqrstuvwxyz-01234", TestName = "Protect_KeyIdOfTheGreatestAllowedLength")]
+        [TestCase("zzz", TestName = "Protect_KeyIdAtTheEndOfTheAllowedLetterRange")]
+        [TestCase("key-9", TestName = "Protect_KeyIdAtTheEndOfTheAllowedDigitRange")]
+        public void Protect_KeyIdOnTheEdgeOfTheAllowedShape_IsAcceptedAndReadsBack(string keyId)
+        {
+            var stored = SecretEnvelope.Protect(Credential, keyId, KeyOneMaterial).Format();
+
+            Assert.That(ReadStrict(stored, KeyOneMaterial), Is.EqualTo(Credential));
+        }
+
+        // An empty secret carries no ciphertext at all, only the authentication tag, so the envelope is at its
+        // shortest possible length here. Refusing to parse it would send an empty stored value down the legacy
+        // path and have it reported as something it is not.
+        [Test]
+        public void Protect_EmptyCredential_RoundTripsAsAnEnvelope()
+        {
+            var stored = SecretEnvelope.Protect(string.Empty, KeyOneId, KeyOneMaterial).Format();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(SecretEnvelope.TryParse(stored, out _), Is.True);
+                Assert.That(ReadStrict(stored, KeyOneMaterial), Is.Empty);
+            }
+        }
+
+        [Test]
+        public void Protect_NoPlainText_IsRefused()
+        {
+            Assert.That(() => SecretEnvelope.Protect(null!, KeyOneId, KeyOneMaterial), Throws.ArgumentNullException);
+        }
+
         private static string? TryRead(string stored, EncryptionKey key)
         {
             return SecretEnvelope.TryParse(stored, out var envelope) && envelope.TryUnprotect(key, out var plainText)

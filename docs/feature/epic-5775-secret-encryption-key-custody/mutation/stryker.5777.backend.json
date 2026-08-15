@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Encryption/SecretEnvelope.cs",
+      "**/Services/Implementation/Encryption/SecretStateClassifier.cs",
+      "**/Services/Implementation/Encryption/EncryptionKeyRingHolder.cs",
+      "**/Services/Implementation/Encryption/UnreadableSecretException.cs",
+      "**/Services/Implementation/Encryption/ConnectionSecrets.cs",
+      "**/Models/Encryption/EncryptionKey.cs",
+      "**/Models/Encryption/EncryptionKeyRing.cs",
+      "**/Models/Encryption/SecretState.cs",
+      "**/Models/Encryption/SecretReadResult.cs",
+      "**/Services/Implementation/CryptoService.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/API/DTO/WorkTrackingSystemConnectionOptionDto.cs",
+      "**/API/WorkTrackingSystemConnectionsController.cs"
+    ],
+    "thresholds": { "high": 90, "low": 80, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Encryption|FullyQualifiedName~Secret|FullyQualifiedName~Crypto|FullyQualifiedName~Updater|FullyQualifiedName~UpdateServiceBase|FullyQualifiedName~OAuth|FullyQualifiedName~AuthStrategy|FullyQualifiedName~WorkTrackingSystemConnection|FullyQualifiedName~FetchRefusal)&(FullyQualifiedName!~Containers)",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

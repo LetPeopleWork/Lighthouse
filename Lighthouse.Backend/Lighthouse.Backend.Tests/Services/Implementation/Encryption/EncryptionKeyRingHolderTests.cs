@@ -50,6 +50,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             Assert.That(inconsistentReads, Is.Empty);
         }
 
+        // A holder with no ring cannot answer the one question it exists for, and every secret read after that
+        // point would fail somewhere far from the mistake. It says so at the moment it is built instead.
+        [Test]
+        public void Holder_BuiltWithoutARing_IsRefused()
+        {
+            Assert.That(() => new EncryptionKeyRingHolder(null!), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void Replace_WithNoRing_IsRefusedAndLeavesTheCurrentRingInPlace()
+        {
+            var ring = RingForGeneration(0);
+            var holder = new EncryptionKeyRingHolder(ring);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => holder.Replace(null!), Throws.ArgumentNullException);
+                Assert.That(holder.Current, Is.EqualTo(ring));
+            }
+        }
+
         private static Action[] InterleavedReadsAndReplaces(EncryptionKeyRingHolder holder, EncryptionKeyRing[] replacements, ConcurrentBag<string> inconsistentReads)
         {
             var actions = new List<Action>(ReadCount + ReplaceCount);

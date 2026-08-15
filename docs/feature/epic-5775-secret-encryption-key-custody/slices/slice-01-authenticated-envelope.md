@@ -82,4 +82,32 @@ None. The uncertainty here is data-shaped and is answered by the acceptance test
 
 ## Verdict
 
-_To be recorded at slice close: confirmed / disproved._
+**Confirmed, 2026-08-15. The format migrates in place.** The hypothesis said this slice would be
+disproved if a real stored blob turned out to be ambiguous between the legacy form and the envelope.
+None is, and the reason is structural rather than probabilistic.
+
+**The count of true legacy-plaintext rows is zero** (OQ-4, recorded in full in `feature-delta.md`).
+Measured against the real backup in `Lighthouse.Backend/DB_Backup` rather than against seeded demo
+data: five connections, 28 options, four of them marked secret. All four decode from base64 to 112,
+224, 80 and 32 bytes, and each is sixteen bytes of initialisation vector followed by a whole number of
+sixteen-byte blocks — the shape AES-CBC produces, and one no typed credential lands on by accident.
+`OAuthCredentials` holds no rows at all. So the residual the four-state reader documents — a stored
+value that was never encrypted but happens to look like a legacy blob, and is therefore reported
+unreadable rather than handed back — describes nothing that exists on this data, and the release note
+owes operators no re-entry instruction.
+
+**The two forms cannot be confused, and that is a property of the two alphabets.** An envelope begins
+`LH1.`, and `.` is outside the standard base64 alphabet, so no value the previous implementation could
+write can begin with the prefix. Ten thousand randomly generated legacy blobs confirm it: none carries
+the prefix and none classifies as an envelope.
+
+**Nothing about the stored value's size forces a schema change.** A 100 KB credential round-trips
+through the three secret columns on both real SQLite and real PostgreSQL, so the columns need no
+widening and this slice ships no EF migration.
+
+**What the verdict does not cover.** The dogfood run described above — pointing a dev build at the
+`:5169` restored database, watching every existing Connection still sync, then corrupting one stored
+byte — is a manual step for the maintainer and is not claimed here. The evidence above is what the
+slice can establish without it, and it is what the hypothesis asked for.
+
+Per-feature mutation testing on the changed surface is recorded in `../mutation/results.md`.

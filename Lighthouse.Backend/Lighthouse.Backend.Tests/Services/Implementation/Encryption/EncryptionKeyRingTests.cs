@@ -149,6 +149,86 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             Assert.That(key.Material.ToArray(), Is.EqualTo(asStored));
         }
 
+        // Two keys that share a name but not their material are the situation rotation exists to make
+        // visible. Treating them as the same key would have a ring silently accept the wrong material under a
+        // name secrets were already written under, and every one of those secrets would stop being readable
+        // with nothing to say why.
+        [Test]
+        public void Key_WithTheSameIdButDifferentMaterial_IsNotEqual()
+        {
+            var key = new EncryptionKey(ActiveKeyId, MaterialOfLength(32));
+            var namesake = new EncryptionKey(ActiveKeyId, MaterialOfLength(32));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.Equals(namesake), Is.False);
+                Assert.That(key.GetHashCode(), Is.Not.EqualTo(namesake.GetHashCode()));
+            }
+        }
+
+        [Test]
+        public void Key_WithTheSameMaterialButADifferentId_IsNotEqual()
+        {
+            var material = MaterialOfLength(32);
+            var key = new EncryptionKey(ActiveKeyId, material);
+            var renamed = new EncryptionKey(RetiredKeyId, material);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.Equals(renamed), Is.False);
+                Assert.That(key.GetHashCode(), Is.Not.EqualTo(renamed.GetHashCode()));
+            }
+        }
+
+        [Test]
+        public void Key_ComparedWithSomethingThatIsNotAKey_IsNotEqualAndDoesNotThrow()
+        {
+            var key = KeyWith(ActiveKeyId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.Equals(null), Is.False);
+                Assert.That(key.Equals((object?)null), Is.False);
+                Assert.That(key.Equals((object?)ActiveKeyId), Is.False);
+                Assert.That(key.Equals((object?)KeyWith(ActiveKeyId)), Is.True);
+            }
+        }
+
+        [TestCase(null, TestName = "Key_BuiltWithNoIdAtAll_IsRefused")]
+        [TestCase("   ", TestName = "Key_BuiltWithABlankId_IsRefused")]
+        public void Key_BuiltWithoutAnId_IsRefused(string? keyId)
+        {
+            Assert.That(() => new EncryptionKey(keyId!, MaterialOfLength(32)), Throws.InstanceOf<ArgumentException>());
+        }
+
+        [Test]
+        public void Ring_BuiltWithoutAnyEntriesAtAll_IsRefused()
+        {
+            Assert.That(() => new EncryptionKeyRing(null!), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void Ring_ComparedWithSomethingThatIsNotARing_IsNotEqualAndDoesNotThrow()
+        {
+            var ring = new EncryptionKeyRing(KeyWith(ActiveKeyId));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Equals((object?)null), Is.False);
+                Assert.That(ring.Equals((object?)ActiveKeyId), Is.False);
+                Assert.That(ring.Equals((object?)new EncryptionKeyRing(KeyWith(ActiveKeyId))), Is.True);
+            }
+        }
+
+        [Test]
+        public void Ring_HoldingDifferentKeys_DoesNotShareAHashCode()
+        {
+            var ring = new EncryptionKeyRing(KeyWith(ActiveKeyId));
+            var other = new EncryptionKeyRing(KeyWith(RetiredKeyId));
+
+            Assert.That(ring.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
+        }
+
         private static EncryptionKey KeyWith(string keyId)
         {
             return new EncryptionKey(keyId, SHA256.HashData(Encoding.UTF8.GetBytes(keyId)));

@@ -685,6 +685,29 @@ describe("ModifyConnectionSettings", () => {
 			expect(screen.queryByText(/Upgrade to Premium/i)).not.toBeInTheDocument();
 		});
 
+		// Editing an OAuth connection, the credential fields are filled in but cannot be typed over, and a
+		// field you cannot type in with nothing to say why reads as broken. It says what to do instead.
+		it("explains why the credential fields cannot be edited on an existing OAuth connection", async () => {
+			renderComponent(
+				{
+					getConnectionSettings: vi
+						.fn()
+						.mockResolvedValue(mockExistingOAuthConnection),
+				},
+				{ canUsePremiumFeatures: true },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Client ID")).toBeInTheDocument();
+			});
+			expect(screen.getByLabelText("Client ID")).toHaveAttribute("readonly");
+			expect(
+				screen.getAllByText(
+					"Locked after the OAuth connect handshake. Reconnect to rotate.",
+				),
+			).not.toHaveLength(0);
+		});
+
 		it("renders Upgrade affordance and not OAuthAuthForm when .oauth is selected and user lacks premium", async () => {
 			renderComponent(
 				{
@@ -836,6 +859,22 @@ describe("ModifyConnectionSettings", () => {
 				expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
 			});
 			expect(screen.queryByText(unreadableMessage)).not.toBeInTheDocument();
+		});
+
+		// There is no OAuth anywhere near this connection, so telling its owner the field was locked after an
+		// OAuth handshake describes something that never happened to them.
+		it("says nothing at all beside a credential field on a connection that is working", async () => {
+			renderConnection(SecretStates.Envelope);
+
+			await waitFor(() => {
+				expect(screen.getByLabelText("Access Token")).toBeInTheDocument();
+			});
+			expect(
+				screen.getByLabelText("Access Token"),
+			).not.toHaveAccessibleDescription();
+			expect(
+				screen.queryByText(/Locked after the OAuth connect handshake/i),
+			).not.toBeInTheDocument();
 		});
 
 		it("leaves the secret field exactly as it is today when no state is reported", async () => {

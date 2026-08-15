@@ -75,6 +75,11 @@ describe("SecretHandlingNotice", () => {
 			expect(link.textContent).toMatch(/protects your credentials/i);
 		});
 
+		it("keeps the sentence and the link from running into each other", () => {
+			render(<SecretHandlingNotice />);
+			expect(noticeText()).toMatch(/immediately\.\s+How Lighthouse protects/);
+		});
+
 		it("lets a host repoint the link once a dedicated page exists", () => {
 			render(<SecretHandlingNotice docsUrl="https://example.test/security" />);
 			expect(screen.getByRole("link")).toHaveAttribute(

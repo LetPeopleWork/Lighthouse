@@ -244,6 +244,81 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        // PKCS7 pads up to the next block boundary, so a credential one character short of a block ends in a
+        // single 0x01 and one that fills a block exactly gains a whole extra block of 0x10. An empty one is
+        // nothing but padding. All three are ordinary secrets somebody typed, and all three sit on an edge of
+        // the range this classifier accepts, where an off-by-one would report a readable secret unreadable.
+        [TestCase("123456789012345", TestName = "Classify_LegacyCbc_CredentialOneCharacterShortOfABlock")]
+        [TestCase("1234567890123456", TestName = "Classify_LegacyCbc_CredentialFillingAWholeBlock")]
+        [TestCase("", TestName = "Classify_LegacyCbc_EmptyCredentialIsNothingButPadding")]
+        public void Classify_LegacyCbcBlobOnAPaddingBoundary_StillReadsBackItsPlainText(string credential)
+        {
+            var result = CreateClassifier().Classify(LegacyCbcBlob(credential, ActiveKeyMaterial));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.State, Is.EqualTo(SecretState.LegacyCbc));
+                Assert.That(result.PlainText, Is.EqualTo(credential));
+            }
+        }
+
+        [Test]
+        public void Classify_CbcShapedValueClaimingMorePaddingThanABlockHolds_ReturnsUnreadable()
+        {
+            var result = CreateClassifier().Classify(CbcBlobOfRawBytes(PaddedWith(20, 20), ActiveKeyMaterial));
+
+            Assert.That(result.State, Is.EqualTo(SecretState.Unreadable));
+        }
+
+        [Test]
+        public void Classify_CbcShapedValueWhosePaddingBytesDisagree_ReturnsUnreadable()
+        {
+            var result = CreateClassifier().Classify(CbcBlobOfRawBytes(PaddedWith(8, 1), ActiveKeyMaterial));
+
+            Assert.That(result.State, Is.EqualTo(SecretState.Unreadable));
+        }
+
+        [Test]
+        public void Classify_CbcShapedValueThatDecryptsToBytesThatAreNotUtf8_ReturnsUnreadable()
+        {
+            var raw = PaddedWith(16, 16);
+            Array.Fill(raw, byte.MaxValue, 0, 16);
+
+            var result = CreateClassifier().Classify(CbcBlobOfRawBytes(raw, ActiveKeyMaterial));
+
+            Assert.That(result.State, Is.EqualTo(SecretState.Unreadable));
+        }
+
+        [Test]
+        public void Classify_CbcShapedValueThatDecryptsToTextCarryingAControlCharacter_ReturnsUnreadable()
+        {
+            var raw = PaddedWith(16, 16);
+            raw[7] = 7;
+
+            var result = CreateClassifier().Classify(CbcBlobOfRawBytes(raw, ActiveKeyMaterial));
+
+            Assert.That(result.State, Is.EqualTo(SecretState.Unreadable));
+        }
+
+        [Test]
+        public void Classifier_BuiltWithoutAKeyRing_IsRefused()
+        {
+            Assert.That(() => new SecretStateClassifier(null!), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void UnreadableSecretException_WithNoClaimedKeyId_SaysSoRatherThanNamingAnEmptyKey()
+        {
+            var exception = new UnreadableSecretException(SecretState.LegacyCbc, null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(exception.ClaimedKeyId, Is.Null);
+                Assert.That(exception.Message, Does.Contain("names no encryption key"));
+                Assert.That(exception.Message, Does.Not.Contain("''"));
+            }
+        }
+
         private static SecretStateClassifier CreateClassifier()
         {
             var ring = new EncryptionKeyRing(
@@ -264,6 +339,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             var cipher = aes.EncryptCbc(Encoding.UTF8.GetBytes(plainText), initialisationVector);
 
             return Convert.ToBase64String([.. initialisationVector, .. cipher]);
+        }
+
+        // A blob written with the padding left off, so a test can choose the exact bytes the classifier sees
+        // after it decrypts. This is what a wrong key looks like from the inside: the decrypt itself always
+        // succeeds and hands back well-formed rubbish, and everything the classifier checks afterwards exists
+        // to tell that rubbish from a secret somebody typed.
+        private static string CbcBlobOfRawBytes(byte[] rawBytes, byte[] keyMaterial)
+        {
+            using var aes = Aes.Create();
+            aes.Key = keyMaterial;
+
+            var cipher = aes.EncryptCbc(rawBytes, FixedIv, PaddingMode.None);
+
+            return Convert.ToBase64String([.. FixedIv, .. cipher]);
+        }
+
+        private static byte[] PaddedWith(byte paddingValue, int paddingByteCount)
+        {
+            var raw = new byte[2 * IvLength];
+
+            Array.Fill(raw, (byte)'a', 0, raw.Length - paddingByteCount);
+            Array.Fill(raw, paddingValue, raw.Length - paddingByteCount, paddingByteCount);
+
+            return raw;
         }
 
         private static string WithDecodedByteFlipped(string stored, int fieldIndex)
