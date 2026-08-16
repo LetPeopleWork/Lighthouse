@@ -618,14 +618,25 @@ namespace Lighthouse.Backend.Data
         }
 
         // Saving a connection hands back every secret it holds, including the ones nobody retyped, so a
-        // value that is already protected would otherwise be encrypted a second time and the real secret
-        // buried under a layer no reader ever unwraps. The question has to be answered by actually reading
-        // the value rather than by matching the text it starts with: a value that merely looks protected
-        // but that no key can open is one nobody can recover, and skipping it would report a clean save
-        // over a secret that is already lost.
+        // value that is already protected must not be encrypted a second time and the real secret buried
+        // under a layer no reader ever unwraps. The question is answered by actually reading the value
+        // rather than by matching the text it starts with.
+        //
+        // The one value that must be left alone is an envelope naming a key this instance does not hold.
+        // That is the credential, encrypted under a key that exists somewhere, and restoring the key store
+        // it belongs to brings it back - which is exactly what an operator is told to do when a start finds
+        // it cannot read what is stored. Encrypting it here wraps ciphertext nobody can read inside
+        // ciphertext they can, destroying the only copy and reporting the row as healthy from then on.
+        //
+        // Anything else that cannot be read is not known to be a secret at all: a value that merely has the
+        // shape of the format this version replaced may equally be a credential somebody typed in. Leaving
+        // that unprotected is the worse of the two mistakes, so it is still encrypted.
         private bool NeedsProtecting(string storedValue)
         {
-            return cryptoService.Read(storedValue) is not { State: SecretState.Envelope };
+            var secret = cryptoService.Read(storedValue);
+
+            return secret is not { State: SecretState.Envelope }
+                && secret is not { State: SecretState.Unreadable, KeyId: not null };
         }
 
     }

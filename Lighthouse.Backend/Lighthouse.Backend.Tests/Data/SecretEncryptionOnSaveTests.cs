@@ -117,11 +117,16 @@ namespace Lighthouse.Backend.Tests
             }
         }
 
-        // The case that separates asking the classifier from testing for the stored value's leading text:
-        // this one looks encrypted but names a key nobody holds, so nothing can ever unwrap it. Matching on
-        // the leading text would leave it in place and report a clean save, hiding a secret already lost.
+        /// <summary>
+        /// This value names a key this instance does not hold, so nothing here can unwrap it - but it is
+        /// still the credential, and restoring the key store it belongs to brings it back. That is exactly
+        /// what a start refusing on an unreadable database tells the operator to do. Encrypting it here
+        /// would wrap ciphertext nobody can read inside ciphertext they can, destroy the only copy, and
+        /// report the row as healthy from then on, so an ordinary rename of a Connection would be enough to
+        /// lose a credential for good.
+        /// </summary>
         [Test]
-        public async Task SecretOptionShapedLikeAnEnvelopeThatNoKeyCanRead_IsNotSkipped()
+        public async Task SecretOptionNamingAKeyThisInstanceDoesNotHold_IsLeftByteIdentical()
         {
             var connectionId = await SeedConnectionWithSecret(Credential, CryptoUnder(StrangerKey));
             var beforeSave = await StoredSecret(connectionId);
@@ -130,7 +135,37 @@ namespace Lighthouse.Backend.Tests
 
             var afterSave = await StoredSecret(connectionId);
 
-            Assert.That(afterSave, Is.Not.EqualTo(beforeSave));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(afterSave, Is.EqualTo(beforeSave));
+                Assert.That(CryptoUnder(ActiveKey, StrangerKey).Read(afterSave).PlainText, Is.EqualTo(Credential),
+                    "whoever restores the key store that belongs to this database gets the credential back, and could not if the save had wrapped it");
+            }
+        }
+
+        /// <summary>
+        /// The other half of the same rule, and the reason it is stated as "an envelope naming a key we do
+        /// not hold" rather than "anything unreadable". A credential somebody typed in can happen to have
+        /// the shape of the format this version replaced, and refusing to encrypt that would store a live
+        /// token in the clear - the worse of the two mistakes by far.
+        /// </summary>
+        [Test]
+        public async Task ACredentialShapedLikeOldCiphertext_IsStillEncrypted()
+        {
+            var credentialThatLooksLikeCiphertext = Convert.ToBase64String(new byte[48]);
+
+            var connectionId = await SeedConnectionWithSecret(credentialThatLooksLikeCiphertext);
+
+            var stored = await StoredSecret(connectionId);
+            var read = CryptoUnder(ActiveKey, RetiredKey).Read(stored);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored, Is.Not.EqualTo(credentialThatLooksLikeCiphertext),
+                    "a live token stored in the clear because it happened to look like ciphertext is the worse of the two mistakes by far");
+                Assert.That(read.State, Is.EqualTo(SecretState.Envelope));
+                Assert.That(read.PlainText, Is.EqualTo(credentialThatLooksLikeCiphertext));
+            }
         }
 
         [Test]
