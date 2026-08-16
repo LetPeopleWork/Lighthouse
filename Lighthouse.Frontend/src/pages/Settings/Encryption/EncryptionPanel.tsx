@@ -164,10 +164,10 @@ const EncryptionPanel: React.FC = () => {
 		try {
 			setReport(await action());
 			await readKeyState();
-		} catch (caught) {
+		} catch (error_) {
 			setFailure(
-				caught instanceof Error
-					? caught.message
+				error_ instanceof Error
+					? error_.message
 					: "The stored secrets could not be moved.",
 			);
 		} finally {
