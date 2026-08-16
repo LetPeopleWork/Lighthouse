@@ -3386,3 +3386,363 @@ credential in the installation should be deny.
 
 ---
 
+
+# Wave: DISTILL — acceptance specification, slice 04
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `slices/slice-04-verify-readability.md` — in full, including the flagged taste test the brief says to
+  record a verdict on here.
+- ✓ `feature-delta.md` — US-04's ten ACs, DISCUSS Locked Decisions (D13 and the AC-4.9/AC-4.10 paragraph
+  that closes the upgrade-by-inaction gap), the Story Map row and the Carpaccio taste tests, DESIGN
+  Driving Ports (the `GET /encryption/secrets` row), Driven Ports, DD-12, Architectural Enforcement, and
+  every DISTILL and DELIVER section slices 01, 02 and 03 left behind — including slice 03's *Upstream
+  Issues* and the adversarial DELIVER review that withdrew AC-3.9's second half.
+- ✓ `docs/product/architecture/adr-147`, `adr-148`, `adr-151`, `adr-152` — re-read for the classifier's
+  four states, the read-only end of the ring, and the report contract.
+- ✓ `environments.yaml` — unchanged since slice 03.
+- ✓ Code as it stands after slice 03: `EncryptionController.cs`, `EncryptionStateDto.cs`,
+  `Models/Encryption/{SecretReadabilityReport,SecretState,SecretReadResult}.cs`,
+  `Services/Interfaces/Encryption/ISecretCustodyService.cs`,
+  `Services/Implementation/Encryption/{SecretCustodyService,SecretStateClassifier,LegacyDefaultEncryptionKey}.cs`,
+  `Lighthouse.Frontend/src/models/Encryption/SecretReadabilityReport.ts`,
+  `src/pages/Settings/Encryption/EncryptionPanel.tsx`, `src/services/Api/EncryptionService.ts`.
+- ✓ `acceptance/milestone-{9..12}-*.feature` from slice 03 — for the vocabulary this slice continues.
+- `docs/product/kpi-contracts.yaml` — inherited unchanged. KPI-5 (upgrade transparency) names AC-4.6 as
+  its instrument; it is measured on the dogfood pass, not by a scenario, matching slices 01-03.
+
+---
+
+## Wave: DISTILL / [REF] The flagged taste test — verdict
+
+The story map flagged slices 03 and 04 as *"two slices identical except for scale"* and the slice brief
+made the verdict a deliverable of this wave: **if slice 04 turns out to be slice 03's report with a flag
+flipped, merge it and say so here.** It is not. Read against the code slice 03 actually shipped, three
+things separate them, and the first is a defect the merge would have hidden.
+
+1. **The traversal slice 03 built cannot answer slice 04's question.** `CandidatesAsync` selects on
+   `!value.StartsWith("LH1." + activeKeyId + ".")` — the predicate that makes rotation resumable and
+   idempotent by letting the database say what is left to do. Run as a check, it returns only the
+   secrets that are *not* on the key in force, so a check on a freshly rotated instance reports zero
+   secrets and a check on a healthy install reports nothing at all. AC-4.2 and AC-4.6 both ask about
+   secrets that predicate deliberately excludes. Slice 04 widens the read pass to every stored secret
+   while leaving the write pass's predicate exactly as it is.
+2. **The report vocabulary is move-shaped, not state-shaped.** `MovedCount` and `UnreadableCount` answer
+   "what did the pass do"; AC-4.3 asks "what is each secret", in four states that must not collapse.
+   On a check, `MovedCount` is zero by construction, so a panel rendering the slice-03 summary would
+   greet an operator with *"Moved 0 stored secrets"* on a perfectly healthy instance.
+3. **AC-4.9 and AC-4.10 are a surface neither slice 03 nor its report has.** An unprompted notice cannot
+   be behind a button, and it cannot cost a decrypt of every credential on every settings page load.
+
+**Verdict: confirmed, not merged.** Recorded in the slice brief's Verdict section at slice close.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation
+
+Run across DISCUSS, DESIGN and DEVOPS plus everything slices 01-03 left behind. **0 contradictions —
+reconciliation passed.** Two things that look like contradictions and are not:
+
+- **Slice 03's *Upstream Issues* recommends taking AC-3.9's second half in slice 04; the slice-03 DELIVER
+  review then withdrew that AC half entirely.** The later document wins, and it wins on a reason rather
+  than on recency: narrowing the ring buys nothing durable, because the bootstrapper appends the
+  published key without asking the database, and it costs a request that already holds a legacy envelope
+  its ability to read it. Slice 04 therefore does **not** narrow the ring, at boot or anywhere else. What
+  it does take from that recommendation is the query — *is any stored secret still under the published
+  key?* — because AC-4.9 needs exactly that number. See *Upstream Issues* below for what is deliberately
+  left undone.
+- **`Encryption:AllowLegacyDefault=false` (ADR-148) was deferred to slice 04 by slice 02's handoff.** It
+  is carried by no AC in any story. It stays undone, and the reason is recorded in *Upstream Issues*
+  rather than being decided silently by omission.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports consumed by this slice**: `GET /api/{v1,latest}/encryption/secrets` →
+  `SecretReadabilityReport`, under the `RbacGuard(SystemAdmin)` already on the controller; and
+  `GET /api/{v1,latest}/encryption`, slice 02's, which gains one field so the notice can be drawn without
+  a second call. The Settings → Encryption panel gains a **Check secrets** action and the notice.
+- **Driven ports in scope**: secret persistence through `LighthouseAppContext`, read-only — this is the
+  first consumer that only reads it; `ICryptoService.Read` for the per-row classification; and the
+  frontend service adapter for the new route. No key-ring source is touched: the check makes no key,
+  and neither does opening the settings page.
+- **The read port cannot write, and that is structural.** `ISecretCustodyReader` was split out in slice
+  03 step 02-01 for exactly this consumer. The route is handed the reader, not the service, so scenario
+  87's second `Then` is satisfied by the shape of what the controller holds rather than by a reviewer
+  noticing.
+- **No EF migration.** Nothing here touches a column definition; the notice count is a query over
+  columns that already exist.
+- **KPI instruments**: KPI-5 (upgrade transparency — zero secrets lost across an upgrade from the
+  pre-epic version on a real restored database) is instrumented by AC-4.6 and measured in the dogfood
+  pass on `:5169`, not by a scenario. No separate `@kpi` scenario is authored, matching slices 01-03.
+- **Substrate owed before the slice closes**: `:5169` restored from a real backup — check before
+  rotating, deliberately corrupt one stored secret, confirm the check names its Connection and field,
+  rotate, and confirm the corrupted one is still named while the rest read as being on the key in force.
+- **Documentation ships with this slice**: `docs/Installation/configuration.md` gains what the check
+  tells an operator and what to do with each of the four states.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags)
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 86 | Checking names every stored secret, what owns it, and the key it is on | milestone-13 | `@real-io @driving_port @us-04` |
+| 87 | The check writes nothing at all | milestone-13 | `@property @us-04` |
+| 88 | A secret on the key in force and one on a key that was retired are told apart | milestone-13 | `@edge @us-04` |
+| 89 | A value in the format this version replaced is reported as that, not as broken | milestone-13 | `@edge @us-04` |
+| 90 | A value nobody can read is reported as that, and not as something ordinary | milestone-13 | `@error @us-04` |
+| 91 | The four states account for every secret checked, with none left over | milestone-13 | `@property @us-04` |
+| 92 | An unreadable secret is named by the Connection and the field that own it | milestone-14 | `@error @us-04` |
+| 93 | A Connection with nothing wrong is not asked to be looked at | milestone-14 | `@edge @us-04` |
+| 94 | What comes back carries no credential of any kind | milestone-14 | `@error @us-04` |
+| 95 | An instance holding no stored secrets says so rather than saying nothing | milestone-14 | `@edge @us-04` |
+| 96 | The check works before any rotation has ever run | milestone-15 | `@real-io @us-04` |
+| 97 | Immediately after a rotation, every readable secret is on the key in force | milestone-15 | `@real-io @us-04` |
+| 98 | A secret the rotation could not read is still named afterwards | milestone-15 | `@error @us-04` |
+| 99 | Checking twice in a row says the same thing and changes nothing | milestone-15 | `@property @us-04` |
+| 100 | Checking a large instance costs no more looking up than checking a small one | milestone-15 | `@edge @real-io @us-04` |
+| 101 | An operator who has just upgraded is told, without asking | milestone-16 | `@driving_adapter @us-04` |
+| 102 | The notice says how many, and offers the one action that fixes it | milestone-16 | `@driving_adapter @us-04` |
+| 103 | The notice is gone once nothing is left under that key | milestone-16 | `@edge @driving_adapter @us-04` |
+| 104 | A fresh install is never told to fix a problem it does not have | milestone-16 | `@edge @driving_adapter @us-04` |
+| 105 | The check is offered on the panel, and what it found reads at a glance | milestone-16 | `@driving_adapter @us-04` |
+| 106 | Somebody who is not a System Administrator cannot check the stored secrets | milestone-16 | `@error @driving_port @us-04` |
+
+Every scenario also carries `@slice-04`. Numbering continues from slice 03's 61-85. **21 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 15 of 21 (71%)**, against the ≥40% target. The six happy paths are
+the check itself (86), the two ends of a rotation (96, 97), the notice (101, 102) and the panel (105).
+
+**AC traceability**: AC-4.1 → 87, 99 · AC-4.2 → 86, 88 · AC-4.3 → 89, 90, 91 · AC-4.4 → 92, 93, 98 ·
+AC-4.5 → 96 · AC-4.6 → 97 · AC-4.7 → 106 · AC-4.8 → 100 · AC-4.9 → 101, 102 · AC-4.10 → 103, 104.
+Carried by no AC and asserted anyway: 94 (nothing in the payload is a credential — the rule slice 03's
+architecture test enforces on the type, asserted here on the wire) and 95 (an instance with nothing
+stored).
+
+**ADR Earned Trust rows covered**: ADR-147 — the four states told apart on real stored values, including
+the two that a single "broken" would merge (89, 90, 91). ADR-152 — the readability report as a driving
+port under the System Administrator guard (86, 106), and no key material in what it returns (94).
+ADR-148 — the published key stays on the ring, read-only, and the check is what makes its population
+visible (101, 103).
+
+**Rows deliberately not covered here**: ADR-150's "a ring swap mid-decrypt does not tear" is slice 05,
+unchanged from slice 03. The chart custody surface is slice 05; the advisory and compliance pages are
+slice 06.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from slices
+01-03, and for the same reason: no Gherkin runner exists in any `.csproj`. They are translated in DELIVER
+into NUnit and Vitest. **No `src/` RED scaffolds**: `TreatWarningsAsErrors` makes a test referencing a
+not-yet-existent type a BROKEN build rather than a RED test. The project's RED mechanism is
+`[Ignore("pending — DELIVER (epic-5775 slice 04)")]`, authored in DELIVER beside the minimal type
+skeletons and un-ignored one scenario at a time.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-{13,14,15,16}-*.feature` | slice 03's `milestone-{9..12}` in the same directory |
+| The four state counts and the invariant that they sum (88, 89, 90, 91, 93, 95) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretReadabilityReportTests.cs` (extend) | the same file, created in slice 03 step 01-01 |
+| The widened read traversal (86, 87, 92, 94, 96, 97, 98, 99, 100) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretCustodyServiceTests.cs` (extend, real SQLite) | the same file — the in-memory provider is still unusable here, for the same `ExecuteUpdateAsync` reason |
+| The route, its guard, and the shape on the wire (86, 94, 106) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) | the same file, created in slice 02 and extended in slice 03 |
+| The count behind the notice (101, 103, 104) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) — counted by SQL, so a real relational provider | the two-provider tests already in `Integration/` |
+| The notice, the check action and the summary (101, 102, 103, 104, 105) | `Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx` + `src/services/Api/EncryptionService.test.ts` | slice 03's tests in the same two files |
+| Checking a restored real backup before and after a rotation (96, 97, 98) | Manual dogfood on `:5169`, recorded in the slice verdict | slice 03's rotation pass on the same substrate |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| The check cannot write — the route holds `ISecretCustodyReader`, which declares `InspectAsync` alone | Compile-enforced by the port shape; asserted at the controller's constructor in `EncryptionControllerTests` |
+| Nothing under `Services.Implementation.Encryption` depends on logging | `SecretCustodySeamArchUnitTest.cs` — already enforced, unchanged, and it is why the check writes no record |
+| No stored value and no plaintext in anything the report exposes | `SecretCustodySeamArchUnitTest.cs` (already enforced on the type) plus scenario 94 on the wire |
+
+**Per-feature Stryker ≥ 80%** on the changed backend and frontend surface at slice end, with a
+`stryker-config.epic-5775-slice-04.json` beside the slice-01, slice-02 and slice-03 configs.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter (DESIGN, slice 04) | Exercised via its protocol by |
+|---|---|
+| `GET /api/{v1,latest}/encryption/secrets` under `RbacGuard(SystemAdmin)` | Scenarios 86, 94, 106 (`WebApplicationFactory`, real HTTP, real guard) — 106 is the screen-bypassed one |
+| `GET /api/{v1,latest}/encryption` — slice 02's, gaining the notice count | Scenarios 101, 103, 104 |
+| Settings → Encryption panel — the **Check secrets** action and the notice | Scenarios 101, 102, 103, 104, 105 (Vitest, the real component against the real service adapter) |
+
+Zero uncovered entry points. The check writes no record, deliberately: nothing is changed by it, and a
+log line naming who read what would be the only place in this feature that accumulates a list of which
+Connections hold unreadable credentials.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| Secret persistence via `LighthouseAppContext`, read-only | YES | Scenarios 86, 96, 97 against a real relational provider; 100 counts the round trips |
+| The notice count query | YES | Scenarios 101, 103, 104 — counted in SQL over real rows, never by decrypting |
+| `ICryptoService.Read` — the per-row classification | YES | Scenarios 88, 89, 90 |
+| The frontend service adapter for the new route | YES | Scenarios 102, 105 (Vitest against the real service) |
+
+Zero "NO — MISSING" rows. No key-ring source carries a row: the check touches none of them.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage
+
+Against `environments.yaml`.
+
+| Environment | Slice-04 coverage | Note |
+|---|---|---|
+| `standalone-exe` | **Exercised** | Scenarios 86, 96, 97 — the check is custody-independent, so one traversal covers every app-owned mode |
+| `docker-with-data-volume` | **Exercised** | Same scenarios; nothing here depends on where the key is kept |
+| `docker-no-data-volume` | **Exercised** | Scenario 101 — an instance with no durable store is on the published key, which is exactly the population the notice exists for |
+| `upgrade-from-pre-epic` | **Exercised** | Scenarios 89, 96, 101, 102 — the upgraded instance is the one holding values in the format this version replaced, and the one nobody has told yet |
+| `k8s-explicit-key` / `k8s-existing-secret` | **Exercised** | Scenario 104 — an operator-supplied key never held the published default, so the notice must not appear. Custody changes nothing else about the check |
+| Database providers (SQLite, PostgreSQL) | **Exercised, symmetrically** | Scenarios 100 and the notice count run against both: the count is SQL, so its behaviour is a property of the engine |
+| `ci-chart`, `kind-install-smoke`, `tenant-zero` | **Not exercised** | Chart substrates, slice 05 |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues
+
+Two, both about what is deliberately **not** done, so neither is decided by omission.
+
+**1. The published key is never dropped from the ring, and AC-3.9's second half stays withdrawn.**
+Slice 03's *Upstream Issues* section recommended taking it here, on the reasoning that the boot-time
+question — *is any stored secret still under the published key?* — is the query this slice builds
+anyway. The slice-03 DELIVER review then withdrew the AC half outright, and its reason survives the
+change of venue: a request that loaded a legacy-default envelope a moment before the ring narrowed is
+holding a credential it can no longer read. At boot there is no such in-flight request, so the argument
+is weaker there — but the cost is still real and the benefit is still nil, because the key is not
+secret. It is published, in every copy of the product and in the public repository; removing it from the
+ring hides it from `GET /encryption` without removing anyone's ability to read what is stored under it.
+What *does* close the exposure is moving the secrets, which is slice 03's action and this slice's
+notice. **Recommendation: leave it withdrawn permanently and delete the deferral, rather than carrying
+it forward again.** Owed to the maintainer as a decision, not to DELIVER.
+
+**2. `Encryption:AllowLegacyDefault=false` (ADR-148) is specified, carried by no AC, and stays undone.**
+Slice 02's handoff deferred it here on the grounds that readability is the surface it would be observed
+on. Read against what slices 02 and 03 shipped, the setting has no work left to do: an instance that
+cannot read *any* stored secret with the key it started on already refuses to start, with the two
+remedies named (`KeyThatReadsNothing.Refusal`); an instance that can read some of them is one where
+dropping the published key would make the rest unreadable, which is the failure the setting would
+cause rather than prevent. The one thing it would add — *fail the boot rather than warn, on an install
+that still has secrets under the published key* — is a policy an operator can already enforce by reading
+the notice this slice adds. **Recommendation: drop it from ADR-148 or record it as a non-goal.** Owed to
+the maintainer.
+
+**3. The notice count is exact for every population measured, and approximate in one corner.** It is
+counted in SQL, without decrypting: a stored value is counted when it is an envelope naming the
+published key, or when it predates the envelope format entirely. The second half is what makes an
+upgraded install — whose secrets are legacy AES-CBC, carrying no key id at all — countable at the price
+of a single query. A value that is *true plaintext* rather than legacy ciphertext is counted with them,
+and re-encryption leaves plaintext alone (slice 03, scenario 69), so on such an install the notice would
+not clear. OQ-4 measured zero true-plaintext rows against the real backup, and the check itself reports
+plaintext in its own state, so an operator hitting this corner is told precisely what it is. Recorded
+rather than engineered around, because the alternative is decrypting every credential on every settings
+page load.
+
+---
+
+## Wave: DISTILL / [REF] Changed Assumptions
+
+One contract shipped in slice 02 is deliberately overturned here, and one thing the wave expected to
+find in the code was not there.
+
+**1. `GET /encryption` now carries a count of stored secrets.** Slice 02's `EncryptionControllerTests`
+asserted that no property on that payload could be named after a secret at all, with the reason: *"how
+many stored credentials are still on the old key is a different question with a different answer;
+answering it here would make an operator read a count of keys as a count of secrets."* AC-4.9 — a
+maintainer decision dated 2026-08-15, after slice 02 shipped — requires exactly that number, unprompted,
+on the encryption surface. The two are irreconcilable and the later one wins.
+
+What survives of the earlier reason is the confusability it was guarding against, and it is now guarded
+directly: `legacyDefaultPresent` is a statement about the ring, `secretsUnderPublishedKey` is a count of
+stored credentials, they are separately named, and the assertion was replaced by one that pins the
+payload's **entire** property set rather than banning a substring — a stricter contract, so a second
+secret-shaped property is an explicit decision rather than something that arrives unnoticed.
+
+The cost is that `GET /encryption` now touches the database, where before it read only the ring. On a
+running instance that is unremarkable — every other page needs the database — but it is why four test
+hosts now migrate their schema where two did before.
+
+**2. The read-only walk existed, and could not answer the question.** The wave expected to find
+`InspectAsync` unimplemented. It was implemented in slice 03, as `WalkAsync(moveThem: false)`, and it
+inherited the write pass's candidate predicate — so it reported only the secrets *not* on the key in
+force. On a freshly rotated instance it returned nothing, which is the opposite of what AC-4.6 asks for.
+The predicate is now passed rather than assumed: the write pass keeps it, the read pass drops it, and a
+scenario on each side pins that neither leaks into the other.
+
+---
+
+## Wave: DISTILL / [REF] Peer Review
+
+`nw-acceptance-designer-reviewer`, 2026-08-16, one iteration. **1 blocker, 1 high, 1 low. Verdict after
+adjudication: blocker rejected with the citation that contradicts it; the high and the low upheld and
+fixed.**
+
+**Rejected.** *"Every scenario must carry a `@contract-shape` tag; zero of 21 do."* The tag is a generic
+nWave mandate that this project has never adopted: none of the twelve `.feature` files slices 01-03
+committed carries one, so applying it to slice 04 alone would make the acceptance directory
+inconsistent with itself while adding nothing a reader of these scenarios can use. The reviewer would
+have raised the identical finding against every previously approved file in the same directory, which is
+the signal that it is a house-style mismatch rather than a defect in this deliverable.
+
+**Upheld and fixed.** *"`the number of times the database was asked anything` is technical language in a
+scenario outcome."* Correct — it names a mechanism, in a file whose whole discipline is not to. Scenario
+100 now reads *"what it costs to look them all up does not grow with how many there are"*, which is the
+same commitment in the operator's words. The reviewer's own suggested rewordings were more technical
+than the original, so the wording is ours rather than theirs. The low finding — scenario 100 exercises a
+real relational provider and did not say so — was fixed by adding `@real-io`.
+
+**Verified independently by the reviewer**: all ten ACs traced to scenarios that actually assert them;
+21 scenarios and the 15-of-21 error/edge/property share recounted from the tags and confirmed; one
+`When` per scenario; no assertion on internal state; slice-boundary discipline intact, with rotation
+used only as a precondition; and — checked against `SecretCustodyService.cs` rather than taken on trust
+— the *flagged taste test* claim that slice 03's candidate predicate makes a check report nothing on a
+rotated instance.
+
+The three scale-sensitive reviewers were not dispatched: DISCUSS, DESIGN and DEVOPS each carry a
+recorded peer review, and slice 04 changed none of those sections.
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To `nw-software-crafter` (DELIVER)**: `deliver/slice-04/roadmap.json` — five phases, seven steps,
+inside-out. The order matters in one place: the four state counts come before the widened traversal,
+because the traversal's tests are written against them.
+
+Three things this wave learned that DELIVER should not rediscover:
+
+- **A save re-encrypts anything that is not already an envelope.** Seeding a stored secret in the format
+  this version replaced by adding it through `SaveChanges` produces an envelope on the key in force
+  instead, and the test then passes while proving nothing. Write the value into the column after the
+  save, the way `SecretCustodyServiceTests` already does.
+- **`GET /encryption` now reads the database**, so every test host serving it needs its schema migrated —
+  including the ones that previously only ever read the ring.
+- **The check must not write a record.** Nothing changed, and a running log of who read which Connections
+  hold unreadable credentials is the one artefact in this feature that would accumulate a list worth
+  stealing.
+
+**To the maintainer**, two decisions recorded in *Upstream Issues* above rather than taken here: whether
+the published key's permanent place on the ring is now settled (recommendation: yes, delete the
+deferral), and whether `Encryption:AllowLegacyDefault` is dropped from ADR-148 or recorded as a non-goal
+(recommendation: drop it).
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered · fixture design discussion for the four-state seed and the lookup counter · full edge-case
+enumeration for the four states and the notice count · error-path rationale per `@error` scenario ·
+tagging cookbook · property-based testing notes for scenarios 91, 99 and 100 · domain-language
+fact-to-step table.
+
+---
