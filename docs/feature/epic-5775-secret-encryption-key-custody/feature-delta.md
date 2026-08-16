@@ -3755,3 +3755,244 @@ tagging cookbook · property-based testing notes for scenarios 91, 99 and 100 ·
 fact-to-step table.
 
 ---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 04b
+
+- ✓ `slices/slice-04b-published-key-never-active.md` — in full: goal, the defect, the IN/OUT boundary and
+  the three acceptance criteria numbered here as AC-4b.1 to AC-4b.3.
+- ✓ `verification/manual-walkthrough.md` — findings **F-20** (blocking) and **F-21** (low priority) in
+  full, plus rows B2b and C1 of the run table they were raised from, and the V4 note that they are fixed
+  inside this epic rather than split into their own bug.
+- ✓ `feature-delta.md` — DISCUSS Locked Decisions, DESIGN Driving Ports and Driven Ports, and every
+  DISTILL and DELIVER section slices 01-04 left behind, in particular slice 04's *Upstream Issues* (which
+  is where the withdrawn ring-narrowing recommendation is recorded) and its Handoff.
+- ✓ `docs/product/architecture/adr-147`, `adr-148`, `adr-152` — re-read for the four states, the
+  published key's read-only place on the ring, and the report contract.
+- ✓ Code as it stands after slice 04:
+  `Services/Implementation/Encryption/{EncryptionKeyRingBootstrapper,ConfiguredKeyRingSource,MountedFileKeyRingSource,GeneratedKeyRingStore,KeyRingSerializer,LegacyDefaultEncryptionKey,PublishedKeySecretCount,SecretStateClassifier,SecretEnvelope}.cs`,
+  `Models/Encryption/{EncryptionKey,EncryptionKeyRing}.cs`, `API/DTO/EncryptionStateDto.cs`,
+  `API/EncryptionController.cs`.
+- ✓ `acceptance/milestone-{13..16}-*.feature` — for the vocabulary this slice continues.
+- `environments.yaml` and `docs/product/kpi-contracts.yaml` — inherited unchanged. No new KPI instrument:
+  KPI-5 is measured on the dogfood pass, and this slice's own evidence is a restart, not a metric.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 04b
+
+Run across DISCUSS, DESIGN, DEVOPS and everything slices 01-04 left behind. **0 contradictions —
+reconciliation passed.** Three things that look like contradictions and are not:
+
+- **ADR-148 says the published key stays on the ring; this slice refuses it.** Different positions on the
+  ring. ADR-148 is about the *end* of the ring, which only ever reads, and that is untouched and must
+  stay untouched or every upgrade stops being readable. The refusal is about the *first* entry, which is
+  the only one anything is ever written under. AC-4b.2 exists to keep the two apart in the tests as well
+  as in the prose.
+- **Slice 02's handoff deferred `Encryption:AllowLegacyDefault=false` to slice 04, and slice 04 left it
+  undone.** It stays undone here too, and for a stronger reason than in slice 04: this slice removes the
+  situation the flag existed to let an operator opt out of. A setting whose only effect would be to make
+  Lighthouse start on a key it now refuses is worse than nothing. Recorded in *Upstream Issues*.
+- **The pre-epic `EncryptionSettings:EncryptionKey` name is honoured deliberately (ADR-148, slice 02) and
+  this slice refuses one particular value in it.** The name still works; the published value in it does
+  not. That is the whole distinction the defect was missing.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 04b
+
+- **DESIGN driving ports consumed by this slice**: none that are new. The refusal is raised during
+  application start, before any port exists; `GET /api/{v1,latest}/encryption` is unchanged in shape and
+  changes only in what `SecretsUnderPublishedKey` means.
+- **Driven ports in scope**: secret persistence through `LighthouseAppContext`, read-only — the count
+  already reads it and now reads values rather than counting rows; and the three configured key names plus
+  the mounted key file, all of which already funnel through one parser.
+- **The comparison is over compiled-in bytes.** `LegacyDefaultEncryptionKey` already holds the published
+  material and is already the single place that does. Nothing new is compiled in, no new secret exists,
+  and no key material leaves that class — the two questions it learns to answer are *is this the published
+  key* and *can the published key read this value*, both of which hand back a boolean.
+- **No EF migration, no schema change, no new configuration setting.**
+- **Substrate owed before the slice closes**: the B2b and C1 walkthrough runs re-run on the same binary
+  substrate — B2b must now refuse to start with a message naming `EncryptionSettings__EncryptionKey`, and
+  C1 must start and report **zero** credentials on the published key where it previously reported one.
+- **Documentation ships with this slice**: `docs/Installation/configuration.md` gains what an operator
+  sees if they carry the pre-epic key value forward, and what to do about it.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 04b
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 107 | A supplied key that is the key published with the product stops the start | milestone-17 | `@error @driving_port @us-04b` |
+| 108 | The refusal names the setting the key arrived in | milestone-17 | `@error @us-04b` |
+| 109 | The name this release retired is refused on the same terms | milestone-17 | `@edge @error @us-04b` |
+| 110 | A ring whose first entry is the published key is refused | milestone-17 | `@edge @error @us-04b` |
+| 111 | A key mounted from an external store is refused on the same terms | milestone-17 | `@edge @error @us-04b` |
+| 112 | The published key behind a key of the operator's own is welcome | milestone-17 | `@edge @us-04b` |
+| 113 | An instance that upgrades still reads everything it stored | milestone-17 | `@real-io @us-04b` |
+| 114 | No refusal repeats a byte of the key it refused | milestone-17 | `@property @error @us-04b` |
+| 115 | An instance with nowhere to keep a key of its own is not caught by this | milestone-17 | `@edge @us-04b` |
+| 116 | A credential written under the operator's own key is not called public | milestone-18 | `@real-io @error @us-04b` |
+| 117 | A credential written under the published key is still called public | milestone-18 | `@real-io @us-04b` |
+| 118 | A credential in an envelope naming the published key is counted | milestone-18 | `@edge @us-04b` |
+| 119 | A credential in an envelope on any other key is not counted | milestone-18 | `@edge @us-04b` |
+| 120 | A value nothing ever encrypted is not called public either | milestone-18 | `@edge @us-04b` |
+| 121 | What decides the count is the key, never the name on the value | milestone-18 | `@property @us-04b` |
+| 122 | An instance that has moved everything pays nothing to be told so | milestone-18 | `@edge @us-04b` |
+
+Every scenario also carries `@slice-04b`. Numbering continues from slice 04's 86-106. **16 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 13 of 16 (81%)**, against the ≥40% target. The three that are not are
+the two ends of the count being right (117, 118) and the upgrade that must keep working (113) — and 113
+is the one this slice could most easily break, which is why it is written down rather than assumed.
+
+**AC traceability**: AC-4b.1 (published material refused as the active key, refusal names the setting) →
+107, 108, 109, 110, 111, 114 · AC-4b.2 (the same material stays readable as a retired entry) → 112, 113,
+115 · AC-4b.3 (the count is true in both directions, whatever id the key wears) → 116, 117, 118, 119, 120,
+121, 122.
+
+**ADR Earned Trust rows covered**: ADR-148 — the published key's place on the ring is read-only, now
+enforced at the one end that was not enforcing it (107, 112, 113). ADR-147 — the four states are what the
+count now defers to instead of guessing from envelope shape (120, 121).
+
+**Rows deliberately not covered here**: the panel's wording and which actions it offers is slice 06a;
+recovering an instance that already cannot read its secrets is slice 05b; the chart custody surface is
+slice 05.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 04b
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from slices
+01-04, and for the same reason: no Gherkin runner exists in any `.csproj`. They are translated in DELIVER
+into NUnit. **No `src/` RED scaffolds**: `TreatWarningsAsErrors` makes a test referencing a not-yet-existent
+type a BROKEN build rather than a RED test.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-{17,18}-*.feature` | slice 04's `milestone-{13..16}` in the same directory |
+| The refusal, through all four ways a key can arrive (107-112, 115) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs` (extend) | the same file — it already stages configuration, a mounted file, a generated store and both database probes |
+| An upgrade still reading what it stored (113) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs` (extend) | `EncryptedUnderThePublishedKey()` in the same file already builds exactly that fixture |
+| No key material in any refusal (114) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs` (extend) | the same file already asserts this for the parse defects |
+| The count, in both directions and every shape (116-122) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/PublishedKeySecretCountTests.cs` (extend, real SQLite) | the same file, created in slice 04 — the in-memory provider is unusable here for the same `ExecuteUpdateAsync` reason |
+| The count on the wire (116, 117) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) | the same file, which already serves `GET /encryption` against a migrated schema |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| No key material escapes `LegacyDefaultEncryptionKey` | Compile-enforced: both new members return a boolean and the material stays private. Asserted by the absence of any accessor — the existing test helper that reaches the key through `WithLegacyDefault()` is left as the only way to hold it |
+| Every way a key can be supplied is refused on the same terms | One parser, `SuppliedKeyRing.ParsedFrom`, is where the refusal lives, so a fifth transport added later inherits it. Asserted by 107, 109, 110 and 111 going through four different entry points to one message |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 04b
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| Application start (the composition root, before any adapter exists) | 107-113, 115 — through `EncryptionKeyRingBootstrapper.Resolve()`, which is what `Program.cs` calls, with the configuration values staged the way each transport delivers them |
+| `GET /api/{v1,latest}/encryption` | 116, 117 — over HTTP against a migrated schema, so the count is exercised through the route an operator's browser actually calls |
+
+No CLI and no hook adapter is in scope. The refusal has no HTTP surface by construction: an instance that
+raises it never finishes starting.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 04b
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `ConfiguredKeyRingSource` (three setting names) | YES | 107, 109, 110 |
+| `MountedFileKeyRingSource` | YES | 111 — a staged filesystem holding a real key file |
+| `GeneratedKeyRingStore` | YES | 113, 115 — real Data Protection over a real temp directory, unchanged from slices 02-04 |
+| Secret persistence (`LighthouseAppContext`) | YES | 116-122 — real SQLite with the migrations applied |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 04b
+
+`environments.yaml` is unchanged. The refusal is provider-agnostic — it is decided before any database is
+opened — so it is exercised once. The count reads stored values through EF and is exercised on real
+SQLite; the SQL half of it (the narrowing predicate) is the one already shipped and already covered on
+both providers by slice 04's integration tests.
+
+The two environments this slice owes evidence in are not test hosts but the walkthrough substrates: the
+**B2b** binary install carrying the pre-epic `appsettings.json`, which must now refuse to start, and the
+**C1** binary install on a genuine custom key, which must now report zero.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 04b
+
+Written here rather than fixed silently.
+
+1. **An instance that already wrote secrets under published material wearing a `k-cfg-` id will not
+   start after this change.** That is the B2b instance from the walkthrough after it took the offered
+   move. The refusal is correct — those credentials are protected by a public value — but the operator's
+   way out is to put the published value back under `Encryption__Keys` as a *retired* entry behind a key
+   of their own, which nothing tells them. This is exactly slice 05b's subject (*a way back in*) and is
+   left to it deliberately. **No released build can be in this state**: the epic is unreleased, and the
+   only path into it was created and closed inside it.
+2. **`Encryption:AllowLegacyDefault` (ADR-148, deferred by slice 02 and again by slice 04) should now be
+   dropped from the ADR rather than deferred a third time.** Recommendation to the maintainer: delete it.
+   A flag whose effect would be to permit what this slice refuses has no defensible setting.
+3. **The retirement nudge tells an operator to copy their `EncryptionSettings` value into
+   `Encryption__Key`.** For the population this slice refuses, that instruction now leads to a refusal
+   instead of a silent exposure — an improvement, but the nudge still gives advice it cannot know is
+   safe. Its wording belongs to slice 06a, which owns the panel's copy.
+4. **F-27 (a move offered on an instance with no key of its own to move onto) is untouched here.** It is
+   listed in slice 06a. This slice does not make it worse: an instance in that state resolves the
+   published key through `PublishedDefaultOnly()`, which never passes through the parser, so scenario 115
+   pins that it still starts.
+
+---
+
+## Wave: DISTILL / [REF] Changed Assumptions — slice 04b
+
+| Assumption carried in | What changed | Consequence |
+|---|---|---|
+| `PublishedKeySecretCount` counts by envelope shape and never decrypts (slice 04) | It now asks whether the published key can read the value | The narrowing predicate stays in SQL, so an instance with nothing left on that key still costs zero decrypts. An instance that has not moved yet pays one AES operation per exposed credential, which is bounded by the number it is being told to move |
+| A stored value with no envelope was written under the published key (slices 02-04) | False for any install that set a key of its own before this release | The count is the only place that assumed it; the check pass never did, which is why the panel could contradict itself |
+| A supplied key is whatever the operator says it is (slices 01-04) | One value is refused | The refusal is at the parser, so it applies to every transport at once, including any added later |
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 04b
+
+**To `nw-software-crafter` (DELIVER)**: `deliver/slice-04b/roadmap.json` — three phases, four steps,
+inside-out. The order matters in one place: `LegacyDefaultEncryptionKey` learns both of its questions
+first, because the refusal and the count are the two callers of it and neither can be written before it
+exists.
+
+Four things this wave learned that DELIVER should not rediscover:
+
+- **The refusal belongs in `SuppliedKeyRing.ParsedFrom`, not in the bootstrapper.** That is the one place
+  every transport already funnels through, it is handed the source name the message has to quote, and it
+  is upstream of the point where custody is decided. Putting it in `Resolve()` would need the source
+  threaded through and would miss `GeneratedKeyRingStore.ReadExisting()`.
+- **`PublishedDefaultOnly()` must not be caught by the refusal.** It deliberately puts the published key
+  in the active position for an instance that has nowhere to keep one of its own, and it builds the ring
+  directly rather than parsing a supplied string — so it is already outside the refusal, and it has to
+  stay that way. Scenario 115 is the test that says so.
+- **A save re-encrypts anything that is not already an envelope**, so a stored value in the pre-envelope
+  format has to be written into the column after the save. Unchanged from slice 04, and half of the new
+  count tests need it.
+- **Compare with `CryptographicOperations.FixedTimeEquals`.** Not because a timing attack on a published
+  value means anything, but because the alternative invites someone to compare base64 strings, and the
+  next person then adds a trim or a case fold to make a test pass.
+
+**To the maintainer**, one decision recorded in *Upstream Issues* rather than taken here: whether
+`Encryption:AllowLegacyDefault` is deleted from ADR-148 (recommendation: delete it).
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives considered ·
+fixture design discussion for staging the published key through four transports · full edge-case
+enumeration for the count's five value shapes · error-path rationale per `@error` scenario · tagging
+cookbook · property-based testing notes for scenarios 114 and 121 · domain-language fact-to-step table.
+
+---
