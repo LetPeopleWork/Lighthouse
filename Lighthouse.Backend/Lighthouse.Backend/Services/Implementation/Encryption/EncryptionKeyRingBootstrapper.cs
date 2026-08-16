@@ -13,7 +13,34 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 throw new InvalidOperationException($"{defect} It was supplied by {source}.");
             }
 
+            if (LegacyDefaultEncryptionKey.Matches(parsed.ActiveKey.Material.Span))
+            {
+                throw new InvalidOperationException(PublishedKeyAsTheActiveKey.RefusalFrom(source));
+            }
+
             return new EncryptionKeyRing(custody, [parsed.ActiveKey, .. parsed.RetiredKeys]);
+        }
+    }
+
+    // What an instance is told when the key it was handed to write with is the key published with the
+    // product. Said at the only moment it can still be said: everything about such an instance looks
+    // healthy afterwards, including the panel that exists to warn about exactly this, because the name a
+    // supplied key wears is derived from its own bytes and matches nothing anybody thought to check.
+    // The refusal is about the first entry of a ring, which is the only one anything is written under.
+    // Behind an active key the same material stays welcome, and has to: it is how an instance that
+    // upgrades keeps reading what it already stored.
+    public static class PublishedKeyAsTheActiveKey
+    {
+        public static string RefusalFrom(string source)
+        {
+            return
+                $"The encryption key supplied by {source} is the key published with Lighthouse. That key " +
+                "ships inside every copy of the product and can be read out of the public source, so a " +
+                "credential written under it would not be protected at all, and Lighthouse will not " +
+                "start on it. Nothing has been changed and nothing is lost: everything already stored " +
+                "stays readable, because Lighthouse always keeps that key for reading. Set " +
+                "Encryption__Key to a key of your own, or remove the setting and let Lighthouse make " +
+                "one, and start Lighthouse again.";
         }
     }
 

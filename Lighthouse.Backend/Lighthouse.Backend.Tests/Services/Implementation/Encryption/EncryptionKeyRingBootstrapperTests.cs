@@ -422,6 +422,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 () => BootstrapperFor(staged, suppliedRing: $"k-one:{encoded},k-one:{encoded}").Resolve());
             var mountedDefect = Assert.Throws<InvalidOperationException>(
                 () => BootstrapperFor(staged, keysFilePath: MountedSecretPath).Resolve());
+            var published = ThePublishedKeyEncoded();
+            var publishedRefusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(staged, suppliedKey: published).Resolve());
 
             using (Assert.EnterMultipleScope())
             {
@@ -429,6 +432,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(mountedDefect.Message, Does.Not.Contain(encoded));
                 Assert.That(configuredDefect.Message, Does.Not.Contain(Convert.ToHexStringLower(material)));
                 Assert.That(mountedDefect.Message, Does.Not.Contain(Convert.ToHexStringLower(material)));
+                Assert.That(publishedRefusal.Message, Does.Not.Contain(published));
+                Assert.That(
+                    publishedRefusal.Message,
+                    Does.Not.Contain(Convert.ToHexStringLower(ThePublishedKey().Material.Span)),
+                    "the key being refused is public, but a refusal that quotes one key teaches the next one to quote another");
             }
         }
 
@@ -752,6 +760,82 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                             && query.EndsWith("LIMIT 1", StringComparison.Ordinal)),
                     Is.True);
             }
+        }
+
+        [Test]
+        public void Resolve_ThePublishedKeySuppliedAsTheKeyToWriteWith_RefusesToStart()
+        {
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(new StagedKeyStoreFileSystem(), suppliedKey: ThePublishedKeyEncoded()).Resolve());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain(ConfiguredKeyRingSource.SingleKeySettingKey),
+                    "an operator cannot act on a refusal that does not say which setting carried the key");
+                Assert.That(refusal.Message, Does.Contain("is the key published with Lighthouse"));
+                Assert.That(refusal.Message, Does.Contain("would not be protected at all"));
+                Assert.That(refusal.Message, Does.Contain("Nothing has been changed and nothing is lost"));
+                Assert.That(refusal.Message, Does.Contain("Set Encryption__Key to a key of your own"));
+            }
+        }
+
+        [Test]
+        public void Resolve_ThePublishedKeyUnderTheNameThisReleaseRetired_RefusesAndNamesThatName()
+        {
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(
+                    new StagedKeyStoreFileSystem(),
+                    suppliedUnderTheRetiredName: ThePublishedKeyEncoded()).Resolve());
+
+            Assert.That(
+                refusal.Message,
+                Does.Contain(ConfiguredKeyRingSource.RetiredSingleKeySettingKey),
+                "this is the file an operator kept across the upgrade, and the setting they have to go and find is the old one");
+        }
+
+        [Test]
+        public void Resolve_ARingWhoseFirstEntryIsThePublishedKey_RefusesAndNamesTheRingSetting()
+        {
+            var supplied = $"{RingStringFor("k-old", ThePublishedKey().Material.ToArray())},{RingStringFor("k-mine", MaterialOf(41))}";
+
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(new StagedKeyStoreFileSystem(), suppliedRing: supplied).Resolve());
+
+            Assert.That(refusal.Message, Does.Contain(ConfiguredKeyRingSource.RingSettingKey));
+        }
+
+        [Test]
+        public void Resolve_AMountedKeyFileHoldingThePublishedKey_RefusesAndNamesTheFile()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            staged.Place(MountedSecretPath, RingTextFor("k-mounted-01", ThePublishedKey().Material.ToArray()));
+
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(staged, keysFilePath: MountedSecretPath).Resolve());
+
+            Assert.That(refusal.Message, Does.Contain($"the file '{MountedSecretPath}'"));
+        }
+
+        [Test]
+        public void Resolve_ARingWhoseSecondEntryIsThePublishedKey_StartsOnTheOperatorsOwnKey()
+        {
+            var supplied = $"{RingStringFor("k-mine", MaterialOf(41))},{RingStringFor("k-old", ThePublishedKey().Material.ToArray())}";
+
+            var ring = BootstrapperFor(new StagedKeyStoreFileSystem(), suppliedRing: supplied).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.ActiveKey.Id, Is.EqualTo("k-mine"));
+                Assert.That(
+                    CryptoServiceHolding(ring).Decrypt(EncryptedUnderThePublishedKey()[0]),
+                    Is.EqualTo(CredentialsStoredBeforeTheUpgrade[0]),
+                    "behind an active key the same material has to stay welcome, or every upgrade stops being readable");
+            }
+        }
+
+        private static string ThePublishedKeyEncoded()
+        {
+            return Convert.ToBase64String(ThePublishedKey().Material.Span);
         }
 
         private static readonly string[] EveryOneNamingThePublishedKey =
