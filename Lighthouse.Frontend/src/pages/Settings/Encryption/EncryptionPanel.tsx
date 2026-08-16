@@ -87,6 +87,17 @@ const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
 	</TableContainer>
 );
 
+// Whether moving the stored secrets would achieve anything. The listed keys are the ones something is
+// actually stored under, so any of them other than the key in force is work a move would do - which
+// covers secrets left on the published key and secrets left on an earlier key without asking twice.
+//
+// Where the key in force IS the published key there is nowhere to move anything to: the move would
+// re-encrypt that key onto itself, change nothing, and leave the warning standing. What fixes that
+// instance is giving it a key of its own, which the custody sentence above the buttons already says.
+const movingWouldAchieveSomething = (keyState: EncryptionKeyState) =>
+	keyState.custody !== "NoDurableStore" &&
+	keyState.keyIds.some((keyId) => keyId !== keyState.activeKeyId);
+
 // A secret that moved needs no listing - the count already says so. What an operator has to act on is
 // what was left behind, and the only useful thing to say about it is which Connection and which field.
 const wasLeftBehind = (
@@ -224,17 +235,6 @@ const EncryptionPanel: React.FC = () => {
 					severity="warning"
 					sx={{ mt: 2 }}
 					data-testid="published-key-notice"
-					action={
-						<Button
-							color="inherit"
-							size="small"
-							disabled={busy}
-							data-testid="published-key-notice-action"
-							onClick={moveThemOntoTheActiveKey}
-						>
-							Move them now
-						</Button>
-					}
 				>
 					{`${keyState.secretsUnderPublishedKey} stored credentials are still readable with the key published with Lighthouse, which anyone who has a copy of Lighthouse can obtain. Moving them onto this instance's own key is the fix, and nobody has to re-enter anything.`}
 				</Alert>
@@ -243,7 +243,7 @@ const EncryptionPanel: React.FC = () => {
 			<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
 				{keyState.canMint && (
 					<Button
-						variant="contained"
+						variant="outlined"
 						disabled={busy}
 						data-testid="rotate-key-button"
 						onClick={() => run("move", () => encryptionService.rotateKey())}
@@ -251,14 +251,18 @@ const EncryptionPanel: React.FC = () => {
 						Rotate key
 					</Button>
 				)}
-				<Button
-					variant={keyState.canMint ? "outlined" : "contained"}
-					disabled={busy}
-					data-testid="reencrypt-button"
-					onClick={moveThemOntoTheActiveKey}
-				>
-					Move stored secrets onto the active key
-				</Button>
+				{movingWouldAchieveSomething(keyState) && (
+					<Button
+						variant={
+							keyState.secretsUnderPublishedKey > 0 ? "contained" : "outlined"
+						}
+						disabled={busy}
+						data-testid="reencrypt-button"
+						onClick={moveThemOntoTheActiveKey}
+					>
+						Move stored secrets
+					</Button>
+				)}
 				<Button
 					variant="text"
 					disabled={busy}

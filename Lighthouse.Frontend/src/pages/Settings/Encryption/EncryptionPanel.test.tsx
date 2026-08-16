@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EncryptionKeyState } from "../../../models/Encryption/EncryptionKeyState";
@@ -24,6 +24,13 @@ const ownKey: EncryptionKeyState = {
 const startedPastTheRefusal: EncryptionKeyState = {
 	...ownKey,
 	allowsStartWithUnreadableSecrets: true,
+};
+
+// An instance that has rotated and has nothing left under the earlier key: the panel lists only the
+// keys something is stored under, so the key in force is the only one there is.
+const nothingLeftToMove: EncryptionKeyState = {
+	...ownKey,
+	keyIds: ["k-2026-08-16-01"],
 };
 
 const justUpgraded: EncryptionKeyState = {
@@ -121,7 +128,9 @@ describe("EncryptionPanel", () => {
 		async (custody) => {
 			renderPanelOn(operatorOwned[custody]);
 
-			await screen.findByTestId("reencrypt-button");
+			// Checking is the one action offered in every state, so it is what says the panel has drawn.
+			// The move is not: an instance whose key in force is the published key has nowhere to move to.
+			await screen.findByTestId("check-secrets-button");
 
 			expect(screen.queryByTestId("rotate-key-button")).not.toBeInTheDocument();
 			expect(
@@ -455,20 +464,71 @@ describe("EncryptionPanel", () => {
 		expect(encryptionService.checkSecrets).not.toHaveBeenCalled();
 	});
 
-	it("offers the one action that fixes it, beside the sentence saying so", async () => {
+	// The alert used to carry its own copy of the move while the button row carried another, both calling
+	// the same thing under two names — and the only emphasised control on the screen was Rotate, which
+	// mints a third key and is not what an upgraded instance needs.
+	it("names the action instead of carrying its own copy of it", async () => {
+		renderPanelOn(justUpgraded, aReportNamingWhatCouldNotBeRead);
+
+		const notice = await screen.findByTestId("published-key-notice");
+
+		expect(
+			within(notice).queryByRole("button"),
+		).not.toBeInTheDocument();
+		expect(screen.getByTestId("reencrypt-button")).toBeInTheDocument();
+	});
+
+	it("offers the one action that fixes it, once", async () => {
 		const encryptionService = renderPanelOn(
 			justUpgraded,
 			aReportNamingWhatCouldNotBeRead,
 		);
 
-		await userEvent.click(
-			await screen.findByTestId("published-key-notice-action"),
-		);
+		await userEvent.click(await screen.findByTestId("reencrypt-button"));
 
 		await waitFor(() => {
-			expect(encryptionService.reEncryptSecrets).toHaveBeenCalled();
+			expect(encryptionService.reEncryptSecrets).toHaveBeenCalledTimes(1);
 		});
 		expect(encryptionService.rotateKey).not.toHaveBeenCalled();
+	});
+
+	it("emphasises the move when something is still on the published key", async () => {
+		renderPanelOn(justUpgraded);
+
+		const move = await screen.findByTestId("reencrypt-button");
+
+		expect(move.className).toContain("MuiButton-contained");
+		expect(screen.getByTestId("rotate-key-button").className).not.toContain(
+			"MuiButton-contained",
+		);
+	});
+
+	it("emphasises nothing on an instance with nothing wrong", async () => {
+		renderPanelOn(nothingLeftToMove);
+
+		const rotate = await screen.findByTestId("rotate-key-button");
+
+		expect(rotate.className).not.toContain("MuiButton-contained");
+		expect(screen.getByTestId("check-secrets-button")).toBeInTheDocument();
+	});
+
+	it("does not offer a move when there is nothing to move", async () => {
+		renderPanelOn(nothingLeftToMove);
+
+		await screen.findByTestId("check-secrets-button");
+
+		expect(screen.queryByTestId("reencrypt-button")).not.toBeInTheDocument();
+	});
+
+	// The move would re-encrypt the published key onto itself, change nothing, and leave the warning
+	// standing. What fixes this instance is a key of its own, which the custody sentence already says.
+	it("does not offer a move where the key in force is the published key", async () => {
+		renderPanelOn(operatorOwned.NoDurableStore);
+
+		await screen.findByTestId("check-secrets-button");
+
+		expect(screen.queryByTestId("reencrypt-button")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("rotate-key-button")).not.toBeInTheDocument();
 	});
 
 	it("says nothing about the published key once nothing is left under it", async () => {
