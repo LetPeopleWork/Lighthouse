@@ -462,7 +462,8 @@ namespace Lighthouse.Backend
             var ring = new EncryptionKeyRingBootstrapper(
                 new ConfiguredKeyRingSource(
                     builder.Configuration[ConfiguredKeyRingSource.RingSettingKey],
-                    builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey]),
+                    builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey],
+                    builder.Configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey]),
                 new MountedFileKeyRingSource(
                     builder.Configuration[MountedFileKeyRingSource.PathSettingKey], fileSystem),
                 new GeneratedKeyRingStore(
@@ -471,7 +472,8 @@ namespace Lighthouse.Backend
                     fileSystem,
                     TimeProvider.System),
                 keyStore,
-                new DatabaseSecretPresenceProbe(() => DatabaseConnectionFor(builder)))
+                new DatabaseSecretPresenceProbe(() => DatabaseConnectionFor(builder)),
+                new DatabaseSecretReadabilityProbe(() => DatabaseConnectionFor(builder)))
                 .Resolve();
 
             // The ring is registered as a singleton and never written back into configuration: every value
@@ -1408,7 +1410,11 @@ namespace Lighthouse.Backend
                 TryGetLogFilePath(builder.Configuration),
                 builder.Configuration,
                 app.Services.GetRequiredService<IEncryptionKeyRingHolder>().Current,
-                KeyStoreLocationFor(builder)));
+                KeyStoreLocationFor(builder),
+                ConfiguredKeyRingSource.AnsweredByTheRetiredName(
+                    builder.Configuration[ConfiguredKeyRingSource.RingSettingKey],
+                    builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey],
+                    builder.Configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey])));
 
             var startupBannerBuilder = new StringBuilder();
 

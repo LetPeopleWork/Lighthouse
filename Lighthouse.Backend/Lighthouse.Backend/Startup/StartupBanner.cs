@@ -14,7 +14,18 @@ namespace Lighthouse.Backend.Startup
         string? LogFilePath,
         IConfiguration Configuration,
         EncryptionKeyRing KeyRing,
-        KeyStoreLocation KeyStore);
+        KeyStoreLocation KeyStore,
+        bool KeyCameFromTheRetiredSetting);
+
+    // Said on every start for as long as the old name keeps working, because the only thing that makes it
+    // safe to eventually stop reading that name is everyone having moved off it first.
+    public static class RetiredKeySettingName
+    {
+        public const string Nudge =
+            "The encryption key is being read from EncryptionSettings__EncryptionKey, which this release " +
+            "retired. It still works today and will stop being read in a future release. Set the same value " +
+            "as Encryption__Key and remove the old one.";
+    }
 
     public static class StartupBanner
     {
@@ -51,7 +62,8 @@ namespace Lighthouse.Backend.Startup
             }
 
             info.AddRange(AuthPostureBanner.BuildAuthPostureLines(facts.Configuration));
-            info.AddRange(BuildEncryptionCustodyLines(facts.KeyRing, facts.KeyStore));
+            info.AddRange(BuildEncryptionCustodyLines(
+                facts.KeyRing, facts.KeyStore, facts.KeyCameFromTheRetiredSetting));
 
             info.Add("");
 
@@ -62,7 +74,8 @@ namespace Lighthouse.Backend.Startup
         // answers to, and the directory that has to survive for it to still be there tomorrow - which is
         // also the directory they would have to back up. The key itself never appears; it is read off the
         // ring rather than out of configuration, so the sentence cannot disagree with the key in force.
-        public static IReadOnlyList<string> BuildEncryptionCustodyLines(EncryptionKeyRing keyRing, KeyStoreLocation keyStore)
+        public static IReadOnlyList<string> BuildEncryptionCustodyLines(
+            EncryptionKeyRing keyRing, KeyStoreLocation keyStore, bool keyCameFromTheRetiredSetting)
         {
             ArgumentNullException.ThrowIfNull(keyRing);
             ArgumentNullException.ThrowIfNull(keyStore);
@@ -75,6 +88,11 @@ namespace Lighthouse.Backend.Startup
             if (keyRing.Custody == KeyCustody.NoDurableStore)
             {
                 lines.Add(Line("⚠️", "Warning", NoDurableKeyStore.Warning));
+            }
+
+            if (keyCameFromTheRetiredSetting)
+            {
+                lines.Add(Line("⚠️", "Warning", RetiredKeySettingName.Nudge));
             }
 
             return lines;

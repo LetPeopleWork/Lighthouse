@@ -176,6 +176,104 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
+        public void Resolve_OnlyTheRetiredSettingNamesAKey_UsesItRatherThanMintingOneAndLeavingSecretsUnreadable()
+        {
+            var material = MaterialOf(41);
+            var staged = new StagedKeyStoreFileSystem();
+
+            var ring = BootstrapperFor(
+                staged, suppliedUnderTheRetiredName: Convert.ToBase64String(material)).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.SuppliedByConfiguration));
+                Assert.That(ring.ActiveKey.Material.ToArray(), Is.EqualTo(material));
+                Assert.That(ring.CanMint, Is.False);
+                Assert.That(staged.FileCount, Is.Zero);
+            }
+        }
+
+        [Test]
+        public void Resolve_TheCurrentAndTheRetiredSettingBothNameAKey_TheCurrentOneWins()
+        {
+            var current = MaterialOf(43);
+            var staged = new StagedKeyStoreFileSystem();
+
+            var ring = BootstrapperFor(
+                staged,
+                suppliedKey: Convert.ToBase64String(current),
+                suppliedUnderTheRetiredName: Convert.ToBase64String(MaterialOf(47))).Resolve();
+
+            Assert.That(ring.ActiveKey.Material.ToArray(), Is.EqualTo(current));
+        }
+
+        [Test]
+        public void Resolve_TheRingSettingAndTheRetiredSettingBothNameAKey_TheRingWins()
+        {
+            var fromTheRing = MaterialOf(53);
+            var staged = new StagedKeyStoreFileSystem();
+
+            var ring = BootstrapperFor(
+                staged,
+                suppliedRing: RingStringFor("k-configured-01", fromTheRing),
+                suppliedUnderTheRetiredName: Convert.ToBase64String(MaterialOf(59))).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.ActiveKey.Id, Is.EqualTo("k-configured-01"));
+                Assert.That(ring.ActiveKey.Material.ToArray(), Is.EqualTo(fromTheRing));
+            }
+        }
+
+        [Test]
+        public void Resolve_StoredSecretsAndNotOneOfThemCanBeRead_RefusesAndNamesBothWaysBack()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var bootstrapper = BootstrapperFor(
+                staged, readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable));
+
+            var refusal = Assert.Throws<InvalidOperationException>(() => bootstrapper.Resolve());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain("not one of them can be read"));
+                Assert.That(refusal.Message, Does.Contain("Nothing has been changed and nothing is lost"));
+                Assert.That(refusal.Message, Does.Contain("Encryption__Key"));
+                Assert.That(refusal.Message, Does.Contain("Encryption__KeyStorePath"));
+            }
+        }
+
+        [TestCase(StoredSecretReadability.SomethingReadable)]
+        [TestCase(StoredSecretReadability.NothingStored)]
+        [TestCase(StoredSecretReadability.CannotTell)]
+        public void Resolve_AnythingOtherThanNotOneSecretReadable_Starts(StoredSecretReadability answer)
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var bootstrapper = BootstrapperFor(staged, readability: new StagedReadabilityProbe(answer));
+
+            Assert.That(() => bootstrapper.Resolve(), Throws.Nothing);
+        }
+
+        // The question costs a read of every stored secret, and the answer cannot change what key was
+        // resolved - so it is asked once, about the ring that was actually resolved, and never before.
+        [Test]
+        public void Resolve_TheKeyThatWasResolved_IsTheOneTheSecretsAreTriedAgainst()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var readability = new StagedReadabilityProbe(StoredSecretReadability.SomethingReadable);
+            var material = MaterialOf(61);
+
+            var ring = BootstrapperFor(
+                staged, suppliedKey: Convert.ToBase64String(material), readability: readability).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(readability.TimesAsked, Is.EqualTo(1));
+                Assert.That(readability.WasAskedAbout, Is.EqualTo(ring));
+            }
+        }
+
+        [Test]
         public void Resolve_ConfigurationAndAMountedFileBothSupplyAKey_ConfigurationWins()
         {
             var configuredMaterial = MaterialOf(13);
@@ -815,17 +913,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             IKeyStoreFileSystem fileSystem,
             string? suppliedRing = null,
             string? suppliedKey = null,
+            string? suppliedUnderTheRetiredName = null,
             string? keysFilePath = null,
             KeyStoreCase keyStoreCase = KeyStoreCase.BesideTheDatabaseFile,
             StagedSecretPresenceProbe? storedSecrets = null,
-            DatabaseSecretPresenceProbe? probe = null)
+            DatabaseSecretPresenceProbe? probe = null,
+            IStoredSecretReadabilityProbe? readability = null)
         {
             return new EncryptionKeyRingBootstrapper(
-                new ConfiguredKeyRingSource(suppliedRing, suppliedKey),
+                new ConfiguredKeyRingSource(suppliedRing, suppliedKey, suppliedUnderTheRetiredName),
                 new MountedFileKeyRingSource(keysFilePath, fileSystem),
                 StoreFor(fileSystem),
                 new KeyStoreLocation(keyStoreDirectory, keyStoreCase),
-                probe ?? storedSecrets ?? (IStoredSecretPresenceProbe)new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone));
+                probe ?? storedSecrets ?? (IStoredSecretPresenceProbe)new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone),
+                readability ?? new StagedReadabilityProbe(StoredSecretReadability.NothingStored));
         }
 
         // Named the same way the store names it, so a ring placed by a test is one this instance can unwrap
@@ -878,6 +979,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             public StoredSecretPresence Look()
             {
                 TimesAsked++;
+
+                return answer;
+            }
+        }
+
+        // Whether anything stored can still be read is a question about the key that was resolved, so the
+        // ring it was asked about is recorded rather than only the answer given back.
+        private sealed class StagedReadabilityProbe : IStoredSecretReadabilityProbe
+        {
+            private readonly StoredSecretReadability answer;
+
+            public StagedReadabilityProbe(StoredSecretReadability answer)
+            {
+                this.answer = answer;
+            }
+
+            public int TimesAsked { get; private set; }
+
+            public EncryptionKeyRing? WasAskedAbout { get; private set; }
+
+            public StoredSecretReadability Look(EncryptionKeyRing ring)
+            {
+                TimesAsked++;
+                WasAskedAbout = ring;
 
                 return answer;
             }

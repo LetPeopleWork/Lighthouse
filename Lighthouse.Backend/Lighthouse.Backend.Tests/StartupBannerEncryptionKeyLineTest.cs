@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests
         public void EncryptionLine_NamesWhereTheKeyCameFromWhatItIsCalledAndWhereItIsKept()
         {
             var lines = StartupBanner.BuildEncryptionCustodyLines(
-                RingUnder(KeyCustody.GeneratedForThisInstance), KeptIn());
+                RingUnder(KeyCustody.GeneratedForThisInstance), KeptIn(), keyCameFromTheRetiredSetting: false);
 
             Assert.That(lines, Has.Some.Contains(EncryptionLabel)
                 .And.Contains("generated for this instance")
@@ -69,7 +69,8 @@ namespace Lighthouse.Backend.Tests
         [TestCase(KeyCustody.NoDurableStore, "the key published with the product")]
         public void EncryptionLine_TellsEachCustodyApartByItsWordingAlone(KeyCustody custody, string expectedSource)
         {
-            var lines = StartupBanner.BuildEncryptionCustodyLines(RingUnder(custody), KeptIn());
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(custody), KeptIn(), keyCameFromTheRetiredSetting: false);
 
             Assert.That(lines[0], Does.Contain(expectedSource));
         }
@@ -77,7 +78,8 @@ namespace Lighthouse.Backend.Tests
         [Test]
         public void NowhereDurableToKeepAKey_SaysSoInASecondLineThatNamesBothWaysOut()
         {
-            var lines = StartupBanner.BuildEncryptionCustodyLines(RingUnder(KeyCustody.NoDurableStore), KeptIn());
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.NoDurableStore), KeptIn(), keyCameFromTheRetiredSetting: false);
 
             using (Assert.EnterMultipleScope())
             {
@@ -103,6 +105,33 @@ namespace Lighthouse.Backend.Tests
                 Assert.That(
                     lines.Count(line => line.Contains(LabelColumn(EncryptionLabel), StringComparison.Ordinal)),
                     Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void AKeyStillSetUnderTheRetiredName_IsSaidSoAndAskedToMove()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration), KeptIn(), keyCameFromTheRetiredSetting: true);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines, Has.Count.EqualTo(2));
+                Assert.That(lines[1], Does.Contain("EncryptionSettings__EncryptionKey"));
+                Assert.That(lines[1], Does.Contain("Encryption__Key"));
+            }
+        }
+
+        [Test]
+        public void AKeySetUnderTheNameInUse_IsNotAskedToMoveAnywhere()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration), KeptIn(), keyCameFromTheRetiredSetting: false);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines, Has.Count.EqualTo(1));
+                Assert.That(lines[0], Does.Not.Contain("EncryptionSettings"));
             }
         }
 
@@ -145,7 +174,8 @@ namespace Lighthouse.Backend.Tests
                 "/app/logs",
                 new ConfigurationBuilder().Build(),
                 RingUnder(custody),
-                KeptIn()));
+                KeptIn(),
+                false));
         }
 
         private static EncryptionKeyRing RingUnder(KeyCustody custody)

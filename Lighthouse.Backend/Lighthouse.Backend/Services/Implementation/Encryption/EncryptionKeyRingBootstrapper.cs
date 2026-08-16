@@ -51,24 +51,29 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private readonly IStoredSecretPresenceProbe storedSecrets;
 
+        private readonly IStoredSecretReadabilityProbe storedSecretReadability;
+
         public EncryptionKeyRingBootstrapper(
             ConfiguredKeyRingSource configuration,
             MountedFileKeyRingSource mountedFile,
             GeneratedKeyRingStore generated,
             KeyStoreLocation keyStore,
-            IStoredSecretPresenceProbe storedSecrets)
+            IStoredSecretPresenceProbe storedSecrets,
+            IStoredSecretReadabilityProbe storedSecretReadability)
         {
             ArgumentNullException.ThrowIfNull(configuration);
             ArgumentNullException.ThrowIfNull(mountedFile);
             ArgumentNullException.ThrowIfNull(generated);
             ArgumentNullException.ThrowIfNull(keyStore);
             ArgumentNullException.ThrowIfNull(storedSecrets);
+            ArgumentNullException.ThrowIfNull(storedSecretReadability);
 
             this.configuration = configuration;
             this.mountedFile = mountedFile;
             this.generated = generated;
             this.keyStore = keyStore;
             this.storedSecrets = storedSecrets;
+            this.storedSecretReadability = storedSecretReadability;
         }
 
         // The order is the whole design, and it is written down once, here. Note that a key someone else
@@ -83,12 +88,29 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         // read what it already stored; the end of the ring is a place it can only ever read from.
         public EncryptionKeyRing Resolve()
         {
-            var resolved = configuration.Resolve()
+            var resolved = (configuration.Resolve()
                 ?? mountedFile.Resolve()
                 ?? generated.ReadExisting()
-                ?? NoKeyAnywhereYet();
+                ?? NoKeyAnywhereYet())
+                .WithLegacyDefault();
 
-            return resolved.WithLegacyDefault();
+            RefuseWhenNothingStoredCanBeRead(resolved);
+
+            return resolved;
+        }
+
+        // Asked last, because it can only be asked once there is a key to ask about, and it cannot change
+        // which key was chosen - it only says whether that key was the right one. One readable secret is
+        // enough to answer yes; anything the database will not tell us is not an answer and does not stop a
+        // start, for the same reason the presence probe is allowed to fail quietly.
+        private void RefuseWhenNothingStoredCanBeRead(EncryptionKeyRing resolved)
+        {
+            if (storedSecretReadability.Look(resolved) != StoredSecretReadability.NothingReadable)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(KeyThatReadsNothing.Refusal);
         }
 
         // The last resort, and the only branch that asks the database anything. A key made where nothing

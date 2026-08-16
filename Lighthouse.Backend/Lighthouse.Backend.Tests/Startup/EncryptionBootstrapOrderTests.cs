@@ -355,27 +355,45 @@ namespace Lighthouse.Backend.Tests.Startup
             }
         }
 
+        // An instance that upgrades while relying on the old name has its secrets encrypted under the key
+        // that name carries. Ignoring it would mint a fresh key over the top, leave every one of those
+        // secrets unreadable, and say nothing about it on the way past - so the old name is still read, last
+        // of all, and the banner asks the operator to move off it.
         [Test]
-        public void AnInstanceCarryingOnlyTheSettingTheCodeUsedToRead_BehavesAsThoughNoKeyHadBeenSupplied()
-        {
-            Assert.That(
-                RingResolvedFromTheSettingTheCodeUsedToRead().Custody,
-                Is.EqualTo(KeyCustody.GeneratedForThisInstance),
-                "The old setting name still decides something. It is deliberately not an alias: a second " +
-                "accepted spelling would have to be honoured forever, and two names for one key is how an " +
-                "operator came to believe they had overridden a key they had not.");
-        }
-
-        [Test]
-        public void TheSettingTheCodeUsedToRead_NeverBecomesTheKeyTheInstanceWritesUnder()
+        public void AnInstanceCarryingOnlyTheSettingTheCodeUsedToRead_KeepsUsingThatKeyRatherThanMintingOverIt()
         {
             var ring = RingResolvedFromTheSettingTheCodeUsedToRead();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.SuppliedByConfiguration));
+                Assert.That(
+                    EveryKeyOn(ring),
+                    Does.Contain(KeyMeantForTheSettingTheCodeUsedToRead),
+                    "An instance that upgrades carrying only the old setting name would mint a key of its " +
+                    "own and leave everything it had already stored unreadable.");
+            }
+        }
+
+        // The reason the old name was not made an alias in the first place: two accepted spellings is how an
+        // operator came to believe they had overridden a key they had not. Reading it last is what keeps
+        // that from coming back - whatever the documentation tells someone to set always wins.
+        [Test]
+        public void TheSettingTheCodeUsedToRead_NeverWinsOverTheNameTheDocumentationGives()
+        {
+            var ring = RingResolvedWith(
+                configuration => configuration.AddCommandLine(
+                [
+                    $"--{ConfiguredKeyRingSource.SingleKeySettingKey}={IntegrationTestEncryptionKey.Value}",
+                    $"--{SettingTheCodeUsedToRead}={KeyMeantForTheSettingTheCodeUsedToRead}",
+                ]),
+                ADurableKeyStore());
 
             Assert.That(
                 EveryKeyOn(ring),
                 Does.Not.Contain(KeyMeantForTheSettingTheCodeUsedToRead),
-                "A value under the old setting name reached the key ring, so an instance would encrypt under " +
-                "a key nothing in the documentation ever told anyone to set.");
+                "The retired name reached the ring while the documented one was also set, so an operator " +
+                "reading the documentation would again be overriding a key they had not.");
         }
 
         [Test]
