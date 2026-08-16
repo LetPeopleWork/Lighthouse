@@ -1,6 +1,7 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import KeyIcon from "@mui/icons-material/Key";
+import LockIcon from "@mui/icons-material/Lock";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import StorageIcon from "@mui/icons-material/Storage";
@@ -21,6 +22,7 @@ import { useRbac } from "../../hooks/useRbac";
 import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
+import EncryptionPanel from "./Encryption/EncryptionPanel";
 import RbacSettings from "./Rbac/RbacSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
 import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
@@ -52,6 +54,7 @@ const Settings: React.FC = () => {
 			"database-management": "30",
 			"api-keys": "40",
 			apikeys: "40",
+			encryption: "45",
 			logs: "99",
 			systeminfo: "99",
 			"system-info": "99",
@@ -70,6 +73,7 @@ const Settings: React.FC = () => {
 			"25": "demo-data",
 			"30": "database",
 			"40": "api-keys",
+			"45": "encryption",
 			"50": "rbac",
 			"99": "system-info",
 		};
@@ -82,7 +86,7 @@ const Settings: React.FC = () => {
 		}
 	};
 
-	const systemAdminTabValues = new Set(["20", "25", "30", "50"]);
+	const systemAdminTabValues = new Set(["20", "25", "30", "45", "50"]);
 
 	const tabConfig = [
 		{
@@ -116,6 +120,14 @@ const Settings: React.FC = () => {
 			panelTestId: "api-keys-panel",
 			icon: <KeyIcon />,
 			component: <ApiKeysSettings />,
+		},
+		{
+			value: "45",
+			label: "Encryption",
+			testId: "encryption-tab",
+			panelTestId: "encryption-panel",
+			icon: <LockIcon />,
+			component: <EncryptionPanel />,
 		},
 		{
 			value: "50",

@@ -15,6 +15,30 @@ const validKeyState = {
 	legacyDefaultPresent: true,
 };
 
+const validReport = {
+	activeKeyId: "k-2026-08-16-01",
+	movedCount: 47,
+	unreadableCount: 1,
+	secrets: [
+		{
+			connectionId: 7,
+			connectionName: "Contoso Board",
+			field: "ClientSecret",
+			keyId: "k-lost-forever",
+			state: "Unreadable",
+			outcome: "CouldNotBeRead",
+		},
+	],
+	byConnection: [
+		{
+			connectionId: 7,
+			connectionName: "Contoso Board",
+			movedCount: 47,
+			unreadableCount: 1,
+		},
+	],
+};
+
 describe("EncryptionService", () => {
 	let encryptionService: EncryptionService;
 
@@ -34,6 +58,37 @@ describe("EncryptionService", () => {
 
 		expect(mockedAxios.get).toHaveBeenCalledWith("/encryption");
 		expect(keyState).toEqual(validKeyState);
+	});
+
+	it("asks for a rotation and reads back what it moved", async () => {
+		mockedAxios.post.mockResolvedValueOnce({ data: validReport });
+
+		const report = await encryptionService.rotateKey();
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/encryption/rotate");
+		expect(report).toEqual(validReport);
+	});
+
+	it("asks to move the stored secrets onto the key already in force", async () => {
+		mockedAxios.post.mockResolvedValueOnce({ data: validReport });
+
+		const report = await encryptionService.reEncryptSecrets();
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/encryption/reencrypt");
+		expect(report).toEqual(validReport);
+	});
+
+	it("rejects a report that does not match the schema", async () => {
+		mockedAxios.post.mockResolvedValueOnce({
+			data: { ...validReport, movedCount: "several" },
+		});
+
+		const error = await encryptionService
+			.rotateKey()
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApiError);
+		expect((error as ApiError).code).toBe("INVALID_RESPONSE");
 	});
 
 	it("rejects a key state response that does not match the schema", async () => {

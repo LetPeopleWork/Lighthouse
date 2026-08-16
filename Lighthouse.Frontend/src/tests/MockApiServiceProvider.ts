@@ -81,6 +81,20 @@ export const createMockEncryptionService = (): IEncryptionService => {
 			keyStorePath: "/app/data/keys",
 			legacyDefaultPresent: false,
 		}),
+		rotateKey: vi.fn().mockResolvedValue({
+			activeKeyId: "lighthouse-instance",
+			movedCount: 0,
+			unreadableCount: 0,
+			secrets: [],
+			byConnection: [],
+		}),
+		reEncryptSecrets: vi.fn().mockResolvedValue({
+			activeKeyId: "lighthouse-instance",
+			movedCount: 0,
+			unreadableCount: 0,
+			secrets: [],
+			byConnection: [],
+		}),
 	};
 };
 
