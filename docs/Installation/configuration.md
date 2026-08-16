@@ -199,7 +199,9 @@ Instances created before this version encrypted with a key that ships inside the
 Lighthouse.exe --Encryption:Key="current:<base64 key>,previous:<base64 key>"
 ```
 
-The **first entry is the one new secrets are written under**; every later entry is only ever used to read what was stored earlier. A name may use lowercase letters, digits and hyphens and be at most 32 characters long; if you leave the `id:` off, Lighthouse derives a name from the key itself. A single key is simply a ring of one, which is why the same setting takes both.
+The **first entry is the one new secrets are written under**; every later entry is only ever used to read what was stored earlier — which is what lets you replace a key without re-entering a single credential. A name may use lowercase letters, digits and hyphens and be at most 32 characters long; if you leave the `id:` off, Lighthouse derives a name from the key itself. A single key is simply a ring of one, which is why the same setting takes both.
+
+This is the same grammar the encryption settings screen quotes back at you, so you can follow either. See [Secret Encryption Key](../settings/encryption.html) for what that screen does with it.
 
 There is also a plural spelling that holds exactly the same thing:
 

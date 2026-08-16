@@ -116,4 +116,32 @@ Slice 04b, so the count the warning is built on is telling the truth before its 
 
 ## Verdict
 
-_To be recorded at slice close._
+**Shipped 2026-08-16.** Eleven findings, and the slice brief was right that they are one decision made
+twice — several of them dissolved into each other once the first was made.
+
+- **The panel is told which keys something is actually stored under**, by reading the id off the front of
+  each stored value rather than decrypting anything. That closed F-3 on its own, and then turned out to
+  answer F-4 as well: any key other than the one in force is work a move would do, so "is there anything
+  to move" needed no second question.
+- **One action, in the button row**, with the alert naming it rather than carrying a copy (F-9, F-11) —
+  which also removed the three-line button wrap of F-8 without touching layout. Emphasis follows the
+  open problem rather than defaulting to Rotate.
+- **No move at all where the key in force is the published key** (V3): it would re-encrypt that key onto
+  itself and leave the warning standing.
+- **The zeros are gone and the plurals agree** (F-12, F-7), and rotation says a key was made rather than
+  reporting a move it did not perform (F-5). Moving and rotating had been sharing one label despite only
+  one of them making a key.
+- **`Kept in` names the setting where Lighthouse keeps no key** (F-14), decided off the ring rather than
+  off configuration — a value can sit in a setting without having won the resolution.
+- **A rotation instruction that can be followed** (F-15), and a header saying what the screen is for
+  (F-2), and the shortened startup line (F-18).
+- **`docs/settings/encryption.md`**, the page the header links to, following the shape every other
+  settings tab uses.
+
+Two defects found while building rather than from the walkthrough, both fixed here: a test fixture that
+claimed an instance held nothing while `SaveChanges` had quietly encrypted two empty tokens into real
+envelopes, and a first cut of the setting-name lookup that read configuration without asking the ring
+what custody was actually in force.
+
+Owed before the epic closes: the **A1**, **A1b**, **A2c** and **B1** walkthrough runs repeated, and the
+panel screenshot regenerated once the E2E fixture runs.

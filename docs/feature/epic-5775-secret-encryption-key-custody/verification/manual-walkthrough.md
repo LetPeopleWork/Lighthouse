@@ -434,6 +434,15 @@ diagnosing a refusal later, so shortening should come out of the custody phrase 
 
 ### Wording — encryption panel
 
+**FIXED in slice 06a (Story #5791), 2026-08-16 — F-2, F-3, F-4, F-5, F-7, F-8, F-9, F-10, F-11, F-12,
+F-14, F-15 and F-18 all close together**, because they were one decision made twice. The panel now
+lists only the keys something is stored under, offers the move only where it would achieve something
+and never where the key in force is the published key, carries one action with the alert naming it,
+drops every zero, agrees in number, reports a rotation as the key it made, names the setting rather
+than a directory the key is not in, gives a rotation instruction that can be followed, and shortens the
+startup custody line. `docs/settings/encryption.md` is the page it links to. Owed: the A1, A1b, A2c and
+B1 runs repeated, and the screenshot regenerated.
+
 **F-2 · The panel does not say what it is for** (A1, 2026-08-16). Maintainer, reading it as a
 first-time user: "I would genuinely not understand what I'm seeing." The table opens on *Key source*
 with no sentence establishing that this is about the credentials stored in Connections, that they are
