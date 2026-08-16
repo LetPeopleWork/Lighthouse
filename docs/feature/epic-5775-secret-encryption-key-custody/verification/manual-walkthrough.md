@@ -336,9 +336,9 @@ Filled in live. Verdict is the operator's, not inferred from code.
 | B2b binary upgrade, operator kept their own `appsettings.json` | **FAIL — blocking**, see F-20 | `supplied by configuration (k-cfg-27d69a05) · …/b2b/keys` + the retired-name nudge | warning fired with count 1; after *Move*: `Moved 1 stored secrets onto key k-cfg-27d69a05`, **warning disappeared**, check reports `1 on the active key` | `server.md` says to override all files; an operator who keeps their edited config lands here | `k-cfg-27d69a05` is derived from the **published** key's bytes. The instance is pinned to the public key by configuration, cannot mint, has no Rotate button — and the panel now reports it as healthy. |
 | B3 docker upgrade | | | | | |
 | B4 postgres upgrade | | | | | |
-| C1 old name | | | | | |
-| C1b nudge followed | | | | | |
-| C2 docs name | | | | | |
+| C1 binary upgrade, genuine custom key under the retired name | **PASS** behaviour, **FAIL** wording (F-21) | `supplied by configuration (k-cfg-d893325b) · …/c1/keys` + retirement nudge | check before move: `1 on the active key k-cfg-d893325b`; warning simultaneously claimed `1 stored credentials are still readable with the key published with Lighthouse`; move: `Moved 1 stored secrets onto key k-cfg-d893325b`; check after: unchanged | — | **The custom-key population survives the upgrade** — team refreshed before anything was touched. New `appsettings.json` confirmed free of `EncryptionSettings`, so the key really came from the env var. |
+| C1b nudge followed verbatim | **PASS** | `supplied by configuration (k-cfg-d893325b) · …/c1/keys`, **nudge gone** | — | — | Set `Encryption__Key` to the same value, dropped `EncryptionSettings__EncryptionKey`. Active key id **unchanged** — the id is a fingerprint of the material, so moving the value between setting names cannot strand a secret. The nudge's instructions are safe to follow. |
+| C2 docs name (`Encryption__Key` set on the old build, where it was a no-op) | **SKIPPED**, with reason | — | — | — | Its population is a subset of the custom-key population, which the maintainer assesses as effectively empty ("I don't think many people (if anyone at all) is using a custom encryption key"). Both halves of the mechanism are already covered from other directions: A2c proved `Encryption__Key` now reaches the code, B2b proved the retired name is still honoured. Only the combination is unexercised. An attempt was made and mis-seeded — the recalled command used the retired name, so it ran as a second C1 — and was not rebuilt. |
 | C3 standalone supplied key | **N/A**, with reason | — | — | — | A standalone install has no writable configuration: `StandaloneInitializer` reads `appsettings.json` out of the packaged resources directory, which is read-only inside the AppImage / Program Files / .app bundle. The only route is an environment variable set before launch, i.e. starting the app from a terminal — outside the edition's whole premise. C1/C2 are therefore not run for standalone either: neither population can exist there. See F-13. |
 | D1 recreate, volume kept | | | | | |
 | D2 key store off volume | | | | | |
@@ -573,6 +573,39 @@ an active key, naming what happened and what to do. The material is compiled in 
 constant-time over 32 bytes, so this costs nothing. Everything else about the state is already correct;
 only the identity check is missing. Whether the same guard should also reject it as a *retired* entry
 is a separate question — it must stay readable, so it should not.
+
+**F-21 · LOW PRIORITY · The published-key notice fires for operators who were never on the published
+key — and the correct answer is already on the same screen** (C1, 2026-08-16). Downgraded on the
+maintainer's assessment that the custom-key population is effectively empty, and because nothing
+breaks: the instance works, and taking the wrongly-motivated remedy is still an improvement (it moves
+the value from unauthenticated AES-CBC onto an authenticated envelope under the operator's own key).
+Recorded in full because the underlying gap is shared with F-20, which is not low priority.
+
+An install that had a genuine custom key set under `EncryptionSettings__EncryptionKey` upgrades cleanly and keeps working. It is then told:
+`1 stored credentials are still readable with the key published with Lighthouse, which anyone who has
+a copy of Lighthouse can obtain.` That is false. The credential was written under the operator's own
+key and the published key has never been able to read it.
+
+Cause: `PublishedKeySecretCount` counts any stored value that lacks the `LH1.` envelope prefix, on the
+reasoning that a pre-epic value can only have been written under the published key. True for the
+default install, false for exactly the population that did the right thing.
+
+What makes this cheap to fix is that **the check pass already knows**. Run before the move, it
+reported `1 on the active key k-cfg-d893325b` — because it decrypts, so it names the key that actually
+read the value. So the panel simultaneously displayed a warning saying the secret is on the published
+key and a report saying it is on the active key, about the same single credential, six inches apart.
+The notice should be derived from the same knowledge the check uses, or at minimum must not claim the
+published key for a legacy value that a non-published key reads.
+
+Relationship to F-20: same missing distinction, opposite direction. F-20 says *safe* when the operator
+is not; F-21 says *exposed* when they are safe. Both follow from reasoning about envelope shape rather
+than about keys. Note the check pass does **not** rescue F-20 — it labels by which ring key read the
+value, and in F-20 that key carries a `k-cfg-` id while holding published material. Only a material
+comparison closes that one.
+
+*Second-order cost.* An operator who knows their own setup reads this sentence, knows it is wrong, and
+concludes the encryption panel cannot be trusted — which is expensive for a feature whose entire job is
+to be believed about exactly this question.
 
 **F-19 · An upgraded binary install ends up with the same key material in two directories** (B2,
 2026-08-16). `KeyStoreMigration` copies rather than moves, deliberately — removing the source would be
