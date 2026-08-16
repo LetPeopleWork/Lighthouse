@@ -9,9 +9,11 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
+using System.Data.Common;
 using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
@@ -51,13 +53,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
         private OneSecretPassAtATime oneAtATime = null!;
 
+        private CountsEveryLookup lookups = null!;
+
         [SetUp]
         public async Task SetUp()
         {
             databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-custody-{Guid.NewGuid():N}.db");
             crypto = CryptoOver(NewKey, OldKey);
             oneAtATime = new OneSecretPassAtATime();
-            provider = BuildProvider($"Data Source={databaseFile}", crypto);
+            lookups = new CountsEveryLookup();
+            provider = BuildProvider($"Data Source={databaseFile}", crypto, lookups);
 
             await using var scope = provider.CreateAsyncScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -369,6 +374,186 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(report.MovedCount, Is.Zero);
                 Assert.That(report.UnreadableCount, Is.EqualTo(1), "looking still says what cannot be read");
             }
+        }
+
+        /// <summary>
+        /// The predicate that makes a rotation resumable - ask the database what is left to do - is exactly
+        /// the wrong one for a check, which is asked what IS. Filtering the finished rows out of a check
+        /// would leave a freshly rotated instance reporting nothing at all.
+        /// </summary>
+        [Test]
+        public async Task ACheck_SeesEveryStoredSecret_IncludingTheOnesAlreadyOnTheKeyInForce()
+        {
+            var report = await CustodyService().InspectAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.Secrets, Has.Count.EqualTo(4),
+                    "two connection options and two tokens are stored, all of them already on the key in force");
+                Assert.That(report.OnActiveKeyCount, Is.EqualTo(4));
+                Assert.That(report.Secrets.Select(secret => secret.ConnectionName), Has.All.EqualTo(Contoso));
+                Assert.That(report.Secrets.Select(secret => secret.Field), Is.EquivalentTo(new[]
+                {
+                    PersonalAccessToken,
+                    ClientSecret,
+                    SecretCustodyService.AccessTokenField,
+                    SecretCustodyService.RefreshTokenField,
+                }));
+            }
+        }
+
+        [Test]
+        public async Task ACheck_NamesTheKeyEachSecretIsUnder_AndTellsTheFourStatesApart()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, "not-encrypted-at-all");
+            await StoreCredentialAsync(Under(KeyNobodyHolds, "unrecoverable"), Under(NewKey, "seed"));
+
+            var report = await CustodyService().InspectAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.OnActiveKeyCount, Is.EqualTo(1));
+                Assert.That(report.OnRetiredKeyCount, Is.EqualTo(1));
+                Assert.That(report.PlaintextCount, Is.EqualTo(1));
+                Assert.That(report.UnreadableCount, Is.EqualTo(1));
+                Assert.That(report.Secrets.Single(secret => secret.Field == PersonalAccessToken).KeyId, Is.EqualTo(OldKey.Id));
+                Assert.That(report.Secrets.Single(secret => secret.Field == ClientSecret).State, Is.EqualTo(SecretState.LegacyPlaintext));
+            }
+        }
+
+        /// <summary>
+        /// Two keys minted on the same day differ only by the counter at the end, so one key's id is a
+        /// prefix of the next one's the moment the count passes nine. Matching on the id without the
+        /// separator that follows it would make everything stored under k-2026-08-16-1 look like it was
+        /// already on k-2026-08-16-11, and a rotation would walk straight past it.
+        /// </summary>
+        [Test]
+        public async Task AKeyWhoseIdBeginsWithTheKeyInForcesId_IsNotMistakenForIt()
+        {
+            var inForce = new EncryptionKey("k-2026-08-16-1", RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
+            var theEleventh = new EncryptionKey("k-2026-08-16-11", RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
+
+            var holder = new EncryptionKeyRingHolder(
+                new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, inForce, theEleventh));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            await StoreAsync(PersonalAccessToken, SecretEnvelope.Protect("contoso-pat", theEleventh.Id, theEleventh.Material.Span).Format());
+
+            var report = await Rotating(holder, cryptoService, new AMinterThatMints(inForce)).ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.Secrets.Select(secret => secret.Field), Does.Contain(PersonalAccessToken),
+                    "the stored value only looks like it is already on the key in force if the separator after the key id is dropped");
+                Assert.That(cryptoService.Read(await StoredOptionAsync(PersonalAccessToken)).KeyId, Is.EqualTo(inForce.Id));
+            }
+        }
+
+        [Test]
+        public void ACheckThatWasCancelledBeforeItBegan_StopsRatherThanReportingOnEverything()
+        {
+            using var alreadyCancelled = new CancellationTokenSource();
+            alreadyCancelled.Cancel();
+
+            Assert.That(
+                async () => await CustodyService().InspectAsync(alreadyCancelled.Token),
+                Throws.InstanceOf<OperationCanceledException>(),
+                "a walk over every stored secret on a large instance has to be abandonable when the request that asked for it is gone");
+        }
+
+        [Test]
+        public async Task ACheck_NamesAnUnreadableSecret_ByTheConnectionAndFieldThatOwnIt()
+        {
+            await StoreAsync(ClientSecret, Under(KeyNobodyHolds, "unrecoverable"));
+
+            var report = await CustodyService().InspectAsync();
+
+            var named = report.Secrets.Single(secret => secret.State == SecretState.Unreadable);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(named.ConnectionName, Is.EqualTo(Contoso));
+                Assert.That(named.Field, Is.EqualTo(ClientSecret));
+                Assert.That(report.MovedCount, Is.Zero, "a check moves nothing, so a summary that talks about moving is talking about nothing");
+            }
+        }
+
+        [Test]
+        public async Task CheckingTwiceInARow_SaysTheSameThing_AndChangesNothing()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+
+            var service = CustodyService();
+
+            var first = await service.InspectAsync();
+            var before = await StoredOptionAsync(PersonalAccessToken);
+            var second = await service.InspectAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(second.Secrets, Has.Count.EqualTo(first.Secrets.Count));
+                Assert.That(second.OnActiveKeyCount, Is.EqualTo(first.OnActiveKeyCount));
+                Assert.That(second.OnRetiredKeyCount, Is.EqualTo(first.OnRetiredKeyCount));
+                Assert.That(second.UnreadableCount, Is.EqualTo(first.UnreadableCount));
+                Assert.That(await StoredOptionAsync(PersonalAccessToken), Is.EqualTo(before));
+            }
+        }
+
+        [Test]
+        public async Task ACheckStraightAfterARotation_ReportsEveryReadableSecretOnTheKeyInForce()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+
+            var (holder, cryptoService) = AnInstanceThatOwnsItsKey();
+            var service = Rotating(holder, cryptoService, new AMinterThatMints(NewerKey));
+
+            await service.RotateAsync();
+            var report = await service.InspectAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.Secrets, Has.Count.EqualTo(4), "a check after a rotation still sees every stored secret");
+                Assert.That(report.ActiveKeyId, Is.EqualTo(NewerKey.Id));
+                Assert.That(report.OnActiveKeyCount, Is.EqualTo(4));
+                Assert.That(report.OnRetiredKeyCount, Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task ACheckOnAnInstanceHoldingNothing_ReportsNoSecrets_AndStillNamesTheKeyInForce()
+        {
+            await StoreAsync(PersonalAccessToken, string.Empty);
+            await StoreAsync(ClientSecret, string.Empty);
+            await StoreCredentialAsync(string.Empty, string.Empty);
+
+            var report = await CustodyService().InspectAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.Secrets, Is.Empty);
+                Assert.That(report.ActiveKeyId, Is.EqualTo(NewKey.Id),
+                    "having nothing stored is an ordinary state, not a failure, and the answer still says which key is in force");
+                Assert.That(report.UnreadableCount, Is.Zero);
+            }
+        }
+
+        /// <summary>
+        /// The check has to finish inside a request on the largest instance anyone runs. What makes that
+        /// hold is that the whole walk is two lookups whatever the instance holds; a lookup per secret
+        /// would turn a large install into a timeout, and it would pass every test written on a small one.
+        /// </summary>
+        [Test]
+        public async Task WhatItCostsToLookThemAllUp_DoesNotGrowWithHowManyThereAre()
+        {
+            var overASmallInstance = await LookupsWhileCheckingAsync();
+
+            await StoreManyMoreSecretsAsync(40);
+
+            var overALargeOne = await LookupsWhileCheckingAsync();
+
+            Assert.That(overALargeOne, Is.EqualTo(overASmallInstance),
+                $"checking 4 secrets cost {overASmallInstance} lookups and checking 44 cost {overALargeOne}");
         }
 
         [Test]
@@ -828,15 +1013,88 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             return (connection.Id, credential.Id);
         }
 
-        private static ServiceProvider BuildProvider(string connectionString, ICryptoService cryptoService)
+        private static ServiceProvider BuildProvider(
+            string connectionString, ICryptoService cryptoService, CountsEveryLookup? counter = null)
         {
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton(cryptoService);
             services.AddDbContext<LighthouseAppContext>(options =>
-                options.UseSqlite(connectionString, sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
+            {
+                options.UseSqlite(connectionString, sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
+
+                if (counter is not null)
+                {
+                    options.AddInterceptors(counter);
+                }
+            });
 
             return services.BuildServiceProvider();
+        }
+
+        private async Task<int> LookupsWhileCheckingAsync()
+        {
+            var service = CustodyService();
+
+            lookups.Reset();
+            await service.InspectAsync();
+
+            return lookups.Count;
+        }
+
+        private async Task StoreManyMoreSecretsAsync(int howMany)
+        {
+            await using var scope = provider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var connection = await context.WorkTrackingSystemConnections
+                .Include(worktracking => worktracking.Options)
+                .SingleAsync(worktracking => worktracking.Id == connectionId);
+
+            for (var index = 0; index < howMany; index++)
+            {
+                connection.Options.Add(new WorkTrackingSystemConnectionOption
+                {
+                    Key = $"Secret{index}",
+                    Value = Under(NewKey, $"credential-{index}"),
+                    IsSecret = true,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        // Counting the round trips rather than timing the walk: a stopwatch on a build agent measures the
+        // agent, and the thing that would actually break a large instance is asking once per secret.
+        private sealed class CountsEveryLookup : DbCommandInterceptor
+        {
+            private int count;
+
+            public int Count => count;
+
+            public void Reset()
+            {
+                Interlocked.Exchange(ref count, 0);
+            }
+
+            public override InterceptionResult<DbDataReader> ReaderExecuting(
+                DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+            {
+                Interlocked.Increment(ref count);
+
+                return base.ReaderExecuting(command, eventData, result);
+            }
+
+            public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+                DbCommand command,
+                CommandEventData eventData,
+                InterceptionResult<DbDataReader> result,
+                CancellationToken cancellationToken = default)
+            {
+                Interlocked.Increment(ref count);
+
+                return base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+            }
         }
 
         private sealed class AMinterThatMints : IKeyRingMinter

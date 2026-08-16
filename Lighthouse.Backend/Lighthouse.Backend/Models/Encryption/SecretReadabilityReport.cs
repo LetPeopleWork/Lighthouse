@@ -53,6 +53,10 @@ namespace Lighthouse.Backend.Models.Encryption
             MovedCount = Secrets.Count(secret => secret.Outcome == SecretMoveOutcome.Moved);
             UnreadableCount = Secrets.Count(secret => secret.Outcome == SecretMoveOutcome.CouldNotBeRead);
 
+            OnActiveKeyCount = Secrets.Count(secret => IsReadable(secret) && secret.KeyId == activeKeyId);
+            OnRetiredKeyCount = Secrets.Count(secret => IsReadable(secret) && secret.KeyId != activeKeyId);
+            PlaintextCount = Secrets.Count(secret => secret.State == SecretState.LegacyPlaintext);
+
             ByConnection = [.. Secrets
                 .GroupBy(secret => (secret.ConnectionId, secret.ConnectionName))
                 .Select(connection => new ConnectionSecretSummary(
@@ -70,6 +74,21 @@ namespace Lighthouse.Backend.Models.Encryption
 
         public int UnreadableCount { get; }
 
+        // The four states a stored secret can be found in, counted so that they add up to the list they
+        // were counted from. They answer a different question from MovedCount: that one says what a pass
+        // did, and these say what the secrets are - which is the only question a read-only check can
+        // answer at all, since it does nothing.
+        public int OnActiveKeyCount { get; }
+
+        public int OnRetiredKeyCount { get; }
+
+        public int PlaintextCount { get; }
+
         public IReadOnlyList<ConnectionSecretSummary> ByConnection { get; }
+
+        private static bool IsReadable(StoredSecretRecord secret)
+        {
+            return secret.State is SecretState.Envelope or SecretState.LegacyCbc;
+        }
     }
 }

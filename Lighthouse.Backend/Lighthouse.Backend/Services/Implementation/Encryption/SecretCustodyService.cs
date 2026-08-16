@@ -95,7 +95,13 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         private async Task<SecretReadabilityReport> WalkAsync(bool moveThem, CancellationToken cancellationToken)
         {
             var activeKeyId = keyRingHolder.Current.ActiveKey.Id;
-            var candidates = await CandidatesAsync(SecretEnvelope.Prefix + activeKeyId + ".", cancellationToken);
+
+            // A pass that writes asks the database what is left to do, and everything already on the key in
+            // force is not it. A pass that only looks is answering a different question - what is stored -
+            // and filtering the answered-already rows out of it would leave a freshly rotated instance
+            // reporting nothing at all.
+            var candidates = await CandidatesAsync(
+                moveThem ? SecretEnvelope.Prefix + activeKeyId + "." : null, cancellationToken);
 
             var walked = new List<StoredSecretRecord>(candidates.Count);
 
@@ -168,25 +174,16 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             }
         }
 
-        // The prefix is the whole of the question "is there anything left to do", and the database answers
-        // it. Nothing is decrypted to find work, so a pass over an instance that is already finished costs
-        // one query and no cryptography at all.
-        private async Task<List<Candidate>> CandidatesAsync(string activeKeyPrefix, CancellationToken cancellationToken)
+        // With a prefix, this is the whole of the question "is there anything left to do", and the database
+        // answers it. Nothing is decrypted to find work, so a pass over an instance that is already finished
+        // costs one query and no cryptography at all. Without one, it is every stored secret there is, which
+        // is two queries whatever the instance holds.
+        private async Task<List<Candidate>> CandidatesAsync(string? activeKeyPrefix, CancellationToken cancellationToken)
         {
-            var candidates = await context.Set<WorkTrackingSystemConnectionOption>()
-                .Where(option => option.IsSecret
-                    && !string.IsNullOrEmpty(option.Value)
-                    && !option.Value.StartsWith(activeKeyPrefix))
-                .Select(option => new Candidate(
-                    option.WorkTrackingSystemConnectionId,
-                    option.WorkTrackingSystemConnection.Name,
-                    option.Key,
-                    option.Value,
-                    option.Id,
-                    SecretColumn.ConnectionOption))
-                .ToListAsync(cancellationToken);
+            var options = context.Set<WorkTrackingSystemConnectionOption>()
+                .Where(option => option.IsSecret && !string.IsNullOrEmpty(option.Value));
 
-            var credentials = await context.Set<OAuthCredential>()
+            var credentialRows = context.Set<OAuthCredential>()
                 .Join(
                     context.WorkTrackingSystemConnections,
                     credential => credential.WorkTrackingSystemConnectionId,
@@ -198,22 +195,39 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                         credential.RefreshToken,
                         ConnectionId = connection.Id,
                         connection.Name,
-                    })
-                .Where(row => !row.AccessToken.StartsWith(activeKeyPrefix)
-                    || !row.RefreshToken.StartsWith(activeKeyPrefix))
+                    });
+
+            if (activeKeyPrefix is not null)
+            {
+                options = options.Where(option => !option.Value.StartsWith(activeKeyPrefix));
+
+                credentialRows = credentialRows.Where(row => !row.AccessToken.StartsWith(activeKeyPrefix)
+                    || !row.RefreshToken.StartsWith(activeKeyPrefix));
+            }
+
+            var candidates = await options
+                .Select(option => new Candidate(
+                    option.WorkTrackingSystemConnectionId,
+                    option.WorkTrackingSystemConnection.Name,
+                    option.Key,
+                    option.Value,
+                    option.Id,
+                    SecretColumn.ConnectionOption))
                 .ToListAsync(cancellationToken);
 
-            // A credential row is fetched when either of its two tokens still needs moving, so each token is
-            // asked about again here. The question is the same one the database answered.
+            var credentials = await credentialRows.ToListAsync(cancellationToken);
+
+            // A credential row is fetched when either of its two tokens qualifies, so each token is asked
+            // about again here. The question is the same one the database answered.
             foreach (var row in credentials)
             {
-                if (StillNeedsMoving(row.AccessToken, activeKeyPrefix))
+                if (Qualifies(row.AccessToken, activeKeyPrefix))
                 {
                     candidates.Add(new Candidate(
                         row.ConnectionId, row.Name, AccessTokenField, row.AccessToken, row.Id, SecretColumn.AccessToken));
                 }
 
-                if (StillNeedsMoving(row.RefreshToken, activeKeyPrefix))
+                if (Qualifies(row.RefreshToken, activeKeyPrefix))
                 {
                     candidates.Add(new Candidate(
                         row.ConnectionId, row.Name, RefreshTokenField, row.RefreshToken, row.Id, SecretColumn.RefreshToken));
@@ -223,10 +237,10 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             return candidates;
         }
 
-        private static bool StillNeedsMoving(string storedValue, string activeKeyPrefix)
+        private static bool Qualifies(string storedValue, string? activeKeyPrefix)
         {
             return !string.IsNullOrEmpty(storedValue)
-                && !storedValue.StartsWith(activeKeyPrefix, StringComparison.Ordinal);
+                && (activeKeyPrefix is null || !storedValue.StartsWith(activeKeyPrefix, StringComparison.Ordinal));
         }
 
         private enum SecretColumn

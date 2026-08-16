@@ -11,6 +11,9 @@ namespace Lighthouse.Backend.API.DTO
             ActiveKeyId = report.ActiveKeyId;
             MovedCount = report.MovedCount;
             UnreadableCount = report.UnreadableCount;
+            OnActiveKeyCount = report.OnActiveKeyCount;
+            OnRetiredKeyCount = report.OnRetiredKeyCount;
+            PlaintextCount = report.PlaintextCount;
             Secrets = [.. report.Secrets.Select(secret => new StoredSecretDto(secret))];
             ByConnection = [.. report.ByConnection.Select(connection => new ConnectionSecretSummaryDto(connection))];
         }
@@ -20,6 +23,12 @@ namespace Lighthouse.Backend.API.DTO
         public int MovedCount { get; }
 
         public int UnreadableCount { get; }
+
+        public int OnActiveKeyCount { get; }
+
+        public int OnRetiredKeyCount { get; }
+
+        public int PlaintextCount { get; }
 
         public IReadOnlyList<StoredSecretDto> Secrets { get; }
 
