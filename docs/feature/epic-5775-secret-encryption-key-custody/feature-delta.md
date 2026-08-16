@@ -4239,3 +4239,224 @@ tagging cookbook · property-based testing notes for scenarios 127 and 142 · do
 fact-to-step table.
 
 ---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 06a
+
+- ✓ `slices/slice-06a-panel-offers-only-what-helps.md` in full, including the **four decisions taken
+  before this wave** — the shortened startup custody line, the published-key warning's wording, the
+  panel header, and the rule that the emphasised button is whatever this instance's open problem is.
+  They are taste rather than derivation, so they were asked rather than guessed.
+- ✓ `verification/manual-walkthrough.md` — **F-2, F-3, F-4, F-5, F-7, F-8, F-9, F-10, F-11, F-12, F-14,
+  F-15, F-18** in full, plus maintainer decisions **V2** (hide unreferenced keys, remove later) and
+  **V3** (suppress the move where it cannot achieve anything).
+- ✓ `feature-delta.md` — everything slices 01-05b left behind, in particular slice 04b's material
+  comparison, which is what makes the count this slice's warning is built on true before its wording is
+  settled, and slice 05b's `allowsStartWithUnreadableSecrets` notice, which this slice must not disturb.
+- ✓ Code as it stands after slice 05b: `EncryptionPanel.tsx` (`KeyRing`, `summaryOf`, `WhatHappened`,
+  `WHO_OWNS_THE_KEY`), `models/Encryption/EncryptionKeyState.ts` (`KEY_CUSTODY_WORDING`),
+  `API/DTO/EncryptionStateDto.cs`, `Startup/StartupBanner.cs`,
+  `Services/Implementation/Encryption/{KeyRingSerializer,PublishedKeySecretCount,ConfiguredKeyRingSource}.cs`.
+- ✓ `acceptance/milestone-{13..22}-*.feature` — for the vocabulary this slice continues.
+- `environments.yaml` and `docs/product/kpi-contracts.yaml` — inherited unchanged.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 06a
+
+**0 contradictions — reconciliation passed.** Three that look like contradictions and are not:
+
+- **ADR-148 keeps the published key on every ring; this slice takes it off the table.** Off the *table*,
+  not off the ring. Scenario 165 exists to say so: a key hidden from the panel is still read with, and
+  scenario 166 pins that a restore holding older values brings it back into view on its own, because
+  nothing was ever removed.
+- **Slice 04b refuses the published key as the key in force; this slice draws a panel for an instance
+  that is on it.** Both are true at once. An instance reaches that state through `PublishedDefaultOnly`
+  — nowhere durable to keep a key, something already stored — which slice 04b deliberately leaves
+  alone. That instance is exactly the one scenario 144 is about: the move would re-encrypt the
+  published key onto itself.
+- **Slice 05b added a notice to this panel; this slice rewrites the panel.** The notice is untouched.
+  It is the only alert on this screen that is about the instance rather than about the secrets, and
+  nothing in this slice's rules — one action, no zeros, situation before action — applies to it.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 06a
+
+- **DESIGN driving ports consumed**: `GET /api/{v1,latest}/encryption`, which gains the referenced-key
+  narrowing and the name of the setting a supplied key arrived in; `GET /encryption/secrets` and the
+  two action routes, all unchanged in shape.
+- **Driven ports in scope**: one new read over `LighthouseAppContext` — *which key ids do the stored
+  values carry* — and nothing else.
+- **The referenced-key set is a query, never a decrypt.** The key id is already written on the front of
+  every stored value. Reading it any other way costs a decrypt that buys nothing, and it would make
+  drawing a table depend on every stored secret being readable — on precisely the instance whose
+  administrator is looking at this screen.
+- **No EF migration, no schema change, no new configuration setting.**
+- **Two things this slice must not disturb**: slice 05b's *started past the refusal* notice, and the
+  `@screenshot` E2E images of this panel, which will need regenerating because every sentence on the
+  screen changes. Per the screenshot-regeneration trap, the old PNGs are removed before the run rather
+  than compared against.
+- **Substrate owed before the slice closes**: the **A1**, **A1b**, **A2c** and **B1** walkthrough runs
+  repeated — a first install (no legacy key listed, nothing emphasised), a single-secret instance (the
+  singular, and no zeros), configuration custody (no directory named, a followable rotation
+  instruction), and an upgraded instance (one action, emphasised, the warning naming it).
+- **Documentation ships with this slice**: `docs/Installation/configuration.md` has to give the same
+  ring grammar and the same two setting names as the panel, word for word.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 06a
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 143 | Nothing to move, so no move is offered | milestone-23 | `@edge @us-06a` |
+| 144 | The move is not offered where it could not achieve anything | milestone-23 | `@edge @error @us-06a` |
+| 145 | The alert names the action rather than carrying its own copy of it | milestone-23 | `@driving_adapter @us-06a` |
+| 146 | One thing is never offered twice under two names | milestone-23 | `@property @us-06a` |
+| 147 | What is emphasised is this instance's open problem | milestone-23 | `@driving_adapter @us-06a` |
+| 148 | An instance with nothing wrong emphasises nothing | milestone-23 | `@edge @us-06a` |
+| 149 | An instance that cannot make a key is not offered to make one | milestone-23 | `@edge @us-06a` |
+| 150 | A count of nothing is not shown at all | milestone-24 | `@edge @us-06a` |
+| 151 | Every category that is not empty is still shown | milestone-24 | `@property @us-06a` |
+| 152 | One secret reads as one secret | milestone-24 | `@edge @us-06a` |
+| 153 | Rotation says a key was made | milestone-24 | `@edge @us-06a` |
+| 154 | Rotation that did move something says both | milestone-24 | `@edge @us-06a` |
+| 155 | A secret nobody could read is always named, however few there are | milestone-24 | `@error @us-06a` |
+| 156 | The panel says what it is about before it says anything else | milestone-25 | `@driving_adapter @us-06a` |
+| 157 | The warning states the situation, then the action | milestone-25 | `@driving_adapter @us-06a` |
+| 158 | Where Lighthouse does not keep the key, the panel does not name a directory | milestone-25 | `@error @us-06a` |
+| 159 | Where Lighthouse does keep the key, it says exactly where | milestone-25 | `@edge @us-06a` |
+| 160 | The rotation instruction can be followed exactly as written | milestone-25 | `@error @us-06a` |
+| 161 | Two settings that differ by one character are told apart | milestone-25 | `@edge @us-06a` |
+| 162 | Nothing the panel says is a credential or a key | milestone-25 | `@error @property @us-06a` |
+| 163 | A key nothing was ever written under is not listed | milestone-26 | `@edge @us-06a` |
+| 164 | A key something was written under is listed, however old it is | milestone-26 | `@edge @us-06a` |
+| 165 | Hiding a key never stops it being read with | milestone-26 | `@property @us-06a` |
+| 166 | A restore brings a key back into view on its own | milestone-26 | `@edge @us-06a` |
+| 167 | The key in force is always listed, even with nothing stored | milestone-26 | `@edge @us-06a` |
+| 168 | The startup custody line is one word and a path | milestone-26 | `@driving_adapter @us-06a` |
+
+Every scenario also carries `@slice-06a`. Numbering continues from slice 05b's 123-142. **26 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 20 of 26 (77%)**, against the ≥40% target. The six that are not
+are the five surfaces that have to say something (145, 147, 156, 157, 168) and the key that has to stay
+visible (164).
+
+**Finding traceability** — this slice is walkthrough-driven rather than story-driven, so it traces to
+findings rather than to numbered ACs: F-2 → 156 · F-3 → 163, 164, 165, 166, 167 · F-4 → 143, 144 ·
+F-5 → 153, 154 · F-7 → 152 · F-8 → 145 (removing the alert's button is what removes the wrap) ·
+F-9 → 146, 147, 148 · F-10 → 157 · F-11 → 145 · F-12 → 150, 151, 155 · F-14 → 158, 159 ·
+F-15 → 160, 161 · F-18 → 168. Carried by no finding and asserted anyway: 149 (an instance that cannot
+mint is not offered to) and 162 (nothing on the panel is a credential or a key).
+
+**ADR Earned Trust rows covered**: ADR-148 — the published key stays on the ring while leaving the
+table (165, 166). ADR-152 — nothing the panel renders is key material (162).
+
+**Rows deliberately not covered here**: removing a key from the ring is a later action this slice makes
+safe rather than performs; the docs pages and the Docker install are slice 06; the system information
+row and the emergency-admin field are slice 06b.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 06a
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from slices
+01-05b. They are translated in DELIVER into NUnit and Vitest.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `acceptance/milestone-{23,24,25,26}-*.feature` | slice 05b's `milestone-{19..22}` in the same directory |
+| Which keys the stored values name (163-167) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/ReferencedKeyIdsTests.cs` (new, real SQLite) | `PublishedKeySecretCountTests`, which seeds the same three columns the same way |
+| The narrowed key list and the setting name on the wire (158, 159, 163, 167) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) | the same file pins the whole payload key-set, so a new field is a deliberate change there |
+| The shortened startup line (168) | `Lighthouse.Backend.Tests/StartupBannerEncryptionKeyLineTest.cs` (extend) | the same file already tells the four custodies apart by wording alone |
+| Which actions exist and which is emphasised (143-149) | `Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx` | slices 04 and 05b built this file's states |
+| The summaries and the warning (150-155, 157, 162) | the same file | `summaryOf` is already covered there |
+| The header and the rotation instruction (156, 160, 161) | the same file | — |
+| The panel screenshots | `Lighthouse.E2E` `@screenshot` run, regenerated | every sentence on the screen changes |
+| The A1 / A1b / A2c / B1 runs repeated | Manual dogfood, recorded in the slice verdict | slices 04b and 05b owe their runs the same way |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| Drawing the panel decrypts nothing | `ReferencedKeyIds` reads key ids off stored text and never calls `ICryptoService`; asserted by the absence of that dependency on its constructor |
+| The ring is never narrowed, only its presentation | `EncryptionKeyRing` is untouched by this slice; scenarios 165 and 166 assert the consequence rather than the code |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 06a
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| `GET /api/{v1,latest}/encryption` | 158, 159, 163, 167 — over HTTP, under the System Administrator guard |
+| The Settings → Encryption panel | 143-157, 160-162, 164-166 — through the rendered component, in every state the slice brief's table names |
+| The startup banner lines | 168 — through `StartupBanner.BuildEncryptionCustodyLines` |
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 06a
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| Secret persistence (`LighthouseAppContext`) | YES | 163-167 — real SQLite with the migrations applied |
+| The frontend service adapter | YES | 143-162 — the panel against the widened payload |
+| `GeneratedKeyRingStore` / `ConfiguredKeyRingSource` | YES | 168 — unchanged from slices 02-05b |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 06a
+
+`environments.yaml` is unchanged. The referenced-key query is exercised on real SQLite; it is a
+`StartsWith` over the same columns slice 04b's count already reads on both providers.
+
+The four substrates this slice owes evidence in are the walkthrough runs its findings came from: **A1**
+(first install), **A1b** (one stored secret), **A2c** (configuration custody) and **B1** (upgraded,
+secrets on the published key). Each one produced findings this slice claims to close, so each one is
+re-run against it.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 06a
+
+1. **F-6's *Remove unused keys* action is not built here.** V2 says hide now, remove later, and V1 —
+   the switch slice 05b shipped — is what makes removal safe. This slice deliberately stops at hiding.
+2. **The docs link this panel gains points at a page slice 06 has not written yet.** It is pointed at
+   the final address rather than a temporary one, so slice 06 fills a page rather than moving a link.
+   Until then the link resolves to the existing configuration page section.
+3. **The `@screenshot` images of this panel go stale the moment this slice lands.** Regenerating them
+   needs a premium licence fixture that is not in the repository, so it is called out here rather than
+   discovered during finalization.
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 06a
+
+**To `nw-software-crafter` (DELIVER)**: `deliver/slice-06a/roadmap.json` — six phases, seven steps,
+back to front. The backend learns which keys anything was written under and stops implying it keeps a
+key it does not; then the panel loses the actions that cannot help; then the sentences stop counting
+nothing; then the screen says what it is for.
+
+Four things this wave learned that DELIVER should not rediscover:
+
+- **The four wording decisions are already taken.** They are in the slice brief under *Decisions taken
+  before DISTILL*, with the exact sentences. Do not re-draft them.
+- **`summaryOf` is two hardcoded sentences with counts interpolated into fixed plurals**, and the
+  warning banner is a third with the same defect. All three are rewritten together or they disagree.
+- **The emphasis rule is a table, not a condition.** Four states, each with its own answer, and the one
+  that is easy to miss is the instance whose key in force is the published key — no move at all.
+- **`KeyRingSerializer` is the source of truth for the ring grammar** the rotation instruction has to
+  quote: comma-separated entries, each bare base64 or `name:base64`, first entry active. The panel and
+  `configuration.md` quote the same sentence.
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered · fixture design discussion for the four panel states · full edge-case enumeration for the
+emphasis table · error-path rationale per `@error` scenario · tagging cookbook · property-based testing
+notes for scenarios 146, 151, 162 and 165 · domain-language fact-to-step table.
+
+---

@@ -86,6 +86,24 @@ reason the published key is bad goes behind the docs link:
 | Operator-owned custody, cannot mint | **Move stored secrets** · Check secrets — no Rotate |
 | The active key *is* the published key | Check secrets — no Move, because there is nothing to move onto |
 
+## IN scope — the page the panel links to
+
+**A `docs/settings/encryption.md` page**, following the pattern every other settings tab already has:
+`parent: System Settings`, a screenshot in `assets/settings/`, and prose describing what the screen
+shows and what each action does. `rbac.md`, `apikeys.md` and `systeminfo.md` are the reference shape.
+
+It is written here rather than in slice 06 for two reasons: the panel gains a *Read more* link in this
+slice, and shipping a link to a page that does not exist is the exact failure slice 06 was created to
+fix; and the screenshot has to show the panel this slice produces, which does not exist until it lands.
+
+Three pages, three readers, nothing duplicated:
+
+| Page | Reader | Carries |
+|---|---|---|
+| `Installation/configuration.md` | the person installing | what to set and when — the key, the key store, the ring grammar |
+| `settings/encryption.md` (new) | the person operating | what the panel shows, and what checking, moving and rotating each do |
+| The Security page (slice 06) | the person assessing | the claims, and how to verify them — linking here rather than repeating it |
+
 ## OUT of scope
 
 - Removing keys from the ring — hiding only. Explicit removal is a later action, and depends on 05b.
