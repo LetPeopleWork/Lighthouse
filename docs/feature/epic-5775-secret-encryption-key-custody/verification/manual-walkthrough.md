@@ -328,21 +328,21 @@ Filled in live. Verdict is the operator's, not inferred from code.
 | A3 docker, documented one-command install | **FAIL — blocking**, see F-22 | — | — | `server.md:81` + the website's copy button + `configuration.md:165` all carry a command that does not run on Linux | `Access to the path '/app/Data/keys' is denied.` — exit 1, nothing created. **Not a regression**: v26.8.14.1 fails the same command with `SQLite Error 14: 'unable to open database file'`. |
 | A3-fix docker, named volume at `/app/data` | **PASS**, on **both** releases | `generated for this instance (k-2026-08-16-01) · /app/data/keys` | — | — | The one-command replacement: no flags, no ownership setup, works on 26.8.14.1 and 26.8.16.7. |
 | A4 docker+postgres, shipped `examples/postgres/docker-compose.yml` | **FAIL — blocking**, see F-24 | first start: `the key published with the product (k-legacy-default) · /app/data-protection-keys` + no-durable-store warning. After restart: `FATAL … nothing stored yet, so Lighthouse will not start` | — | the example sets no encryption key and no key-store path | Starts on `docker compose up`, then **crash-loops on the first restart** under `restart: always`. |
-| A4b remedy: key | | | | | |
-| A4c remedy: key store path | | | | | |
+| A4b remedy: `Encryption__Key` (Postgres compose) | **PASS** | `supplied by configuration (k-cfg-b5a1749a) · /app/data-protection-keys` | — | — | Starts, survives restart, no crash loop. Custody is operator-owned, so no minting and no Rotate — the Kubernetes experience in Docker. Reinforces F-14 at its worst: *Kept in* names a directory that does not hold the key **and** dies with the container. Probe file `candidate-postgres-suppliedkey.yml`. |
+| A4c remedy: `Encryption__KeyStorePath` on a named volume (Postgres compose) | **PASS** — recommended fix | `generated for this instance (k-2026-08-16-01) · /app/data/keys` | — | — | **Same key id across start, `restart`, and a full `down`+`up` recreate.** Custody stays app-owned, so Rotate is offered and Docker-Postgres behaves like Docker-SQLite. Also proves D1 for Postgres. Candidate file `candidate-postgres-compose.yml`. |
 | B1 standalone upgrade — half 1 | **PASS** | `generated for this instance (k-2026-08-16-01) · …/data-protection-keys` | 2 chips (`k-2026-08-16-01`, `k-legacy-default`); warning fired: `1 stored credentials are still readable with the key published with Lighthouse…` + *Move them now*; check: `0 on the active key, 1 on an earlier key` | — | Launch normal, no prompt. Team refreshed **before** touching any encryption UI — the credential written by v26.8.14.1 still authenticates. `encryption-keyring.protected` created; the old DP key and `oauth-state-secret.protected` untouched. Layout + duplication findings F-8, F-9. |
 | B1 standalone upgrade — half 2 | **PASS** | — | `Moved 1 stored secrets onto key k-2026-08-16-01. 0 could not be read.`; warning replaced by a green success in place; check: `1 on the active key, 0 on an earlier key`; `k-legacy-default` still held | — | Team re-synced after the move — credential travelled from the published key onto the instance's own, nothing re-entered. Maintainer reached for the button at the **bottom**, not the one in the alert. Findings F-10, F-11, F-12. |
 | B2 binary upgrade — half 1 (sanctioned: appsettings.json overwritten) | **PASS** | `generated for this instance (k-2026-08-16-01) · …/b2/keys` | 2 chips, warning fired with count 1 + *Move them now*; check: `0 on the active key, 1 on an earlier key` | — | New `appsettings.json` has no `EncryptionSettings` block, so the published literal is gone and the instance mints. Team refreshed before touching the panel. **`KeyStoreMigration` verified on real data**: `key-c75b….xml` and `oauth-state-secret.protected` appear inside the new `keys/` still stamped 15:37, the old build's time — carried across from `data-protection-keys/`, not regenerated. Banner length finding F-18. |
 | B2 binary upgrade — half 2 | **PASS** | — | via *Move them now* this time: `Moved 1 stored secrets onto key k-2026-08-16-01. 0 could not be read.`; check: `1 on the active key` | — | Team re-synced after the move. Both entry points to the same action verified across B1 (bottom button) and B2 (alert button). Duplicate key-store finding F-19. |
 | B2b binary upgrade, operator kept their own `appsettings.json` | **FAIL — blocking**, see F-20 | `supplied by configuration (k-cfg-27d69a05) · …/b2b/keys` + the retired-name nudge | warning fired with count 1; after *Move*: `Moved 1 stored secrets onto key k-cfg-27d69a05`, **warning disappeared**, check reports `1 on the active key` | `server.md` says to override all files; an operator who keeps their edited config lands here | `k-cfg-27d69a05` is derived from the **published** key's bytes. The instance is pinned to the public key by configuration, cannot mint, has no Rotate button — and the panel now reports it as healthy. |
-| B3 docker upgrade | | | | | |
-| B4 postgres upgrade | | | | | |
+| B3 docker upgrade (SQLite, named volume, container replaced) | **PASS**, both halves | `generated for this instance (k-2026-08-16-01) · /app/data/keys` | 2 chips, warning with count 1; check: `0 on the active key, 1 on an earlier key`; move: `Moved 1 stored secrets onto key k-2026-08-16-01`; team re-synced | — | First run to survive an actual **container replacement** rather than a file swap. `/app/data-protection-keys` was **gone** — it lived in the old container's writable layer — so `KeyStoreMigration` never fires on Docker and a fresh DP key + `oauth-state-secret.protected` are generated in `/app/data/keys`. Nothing lost: the old encryption key was compiled in, and the state secret only guards in-flight handshakes. See F-25. |
+| B4 postgres upgrade (secrets already stored, no custody configured) | **PASS** behaviour, **FAIL** wording (F-27) | `the key published with the product (k-legacy-default) · /app/data-protection-keys` + no-durable-store warning | 1 chip only; no Rotate; custody sentence names both remedies correctly; published-key warning with count 1; after *Move*: `Moved 1 stored secrets onto key k-legacy-default. 0 could not be read.` and **the warning does not clear** | — | Starts rather than refuses, which is right — secrets exist, so refusing would take a working system away. The contrast with B2b is the point: here the published key wears its own name, so the count still sees it and the panel stays honest. |
 | C1 binary upgrade, genuine custom key under the retired name | **PASS** behaviour, **FAIL** wording (F-21) | `supplied by configuration (k-cfg-d893325b) · …/c1/keys` + retirement nudge | check before move: `1 on the active key k-cfg-d893325b`; warning simultaneously claimed `1 stored credentials are still readable with the key published with Lighthouse`; move: `Moved 1 stored secrets onto key k-cfg-d893325b`; check after: unchanged | — | **The custom-key population survives the upgrade** — team refreshed before anything was touched. New `appsettings.json` confirmed free of `EncryptionSettings`, so the key really came from the env var. |
 | C1b nudge followed verbatim | **PASS** | `supplied by configuration (k-cfg-d893325b) · …/c1/keys`, **nudge gone** | — | — | Set `Encryption__Key` to the same value, dropped `EncryptionSettings__EncryptionKey`. Active key id **unchanged** — the id is a fingerprint of the material, so moving the value between setting names cannot strand a secret. The nudge's instructions are safe to follow. |
 | C2 docs name (`Encryption__Key` set on the old build, where it was a no-op) | **SKIPPED**, with reason | — | — | — | Its population is a subset of the custom-key population, which the maintainer assesses as effectively empty ("I don't think many people (if anyone at all) is using a custom encryption key"). Both halves of the mechanism are already covered from other directions: A2c proved `Encryption__Key` now reaches the code, B2b proved the retired name is still honoured. Only the combination is unexercised. An attempt was made and mis-seeded — the recalled command used the retired name, so it ran as a second C1 — and was not rebuilt. |
 | C3 standalone supplied key | **N/A**, with reason | — | — | — | A standalone install has no writable configuration: `StandaloneInitializer` reads `appsettings.json` out of the packaged resources directory, which is read-only inside the AppImage / Program Files / .app bundle. The only route is an environment variable set before launch, i.e. starting the app from a terminal — outside the edition's whole premise. C1/C2 are therefore not run for standalone either: neither population can exist there. See F-13. |
-| D1 recreate, volume kept | | | | | |
-| D2 key store off volume | | | | | |
+| D1 recreate, volume kept | **PASS** | `generated for this instance (k-2026-08-16-01) · /app/data/keys` | — | — | `docker rm -f` + `docker run` against the same volume returns the **same key id**, with `encryption-keyring.protected` untouched (timestamp predates the recreate). Self-asserting: the database holds a secret by this point, so had the key not survived, `RefuseWhenNothingStoredCanBeRead` would have stopped the start. A clean boot is the proof. |
+| D2 key store off the volume, then recreate | **PASS** behaviour, **FAIL** recoverability (F-26) | `FATAL: This instance has stored credentials and not one of them can be read with the key it started on…` | — | — | Provoked on purpose: database on a named volume, `Encryption__KeyStorePath=/app/keys` on the writable layer. `docker rm` + recreate destroys the key while the secrets survive. Refuses, names the cause, suggests deleting nothing — all correct. But the key here is **destroyed, not misplaced**, and the message cannot tell the difference. |
 
 ---
 
@@ -604,10 +604,25 @@ Worse, step 1 is the only moment the operator is told anything, and it is a log 
 they have no reason to be tailing. By the time they see a message they can act on, the application will
 not start.
 
-*Fix.* The example must supply custody: either `Encryption__Key`, or `Encryption__KeyStorePath` on a
-mounted volume. Whichever is chosen, the same treatment is owed to `docs/Installation/configuration.md`
-where the Postgres setup is described, because an operator writing their own compose file from that
-page lands in the identical trap.
+*Fix, verified both ways (A4b, A4c).* The example must supply custody, and the choice is not cosmetic
+— it decides what product a Docker-Postgres operator gets:
+
+- **`Encryption__KeyStorePath: /app/data/keys` on a named volume** — custody stays app-owned. Lighthouse
+  mints, the panel offers **Rotate key**, and Docker-Postgres behaves exactly like Docker-SQLite.
+  Verified: identical key id across start, restart and a full `down`+`up` recreate. **Recommended**,
+  and written up as `candidate-postgres-compose.yml` beside this document.
+- **`Encryption__Key`** — custody becomes operator-owned. No minting, no Rotate, rotation is a manual
+  ring edit. That is the Kubernetes experience, and it is the right answer *there* because a pod may
+  not mint; importing it into Docker splits the Docker product in two for no forced reason.
+
+The key store must sit **under `/app/data`**, not at a path of its own: a bind mount would be
+host-owned and unwritable by uid 1654 (F-22), and a named volume at a path the image does not prepare
+is created root-owned. `/app/data` is the one directory `Dockerfile:61` creates and chowns — which is
+also why F-23's casing mismatch has to be fixed for any of this to be a one-liner.
+
+The same treatment is owed to `docs/Installation/configuration.md`, where the Postgres setup is
+described, because an operator writing their own compose file from that page lands in the identical
+trap.
 
 **F-20 · BLOCKING · An operator can be pinned to the published key and then told they are safe**
 (B2b, 2026-08-16). Observed end to end, not inferred.
@@ -682,6 +697,70 @@ comparison closes that one.
 *Second-order cost.* An operator who knows their own setup reads this sentence, knows it is wrong, and
 concludes the encryption panel cannot be trusted — which is expensive for a feature whose entire job is
 to be believed about exactly this question.
+
+**F-27 · In no-durable-store custody the panel offers a move that cannot achieve anything** (B4,
+2026-08-16). An upgraded Postgres instance with no custody configured runs on the published key. The
+panel then shows the published-key warning — *"Moving them onto this instance's own key is the fix"* —
+on an instance that **has no own key**: the active key is `k-legacy-default`, and *Move stored secrets
+onto the active key* is the filled primary button, because `canMint` is false.
+
+Pressing it reports `Moved 1 stored secrets onto key k-legacy-default. 0 could not be read.` and the
+orange warning **stays exactly as it was**, since a value re-encrypted under `k-legacy-default` still
+carries the prefix the counter matches. The operator is left looking at a green success and an
+unchanged warning at the same time, and can repeat this forever.
+
+The behaviour is right and the honesty is right — this is precisely where B2b lied, and the only
+difference is that here the published key wears its own name instead of a `k-cfg-` disguise. What is
+wrong is offering the action at all. In this custody the fix is not a button: it is the custody
+sentence directly above, which already names both remedies correctly. Wanted: suppress the move where
+the active key *is* the published key, and let the warning point at that sentence instead of at an
+action that cannot help. Same root as F-4 (offering a move with nothing to move) and F-11 (the alert
+carrying its own copy of an action).
+
+**F-26 · A lost key leaves an instance that can never start again, and no supported way out**
+(D2, 2026-08-16). With the database on a volume and the key store on the container's writable layer, a
+recreate destroys the key and keeps the secrets. The refusal is correct and its restraint is right — it
+never suggests deleting anything. Two things about it are not right for this case:
+
+1. **The reassurance is false here.** "Nothing has been changed and nothing is lost - the credentials
+   are still there, encrypted under the key they were written with." True of A2d, where the operator
+   merely pointed at the wrong key and recovery was one variable away. In D2 the key that wrote them no
+   longer exists anywhere, so the credentials are lost in every sense that matters to their owner. The
+   message is identical in both cases because the application cannot tell them apart — but it can stop
+   asserting the reassuring one as fact.
+2. **Neither remedy is reachable, and no third one is offered.** "Set `Encryption__Key` to the key this
+   instance was using before" asks for a value Lighthouse generated and never showed anyone. "Set
+   `Encryption__KeyStorePath` to the key store that belongs to this database" names a directory that
+   was destroyed. There is no instruction for the case where the key is genuinely gone.
+
+*And there is no escape hatch.* Nothing in the codebase can start an instance whose stored secrets are
+all unreadable — `RefuseWhenNothingStoredCanBeRead` has no flag, no override, no confirmation path
+(only two references exist, the throw and the message). Pointing the instance at a fresh key store does
+not help either: the database still holds unreadable secrets, so it refuses again. The operator's only
+route back is manual surgery on the secret columns of their own database, which is undocumented and
+requires knowing which three columns they are.
+
+So the outcome of a lost key is a permanently unstartable instance, including all the data that has
+nothing to do with encryption — teams, forecasts, history. Wanted: an explicit, deliberately
+uncomfortable path that discards the unreadable secrets and starts, telling the operator exactly which
+Connections must have their credentials re-entered. The check pass already produces that list.
+
+**F-25 · A Docker upgrade silently rotates the Data Protection ring, and the key-store migration can
+never run there** (B3, 2026-08-16). v26.8.14.1 kept its Data Protection keys in
+`/app/data-protection-keys` — the container's writable layer, not a volume. Upgrading Docker means
+replacing the container, which destroys that layer. By the time the new image starts, the legacy
+directory does not exist, so `KeyStoreMigration` has nothing to find: it is effectively binary- and
+standalone-only.
+
+Observed: the old `key-f574a5ec….xml` and its `oauth-state-secret.protected` vanished, and a fresh
+`key-88247a2d….xml` plus a fresh state secret appeared in `/app/data/keys`.
+
+**Nothing is lost today**, and that is worth stating plainly so nobody 'fixes' it in a hurry: the old
+encryption key was compiled into the product rather than kept in that folder, and the OAuth state
+secret only protects in-flight handshakes. The reason to record it is forward-looking — the moment
+anything else is persisted under Data Protection outside `/app/data`, a Docker upgrade will discard it
+with no message. This epic's own ring would have been exactly such a thing had it not been placed
+beside the database.
 
 **F-19 · An upgraded binary install ends up with the same key material in two directories** (B2,
 2026-08-16). `KeyStoreMigration` copies rather than moves, deliberately — removing the source would be

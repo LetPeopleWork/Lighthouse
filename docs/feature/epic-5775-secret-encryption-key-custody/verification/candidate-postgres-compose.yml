@@ -1,0 +1,45 @@
+# Candidate replacement for examples/postgres/docker-compose.yml, under test in the
+# epic-5775 manual walkthrough. Two changes against the shipped example:
+#
+#   1. Encryption__KeyStorePath names a directory Lighthouse is allowed to promise survives a
+#      restart. Without it a Postgres deployment has no durable place for a key, so it refuses to
+#      mint one - and refuses to start once the schema exists and holds no secrets yet.
+#   2. The key store lives under /app/data on a named volume. A bind mount would be owned by the
+#      host user and the container runs as uid 1654, and a named volume at a path the image does
+#      not prepare is created root-owned. /app/data is the one path the image creates and chowns.
+
+name: lighthouse-pg-keystore
+
+services:
+  postgres:
+    image: postgres:17.2-alpine
+    environment:
+      POSTGRES_DB: lighthouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+
+  lighthouse:
+    image: ghcr.io/letpeoplework/lighthouse:26.8.16.7
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      Database__Provider: postgres
+      Database__ConnectionString: "Host=postgres;Database=lighthouse;Username=postgres;Password=postgres"
+      Encryption__KeyStorePath: /app/data/keys
+    ports:
+      - "48331:80"
+    volumes:
+      - lighthouse-data:/app/data
+    restart: always
+
+volumes:
+  postgres-data:
+  lighthouse-data:
