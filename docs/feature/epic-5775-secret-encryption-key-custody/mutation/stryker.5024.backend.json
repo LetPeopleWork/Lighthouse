@@ -12,6 +12,7 @@
       "**/Services/Implementation/Encryption/MountedFileKeyRingSource.cs",
       "**/Services/Implementation/Encryption/GeneratedKeyRingStore.cs",
       "**/Services/Implementation/Encryption/DatabaseSecretPresenceProbe.cs",
+      "**/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs",
       "**/Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs",
       "**/Models/Encryption/KeyCustody.cs",
       "**/Startup/StartupBanner.cs",

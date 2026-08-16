@@ -170,6 +170,31 @@ builds the custody banner therefore carry integration tests but no mutation scor
 slice 01, and it is why the `StartupBanner.cs` omission mattered: moving code out of `Program.cs` is the
 moment it becomes measurable, and this config did not measure it until it was corrected.
 
+## Follow-on: the two custody gaps the scenario walkthrough found
+
+Walking the four install-and-upgrade scenarios with the maintainer after the slice was green turned up
+two more, both in the same place — what an upgrade does when it cannot read what is already stored.
+
+**An operator who had customised their key lost access to it silently.** The setting every Lighthouse
+before this release read its key from is `EncryptionSettings:EncryptionKey`; nothing in the new
+resolution path reads that name. An instance upgrading while relying on it therefore found no
+configured key, minted a fresh one, appended the published default, and started cheerfully — while
+every secret written under the operator's own key matched neither. The old name is now read last, after
+both documented names, so the documented one always wins and the "operator believes they overrode a key
+they had not" failure the name was retired over cannot come back. It stays undocumented and the banner
+asks them to move to `Encryption__Key`.
+
+**Nothing noticed that the key could not read anything.** Startup only ever asked the database whether
+secrets exist, and only in the branch where minting is forbidden. It now asks, once, after the key is
+resolved: if there are stored secrets and not one of them can be read with the ring in force, that is
+the wrong key rather than a few stale values, and startup stops with the two ways back. Something
+readable, nothing stored, or a database that will not answer all start normally.
+
+Re-run with both changes and the new probe in scope: **82.29 %** (288 / 350), nothing uncovered.
+`ConfiguredKeyRingSource` went from 57.14 % to 100 % and the new probe from 16.67 % to 72.22 % once it
+had tests of its own — the first run had only exercised it through a fake in the bootstrapper's tests,
+which is the same hole as the missing file above, in new code, found the same way.
+
 ## Reproducing
 
 Run the two stacks one after the other; overlapping them puts both above the memory the frontend run

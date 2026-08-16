@@ -236,7 +236,11 @@ If nothing sensitive is stored yet, Lighthouse **stops instead of starting**: a 
 
 A key that Lighthouse cannot use — not base64, not 32 bytes, or an entry it cannot read — **stops startup**, and the log names the entry at fault. Lighthouse will not quietly start on some other key.
 
-A key that is valid but isn't the one a stored secret was written under is a different matter: Lighthouse starts, and it tells you which connection holds a value it can no longer read and which field that value sits in. You retype that one value rather than working out for yourself why a work tracking system stopped updating.
+A key that is valid but isn't the one a stored secret was written under is a different matter, and what happens depends on how much of what you have stored it can still read.
+
+If Lighthouse can read some of your stored secrets but not others, it starts, and it tells you which connection holds a value it can no longer read and which field that value sits in. You retype that one value rather than working out for yourself why a work tracking system stopped updating.
+
+If it can read **none** of them, that is not a handful of stale values — it is the wrong key, and starting would leave every connection you have broken with no explanation. Lighthouse **stops startup** and says so, naming the two ways back: set `Encryption__Key` to the key the instance was using before, or set `Encryption__KeyStorePath` to the key store that belongs to this database. Nothing is changed and nothing is lost; your secrets are still there, encrypted under the key they were written with.
 
 ## Certificate
 In order to run Lighthouse via secure https connection, we need to specify a certificate.
