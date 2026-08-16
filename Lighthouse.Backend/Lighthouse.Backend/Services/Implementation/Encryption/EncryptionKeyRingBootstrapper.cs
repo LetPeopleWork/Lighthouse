@@ -153,12 +153,14 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 return;
             }
 
-            if (storedSecretReadability.Look(resolved).Readability != StoredSecretReadability.NothingReadable)
+            var finding = storedSecretReadability.Look(resolved);
+
+            if (finding.Readability != StoredSecretReadability.NothingReadable)
             {
                 return;
             }
 
-            throw new InvalidOperationException(KeyThatReadsNothing.Refusal);
+            throw new InvalidOperationException(KeyThatReadsNothing.RefusalFor(resolved, finding.KeyIdsSeen));
         }
 
         // The last resort, and the only branch that asks the database anything. A key made where nothing

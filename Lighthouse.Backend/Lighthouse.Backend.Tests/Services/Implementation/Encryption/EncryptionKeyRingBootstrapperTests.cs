@@ -237,7 +237,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(refusal.Message, Does.Contain("not one of them can be read"));
-                Assert.That(refusal.Message, Does.Contain("Nothing has been changed and nothing is lost"));
                 Assert.That(refusal.Message, Does.Contain("Encryption__Key"));
                 Assert.That(refusal.Message, Does.Contain("Encryption__KeyStorePath"));
             }
@@ -835,6 +834,120 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                     Is.EqualTo(CredentialsStoredBeforeTheUpgrade[0]),
                     "behind an active key the same material has to stay welcome, or every upgrade stops being readable");
             }
+        }
+
+        // The refusal an operator reads at the moment everything stopped. Both remedies it used to offer
+        // assumed they had lost a key; the reproduced cause is that they added one, and in that state the
+        // key store is already correct and the key it asks them for was generated into a file they never
+        // read.
+        [Test]
+        public void Resolve_AKeyThatReadsNothing_LeadsWithUndoingWhatWasJustSet()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder);
+
+            var undo = refusal.Message.IndexOf("remove that setting", StringComparison.Ordinal);
+            var supplyAnother = refusal.Message.IndexOf("Otherwise set Encryption__Key", StringComparison.Ordinal);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(undo, Is.GreaterThan(-1),
+                    "the only remedy an operator can carry out with nothing but what they already have");
+                Assert.That(undo, Is.LessThan(supplyAnother),
+                    "it is both the likeliest cause and the cheapest fix, so it is read first");
+            }
+        }
+
+        [Test]
+        public void Resolve_AKeyThatReadsNothing_NamesBothKeys()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain(WrittenUnder),
+                    "the stored credentials say which key wrote them, and an operator told two keys disagree is left to work out which two");
+                Assert.That(refusal.Message, Does.Contain(StartedOn));
+            }
+        }
+
+        [Test]
+        public void Resolve_StoredValuesUnderTwoKeys_NamesThemBoth()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder, "k-and-this-one-02");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain(WrittenUnder));
+                Assert.That(refusal.Message, Does.Contain("k-and-this-one-02"));
+            }
+        }
+
+        [Test]
+        public void Resolve_StoredValuesNamingNoKeyAtAll_SaysThatRatherThanInventingOne()
+        {
+            var refusal = RefusalWhenNothingCanBeRead();
+
+            Assert.That(refusal.Message, Does.Contain("carry no key name at all"),
+                "values written before this release carry none, and naming a key that never existed sends an operator hunting for it");
+        }
+
+        [Test]
+        public void Resolve_AKeyThatReadsNothing_DoesNotPromiseThatNothingIsLost()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Not.Contain("nothing is lost"),
+                    "true of an operator who pointed at the wrong key, false of one whose key store was destroyed, and Lighthouse cannot tell them apart");
+                Assert.That(refusal.Message, Does.Contain("Nothing has been changed by this start"),
+                    "which is the thing that is true either way");
+            }
+        }
+
+        [Test]
+        public void Resolve_AKeyThatReadsNothing_NamesTheWayPastItAndWhatItCosts()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain("Encryption__StartEvenIfNothingStoredCanBeRead"));
+                Assert.That(refusal.Message, Does.Contain("every one of them has to be entered again"),
+                    "an operator who reaches for this without reading what it costs has thrown away every credential they hold");
+                Assert.That(refusal.Message, Does.Contain("Nothing is deleted"));
+            }
+        }
+
+        [Test]
+        public void Resolve_AKeyThatReadsNothing_StillRepeatsNoKeyMaterial()
+        {
+            var material = MaterialOf(73);
+
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(
+                    new StagedKeyStoreFileSystem(),
+                    suppliedRing: RingStringFor(StartedOn, material),
+                    readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable, WrittenUnder)).Resolve());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Not.Contain(Convert.ToBase64String(material)));
+                Assert.That(refusal.Message, Does.Not.Contain(Convert.ToHexStringLower(material)));
+            }
+        }
+
+        private const string StartedOn = "k-started-on-01";
+
+        private const string WrittenUnder = "k-written-under-01";
+
+        private InvalidOperationException RefusalWhenNothingCanBeRead(params string[] keyIdsStoredValuesName)
+        {
+            return Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(
+                    new StagedKeyStoreFileSystem(),
+                    suppliedRing: RingStringFor(StartedOn, MaterialOf(79)),
+                    readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable, keyIdsStoredValuesName)).Resolve())!;
         }
 
         // The one refusal with no way out, and the switch that provides one. It is deliberately shaped like
