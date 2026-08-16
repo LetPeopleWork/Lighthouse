@@ -40,6 +40,9 @@ export interface SecretReadabilityReport {
 	activeKeyId: string;
 	movedCount: number;
 	unreadableCount: number;
+	onActiveKeyCount: number;
+	onRetiredKeyCount: number;
+	plaintextCount: number;
 	secrets: StoredSecret[];
 	byConnection: ConnectionSecretSummary[];
 }
@@ -64,6 +67,9 @@ export const SecretReadabilityReportSchema = z.object({
 	activeKeyId: z.string(),
 	movedCount: z.number(),
 	unreadableCount: z.number(),
+	onActiveKeyCount: z.number(),
+	onRetiredKeyCount: z.number(),
+	plaintextCount: z.number(),
 	secrets: z.array(StoredSecretSchema),
 	byConnection: z.array(ConnectionSecretSummarySchema),
 });

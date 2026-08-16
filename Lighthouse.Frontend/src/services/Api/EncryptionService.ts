@@ -10,6 +10,7 @@ import { BaseApiService } from "./BaseApiService";
 
 export interface IEncryptionService {
 	getKeyState(): Promise<EncryptionKeyState>;
+	checkSecrets(): Promise<SecretReadabilityReport>;
 	rotateKey(): Promise<SecretReadabilityReport>;
 	reEncryptSecrets(): Promise<SecretReadabilityReport>;
 }
@@ -22,6 +23,17 @@ export class EncryptionService
 		return await this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>("/encryption");
 			return BaseApiService.parse(EncryptionKeyStateSchema, response.data);
+		});
+	}
+
+	// A read, and it asks like one. What tells an operator this changes nothing is that it is the same
+	// kind of request as opening the page, not a promise made in the button's label.
+	async checkSecrets(): Promise<SecretReadabilityReport> {
+		return await this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				"/encryption/secrets",
+			);
+			return BaseApiService.parse(SecretReadabilityReportSchema, response.data);
 		});
 	}
 

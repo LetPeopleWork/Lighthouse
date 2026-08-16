@@ -13,12 +13,16 @@ const validKeyState = {
 	keyIds: ["operator-supplied", "lighthouse-default"],
 	keyStorePath: "/app/data/keys",
 	legacyDefaultPresent: true,
+	secretsUnderPublishedKey: 2,
 };
 
 const validReport = {
 	activeKeyId: "k-2026-08-16-01",
 	movedCount: 47,
 	unreadableCount: 1,
+	onActiveKeyCount: 45,
+	onRetiredKeyCount: 2,
+	plaintextCount: 0,
 	secrets: [
 		{
 			connectionId: 7,
@@ -58,6 +62,30 @@ describe("EncryptionService", () => {
 
 		expect(mockedAxios.get).toHaveBeenCalledWith("/encryption");
 		expect(keyState).toEqual(validKeyState);
+	});
+
+	it("checks the stored secrets by reading, not by asking for anything to be done", async () => {
+		mockedAxios.get.mockResolvedValueOnce({ data: validReport });
+
+		const report = await encryptionService.checkSecrets();
+
+		expect(mockedAxios.get).toHaveBeenCalledWith("/encryption/secrets");
+		expect(mockedAxios.post).not.toHaveBeenCalled();
+		expect(report).toEqual(validReport);
+	});
+
+	it("rejects a check whose counts are not counts", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: { ...validReport, onRetiredKeyCount: "a couple" },
+		});
+
+		const error = await encryptionService
+			.checkSecrets()
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApiError);
+		expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+		expect((error as ApiError).technicalDetails).toContain("onRetiredKeyCount");
 	});
 
 	it("asks for a rotation and reads back what it moved", async () => {

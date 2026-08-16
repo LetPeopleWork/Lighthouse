@@ -17,6 +17,13 @@ const ownKey: EncryptionKeyState = {
 	keyIds: ["k-2026-08-16-01", "k-2025-11-02-01"],
 	keyStorePath: "/app/data/keys",
 	legacyDefaultPresent: false,
+	secretsUnderPublishedKey: 0,
+};
+
+const justUpgraded: EncryptionKeyState = {
+	...ownKey,
+	legacyDefaultPresent: true,
+	secretsUnderPublishedKey: 12,
 };
 
 const operatorOwned: Record<string, EncryptionKeyState> = {
@@ -44,6 +51,9 @@ const aReportNamingWhatCouldNotBeRead: SecretReadabilityReport = {
 	activeKeyId: "k-2026-08-16-02",
 	movedCount: 46,
 	unreadableCount: 1,
+	onActiveKeyCount: 46,
+	onRetiredKeyCount: 0,
+	plaintextCount: 0,
 	secrets: [
 		{
 			connectionId: 7,
@@ -74,6 +84,7 @@ const renderPanelOn = (
 	if (report) {
 		vi.mocked(encryptionService.rotateKey).mockResolvedValue(report);
 		vi.mocked(encryptionService.reEncryptSecrets).mockResolvedValue(report);
+		vi.mocked(encryptionService.checkSecrets).mockResolvedValue(report);
 	}
 
 	render(
@@ -149,6 +160,9 @@ describe("EncryptionPanel", () => {
 			activeKeyId: "k-2026-08-16-02",
 			movedCount: 2,
 			unreadableCount: 1,
+			onActiveKeyCount: 2,
+			onRetiredKeyCount: 1,
+			plaintextCount: 1,
 			secrets: [
 				{
 					connectionId: 7,
@@ -222,6 +236,9 @@ describe("EncryptionPanel", () => {
 			activeKeyId: "k-2026-08-16-02",
 			movedCount: 3,
 			unreadableCount: 0,
+			onActiveKeyCount: 3,
+			onRetiredKeyCount: 0,
+			plaintextCount: 0,
 			secrets: [
 				{
 					connectionId: 7,
@@ -388,6 +405,92 @@ describe("EncryptionPanel", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("rotate-key-button")).toBeEnabled();
 		});
+	});
+
+	it("tells an administrator who has just upgraded, without their having asked", async () => {
+		const encryptionService = renderPanelOn(justUpgraded);
+
+		const notice = await screen.findByTestId("published-key-notice");
+
+		expect(notice).toHaveTextContent("12 stored credentials");
+		expect(notice).toHaveTextContent("anyone who has a copy of Lighthouse");
+		expect(encryptionService.checkSecrets).not.toHaveBeenCalled();
+	});
+
+	it("offers the one action that fixes it, beside the sentence saying so", async () => {
+		const encryptionService = renderPanelOn(
+			justUpgraded,
+			aReportNamingWhatCouldNotBeRead,
+		);
+
+		await userEvent.click(
+			await screen.findByTestId("published-key-notice-action"),
+		);
+
+		await waitFor(() => {
+			expect(encryptionService.reEncryptSecrets).toHaveBeenCalled();
+		});
+		expect(encryptionService.rotateKey).not.toHaveBeenCalled();
+	});
+
+	it("says nothing about the published key once nothing is left under it", async () => {
+		renderPanelOn(ownKey);
+
+		await screen.findByTestId("reencrypt-button");
+
+		expect(
+			screen.queryByTestId("published-key-notice"),
+		).not.toBeInTheDocument();
+	});
+
+	it("says what every stored secret is on, and never that anything was moved", async () => {
+		const checked: SecretReadabilityReport = {
+			activeKeyId: "k-2026-08-16-01",
+			movedCount: 0,
+			unreadableCount: 1,
+			onActiveKeyCount: 45,
+			onRetiredKeyCount: 2,
+			plaintextCount: 0,
+			secrets: [
+				{
+					connectionId: 7,
+					connectionName: "Contoso Board",
+					field: "ClientSecret",
+					keyId: "k-lost-forever",
+					state: "Unreadable",
+					outcome: "CouldNotBeRead",
+				},
+			],
+			byConnection: [],
+		};
+
+		const encryptionService = renderPanelOn(ownKey, checked);
+
+		await userEvent.click(await screen.findByTestId("check-secrets-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(encryptionService.checkSecrets).toHaveBeenCalled();
+		expect(report).toHaveTextContent("45 on the active key");
+		expect(report).toHaveTextContent("2 on an earlier key");
+		expect(report).toHaveTextContent("1 could not be read");
+
+		// Nothing was moved, because nothing was asked to be. Reusing the rotation's wording would greet
+		// an operator with "Moved 0 stored secrets" on an instance where nothing at all is wrong.
+		expect(report).not.toHaveTextContent("Moved");
+		expect(encryptionService.reEncryptSecrets).not.toHaveBeenCalled();
+		expect(encryptionService.rotateKey).not.toHaveBeenCalled();
+	});
+
+	it("names the Connection and the field of anything a check could not read", async () => {
+		renderPanelOn(ownKey, aReportNamingWhatCouldNotBeRead);
+
+		await userEvent.click(await screen.findByTestId("check-secrets-button"));
+
+		const secrets = await screen.findByTestId("encryption-report-secrets");
+
+		expect(secrets).toHaveTextContent("Contoso Board");
+		expect(secrets).toHaveTextContent("ClientSecret");
 	});
 
 	it("shows no key material of any kind", async () => {

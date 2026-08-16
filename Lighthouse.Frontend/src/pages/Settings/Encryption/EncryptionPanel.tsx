@@ -96,15 +96,25 @@ const wasLeftBehind = (
 	secret.outcome === "CouldNotBeWritten" ||
 	secret.outcome === "NotEncrypted";
 
-const WhatHappened: React.FC<{ report: SecretReadabilityReport }> = ({
-	report,
-}) => {
+// A check moves nothing, so a summary counting what moved would greet an operator with "Moved 0" on a
+// perfectly healthy instance. The two actions answer different questions and are said in different words.
+type WhatWasAsked = "check" | "move";
+
+const summaryOf = (asked: WhatWasAsked, report: SecretReadabilityReport) =>
+	asked === "move"
+		? `Moved ${report.movedCount} stored secrets onto key ${report.activeKeyId}. ${report.unreadableCount} could not be read.`
+		: `Checked ${report.secrets.length} stored secrets. ${report.onActiveKeyCount} on the active key ${report.activeKeyId}, ${report.onRetiredKeyCount} on an earlier key, ${report.plaintextCount} never encrypted, ${report.unreadableCount} could not be read.`;
+
+const WhatHappened: React.FC<{
+	asked: WhatWasAsked;
+	report: SecretReadabilityReport;
+}> = ({ asked, report }) => {
 	const leftBehind = report.secrets.filter(wasLeftBehind);
 
 	return (
 		<Box sx={{ mt: 2 }} data-testid="encryption-report">
 			<Alert severity={leftBehind.length > 0 ? "warning" : "success"}>
-				{`Moved ${report.movedCount} stored secrets onto key ${report.activeKeyId}. ${report.unreadableCount} could not be read.`}
+				{summaryOf(asked, report)}
 			</Alert>
 
 			{leftBehind.length > 0 && (
@@ -138,6 +148,7 @@ const WhatHappened: React.FC<{ report: SecretReadabilityReport }> = ({
 const EncryptionPanel: React.FC = () => {
 	const [keyState, setKeyState] = useState<EncryptionKeyState | null>(null);
 	const [report, setReport] = useState<SecretReadabilityReport | null>(null);
+	const [asked, setAsked] = useState<WhatWasAsked>("move");
 	const [failure, setFailure] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
 
@@ -156,6 +167,7 @@ const EncryptionPanel: React.FC = () => {
 	}, [readKeyState]);
 
 	const run = async (
+		whatWasAsked: WhatWasAsked,
 		action: () => Promise<SecretReadabilityReport>,
 	): Promise<void> => {
 		setBusy(true);
@@ -163,6 +175,7 @@ const EncryptionPanel: React.FC = () => {
 
 		try {
 			setReport(await action());
+			setAsked(whatWasAsked);
 			await readKeyState();
 		} catch (error_) {
 			setFailure(
@@ -174,6 +187,9 @@ const EncryptionPanel: React.FC = () => {
 			setBusy(false);
 		}
 	};
+
+	const moveThemOntoTheActiveKey = () =>
+		run("move", () => encryptionService.reEncryptSecrets());
 
 	if (keyState === null) {
 		return null;
@@ -191,13 +207,34 @@ const EncryptionPanel: React.FC = () => {
 				{WHO_OWNS_THE_KEY[keyState.custody]}
 			</Typography>
 
+			{keyState.secretsUnderPublishedKey > 0 && (
+				<Alert
+					severity="warning"
+					sx={{ mt: 2 }}
+					data-testid="published-key-notice"
+					action={
+						<Button
+							color="inherit"
+							size="small"
+							disabled={busy}
+							data-testid="published-key-notice-action"
+							onClick={moveThemOntoTheActiveKey}
+						>
+							Move them now
+						</Button>
+					}
+				>
+					{`${keyState.secretsUnderPublishedKey} stored credentials are still readable with the key published with Lighthouse, which anyone who has a copy of Lighthouse can obtain. Moving them onto this instance's own key is the fix, and nobody has to re-enter anything.`}
+				</Alert>
+			)}
+
 			<Stack direction="row" spacing={2} sx={{ mt: 2 }}>
 				{keyState.canMint && (
 					<Button
 						variant="contained"
 						disabled={busy}
 						data-testid="rotate-key-button"
-						onClick={() => run(() => encryptionService.rotateKey())}
+						onClick={() => run("move", () => encryptionService.rotateKey())}
 					>
 						Rotate key
 					</Button>
@@ -206,9 +243,17 @@ const EncryptionPanel: React.FC = () => {
 					variant={keyState.canMint ? "outlined" : "contained"}
 					disabled={busy}
 					data-testid="reencrypt-button"
-					onClick={() => run(() => encryptionService.reEncryptSecrets())}
+					onClick={moveThemOntoTheActiveKey}
 				>
 					Move stored secrets onto the active key
+				</Button>
+				<Button
+					variant="text"
+					disabled={busy}
+					data-testid="check-secrets-button"
+					onClick={() => run("check", () => encryptionService.checkSecrets())}
+				>
+					Check secrets
 				</Button>
 			</Stack>
 
@@ -218,7 +263,7 @@ const EncryptionPanel: React.FC = () => {
 				</Alert>
 			)}
 
-			{report !== null && <WhatHappened report={report} />}
+			{report !== null && <WhatHappened asked={asked} report={report} />}
 		</InputGroup>
 	);
 };

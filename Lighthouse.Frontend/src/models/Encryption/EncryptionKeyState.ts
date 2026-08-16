@@ -16,6 +16,7 @@ export interface EncryptionKeyState {
 	keyIds: string[];
 	keyStorePath: string;
 	legacyDefaultPresent: boolean;
+	secretsUnderPublishedKey: number;
 }
 
 export const EncryptionKeyStateSchema = z.object({
@@ -25,6 +26,7 @@ export const EncryptionKeyStateSchema = z.object({
 	keyIds: z.array(z.string()),
 	keyStorePath: z.string(),
 	legacyDefaultPresent: z.boolean(),
+	secretsUnderPublishedKey: z.number(),
 });
 
 // A self-hoster reading this screen is asking whether the key is theirs to keep, not what the

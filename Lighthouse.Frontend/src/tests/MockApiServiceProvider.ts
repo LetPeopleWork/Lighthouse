@@ -72,6 +72,17 @@ export const createMockApiServiceContext = (
 };
 
 export const createMockEncryptionService = (): IEncryptionService => {
+	const nothingToReport = {
+		activeKeyId: "lighthouse-instance",
+		movedCount: 0,
+		unreadableCount: 0,
+		onActiveKeyCount: 0,
+		onRetiredKeyCount: 0,
+		plaintextCount: 0,
+		secrets: [],
+		byConnection: [],
+	};
+
 	return {
 		getKeyState: vi.fn().mockResolvedValue({
 			custody: "GeneratedForThisInstance",
@@ -80,21 +91,11 @@ export const createMockEncryptionService = (): IEncryptionService => {
 			keyIds: ["lighthouse-instance"],
 			keyStorePath: "/app/data/keys",
 			legacyDefaultPresent: false,
+			secretsUnderPublishedKey: 0,
 		}),
-		rotateKey: vi.fn().mockResolvedValue({
-			activeKeyId: "lighthouse-instance",
-			movedCount: 0,
-			unreadableCount: 0,
-			secrets: [],
-			byConnection: [],
-		}),
-		reEncryptSecrets: vi.fn().mockResolvedValue({
-			activeKeyId: "lighthouse-instance",
-			movedCount: 0,
-			unreadableCount: 0,
-			secrets: [],
-			byConnection: [],
-		}),
+		checkSecrets: vi.fn().mockResolvedValue(nothingToReport),
+		rotateKey: vi.fn().mockResolvedValue(nothingToReport),
+		reEncryptSecrets: vi.fn().mockResolvedValue(nothingToReport),
 	};
 };
 
