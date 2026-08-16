@@ -1,0 +1,248 @@
+{
+  "roadmap": {
+    "project_id": "epic-5775-secret-encryption-key-custody",
+    "slice": "slice-05b-a-way-back-in",
+    "created_at": "2026-08-16",
+    "total_steps": 7,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Ship slice 05b of ADO Epic #5775 (Story #5790): an operator whose encryption key is genuinely gone can start Lighthouse, see exactly which credentials are unreadable, and re-enter them — instead of owning a database nothing can open. Refusing to start when nothing stored can be read is correct; having no way past it is not. The refusal fires during bootstrap, before a port is bound, so the process writes one FATAL line and exits, and on a container with restart: always it does that forever. The blast radius is out of all proportion: the unreadable values may be two API tokens, and the refusal takes teams, forecasts and history down with them. A configuration switch delivered exactly as Authorization:EmergencySystemAdminSubjects is — visible on the startup line and the encryption panel for as long as it is in force — lets that instance start. The check pass already produces the list of Connections and fields to re-enter. And the refusal itself stops asking for a value nobody wrote down on a directory that no longer exists: it leads with removing the key that was just set, names both keys, and stops asserting that nothing is lost as though it knew.",
+    "overview": "Six phases, 7 steps, inside-out: the probe learns to say which keys the stored values name, the refusal is rewritten around that, the switch lands beside the one refusal it lets past, the two surfaces announce it, the re-entry path is proved through a real save, and the last step is documentation and the slice close.",
+    "slice_to_phase": {
+      "slice-05b-a-way-back-in / 1. which keys the stored values name": "phase-01 (1 step)",
+      "slice-05b-a-way-back-in / 2. a refusal that fits the situation": "phase-02 (1 step)",
+      "slice-05b-a-way-back-in / 3. the switch": "phase-03 (1 step)",
+      "slice-05b-a-way-back-in / 4. saying so, for as long as it is on": "phase-04 (2 steps)",
+      "slice-05b-a-way-back-in / 5. typing the credentials back in": "phase-05 (1 step)",
+      "slice-05b-a-way-back-in / 6. documentation and slice close": "phase-06 (1 step)",
+      "_not_in_this_roadmap_": "removing keys from the ring (a later action this slice makes safe, per walkthrough decision V2); working out whether a key is misplaced or destroyed (the application genuinely cannot tell); the panel's wording and which actions it offers (slice 06a, incl. F-27); the Helm chart custody surface (slice 05, Story #5780)."
+    },
+    "phases": [
+      {
+        "id": "01",
+        "name": "Which keys the stored values name",
+        "description": "The refusal has to quote two key ids and the probe already reads every stored value once to answer whether any of them can be read. It reports the ids from that same pass rather than from a second one — a start that reads the secret columns twice gets slow on exactly the instance that is already in trouble.",
+        "steps": [
+          {
+            "id": "01-01",
+            "name": "The probe says what it saw, not only whether it liked it",
+            "description": "RED: extend `StoredSecretReadabilityProbeTests.cs` against the real SQLite database that file already builds. Cases: a database of envelopes naming one key reports that key id; envelopes naming two keys report both, without repeats; a value in the format this version replaced names no key and is not reported as one; an unreadable value whose envelope names a key still reports that name, because that is precisely the id the operator has to be told; a database that cannot be asked reports no ids and the CannotTell answer it already reports; a database holding nothing reports none. GREEN: change `IStoredSecretReadabilityProbe.Look` to return a small record carrying the existing answer plus the key ids seen. Update `EncryptionKeyRingBootstrapper` and the staged probe in `EncryptionKeyRingBootstrapperTests` to the new shape, behaviour unchanged. COMMIT: `refactor(encryption): let the readability probe report the keys it saw`.",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/StoredSecretReadabilityProbeTests.cs",
+            "scenario_name": "Scenario 139 (in part)",
+            "red_to_green_tests": [
+              "Envelopes naming one key report that key id",
+              "Envelopes naming two keys report both, without repeats",
+              "A value in the format this version replaced names no key",
+              "An unreadable envelope still reports the key it names",
+              "A database that cannot be asked reports no ids",
+              "A database holding nothing reports none"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/StoredSecretReadabilityProbeTests.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs"
+            ],
+            "dependencies": [],
+            "criteria": [
+              "The stored values are read once, not twice.",
+              "No behaviour changes in this step — only what the probe hands back."
+            ],
+            "estimated_hours": 0.75,
+            "deliverables": ["StoredSecretReadabilityProbe.cs (result record)", "StoredSecretReadabilityProbeTests.cs (extended)"]
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "name": "A refusal that fits the situation",
+        "description": "Both remedies the refusal offers assume the operator lost a key. The likelier cause, and the one the walkthrough reproduced, is that they added one: a configured key displaces the minted key out of the ring, so the key store is already correct and pointing at it is a no-op, and the key it asks for was generated and kept in a file. The instruction that works was the one missing.",
+        "steps": [
+          {
+            "id": "02-01",
+            "name": "Lead with undo, name both keys, stop promising",
+            "description": "RED: extend `EncryptionKeyRingBootstrapperTests.cs`. Cases: the refusal's first remedy is removing the key that was just set; it names the key the instance started on; it names the key the stored credentials say they were written under; it does not assert that nothing is lost, and does say that nothing has been changed by this start; it names the switch and says plainly what taking it costs; it repeats no key material, asserted the way slice 04b's equivalent is. GREEN: turn `KeyThatReadsNothing.Refusal` from a constant into a sentence built from the active key id and the ids the probe reported, and rewrite it. The reassurance becomes a statement about this start rather than a claim about the credentials. COMMIT: `fix(encryption): tell an operator which keys are involved and what actually fixes it`.",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs",
+            "scenario_name": "Scenarios 138, 139, 140, 141, 142",
+            "red_to_green_tests": [
+              "The first remedy offered is removing the key that was just set",
+              "The refusal names the key the instance started on",
+              "The refusal names the key the stored credentials were written under",
+              "The refusal does not assert that nothing is lost",
+              "The refusal says what has not changed, which is true either way",
+              "The refusal names the switch and what taking it costs",
+              "The refusal repeats no key material"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/StoredSecretReadabilityProbe.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs"
+            ],
+            "dependencies": ["01-01"],
+            "criteria": [
+              "Nothing in the message is a claim the application cannot check.",
+              "A key id is named; no key material is."
+            ],
+            "estimated_hours": 0.75,
+            "deliverables": ["KeyThatReadsNothing (rewritten)", "EncryptionKeyRingBootstrapperTests.cs (extended)"]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "name": "The switch",
+        "description": "Guarding the one method rather than the whole resolution is what keeps every other refusal firing. A switch that let past all of them would be a way to run with no protection at all rather than a way back into a locked room.",
+        "steps": [
+          {
+            "id": "03-01",
+            "name": "Start past this one refusal, and no other",
+            "description": "RED: extend `EncryptionKeyRingBootstrapperTests.cs`. Cases: with the switch set, an instance whose stored secrets are all unreadable resolves a ring and starts; without it, the same instance still refuses with the message from 02-01; with the switch set, an instance that can read what it has resolves exactly the ring it would have resolved anyway; the switch re-encrypts nothing and discards nothing (assert every stored value byte for byte); and one case per other refusal — key material that is not 32 bytes, nowhere durable with nothing stored, a key file that is not there, the published key supplied as the key — each still refusing with the switch set, and none of those messages mentioning it. GREEN: read `Encryption:StartEvenIfNothingStoredCanBeRead` in `Program.EnsureEncryptionKeyRing`, hand it to the bootstrapper, and guard `RefuseWhenNothingStoredCanBeRead` alone. COMMIT: `feat(encryption): let an operator start past a key that is gone, on purpose`.",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs",
+            "scenario_name": "Scenarios 123, 124, 125, 126, 127",
+            "red_to_green_tests": [
+              "With the switch set, an instance nothing can read starts",
+              "Without the switch, it still refuses",
+              "With the switch set, a healthy instance resolves the same ring",
+              "The switch re-encrypts nothing and discards nothing",
+              "Every other refusal still fires with the switch set",
+              "No other refusal mentions the switch"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs"
+            ],
+            "dependencies": ["02-01"],
+            "criteria": [
+              "The guard is on the one method, so a refusal added later is not silently let past.",
+              "The switch is read once and never written back into configuration."
+            ],
+            "estimated_hours": 0.75,
+            "deliverables": ["EncryptionKeyRingBootstrapper.cs (guarded refusal)", "Program.cs (setting read)"]
+          }
+        ]
+      },
+      {
+        "id": "04",
+        "name": "Saying so, for as long as it is on",
+        "description": "The emergency administrator is the precedent, and the visibility is the reason it is the precedent. Two surfaces for two readers: the startup line for whoever watches the container come up, the panel for whoever opens Settings months later — and the panel is the only one a standalone operator will ever see.",
+        "steps": [
+          {
+            "id": "04-01",
+            "name": "The startup line and the state payload both say it",
+            "description": "RED: extend `StartupBannerAuthVisibilityTest.cs` for the line — present with the switch, absent without it, present again on a second build of the lines — and `EncryptionControllerTests.cs` for the payload, including the pinned key-set which must gain exactly one name and no more, and the existing no-key-material assertion. GREEN: add the fact to `StartupBannerFacts` and the line to `StartupBanner.BuildEncryptionCustodyLines`; add the property to `EncryptionStateDto`, fed from the same value `Program.cs` handed the bootstrapper rather than re-read from configuration. COMMIT: `feat(encryption): say on every start and every settings page that the hatch is open`.",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerAuthVisibilityTest.cs",
+            "scenario_name": "Scenarios 128, 129, 130, 131, 132",
+            "red_to_green_tests": [
+              "The startup line says the instance started with credentials it cannot read",
+              "An instance started without the switch has no such line",
+              "The line is written again on a restart",
+              "The state payload says the instance started past the refusal",
+              "The payload's pinned key-set gains exactly one name",
+              "Nothing in the payload is a credential or part of a key"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend/Startup/StartupBanner.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/API/DTO/EncryptionStateDto.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/API/EncryptionController.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerAuthVisibilityTest.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs"
+            ],
+            "dependencies": ["03-01"],
+            "criteria": [
+              "One fact, read once, feeds both surfaces, so they cannot disagree.",
+              "A healthy install is not taught to worry about a hatch it never opened."
+            ],
+            "estimated_hours": 0.75,
+            "deliverables": ["StartupBanner.cs (extended)", "EncryptionStateDto.cs (extended)"]
+          },
+          {
+            "id": "04-02",
+            "name": "The panel says it, and hands over the list",
+            "description": "RED: extend `EncryptionPanel.test.tsx`. Cases: with the flag set the panel shows the notice; without it the notice is absent; the notice is shown alongside the check rather than instead of it, so the operator can get the list of Connections and fields in the same place; and the notice says what to do to close the hatch. GREEN: extend the frontend model for the new field and render the notice in `EncryptionPanel.tsx`. Wording only, no new action — which actions the panel offers is slice 06a's. COMMIT: `feat(encryption): tell an administrator the instance is running past a refusal`.",
+            "test_file": "Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx",
+            "scenario_name": "Scenarios 129, 131, 133",
+            "red_to_green_tests": [
+              "With the flag set, the panel shows the notice",
+              "Without it, the notice is absent",
+              "The notice does not replace the check that produces the list",
+              "The notice says what closes the hatch"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Frontend/src/models/Encryption/EncryptionState.ts",
+              "Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.tsx",
+              "Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx"
+            ],
+            "dependencies": ["04-01"],
+            "criteria": [
+              "No new action is added to the panel — that is slice 06a.",
+              "pnpm test, pnpm build and Biome all clean."
+            ],
+            "estimated_hours": 0.75,
+            "deliverables": ["EncryptionPanel.tsx (notice)", "EncryptionPanel.test.tsx (extended)"]
+          }
+        ]
+      },
+      {
+        "id": "05",
+        "name": "Typing the credentials back in",
+        "description": "This is what stops the hatch opening the door and leaving the room locked. The save-time guard that refuses to overwrite a credential it cannot read is correct and stays — it protects the value nobody retyped. A value an operator has just typed is a different act, and the risk is not the guard but a Connection update that keeps the stored value when the client sends a placeholder, which would make the re-entry a silent no-op.",
+        "steps": [
+          {
+            "id": "05-01",
+            "name": "A credential typed back in lands under the key in force",
+            "description": "RED: write the cases against a real SQLite context and a real save, not against the guard in isolation. Cases: a Connection whose stored credential is an unreadable envelope accepts a new value and the save succeeds; the stored value afterwards is an envelope naming the key in force; a check afterwards no longer lists that field; a Connection with two unreadable credentials where only one is retyped leaves the other byte for byte; and a save that carries no new value for an unreadable field still leaves it alone. GREEN: whatever the tests show is needed on the Connection update path so a supplied value reaches the column. If nothing is needed, the tests stand as the regression net that says so — that is the outcome to hope for and the one that must be proved rather than assumed. COMMIT: `fix(encryption): let an operator replace a credential nothing can read` (or `test(encryption): pin that a credential can be typed back in` if no production change proves necessary).",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretCustodyServiceTests.cs",
+            "scenario_name": "Scenarios 133, 134, 135, 136, 137",
+            "red_to_green_tests": [
+              "A Connection whose credential cannot be read accepts a new value",
+              "The re-entered value is stored under the key in force",
+              "A check afterwards no longer lists that field",
+              "A credential nobody re-entered is left byte for byte",
+              "A save carrying no new value leaves the unreadable field alone"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretCustodyServiceTests.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs"
+            ],
+            "dependencies": ["03-01"],
+            "criteria": [
+              "The guard against overwriting an unreadable credential still holds for values nobody typed.",
+              "The re-entry is proved through a real save, because that is where it would silently fail."
+            ],
+            "estimated_hours": 1.0,
+            "deliverables": ["Connection save path (proved, changed only if needed)", "regression tests"]
+          }
+        ]
+      },
+      {
+        "id": "06",
+        "name": "Documentation and slice close",
+        "description": "The switch is useless to an operator who cannot find it at the moment they need it, which is the moment their instance will not start.",
+        "steps": [
+          {
+            "id": "06-01",
+            "name": "Write down the way back in",
+            "description": "Update `docs/Installation/configuration.md`: what the refusal means, the two situations it cannot tell apart, and the sequence for the one where the key is gone — set the switch, start, open the encryption settings, check the stored secrets, re-enter every credential named, remove the switch, restart. Say plainly what the switch costs and that it is visible while it is on. Record the slice verdict in `slices/slice-05b-a-way-back-in.md` and mark F-16, F-17 and F-26 addressed in `verification/manual-walkthrough.md`. COMMIT: `docs(encryption): write down the way back in after a key is gone`.",
+            "test_file": "n/a",
+            "scenario_name": "n/a — documentation",
+            "red_to_green_tests": [],
+            "files_to_modify": [
+              "docs/Installation/configuration.md",
+              "docs/feature/epic-5775-secret-encryption-key-custody/slices/slice-05b-a-way-back-in.md",
+              "docs/feature/epic-5775-secret-encryption-key-custody/verification/manual-walkthrough.md"
+            ],
+            "dependencies": ["04-02", "05-01"],
+            "criteria": [
+              "The sequence is written as steps an operator can follow while their instance is down.",
+              "No internal reference numbers appear in prose a user reads."
+            ],
+            "estimated_hours": 0.5,
+            "deliverables": ["configuration.md (extended)", "slice verdict recorded"]
+          }
+        ]
+      }
+    ]
+  }
+}

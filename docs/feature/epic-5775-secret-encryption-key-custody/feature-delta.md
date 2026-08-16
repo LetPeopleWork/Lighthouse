@@ -3996,3 +3996,246 @@ enumeration for the count's five value shapes · error-path rationale per `@erro
 cookbook · property-based testing notes for scenarios 114 and 121 · domain-language fact-to-step table.
 
 ---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 05b
+
+- ✓ `slices/slice-05b-a-way-back-in.md` — in full: goal, the defect, the IN/OUT boundary, the constraint
+  to settle while building, and the four acceptance criteria numbered here as AC-5b.1 to AC-5b.4.
+- ✓ `verification/manual-walkthrough.md` — **F-26** (blocking, run D2) in full, plus **F-16** and
+  **F-17** (the refusal's wording, run A2d) which the slice brief pulls into scope, and maintainer
+  decision **[V1]**, which is what shapes the switch. Also **[V2]**, because it says explicitly that V1
+  is what makes a later *Remove unused keys* action safe.
+- ✓ `feature-delta.md` — every DISTILL and DELIVER section slices 01-04b left behind, and slice 04b's
+  *Upstream Issues* item 1, which deferred exactly this slice's subject.
+- ✓ `docs/product/architecture/adr-147`, `adr-148`, `adr-152` — the four states, the read-only end of the
+  ring, the report contract.
+- ✓ Code as it stands after slice 04b: `Program.cs` (`EnsureEncryptionKeyRing`, the startup banner
+  assembly), `Startup/StartupBanner.cs` and `StartupBannerFacts`, `Startup/AuthPostureBanner.cs`,
+  `Models/Auth/AuthorizationConfiguration.cs`, `Models/SystemInfo.cs`, `Models/Authorization/RbacStatus.cs`
+  — the emergency-administrator precedent end to end;
+  `Services/Implementation/Encryption/{EncryptionKeyRingBootstrapper,StoredSecretReadabilityProbe,SecretStateClassifier}.cs`,
+  `Data/LighthouseAppContext.cs` (`EncryptSecrets`, `NeedsProtecting`),
+  `Services/Implementation/CryptoService.cs`, `API/DTO/EncryptionStateDto.cs`,
+  `Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.tsx`.
+- ✓ `acceptance/milestone-{13..18}-*.feature` — for the vocabulary this slice continues.
+- `environments.yaml` and `docs/product/kpi-contracts.yaml` — inherited unchanged.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 05b
+
+Run across DISCUSS, DESIGN, DEVOPS and everything slices 01-04b left behind. **0 contradictions —
+reconciliation passed.** Three things that look like contradictions and are not:
+
+- **The refusal this slice lets an operator past is the one slice 02 introduced deliberately.** It is
+  not withdrawn. Without the switch the behaviour is byte for byte what it was — that is AC-5b.4, and
+  scenario 124 is the test that says so. What changes is that the refusal stops being a dead end.
+- **Slice 04b refuses the published key as the active key; this slice refuses fewer things.** Different
+  refusals. Scenario 127 pins that the switch lets past exactly one of them and leaves every other
+  refusal — unusable key material, nowhere to keep a key with nothing stored, a key file that is not
+  there, the published key supplied as the key — untouched. A switch that let past all of them would be
+  a way to run with no protection at all rather than a way back into a locked room.
+- **The save guard slice 03 added stops a save overwriting a credential it cannot read; this slice
+  needs a save to land on exactly such a credential.** Not the same act. The guard exists because
+  *saving a Connection hands back every secret it holds, including the ones nobody retyped* — it
+  protects the value nobody touched. A value an operator has just typed arrives as plaintext, and
+  plaintext has always been encrypted. The slice brief calls this out as the constraint to settle while
+  building, and scenarios 135 and 136 are the pair that settle it.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 05b
+
+- **DESIGN driving ports consumed by this slice**: `GET /api/{v1,latest}/encryption`, which gains one
+  field so the panel can say the instance started past the refusal; `GET /api/{v1,latest}/encryption/secrets`,
+  slice 04's, reused unchanged for the to-do list; and the existing Connection update route, which is
+  where a re-entered credential arrives. The refusal itself has no HTTP surface: an instance raising it
+  never finishes starting.
+- **Driven ports in scope**: the raw-connection readability probe, which must now report *which* keys
+  the stored values name as well as whether any of them can be read; and secret persistence through
+  `LighthouseAppContext`, whose save-time guard is what a re-entered credential passes through.
+- **The setting.** Delivered exactly as `Authorization:EmergencySystemAdminSubjects` is — command line
+  and environment variable, no UI, no API to set it. Named
+  **`Encryption:StartEvenIfNothingStoredCanBeRead`** (`Encryption__StartEvenIfNothingStoredCanBeRead`),
+  which names the refusal it lets past rather than describing a mood. Boolean; absent means false.
+- **No EF migration, no schema change.** The switch is configuration, the list is a read, and the
+  re-entry writes a column that already exists.
+- **KPI instruments**: none new. KPI-5 is about an upgrade, and this slice is about a disaster.
+- **Substrate owed before the slice closes**: the **D2** walkthrough run repeated — database on a named
+  volume, key store on the writable layer, `docker rm` and recreate — which must now start with the
+  switch, list the Connections to fix, and accept the credentials typed back in. And **A2d**, whose
+  refusal must now lead with removing the key that was just set and name both key ids.
+- **Documentation ships with this slice**: `docs/Installation/configuration.md` gains the switch, what
+  it costs, and the sequence for getting back to a working instance.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 05b
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 123 | With the switch set, an instance nothing can read starts | milestone-19 | `@error @driving_port @us-05b` |
+| 124 | Without the switch, it still refuses | milestone-19 | `@edge @us-05b` |
+| 125 | The switch changes nothing on an instance that is fine | milestone-19 | `@edge @us-05b` |
+| 126 | The switch is not a repair | milestone-19 | `@error @us-05b` |
+| 127 | The switch lets past one refusal and no other | milestone-19 | `@property @error @us-05b` |
+| 128 | The startup line says the instance started past a refusal | milestone-20 | `@driving_adapter @us-05b` |
+| 129 | The encryption state says so too | milestone-20 | `@driving_port @us-05b` |
+| 130 | An instance that never needed it says nothing about it | milestone-20 | `@edge @us-05b` |
+| 131 | It is said on every start, not only the first | milestone-20 | `@edge @driving_adapter @us-05b` |
+| 132 | Saying so costs no credential | milestone-20 | `@error @us-05b` |
+| 133 | The check names every credential that has to be re-entered | milestone-21 | `@driving_port @us-05b` |
+| 134 | Re-entering a credential works | milestone-21 | `@real-io @us-05b` |
+| 135 | What was re-entered is stored under the key in force | milestone-21 | `@real-io @us-05b` |
+| 136 | A credential nobody re-entered is left exactly as it was | milestone-21 | `@error @us-05b` |
+| 137 | Once everything has been re-entered, the switch is not needed any more | milestone-21 | `@edge @us-05b` |
+| 138 | The refusal leads with the remedy an operator can carry out unaided | milestone-22 | `@error @us-05b` |
+| 139 | It names the key it started on and the key the credentials were written under | milestone-22 | `@error @us-05b` |
+| 140 | It stops asserting that nothing is lost as though it knew | milestone-22 | `@error @us-05b` |
+| 141 | It names the way past itself | milestone-22 | `@error @us-05b` |
+| 142 | Naming the keys still repeats no key material | milestone-22 | `@property @error @us-05b` |
+
+Every scenario also carries `@slice-05b`. Numbering continues from slice 04b's 107-122. **20 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 15 of 20 (75%)**, against the ≥40% target. The five that are not
+are the two surfaces that have to say something (128, 129), the check that has to list something (133),
+and the two halves of a credential being typed back in (134, 135) — which is the whole point of the
+slice and the half most likely to be quietly broken by the save guard.
+
+**AC traceability**: AC-5b.1 (with the switch, an instance whose every stored secret is unreadable
+starts and serves) → 123, 125, 126, 127 · AC-5b.2 (while set, both the panel and the startup line say
+so unprompted) → 128, 129, 130, 131, 132 · AC-5b.3 (re-entering a credential succeeds and is written
+under the active key) → 133, 134, 135, 136, 137 · AC-5b.4 (without the switch, unchanged) → 124, 127.
+Carried by the slice's IN-scope bullet on wording rather than by a numbered AC: 138, 139, 140, 141, 142.
+
+**ADR Earned Trust rows covered**: ADR-147 — the four states are what supplies the to-do list, and the
+unreadable one is the only one that asks anybody to do anything (133). ADR-152 — the state payload and
+the check stay under the System Administrator guard and carry no key material (132, 142).
+
+**Rows deliberately not covered here**: removing keys from the ring is a later action this slice makes
+safe, not part of it. Working out whether a key is misplaced or destroyed is not attempted — the
+application genuinely cannot tell, and scenario 140 is what stops it pretending otherwise.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 05b
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from slices
+01-04b. They are translated in DELIVER into NUnit and Vitest.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-{19,20,21,22}-*.feature` | slice 04b's `milestone-{17,18}` in the same directory |
+| The switch, and that it lets past one refusal and no other (123-127) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs` (extend) | the same file already stages every other refusal |
+| Which keys the stored values name (139) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/StoredSecretReadabilityProbeTests.cs` (extend, real SQLite over a raw connection) | the same file, created in slice 02 |
+| The refusal's wording (138, 140, 141, 142) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/EncryptionKeyRingBootstrapperTests.cs` (extend) | the same file already asserts sentence-by-sentence on `NoDurableKeyStore` and on slice 04b's refusal |
+| The startup line (128, 130, 131) | `Lighthouse.Backend.Tests/StartupBannerAuthVisibilityTest.cs` (extend) or a sibling | that file exists for exactly this question about the emergency administrator |
+| The state payload (129, 130, 132) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) | the same file pins the whole payload key-set, so a new field is a deliberate change there |
+| The to-do list (133) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretCustodyServiceTests.cs` (extend, real SQLite) | slice 04 built the list in that file |
+| A credential typed back in (134, 135, 136, 137) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/…` and the Connection save tests, against real SQLite | the save-time guard lives in `LighthouseAppContext`, so this has to go through a real save |
+| The panel saying so (129, 131) | `Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx` | slice 04's tests in the same file |
+| The D2 and A2d walkthrough runs repeated | Manual dogfood, recorded in the slice verdict | slice 04b owes B2b and C1 the same way |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| The switch is never readable from anything that enumerates configuration back out | The existing `Resolution_HasNoWayToPutAnythingItResolvedBackIntoConfiguration` test covers the resolution types; the switch is read once at the same point and not stored |
+| The refusal still repeats no key material | Scenario 142, asserted the way slice 04b's 114 is |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 05b
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| Application start (the composition root) | 123-127, 138-142 — through `EncryptionKeyRingBootstrapper.Resolve()`, which is what `Program.cs` calls |
+| The startup banner lines | 128, 130, 131 — through `StartupBanner.BuildInfoLines`, the same function `Program.cs` hands its facts to |
+| `GET /api/{v1,latest}/encryption` | 129, 130, 132 — over HTTP |
+| `GET /api/{v1,latest}/encryption/secrets` | 133 — over HTTP, under the System Administrator guard |
+| The Connection update route | 134, 135, 136 — a credential typed back in has to survive the save-time guard, which only a real save exercises |
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 05b
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| The raw-connection readability probe | YES | 139 — real SQLite through a raw connection, the way the probe is used at bootstrap |
+| Secret persistence (`LighthouseAppContext`) | YES | 134, 135, 136 — a real save through the real save-time guard |
+| `ConfiguredKeyRingSource` / `GeneratedKeyRingStore` | YES | 123-127 — unchanged from slices 02-04b |
+| The frontend service adapter | YES | 129, 131 — the panel against the new field |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 05b
+
+`environments.yaml` is unchanged. The switch is decided before any database is opened and is
+provider-agnostic. The readability probe and the save-time guard are exercised on real SQLite.
+
+The environment this slice owes evidence in is the one that produced the finding: **D2**, a container
+with the database on a named volume and the key store on the writable layer, recreated. That is the
+only place the failure is real rather than staged, and it is where the sequence — start with the
+switch, read the list, type the credentials back in, remove the switch — has to be walked end to end.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 05b
+
+Written here rather than fixed silently.
+
+1. **The switch has no expiry and nothing nags about it beyond saying it is on.** That is deliberate and
+   matches the emergency administrator, which also has none. Recorded because "visible" and "temporary"
+   are different properties and only the first is delivered here.
+2. **Slice 04b's *Upstream Issues* item 1 — an instance that already wrote secrets under published
+   material wearing a `k-cfg-` id cannot start — is closed by this slice**, but only as a side effect:
+   the switch lets it start, and the check then names every credential to re-enter. The narrower remedy
+   (put the published value back as a retired entry behind a key of your own) is better where it
+   applies, and belongs in the documentation this slice ships rather than in code.
+3. **F-27 (a move offered on an instance with no key of its own) and the panel's wording remain slice
+   06a's.** This slice adds one sentence to that panel and does not touch the rest.
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 05b
+
+**To `nw-software-crafter` (DELIVER)**: `deliver/slice-05b/roadmap.json` — six phases, seven steps,
+inside-out. The order matters in two places: the probe learns to report which keys the stored values
+name before the refusal is rewritten, because the new wording quotes them; and the switch lands before
+the surfaces that announce it, because there is nothing to announce until it exists.
+
+Four things this wave learned that DELIVER should not rediscover:
+
+- **The switch belongs beside `RefuseWhenNothingStoredCanBeRead`, not in front of `Resolve()`.** Every
+  other refusal on that path has to keep firing, and the way to guarantee that is to guard the one
+  method rather than the whole resolution. Scenario 127 is the test that would catch the mistake.
+- **`NeedsProtecting` already does the right thing for a re-entered credential** — a value typed by an
+  operator arrives as plaintext and plaintext has always been encrypted. What has to be proved is that
+  the *save path* reaches it: the risk is a Connection update that keeps the stored value when the
+  client sends a placeholder, which would make the re-entry a no-op with no error. Test through a real
+  save, not through the guard.
+- **The readability probe currently answers with an enum**, and the new wording needs two key ids as
+  well. Return a small record rather than adding an out-parameter or a second query — the probe already
+  reads every stored value once, and reading them twice at bootstrap is how a start gets slow on
+  exactly the instance that is already in trouble.
+- **The banner is assembled from `StartupBannerFacts`**, a record `Program.cs` fills in one place. Add
+  the fact there rather than reaching for configuration inside the banner, or the line and the panel
+  will eventually disagree about whether the switch is on.
+
+**To the maintainer**, one thing chosen here rather than asked: the setting is named
+`Encryption:StartEvenIfNothingStoredCanBeRead`. It is long on purpose — an operator pasting it into a
+compose file should not be able to mistake it for a repair.
+
+---
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered · fixture design discussion for staging an instance nothing can read · full edge-case
+enumeration for the switch against every other refusal · error-path rationale per `@error` scenario ·
+tagging cookbook · property-based testing notes for scenarios 127 and 142 · domain-language
+fact-to-step table.
+
+---
