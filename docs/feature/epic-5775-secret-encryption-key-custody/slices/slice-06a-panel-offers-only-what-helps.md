@@ -48,6 +48,44 @@ sentence twice and reconciling them later.
 - **A shorter startup custody line.** Take the length out of the custody phrase, not the key id: the id
   is the most useful thing there when diagnosing a refusal later.
 
+## Decisions taken before DISTILL (maintainer, 2026-08-16)
+
+Four calls that are taste rather than derivation, so they were asked rather than guessed.
+
+**The startup custody line drops both the phrase and the key id.** One word for custody, then the path:
+
+```
+🔑  Encryption    : instance · /storage/…/b2/keys
+🔑  Encryption    : configured · /app/keys
+🔑  Encryption    : mounted secret · /app/keys
+🔑  Encryption    : published key · /app/keys
+```
+
+This reverses F-17's recommendation to keep the id on that line. It is safe to reverse now: slice 05b
+made the refusal itself name both the key the instance started on and the key the stored credentials
+were written under, so the id is available at the moment it is actually needed rather than on every
+healthy start.
+
+**The published-key warning states the situation, then the action, then what it does not cost.** The
+reason the published key is bad goes behind the docs link:
+
+> 1 stored credential is still encrypted with the key published with Lighthouse.
+>
+> Move it onto this instance's own key — nothing has to be re-entered. Why this matters ↗
+
+**The panel header is one line and lets the docs teach.**
+
+> How the credentials stored in your Connections are encrypted at rest. Read more ↗
+
+**The primary button is whatever this instance's open problem is** — never Rotate by default:
+
+| State | Button row |
+|---|---|
+| Secrets still on the published key | **Move stored secrets** · Rotate key · Check secrets |
+| Healthy, own key, nothing to move | Rotate key · Check secrets — none emphasised |
+| Operator-owned custody, cannot mint | **Move stored secrets** · Check secrets — no Rotate |
+| The active key *is* the published key | Check secrets — no Move, because there is nothing to move onto |
+
 ## OUT of scope
 
 - Removing keys from the ring — hiding only. Explicit removal is a later action, and depends on 05b.
