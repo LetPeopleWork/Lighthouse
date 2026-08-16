@@ -144,6 +144,29 @@ namespace Lighthouse.Backend.Tests
         }
 
         /// <summary>
+        /// The guard above protects the value nobody touched. It must not also stand between an operator
+        /// and a value they have just typed, because that is the only way back for an instance started
+        /// past the refusal — the hatch would open the door and leave the room locked.
+        /// </summary>
+        [Test]
+        public async Task SecretOptionNamingAKeyThisInstanceDoesNotHold_WhoseValueWasReEntered_LandsOnTheKeyInForce()
+        {
+            var connectionId = await SeedConnectionWithSecret(Credential, CryptoUnder(StrangerKey));
+
+            await ResaveSecretOption(connectionId, ReEnteredCredential);
+
+            var read = CryptoUnder(ActiveKey, RetiredKey).Read(await StoredSecret(connectionId));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(read.State, Is.EqualTo(SecretState.Envelope));
+                Assert.That(read.KeyId, Is.EqualTo(ActiveKey.Id));
+                Assert.That(read.PlainText, Is.EqualTo(ReEnteredCredential),
+                    "an operator whose key is gone gets their instance back by typing the credentials in again, and nothing else");
+            }
+        }
+
+        /// <summary>
         /// The other half of the same rule, and the reason it is stated as "an envelope naming a key we do
         /// not hold" rather than "anything unreadable". A credential somebody typed in can happen to have
         /// the shape of the format this version replaced, and refusing to encrypt that would store a live
