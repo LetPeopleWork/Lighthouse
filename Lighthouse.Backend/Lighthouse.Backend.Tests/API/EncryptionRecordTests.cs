@@ -102,7 +102,43 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        private EncryptionController ControllerOver(ISecretCustodyService custodyService)
+        /// <summary>
+        /// Whoever rewrote every credential in the installation has to be nameable afterwards, and the four
+        /// ways a request can carry an identity are not interchangeable: a token from one provider says
+        /// `sub`, another says `oid`, a Windows-authenticated request says neither, and an unauthenticated
+        /// one - which this route refuses, but which the record must survive - says nothing at all.
+        /// </summary>
+        [TestCase("sub", "the-subject", ExpectedResult = "the-subject")]
+        [TestCase("oid", "the-object-id", ExpectedResult = "the-object-id")]
+        [TestCase("nothing-recognised", "ignored", ExpectedResult = "unknown")]
+        public async Task<string> TheRecord_NamesWhoeverTheRequestCouldBeIdentifiedBy(string claim, string value)
+        {
+            var controller = ControllerOver(AReportOf(moved: 1, unreadable: 0), IdentifiedBy(claim, value));
+
+            await controller.RotateKey(CancellationToken.None);
+
+            var actor = EverythingHandedToTheLoggingPipeline()
+                .Single(written => written.StartsWith("Actor=", StringComparison.Ordinal));
+
+            return actor["Actor=".Length..];
+        }
+
+        [Test]
+        public async Task TheRecord_FallsBackToTheSignedInName_WhenNeitherSubjectNorObjectIdIsPresent()
+        {
+            var named = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, "CONTOSO\\administrator")], "test"));
+
+            await ControllerOver(AReportOf(moved: 1, unreadable: 0), named).RotateKey(CancellationToken.None);
+
+            Assert.That(EverythingHandedToTheLoggingPipeline(), Has.One.Contains("Actor=CONTOSO\\administrator"));
+        }
+
+        private static ClaimsPrincipal IdentifiedBy(string claim, string value)
+        {
+            return new ClaimsPrincipal(new ClaimsIdentity([new Claim(claim, value)], "test"));
+        }
+
+        private EncryptionController ControllerOver(ISecretCustodyService custodyService, ClaimsPrincipal? asWhom = null)
         {
             var configuration = new ConfigurationBuilder().AddInMemoryCollection([]).Build();
 
@@ -114,13 +150,15 @@ namespace Lighthouse.Backend.Tests.API
                 configuration,
                 environment.Object,
                 custodyService,
+                custodyService,
+                new NothingIsUnderThePublishedKey(),
                 logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
                     HttpContext = new DefaultHttpContext
                     {
-                        User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", Actor)], "test")),
+                        User = asWhom ?? new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", Actor)], "test")),
                     },
                 },
             };
@@ -183,6 +221,11 @@ namespace Lighthouse.Backend.Tests.API
 
             public Task<SecretReadabilityReport> RotateAsync(CancellationToken cancellationToken = default) =>
                 throw new MintingNotPermittedException(KeyCustody.SuppliedByConfiguration);
+        }
+
+        private sealed class NothingIsUnderThePublishedKey : IPublishedKeySecretCount
+        {
+            public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
         }
     }
 }

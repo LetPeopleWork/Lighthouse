@@ -44,6 +44,13 @@ namespace Lighthouse.Backend.API
 
         private readonly ISecretCustodyService custodyService;
 
+        // The check is handed a port with no method that writes, so it cannot move a secret even by
+        // mistake. That guarantee is the shape of what this controller holds rather than something a
+        // reviewer has to keep noticing, which is why it is a second dependency onto the same object.
+        private readonly ISecretCustodyReader secretReader;
+
+        private readonly IPublishedKeySecretCount publishedKeySecrets;
+
         private readonly ILogger<EncryptionController> logger;
 
         public EncryptionController(
@@ -51,20 +58,37 @@ namespace Lighthouse.Backend.API
             IConfiguration configuration,
             IWebHostEnvironment environment,
             ISecretCustodyService custodyService,
+            ISecretCustodyReader secretReader,
+            IPublishedKeySecretCount publishedKeySecrets,
             ILogger<EncryptionController> logger)
         {
             this.keyRingHolder = keyRingHolder ?? throw new ArgumentNullException(nameof(keyRingHolder));
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
             this.custodyService = custodyService ?? throw new ArgumentNullException(nameof(custodyService));
+            this.secretReader = secretReader ?? throw new ArgumentNullException(nameof(secretReader));
+            this.publishedKeySecrets = publishedKeySecrets ?? throw new ArgumentNullException(nameof(publishedKeySecrets));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpGet]
         [ProducesResponseType<EncryptionStateDto>(StatusCodes.Status200OK)]
-        public ActionResult<EncryptionStateDto> GetEncryptionState()
+        public async Task<ActionResult<EncryptionStateDto>> GetEncryptionState(CancellationToken cancellationToken)
         {
-            return Ok(new EncryptionStateDto(keyRingHolder.Current, WhereTheKeyIsKept().Directory));
+            return Ok(new EncryptionStateDto(
+                keyRingHolder.Current,
+                WhereTheKeyIsKept().Directory,
+                await publishedKeySecrets.CountAsync(cancellationToken)));
+        }
+
+        // Nothing is recorded about a check, and that is deliberate: nothing changed, and a running record
+        // of who read which Connections hold unreadable credentials is the one thing in this feature that
+        // would accumulate somewhere nobody is guarding.
+        [HttpGet("secrets")]
+        [ProducesResponseType<SecretReadabilityReportDto>(StatusCodes.Status200OK)]
+        public async Task<ActionResult<SecretReadabilityReportDto>> CheckSecrets(CancellationToken cancellationToken)
+        {
+            return Ok(new SecretReadabilityReportDto(await secretReader.InspectAsync(cancellationToken)));
         }
 
         // The refusal is part of the contract rather than a convention of the screen. A rotation started

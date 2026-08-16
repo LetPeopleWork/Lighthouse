@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
     {
         private const string ActiveKeyId = "k-2026-08-16-01";
 
+        private const string RetiredKeyId = "k-2025-11-02-01";
+
         private const int ContosoId = 7;
 
         private const int FabrikamId = 9;
@@ -116,8 +118,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(report.Secrets, Is.Empty);
                 Assert.That(report.MovedCount, Is.Zero);
                 Assert.That(report.UnreadableCount, Is.Zero);
+                Assert.That(report.OnActiveKeyCount, Is.Zero);
+                Assert.That(report.OnRetiredKeyCount, Is.Zero);
+                Assert.That(report.PlaintextCount, Is.Zero);
                 Assert.That(report.ByConnection, Is.Empty);
             }
+        }
+
+        /// <summary>
+        /// A read-only check does nothing, so what a pass did is not a question it can answer. What each
+        /// stored secret IS, is - and the four states it can be in are kept apart because they send an
+        /// operator to four different places.
+        /// </summary>
+        [Test]
+        public void TheFourStates_SayWhatEachSecretIs_RatherThanWhatWasDoneToIt()
+        {
+            var report = new SecretReadabilityReport(ActiveKeyId,
+            [
+                OnKey(ActiveKeyId, SecretState.Envelope),
+                OnKey(ActiveKeyId, SecretState.Envelope),
+                OnKey(RetiredKeyId, SecretState.Envelope),
+                OnKey(RetiredKeyId, SecretState.LegacyCbc),
+                OnKey(null, SecretState.LegacyPlaintext),
+                OnKey(RetiredKeyId, SecretState.Unreadable),
+            ]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.OnActiveKeyCount, Is.EqualTo(2));
+                Assert.That(report.OnRetiredKeyCount, Is.EqualTo(2),
+                    "a value in the format this version replaced is still readable, and which key reads it is the answer an operator wants");
+                Assert.That(report.PlaintextCount, Is.EqualTo(1));
+                Assert.That(report.UnreadableCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void AnUnreadableSecret_IsCountedAsUnreadable_AndAsNothingElse()
+        {
+            var report = new SecretReadabilityReport(ActiveKeyId,
+            [
+                OnKey(ActiveKeyId, SecretState.Unreadable),
+            ]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.UnreadableCount, Is.EqualTo(1));
+                Assert.That(report.OnActiveKeyCount, Is.Zero,
+                    "an envelope naming the active key that nobody can open is not a secret on the active key - it is a secret nobody has");
+                Assert.That(report.OnRetiredKeyCount, Is.Zero);
+                Assert.That(report.PlaintextCount, Is.Zero);
+            }
+        }
+
+        [TestCase(0, 0, 0, 0)]
+        [TestCase(3, 0, 0, 0)]
+        [TestCase(1, 2, 3, 4)]
+        [TestCase(0, 0, 5, 1)]
+        public void TheFourCounts_AddUpToTheListTheyWereCountedFrom(
+            int onActive, int onRetired, int plaintext, int unreadable)
+        {
+            var secrets = Enumerable.Repeat(OnKey(ActiveKeyId, SecretState.Envelope), onActive)
+                .Concat(Enumerable.Repeat(OnKey(RetiredKeyId, SecretState.LegacyCbc), onRetired))
+                .Concat(Enumerable.Repeat(OnKey(null, SecretState.LegacyPlaintext), plaintext))
+                .Concat(Enumerable.Repeat(OnKey(RetiredKeyId, SecretState.Unreadable), unreadable));
+
+            var report = new SecretReadabilityReport(ActiveKeyId, secrets);
+
+            Assert.That(
+                report.OnActiveKeyCount + report.OnRetiredKeyCount + report.PlaintextCount + report.UnreadableCount,
+                Is.EqualTo(report.Secrets.Count),
+                "every secret is in exactly one of the four states; a total that does not add up means one is counted twice or not at all");
         }
 
         /// <summary>
@@ -158,6 +229,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(() => new StoredSecretDto(null!), Throws.ArgumentNullException);
                 Assert.That(() => new ConnectionSecretSummaryDto(null!), Throws.ArgumentNullException);
                 Assert.That(() => new SecretReadabilityReportDto(new SecretReadabilityReport(ActiveKeyId, [secret])), Throws.Nothing);
+                Assert.That(() => new EncryptionStateDto(null!, "/app/data/keys", 0), Throws.ArgumentNullException,
+                    "a payload describing a ring it was not given describes nothing");
             }
         }
 
@@ -168,7 +241,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             SecretMoveOutcome outcome,
             SecretState state = SecretState.Envelope)
         {
-            return new StoredSecretRecord(connectionId, connectionName, field, "k-2025-11-02-01", state, outcome);
+            return new StoredSecretRecord(connectionId, connectionName, field, RetiredKeyId, state, outcome);
+        }
+
+        // What a read-only check produces: the outcome is not a choice, it follows from the state, which is
+        // the whole point of a pass that does nothing.
+        private static StoredSecretRecord OnKey(string? keyId, SecretState state)
+        {
+            var outcome = state switch
+            {
+                SecretState.Unreadable => SecretMoveOutcome.CouldNotBeRead,
+                SecretState.LegacyPlaintext => SecretMoveOutcome.NotEncrypted,
+                _ => SecretMoveOutcome.Unmoved,
+            };
+
+            return new StoredSecretRecord(ContosoId, Contoso, "PersonalAccessToken", keyId, state, outcome);
         }
     }
 }

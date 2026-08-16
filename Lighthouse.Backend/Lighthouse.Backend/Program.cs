@@ -493,6 +493,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<OneSecretPassAtATime>();
             builder.Services.AddScoped<ISecretCustodyService, SecretCustodyService>();
             builder.Services.AddScoped<ISecretCustodyReader>(services => services.GetRequiredService<ISecretCustodyService>());
+            builder.Services.AddScoped<IPublishedKeySecretCount, PublishedKeySecretCount>();
         }
 
         // Asked for lazily, and only on the one path that has nowhere durable to keep a key: every other

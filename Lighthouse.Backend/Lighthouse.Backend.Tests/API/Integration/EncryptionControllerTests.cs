@@ -1,6 +1,8 @@
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -70,6 +72,38 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static readonly string[] ExpectedOwnKeyIds = [MintedKeyId, OlderKeyId];
 
+        private const string CheckedConnection = "Contoso Board";
+
+        private const string OnTheKeyInForce = "PersonalAccessToken";
+
+        private const string OnThePublishedKey = "ClientSecret";
+
+        private const string NobodyCanRead = "ApiToken";
+
+        private const string InTheOldFormat = "LegacyToken";
+
+        private static readonly string[] EveryCredentialSeeded =
+        [
+            "pat-on-the-key-in-force",
+            "secret-on-the-published-key",
+            "token-nobody-can-read",
+            "token-in-the-old-format",
+        ];
+
+        // Pinned rather than banned by substring. The payload used to carry nothing about stored secrets at
+        // all; it now carries exactly one count, and pinning the whole set is what makes a second one an
+        // explicit decision rather than something that arrives unnoticed.
+        private static readonly string[] EverythingTheKeyStatePayloadCarries =
+        [
+            "custody",
+            "canMint",
+            "activeKeyId",
+            "keyIds",
+            "keyStorePath",
+            "legacyDefaultPresent",
+            "secretsUnderPublishedKey",
+        ];
+
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
         private WebApplicationFactory<Program> factory = null!;
@@ -84,6 +118,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private string rotatableKeyStore = null!;
 
+        private TestWebApplicationFactory<Program> checkableRootFactory = null!;
+
+        private WebApplicationFactory<Program> checkableFactory = null!;
+
+        private EncryptionKey publishedKey = null!;
+
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
@@ -97,10 +137,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rotatableRootFactory = new TestWebApplicationFactory<Program>();
             rotatableFactory = AHostThatCanMakeItsOwnKey(rotatableRootFactory, rotatableKeyStore);
 
-            // Migrations are skipped in the test environment, and moving stored secrets is the first thing
-            // on this controller that reads the tables holding them.
+            var checkableRing = ARingThisInstanceMadeForItself().WithLegacyDefault();
+            checkableRing.TryGet(LegacyDefaultEncryptionKey.Id, out var published);
+            publishedKey = published!;
+
+            checkableRootFactory = new TestWebApplicationFactory<Program>();
+            checkableFactory = AHostRunningOn(
+                checkableRootFactory, checkableRing, Directory.CreateTempSubdirectory("EncryptionControllerCheck_").FullName);
+
+            // Migrations are skipped in the test environment, and every route on this controller now reads
+            // the tables holding stored secrets - the key state included, because it counts how many are
+            // still on the published key.
             WithSecretsToWalk(factory);
+            WithSecretsToWalk(ownKeyFactory);
             WithSecretsToWalk(rotatableFactory);
+            WithSecretsToWalk(checkableFactory);
+
+            SeedOneOfEachStateOn(checkableFactory, checkableRing);
         }
 
         private static void WithSecretsToWalk(WebApplicationFactory<Program> host)
@@ -112,6 +165,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
+            checkableFactory.Dispose();
+            checkableRootFactory.Dispose();
             rotatableFactory.Dispose();
             rotatableRootFactory.Dispose();
             ownKeyFactory.Dispose();
@@ -194,9 +249,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     "an upgraded instance keeps the published key behind its own so that what it already stored stays readable");
                 Assert.That(ownKey.Bool("legacyDefaultPresent"), Is.False,
                     "this ring does not hold the published key, and the flag is a statement about the ring");
-                Assert.That(payload.PropertyNames, Has.None.Matches<string>(name => name.Contains("ecret", StringComparison.OrdinalIgnoreCase)),
-                    "how many stored credentials are still on the old key is a different question with a different answer; "
-                    + "answering it here would make an operator read a count of keys as a count of secrets");
+                Assert.That(payload.PropertyNames, Is.EquivalentTo(EverythingTheKeyStatePayloadCarries),
+                    "how many stored credentials are still on the published key is a different question from whether "
+                    + "the key is held, and the two travel as separate properties so that an operator cannot read a "
+                    + $"count of keys as a count of secrets; response was: {payload.Raw}");
             }
         }
 
@@ -350,6 +406,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Conflict), body);
+                Assert.That(body, Does.Contain("cannot make a new encryption key"),
+                    "a refusal that does not say what was refused reads as an outage");
                 Assert.That(body, Does.Contain("belongs to"),
                     "an administrator turned down without being told who owns the key has nothing to act on");
                 Assert.That(IdsOn(RingOf(factory)), Is.EqualTo(before).AsCollection);
@@ -449,6 +507,131 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task ASystemAdministrator_IsToldWhatEveryStoredSecretIsOn_AndWhatOwnsIt()
+        {
+            using var client = checkableFactory.CreateClient().AsSystemAdmin();
+
+            using var response = await client.GetAsync(LatestRoute + "/secrets");
+            var payload = await ReadJsonAsync(response);
+
+            var secrets = payload.Objects("secrets");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), payload.Raw);
+                Assert.That(secrets, Has.Count.EqualTo(4), payload.Raw);
+                Assert.That(secrets.Select(secret => secret.GetProperty("connectionName").GetString()),
+                    Has.All.EqualTo(CheckedConnection));
+                Assert.That(secrets.Select(secret => secret.GetProperty("field").GetString()),
+                    Is.EquivalentTo(new[] { OnTheKeyInForce, OnThePublishedKey, NobodyCanRead, InTheOldFormat }),
+                    "a value that is not a secret is not a stored secret, so it is not something to check");
+                Assert.That(payload.Int("onActiveKeyCount"), Is.EqualTo(1));
+                Assert.That(payload.Int("onRetiredKeyCount"), Is.EqualTo(2),
+                    "a value in the format this version replaced is still readable, and it is on an earlier key rather than broken");
+                Assert.That(payload.Int("unreadableCount"), Is.EqualTo(1));
+                Assert.That(payload.Int("movedCount"), Is.Zero, "a check moves nothing");
+                Assert.That(
+                    secrets.Single(secret => secret.GetProperty("field").GetString() == InTheOldFormat)
+                        .GetProperty("state").GetString(),
+                    Is.EqualTo(nameof(SecretState.LegacyCbc)));
+            }
+        }
+
+        [Test]
+        public async Task TheCheck_NamesTheConnectionAndFieldOfAnythingNobodyCanRead_AndCarriesNoCredential()
+        {
+            using var client = checkableFactory.CreateClient().AsSystemAdmin();
+
+            using var response = await client.GetAsync(LatestRoute + "/secrets");
+            var payload = await ReadJsonAsync(response);
+
+            var unreadable = payload.Objects("secrets")
+                .Single(secret => secret.GetProperty("state").GetString() == nameof(SecretState.Unreadable));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(unreadable.GetProperty("connectionName").GetString(), Is.EqualTo(CheckedConnection));
+                Assert.That(unreadable.GetProperty("field").GetString(), Is.EqualTo(NobodyCanRead));
+
+                foreach (var credential in EveryCredentialSeeded)
+                {
+                    Assert.That(payload.Raw, Does.Not.Contain(credential),
+                        "the report travels to a browser; a decrypted credential in it moves every secret somewhere nobody is guarding");
+                }
+
+                foreach (var stored in StoredValuesOn(checkableFactory))
+                {
+                    Assert.That(payload.Raw, Does.Not.Contain(stored), "a stored value is in the report");
+                }
+
+                AssertNoMaterialOf(RingOf(checkableFactory), payload.Raw);
+            }
+        }
+
+        [Test]
+        public async Task TheCheck_AnswersNobodyWhoIsNotASystemAdministrator()
+        {
+            using var viewerClient = checkableFactory.CreateClient().AsViewer();
+
+            using var response = await viewerClient.GetAsync(LatestRoute + "/secrets");
+            var refusal = (await response.Content.ReadAsStringAsync()).ToLowerInvariant();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), refusal);
+
+                foreach (var word in WordsThatWouldNameTheKeyOrItsCustody)
+                {
+                    Assert.That(refusal, Does.Not.Contain(word), $"the refusal names '{word}'");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The number an operator who has just upgraded needs, and it is on the state payload rather than
+        /// behind the check because somebody who knew to press the check did not need telling. It is
+        /// counted without decrypting anything, so the settings page is not slowest for exactly the
+        /// instance that most needs to see it.
+        /// </summary>
+        [Test]
+        public async Task ThePayload_SaysHowManySecretsAreStillOnTheKeyPublishedWithTheProduct()
+        {
+            using var checkableClient = checkableFactory.CreateClient().AsSystemAdmin();
+            using var freshClient = factory.CreateClient().AsSystemAdmin();
+
+            using var checkable = await checkableClient.GetAsync(LatestRoute);
+            using var fresh = await freshClient.GetAsync(LatestRoute);
+
+            var withSecrets = await ReadJsonAsync(checkable);
+            var withNone = await ReadJsonAsync(fresh);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(withSecrets.Int("secretsUnderPublishedKey"), Is.EqualTo(2), withSecrets.Raw);
+                Assert.That(withNone.Int("secretsUnderPublishedKey"), Is.Zero,
+                    "an install holding nothing under that key is never told to fix a problem it does not have");
+            }
+        }
+
+        [Test]
+        public async Task TheCheckRoute_AnswersOnBothTheVersionedAndTheLatestPath()
+        {
+            using var client = checkableFactory.CreateClient().AsSystemAdmin();
+
+            using var versioned = await client.GetAsync(VersionedRoute + "/secrets");
+            using var latest = await client.GetAsync(LatestRoute + "/secrets");
+
+            var versionedBody = await versioned.Content.ReadAsStringAsync();
+            var latestBody = await latest.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(versioned.StatusCode, Is.EqualTo(HttpStatusCode.OK), versionedBody);
+                Assert.That(latestBody, Is.EqualTo(versionedBody));
+            }
+        }
+
+        [Test]
         public async Task TheRoute_AnswersOnBothTheVersionedAndTheLatestPath()
         {
             using var client = factory.CreateClient().AsSystemAdmin();
@@ -510,6 +693,82 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     services.AddSingleton<IKeyRingMinter>(new GeneratedKeyRingMinter(
                         keyStoreDirectory, new PhysicalKeyStoreFileSystem(), TimeProvider.System));
                 }));
+        }
+
+        // One stored secret in each of the four states the check has to tell apart. The values are written
+        // into the columns after the save rather than through it, because a save encrypts anything not
+        // already an envelope - which would turn the value in the old format into one on the key in force
+        // before the check ever saw it.
+        private void SeedOneOfEachStateOn(WebApplicationFactory<Program> host, EncryptionKeyRing ring)
+        {
+            using var scope = host.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = CheckedConnection,
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+            };
+
+            var nobodyHolds = new EncryptionKey("k-lost-forever", RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
+
+            var stored = new Dictionary<string, string>
+            {
+                [OnTheKeyInForce] = Under(ring.ActiveKey, EveryCredentialSeeded[0]),
+                [OnThePublishedKey] = Under(publishedKey, EveryCredentialSeeded[1]),
+                [NobodyCanRead] = Under(nobodyHolds, EveryCredentialSeeded[2]),
+                [InTheOldFormat] = InTheFormatThisVersionReplaced(EveryCredentialSeeded[3], publishedKey),
+            };
+
+            foreach (var field in stored.Keys)
+            {
+                connection.Options.Add(new WorkTrackingSystemConnectionOption { Key = field, Value = "placeholder", IsSecret = true });
+            }
+
+            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            {
+                Key = "Url",
+                Value = "https://dev.azure.com/contoso",
+                IsSecret = false,
+            });
+
+            context.WorkTrackingSystemConnections.Add(connection);
+            context.SaveChanges();
+
+            foreach (var (field, storedValue) in stored)
+            {
+                context.Set<WorkTrackingSystemConnectionOption>()
+                    .Where(option => option.WorkTrackingSystemConnectionId == connection.Id && option.Key == field)
+                    .ExecuteUpdate(set => set.SetProperty(option => option.Value, storedValue));
+            }
+        }
+
+        private static string Under(EncryptionKey key, string credential)
+        {
+            return SecretEnvelope.Protect(credential, key.Id, key.Material.Span).Format();
+        }
+
+        // What every install written before this release holds: AES-CBC, an initialisation vector in front,
+        // and no key id anywhere on the value.
+        private static string InTheFormatThisVersionReplaced(string credential, EncryptionKey key)
+        {
+            using var aes = Aes.Create();
+            aes.Key = key.Material.ToArray();
+
+            var iv = RandomNumberGenerator.GetBytes(16);
+            var cipherText = aes.EncryptCbc(System.Text.Encoding.UTF8.GetBytes(credential), iv);
+
+            return Convert.ToBase64String([.. iv, .. cipherText]);
+        }
+
+        private static List<string> StoredValuesOn(WebApplicationFactory<Program> host)
+        {
+            using var scope = host.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            return [.. context.Set<WorkTrackingSystemConnectionOption>()
+                .Where(option => option.IsSecret)
+                .Select(option => option.Value)];
         }
 
         private static EncryptionKeyRing ARingThisInstanceMadeForItself()
@@ -589,6 +848,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
             public string String(string propertyName) => properties[propertyName].GetString() ?? string.Empty;
 
             public bool Bool(string propertyName) => properties[propertyName].GetBoolean();
+
+            public int Int(string propertyName) => properties[propertyName].GetInt32();
+
+            public List<JsonElement> Objects(string propertyName) => [.. properties[propertyName].EnumerateArray()];
 
             public List<string> Strings(string propertyName) =>
             [
