@@ -16,6 +16,10 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     // The settings page asks this on every load, so the narrowing matters: an instance that has moved
     // everything onto a key of its own has nothing left to ask about and decrypts nothing at all. What is
     // left to read is bounded by the number of credentials the operator is being told to move.
+    //
+    // The narrowing can only be relied on because that key is refused as the key secrets are written
+    // under, wherever it is supplied from. Without that refusal a value could carry an envelope naming
+    // some other key while holding this one's bytes, and no predicate over the stored text would find it.
     public sealed class PublishedKeySecretCount : IPublishedKeySecretCount
     {
         private static readonly string PublishedKeyPrefix = SecretEnvelope.Prefix + LegacyDefaultEncryptionKey.Id + ".";
