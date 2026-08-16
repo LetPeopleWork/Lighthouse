@@ -109,12 +109,55 @@ const wasLeftBehind = (
 
 // A check moves nothing, so a summary counting what moved would greet an operator with "Moved 0" on a
 // perfectly healthy instance. The two actions answer different questions and are said in different words.
-type WhatWasAsked = "check" | "move";
+// Three, not two. Rotating and moving both write, but only one of them makes a key, and a rotation
+// reported in the vocabulary of a move says nothing about the thing that actually happened.
+type WhatWasAsked = "check" | "move" | "rotate";
 
-const summaryOf = (asked: WhatWasAsked, report: SecretReadabilityReport) =>
-	asked === "move"
-		? `Moved ${report.movedCount} stored secrets onto key ${report.activeKeyId}. ${report.unreadableCount} could not be read.`
-		: `Checked ${report.secrets.length} stored secrets. ${report.onActiveKeyCount} on the active key ${report.activeKeyId}, ${report.onRetiredKeyCount} on an earlier key, ${report.plaintextCount} never encrypted, ${report.unreadableCount} could not be read.`;
+const secrets = (count: number) =>
+	count === 1 ? "1 stored secret" : `${count} stored secrets`;
+
+// A count of zero is not information. Four categories of nothing compete with the one number that
+// matters, and the number that matters is always one of the few that are not zero - so only those are
+// said. An operator reads a count above zero as something they may have to do.
+const whatEachOneIs = (report: SecretReadabilityReport) =>
+	[
+		[report.onActiveKeyCount, `on the key in force ${report.activeKeyId}`],
+		[report.onRetiredKeyCount, "on an earlier key"],
+		[report.plaintextCount, "never encrypted"],
+		[report.unreadableCount, "could not be read"],
+	]
+		.filter(([count]) => (count as number) > 0)
+		.map(([count, what]) => `${count} ${what}`)
+		.join(", ");
+
+const couldNotBeRead = (report: SecretReadabilityReport) =>
+	report.unreadableCount > 0
+		? ` ${secrets(report.unreadableCount)} could not be read.`
+		: "";
+
+// Rotation leads with the key it made, because that is what happened and it happens whether or not
+// there was anything to move. On an empty instance this used to read "Moved 0 stored secrets onto key
+// k-…", which is the one fact it did not report.
+const summaryOf = (asked: WhatWasAsked, report: SecretReadabilityReport) => {
+	if (asked === "rotate") {
+		const moved =
+			report.movedCount > 0
+				? ` ${secrets(report.movedCount)} moved onto it.`
+				: "";
+
+		return `Made key ${report.activeKeyId} and put it in force.${moved}${couldNotBeRead(report)}`;
+	}
+
+	if (asked === "move") {
+		return report.movedCount === 0
+			? `Nothing needed moving - every stored secret was already on key ${report.activeKeyId}.${couldNotBeRead(report)}`
+			: `Moved ${secrets(report.movedCount)} onto key ${report.activeKeyId}.${couldNotBeRead(report)}`;
+	}
+
+	return report.secrets.length === 0
+		? "Checked every stored secret. There are none yet."
+		: `Checked ${secrets(report.secrets.length)}: ${whatEachOneIs(report)}.`;
+};
 
 const WhatHappened: React.FC<{
 	asked: WhatWasAsked;
@@ -246,7 +289,7 @@ const EncryptionPanel: React.FC = () => {
 						variant="outlined"
 						disabled={busy}
 						data-testid="rotate-key-button"
-						onClick={() => run("move", () => encryptionService.rotateKey())}
+						onClick={() => run("rotate", () => encryptionService.rotateKey())}
 					>
 						Rotate key
 					</Button>

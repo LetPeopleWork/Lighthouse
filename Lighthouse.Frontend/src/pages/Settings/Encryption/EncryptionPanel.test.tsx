@@ -160,8 +160,9 @@ describe("EncryptionPanel", () => {
 
 		const report = await screen.findByTestId("encryption-report");
 
-		expect(report).toHaveTextContent("Moved 46 stored secrets");
-		expect(report).toHaveTextContent("1 could not be read");
+		expect(report).toHaveTextContent("Made key k-2026-08-16-02 and put it in force");
+		expect(report).toHaveTextContent("46 stored secrets moved onto it");
+		expect(report).toHaveTextContent("1 stored secret could not be read");
 		expect(screen.getByTestId("encryption-report-secrets")).toHaveTextContent(
 			"Contoso Board",
 		);
@@ -273,8 +274,9 @@ describe("EncryptionPanel", () => {
 
 		const report = await screen.findByTestId("encryption-report");
 
-		expect(report).toHaveTextContent("Moved 3 stored secrets");
-		expect(report).toHaveTextContent("0 could not be read");
+		expect(report).toHaveTextContent("Made key k-2026-08-16-02 and put it in force");
+		expect(report).toHaveTextContent("3 stored secrets moved onto it");
+		expect(report).not.toHaveTextContent("could not be read");
 		expect(
 			screen.queryByTestId("encryption-report-secrets"),
 		).not.toBeInTheDocument();
@@ -531,6 +533,112 @@ describe("EncryptionPanel", () => {
 		expect(screen.queryByTestId("rotate-key-button")).not.toBeInTheDocument();
 	});
 
+	// The strongest signal of the verification session, and a rule rather than a rewrite: a count of zero
+	// is not information. Four categories of nothing competed with the one number that mattered.
+	it("says only the states that have something in them", async () => {
+		renderPanelOn(ownKey, {
+			activeKeyId: "k-2026-08-16-01",
+			movedCount: 0,
+			unreadableCount: 0,
+			onActiveKeyCount: 1,
+			onRetiredKeyCount: 0,
+			plaintextCount: 0,
+			secrets: [
+				{
+					connectionId: 7,
+					connectionName: "Contoso Board",
+					field: "ClientSecret",
+					keyId: "k-2026-08-16-01",
+					state: "Envelope",
+					outcome: "Unmoved",
+				},
+			],
+			byConnection: [],
+		});
+
+		await userEvent.click(await screen.findByTestId("check-secrets-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("1 on the key in force");
+		expect(report).not.toHaveTextContent("0 ");
+	});
+
+	// One Connection with one secret field is the smallest real instance there is, and it is what a
+	// first-time operator has.
+	it("writes one secret in the singular", async () => {
+		renderPanelOn(ownKey, {
+			activeKeyId: "k-2026-08-16-01",
+			movedCount: 0,
+			unreadableCount: 0,
+			onActiveKeyCount: 1,
+			onRetiredKeyCount: 0,
+			plaintextCount: 0,
+			secrets: [
+				{
+					connectionId: 7,
+					connectionName: "Contoso Board",
+					field: "ClientSecret",
+					keyId: "k-2026-08-16-01",
+					state: "Envelope",
+					outcome: "Unmoved",
+				},
+			],
+			byConnection: [],
+		});
+
+		await userEvent.click(await screen.findByTestId("check-secrets-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("Checked 1 stored secret:");
+		expect(report).not.toHaveTextContent("1 stored secrets");
+	});
+
+	it("says a key was made when a rotation had nothing to move", async () => {
+		renderPanelOn(ownKey, {
+			activeKeyId: "k-2026-08-16-02",
+			movedCount: 0,
+			unreadableCount: 0,
+			onActiveKeyCount: 0,
+			onRetiredKeyCount: 0,
+			plaintextCount: 0,
+			secrets: [],
+			byConnection: [],
+		});
+
+		await userEvent.click(await screen.findByTestId("rotate-key-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("Made key k-2026-08-16-02 and put it in force");
+		expect(report).not.toHaveTextContent("moved");
+	});
+
+	it("says nothing needed moving rather than that nothing moved", async () => {
+		const encryptionService = renderPanelOn(justUpgraded, {
+			activeKeyId: "k-2026-08-16-01",
+			movedCount: 0,
+			unreadableCount: 0,
+			onActiveKeyCount: 4,
+			onRetiredKeyCount: 0,
+			plaintextCount: 0,
+			secrets: [],
+			byConnection: [],
+		});
+
+		await userEvent.click(await screen.findByTestId("reencrypt-button"));
+
+		await waitFor(() => {
+			expect(encryptionService.reEncryptSecrets).toHaveBeenCalled();
+		});
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("Nothing needed moving");
+		expect(report).not.toHaveTextContent("Moved 0");
+	});
+
 	it("says nothing about the published key once nothing is left under it", async () => {
 		renderPanelOn(ownKey);
 
@@ -569,9 +677,13 @@ describe("EncryptionPanel", () => {
 		const report = await screen.findByTestId("encryption-report");
 
 		expect(encryptionService.checkSecrets).toHaveBeenCalled();
-		expect(report).toHaveTextContent("45 on the active key");
+		expect(report).toHaveTextContent("45 on the key in force");
 		expect(report).toHaveTextContent("2 on an earlier key");
 		expect(report).toHaveTextContent("1 could not be read");
+
+		// A count of zero is not information. Nothing here was ever unencrypted, and saying so would put
+		// a category of nothing beside the one number an operator has to act on.
+		expect(report).not.toHaveTextContent("never encrypted");
 
 		// Nothing was moved, because nothing was asked to be. Reusing the rotation's wording would greet
 		// an operator with "Moved 0 stored secrets" on an instance where nothing at all is wrong.
