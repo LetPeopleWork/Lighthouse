@@ -14,6 +14,7 @@
       "**/Services/Implementation/Encryption/DatabaseSecretPresenceProbe.cs",
       "**/Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs",
       "**/Models/Encryption/KeyCustody.cs",
+      "**/Startup/StartupBanner.cs",
       "**/Models/Encryption/EncryptionKeyRing.cs",
       "**/API/EncryptionController.cs",
       "**/API/DTO/EncryptionStateDto.cs"

@@ -106,6 +106,16 @@ namespace Lighthouse.Backend.Tests
             }
         }
 
+        // The version is the first thing anyone is asked for when they report a problem, and it is the one
+        // line of the banner carried by no label, so nothing else here would notice it going missing.
+        [Test]
+        public void TheBanner_NamesTheVersionItIsRunning()
+        {
+            var lines = WholeBannerUnder(KeyCustody.GeneratedForThisInstance);
+
+            Assert.That(lines, Has.Some.Contains("Lighthouse 1.2.3.4"));
+        }
+
         private static string LabelColumn(string label)
         {
             return $"{label,-13} :";
