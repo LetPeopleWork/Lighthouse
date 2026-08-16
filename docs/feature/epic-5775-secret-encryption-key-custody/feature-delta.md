@@ -626,6 +626,15 @@ without asking — the exact conversation that lost the evaluation this epic cam
   with the source, until a rotation is run. Saying "we fixed the encryption" without that sentence
   would let a reader conclude the upgrade closed a window it did not close. Added 2026-08-15 by
   maintainer decision, alongside AC-4.9.
+- AC-6.18 `ARCHITECTURE.md` gains a **dedicated section** on secret encryption and key custody, sitting
+  with the other load-bearing concerns rather than as a line inside Persistence. It names the envelope
+  and where it is written, the key ring and how it is resolved at builder time, the three custody modes
+  and what each one can and cannot be asked to do, where the key store lives relative to the database,
+  and the read-only check and the re-encryption pass as the two things that walk every stored secret.
+  The ADR index row for 146-153 currently reads *"Designed, not yet built — nothing in this release
+  implements them"*, which stopped being true at slice 01; correcting that row is part of this AC, not
+  a separate errand. Added 2026-08-16 by maintainer decision: an architecture document that is silent
+  about how the product protects credentials is the one a security reviewer opens first.
 
 ---
 

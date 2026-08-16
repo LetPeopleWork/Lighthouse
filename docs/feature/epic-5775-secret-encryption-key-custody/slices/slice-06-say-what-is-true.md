@@ -33,6 +33,14 @@ actually does, and the people running the affected versions are told at the mome
   site — the gap is not a missing claim, it is a missing address.
 - The connector concept pages swap their isolated "stored encrypted in its database" one-liner for the
   plain-language answer plus a link. Per-connector specifics stay there; nothing is duplicated.
+- **`ARCHITECTURE.md` gains a dedicated section on secret encryption and key custody**, alongside the
+  other load-bearing concerns rather than as a clause inside Persistence. It covers the envelope and
+  where it is written, the key ring and its builder-time resolution, the three custody modes and what
+  each can and cannot be asked to do, where the key store sits relative to the database, and the
+  read-only check and the re-encryption pass as the two things that walk every stored secret. The ADR
+  index row for 146-153 still says *"Designed, not yet built — nothing in this release implements
+  them"*; that stopped being true at slice 01 and is corrected here. Today the whole document mentions
+  encryption twice, and one of those two is that stale row.
 - The vulnerability reporting path appears in the docs, not only in the repository-root file.
 - Slice 01's in-product link is repointed at the Security page.
 - `SECURITY.md`: reporting path, and what this epic changed.
@@ -45,7 +53,9 @@ actually does, and the people running the affected versions are told at the mome
 - Marketing website security copy. Flagged for the DELIVER checklist; this slice does not edit another
   repository.
 - A formal threat model document. If writing this slice produces one worth keeping, it lands as an
-  architecture note, not as scope creep here.
+  architecture note, not as scope creep here. The `ARCHITECTURE.md` section is not that document: it
+  says how the mechanism is built, not what an attacker would do with it — the limits belong on the
+  Security page, where a reviewer is already reading.
 
 ## Learning hypothesis
 
@@ -58,12 +68,14 @@ public documentation — which is the conversation that lost the evaluation this
 
 ## Acceptance criteria
 
-AC-6.1 through AC-6.16 in `feature-delta.md`. The three that carry the slice:
+AC-6.1 through AC-6.18 in `feature-delta.md`. The four that carry the slice:
 
 - **AC-6.5** — the compliance self-assessment cites evidence that matches shipped behaviour.
 - **AC-6.7** — the advisory publishes when the fixed version is installable, not before.
 - **AC-6.13** — the Security page answers the plain question at the top and lets a reviewer verify the
   claims below it, at one URL.
+- **AC-6.18** — `ARCHITECTURE.md` describes how the product protects credentials, in a section of its
+  own. It is the document a reviewer opens before the docs site, and it is currently silent.
 
 ## Dependencies
 
