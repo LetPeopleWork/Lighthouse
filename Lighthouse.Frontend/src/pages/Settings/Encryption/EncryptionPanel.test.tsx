@@ -144,6 +144,134 @@ describe("EncryptionPanel", () => {
 		);
 	});
 
+	it("lists only the secrets that need somebody to do something", async () => {
+		const mixed: SecretReadabilityReport = {
+			activeKeyId: "k-2026-08-16-02",
+			movedCount: 2,
+			unreadableCount: 1,
+			secrets: [
+				{
+					connectionId: 7,
+					connectionName: "Contoso Board",
+					field: "PersonalAccessToken",
+					keyId: "k-2026-08-16-02",
+					state: "Envelope",
+					outcome: "Moved",
+				},
+				{
+					connectionId: 7,
+					connectionName: "Contoso Board",
+					field: "AccessToken",
+					keyId: "k-2026-08-16-02",
+					state: "Envelope",
+					outcome: "MovedByAnotherWriter",
+				},
+				{
+					connectionId: 9,
+					connectionName: "Fabrikam Tracker",
+					field: "ClientSecret",
+					keyId: "k-lost-forever",
+					state: "Unreadable",
+					outcome: "CouldNotBeRead",
+				},
+				{
+					connectionId: 9,
+					connectionName: "Fabrikam Tracker",
+					field: "ApiToken",
+					keyId: null,
+					state: "LegacyPlaintext",
+					outcome: "NotEncrypted",
+				},
+				{
+					connectionId: 9,
+					connectionName: "Fabrikam Tracker",
+					field: "RefreshToken",
+					keyId: "k-2025-11-02-01",
+					state: "Envelope",
+					outcome: "CouldNotBeWritten",
+				},
+			],
+			byConnection: [],
+		};
+
+		renderPanelOn(ownKey, mixed);
+
+		await userEvent.click(await screen.findByTestId("rotate-key-button"));
+
+		const table = await screen.findByTestId("encryption-report-secrets");
+
+		// A secret that moved needs no row: the counts already say so, and burying the two that need
+		// action under the forty-six that do not is how an operator misses them.
+		expect(table).toHaveTextContent("ClientSecret");
+		expect(table).toHaveTextContent("ApiToken");
+		expect(table).not.toHaveTextContent("PersonalAccessToken");
+		expect(table).not.toHaveTextContent("AccessToken");
+		expect(table).toHaveTextContent("could not be read");
+		expect(table).toHaveTextContent("was not encrypted");
+
+		// A database that would not take the write is a pass to run again, not a token to reissue, and
+		// the row has to say which of the two it is.
+		expect(table).toHaveTextContent("RefreshToken");
+		expect(table).toHaveTextContent("run this again");
+
+		expect(screen.getByRole("alert").className).toMatch(/Warning/);
+	});
+
+	it("shows no table at all when nothing was left behind", async () => {
+		const clean: SecretReadabilityReport = {
+			activeKeyId: "k-2026-08-16-02",
+			movedCount: 3,
+			unreadableCount: 0,
+			secrets: [
+				{
+					connectionId: 7,
+					connectionName: "Contoso Board",
+					field: "PersonalAccessToken",
+					keyId: "k-2026-08-16-02",
+					state: "Envelope",
+					outcome: "Moved",
+				},
+			],
+			byConnection: [],
+		};
+
+		renderPanelOn(ownKey, clean);
+
+		await userEvent.click(await screen.findByTestId("rotate-key-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("Moved 3 stored secrets");
+		expect(report).toHaveTextContent("0 could not be read");
+		expect(
+			screen.queryByTestId("encryption-report-secrets"),
+		).not.toBeInTheDocument();
+
+		// Nothing was left behind, so the result must not be dressed as a warning - an operator who is
+		// warned when there is nothing to do stops reading the ones that matter.
+		expect(screen.getByRole("alert").className).toMatch(/Success/);
+	});
+
+	it("tells an administrator who owns the key in every custody mode", async () => {
+		renderPanelOn(ownKey);
+
+		expect(
+			await screen.findByTestId("encryption-custody-explanation"),
+		).toHaveTextContent("Lighthouse made this key and keeps it");
+	});
+
+	it("names the key store and the key source", async () => {
+		renderPanelOn(ownKey);
+
+		const ring = await screen.findByTestId("encryption-key-ring");
+
+		expect(ring).toHaveTextContent("Key source");
+		expect(ring).toHaveTextContent("generated for this instance");
+		expect(screen.getByTestId("encryption-key-store-path")).toHaveTextContent(
+			"/app/data/keys",
+		);
+	});
+
 	it("moves the stored secrets without making a key where an operator owns it", async () => {
 		const encryptionService = renderPanelOn(
 			operatorOwned.SuppliedByConfiguration,
@@ -179,6 +307,87 @@ describe("EncryptionPanel", () => {
 			"cannot make a new encryption key",
 		);
 		expect(screen.queryByTestId("encryption-report")).not.toBeInTheDocument();
+	});
+
+	it("shows nothing at all when the key state cannot be read", async () => {
+		const encryptionService = createMockEncryptionService();
+		vi.mocked(encryptionService.getKeyState).mockRejectedValue(
+			new Error("forbidden"),
+		);
+
+		const { container } = render(
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({ encryptionService })}
+			>
+				<EncryptionPanel />
+			</ApiServiceContext.Provider>,
+		);
+
+		await waitFor(() => {
+			expect(encryptionService.getKeyState).toHaveBeenCalled();
+		});
+		expect(container).toBeEmptyDOMElement();
+	});
+
+	it("says something useful when the failure carries no message", async () => {
+		const encryptionService = createMockEncryptionService();
+		vi.mocked(encryptionService.getKeyState).mockResolvedValue(ownKey);
+		vi.mocked(encryptionService.rotateKey).mockRejectedValue("not an error");
+
+		render(
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({ encryptionService })}
+			>
+				<EncryptionPanel />
+			</ApiServiceContext.Provider>,
+		);
+
+		await userEvent.click(await screen.findByTestId("rotate-key-button"));
+
+		expect(await screen.findByTestId("encryption-failure")).toHaveTextContent(
+			"The stored secrets could not be moved.",
+		);
+	});
+
+	it("reports nothing as failed when the move succeeded", async () => {
+		renderPanelOn(ownKey, aReportNamingWhatCouldNotBeRead);
+
+		await userEvent.click(await screen.findByTestId("rotate-key-button"));
+		await screen.findByTestId("encryption-report");
+
+		expect(screen.queryByTestId("encryption-failure")).not.toBeInTheDocument();
+	});
+
+	it("refuses to be asked twice while a pass is still running", async () => {
+		const encryptionService = createMockEncryptionService();
+		vi.mocked(encryptionService.getKeyState).mockResolvedValue(ownKey);
+
+		let finish: (report: SecretReadabilityReport) => void = () => {};
+		vi.mocked(encryptionService.rotateKey).mockReturnValue(
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+		);
+
+		render(
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({ encryptionService })}
+			>
+				<EncryptionPanel />
+			</ApiServiceContext.Provider>,
+		);
+
+		await userEvent.click(await screen.findByTestId("rotate-key-button"));
+
+		// Rewriting every stored credential is not something to start a second time by double-clicking.
+		expect(await screen.findByTestId("rotate-key-button")).toBeDisabled();
+		expect(screen.getByTestId("reencrypt-button")).toBeDisabled();
+
+		finish(aReportNamingWhatCouldNotBeRead);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("rotate-key-button")).toBeEnabled();
+		});
 	});
 
 	it("shows no key material of any kind", async () => {

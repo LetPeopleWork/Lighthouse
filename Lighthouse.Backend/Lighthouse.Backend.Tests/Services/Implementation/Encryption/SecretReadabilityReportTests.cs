@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Encryption;
 using NUnit.Framework;
 
@@ -141,6 +142,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 nameof(StoredSecretRecord.Outcome),
             }), "a property was added to the record that describes a secret; if it can hold the secret itself, " +
                 "every stored credential now travels to a browser and into a log. Found: " + string.Join(", ", readable));
+        }
+
+        [Test]
+        public void EveryPartOfAReport_RefusesWhatItCannotDescribe()
+        {
+            var secret = Secret(ContosoId, Contoso, "PersonalAccessToken", SecretMoveOutcome.Moved);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => new SecretReadabilityReport(" ", []), Throws.ArgumentException,
+                    "a report that cannot name the key everything was moved onto describes nothing");
+                Assert.That(() => new SecretReadabilityReport(ActiveKeyId, null!), Throws.ArgumentNullException);
+                Assert.That(() => new SecretReadabilityReportDto(null!), Throws.ArgumentNullException);
+                Assert.That(() => new StoredSecretDto(null!), Throws.ArgumentNullException);
+                Assert.That(() => new ConnectionSecretSummaryDto(null!), Throws.ArgumentNullException);
+                Assert.That(() => new SecretReadabilityReportDto(new SecretReadabilityReport(ActiveKeyId, [secret])), Throws.Nothing);
+            }
         }
 
         private static StoredSecretRecord Secret(

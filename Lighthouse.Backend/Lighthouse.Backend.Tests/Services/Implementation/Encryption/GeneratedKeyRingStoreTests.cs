@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 using NUnit.Framework;
+using System.Globalization;
+using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 {
@@ -139,6 +141,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             Assert.That(() => ring.Without(InForce.Id), Throws.ArgumentException,
                 "nothing written under it could be read afterwards");
+        }
+
+        /// <summary>
+        /// A name is only free if no key on the ring already has it, and a ring naming one key twice cannot
+        /// be spelled at all - so a day that runs out of names has to say so rather than build a ring that
+        /// throws somewhere less obvious. The refusal is the one the route turns into a conflict, so an
+        /// administrator reads a sentence rather than a 500.
+        /// </summary>
+        [Test]
+        public void ADayWithNoNameLeftToGive_RefusesRatherThanRepeatingOne()
+        {
+            var everyNameToday = Enumerable.Range(1, 99)
+                .Select(madeToday => new EncryptionKey(
+                    string.Create(CultureInfo.InvariantCulture, $"k-2026-08-16-{madeToday:00}"),
+                    RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength)))
+                .ToArray();
+
+            var full = new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, [InForce, .. everyNameToday]);
+            var store = StoreOver(new AKeyStoreThatKeepsWhatItIsGiven());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => store.MintOnto(full),
+                    Throws.InstanceOf<MintingNotPermittedException>().With.Message.Contains("today"));
+
+                var oneNameLeft = full.Without("k-2026-08-16-99");
+                Assert.That(store.MintOnto(oneNameLeft).ActiveKey.Id, Is.EqualTo("k-2026-08-16-99"),
+                    "the ninety-ninth name is still a name it may use");
+            }
+        }
+
+        [Test]
+        public void TheStore_RefusesEveryThingItCannotWorkWithout()
+        {
+            var protection = GeneratedKeyRingStore.ProtectionKeptBesideTheKeyStore(keyStoreDirectory);
+            dataProtectionHosts.Add(protection);
+
+            var dataProtection = protection.GetRequiredService<IDataProtectionProvider>();
+            var fileSystem = new AKeyStoreThatKeepsWhatItIsGiven();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => new GeneratedKeyRingStore(" ", dataProtection, fileSystem, clock), Throws.ArgumentException);
+                Assert.That(() => new GeneratedKeyRingStore(keyStoreDirectory, null!, fileSystem, clock), Throws.ArgumentNullException);
+                Assert.That(() => new GeneratedKeyRingStore(keyStoreDirectory, dataProtection, null!, clock), Throws.ArgumentNullException);
+                Assert.That(() => new GeneratedKeyRingStore(keyStoreDirectory, dataProtection, fileSystem, null!), Throws.ArgumentNullException);
+                Assert.That(() => StoreOver(fileSystem).MintOnto(null!), Throws.ArgumentNullException);
+                Assert.That(() => new GeneratedKeyRingMinter(" ", fileSystem, clock), Throws.ArgumentException);
+                Assert.That(() => new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, InForce).Without(" "), Throws.ArgumentException);
+            }
         }
 
         private GeneratedKeyRingStore StoreOver(IKeyStoreFileSystem fileSystem)

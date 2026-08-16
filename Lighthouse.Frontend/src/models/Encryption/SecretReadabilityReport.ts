@@ -68,13 +68,18 @@ export const SecretReadabilityReportSchema = z.object({
 	byConnection: z.array(ConnectionSecretSummarySchema),
 });
 
-// What an operator is told happened to one stored credential. "Moved by another writer" is not a
-// failure: something else wrote that row under the key in force while the pass was running, which is
-// where the pass was taking it anyway.
-export const SECRET_OUTCOME_WORDING: Record<SecretMoveOutcome, string> = {
-	Unmoved: "left where it was",
-	Moved: "moved onto the active key",
-	MovedByAnotherWriter: "already on the active key",
+// The outcomes an operator is ever shown a row for. A secret that moved needs no wording because it
+// needs no row - the counts already say how many - so only the three that ask somebody to do something
+// are spelled out here.
+export type SecretOutcomeNeedingAttention = Extract<
+	SecretMoveOutcome,
+	"CouldNotBeRead" | "CouldNotBeWritten" | "NotEncrypted"
+>;
+
+export const SECRET_OUTCOME_WORDING: Record<
+	SecretOutcomeNeedingAttention,
+	string
+> = {
 	CouldNotBeRead: "could not be read, and was left untouched",
 	CouldNotBeWritten: "the database would not take the change — run this again",
 	NotEncrypted: "was not encrypted, and was left untouched",

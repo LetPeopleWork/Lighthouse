@@ -174,6 +174,116 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        /// <summary>
+        /// The same guard as the connection option above, on the column that actually gets rewritten by a
+        /// token refresh. A predicate that matched on the row rather than on the value would put the token
+        /// the refresh replaced back over the one it just obtained, and the only way back from that is
+        /// re-authorising with the work tracking system.
+        /// </summary>
+        [Test]
+        public async Task AnAccessTokenRewrittenBetweenTheReadAndTheWrite_IsNotWrittenOver()
+        {
+            var refreshTokenAsStored = Under(OldKey, "the-refresh-token");
+            await StoreCredentialAsync(Under(OldKey, "the-access-token"), refreshTokenAsStored);
+
+            var refreshed = Under(NewKey, "obtained-by-a-refresh");
+            var interfering = new WriterThatGetsThereFirst(
+                crypto,
+                async () => await StoreCredentialAsync(refreshed, refreshTokenAsStored));
+
+            var report = await CustodyService(interfering).ReEncryptAsync();
+            var credential = await StoredCredentialAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(credential.AccessToken, Is.EqualTo(refreshed),
+                    "the pass must not write over a value it did not read");
+                Assert.That(crypto.Read(credential.RefreshToken).PlainText, Is.EqualTo("the-refresh-token"),
+                    "the other token on the same row is still moved");
+                Assert.That(report.Secrets, Has.One.Matches<StoredSecretRecord>(
+                    secret => secret.Outcome == SecretMoveOutcome.MovedByAnotherWriter));
+            }
+        }
+
+        [Test]
+        public async Task ARefreshTokenRewrittenBetweenTheReadAndTheWrite_IsNotWrittenOver()
+        {
+            var accessTokenAsStored = Under(OldKey, "the-access-token");
+            await StoreCredentialAsync(accessTokenAsStored, Under(OldKey, "the-refresh-token"));
+
+            var refreshed = Under(NewKey, "obtained-by-a-refresh");
+            var interfering = new WriterThatGetsThereFirst(
+                crypto,
+                async () => await StoreCredentialAsync(accessTokenAsStored, refreshed),
+                letThrough: 1);
+
+            await CustodyService(interfering).ReEncryptAsync();
+            var credential = await StoredCredentialAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(credential.RefreshToken, Is.EqualTo(refreshed),
+                    "a refresh token is the one credential that cannot be recovered without going back to the tracker");
+                Assert.That(crypto.Read(credential.AccessToken).PlainText, Is.EqualTo("the-access-token"));
+            }
+        }
+
+        /// <summary>
+        /// A credential row carries two tokens and they do not have to be on the same key. Asking about only
+        /// one of them leaves the other stranded on a retired key with nothing ever coming back for it.
+        /// </summary>
+        [Test]
+        public async Task ACredentialWithOnlyOneTokenLeftBehind_StillHasThatOneMoved()
+        {
+            var alreadyCurrent = Under(NewKey, "already-current");
+            await StoreCredentialAsync(alreadyCurrent, Under(OldKey, "left-behind"));
+
+            var report = await CustodyService().ReEncryptAsync();
+            var credential = await StoredCredentialAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.MovedCount, Is.EqualTo(1));
+                Assert.That(report.Secrets, Has.One.Matches<StoredSecretRecord>(
+                    secret => secret.Field == SecretCustodyService.RefreshTokenField));
+                Assert.That(crypto.Read(credential.RefreshToken).KeyId, Is.EqualTo(NewKey.Id));
+                Assert.That(credential.AccessToken, Is.EqualTo(alreadyCurrent),
+                    "the token that was already current is not rewritten");
+            }
+        }
+
+        [Test]
+        public async Task ACredentialWithOnlyItsAccessTokenLeftBehind_StillHasThatOneMoved()
+        {
+            await StoreCredentialAsync(Under(OldKey, "left-behind"), Under(NewKey, "already-current"));
+
+            var report = await CustodyService().ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.MovedCount, Is.EqualTo(1));
+                Assert.That(report.Secrets, Has.One.Matches<StoredSecretRecord>(
+                    secret => secret.Field == SecretCustodyService.AccessTokenField));
+                Assert.That(crypto.Read((await StoredCredentialAsync()).AccessToken).PlainText, Is.EqualTo("left-behind"));
+            }
+        }
+
+        [Test]
+        public async Task AnEmptyToken_IsNotSomethingToMove()
+        {
+            await StoreCredentialAsync(string.Empty, Under(OldKey, "the-refresh-token"));
+
+            var report = await CustodyService().ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.MovedCount, Is.EqualTo(1), "there is nothing stored in an empty column to move or to report");
+                Assert.That(report.Secrets, Has.None.Matches<StoredSecretRecord>(
+                    secret => secret.Field == SecretCustodyService.AccessTokenField));
+                Assert.That((await StoredCredentialAsync()).AccessToken, Is.Empty);
+            }
+        }
+
         [Test]
         public async Task RunningItAgain_MovesNothing_AndReportsTheSameTotals()
         {
@@ -521,6 +631,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                         "every secret is still readable with a key the ring holds");
                 }
             }
+        }
+
+        [Test]
+        public void ThePass_RefusesEveryThingItCannotWorkWithout()
+        {
+            using var scope = provider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey));
+            var minter = new AMinterThatMints(NewerKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => new SecretCustodyService(null!, crypto, holder, minter, oneAtATime), Throws.ArgumentNullException);
+                Assert.That(() => new SecretCustodyService(context, null!, holder, minter, oneAtATime), Throws.ArgumentNullException);
+                Assert.That(() => new SecretCustodyService(context, crypto, null!, minter, oneAtATime), Throws.ArgumentNullException);
+                Assert.That(() => new SecretCustodyService(context, crypto, holder, null!, oneAtATime), Throws.ArgumentNullException);
+                Assert.That(() => new SecretCustodyService(context, crypto, holder, minter, null!), Throws.ArgumentNullException);
+                Assert.That(async () => await oneAtATime.RunAsync<int>(null!, CancellationToken.None), Throws.ArgumentNullException);
+            }
+        }
+
+        /// <summary>
+        /// An administrator turned down has to be told who the key belongs to, because that is the only
+        /// thing that tells them where to go and do something about it. One refusal for all three would
+        /// send a Kubernetes operator looking in a settings file.
+        /// </summary>
+        [Test]
+        public void TheRefusalToMakeAKey_NamesWhoTheKeyBelongsTo()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(RefusalFor(KeyCustody.SuppliedByConfiguration), Does.Contain("configuration").And.Contain("belongs to"));
+                Assert.That(RefusalFor(KeyCustody.SuppliedByExternalSecret), Does.Contain("mounted secret").And.Contain("belongs to"));
+                Assert.That(RefusalFor(KeyCustody.NoDurableStore), Does.Contain("nowhere it could keep a key"));
+
+                foreach (var custody in Enum.GetValues<KeyCustody>())
+                {
+                    Assert.That(RefusalFor(custody), Does.Contain("start Lighthouse again"),
+                        $"the refusal for {custody} says who owns the key but not what to do next");
+                }
+            }
+        }
+
+        private static string RefusalFor(KeyCustody custody)
+        {
+            var refused = Assert.Throws<MintingNotPermittedException>(
+                () => new AKeyOnlyItsOwnerCanReplace(custody).MintOnto(
+                    new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey)));
+
+            return refused!.Message;
         }
 
         private (EncryptionKeyRingHolder Holder, CryptoService Crypto) AnInstanceThatOwnsItsKey()

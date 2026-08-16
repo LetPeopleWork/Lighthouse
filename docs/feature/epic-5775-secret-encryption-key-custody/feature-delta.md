@@ -3256,9 +3256,16 @@ secret unreadable. It also changes a shipped slice-02 contract: `EncryptionContr
 `legacyDefaultPresent` is true for an instance holding no stored secrets at all, which a
 nothing-stored-so-drop-it rule would flip.
 
-**Recommendation**: leave it here and take it in **slice 06**, which is the slice about saying what is
-actually true, and where the count of secrets still under the published key is already in scope. Slice
-04's readability report is what makes the question answerable cheaply, so the order is right.
+**Recommendation**: take it in **slice 04**. It was first written down here as slice 06, which was
+wrong — slice 06 is documentation, the compliance rows, the Security page and the advisory, and ships
+no code at all. Slice 04 is the right home because the question the bootstrapper needs to ask at start
+— *is any stored secret still under the published key?* — is exactly the query slice 04 exists to
+build, over the same traversal and the same report vocabulary. Doing it there costs one caller rather
+than one component.
+
+Note also that slice 03 no longer narrows the ring in process either — see the DELIVER review section
+at the end of this document. So today the published key is held for the life of every instance that
+ever had it, and *both* halves of AC-3.9's second sentence are slice 04's to deliver.
 
 ---
 

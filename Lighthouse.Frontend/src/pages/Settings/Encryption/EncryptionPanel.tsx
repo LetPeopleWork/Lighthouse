@@ -20,6 +20,7 @@ import {
 } from "../../../models/Encryption/EncryptionKeyState";
 import {
 	SECRET_OUTCOME_WORDING,
+	type SecretOutcomeNeedingAttention,
 	type SecretReadabilityReport,
 	type StoredSecret,
 } from "../../../models/Encryption/SecretReadabilityReport";
@@ -88,10 +89,12 @@ const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
 
 // A secret that moved needs no listing - the count already says so. What an operator has to act on is
 // what was left behind, and the only useful thing to say about it is which Connection and which field.
-const wasLeftBehind = (secret: StoredSecret): boolean =>
-	secret.outcome !== "Moved" &&
-	secret.outcome !== "Unmoved" &&
-	secret.outcome !== "MovedByAnotherWriter";
+const wasLeftBehind = (
+	secret: StoredSecret,
+): secret is StoredSecret & { outcome: SecretOutcomeNeedingAttention } =>
+	secret.outcome === "CouldNotBeRead" ||
+	secret.outcome === "CouldNotBeWritten" ||
+	secret.outcome === "NotEncrypted";
 
 const WhatHappened: React.FC<{ report: SecretReadabilityReport }> = ({
 	report,
