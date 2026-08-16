@@ -331,7 +331,9 @@ Filled in live. Verdict is the operator's, not inferred from code.
 | A4c remedy: key store path | | | | | |
 | B1 standalone upgrade — half 1 | **PASS** | `generated for this instance (k-2026-08-16-01) · …/data-protection-keys` | 2 chips (`k-2026-08-16-01`, `k-legacy-default`); warning fired: `1 stored credentials are still readable with the key published with Lighthouse…` + *Move them now*; check: `0 on the active key, 1 on an earlier key` | — | Launch normal, no prompt. Team refreshed **before** touching any encryption UI — the credential written by v26.8.14.1 still authenticates. `encryption-keyring.protected` created; the old DP key and `oauth-state-secret.protected` untouched. Layout + duplication findings F-8, F-9. |
 | B1 standalone upgrade — half 2 | **PASS** | — | `Moved 1 stored secrets onto key k-2026-08-16-01. 0 could not be read.`; warning replaced by a green success in place; check: `1 on the active key, 0 on an earlier key`; `k-legacy-default` still held | — | Team re-synced after the move — credential travelled from the published key onto the instance's own, nothing re-entered. Maintainer reached for the button at the **bottom**, not the one in the alert. Findings F-10, F-11, F-12. |
-| B2 binary upgrade | | | | | |
+| B2 binary upgrade — half 1 (sanctioned: appsettings.json overwritten) | **PASS** | `generated for this instance (k-2026-08-16-01) · …/b2/keys` | 2 chips, warning fired with count 1 + *Move them now*; check: `0 on the active key, 1 on an earlier key` | — | New `appsettings.json` has no `EncryptionSettings` block, so the published literal is gone and the instance mints. Team refreshed before touching the panel. **`KeyStoreMigration` verified on real data**: `key-c75b….xml` and `oauth-state-secret.protected` appear inside the new `keys/` still stamped 15:37, the old build's time — carried across from `data-protection-keys/`, not regenerated. Banner length finding F-18. |
+| B2 binary upgrade — half 2 | **PASS** | — | via *Move them now* this time: `Moved 1 stored secrets onto key k-2026-08-16-01. 0 could not be read.`; check: `1 on the active key` | — | Team re-synced after the move. Both entry points to the same action verified across B1 (bottom button) and B2 (alert button). Duplicate key-store finding F-19. |
+| B2b binary upgrade, operator kept their own `appsettings.json` | **FAIL — blocking**, see F-20 | `supplied by configuration (k-cfg-27d69a05) · …/b2b/keys` + the retired-name nudge | warning fired with count 1; after *Move*: `Moved 1 stored secrets onto key k-cfg-27d69a05`, **warning disappeared**, check reports `1 on the active key` | `server.md` says to override all files; an operator who keeps their edited config lands here | `k-cfg-27d69a05` is derived from the **published** key's bytes. The instance is pinned to the public key by configuration, cannot mint, has no Rotate button — and the panel now reports it as healthy. |
 | B3 docker upgrade | | | | | |
 | B4 postgres upgrade | | | | | |
 | C1 old name | | | | | |
@@ -356,6 +358,15 @@ operator has no reason to know exists. Standalone has no terminal. The banner is
 custody surface and the entire standalone population is structurally blind to it. Whatever the banner
 is load-bearing for has to be reachable from the panel too, or it is not reachable at all for this
 edition.
+
+**F-18 · The custody line is long enough to be skimmed past** (B2, 2026-08-16). Observed:
+`🔑  Encryption    : generated for this instance (k-2026-08-16-01) · /storage/…/b2/keys`. Maintainer:
+"it's a bit long now, could we do something like a single word here and then the path, like
+'instance - /storage/…'?" Every other banner line is a label and a short value; this one is a clause.
+
+Worth reconciling with F-17 before acting: the key id is the single most useful thing in that line for
+diagnosing a refusal later, so shortening should come out of the custody phrase — `instance`,
+`configured`, `mounted secret`, `published key` — rather than out of the id.
 
 ### Wording — encryption panel
 
@@ -521,6 +532,62 @@ confirming when the server and Docker runs exercise those states for real.
 _(to be filled)_
 
 ### Behaviour defects (not wording)
+
+**F-20 · BLOCKING · An operator can be pinned to the published key and then told they are safe**
+(B2b, 2026-08-16). Observed end to end, not inferred.
+
+*How it is reached.* `server.md` tells operators to upgrade by copying the new files over the old
+folder, overriding everything. Anyone who has edited `appsettings.json` — a port, a certificate path, a
+Postgres connection string — keeps or merges their own copy instead. That file still carries the
+pre-epic `EncryptionSettings.EncryptionKey`, whose value is the literal published key from the public
+repository. On the upgraded build the retired-name branch honours it, so the published key becomes the
+**active** key, under a fresh id derived from its bytes (`k-cfg-27d69a05`). Custody reads *supplied by
+configuration*: no minting, no Rotate button.
+
+*Why it is silent.* `PublishedKeySecretCount` decides the question by envelope prefix — either
+`LH1.k-legacy-default.` or no envelope at all. Nothing in the codebase compares key **material**;
+every reference to `LegacyDefaultEncryptionKey` matches on the id. So the published key wearing a
+`k-cfg-` id is invisible to the one check that exists to catch exactly this.
+
+*The sequence, verbatim.* The panel correctly warned `1 stored credentials are still readable with the
+key published with Lighthouse… Moving them onto this instance's own key is the fix`. Moving reported
+`Moved 1 stored secrets onto key k-cfg-27d69a05`. **The warning then disappeared** and the check
+reported `1 on the active key`. The credential is now encrypted with bytes that ship inside every copy
+of Lighthouse, and every surface says the instance is healthy.
+
+This is worse than not warning at all. The operator was told they were exposed, took the offered
+remedy, and was told they were fixed — so the one prompt that would ever have made them look again is
+spent, and nothing will raise it a second time.
+
+*The retirement nudge makes it worse.* It says "Set the same value as `Encryption__Key` and remove the
+old one." Followed faithfully, that pins the published key under the current setting name — and the
+nudge stops firing, because the name is now correct. The last remaining signal is removed by obeying
+it.
+
+*Reachable other ways.* Any operator who copies the old `EncryptionSettings` value into
+`Encryption__Key` or `Encryption__Keys` — a reasonable reading of "keep using my existing key" — lands
+in the identical state.
+
+*Fix.* Compare supplied key material against the published key at bootstrap and refuse to accept it as
+an active key, naming what happened and what to do. The material is compiled in and the comparison is
+constant-time over 32 bytes, so this costs nothing. Everything else about the state is already correct;
+only the identity check is missing. Whether the same guard should also reject it as a *retired* entry
+is a separate question — it must stay readable, so it should not.
+
+**F-19 · An upgraded binary install ends up with the same key material in two directories** (B2,
+2026-08-16). `KeyStoreMigration` copies rather than moves, deliberately — removing the source would be
+irreversible if the migration picked wrongly. The consequence on a real upgrade is that
+`data-protection-keys/` and `keys/` both survive, holding byte-identical copies of the Data Protection
+key and `oauth-state-secret.protected`, with `data-protection-keys/` now dead.
+
+Nothing on disk or on screen distinguishes them. An operator writing a backup script, or tidying up,
+has a 50 % chance of keeping the wrong one — and the wrong one looks exactly as plausible, since it is
+the directory that has been there for years and is the one every older doc and forum post names.
+
+Not a defect, and copying is the right default. But the leftover should either be named as safe to
+delete somewhere the operator will look, or marked on disk — a short `README` or a rename to something
+visibly retired — so the live one is identifiable without reading source. Note this does not arise for
+standalone, where both names resolve to the same configured directory (A1).
 
 **F-6 · Nothing ever leaves the ring, and there is no surface that would remove it** (A1,
 2026-08-16). After one rotation on an empty instance, Keys held reads
