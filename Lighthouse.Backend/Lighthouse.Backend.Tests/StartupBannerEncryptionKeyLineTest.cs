@@ -149,9 +149,14 @@ namespace Lighthouse.Backend.Tests
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(lines, Has.Count.EqualTo(2));
+                Assert.That(lines[1], Does.StartWith("🚨"),
+                    "the banner is a wall of text and the emoji is how a line is found in it");
+                Assert.That(lines[1], Does.Contain("This instance was started with"));
                 Assert.That(lines[1], Does.Contain("Encryption__StartEvenIfNothingStoredCanBeRead"));
                 Assert.That(lines[1], Does.Contain("has to be entered again"),
                     "the line is only useful if it says what the operator still owes");
+                Assert.That(lines[1], Does.Contain("Remove the setting once they have been"),
+                    "a notice that never says how to make itself go away is one people learn to scroll past");
             }
         }
 
@@ -165,6 +170,57 @@ namespace Lighthouse.Backend.Tests
 
             Assert.That(lines, Has.Count.EqualTo(1),
                 "a healthy install is not taught to worry about a hatch it never opened");
+        }
+
+        // Every line is found by its emoji before it is read by its label - the banner is a wall of text
+        // in a console, and an operator scanning it for the encryption row is looking for the key.
+        [TestCase("🌐", "Url")]
+        [TestCase("🖥️", "OS")]
+        [TestCase("⚙️", "Runtime")]
+        [TestCase("🧩", "Architecture")]
+        [TestCase("🔢", "Process ID")]
+        [TestCase("💾", "Database")]
+        [TestCase("📝", "Logs")]
+        [TestCase("🔑", "Encryption")]
+        public void EveryBannerRow_IsFoundByItsOwnMarkerAsWellAsItsLabel(string marker, string label)
+        {
+            var lines = WholeBannerUnder(KeyCustody.GeneratedForThisInstance);
+
+            Assert.That(
+                lines.Where(line => line.Contains(LabelColumn(label), StringComparison.Ordinal)),
+                Has.Some.StartWith(marker),
+                $"the {label} row lost the marker an operator scans for");
+        }
+
+        [Test]
+        public void AWarningRow_IsMarkedApartFromTheRowItFollows()
+        {
+            var nowhereDurable = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.NoDurableStore), KeptIn(), keyCameFromTheRetiredSetting: false);
+            var retiredName = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration), KeptIn(), keyCameFromTheRetiredSetting: true);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nowhereDurable[1], Does.StartWith("⚠️"));
+                Assert.That(nowhereDurable[1], Does.Contain(LabelColumn("Warning")));
+                Assert.That(retiredName[1], Does.StartWith("⚠️"));
+                Assert.That(retiredName[1], Does.Contain(LabelColumn("Warning")));
+            }
+        }
+
+        [Test]
+        public void TheCustodyLines_RefuseToBeBuiltWithoutARingOrAKeyStore()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    () => StartupBanner.BuildEncryptionCustodyLines(null!, KeptIn(), false),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => StartupBanner.BuildEncryptionCustodyLines(RingUnder(KeyCustody.GeneratedForThisInstance), null!, false),
+                    Throws.ArgumentNullException);
+            }
         }
 
         // The version is the first thing anyone is asked for when they report a problem, and it is the one

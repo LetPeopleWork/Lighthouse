@@ -49,6 +49,8 @@ namespace Lighthouse.Backend.Startup
         {
             ArgumentNullException.ThrowIfNull(facts);
 
+            // Stryker disable all: blank rows and rule lines are where the banner breathes, not what it
+            // says. Pinning them would freeze the layout against the next person who wants to move a gap.
             var info = new List<string>
             {
                 "",
@@ -59,9 +61,11 @@ namespace Lighthouse.Backend.Startup
                 Rule,
                 ""
             };
+            // Stryker restore all
 
             info.AddRange(facts.Urls.Select(url => Line("🌐", "Url", url)));
 
+            // Stryker disable once all: a gap between the addresses and the machine they answer on.
             info.Add("");
 
             info.Add(Line("🖥️", "OS", RuntimeInformation.OSDescription.Trim()));
@@ -82,6 +86,7 @@ namespace Lighthouse.Backend.Startup
                 facts.KeyCameFromTheRetiredSetting,
                 facts.AllowsStartWithUnreadableSecrets));
 
+            // Stryker disable once all: the gap that separates the banner from whatever logs next.
             info.Add("");
 
             return info;

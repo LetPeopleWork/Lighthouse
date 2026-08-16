@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
@@ -658,6 +659,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That((await ReadJsonAsync(startedNormally)).Bool("allowsStartWithUnreadableSecrets"), Is.False,
                     "an instance that never needed the switch is not taught to worry about a hatch it never opened");
             }
+        }
+
+        [Test]
+        public void TheStatePayload_RefusesToBeBuiltWithoutARing()
+        {
+            Assert.That(
+                () => new EncryptionStateDto(null!, ReportedKeyStore, 0),
+                Throws.ArgumentNullException,
+                "every field on this payload is read off the ring, so one built without it would answer with defaults that look like facts");
         }
 
         [Test]

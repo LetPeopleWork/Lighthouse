@@ -168,6 +168,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 "no answer is not an answer, and half of one would be quoted at an operator as though it were");
         }
 
+        [Test]
+        public void Look_AnOAuthAccessTokenIsTheOnlyThingStored_IsStillAsked()
+        {
+            CreateSchema();
+            StoreOAuthCredential(accessToken: WrittenUnder(AKeyThisInstanceNeverHad), refreshToken: null);
+
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.NothingReadable),
+                "a connection whose access token is the only secret it holds is still a connection about to stop working");
+        }
+
+        [Test]
+        public void TheProbe_RefusesToBeBuiltWithoutSomewhereToLook()
+        {
+            Assert.That(() => new DatabaseSecretReadabilityProbe(null!), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void Look_NoRingToTryThingsAgainst_Refuses()
+        {
+            Assert.That(() => Probe().Look(null!), Throws.ArgumentNullException);
+        }
+
         private static string WrittenUnder(string keyId)
         {
             return SecretEnvelope.Protect("a token", keyId, MaterialFor(keyId)).Format();

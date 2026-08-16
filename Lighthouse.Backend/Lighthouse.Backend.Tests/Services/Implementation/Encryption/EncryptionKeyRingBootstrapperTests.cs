@@ -937,6 +937,59 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        // The remedy that fits depends on whether there is anything to undo. An instance that minted its
+        // own key was not handed one by anybody, so telling its operator to remove a setting sends them
+        // looking for something that was never there.
+        [Test]
+        public void Resolve_AKeyThisInstanceMadeForItselfThatReadsNothing_DoesNotTellAnyoneToRemoveASetting()
+        {
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(
+                    new PhysicalKeyStoreFileSystem(),
+                    readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable, WrittenUnder)).Resolve());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain("using a key it made for itself"));
+                Assert.That(refusal.Message, Does.Not.Contain("remove that setting"),
+                    "there is no setting to remove, and an operator sent looking for one loses the time they have");
+            }
+        }
+
+        [Test]
+        public void Resolve_AKeyThatReadsNothing_ReadsAsSentencesRatherThanRunTogether()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder);
+
+            Assert.That(
+                refusal.Message,
+                Does.Contain("exactly as it was. If you have just started supplying"),
+                "the parts are assembled, and an operator reads the result rather than the parts");
+        }
+
+        [Test]
+        public void Resolve_StoredValuesUnderTwoKeys_KeepsThemApartFromEachOther()
+        {
+            var refusal = RefusalWhenNothingCanBeRead(WrittenUnder, "k-and-this-one-02");
+
+            Assert.That(
+                refusal.Message,
+                Does.Contain($"'{WrittenUnder}', 'k-and-this-one-02'"),
+                "two key ids run together read as one name that matches no key at all");
+        }
+
+        [Test]
+        public void TheRefusal_RefusesToBeBuiltWithoutTheThingsItQuotes()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => KeyThatReadsNothing.RefusalFor(null!, []), Throws.ArgumentNullException);
+                Assert.That(
+                    () => KeyThatReadsNothing.RefusalFor(new EncryptionKeyRing(new EncryptionKey(StartedOn, MaterialOf(83))), null!),
+                    Throws.ArgumentNullException);
+            }
+        }
+
         private const string StartedOn = "k-started-on-01";
 
         private const string WrittenUnder = "k-written-under-01";

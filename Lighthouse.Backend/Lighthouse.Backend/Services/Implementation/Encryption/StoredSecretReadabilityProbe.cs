@@ -123,6 +123,8 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
                 foreach (var value in StoredSecretQueries.SelectMany(query => ValuesFrom(connection, query)))
                 {
+                    // Stryker disable once Update: this only ever answers "was there anything at all", so
+                    // counting the other way reaches the same two answers by the same route.
                     stored++;
 
                     var read = classifier.Classify(value);
