@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
@@ -19,7 +20,13 @@ namespace Lighthouse.Backend.API
     [ApiController]
     [Authorize]
     [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+    // Reading the state of this instance's encryption key and acting on it are one job, not two: an
+    // administrator looks at which keys are held to decide whether to move the secrets, and looks again
+    // afterwards to see that it worked. Splitting them would put the same System Administrator guard and the
+    // same key ring behind two routes with two chances to drift apart.
+#pragma warning disable S6960
     public sealed class EncryptionController : ControllerBase
+#pragma warning restore S6960
     {
         private const string KeyStorePathSetting = "Encryption:KeyStorePath";
 
@@ -35,14 +42,22 @@ namespace Lighthouse.Backend.API
 
         private readonly IWebHostEnvironment environment;
 
+        private readonly ISecretCustodyService custodyService;
+
+        private readonly ILogger<EncryptionController> logger;
+
         public EncryptionController(
             IEncryptionKeyRingHolder keyRingHolder,
             IConfiguration configuration,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            ISecretCustodyService custodyService,
+            ILogger<EncryptionController> logger)
         {
             this.keyRingHolder = keyRingHolder ?? throw new ArgumentNullException(nameof(keyRingHolder));
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
+            this.custodyService = custodyService ?? throw new ArgumentNullException(nameof(custodyService));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpGet]
@@ -50,6 +65,66 @@ namespace Lighthouse.Backend.API
         public ActionResult<EncryptionStateDto> GetEncryptionState()
         {
             return Ok(new EncryptionStateDto(keyRingHolder.Current, WhereTheKeyIsKept().Directory));
+        }
+
+        // The refusal is part of the contract rather than a convention of the screen. A rotation started
+        // with the screen bypassed entirely has to be turned down for the same reason and in the same words,
+        // because the reason is where the key came from and not what was drawn.
+        [HttpPost("rotate")]
+        [ProducesResponseType<SecretReadabilityReportDto>(StatusCodes.Status200OK)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<SecretReadabilityReportDto>> RotateKey(CancellationToken cancellationToken)
+        {
+            SecretReadabilityReport report;
+
+            try
+            {
+                report = await custodyService.RotateAsync(cancellationToken);
+            }
+            catch (MintingNotPermittedException refusal)
+            {
+                return Conflict(new ProblemDetails
+                {
+                    Title = "This instance cannot make a new encryption key",
+                    Detail = refusal.Message,
+                    Status = StatusCodes.Status409Conflict,
+                });
+            }
+
+            logger.LogInformation(
+                "encryption.rotation.completed {Actor} {MovedCount} {UnreadableCount} {NewActiveKeyId}",
+                WhoAskedForIt(),
+                report.MovedCount,
+                report.UnreadableCount,
+                report.ActiveKeyId);
+
+            return Ok(new SecretReadabilityReportDto(report));
+        }
+
+        [HttpPost("reencrypt")]
+        [ProducesResponseType<SecretReadabilityReportDto>(StatusCodes.Status200OK)]
+        public async Task<ActionResult<SecretReadabilityReportDto>> ReEncrypt(CancellationToken cancellationToken)
+        {
+            var report = await custodyService.ReEncryptAsync(cancellationToken);
+
+            logger.LogInformation(
+                "encryption.reencryption.completed {Actor} {MovedCount} {UnreadableCount} {NewActiveKeyId}",
+                WhoAskedForIt(),
+                report.MovedCount,
+                report.UnreadableCount,
+                report.ActiveKeyId);
+
+            return Ok(new SecretReadabilityReportDto(report));
+        }
+
+        // An action that rewrites every stored credential in the installation is one somebody has to be
+        // answerable for afterwards, and the request is the only place that knows who that was.
+        private string WhoAskedForIt()
+        {
+            return User.FindFirst("sub")?.Value
+                ?? User.FindFirst("oid")?.Value
+                ?? User.Identity?.Name
+                ?? "unknown";
         }
 
         // Asked the same way startup asked it, off the same settings, so the path an operator is shown

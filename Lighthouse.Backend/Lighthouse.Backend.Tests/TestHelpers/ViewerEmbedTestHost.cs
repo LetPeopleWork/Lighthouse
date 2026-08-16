@@ -192,6 +192,17 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return await client.GetAsync(path);
         }
 
+        public static async Task<HttpResponseMessage> PostAsViewerAsync(
+            WebApplicationFactory<Program> host,
+            string path,
+            string? sessionCookie = null,
+            string? embedCookie = null)
+        {
+            using var client = CreateClient(host);
+            ApplyCookies(client, sessionCookie, embedCookie);
+            return await client.PostAsync(path, content: null);
+        }
+
         public static string? ReadSetCookie(HttpResponseMessage response, string cookieName)
         {
             ArgumentNullException.ThrowIfNull(response);

@@ -1,8 +1,10 @@
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -76,6 +78,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private WebApplicationFactory<Program> ownKeyFactory = null!;
 
+        private TestWebApplicationFactory<Program> rotatableRootFactory = null!;
+
+        private WebApplicationFactory<Program> rotatableFactory = null!;
+
+        private string rotatableKeyStore = null!;
+
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
@@ -84,15 +92,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             ownKeyRootFactory = new TestWebApplicationFactory<Program>();
             ownKeyFactory = AHostRunningOn(ownKeyRootFactory, ARingThisInstanceMadeForItself(), ReportedKeyStore);
+
+            rotatableKeyStore = Directory.CreateTempSubdirectory("EncryptionControllerRotation_").FullName;
+            rotatableRootFactory = new TestWebApplicationFactory<Program>();
+            rotatableFactory = AHostThatCanMakeItsOwnKey(rotatableRootFactory, rotatableKeyStore);
+
+            // Migrations are skipped in the test environment, and moving stored secrets is the first thing
+            // on this controller that reads the tables holding them.
+            WithSecretsToWalk(factory);
+            WithSecretsToWalk(rotatableFactory);
+        }
+
+        private static void WithSecretsToWalk(WebApplicationFactory<Program> host)
+        {
+            using var scope = host.Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.Migrate();
         }
 
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
+            rotatableFactory.Dispose();
+            rotatableRootFactory.Dispose();
             ownKeyFactory.Dispose();
             ownKeyRootFactory.Dispose();
             factory.Dispose();
             rootFactory.Dispose();
+
+            Directory.Delete(rotatableKeyStore, recursive: true);
         }
 
         [Test]
@@ -312,6 +339,116 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task RotatingWhereTheKeyWasSuppliedToThisInstance_IsRefused_AndTheKeysHeldAreUnchanged()
+        {
+            using var client = factory.CreateClient().AsSystemAdmin();
+
+            var before = IdsOn(RingOf(factory));
+            using var response = await client.PostAsync(LatestRoute + "/rotate", content: null);
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Conflict), body);
+                Assert.That(body, Does.Contain("belongs to"),
+                    "an administrator turned down without being told who owns the key has nothing to act on");
+                Assert.That(IdsOn(RingOf(factory)), Is.EqualTo(before).AsCollection);
+            }
+        }
+
+        [Test]
+        public async Task RotatingWhereTheInstanceOwnsItsKey_MakesANewOneAndSaysWhatItMoved()
+        {
+            using var client = rotatableFactory.CreateClient().AsSystemAdmin();
+
+            var before = RingOf(rotatableFactory).ActiveKey.Id;
+            using var response = await client.PostAsync(LatestRoute + "/rotate", content: null);
+            var payload = await ReadJsonAsync(response);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), payload.Raw);
+                Assert.That(payload.String("activeKeyId"), Is.Not.EqualTo(before));
+                Assert.That(RingOf(rotatableFactory).TryGet(before, out _), Is.True,
+                    "the key that was in force is retired, not discarded, so nothing already stored under it becomes unreadable");
+                Assert.That(payload.PropertyNames, Does.Contain("movedCount").And.Contain("unreadableCount").And.Contain("byConnection"));
+                AssertNoMaterialOf(RingOf(rotatableFactory), payload.Raw);
+            }
+        }
+
+        [Test]
+        public async Task MovingTheSecretsOntoTheKeyInForce_IsOfferedWhoeverOwnsTheKey()
+        {
+            using var suppliedClient = factory.CreateClient().AsSystemAdmin();
+            using var ownKeyClient = rotatableFactory.CreateClient().AsSystemAdmin();
+
+            using var supplied = await suppliedClient.PostAsync(LatestRoute + "/reencrypt", content: null);
+            using var ownKey = await ownKeyClient.PostAsync(LatestRoute + "/reencrypt", content: null);
+
+            var suppliedPayload = await ReadJsonAsync(supplied);
+            var ownKeyPayload = await ReadJsonAsync(ownKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(supplied.StatusCode, Is.EqualTo(HttpStatusCode.OK), suppliedPayload.Raw);
+                Assert.That(ownKey.StatusCode, Is.EqualTo(HttpStatusCode.OK), ownKeyPayload.Raw);
+                Assert.That(suppliedPayload.String("activeKeyId"), Is.EqualTo(RingOf(factory).ActiveKey.Id),
+                    "there is nothing to make here, only somewhere to move to");
+                AssertNoMaterialOf(RingOf(factory), suppliedPayload.Raw);
+                AssertNoMaterialOf(RingOf(rotatableFactory), ownKeyPayload.Raw);
+            }
+        }
+
+        [Test]
+        public async Task NeitherRotatingNorMoving_AnswersAnybodyWhoIsNotASystemAdministrator()
+        {
+            using var viewerClient = factory.CreateClient().AsViewer();
+
+            using var rotate = await viewerClient.PostAsync(LatestRoute + "/rotate", content: null);
+            using var reencrypt = await viewerClient.PostAsync(LatestRoute + "/reencrypt", content: null);
+
+            var refusals = new[]
+            {
+                (await rotate.Content.ReadAsStringAsync()).ToLowerInvariant(),
+                (await reencrypt.Content.ReadAsStringAsync()).ToLowerInvariant(),
+            };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rotate.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), refusals[0]);
+                Assert.That(reencrypt.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), refusals[1]);
+
+                foreach (var refusal in refusals)
+                {
+                    foreach (var word in WordsThatWouldNameTheKeyOrItsCustody)
+                    {
+                        Assert.That(refusal, Does.Not.Contain(word), $"the refusal names '{word}'");
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public async Task AnEmbedSessionPrincipal_CanNeitherRotateNorMoveAnything()
+        {
+            using var embedHost = new ViewerEmbedTestHost();
+            embedHost.SeedRbacFixture();
+
+            var embedCookie = await embedHost.EstablishEmbedCookieAsync(ViewerEmbedTestHost.UnprovisionedViewerSubject);
+
+            using var rotate = await ViewerEmbedTestHost.PostAsViewerAsync(
+                embedHost.AuthEnabled, LatestRoute + "/rotate", embedCookie: embedCookie);
+            using var reencrypt = await ViewerEmbedTestHost.PostAsViewerAsync(
+                embedHost.AuthEnabled, LatestRoute + "/reencrypt", embedCookie: embedCookie);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rotate.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+                Assert.That(reencrypt.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+            }
+        }
+
+        [Test]
         public async Task TheRoute_AnswersOnBothTheVersionedAndTheLatestPath()
         {
             using var client = factory.CreateClient().AsSystemAdmin();
@@ -357,6 +494,22 @@ namespace Lighthouse.Backend.Tests.API.Integration
                         services.AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring));
                     });
                 });
+        }
+
+        // The one host in this file that can actually rotate: it holds a key of its own and is given the
+        // thing that makes keys, pointed at a real directory. Every other host here is handed its key
+        // through configuration, which is exactly the custody that must be refused.
+        private static WebApplicationFactory<Program> AHostThatCanMakeItsOwnKey(
+            TestWebApplicationFactory<Program> root,
+            string keyStoreDirectory)
+        {
+            return AHostRunningOn(root, ARingThisInstanceMadeForItself(), keyStoreDirectory)
+                .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<IKeyRingMinter>();
+                    services.AddSingleton<IKeyRingMinter>(new GeneratedKeyRingMinter(
+                        keyStoreDirectory, new PhysicalKeyStoreFileSystem(), TimeProvider.System));
+                }));
         }
 
         private static EncryptionKeyRing ARingThisInstanceMadeForItself()
