@@ -170,6 +170,67 @@ namespace Lighthouse.Backend.Tests.Startup
         }
 
         [Test]
+        public void CarryOverLegacyKeyStore_RunAgainAfterTheInstanceMintedItsOwnKey_CarriesNothingRatherThanRefusing()
+        {
+            var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<key a>"));
+            var resolved = EmptyDirectory("resolved");
+            KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
+            File.WriteAllText(
+                Path.Combine(resolved, "encryption-keyring.protected"), "<the key this instance minted>");
+
+            var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
+
+            Assert.That(outcome.ContentsWereCarriedOver, Is.False);
+        }
+
+        [Test]
+        public void CarryOverLegacyKeyStore_TheLegacyDirectoryIsTheResolvedOne_CarriesNothingAndLeavesItAsItWas()
+        {
+            var directory = PopulatedDirectory("resolved", ("key-a.xml", "<the only key there is>"));
+            var before = ContentsOf(directory);
+
+            var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(directory, directory);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.ContentsWereCarriedOver, Is.False);
+                Assert.That(ContentsOf(directory), Is.EqualTo(before));
+            }
+        }
+
+        [Test]
+        public void CarryOverLegacyKeyStore_TheResolvedDirectoryDoesNotExistYet_IsCreatedAndFilled()
+        {
+            var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<key a>"));
+            var resolved = Path.Combine(contentRoot, "resolved-that-was-never-created");
+
+            var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.ContentsWereCarriedOver, Is.True);
+                Assert.That(ContentsOf(resolved), Is.EqualTo(ContentsOf(legacy)));
+            }
+        }
+
+        [Test]
+        public void CarryOverLegacyKeyStore_ALegacyStoreHoldingASubdirectory_CarriesThatTreeAcrossToo()
+        {
+            var legacy = PopulatedDirectory(
+                "legacy", ("key-a.xml", "<key a>"), (Path.Combine("nested", "key-b.xml"), "<key b>"));
+            var resolved = EmptyDirectory("resolved");
+
+            var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.ContentsWereCarriedOver, Is.True);
+                Assert.That(ContentsOf(resolved), Is.EqualTo(ContentsOf(legacy)));
+                Assert.That(File.Exists(Path.Combine(resolved, "nested", "key-b.xml")), Is.True);
+            }
+        }
+
+        [Test]
         public void CarryOverLegacyKeyStore_BothPopulatedAndDifferent_StopsStartupAndModifiesNeither()
         {
             var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<the key this instance used to have>"));
@@ -185,9 +246,22 @@ namespace Lighthouse.Backend.Tests.Startup
             {
                 Assert.That(refusal.Message, Does.Contain(legacy));
                 Assert.That(refusal.Message, Does.Contain(resolved));
+                Assert.That(refusal.Message, Does.Contain("will not choose between them"));
+                Assert.That(refusal.Message, Does.Contain("move the other one elsewhere"));
                 Assert.That(ContentsOf(legacy), Is.EqualTo(legacyBefore));
                 Assert.That(ContentsOf(resolved), Is.EqualTo(resolvedBefore));
             }
+        }
+
+        [Test]
+        public void CarryOverLegacyKeyStore_TheSameKeyFileHoldingDifferentKeys_StopsStartup()
+        {
+            var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<the key this instance used to have>"));
+            var resolved = PopulatedDirectory("resolved", ("key-a.xml", "<a key from somewhere else>"));
+
+            Assert.That(
+                () => KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy),
+                Throws.InvalidOperationException);
         }
 
         [Test]
@@ -256,7 +330,9 @@ namespace Lighthouse.Backend.Tests.Startup
 
             foreach (var (fileName, contents) in files)
             {
-                File.WriteAllText(Path.Combine(directory, fileName), contents);
+                var file = Path.Combine(directory, fileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+                File.WriteAllText(file, contents);
             }
 
             return directory;

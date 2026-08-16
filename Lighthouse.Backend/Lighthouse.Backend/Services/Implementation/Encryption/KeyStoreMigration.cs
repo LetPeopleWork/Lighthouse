@@ -33,10 +33,10 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 return new KeyStoreMigrationOutcome(true, legacyDirectory, resolvedDirectory);
             }
 
-            if (!HoldTheSameKeys(legacyDirectory, legacyContents, resolvedDirectory, resolvedContents))
+            if (!ResolvedHoldsEveryLegacyKey(legacyDirectory, legacyContents, resolvedDirectory, resolvedContents))
             {
                 throw new InvalidOperationException(
-                    $"Two key stores were found and they do not hold the same keys: '{legacyDirectory}' and '{resolvedDirectory}'. " +
+                    $"A key store was found at '{legacyDirectory}' holding keys the one in use at '{resolvedDirectory}' does not. " +
                     "Lighthouse will not choose between them, because the wrong choice leaves every stored secret unreadable. " +
                     "Keep the store that belongs to this instance, move the other one elsewhere, and start Lighthouse again.");
             }
@@ -56,14 +56,19 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             }
         }
 
-        private static bool HoldTheSameKeys(
+        // Every carry-over leaves the legacy store where it was, and the instance then writes its own key
+        // into the resolved one - so from the second start onwards the resolved store holds strictly more
+        // than the legacy store does. What has to hold is that nothing in the legacy store would be lost by
+        // walking away from it, not that the two are identical.
+        private static bool ResolvedHoldsEveryLegacyKey(
             string legacyDirectory,
             List<string> legacyContents,
             string resolvedDirectory,
             List<string> resolvedContents)
         {
-            return legacyContents.SequenceEqual(resolvedContents, StringComparer.Ordinal)
-                && legacyContents.TrueForAll(relativePath => AreIdentical(
+            return legacyContents.TrueForAll(relativePath =>
+                resolvedContents.Contains(relativePath, StringComparer.Ordinal)
+                && AreIdentical(
                     Path.Combine(legacyDirectory, relativePath),
                     Path.Combine(resolvedDirectory, relativePath)));
         }
