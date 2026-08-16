@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Encryption;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -51,6 +52,8 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         public const string TemporaryFileSuffix = ".writing";
 
+        private const int MostKeysMadeInOneDay = 99;
+
         private const string ProtectorPurpose = "Lighthouse.Encryption.KeyRing.v1";
 
         private readonly IKeyStoreFileSystem fileSystem;
@@ -98,23 +101,67 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 stored, KeyCustody.GeneratedForThisInstance, $"the file '{RingFilePath}'");
         }
 
+        // The wrapping keys that protect the ring file live on disk beside it, which is not necessarily
+        // where the application keeps its own - a deployment with more than one replica keeps those in Redis
+        // so that a cookie issued by one pod can be read by another. Wrapping the ring with those instead
+        // would write a file the next start cannot unwrap.
+        public static ServiceProvider ProtectionKeptBesideTheKeyStore(string keyStoreDirectory)
+        {
+            return new ServiceCollection()
+                .AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(keyStoreDirectory))
+                .Services
+                .BuildServiceProvider();
+        }
+
         public EncryptionKeyRing Mint()
         {
-            var ring = new EncryptionKeyRing(
-                KeyCustody.GeneratedForThisInstance,
-                new EncryptionKey(MintedKeyId(), RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength)));
+            return Persisted(new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey(existing: null)));
+        }
 
+        // The new key goes in front and everything that was there goes behind it, so what was written under
+        // the old keys stays readable while nothing is ever written under them again.
+        public EncryptionKeyRing MintOnto(EncryptionKeyRing existing)
+        {
+            ArgumentNullException.ThrowIfNull(existing);
+
+            return Persisted(new EncryptionKeyRing(
+                existing.Custody,
+                [NewKey(existing), existing.ActiveKey, .. existing.RetiredKeys]));
+        }
+
+        private EncryptionKeyRing Persisted(EncryptionKeyRing ring)
+        {
             Write(KeyRingSerializer.Format(ring));
 
             return ring;
         }
 
-        // The name says when the key was made, so an operator reading two of them can tell which is which.
-        private string MintedKeyId()
+        private EncryptionKey NewKey(EncryptionKeyRing? existing)
+        {
+            return new EncryptionKey(UnusedKeyId(existing), RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
+        }
+
+        // The name says when the key was made, so an operator reading two of them can tell which is which,
+        // and it counts up within the day because rotating twice in one afternoon is exactly what someone
+        // containing an exposure does - and a ring naming one key twice cannot be spelled at all.
+        private string UnusedKeyId(EncryptionKeyRing? existing)
         {
             var madeOn = timeProvider.GetUtcNow().UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-            return $"k-{madeOn}-01";
+            for (var madeTodayBefore = 1; madeTodayBefore <= MostKeysMadeInOneDay; madeTodayBefore++)
+            {
+                var name = string.Create(CultureInfo.InvariantCulture, $"k-{madeOn}-{madeTodayBefore:00}");
+
+                if (existing is null || !existing.TryGet(name, out _))
+                {
+                    return name;
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"This instance has already made {MostKeysMadeInOneDay} keys today. Nothing is wrong with the " +
+                "keys it has; rotating again is worth waiting until tomorrow for.");
         }
 
         // Written aside and then moved into place, so a process that dies part-way leaves the key that was

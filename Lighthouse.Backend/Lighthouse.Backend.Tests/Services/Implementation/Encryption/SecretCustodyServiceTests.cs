@@ -34,6 +34,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
         private static readonly EncryptionKey NewKey = new("k-2026-08-16-01", Convert.FromBase64String("Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZmdoaWo="));
 
+        private static readonly EncryptionKey NewerKey = new("k-2026-08-16-02", Convert.FromBase64String("MTIzNDU2Nzg5MGFiY2RlZmdoaWpmb29iYXJiYXpxdXg="));
+
         private static readonly EncryptionKey KeyNobodyHolds = new("k-lost-forever", Convert.FromBase64String("bG9zdGtleWxvc3RrZXlsb3N0a2V5bG9zdGtleWxvc3Q="));
 
         private string databaseFile = null!;
@@ -273,6 +275,132 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        [Test]
+        public async Task Rotating_MakesAKeyAndMovesEverythingOntoIt_AndKeepsTheKeyThatWasInForce()
+        {
+            var (holder, rotating) = AnInstanceThatOwnsItsKey();
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+
+            var report = await Rotating(holder, rotating, new AMinterThatMints(NewerKey)).RotateAsync();
+
+            var stored = await StoredOptionAsync(PersonalAccessToken);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holder.Current.ActiveKey.Id, Is.EqualTo(NewerKey.Id));
+                Assert.That(holder.Current.TryGet(NewKey.Id, out _), Is.True, "the key that was in force is retired, not discarded");
+                Assert.That(holder.Current.TryGet(OldKey.Id, out _), Is.True);
+                Assert.That(report.MovedCount, Is.EqualTo(4), "both connection options and both OAuth tokens move onto the new key");
+                Assert.That(rotating.Read(stored).KeyId, Is.EqualTo(NewerKey.Id));
+                Assert.That(rotating.Read(stored).PlainText, Is.EqualTo("contoso-pat"));
+            }
+        }
+
+        [Test]
+        public async Task RotatingWhereAnOperatorOwnsTheKey_IsRefused_AndNothingIsWritten()
+        {
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByConfiguration, NewKey, OldKey));
+            var supplied = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            var before = await StoredOptionAsync(PersonalAccessToken);
+
+            Assert.That(
+                async () => await Rotating(holder, supplied, new AMinterThatMints(NewerKey)).RotateAsync(),
+                Throws.InstanceOf<MintingNotPermittedException>());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holder.Current.ActiveKey.Id, Is.EqualTo(NewKey.Id), "the keys held are exactly the keys that were held");
+                Assert.That(await StoredOptionAsync(PersonalAccessToken), Is.EqualTo(before));
+            }
+        }
+
+        [Test]
+        public async Task AKeyThatCannotBeProved_IsNeverUsed_AndNoSecretIsWritten()
+        {
+            var (holder, rotating) = AnInstanceThatOwnsItsKey();
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            var before = await StoredOptionAsync(PersonalAccessToken);
+
+            Assert.That(
+                async () => await Rotating(holder, rotating, new AMinterThatCannotKeepIt()).RotateAsync(),
+                Throws.InvalidOperationException);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holder.Current.ActiveKey.Id, Is.EqualTo(NewKey.Id));
+                Assert.That(await StoredOptionAsync(PersonalAccessToken), Is.EqualTo(before));
+            }
+        }
+
+        [Test]
+        public async Task ThePublishedKey_StopsBeingHeldOnceTheLastSecretUnderItHasMoved()
+        {
+            var (holder, rotating) = AnInstanceStillHoldingThePublishedKey(out var published);
+
+            await StoreAsync(PersonalAccessToken, Under(published, "written-before-any-of-this"));
+            await StoreAsync(ClientSecret, Under(published, "also-written-before"));
+
+            var report = await Rotating(holder, rotating, new AMinterThatMints(NewerKey)).RotateAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.MovedCount, Is.EqualTo(4), "the two under the published key and the two the OAuth credential holds");
+                Assert.That(holder.Current.TryGet(LegacyDefaultEncryptionKey.Id, out _), Is.False,
+                    "nothing is stored under it any more, so it is no longer one of the keys held");
+            }
+        }
+
+        [Test]
+        public async Task ThePublishedKey_StaysHeldWhileOneSecretUnderItCannotBeRead()
+        {
+            var (holder, rotating) = AnInstanceStillHoldingThePublishedKey(out var published);
+
+            await StoreAsync(PersonalAccessToken, Under(published, "written-before-any-of-this"));
+            await StoreAsync(ClientSecret, SecretEnvelope.Protect("lost", LegacyDefaultEncryptionKey.Id, KeyNobodyHolds.Material.Span).Format());
+
+            var before = await StoredOptionAsync(ClientSecret);
+            var report = await Rotating(holder, rotating, new AMinterThatMints(NewerKey)).RotateAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.UnreadableCount, Is.EqualTo(1));
+                Assert.That(await StoredOptionAsync(ClientSecret), Is.EqualTo(before));
+                Assert.That(holder.Current.TryGet(LegacyDefaultEncryptionKey.Id, out _), Is.True,
+                    "one secret still names it, so letting it go would put that credential out of reach for good");
+            }
+        }
+
+        private (EncryptionKeyRingHolder Holder, CryptoService Crypto) AnInstanceThatOwnsItsKey()
+        {
+            var holder = new EncryptionKeyRingHolder(
+                new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey, OldKey));
+
+            return (holder, new CryptoService(holder, NullLogger<CryptoService>.Instance));
+        }
+
+        private static (EncryptionKeyRingHolder Holder, CryptoService Crypto) AnInstanceStillHoldingThePublishedKey(
+            out EncryptionKey published)
+        {
+            var ring = new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey).WithLegacyDefault();
+            ring.TryGet(LegacyDefaultEncryptionKey.Id, out var legacy);
+            published = legacy!;
+
+            var holder = new EncryptionKeyRingHolder(ring);
+
+            return (holder, new CryptoService(holder, NullLogger<CryptoService>.Instance));
+        }
+
+        private SecretCustodyService Rotating(
+            IEncryptionKeyRingHolder holder, ICryptoService cryptoService, IKeyRingMinter minter)
+        {
+            var scope = provider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            return new SecretCustodyService(context, cryptoService, holder, minter);
+        }
+
         private SecretCustodyService CustodyService(ICryptoService? cryptoService = null)
         {
             var scope = provider.CreateScope();
@@ -381,6 +509,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 options.UseSqlite($"Data Source={databaseFile}", sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
 
             return services.BuildServiceProvider();
+        }
+
+        private sealed class AMinterThatMints : IKeyRingMinter
+        {
+            private readonly EncryptionKey minted;
+
+            public AMinterThatMints(EncryptionKey minted)
+            {
+                this.minted = minted;
+            }
+
+            public EncryptionKeyRing MintOnto(EncryptionKeyRing existing)
+            {
+                return new EncryptionKeyRing(existing.Custody, [minted, existing.ActiveKey, .. existing.RetiredKeys]);
+            }
+        }
+
+        // A filesystem that accepts the write, reports success and hands back something else afterwards.
+        private sealed class AMinterThatCannotKeepIt : IKeyRingMinter
+        {
+            public EncryptionKeyRing MintOnto(EncryptionKeyRing existing)
+            {
+                throw new InvalidOperationException(
+                    "The encryption key did not read back as what was written, so this filesystem cannot be trusted to keep it.");
+            }
         }
 
         /// <summary>

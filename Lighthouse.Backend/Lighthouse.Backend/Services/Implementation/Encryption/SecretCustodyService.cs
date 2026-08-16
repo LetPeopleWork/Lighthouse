@@ -35,10 +35,13 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private readonly IEncryptionKeyRingHolder keyRingHolder;
 
+        private readonly IKeyRingMinter? minter;
+
         public SecretCustodyService(
             LighthouseAppContext context,
             ICryptoService cryptoService,
-            IEncryptionKeyRingHolder keyRingHolder)
+            IEncryptionKeyRingHolder keyRingHolder,
+            IKeyRingMinter? minter = null)
         {
             ArgumentNullException.ThrowIfNull(context);
             ArgumentNullException.ThrowIfNull(cryptoService);
@@ -47,6 +50,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             this.context = context;
             this.cryptoService = cryptoService;
             this.keyRingHolder = keyRingHolder;
+            this.minter = minter;
         }
 
         public Task<SecretReadabilityReport> InspectAsync(CancellationToken cancellationToken = default)
@@ -57,6 +61,40 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         public Task<SecretReadabilityReport> ReEncryptAsync(CancellationToken cancellationToken = default)
         {
             return WalkAsync(moveThem: true, cancellationToken);
+        }
+
+        // Order is the safety. The key is made, written and read back before it becomes the key anything is
+        // written under, so a failure anywhere before that leaves the ring that was in force and not one
+        // stored secret touched. The key that was in force goes behind the new one rather than away, which
+        // is what lets the pass be interrupted at any point and still leave every credential readable.
+        public async Task<SecretReadabilityReport> RotateAsync(CancellationToken cancellationToken = default)
+        {
+            var inForce = keyRingHolder.Current;
+
+            if (!inForce.CanMint || minter is null)
+            {
+                throw new MintingNotPermittedException(inForce.Custody);
+            }
+
+            var minted = minter.MintOnto(inForce.Without(LegacyDefaultEncryptionKey.Id));
+
+            keyRingHolder.Replace(minted.WithLegacyDefault());
+
+            var report = await WalkAsync(moveThem: true, cancellationToken);
+
+            keyRingHolder.Replace(AnythingStillUnderThePublishedKey(report) ? minted.WithLegacyDefault() : minted);
+
+            return report;
+        }
+
+        // Asked of what the pass actually found rather than of a count kept alongside it. A secret the pass
+        // could not read still names the key it was written under, and if that is the key published with the
+        // product then that key is still doing work and cannot be let go of.
+        private static bool AnythingStillUnderThePublishedKey(SecretReadabilityReport report)
+        {
+            return report.Secrets.Any(secret =>
+                secret.Outcome is not (SecretMoveOutcome.Moved or SecretMoveOutcome.MovedByAnotherWriter)
+                && string.Equals(secret.KeyId, LegacyDefaultEncryptionKey.Id, StringComparison.Ordinal));
         }
 
         private async Task<SecretReadabilityReport> WalkAsync(bool moveThem, CancellationToken cancellationToken)

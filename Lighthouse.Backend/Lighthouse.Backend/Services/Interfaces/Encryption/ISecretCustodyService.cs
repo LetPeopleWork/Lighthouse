@@ -13,5 +13,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Encryption
     public interface ISecretCustodyService : ISecretCustodyReader
     {
         Task<SecretReadabilityReport> ReEncryptAsync(CancellationToken cancellationToken = default);
+
+        Task<SecretReadabilityReport> RotateAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -56,6 +56,25 @@ namespace Lighthouse.Backend.Models.Encryption
             return new EncryptionKeyRing(Custody, [.. keys, key]);
         }
 
+        // Removing a key is only ever safe once nothing stored is still under it, which is a question about
+        // the data rather than about the ring - so the caller answers it and this only refuses the one case
+        // that is never safe: taking away the key secrets are being written under.
+        public EncryptionKeyRing Without(string keyId)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(keyId);
+
+            if (string.Equals(ActiveKey.Id, keyId, StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    "The key secrets are being written under cannot be taken off the ring, because nothing written under it could be read afterwards.",
+                    nameof(keyId));
+            }
+
+            var kept = Array.FindAll(keys, key => !string.Equals(key.Id, keyId, StringComparison.Ordinal));
+
+            return kept.Length == keys.Length ? this : new EncryptionKeyRing(Custody, kept);
+        }
+
         public EncryptionKeyRing WithLegacyDefault()
         {
             return LegacyDefaultEncryptionKey.AppendedTo(this);
