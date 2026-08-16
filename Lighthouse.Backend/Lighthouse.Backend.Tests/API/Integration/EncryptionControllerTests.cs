@@ -102,6 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "keyStorePath",
             "legacyDefaultPresent",
             "secretsUnderPublishedKey",
+            "allowsStartWithUnreadableSecrets",
         ];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
@@ -144,7 +145,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             checkableRootFactory = new TestWebApplicationFactory<Program>();
             checkableFactory = AHostRunningOn(
-                checkableRootFactory, checkableRing, Directory.CreateTempSubdirectory("EncryptionControllerCheck_").FullName);
+                checkableRootFactory,
+                checkableRing,
+                Directory.CreateTempSubdirectory("EncryptionControllerCheck_").FullName,
+                allowsStartWithUnreadableSecrets: true);
 
             // Migrations are skipped in the test environment, and every route on this controller now reads
             // the tables holding stored secrets - the key state included, because it counts how many are
@@ -633,6 +637,29 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "the published key has never been able to read that value, so no number of shapes makes it public");
         }
 
+        /// <summary>
+        /// An instance started past the refusal looks entirely healthy from every other angle. The startup
+        /// line says so, but a standalone operator has no console to read it in, and whoever finds the
+        /// setting still in force months later is rarely the person who set it — so the settings page has
+        /// to say it too, and say it every time.
+        /// </summary>
+        [Test]
+        public async Task ThePayload_SaysWhenTheInstanceWasStartedPastTheRefusal()
+        {
+            using var pastTheRefusal = checkableFactory.CreateClient().AsSystemAdmin();
+            using var ordinary = factory.CreateClient().AsSystemAdmin();
+
+            using var startedPastIt = await pastTheRefusal.GetAsync(LatestRoute);
+            using var startedNormally = await ordinary.GetAsync(LatestRoute);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((await ReadJsonAsync(startedPastIt)).Bool("allowsStartWithUnreadableSecrets"), Is.True);
+                Assert.That((await ReadJsonAsync(startedNormally)).Bool("allowsStartWithUnreadableSecrets"), Is.False,
+                    "an instance that never needed the switch is not taught to worry about a hatch it never opened");
+            }
+        }
+
         [Test]
         public async Task TheCheckRoute_AnswersOnBothTheVersionedAndTheLatestPath()
         {
@@ -676,11 +703,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private static WebApplicationFactory<Program> AHostRunningOn(
             TestWebApplicationFactory<Program> root,
             EncryptionKeyRing ring,
-            string keyStoreDirectory)
+            string keyStoreDirectory,
+            bool allowsStartWithUnreadableSecrets = false)
         {
             var keyStoreSetting = new Dictionary<string, string?>
             {
                 ["Encryption:KeyStorePath"] = keyStoreDirectory,
+                [EncryptionKeyRingBootstrapper.StartAnywaySettingKey] = allowsStartWithUnreadableSecrets ? "true" : null,
             };
 
             return TestWebApplicationFactory<Program>.WithTestAuthentication(root)

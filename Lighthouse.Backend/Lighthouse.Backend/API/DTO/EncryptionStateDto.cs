@@ -5,7 +5,11 @@ namespace Lighthouse.Backend.API.DTO
 {
     public sealed class EncryptionStateDto
     {
-        public EncryptionStateDto(EncryptionKeyRing keyRing, string keyStorePath, int secretsUnderPublishedKey)
+        public EncryptionStateDto(
+            EncryptionKeyRing keyRing,
+            string keyStorePath,
+            int secretsUnderPublishedKey,
+            bool allowsStartWithUnreadableSecrets = false)
         {
             ArgumentNullException.ThrowIfNull(keyRing);
 
@@ -16,6 +20,7 @@ namespace Lighthouse.Backend.API.DTO
             KeyStorePath = keyStorePath;
             LegacyDefaultPresent = keyRing.TryGet(LegacyDefaultEncryptionKey.Id, out _);
             SecretsUnderPublishedKey = secretsUnderPublishedKey;
+            AllowsStartWithUnreadableSecrets = allowsStartWithUnreadableSecrets;
         }
 
         public KeyCustody Custody { get; }
@@ -41,5 +46,10 @@ namespace Lighthouse.Backend.API.DTO
         // properties because an operator who confused them would either panic or relax for the wrong
         // reason.
         public int SecretsUnderPublishedKey { get; }
+
+        // Whether this instance was told to start even though it cannot read a single credential it holds.
+        // It is on the settings page and not only in a log because the operator who set it is usually not
+        // the one who finds it still set months later, and a standalone install has no console to read.
+        public bool AllowsStartWithUnreadableSecrets { get; }
     }
 }

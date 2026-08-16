@@ -135,6 +135,38 @@ namespace Lighthouse.Backend.Tests
             }
         }
 
+        // An instance running past the refusal looks entirely normal from every other angle, and the
+        // operator who set the switch is rarely the one who finds it still set months later.
+        [Test]
+        public void AnInstanceStartedPastTheRefusal_SaysSoOnEveryStart()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.GeneratedForThisInstance),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: true);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines, Has.Count.EqualTo(2));
+                Assert.That(lines[1], Does.Contain("Encryption__StartEvenIfNothingStoredCanBeRead"));
+                Assert.That(lines[1], Does.Contain("has to be entered again"),
+                    "the line is only useful if it says what the operator still owes");
+            }
+        }
+
+        [Test]
+        public void AnInstanceThatNeverNeededTheSwitch_IsNotToldAboutIt()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.GeneratedForThisInstance),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false);
+
+            Assert.That(lines, Has.Count.EqualTo(1),
+                "a healthy install is not taught to worry about a hatch it never opened");
+        }
+
         // The version is the first thing anyone is asked for when they report a problem, and it is the one
         // line of the banner carried by no label, so nothing else here would notice it going missing.
         [Test]

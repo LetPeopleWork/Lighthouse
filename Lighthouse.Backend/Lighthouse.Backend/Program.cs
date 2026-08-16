@@ -1429,7 +1429,8 @@ namespace Lighthouse.Backend
                 ConfiguredKeyRingSource.AnsweredByTheRetiredName(
                     builder.Configuration[ConfiguredKeyRingSource.RingSettingKey],
                     builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey],
-                    builder.Configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey])));
+                    builder.Configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey]),
+                builder.Configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey)));
 
             var startupBannerBuilder = new StringBuilder();
 

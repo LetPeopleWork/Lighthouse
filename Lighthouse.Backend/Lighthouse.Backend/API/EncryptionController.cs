@@ -78,7 +78,8 @@ namespace Lighthouse.Backend.API
             return Ok(new EncryptionStateDto(
                 keyRingHolder.Current,
                 WhereTheKeyIsKept().Directory,
-                await publishedKeySecrets.CountAsync(cancellationToken)));
+                await publishedKeySecrets.CountAsync(cancellationToken),
+                configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey)));
         }
 
         // Nothing is recorded about a check, and that is deliberate: nothing changed, and a running record

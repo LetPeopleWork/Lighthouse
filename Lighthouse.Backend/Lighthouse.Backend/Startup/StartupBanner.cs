@@ -15,7 +15,8 @@ namespace Lighthouse.Backend.Startup
         IConfiguration Configuration,
         EncryptionKeyRing KeyRing,
         KeyStoreLocation KeyStore,
-        bool KeyCameFromTheRetiredSetting);
+        bool KeyCameFromTheRetiredSetting,
+        bool AllowsStartWithUnreadableSecrets = false);
 
     // Said on every start for as long as the old name keeps working, because the only thing that makes it
     // safe to eventually stop reading that name is everyone having moved off it first.
@@ -25,6 +26,19 @@ namespace Lighthouse.Backend.Startup
             "The encryption key is being read from EncryptionSettings__EncryptionKey, which this release " +
             "retired. It still works today and will stop being read in a future release. Set the same value " +
             "as Encryption__Key and remove the old one.";
+    }
+
+    // Said on every start for as long as the setting is in force, and shaped like the emergency
+    // administrator line for the same reason: whoever opens a hatch is rarely the person who pays for it
+    // still being open a year later.
+    public static class RunningWithCredentialsItCannotRead
+    {
+        public static string Notice =>
+            "This instance was started with " +
+            EncryptionKeyRingBootstrapper.StartAnywaySettingKey.Replace(":", "__", StringComparison.Ordinal) +
+            " set, so it is running with stored credentials it cannot read. Every one of them has to be " +
+            "entered again; the encryption settings name the Connection and the field each one sits in. " +
+            "Remove the setting once they have been.";
     }
 
     public static class StartupBanner
@@ -63,7 +77,10 @@ namespace Lighthouse.Backend.Startup
 
             info.AddRange(AuthPostureBanner.BuildAuthPostureLines(facts.Configuration));
             info.AddRange(BuildEncryptionCustodyLines(
-                facts.KeyRing, facts.KeyStore, facts.KeyCameFromTheRetiredSetting));
+                facts.KeyRing,
+                facts.KeyStore,
+                facts.KeyCameFromTheRetiredSetting,
+                facts.AllowsStartWithUnreadableSecrets));
 
             info.Add("");
 
@@ -75,7 +92,10 @@ namespace Lighthouse.Backend.Startup
         // also the directory they would have to back up. The key itself never appears; it is read off the
         // ring rather than out of configuration, so the sentence cannot disagree with the key in force.
         public static IReadOnlyList<string> BuildEncryptionCustodyLines(
-            EncryptionKeyRing keyRing, KeyStoreLocation keyStore, bool keyCameFromTheRetiredSetting)
+            EncryptionKeyRing keyRing,
+            KeyStoreLocation keyStore,
+            bool keyCameFromTheRetiredSetting,
+            bool allowsStartWithUnreadableSecrets = false)
         {
             ArgumentNullException.ThrowIfNull(keyRing);
             ArgumentNullException.ThrowIfNull(keyStore);
@@ -93,6 +113,11 @@ namespace Lighthouse.Backend.Startup
             if (keyCameFromTheRetiredSetting)
             {
                 lines.Add(Line("⚠️", "Warning", RetiredKeySettingName.Nudge));
+            }
+
+            if (allowsStartWithUnreadableSecrets)
+            {
+                lines.Add(Line("🚨", "Encryption", RunningWithCredentialsItCannotRead.Notice));
             }
 
             return lines;
