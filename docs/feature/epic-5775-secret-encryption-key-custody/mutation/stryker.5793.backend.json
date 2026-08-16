@@ -10,7 +10,7 @@
     ],
     "thresholds": { "high": 90, "low": 80, "break": 0 },
     "coverage-analysis": "perTestInIsolation",
-    "test-case-filter": "(FullyQualifiedName~SystemInfo|FullyQualifiedName~SurveyNudge|FullyQualifiedName~EncryptionController|FullyQualifiedName~EncryptionRecord|FullyQualifiedName~StartupBanner)&(FullyQualifiedName!~Containers)",
+    "test-case-filter": "(FullyQualifiedName~SystemInfo|FullyQualifiedName~StoredSecretSummary|FullyQualifiedName~SurveyNudge|FullyQualifiedName~EncryptionController|FullyQualifiedName~EncryptionRecord|FullyQualifiedName~StartupBanner)&(FullyQualifiedName!~Containers)",
     "reporters": ["progress", "json", "cleartext"],
     "concurrency": 4,
     "additional-timeout": 30000,

@@ -997,6 +997,12 @@ get re-applied.
 
 ## Infra & flakes
 
+### 2026-08-16 — three ways a Stryker.NET run produces a number that is not a result
+- **Symptom**: epic-5775 slice 06b scored 0.00 %, then 68.75 %, then 80.00 %, then 93.33 % over the same three files without the production code changing between the last two.
+- **Root cause**: three different broken runs. (1) **The tree was edited while the run was in flight** — Stryker copies the solution at start, so adding a constructor parameter to a controller and its test mid-run scores a source/test pair that never existed together; every mutant "survived". (2) A genuine sub-gate result that needed real tests. (3) **The `test-case-filter` did not match the new test fixture's name**, so the run silently never executed the tests written to kill those exact mutants — and still reported a passing 80 %.
+- **Fix**: freeze the working tree for the duration of a run; and after adding any new test fixture, check its type name against every fragment in `test-case-filter` before believing the score.
+- **Rule going forward**: A Stryker score is only evidence if you have checked *what ran*. Zero killed against a suite you know is green means the run is broken, not the code. A score that passes the gate while the mutants you just wrote tests for are still listed as survived means your filter excluded those tests — confirm scope per file in `reports/mutation-report.json` rather than reading the summary line. Adding a fixture whose name matches no filter fragment is silent.
+
 ### 2026-08-10 — concurrent merges race SonarCloud, and the loser's report is rejected as stale
 - **Symptom**: `sonar-gates` red on run 31359369238 while every other job was green. The log's only real line: `Report for commit '146861cc9…' can't be processed: a newer report has already been processed, and processing older reports is not supported. The last processed report was for commit 'f08fc7693…'.`
 - **Root cause**: four dependabot PRs were merged into `main` within about two seconds of each other (05:40:59–05:41:01). Each merge starts its own analysis; SonarCloud processes reports per project in arrival order and **refuses any report older than the last one it processed**. The merge that happens to lose the race fails its gate even though its code is fine. Nothing was wrong with the commit.

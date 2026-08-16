@@ -78,6 +78,8 @@ namespace Lighthouse.Backend.API
             // and an authorisation bug that only ever shows up as a missing row is one nobody reports.
             catch (Exception couldNotBeAsked) when (couldNotBeAsked is DbException or InvalidOperationException)
             {
+                // Stryker disable once String: that this is said at warning level is the behaviour; the
+                // sentence is for whoever reads the log and is not something a test should freeze.
                 logger.LogWarning(
                     couldNotBeAsked,
                     "Could not work out whether this caller administers the instance, so the system information was answered without what only an administrator may see.");

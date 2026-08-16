@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
@@ -323,6 +324,50 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        /// <summary>
+        /// Withholding is the right answer to a question that could not be asked. It is also the answer a
+        /// genuine fault in the permission check would produce, and an authorisation bug whose only
+        /// symptom is a missing row on a settings page is one nobody ever reports.
+        /// </summary>
+        [Test]
+        public async Task GetSystemInfo_TheAdministratorCheckCouldNotBeMade_WithholdsAndSaysSo()
+        {
+            var logger = new Mock<ILogger<SystemInfoController>>();
+
+            rbacMock
+                .Setup(rbac => rbac.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    RbacGuardRequirement.SystemAdmin,
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("no database to ask"));
+
+            systemInfoServiceMock.Setup(service => service.GetSystemInfo())
+                .Returns(AnInstanceWith(OneEmergencyAdmin, "instance · /app/data/keys"));
+
+            var response = await CreateSubject(logger).GetSystemInfo(CancellationToken.None);
+            var answered = (SystemInfo)((OkObjectResult)response.Result!).Value!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Encryption, Is.Null,
+                    "a question that cannot be answered is not a yes");
+                Assert.That(answered.EmergencyAdminSubjects, Is.Empty);
+                Assert.That(answered.Os, Is.Not.Empty,
+                    "and the request still succeeds - this is what the application shell fetches before it can draw anything at all");
+
+                logger.Verify(
+                    written => written.Log(
+                        LogLevel.Warning,
+                        It.IsAny<EventId>(),
+                        It.IsAny<It.IsAnyType>(),
+                        It.IsAny<Exception>(),
+                        (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+                    Times.Once,
+                    "the safe behaviour must not also be a silent one");
+            }
+        }
+
         private async Task<SystemInfo> Answered()
         {
             var response = await CreateSubject().GetSystemInfo(CancellationToken.None);
@@ -348,9 +393,13 @@ namespace Lighthouse.Backend.Tests.API
                 Encryption: encryption);
         }
 
-        private SystemInfoController CreateSubject()
+        private SystemInfoController CreateSubject(Mock<ILogger<SystemInfoController>>? logger = null)
         {
-            return new SystemInfoController(systemInfoServiceMock.Object, refreshLogServiceMock.Object, rbacMock.Object, NullLogger<SystemInfoController>.Instance)
+            return new SystemInfoController(
+                systemInfoServiceMock.Object,
+                refreshLogServiceMock.Object,
+                rbacMock.Object,
+                logger?.Object ?? NullLogger<SystemInfoController>.Instance)
             {
                 // Somebody who signed in. A caller who did not is settled without asking anybody, so a
                 // controller built without a principal would answer every one of these as a stranger.
