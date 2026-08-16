@@ -219,6 +219,17 @@ If a secret store already owns your key and mounts it into the container as a fi
 
 The file holds exactly what the setting would hold — one key, or several in the form above. If the setting names a file that isn't there, Lighthouse does not start: it won't fall back to a key of its own, because the mounted file would win again as soon as it reappeared and everything written in the meantime would be unreadable.
 
+### The key that ships with Lighthouse is never accepted as your key
+
+Every Lighthouse before this version encrypted with a key that is written into the product, and that key can be read out of the public source by anyone. If you carry that value forward — by keeping your own `appsettings.json` across the upgrade, or by copying the old value into `Encryption__Key` — Lighthouse **stops startup** rather than writing your tokens under a key anybody already has. The message names the setting the value arrived in.
+
+Nothing is changed and nothing is lost: Lighthouse always keeps that key for reading, so everything you already stored is still readable. There are two ways on:
+
+- set `Encryption__Key` to a key of your own, or
+- remove the setting entirely and let Lighthouse create and keep one for you.
+
+The same value is still welcome *behind* a key of your own — second or later in the list described above. That is exactly how an instance keeps reading what it stored before the upgrade; what it may never be is the key new secrets are written under.
+
 ### When Lighthouse has nowhere to keep a key
 
 Some deployments leave Lighthouse nowhere to put a key it would still find tomorrow — a database that is not a local file (Postgres, for example), or a container whose database file is written inside the container rather than onto a mounted volume. Lighthouse says so on startup and names the two ways out:

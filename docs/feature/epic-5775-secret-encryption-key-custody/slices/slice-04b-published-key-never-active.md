@@ -54,4 +54,25 @@ stored value.
 
 ## Verdict
 
-_To be recorded at slice close._
+**Shipped 2026-08-16.** Three changes, all behind one idea: stop reasoning about a key's name and start
+asking about its material.
+
+- `LegacyDefaultEncryptionKey` learned two questions — *is this key that key* (constant-time over the
+  compiled-in bytes) and *can that key read this value*. Both hand back a boolean; the material still
+  leaves the class nowhere.
+- The refusal went into `SuppliedKeyRing.ParsedFrom`, the one parser every transport funnels through, so
+  configuration under any of its three names, a mounted key file and a key store this instance wrote are
+  all refused on the same terms and in the same words — and a fifth transport added later inherits it.
+  It is scoped to the first entry of a ring. Behind an active key the same material stays welcome, which
+  scenario 112 and the pre-existing upgrade tests pin.
+- The count kept its SQL narrowing predicate — that is what keeps the settings page free for an instance
+  that has already moved everything — and replaced the guess it made on the narrowed set with a read.
+
+Two things deliberately left: an instance that already wrote secrets under published material wearing a
+`k-cfg-` id will now refuse to start, and the way back in is slice 05b's subject. No released build can
+be in that state — the path into it was opened and closed inside this epic. And the panel's wording,
+which still says "the key published with Lighthouse" in a sentence slice 06a owns.
+
+Owed before the epic closes: the **B2b** and **C1** walkthrough runs repeated on the same binary
+substrate — B2b must refuse to start naming `EncryptionSettings__EncryptionKey`, C1 must start and
+report zero.

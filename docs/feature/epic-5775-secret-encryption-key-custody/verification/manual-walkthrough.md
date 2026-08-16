@@ -662,6 +662,11 @@ trap.
 **F-20 · BLOCKING · An operator can be pinned to the published key and then told they are safe**
 (B2b, 2026-08-16). Observed end to end, not inferred.
 
+**FIXED in slice 04b (Story #5789), 2026-08-16.** Supplied key material equal to the published key is
+refused as the active key at the one moment it can still be said, in the one parser every transport
+funnels through, and the refusal names the setting that carried it. Owed before the slice closes: the
+B2b run repeated on the same substrate.
+
 *How it is reached.* `server.md` tells operators to upgrade by copying the new files over the old
 folder, overriding everything. Anyone who has edited `appsettings.json` — a port, a certificate path, a
 Postgres connection string — keeps or merges their own copy instead. That file still carries the
@@ -706,6 +711,11 @@ maintainer's assessment that the custom-key population is effectively empty, and
 breaks: the instance works, and taking the wrongly-motivated remedy is still an improvement (it moves
 the value from unauthenticated AES-CBC onto an authenticated envelope under the operator's own key).
 Recorded in full because the underlying gap is shared with F-20, which is not low priority.
+
+**FIXED in slice 04b (Story #5789), 2026-08-16.** The count stops deciding by envelope shape and asks
+the published key whether it can read the value. The narrowing predicate stays in SQL, so an instance
+that has moved everything still decrypts nothing. The sentence the panel draws from that count belongs
+to slice 06a; this closes the number behind it. Owed before the slice closes: the C1 run repeated.
 
 An install that had a genuine custom key set under `EncryptionSettings__EncryptionKey` upgrades cleanly and keeps working. It is then told:
 `1 stored credentials are still readable with the key published with Lighthouse, which anyone who has
