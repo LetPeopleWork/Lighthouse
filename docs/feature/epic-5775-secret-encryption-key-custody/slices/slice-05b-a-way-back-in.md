@@ -81,6 +81,11 @@ Slices 01–04 (the check pass supplies the to-do list). Independent of slice 05
 (phase 2), because the wording quotes the setting name and a message naming a setting that does nothing
 would have been wrong for the length of one commit.
 
+Mutation: **97.73 %** backend on the four files this slice touched, second run. The first said 73.43 %
+and the distribution said more than the number did — the switch and its guard were 32 of 32 killed on
+the first pass, and every survivor was a sentence, a marker or a piece of banner older than this slice.
+Recorded in `mutation/results-5790.md`.
+
 Owed before the epic closes: the **D2** walkthrough run repeated end to end — start with the switch,
 read the list, type the credentials back in, remove the switch — and **A2d**, whose refusal must now
 lead with removing the key that was just set and name both key ids.
