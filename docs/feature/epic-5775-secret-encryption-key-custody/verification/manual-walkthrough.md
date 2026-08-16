@@ -322,7 +322,9 @@ Filled in live. Verdict is the operator's, not inferred from code.
 |---|---|---|---|---|---|
 | A1 standalone fresh | **PASS**, behaviour | `generated for this instance (k-2026-08-16-01) · /home/benjamin/.config/Lighthouse/data-protection-keys` — log only, no terminal | source/active/held/kept-in all correct; `k-legacy-default` also listed under Keys held; Rotate + Move + Check all offered; no published-key warning | panel has no header saying what it is for, and no link to docs | Nothing interrupted the launch. `encryption-keyring.protected` created beside the existing DP key and `oauth-state-secret.protected`. Rotate on an empty instance produced `k-2026-08-16-02` and reported "Moved 0 stored secrets". |
 | A1b standalone, real secret on a minted key | **PASS** | — | check: `1 on the active key k-…02`; rotate: `Moved 1 stored secrets onto key k-…03`; check: `1 on the active key k-…03` | — | Added a real connection + team on the dev build, synced. Rotated. Re-synced after the move — works, nothing re-entered. Keys held now **4 chips**. Plural agreement wrong throughout (F-7). |
-| A2 binary fresh | | | | | |
+| A2 binary fresh (SQLite, v26.8.16.7) | **PASS** | `generated for this instance (k-2026-08-16-01) · …/Lighthouse-linux-x64-v26.8.16.7/keys` — **visible in the terminal**, unlike standalone | *generated for this instance*, `k-2026-08-16-01`, 2 chips, Kept in = `…/keys`, no warning | — | Key-store case 3 confirmed: `<app dir>/keys`, not `data-protection-keys`. **Only one key directory exists** — `keys/` holds the ring, the Data Protection key and `oauth-state-secret.protected`; no second folder to confuse an operator or miss in a backup. On the banner: "you don't need to see it, but for debugging/logs it's nice to have" — so F-1 is about the panel carrying the load, not about making the banner louder. |
+| A2c binary, key supplied by configuration | **PASS**, behaviour — **Bug #5776 confirmed dead** | `supplied by configuration (k-cfg-afa1daf1) · …/a2c/keys` | *supplied by configuration*, `k-cfg-afa1daf1`, 2 chips, **Rotate absent**, Move + Check only | the rotation instruction is unactionable (F-15) | `Encryption__Key` reaches the code and the id is derived from the value, not random. `keys/` exists and holds the Data Protection key + `oauth-state-secret.protected` but **no `encryption-keyring.protected`** — nothing minted, exactly right. Findings F-14, F-15. |
+| A2d binary, key supplied *after* secrets exist | **PASS**, behaviour — refuses correctly | `FATAL: This instance has stored credentials and not one of them can be read with the key it started on…` | — | — | Refused to start, wrote nothing. The reassurance sentence ("Nothing has been changed and nothing is lost") is the strongest copy in the feature — it is what stops a stuck operator deleting their key store. Neither remedy offered is the one that fits: F-16, F-17. **Recovery verified**: removing the variable and restarting brings back `generated for this instance (k-2026-08-16-01)` and the team refreshes — so F-16/F-17 are wording, not blocking. |
 | A3 docker+volume fresh | | | | | |
 | A4 docker+postgres fresh | | | | | |
 | A4b remedy: key | | | | | |
@@ -378,6 +380,10 @@ The code already holds the principle this violates — the comment above `summar
 counting what moved "would greet an operator with 'Moved 0' on a perfectly healthy instance", which is
 why *Check* was given its own vocabulary. The same reasoning applies to offering the action at all.
 
+Worse in configuration custody (A2c): because `canMint` is false the Move button is promoted to the
+filled, primary style, so on a fresh instance holding **zero** secrets the single most prominent
+control on the page is an action with nothing to act on.
+
 **F-7 · The report sentences do not agree in number** (A1b, 2026-08-16). Observed verbatim:
 `Checked 1 stored secrets.` and `Moved 1 stored secrets onto key k-2026-08-16-03.` Both summaries in
 `summaryOf` interpolate a count straight into a hardcoded plural. Singular is not a rare case here —
@@ -425,6 +431,63 @@ not information, it is four categories of nothing competing for attention with t
 matters. A healthy instance should read `Checked 1 stored secret. It is on the active key
 k-2026-08-16-01.` and a sick one should read the same plus only the categories that are non-zero.
 Applies to both summaries in `summaryOf`.
+
+**F-14 · "Kept in" names a directory the key is not kept in** (A2c, 2026-08-16). With custody
+*supplied by configuration* the panel still shows `Kept in …/a2c/keys`. The key is not there and never
+will be — it lives in the environment. What makes this actively dangerous rather than merely untidy is
+that the directory **exists and is full of key-shaped files**: the Data Protection key and
+`oauth-state-secret.protected` are both in it. An operator who backs that folder up alongside the
+database has every reason to believe they have taken their encryption key with them, and they have
+not. Restoring that pair onto a host without the environment variable yields a database whose
+credentials cannot be read.
+
+The row should say where the key came from in this mode — the setting name — or be replaced by a
+backup-oriented sentence that is true for the custody in force.
+
+**F-15 · The rotation instruction cannot be followed** (A2c, 2026-08-16). Verbatim: *"To replace it,
+put the new key ahead of the old one in `Encryption__Keys`, start Lighthouse again, and then move the
+stored secrets onto it."* Everything an operator needs to actually type is missing:
+
+- It names `Encryption__Keys`, which is **not** the variable they set (`Encryption__Key`). Nothing says
+  both exist, that the plural takes a ring, or that the plural wins when both are present. Two names
+  differing by one character, with different grammars, is exactly the confusion this epic was created
+  to end.
+- The ring grammar is never given. Per `KeyRingSerializer` it is comma-separated entries, each either
+  bare base64 or `name:base64`, first entry active. "Ahead of" implies the ordering but not the
+  separator, and an operator guessing a newline or a semicolon gets a startup refusal.
+- It does not say what to do with the old `Encryption__Key` afterwards, or that leaving it set is
+  harmless because the plural is read first.
+
+This sentence is the only rotation procedure this population is ever given — and per the same wording
+in `SuppliedByExternalSecret`, it is what every Kubernetes operator will read too once slice 05 lands.
+It needs the concrete grammar, an example ring, and a docs link.
+
+**F-16 · The refusal never offers the remedy that actually fits: undo what you just set** (A2d,
+2026-08-16). Full text observed:
+
+> FATAL: This instance has stored credentials and not one of them can be read with the key it started
+> on, so this is not the key they were written under. Nothing has been changed and nothing is lost -
+> the credentials are still there, encrypted under the key they were written with. Set
+> `Encryption__Key` to the key this instance was using before, or set `Encryption__KeyStorePath` to the
+> key store that belongs to this database, and start Lighthouse again.
+
+Both remedies assume the operator **lost** a key. The far likelier cause — and the one actually
+reproduced here — is that they **added** one: an instance that had been happily minting for months
+gets `Encryption__Key` set for the first time, and the configured key displaces the minted key out of
+the ring. In that state the key store is already correct and already present; `Encryption__KeyStorePath`
+is a no-op, and "set `Encryption__Key` to the key this instance was using before" asks for a value that
+was never written down anywhere, because Lighthouse generated it and kept it in a file.
+
+The one instruction that works — *remove the `Encryption__Key` you just set and start again* — is the
+only one missing. Worth stating first, because it is both the most likely cause and the only remedy an
+operator can carry out unaided.
+
+**F-17 · The refusal knows which keys are involved and does not say** (A2d, 2026-08-16). It says "this
+is not the key they were written under" without naming either side. Both are known: the ring reports
+its active key id, and every stored envelope carries the id of the key that wrote it — that is exactly
+what the check pass reads. "Your stored credentials were written under `k-2026-08-16-01`; this
+instance started on `k-cfg-9f2ab1c4`" turns a puzzle into a diagnosis, and costs nothing in secrecy:
+key **ids** are already displayed on the encryption panel, and no key material is involved.
 
 **F-5 · Rotate on an empty instance reports in move-vocabulary** (A1, 2026-08-16). Rotating with
 nothing stored is legitimate and should stay available, but its report reads `Moved 0 stored secrets
