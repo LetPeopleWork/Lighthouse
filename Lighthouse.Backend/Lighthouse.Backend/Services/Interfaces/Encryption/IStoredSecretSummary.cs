@@ -1,5 +1,11 @@
 namespace Lighthouse.Backend.Services.Interfaces.Encryption
 {
+    // Whose key this instance is on and where that key is kept, worked out once at startup from the ring
+    // that was actually resolved and the directory it was actually resolved from. Handed round as a
+    // finished sentence rather than as the ingredients, so nothing downstream can reach for
+    // configuration and arrive at a different answer than the key in force.
+    public sealed record KeyCustodyDescription(string Line);
+
     // What the encryption settings need to know about the stored secrets without decrypting any of them:
     // how many are still readable with the key published with the product, and which keys the rest say
     // wrote them.

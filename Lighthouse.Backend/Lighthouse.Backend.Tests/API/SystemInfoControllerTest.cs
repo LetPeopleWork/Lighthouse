@@ -1,3 +1,6 @@
+using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
@@ -265,6 +268,58 @@ namespace Lighthouse.Backend.Tests.API
                 changed,
                 Is.EquivalentTo(WhatOnlyAnAdministratorMaySee),
                 "a field added to this response later is withheld by the same sentence or by nothing at all");
+        }
+
+        // The startup line is read from a console by whoever runs the process; this page is read by an
+        // administrator months later, and is the only one of the two a standalone operator ever sees.
+        // Two copies of the same sentence that agree today are two copies that disagree later, so there
+        // is one sentence.
+        [TestCase(KeyCustody.GeneratedForThisInstance)]
+        [TestCase(KeyCustody.SuppliedByConfiguration)]
+        [TestCase(KeyCustody.SuppliedByExternalSecret)]
+        [TestCase(KeyCustody.NoDurableStore)]
+        public async Task GetSystemInfo_TheCustodyItReports_ReadsTheSameAsTheStartupLine(KeyCustody custody)
+        {
+            var keyStore = new KeyStoreLocation("/app/data/keys", KeyStoreCase.BesideTheDatabaseFile);
+            var described = WhoseKeyThisIs.AndWhereItIsKept(custody, keyStore.Directory);
+
+            systemInfoServiceMock.Setup(service => service.GetSystemInfo())
+                .Returns(AnInstanceWith(OneEmergencyAdmin, described));
+
+            var bannerLine = StartupBanner.BuildEncryptionCustodyLines(
+                new EncryptionKeyRing(custody, new EncryptionKey("k-2026-08-16-01", new byte[EncryptionKey.MaterialLength])),
+                keyStore,
+                keyCameFromTheRetiredSetting: false)[0];
+
+            var answered = await Answered();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Encryption, Is.EqualTo(described));
+                Assert.That(bannerLine, Does.Contain(described),
+                    "the banner and this page render the same sentence, so neither can be changed without the other");
+            }
+        }
+
+        [Test]
+        public async Task GetSystemInfo_WhatItSaysAboutTheKey_IsNeitherTheKeyNorItsName()
+        {
+            var described = WhoseKeyThisIs.AndWhereItIsKept(
+                KeyCustody.GeneratedForThisInstance, "/app/data/keys");
+
+            systemInfoServiceMock.Setup(service => service.GetSystemInfo())
+                .Returns(AnInstanceWith(OneEmergencyAdmin, described));
+
+            var answered = await Answered();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Encryption, Does.Not.Contain("k-"),
+                    "a key id is not on this page: the moment it is worth having is a start that stopped, and the refusal names it there");
+                Assert.That(answered.Encryption, Does.Contain("instance"));
+                Assert.That(answered.Encryption, Does.Contain("/app/data/keys"),
+                    "the directory an operator has to back up alongside the database");
+            }
         }
 
         private async Task<SystemInfo> Answered()

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
@@ -21,8 +22,11 @@ namespace Lighthouse.Backend.Services.Implementation
         private readonly IServiceScopeFactory scopeFactory;
         private readonly ILogger<SystemInfoService> logger;
 
-        public SystemInfoService(IConfiguration configuration, ILogConfiguration logConfiguration, IServiceConfig serviceConfig, IServiceScopeFactory scopeFactory, ILogger<SystemInfoService> logger)
+        private readonly KeyCustodyDescription keyCustody;
+
+        public SystemInfoService(IConfiguration configuration, ILogConfiguration logConfiguration, IServiceConfig serviceConfig, IServiceScopeFactory scopeFactory, ILogger<SystemInfoService> logger, KeyCustodyDescription keyCustody)
         {
+            this.keyCustody = keyCustody;
             this.configuration = configuration;
             this.logConfiguration = logConfiguration;
             this.serviceConfig = serviceConfig;
@@ -50,7 +54,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 IsAuthorizationEnabled: authorization.Enabled,
                 EmergencyAdminSubjects: authorization.EmergencySystemAdminSubjects,
                 BaseUrl: serviceConfig.BaseUrl,
-                InstallTimestamp: GetInstallTimestamp());
+                InstallTimestamp: GetInstallTimestamp(),
+                Encryption: keyCustody.Line);
         }
 
         private string? GetInstallTimestamp()

@@ -41,6 +41,34 @@ namespace Lighthouse.Backend.Startup
             "Remove the setting once they have been.";
     }
 
+    // One sentence, rendered in two places. The startup line is read from a console by whoever runs the
+    // process; the system information page is read by an administrator months later, and is the only one
+    // a standalone operator ever sees. Two copies that agree today are two copies that disagree later.
+    public static class WhoseKeyThisIs
+    {
+        // One word each, and they still have to tell the four apart on their own - an operator scanning a
+        // console is reading this at a glance or not at all. A custody nobody named claims the least,
+        // which is the same thing having nowhere to keep a key means: the instance is on the key that
+        // ships inside every copy of the product.
+        public static string InAWord(KeyCustody custody)
+        {
+            return custody switch
+            {
+                KeyCustody.GeneratedForThisInstance => "instance",
+                KeyCustody.SuppliedByConfiguration => "configured",
+                KeyCustody.SuppliedByExternalSecret => "mounted secret",
+                _ => "published key",
+            };
+        }
+
+        // Whose key it is, then where the key store is. Never the key id: it is worth having at the
+        // moment a start stops, and the refusal that stops one names it there.
+        public static string AndWhereItIsKept(KeyCustody custody, string keyStoreDirectory)
+        {
+            return $"{InAWord(custody)} · {keyStoreDirectory}";
+        }
+    }
+
     public static class StartupBanner
     {
         private const string Rule = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
@@ -114,7 +142,7 @@ namespace Lighthouse.Backend.Startup
 
             var lines = new List<string>
             {
-                Line("🔑", "Encryption", $"{WhereTheKeyCameFrom(keyRing.Custody)} · {keyStore.Directory}")
+                Line("🔑", "Encryption", WhoseKeyThisIs.AndWhereItIsKept(keyRing.Custody, keyStore.Directory))
             };
 
             if (keyRing.Custody == KeyCustody.NoDurableStore)
@@ -133,21 +161,6 @@ namespace Lighthouse.Backend.Startup
             }
 
             return lines;
-        }
-
-        // One word each, and they still have to tell the four apart on their own - an operator scanning a
-        // console is reading this at a glance or not at all. A custody nobody named claims the least,
-        // which is the same thing having nowhere to keep a key means: the instance is on the key that
-        // ships inside every copy of the product.
-        private static string WhereTheKeyCameFrom(KeyCustody custody)
-        {
-            return custody switch
-            {
-                KeyCustody.GeneratedForThisInstance => "instance",
-                KeyCustody.SuppliedByConfiguration => "configured",
-                KeyCustody.SuppliedByExternalSecret => "mounted secret",
-                _ => "published key",
-            };
         }
 
         private static string Line(string emoji, string label, string value)

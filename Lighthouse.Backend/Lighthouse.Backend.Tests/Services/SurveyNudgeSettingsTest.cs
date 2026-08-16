@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Services.Implementation;
@@ -244,7 +245,7 @@ namespace Lighthouse.Backend.Tests.Services
             services.AddScoped(_ => appSettingService);
             var scopeFactory = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
-            return new SystemInfoService(configuration.Object, logConfiguration.Object, serviceConfig.Object, scopeFactory, NullLogger<SystemInfoService>.Instance);
+            return new SystemInfoService(configuration.Object, logConfiguration.Object, serviceConfig.Object, scopeFactory, NullLogger<SystemInfoService>.Instance, new KeyCustodyDescription("instance · /app/data/keys"));
         }
     }
 }

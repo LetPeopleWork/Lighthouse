@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -213,7 +214,7 @@ namespace Lighthouse.Backend.Tests.Services
 
         private SystemInfoService CreateSubject()
         {
-            return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object, serviceConfigMock.Object, BuildScopeFactory(), NullLogger<SystemInfoService>.Instance);
+            return new SystemInfoService(configurationMock.Object, logConfigurationMock.Object, serviceConfigMock.Object, BuildScopeFactory(), NullLogger<SystemInfoService>.Instance, new KeyCustodyDescription("instance · /app/data/keys"));
         }
 
         private static IServiceScopeFactory BuildScopeFactory()
@@ -334,7 +335,7 @@ namespace Lighthouse.Backend.Tests.Services
 
         private SystemInfoService CreateSubjectWithConfiguration(IConfiguration configuration)
         {
-            return new SystemInfoService(configuration, logConfigurationMock.Object, serviceConfigMock.Object, BuildScopeFactory(), NullLogger<SystemInfoService>.Instance);
+            return new SystemInfoService(configuration, logConfigurationMock.Object, serviceConfigMock.Object, BuildScopeFactory(), NullLogger<SystemInfoService>.Instance, new KeyCustodyDescription("instance · /app/data/keys"));
         }
     }
 }

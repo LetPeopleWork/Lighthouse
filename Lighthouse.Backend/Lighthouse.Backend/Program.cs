@@ -31,6 +31,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
+using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -66,7 +67,6 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
-using Lighthouse.Backend.Startup;
 using Lighthouse.Backend.API.Swagger;
 using Lighthouse.Backend.API.Filters;
 
@@ -497,6 +497,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IPublishedKeySecretCount, PublishedKeySecretCount>();
             builder.Services.AddScoped<IReferencedKeyIds, ReferencedKeyIds>();
             builder.Services.AddScoped<IStoredSecretSummary, StoredSecretSummaryReader>();
+
+            builder.Services.AddSingleton(new KeyCustodyDescription(
+                WhoseKeyThisIs.AndWhereItIsKept(ring.Custody, keyStore.Directory)));
         }
 
         // Asked for lazily, and only on the one path that has nowhere durable to keep a key: every other
