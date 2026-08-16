@@ -92,6 +92,7 @@ export const createMockEncryptionService = (): IEncryptionService => {
 			keyStorePath: "/app/data/keys",
 			legacyDefaultPresent: false,
 			secretsUnderPublishedKey: 0,
+			allowsStartWithUnreadableSecrets: false,
 		}),
 		checkSecrets: vi.fn().mockResolvedValue(nothingToReport),
 		rotateKey: vi.fn().mockResolvedValue(nothingToReport),

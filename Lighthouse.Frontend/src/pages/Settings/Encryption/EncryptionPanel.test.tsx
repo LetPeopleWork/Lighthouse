@@ -18,6 +18,12 @@ const ownKey: EncryptionKeyState = {
 	keyStorePath: "/app/data/keys",
 	legacyDefaultPresent: false,
 	secretsUnderPublishedKey: 0,
+	allowsStartWithUnreadableSecrets: false,
+};
+
+const startedPastTheRefusal: EncryptionKeyState = {
+	...ownKey,
+	allowsStartWithUnreadableSecrets: true,
 };
 
 const justUpgraded: EncryptionKeyState = {
@@ -405,6 +411,38 @@ describe("EncryptionPanel", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("rotate-key-button")).toBeEnabled();
 		});
+	});
+
+	it("says when the instance was started past the refusal", async () => {
+		renderPanelOn(startedPastTheRefusal);
+
+		const notice = await screen.findByTestId("started-past-the-refusal-notice");
+
+		// Whoever finds this months later is rarely the person who set it, so the notice has to say what
+		// is still owed rather than only that something happened.
+		expect(notice).toHaveTextContent(
+			"Encryption__StartEvenIfNothingStoredCanBeRead",
+		);
+		expect(notice).toHaveTextContent("enter those credentials again");
+		expect(notice).toHaveTextContent("remove the setting");
+	});
+
+	it("still offers the check that names what has to be re-entered", async () => {
+		renderPanelOn(startedPastTheRefusal);
+
+		await screen.findByTestId("started-past-the-refusal-notice");
+
+		expect(screen.getByTestId("check-secrets-button")).toBeEnabled();
+	});
+
+	it("says nothing about a hatch an instance never opened", async () => {
+		renderPanelOn(ownKey);
+
+		await screen.findByTestId("reencrypt-button");
+
+		expect(
+			screen.queryByTestId("started-past-the-refusal-notice"),
+		).not.toBeInTheDocument();
 	});
 
 	it("tells an administrator who has just upgraded, without their having asked", async () => {
