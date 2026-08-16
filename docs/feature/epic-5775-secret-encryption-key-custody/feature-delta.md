@@ -2981,3 +2981,331 @@ already reference `Services`, and no ArchUnit rule forbids it. Recorded as a del
 than an oversight — the alternative was to drop `WithLegacyDefault()` from the ring and leave only
 `LegacyDefaultEncryptionKey.AppendedTo(ring)`, which reads worse at the call site.
 
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+- ✓ `slices/slice-03-rotate-without-recredentialing.md` — in full, including the pre-slice SPIKE.
+- ✓ `feature-delta.md` — US-03's thirteen ACs, DISCUSS Locked Decisions (D6, D9), the Story Map row for
+  slice 03, DESIGN Component Decomposition / Driving Ports / Driven Ports / Decisions (DD-11 to DD-15) /
+  Architectural Enforcement / Forks F-2 and F-6 / Open questions, and the DISTILL and DELIVER sections
+  slices 01 and 02 left behind.
+- ✓ `docs/product/architecture/adr-151`, `adr-152` — in full. `adr-146` to `adr-150` were read in the
+  slice-01 and slice-02 waves and are unchanged.
+- ✓ `environments.yaml` — the coexistence matrix and the two Kubernetes rows.
+- ✓ Code as it stands after slice 02: `EncryptionController.cs`, `EncryptionStateDto.cs`,
+  `CryptoService.cs`, `Models/Encryption/{EncryptionKeyRing,KeyCustody,SecretReadResult}.cs`,
+  `Services/Implementation/Encryption/{GeneratedKeyRingStore,EncryptionKeyRingHolder,KeyRingSerializer,
+  LegacyDefaultEncryptionKey,ConnectionSecrets,StoredSecretReadabilityProbe}.cs`,
+  `Data/LighthouseAppContext.cs` (`EncryptSecrets`, `RegenerateConcurrencyTokens`, `SaveWithRetry`),
+  `Data/DatabaseConfigurator.cs`, `Services/Implementation/OAuth/OAuthService.cs:178-280`.
+- ✓ `acceptance/milestone-{5..8}-*.feature` from slice 02 — for the conventions this slice continues.
+- `docs/product/kpi-contracts.yaml` — inherited unchanged; slice 03 authors no new `@kpi` scenario
+  (see Pre-requisites).
+
+---
+
+## Wave: DISTILL / [REF] Pre-slice SPIKE — OQ-1 answered by measurement
+
+The slice brief made this a hard gate: if a re-encryption pass needs to hold off the sync pipeline, the
+brief is re-cut and goes back to DESIGN. It does not. **The brief stands unchanged.**
+
+Measured 2026-08-16, against real SQLite (WAL, `busy_timeout=10000`, arranged the way
+`DatabaseConfigurator` arranges it) and a real PostgreSQL in a container — not against a fake and not
+against the in-memory provider, because the whole question is what a relational engine does with a
+guarded statement.
+
+| # | ADR-151's question | Measured answer |
+|---|---|---|
+| 1 | Does a guarded update report 0 rows affected when somebody else rewrote the row after it was read? | **Yes, on both providers.** A row rewritten by a token refresh between the read and the write is not moved, and the refreshed token survives. A row nobody touched is moved, one row affected. |
+| 2 | Is a database that will not hand the row over distinguishable from a lost update? | **Yes, structurally.** A refusal to write raises; a declined move returns zero. They cannot be confused, which is what the question was for. Both are treated the same way — the next pass takes the row. |
+| 3 | Is `OAuthService`'s per-connection gate per process only? | **Yes.** `connectionLocks` is an in-memory dictionary on a singleton (`OAuthService.cs:184`), so it coordinates nothing across replicas. No in-process lock could ever have been the answer. |
+
+**Consequence: no lock, no maintenance window, no migration.** Fallback B (a concurrency token on
+`OAuthCredential`) and fallback C (a shared per-connection gate) are both unused, so DESIGN F-6's
+condition — "a migration is owed only if the slice-03 probe forces fallback B" — does not fire and slice
+03 ships no EF migration.
+
+The probe is not throwaway. It is committed as
+`Lighthouse.Backend.Tests/Integration/Containers/ReEncryptionCompareAndSwapProbeTests.cs` and is the
+permanent evidence behind ADR-151's first Earned Trust row, on both providers, in CI.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation
+
+Run across the DISCUSS, DESIGN and DEVOPS sections of this document, plus everything slices 01 and 02
+left behind. **0 contradictions — reconciliation passed.** Three near-misses, all previously dated and
+recorded:
+
+- **D6 vs DESIGN F-2 / DD-14.** DISCUSS puts configuration-supplied custody on the app-owned side; DESIGN
+  moves it to the operator side, because a key minted over a configured one loses to it on the next
+  restart. Confirmed 2026-08-14 and already carried into slice 02's `KeyCustody`. Slice 03 is where the
+  correction becomes visible to an operator: scenarios 79, 80 and 82.
+- **AC-3.10 / AC-3.11 wording vs `CanMint`.** Both ACs were restated by F-2 — one word each — and the
+  restated form is what the scenarios pin. `CanMint => Custody == GeneratedForThisInstance` shipped in
+  slice 02; slice 03 adds only the two actions derived from it.
+- **The story map's "merge slices 03 and 04 if they turn out identical".** They are one component
+  (DD-13, ADR-151) and stay two slices, because the read-only check is what makes the writing one safe to
+  run and it ships first. This is a recorded decision, not a contradiction.
+
+**Not re-derived, per the wave brief**: OQ-1 is answered above by measurement; no EF migration is
+required (DESIGN F-6, and the probe closes its one open condition); D13 says upgrading does not
+re-encrypt, which is why rotation is the only thing that moves a stored secret.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports consumed by this slice**: `POST /api/{v1,latest}/encryption/rotate` and
+  `POST /api/{v1,latest}/encryption/reencrypt`, both under `RbacGuard(SystemAdmin)` on the controller
+  slice 02 created; and a new Settings → Encryption panel gated on `useRbac().isSystemAdmin`.
+  `GET /encryption` is slice 02's and is consumed here unchanged — the panel reads its custody and key
+  list from it. `GET /encryption/secrets` is slice 04 and carries no scenario here.
+- **Driven ports in scope**: secret persistence through `LighthouseAppContext` (the guarded per-row
+  update, and the only three columns this feature may write), `GeneratedKeyRingStore` (minting, now
+  called after boot rather than only during it), `EncryptionKeyRingHolder.Replace` (the atomic swap
+  slice 02 built and nothing yet used), and `ICryptoService.Read` for the per-row verification.
+- **Slices 01 and 02 landed**: the envelope and its four-state read, the ring value object, the holder,
+  the three key-ring sources, custody and `CanMint`, and the System-Admin-guarded controller. Slice 03
+  adds no new key-resolution behaviour at all — it is the first slice that *writes* secrets rather than
+  deciding which key reads them.
+- **No EF migration** (DESIGN F-6, and the probe leaves its condition unfired). Nothing in slice 03
+  touches a column definition.
+- **KPI instruments**: KPI-2 — the share of rotations completing with zero Connections requiring
+  re-entry — is this slice's outcome, and its instrument is the rotation report itself (scenario 63) plus
+  the post-rotation Connection check (scenario 64). KPI-3's duration budget is measured in the dogfood
+  pass on `:5169`, not by a scenario. No separate `@kpi` scenario is authored, matching slices 01 and 02.
+- **Substrate owed before the slice closes**: `:5169` restored from a real backup with live OAuth
+  credentials, rotated while a sync is running, and every Connection triggered afterwards. Demo data
+  cannot prove scenario 64 or 75 — those need credentials a work tracking system will actually accept.
+- **Documentation ships with this slice**: `docs/Installation/configuration.md` gains what an operator
+  does to rotate in each custody mode, and the Kubernetes four-action sequence ADR-153 describes.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags)
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 61 | Rotating puts every readable secret onto a new key and asks nobody for anything | milestone-9 | `@real-io @driving_port @us-03` |
+| 62 | The key that was in force is retired, not discarded | milestone-9 | `@edge @us-03` |
+| 63 | The report says how many moved and how many could not be read, for each Connection | milestone-9 | `@us-03` |
+| 64 | Every Connection works immediately afterwards | milestone-9 | `@real-io @regression @us-03` |
+| 65 | Where Lighthouse owns the key, one action does the whole job | milestone-9 | `@driving_port @us-03` |
+| 66 | A new key that cannot be read back is never used, and no secret is moved | milestone-9 | `@error @us-03` |
+| 67 | Moving a secret changes nothing else about it | milestone-9 | `@regression @us-03` |
+| 68 | A secret that cannot be read is left exactly as it was, and named | milestone-10 | `@error @us-03` |
+| 69 | A value that was never encrypted is reported rather than encrypted | milestone-10 | `@edge @us-03` |
+| 70 | Running it again moves nothing and says the same thing | milestone-10 | `@property @us-03` |
+| 71 | Interrupted halfway, the instance still works and the next run finishes the rest | milestone-10 | `@edge @us-03` |
+| 72 | The key published with the product leaves the ring once nothing is stored under it | milestone-10 | `@edge @us-03` |
+| 73 | While one secret is still under the published key, that key stays | milestone-10 | `@error @us-03` |
+| 74 | A rotation does not reject an edit somebody already had open | milestone-10 | `@regression @us-03` |
+| 75 | A refresh that lands mid-rotation keeps the token it obtained | milestone-11 | `@real-io @adapter-integration @us-03` |
+| 76 | A secret somebody else rewrote is counted as already moved, not as a failure | milestone-11 | `@edge @us-03` |
+| 77 | The pass never writes over a value it did not read | milestone-11 | `@property @us-03` |
+| 78 | A secret the database would not let go of this time is taken by the next run | milestone-11 | `@edge @us-03` |
+| 79 | Where an operator owns the key, Lighthouse refuses to make one | milestone-12 | `@error @driving_port @us-03` |
+| 80 | Where an operator owns the key, moving the secrets onto the new one is offered and works | milestone-12 | `@real-io @driving_port @us-03` |
+| 81 | The panel says who owns the key and which keys are held | milestone-12 | `@driving_adapter @us-03` |
+| 82 | The panel never shows an action Lighthouse cannot honour | milestone-12 | `@edge @driving_adapter @us-03` |
+| 83 | Somebody who is not a System Administrator can neither rotate nor move anything | milestone-12 | `@error @driving_adapter @us-03` |
+| 84 | The rotation is recorded, and the record carries no key material | milestone-12 | `@driving_adapter @us-03` |
+| 85 | Moving the secrets is the same work whoever owns the key | milestone-12 | `@property @us-03` |
+
+Every scenario also carries `@slice-03`. Numbering continues from slice 02's 31-60. **25 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01. Scenario 61 is this
+slice's end-to-end demo proof and is tagged `@real-io @driving_port` rather than `@walking_skeleton` —
+same vertical, one wave later.
+
+**Error / edge / regression / property coverage = 18 of 25 (72%)**, against the ≥40% target. The seven
+happy paths are the rotation itself (61), the report (63), the one-action shape where Lighthouse owns
+the key (65), the mid-rotation refresh (75), the operator-owned re-encryption (80), the panel (81) and
+the record (84). The weighting is the slice's: a pass that writes over stored credentials is defined
+almost entirely by what it declines to do.
+
+**AC traceability**: AC-3.1 → 61, 62, 65 · AC-3.2 → 61, 65, 80 · AC-3.3 → 61, 64 · AC-3.4 → 63 ·
+AC-3.5 → 68, 69, 73 · AC-3.6 → 70, 71, 78 · AC-3.7 → 75, 76, 77 · AC-3.8 → 83, 84 · AC-3.9 → 72, 73 ·
+AC-3.10 → 65 · AC-3.11 → 79, 80, 82 · AC-3.12 → 81 · AC-3.13 → 80, 85.
+
+**ADR Earned Trust rows covered**: ADR-151 — the compare-and-swap honoured on both providers (77, and
+the committed probe), a refresh mid-rotation losing nothing (75), an unreadable secret never overwritten
+(68), idempotence (70), an interruption leaving a working instance (71), an open edit form not rejected
+(74), the published default leaving the ring only when nothing references it (72, 73). ADR-152 — the
+mint refusal as a contract with the screen bypassed (79), a non-admin refused (83), no key material in
+the record (84), the panel's two shapes matching `canMint` (81, 82). ADR-148 — **"a rotation cannot
+leave a half-written ring"** (66), the row slice 02 recorded as needing a rotation to exist.
+
+**Rows deliberately not covered here**: ADR-150's "a ring swap mid-decrypt does not tear" needs a hot
+reload and belongs to slice 05 — rotation replaces the ring atomically through the holder slice 02
+built, and a reader that took the ring at the top of an operation keeps a consistent one, but the
+*reload* path is not exercised until a file can change under a running process. ADR-152's readability
+report (`GET /encryption/secrets`) is slice 04.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from slices
+01 and 02, and for the same reason: no Gherkin runner exists in any `.csproj`. They are translated in
+DELIVER into NUnit and Vitest. **No `src/` RED scaffolds**: `TreatWarningsAsErrors` makes a test
+referencing a not-yet-existent type a BROKEN build rather than a RED test. The project's RED mechanism is
+`[Ignore("pending — DELIVER (epic-5775 slice 03)")]`, authored in DELIVER beside the minimal type
+skeletons and un-ignored one scenario at a time.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5775-secret-encryption-key-custody/acceptance/milestone-{9,10,11,12}-*.feature` | slice 02's `milestone-{5..8}` in the same directory |
+| The traversal, the report and the refusals (61, 62, 63, 65, 66, 67, 68, 69, 70, 71, 72, 73, 76, 78, 85) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretCustodyServiceTests.cs` | `EncryptionKeyRingBootstrapperTests.cs` — same directory, established in slices 01 and 02 |
+| The two routes, their guards and the refusal contract (79, 80, 83, 84) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) | the same file, created in slice 02 for `GET /encryption` |
+| The compare-and-swap on both providers (75, 77) | `Lighthouse.Backend.Tests/Integration/Containers/ReEncryptionCompareAndSwapProbeTests.cs` | `LongSecretRoundTripTests.cs` — same directory, same two-provider shape |
+| An open edit form surviving a rotation (74) | `Lighthouse.Backend.Tests/API/Integration/` beside the existing concurrency-token integration tests | `PortfolioConcurrencyTokenIntegrationTest.cs`, `ConcurrencyTokenTestHelpers.cs` |
+| The panel's two shapes and the key list (81, 82) | `Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx` + `src/services/Api/EncryptionService.test.ts` | slice 02's `SystemSettingsTab.test.tsx`; `LicensingService.test.ts` for the service shape |
+| Rotating a restored real backup while a sync runs (64) | Manual dogfood on `:5169`, recorded in the slice verdict | slice 02's upgrade pass on the same substrate |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`.
+They are enforcement, not scenarios, and are listed so DELIVER does not rediscover them:
+
+| Rule | Where it lands |
+|---|---|
+| Re-encryption writes exactly three columns — `WorkTrackingSystemConnectionOption.Value`, `OAuthCredential.AccessToken`, `OAuthCredential.RefreshToken` — and nothing else | `Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs` (extend), plus a structural test over `SecretCustodyService` |
+| The read port cannot write — the slice-04 port declares `InspectAsync` only | Compile-enforced by the port shape; the interface split lands here so slice 04 inherits it |
+| No key material in the `encryption.rotation.completed` record's structured properties | same architecture file (extend), matching the rule slice 02 added for `encryption.*` |
+| Custody is derived, never configured — no setting named `canRotate`, `canMint` or equivalent exists | structural test over the configuration surface |
+| Lighthouse never references a Kubernetes client type | `SecretCustodySeamArchUnitTest.cs` (extend) — nothing to probe because nothing can compile |
+
+**Per-feature Stryker ≥ 80%** on the changed backend and frontend surface at slice end, with a
+`stryker-config.epic-5775-slice-03.json` beside the slice-01 and slice-02 configs.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter (DESIGN, slice 03) | Exercised via its protocol by |
+|---|---|
+| `POST /api/{v1,latest}/encryption/rotate` under `RbacGuard(SystemAdmin)` | Scenarios 79, 83, 84 (`WebApplicationFactory`, real HTTP, real guard) — 79 is deliberately the screen-bypassed one |
+| `POST /api/{v1,latest}/encryption/reencrypt` under `RbacGuard(SystemAdmin)` | Scenarios 80, 83 (`WebApplicationFactory`, real HTTP) |
+| `GET /api/{v1,latest}/encryption` — slice 02's, consumed here | Scenarios 72, 73, 81 (the key list and the published-key statement after a rotation) |
+| Settings → Encryption panel | Scenarios 81, 82 (Vitest, the real component against the real service adapter) |
+| The rotation record | Scenario 84 — asserted on the emitted structured properties, not on a log string |
+
+Zero uncovered entry points. `GET /encryption/secrets` belongs to slice 04 and is correctly absent.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| Secret persistence via `LighthouseAppContext` — the guarded per-row update | YES | Scenarios 75, 77 on real SQLite and real PostgreSQL; 61, 64, 80 through the real context |
+| `GeneratedKeyRingStore` — minting after boot, written and read back | YES | Scenarios 65, 66 — 66 is the one that proves an unverifiable key is never activated |
+| `EncryptionKeyRingHolder.Replace` — the atomic swap | YES | Scenarios 61, 62, 71 — first exercised here; slice 02 built it and nothing used it |
+| `ICryptoService.Read` — the per-row verification | YES | Scenarios 68, 69, 73 |
+| `ConfiguredKeyRingSource` / `MountedFileKeyRingSource` — operator-owned custody | YES | Scenarios 79, 80 — the ring arrives the way an operator supplies it, not from a pre-set enum |
+| The frontend service adapter for the two new routes | YES | Scenarios 81, 82 (Vitest against the real service) |
+
+Zero "NO — MISSING" rows. `KeyRingFileWatcher` carries no row: it arrives in slice 05.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage
+
+Against `environments.yaml`.
+
+| Environment | Slice-03 coverage | Note |
+|---|---|---|
+| `standalone-exe` | **Exercised** | Scenarios 61, 65 — the app-owned custody mode, which is what a standalone install always is |
+| `docker-with-data-volume` | **Exercised** | Same two scenarios; custody is identical and the key store is the mounted directory |
+| `docker-no-data-volume` | **Exercised** | Scenario 79's refusal covers the shape, since an instance with no durable store cannot mint either. The published-key case is slices 02 and 06, not this one |
+| `upgrade-from-pre-epic` | **Exercised** | Scenarios 72, 73 — an upgraded instance is precisely the one still holding secrets under the published key, and rotation is what removes it |
+| `k8s-explicit-key` | **Exercised** | Scenarios 79, 80, 82 — the configuration-supplied mode F-2 moved to the operator side |
+| `k8s-existing-secret` | **Exercised** | Scenario 80's `Given` is an operator adding a key alongside the old one and rolling the pod, which is ADR-153's supported sequence |
+| Database providers (SQLite, PostgreSQL) | **Exercised, symmetrically** | Scenarios 75 and 77 run against both, because the guarded update is the one thing in this slice whose behaviour is a property of the engine |
+| `ci-chart`, `kind-install-smoke`, `tenant-zero` | **Not exercised** | Chart substrates, slice 05. The Tenant Zero rotation walkthrough DEVOPS wrote is a slice-05 rehearsal of this slice's behaviour, not a scenario here |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues
+
+One, and it narrows an AC rather than contradicting it.
+
+**AC-3.9's second half is transient as the ring is assembled today.** The AC reads: "On an instance still
+on the published default key, rotation removes the last row referencing it and the default leaves the
+ring." The first half is fully durable and is what the slice implements — re-encryption moves the last
+secret off the published key, permanently. The second half is not, because
+`EncryptionKeyRingBootstrapper.Resolve()` appends the published key to **every** ring it produces,
+unconditionally, and ADR-148 states that as the rule: the end of the ring is a place it can only ever
+read from, so that an upgrading instance can read what it already stored. Nothing the rotation writes
+changes what the next boot appends.
+
+So after a rotation the live ring no longer holds the published key and `GET /encryption` says so —
+which is what scenario 72 asserts, and it is asserted at the level of what an operator observes. After a
+restart it is held again, reading nothing.
+
+**Making that durable is a design change, not a code tweak**, which is why it is recorded here rather
+than decided in an editor. It would mean the bootstrapper asking the database whether any stored secret
+still names the published key before deciding whether to append it — a new question at builder time,
+with the same three-answer shape ADR-149's durability probe already needed, and with *cannot tell*
+having to mean *append*, because dropping the key on an unreachable database would make every stored
+secret unreadable. It also changes a shipped slice-02 contract: `EncryptionControllerTests` asserts
+`legacyDefaultPresent` is true for an instance holding no stored secrets at all, which a
+nothing-stored-so-drop-it rule would flip.
+
+**Recommendation**: leave it here and take it in **slice 06**, which is the slice about saying what is
+actually true, and where the count of secrets still under the published key is already in scope. Slice
+04's readability report is what makes the question answerable cheaply, so the order is right.
+
+---
+
+## Wave: DISTILL / [REF] Peer Review
+
+`nw-acceptance-designer-reviewer`, 2026-08-16. **Iteration 1: rejected — 1 blocker, and the blocker was
+a false negative.** The reviewer reported that the four `.feature` files did not exist; they did, and
+had for the whole session. Its file lookup failed and it reasoned from the absence rather than saying it
+could not read them. Re-dispatched with the four absolute paths. **Iteration 2: approved — 0 blockers, 0
+high, 0 low.**
+
+Verified independently by the reviewer on the second pass: all thirteen ACs traced to scenarios that
+actually assert them; ADR-151's seven Earned Trust rows and ADR-152's four covered or correctly
+deferred; no Gherkin antipattern, no technical leakage, one `When` per scenario; no slice-boundary
+violation — nothing here asserts slice 04's readability report or slice 05's chart and reload; all five
+driving surfaces and all six driven adapters covered; and the 18-of-25 error/edge/regression/property
+claim recounted from the tags actually present and confirmed.
+
+The three scale-sensitive reviewers were not dispatched: DISCUSS, DESIGN and DEVOPS each carry a
+recorded peer review, and slice 03 changed none of those sections.
+
+**Worth recording about the tooling rather than the artefact**: a reviewer that cannot read a file must
+say so. A verdict of *rejected — the deliverable is missing* is indistinguishable, to anyone reading the
+verdict alone, from a real finding, and it is the one failure mode that makes an automated gate
+expensive rather than cheap.
+
+---
+
+## Wave: DISTILL / [REF] Handoff
+
+**To `nw-software-crafter` (DELIVER)**: `deliver/slice-03/roadmap.json` — six phases, eleven steps,
+inside-out. The order is not negotiable in one place only: the report and the traversal come before
+minting, because a rotation that could mint before it could move would have a window in which the ring
+had changed and nothing had followed it.
+
+Three things this wave learned that DELIVER should not rediscover:
+
+- **The in-memory EF provider does not implement `ExecuteUpdateAsync`.** Every test of the traversal
+  needs a real relational provider. This is not a purity preference; the guarded write is the whole
+  mechanism, and a simulated one tests the simulation.
+- **`SecretCustodyService` may not log.** The architecture rule slice 02 added forbids any type under
+  `Services.Implementation.Encryption` from depending on logging, so the rotation record is written by
+  the controller, which is also the only place that knows who the actor is.
+- **The application-wide data protection provider may persist to Redis.** The key store file was wrapped
+  by a file-backed provider pinned to the key store directory. Minting at request time has to use the
+  same arrangement the boot path used, or it will write a ring the next boot cannot unwrap.
+
+**To the maintainer**: the pre-slice SPIKE ran and its answer is *no lock*, so the brief was not re-cut
+and no EF migration is owed. The one open decision is AC-3.9's second half, recorded in *Upstream
+Issues* above with a recommendation to take it in slice 06.
+
+---
+
