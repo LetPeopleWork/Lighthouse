@@ -134,6 +134,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             Assert.That(await ReadAsync(), Is.EquivalentTo(new[] { KeyInForce.Id }));
         }
 
+        // A value can start like an envelope and be nothing of the sort - a truncated column, a restore
+        // that half-finished, somebody editing the database by hand. The prefix is taken in the database
+        // rather than in memory, where asking for more characters than a value has returns what is there
+        // instead of throwing, and nothing downstream can find a key id in the remains.
+        [TestCase("LH1.")]
+        [TestCase("LH1.x")]
+        [TestCase("LH1..broken")]
+        [TestCase("LH1.k-truncated-before-the-nonce")]
+        public async Task AValueThatStartsLikeAnEnvelopeAndIsNot_NamesNoKeyAndDoesNotThrow(string malformed)
+        {
+            await StoreOptionAsync("ClientSecret", malformed);
+
+            Assert.That(await ReadAsync(), Is.Empty);
+        }
+
+        [Test]
+        public async Task AKeyIdOfTheLongestLengthAllowed_IsStillReadWhole()
+        {
+            var longestAllowed = new EncryptionKey(
+                new string('k', 32), RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
+
+            await StoreOptionAsync("ClientSecret", Under(longestAllowed, "at-the-limit"));
+
+            Assert.That(await ReadAsync(), Is.EquivalentTo(new[] { longestAllowed.Id }),
+                "the prefix taken from each value is sized for the longest id a key may carry, and one character short would silently rename it");
+        }
+
         [Test]
         public void TheReader_RefusesToBeBuiltWithoutSomewhereToLook()
         {

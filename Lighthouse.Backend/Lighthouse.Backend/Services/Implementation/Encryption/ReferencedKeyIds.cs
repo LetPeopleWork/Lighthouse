@@ -18,7 +18,14 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     public sealed class ReferencedKeyIds : IReferencedKeyIds
     {
         // The id sits between the version token and the nonce, and a key id is at most 32 characters, so
-        // this much of a stored value always holds the whole id and never holds any ciphertext.
+        // this much of a stored value always holds the whole id and never holds any ciphertext. One
+        // character less would silently rename the longest key an operator can define.
+        //
+        // The prefix is taken in the database, not in memory, and that is what makes it safe on a value
+        // that only looks like an envelope - a truncated column, a half-finished restore, somebody
+        // editing by hand. SQL substring returns what is there when asked for more than a value has,
+        // where the same call in memory would throw; and a remnant with no second separator in it names
+        // no key, so nothing downstream mistakes it for one.
         private const int AsFarAsAKeyIdCanReach = 37;
 
         private readonly LighthouseAppContext context;

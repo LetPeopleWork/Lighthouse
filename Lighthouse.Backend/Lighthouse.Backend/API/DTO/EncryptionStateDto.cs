@@ -18,6 +18,9 @@ namespace Lighthouse.Backend.API.DTO
             Custody = keyRing.Custody;
             CanMint = keyRing.CanMint;
             ActiveKeyId = keyRing.ActiveKey.Id;
+            // Nothing narrows the list where nobody said which keys are referenced. That is the safe way
+            // round: showing a key that turns out to be unused is noise, and hiding one an operator still
+            // needs is how somebody deletes a key store they had to keep.
             KeyIds = [
                 keyRing.ActiveKey.Id,
                 .. keyRing.RetiredKeys
