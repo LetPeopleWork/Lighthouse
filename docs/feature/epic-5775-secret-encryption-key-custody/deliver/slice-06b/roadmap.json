@@ -1,0 +1,122 @@
+{
+  "roadmap": {
+    "project_id": "epic-5775-secret-encryption-key-custody",
+    "slice": "slice-06b-what-a-signed-in-caller-learns",
+    "created_at": "2026-08-16",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Ship slice 06b of ADO Epic #5775 (Story #5793): an administrator diagnosing an instance sees which key it is on in the place they actually look, and a caller who is only signed in learns nothing about the security posture of the installation. The startup banner is the design's primary custody surface and the standalone population never sees a console; the encryption panel answers half of it, but somebody working out why an instance is behaving oddly opens system information first, and that page is silent about encryption. The reason it is silent stands — that response answers before anyone is authorised, because the shell needs the version and the authentication posture to render, and a viewer inside an embedded frame satisfies 'signed in'. So the rule is not relaxed: the response carries a field only some callers are given. The same response already carries emergencyAdminSubjects unguarded, which is the identical question and worse in one respect, because those name real people rather than a category — fixed here rather than separately, because two halves of one decision in two places is how they come to disagree.",
+    "overview": "Three phases, 3 steps: the response learns to answer differently depending on who asked, the custody sentence is shared with the startup line rather than written twice, and the page draws the rows only when they are there.",
+    "slice_to_phase": {
+      "slice-06b-what-a-signed-in-caller-learns / 1. one place decides what only an administrator may see": "phase-01 (1 step)",
+      "slice-06b-what-a-signed-in-caller-learns / 2. the custody sentence, said once": "phase-02 (1 step)",
+      "slice-06b-what-a-signed-in-caller-learns / 3. the page draws what it was given": "phase-03 (1 step)",
+      "_not_in_this_roadmap_": "the encryption panel itself (slice 06a, shipped); any change to what an unauthenticated caller is told, which is already nothing; removing fields from the response wholesale, because the shell cannot render without the version and the authentication posture."
+    },
+    "phases": [
+      {
+        "id": "01",
+        "name": "One place decides what only an administrator may see",
+        "description": "The decision belongs on the record rather than at the call site, so a third field added later is withheld by the same sentence rather than by somebody remembering to guard it. The controller asks the same question the RbacGuard attribute asks, which also means an instance not enforcing access control tells its operator everything - with nobody to tell apart there is nobody to withhold it from, and that is the standalone case this slice exists for.",
+        "steps": [
+          {
+            "id": "01-01",
+            "name": "Answer differently depending on who asked",
+            "description": "RED: extend the system-information tests. Cases: a System Administrator receives the emergency administrator subjects; a signed-in caller who is not one receives none; the version, the authentication posture, the authorisation posture, the database provider and the log path are unchanged for both; an instance where access control is not enforced answers as it does for an administrator; the narrowing names its fields in one place, asserted by reflection over the record so a field added later without a decision is caught. GREEN: add `SystemInfo.WithoutWhatOnlyAnAdministratorMaySee()` naming exactly those fields, and have `SystemInfoController.GetSystemInfo` ask `IRbacAdministrationService.CanSatisfyRequirementAsync(User, RbacGuardRequirement.SystemAdmin)` once and call it when the answer is no. COMMIT: `fix(auth): stop telling every signed-in caller who can administer the installation`.",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs",
+            "scenario_name": "Scenarios 171, 172, 173, 174, 176",
+            "red_to_green_tests": [
+              "A System Administrator receives the emergency administrator subjects",
+              "A signed-in caller who is not one receives none",
+              "The version and both postures are answered to either caller",
+              "The database provider and log path are unchanged for either caller",
+              "An instance not enforcing access control answers as it does for an administrator",
+              "The fields withheld are named in exactly one place"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend/Models/SystemInfo.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs"
+            ],
+            "dependencies": [],
+            "criteria": [
+              "Nothing that was unguarded before becomes guarded by accident.",
+              "An unauthenticated caller is unaffected: the route already requires nothing more than being signed in, and that is unchanged.",
+              "The RBAC question is asked once per request, not once per field."
+            ],
+            "estimated_hours": 1.0,
+            "deliverables": ["SystemInfo.cs (narrowing)", "SystemInfoController.cs (asks once)"]
+          }
+        ]
+      },
+      {
+        "id": "02",
+        "name": "The custody sentence, said once",
+        "description": "The startup line and this page have to say the same word for the same custody, and the way to guarantee that is for there to be one sentence rather than two that agree today.",
+        "steps": [
+          {
+            "id": "02-01",
+            "name": "Share the wording with the startup line",
+            "description": "RED: extend the system-information tests for the custody field across all four custodies, asserting it reads the same as `StartupBanner.BuildEncryptionCustodyLines` renders; and that no key id and no key material appears in the answer under any custody, asserted the way the banner's own no-material test is. GREEN: lift the custody wording out of `StartupBanner` into something both call - the banner keeps rendering the line, the system information keeps rendering the field, and neither owns the words. Feed the field from the resolved ring and the key store the same way the banner is fed, so configuration cannot contradict the key in force. COMMIT: `feat(encryption): say which key this instance is on where operators look first`.",
+            "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs",
+            "scenario_name": "Scenarios 169, 170, 175, 177",
+            "red_to_green_tests": [
+              "An administrator is told the custody and the key store",
+              "A signed-in caller who is not one is told neither",
+              "All four custodies read the same here as on the startup line",
+              "No key id and no key material appears under any custody"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Backend/Lighthouse.Backend/Startup/StartupBanner.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Models/SystemInfo.cs",
+              "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/SystemInfoService.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SystemInfoControllerTest.cs",
+              "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerEncryptionKeyLineTest.cs"
+            ],
+            "dependencies": ["01-01"],
+            "criteria": [
+              "One sentence, two renderings - the wording cannot drift between them.",
+              "The custody is read off the resolved ring, never off configuration."
+            ],
+            "estimated_hours": 1.0,
+            "deliverables": ["shared custody wording", "SystemInfo.cs (encryption field)"]
+          }
+        ]
+      },
+      {
+        "id": "03",
+        "name": "The page draws what it was given",
+        "description": "A field the caller was not given is a row the page does not draw. Rendering an empty row would tell a viewer that there is something here they are not being shown, which is most of what withholding it was for.",
+        "steps": [
+          {
+            "id": "03-01",
+            "name": "Draw the rows only when they are there",
+            "description": "RED: extend the system-information page tests. Cases: with the field present the row is drawn and reads the custody and the key store; with it absent no row is drawn and nothing hints that one was withheld; the emergency administrator row behaves the same way. GREEN: make both fields optional on the frontend model and render each row only when its value is there. Also update `docs/settings/systeminfo.md` for the new row and regenerate its screenshot. COMMIT: `feat(encryption): show the key custody on the system information page`.",
+            "test_file": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx",
+            "scenario_name": "Scenarios 169, 170, 172",
+            "red_to_green_tests": [
+              "The custody row is drawn when the field is there",
+              "No custody row is drawn when it is not",
+              "Nothing on the page hints that a row was withheld",
+              "The emergency administrator row behaves the same way"
+            ],
+            "files_to_modify": [
+              "Lighthouse.Frontend/src/models/SystemInfo.ts",
+              "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx",
+              "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx",
+              "docs/settings/systeminfo.md"
+            ],
+            "dependencies": ["02-01"],
+            "criteria": [
+              "An absent field draws nothing, not an empty row.",
+              "pnpm test, pnpm build and Biome all clean."
+            ],
+            "estimated_hours": 1.0,
+            "deliverables": ["SystemSettingsTab.tsx (rows)", "systeminfo.md (updated)"]
+          }
+        ]
+      }
+    ]
+  }
+}

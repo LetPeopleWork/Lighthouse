@@ -1,0 +1,19 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Encryption/ReferencedKeyIds.cs",
+      "**/Services/Implementation/Encryption/ConfiguredKeyRingSource.cs",
+      "**/API/DTO/EncryptionStateDto.cs"
+    ],
+    "thresholds": { "high": 90, "low": 80, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~ReferencedKeyIds|FullyQualifiedName~ConfiguredKeyRingSource|FullyQualifiedName~EncryptionController|FullyQualifiedName~EncryptionRecord|FullyQualifiedName~EncryptionKeyRing|FullyQualifiedName~StartupBanner|FullyQualifiedName~PublishedKeySecret|FullyQualifiedName~SecretCustody)&(FullyQualifiedName!~Containers)",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

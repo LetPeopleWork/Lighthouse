@@ -1,6 +1,6 @@
 # Slice 06b — What a caller who is merely signed in gets to learn
 
-**Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story TBD · **Estimate**: ~3h
+**Feature**: epic-5775-secret-encryption-key-custody · **ADO**: Epic #5775 → Story #5793 · **Estimate**: ~3h
 **Origin**: not from DISCUSS. Maintainer decisions **V5** and **V6** of 2026-08-16, taken against
 walkthrough finding **F-1**.
 
