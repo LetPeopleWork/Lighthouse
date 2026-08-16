@@ -368,11 +368,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         private static string ActiveKeyIdAfterInvoking(MethodInfo producer, KeyCustody custody)
         {
             var ring = new EncryptionKeyRing(custody, KeyWith(ActiveKeyId), KeyWith(RetiredKeyId));
-            object[] arguments = producer.GetParameters().Length == 0 ? [] : [KeyWith(LegacyKeyId)];
 
-            var produced = (EncryptionKeyRing)producer.Invoke(ring, arguments)!;
+            var produced = (EncryptionKeyRing)producer.Invoke(
+                ring, [.. producer.GetParameters().Select(ArgumentFor)])!;
 
             return produced.ActiveKey.Id;
+        }
+
+        // Whatever a producer asks for it is handed something real of that type - a key the ring does not
+        // already hold, or the name of the one key it is allowed to let go of. Built from the parameter
+        // rather than assumed, so a producer added later is exercised by this rule the moment it appears
+        // instead of failing to be called at all.
+        private static object ArgumentFor(ParameterInfo parameter)
+        {
+            return parameter.ParameterType == typeof(string) ? RetiredKeyId : KeyWith(LegacyKeyId);
         }
 
         private static Type? TypeCarriedBy(MemberInfo member)

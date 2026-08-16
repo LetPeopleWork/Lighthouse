@@ -11,27 +11,14 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         public MintingNotPermittedException(KeyCustody custody)
             : base(WhyNot(custody))
         {
-            Custody = custody;
         }
 
-        public MintingNotPermittedException()
-            : this(KeyCustody.NoDurableStore)
-        {
-        }
-
+        // Where the reason is not who owns the key. The caller supplies the whole sentence, because an
+        // administrator turned down has to be told what to do next and only the caller knows.
         public MintingNotPermittedException(string message)
             : base(message)
         {
-            Custody = KeyCustody.NoDurableStore;
         }
-
-        public MintingNotPermittedException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-            Custody = KeyCustody.NoDurableStore;
-        }
-
-        public KeyCustody Custody { get; }
 
         private static string WhyNot(KeyCustody custody)
         {
