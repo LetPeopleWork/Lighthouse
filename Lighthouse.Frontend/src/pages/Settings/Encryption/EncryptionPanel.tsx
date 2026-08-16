@@ -2,6 +2,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -33,11 +34,36 @@ const WHO_OWNS_THE_KEY: Record<KeyCustody, string> = {
 	GeneratedForThisInstance:
 		"Lighthouse made this key and keeps it, so it can make a new one for you.",
 	SuppliedByConfiguration:
-		"This key was supplied through the instance's configuration, so it belongs to whoever set it. To replace it, put the new key ahead of the old one in Encryption__Keys, start Lighthouse again, and then move the stored secrets onto it.",
+		"This key was supplied through the instance's configuration, so it belongs to whoever set it.",
 	SuppliedByExternalSecret:
-		"This key was supplied from a mounted secret, so it belongs to whoever keeps that secret. To replace it, put the new key ahead of the old one in that secret, restart the pod, and then move the stored secrets onto it.",
+		"This key was supplied from a mounted secret, so it belongs to whoever keeps that secret.",
 	NoDurableStore:
 		"This instance has nowhere to keep a key that would still be there after a restart, so it is running on the key published with the product. Set Encryption__Key, or set Encryption__KeyStorePath to a directory that outlives this container, and start Lighthouse again.",
+};
+
+// The only rotation procedure this population is ever given, and the one observed could not be
+// followed: it named Encryption__Keys when the operator had set Encryption__Key - two names differing
+// by one character, with different grammars, and it never said the plural existed or that it wins. It
+// gave no separator either, so an operator guessing a newline got a startup refusal. Everything
+// somebody has to type is now in it, including which entry becomes the key in force.
+//
+// The same sentence reaches every Kubernetes operator through the mounted-secret custody, so it is
+// written once and told where to put the value rather than twice.
+const howToReplaceIt = (keyState: EncryptionKeyState) => {
+	const setting = keyState.keySuppliedThrough ?? "Encryption__Key";
+	const where =
+		keyState.custody === "SuppliedByExternalSecret"
+			? `the file ${setting} points at, then restart the pod`
+			: `${setting}, then start Lighthouse again`;
+
+	return (
+		`To replace it, put the new key first in ${where}. ` +
+		"More than one key is written as a comma-separated list, each entry either the base64 key on its " +
+		"own or name:base64, and the first entry is the one new secrets are written under - the rest are " +
+		"kept so that what was already stored stays readable. Encryption__Key and Encryption__Keys both " +
+		"take that list and the plural wins if you set both, so leaving the old one in place is harmless. " +
+		"Then move the stored secrets onto the new key."
+	);
 };
 
 const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
@@ -115,6 +141,9 @@ type WhatWasAsked = "check" | "move" | "rotate";
 
 const secrets = (count: number) =>
 	count === 1 ? "1 stored secret" : `${count} stored secrets`;
+
+const credentials = (count: number) =>
+	count === 1 ? "1 stored credential is" : `${count} stored credentials are`;
 
 // A count of zero is not information. Four categories of nothing compete with the one number that
 // matters, and the number that matters is always one of the few that are not zero - so only those are
@@ -251,7 +280,23 @@ const EncryptionPanel: React.FC = () => {
 
 	return (
 		<InputGroup title="Secret Encryption Key" initiallyExpanded={true}>
-			<KeyRing keyState={keyState} />
+			{/* Read cold, this screen used to open on a table whose first row is "Key source", with nothing
+			    saying what any of it is about. One line, and the documentation does the teaching. */}
+			<Typography variant="body2" data-testid="encryption-subject">
+				How the credentials stored in your Connections are encrypted at rest.{" "}
+				<Link
+					href="https://docs.lighthouse.letpeople.work/settings/encryption.html"
+					target="_blank"
+					rel="noopener"
+					data-testid="encryption-docs-link"
+				>
+					Read more
+				</Link>
+			</Typography>
+
+			<Box sx={{ mt: 2 }}>
+				<KeyRing keyState={keyState} />
+			</Box>
 
 			<Typography
 				variant="body2"
@@ -259,6 +304,9 @@ const EncryptionPanel: React.FC = () => {
 				data-testid="encryption-custody-explanation"
 			>
 				{WHO_OWNS_THE_KEY[keyState.custody]}
+				{keyState.keySuppliedThrough !== null &&
+					keyState.keySuppliedThrough !== undefined &&
+					` ${howToReplaceIt(keyState)}`}
 			</Typography>
 
 			{keyState.allowsStartWithUnreadableSecrets && (
@@ -279,7 +327,7 @@ const EncryptionPanel: React.FC = () => {
 					sx={{ mt: 2 }}
 					data-testid="published-key-notice"
 				>
-					{`${keyState.secretsUnderPublishedKey} stored credentials are still readable with the key published with Lighthouse, which anyone who has a copy of Lighthouse can obtain. Moving them onto this instance's own key is the fix, and nobody has to re-enter anything.`}
+					{`${credentials(keyState.secretsUnderPublishedKey)} still encrypted with the key published with Lighthouse. Move ${keyState.secretsUnderPublishedKey === 1 ? "it" : "them"} onto this instance's own key — nothing has to be re-entered.`}
 				</Alert>
 			)}
 

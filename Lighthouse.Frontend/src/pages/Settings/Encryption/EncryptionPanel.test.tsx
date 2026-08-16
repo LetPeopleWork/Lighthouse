@@ -19,6 +19,7 @@ const ownKey: EncryptionKeyState = {
 	legacyDefaultPresent: false,
 	secretsUnderPublishedKey: 0,
 	allowsStartWithUnreadableSecrets: false,
+	keySuppliedThrough: null,
 };
 
 const startedPastTheRefusal: EncryptionKeyState = {
@@ -44,11 +45,13 @@ const operatorOwned: Record<string, EncryptionKeyState> = {
 		...ownKey,
 		custody: "SuppliedByConfiguration",
 		canMint: false,
+		keySuppliedThrough: "Encryption__Key",
 	},
 	SuppliedByExternalSecret: {
 		...ownKey,
 		custody: "SuppliedByExternalSecret",
 		canMint: false,
+		keySuppliedThrough: "Encryption__KeysFile",
 	},
 	NoDurableStore: {
 		...ownKey,
@@ -160,7 +163,9 @@ describe("EncryptionPanel", () => {
 
 		const report = await screen.findByTestId("encryption-report");
 
-		expect(report).toHaveTextContent("Made key k-2026-08-16-02 and put it in force");
+		expect(report).toHaveTextContent(
+			"Made key k-2026-08-16-02 and put it in force",
+		);
 		expect(report).toHaveTextContent("46 stored secrets moved onto it");
 		expect(report).toHaveTextContent("1 stored secret could not be read");
 		expect(screen.getByTestId("encryption-report-secrets")).toHaveTextContent(
@@ -274,7 +279,9 @@ describe("EncryptionPanel", () => {
 
 		const report = await screen.findByTestId("encryption-report");
 
-		expect(report).toHaveTextContent("Made key k-2026-08-16-02 and put it in force");
+		expect(report).toHaveTextContent(
+			"Made key k-2026-08-16-02 and put it in force",
+		);
 		expect(report).toHaveTextContent("3 stored secrets moved onto it");
 		expect(report).not.toHaveTextContent("could not be read");
 		expect(
@@ -461,9 +468,84 @@ describe("EncryptionPanel", () => {
 
 		const notice = await screen.findByTestId("published-key-notice");
 
-		expect(notice).toHaveTextContent("12 stored credentials");
-		expect(notice).toHaveTextContent("anyone who has a copy of Lighthouse");
+		expect(notice).toHaveTextContent("12 stored credentials are");
+		expect(notice).toHaveTextContent("key published with Lighthouse");
 		expect(encryptionService.checkSecrets).not.toHaveBeenCalled();
+	});
+
+	// The situation, then the action. Why that key is no protection is a paragraph, and it belongs on the
+	// page the header links to rather than in front of somebody who has to decide what to press.
+	it("states the situation and then the action, and leaves the why to the docs", async () => {
+		renderPanelOn(justUpgraded);
+
+		const notice = await screen.findByTestId("published-key-notice");
+
+		expect(notice).toHaveTextContent(
+			"still encrypted with the key published with Lighthouse",
+		);
+		expect(notice).toHaveTextContent("nothing has to be re-entered");
+		expect(notice).not.toHaveTextContent("anyone who has a copy");
+	});
+
+	it("writes one exposed credential in the singular", async () => {
+		renderPanelOn({ ...justUpgraded, secretsUnderPublishedKey: 1 });
+
+		const notice = await screen.findByTestId("published-key-notice");
+
+		expect(notice).toHaveTextContent("1 stored credential is");
+		expect(notice).toHaveTextContent("Move it onto this instance's own key");
+	});
+
+	// Everything an operator has to type. The observed instruction named Encryption__Keys to an operator
+	// who had set Encryption__Key, never said both existed or which won, and gave no separator - so a
+	// guess at a newline earned a startup refusal.
+	it("gives a rotation instruction that can be followed", async () => {
+		renderPanelOn(operatorOwned.SuppliedByConfiguration);
+
+		const custody = await screen.findByTestId("encryption-custody-explanation");
+
+		expect(custody).toHaveTextContent("Encryption__Key,");
+		expect(custody).toHaveTextContent("comma-separated list");
+		expect(custody).toHaveTextContent("name:base64");
+		expect(custody).toHaveTextContent(
+			"the first entry is the one new secrets are written under",
+		);
+		expect(custody).toHaveTextContent("the plural wins if you set both");
+	});
+
+	it("names the setting the operator actually set", async () => {
+		renderPanelOn(operatorOwned.SuppliedByExternalSecret);
+
+		const custody = await screen.findByTestId("encryption-custody-explanation");
+
+		expect(custody).toHaveTextContent("Encryption__KeysFile");
+		expect(custody).toHaveTextContent("restart the pod");
+	});
+
+	it("tells nobody to edit a setting where Lighthouse keeps the key itself", async () => {
+		renderPanelOn(ownKey);
+
+		const custody = await screen.findByTestId("encryption-custody-explanation");
+
+		expect(custody).not.toHaveTextContent("To replace it");
+		expect(custody).toHaveTextContent("it can make a new one for you");
+	});
+
+	// Read cold, the screen used to open on a table headed "Key source" with nothing saying what any of
+	// it was about. A maintainer reading it as a first-time user: "I would genuinely not understand what
+	// I'm seeing."
+	it("says what the screen is about before it says anything else", async () => {
+		renderPanelOn(ownKey);
+
+		const subject = await screen.findByTestId("encryption-subject");
+
+		expect(subject).toHaveTextContent(
+			"credentials stored in your Connections are encrypted at rest",
+		);
+		expect(screen.getByTestId("encryption-docs-link")).toHaveAttribute(
+			"href",
+			expect.stringContaining("settings/encryption"),
+		);
 	});
 
 	// The alert used to carry its own copy of the move while the button row carried another, both calling
@@ -474,9 +556,7 @@ describe("EncryptionPanel", () => {
 
 		const notice = await screen.findByTestId("published-key-notice");
 
-		expect(
-			within(notice).queryByRole("button"),
-		).not.toBeInTheDocument();
+		expect(within(notice).queryByRole("button")).not.toBeInTheDocument();
 		expect(screen.getByTestId("reencrypt-button")).toBeInTheDocument();
 	});
 
@@ -611,7 +691,9 @@ describe("EncryptionPanel", () => {
 
 		const report = await screen.findByTestId("encryption-report");
 
-		expect(report).toHaveTextContent("Made key k-2026-08-16-02 and put it in force");
+		expect(report).toHaveTextContent(
+			"Made key k-2026-08-16-02 and put it in force",
+		);
 		expect(report).not.toHaveTextContent("moved");
 	});
 

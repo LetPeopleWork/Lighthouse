@@ -15,6 +15,7 @@ const validKeyState = {
 	legacyDefaultPresent: true,
 	secretsUnderPublishedKey: 2,
 	allowsStartWithUnreadableSecrets: false,
+	keySuppliedThrough: null,
 };
 
 const validReport = {

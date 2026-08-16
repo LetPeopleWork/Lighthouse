@@ -18,6 +18,9 @@ export interface EncryptionKeyState {
 	legacyDefaultPresent: boolean;
 	secretsUnderPublishedKey: number;
 	allowsStartWithUnreadableSecrets: boolean;
+	// The setting the key arrived in, or null where Lighthouse keeps the key itself. It is what the
+	// rotation instruction has to name: the one observed named a setting the operator had not set.
+	keySuppliedThrough: string | null;
 }
 
 export const EncryptionKeyStateSchema = z.object({
@@ -29,6 +32,7 @@ export const EncryptionKeyStateSchema = z.object({
 	legacyDefaultPresent: z.boolean(),
 	secretsUnderPublishedKey: z.number(),
 	allowsStartWithUnreadableSecrets: z.boolean(),
+	keySuppliedThrough: z.string().nullable(),
 });
 
 // A self-hoster reading this screen is asking whether the key is theirs to keep, not what the
