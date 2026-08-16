@@ -44,7 +44,12 @@ actually does, and the people running the affected versions are told at the mome
 - The vulnerability reporting path appears in the docs, not only in the repository-root file.
 - Slice 01's in-product link is repointed at the Security page.
 - `SECURITY.md`: reporting path, and what this epic changed.
-- A GitHub Security Advisory, published **when the fixed version is installable, not before**.
+- ~~A GitHub Security Advisory, published when the fixed version is installable, not before.~~
+  **Withdrawn by maintainer decision V7, 2026-08-16**: the key was never withheld. It shipped in
+  `appsettings.json` in every build and sat in the public repository, which is documented behaviour
+  rather than a defect, so an advisory would describe the fix rather than a breach. What operators need
+  is the upgrade instruction and the move, and the release notes carry both. **AC-6.7 is withdrawn with
+  it.**
 - Release notes leading with what the operator should do.
 - Seeded terminology throughout — never one tracker's vocabulary.
 

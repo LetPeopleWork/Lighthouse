@@ -363,6 +363,34 @@ Two things to settle while building it:
 - The check report already names Connection and field for every unreadable secret, so the panel can
   hand the operator their exact to-do list rather than making them hunt.
 
+**[V5] The custody line is mirrored into the UI system information, System Administrator only**
+(maintainer, 2026-08-16). The startup banner is the design's primary custody surface and the entire
+standalone population is structurally blind to it — that is F-1, and the encryption panel only half
+answers it, because an operator diagnosing an instance goes to system information first.
+
+The reason key state was kept off that response stands: `GET /api/systeminfo` is deliberately
+unguarded, because the application shell needs the version and the authentication posture before
+anyone is authorised, and a viewer who opens Lighthouse inside an embedded frame satisfies "signed in".
+So the field is **served as null to everyone who is not a System Administrator**, and the row is drawn
+only when it is present. An embedded-frame viewer learns nothing; an administrator gets the mirror.
+
+The line carries the same shortened custody wording as the banner (see the slice 06a decisions):
+custody word, then the path.
+
+**[V6] The same response already leaks `emergencyAdminSubjects`, and that is folded into this epic**
+(maintainer, 2026-08-16). It is the identical question — what does a caller who is merely signed in
+learn about the security posture of the installation — and it is worse in one respect: the emergency
+administrator subjects are real user identities, not a category. It predates this epic and would
+otherwise have been raised as its own bug; the maintainer chose to fix it alongside the system
+information work rather than leave two halves of one decision in two places.
+
+**[V7] No security advisory. Release notes only** (maintainer, 2026-08-16). This reverses AC-6.7 in
+slice 06, which said an advisory publishes when the fixed version is installable. The reasoning: the
+key was never withheld. It shipped in `appsettings.json` in every build and sat in the public
+repository, which is documented behaviour rather than a defect, and a CVE against the product would
+describe the fix rather than a breach. What operators need is the upgrade instruction and the move,
+and the release notes carry both. Slice 06 drops the advisory and keeps everything else.
+
 **[V2] F-6: hide unreferenced keys now, offer explicit removal later.** Keeping every key costs
 nothing, and the complaint was that four meaningless chips were confusing, not that the keys existed.
 So: hide keys nothing references, keep them in the ring. A later explicit *Remove unused keys* action,
