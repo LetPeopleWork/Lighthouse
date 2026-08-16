@@ -92,10 +92,17 @@ namespace Lighthouse.Backend.Startup
             return info;
         }
 
-        // What an operator has to know to keep their secrets readable: whose key this is, which name it
-        // answers to, and the directory that has to survive for it to still be there tomorrow - which is
-        // also the directory they would have to back up. The key itself never appears; it is read off the
-        // ring rather than out of configuration, so the sentence cannot disagree with the key in force.
+        // What an operator has to know to keep their secrets readable: whose key this is, and the
+        // directory that has to survive for it to still be there tomorrow. Every other line of this
+        // banner is a label and a short value, and this one was a clause.
+        //
+        // The key id came off it deliberately. It is the most useful thing to have when diagnosing a
+        // start that stopped - which is why the refusal that stops one now names both the key the
+        // instance came up on and the key the stored credentials were written under. Carrying it on every
+        // healthy start as well only lengthened the line nobody was reading.
+        //
+        // The key itself never appears; it is read off the ring rather than out of configuration, so the
+        // sentence cannot disagree with the key in force.
         public static IReadOnlyList<string> BuildEncryptionCustodyLines(
             EncryptionKeyRing keyRing,
             KeyStoreLocation keyStore,
@@ -107,7 +114,7 @@ namespace Lighthouse.Backend.Startup
 
             var lines = new List<string>
             {
-                Line("🔑", "Encryption", $"{WhereTheKeyCameFrom(keyRing.Custody)} ({keyRing.ActiveKey.Id}) · {keyStore.Directory}")
+                Line("🔑", "Encryption", $"{WhereTheKeyCameFrom(keyRing.Custody)} · {keyStore.Directory}")
             };
 
             if (keyRing.Custody == KeyCustody.NoDurableStore)
@@ -128,16 +135,18 @@ namespace Lighthouse.Backend.Startup
             return lines;
         }
 
-        // A custody nobody named claims the least, which is the same thing having nowhere to keep a key
-        // means: the instance is on the key that ships inside every copy of the product.
+        // One word each, and they still have to tell the four apart on their own - an operator scanning a
+        // console is reading this at a glance or not at all. A custody nobody named claims the least,
+        // which is the same thing having nowhere to keep a key means: the instance is on the key that
+        // ships inside every copy of the product.
         private static string WhereTheKeyCameFrom(KeyCustody custody)
         {
             return custody switch
             {
-                KeyCustody.GeneratedForThisInstance => "generated for this instance",
-                KeyCustody.SuppliedByConfiguration => "supplied by configuration",
-                KeyCustody.SuppliedByExternalSecret => "supplied by a mounted secret file",
-                _ => "the key published with the product",
+                KeyCustody.GeneratedForThisInstance => "instance",
+                KeyCustody.SuppliedByConfiguration => "configured",
+                KeyCustody.SuppliedByExternalSecret => "mounted secret",
+                _ => "published key",
             };
         }
 

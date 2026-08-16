@@ -102,6 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "legacyDefaultPresent",
             "secretsUnderPublishedKey",
             "allowsStartWithUnreadableSecrets",
+            "keySuppliedThrough",
         ];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
@@ -686,6 +687,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     "this host holds a secret written under the published key, which is exactly the case where "
                     + "listing it tells the operator something true");
                 Assert.That(payload.Bool("legacyDefaultPresent"), Is.True);
+            }
+        }
+
+        /// <summary>
+        /// The panel used to name the key store directory in every custody. Under a supplied key that
+        /// directory exists and is full of key-shaped files — the Data Protection key and the OAuth state
+        /// secret both live there — and none of them is the encryption key. An operator who backed it up
+        /// alongside the database had every reason to think they had taken their key with them, and
+        /// restoring that pair onto a host without the setting yields a database nobody can open.
+        /// </summary>
+        [Test]
+        public async Task ThePayload_NamesTheSettingASuppliedKeyArrivedIn()
+        {
+            using var suppliedClient = factory.CreateClient().AsSystemAdmin();
+            using var ownKeyClient = ownKeyFactory.CreateClient().AsSystemAdmin();
+
+            using var supplied = await suppliedClient.GetAsync(LatestRoute);
+            using var ownKey = await ownKeyClient.GetAsync(LatestRoute);
+
+            var suppliedPayload = await ReadJsonAsync(supplied);
+            var ownKeyPayload = await ReadJsonAsync(ownKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(suppliedPayload.String("keySuppliedThrough"), Is.EqualTo("Encryption__Key"),
+                    "named the way an operator writes it, because the point of the answer is that they can go and edit it");
+                Assert.That(ownKeyPayload.String("keySuppliedThrough"), Is.Null.Or.Empty,
+                    "this instance made its own key and keeps it, so there is no setting to send anybody to");
             }
         }
 

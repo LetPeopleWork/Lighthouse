@@ -40,6 +40,37 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 && !string.IsNullOrWhiteSpace(suppliedUnderTheRetiredName);
         }
 
+        // Which setting an operator would have to go and edit. Where Lighthouse keeps the key itself the
+        // answer is nothing, and saying so is the point: the panel used to name the key store directory
+        // in every custody, and under a supplied key that directory exists, is full of key-shaped files,
+        // and does not contain the key. An operator who backed it up alongside the database had every
+        // reason to believe they had taken their encryption key with them.
+        public static string? SettingThatAnswered(string? suppliedRing, string? suppliedKey, string? suppliedUnderTheRetiredName)
+        {
+            if (!string.IsNullOrWhiteSpace(suppliedRing))
+            {
+                return AsAnOperatorWouldWriteIt(RingSettingKey);
+            }
+
+            if (!string.IsNullOrWhiteSpace(suppliedKey))
+            {
+                return AsAnOperatorWouldWriteIt(SingleKeySettingKey);
+            }
+
+            return string.IsNullOrWhiteSpace(suppliedUnderTheRetiredName)
+                ? null
+                : AsAnOperatorWouldWriteIt(RetiredSingleKeySettingKey);
+        }
+
+        // Settings are spelled with a colon inside the application and with two underscores everywhere an
+        // operator types them, and it is the second spelling they have to recognise.
+        public static string AsAnOperatorWouldWriteIt(string settingKey)
+        {
+            ArgumentNullException.ThrowIfNull(settingKey);
+
+            return settingKey.Replace(":", "__", StringComparison.Ordinal);
+        }
+
         public EncryptionKeyRing? Resolve()
         {
             if (!string.IsNullOrWhiteSpace(suppliedRing))

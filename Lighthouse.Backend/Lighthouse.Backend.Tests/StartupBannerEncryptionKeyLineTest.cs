@@ -32,15 +32,26 @@ namespace Lighthouse.Backend.Tests
         ];
 
         [Test]
-        public void EncryptionLine_NamesWhereTheKeyCameFromWhatItIsCalledAndWhereItIsKept()
+        public void EncryptionLine_NamesWhoseKeyItIsAndWhereItIsKept()
         {
             var lines = StartupBanner.BuildEncryptionCustodyLines(
                 RingUnder(KeyCustody.GeneratedForThisInstance), KeptIn(), keyCameFromTheRetiredSetting: false);
 
             Assert.That(lines, Has.Some.Contains(EncryptionLabel)
-                .And.Contains("generated for this instance")
-                .And.Contains(ActiveKeyId)
+                .And.Contains("instance")
                 .And.Contains(KeyStoreDirectory));
+        }
+
+        // Every other line of this banner is a label and a short value; this one was a clause. The key id
+        // came off it because the moment it is worth having is a start that stopped - and the refusal
+        // that stops one now names both keys itself.
+        [Test]
+        public void EncryptionLine_CarriesNoKeyId()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.GeneratedForThisInstance), KeptIn(), keyCameFromTheRetiredSetting: false);
+
+            Assert.That(lines[0], Does.Not.Contain(ActiveKeyId));
         }
 
         /// <summary>
@@ -63,10 +74,10 @@ namespace Lighthouse.Backend.Tests
                 "log file the operator reads it from. Found: " + string.Join(", ", disclosed));
         }
 
-        [TestCase(KeyCustody.GeneratedForThisInstance, "generated for this instance")]
-        [TestCase(KeyCustody.SuppliedByConfiguration, "supplied by configuration")]
-        [TestCase(KeyCustody.SuppliedByExternalSecret, "supplied by a mounted secret file")]
-        [TestCase(KeyCustody.NoDurableStore, "the key published with the product")]
+        [TestCase(KeyCustody.GeneratedForThisInstance, "instance")]
+        [TestCase(KeyCustody.SuppliedByConfiguration, "configured")]
+        [TestCase(KeyCustody.SuppliedByExternalSecret, "mounted secret")]
+        [TestCase(KeyCustody.NoDurableStore, "published key")]
         public void EncryptionLine_TellsEachCustodyApartByItsWordingAlone(KeyCustody custody, string expectedSource)
         {
             var lines = StartupBanner.BuildEncryptionCustodyLines(
