@@ -9,14 +9,19 @@ namespace Lighthouse.Backend.API.DTO
             EncryptionKeyRing keyRing,
             string keyStorePath,
             int secretsUnderPublishedKey,
-            bool allowsStartWithUnreadableSecrets = false)
+            bool allowsStartWithUnreadableSecrets = false,
+            IReadOnlyCollection<string>? keysSomethingWasWrittenUnder = null)
         {
             ArgumentNullException.ThrowIfNull(keyRing);
 
             Custody = keyRing.Custody;
             CanMint = keyRing.CanMint;
             ActiveKeyId = keyRing.ActiveKey.Id;
-            KeyIds = [keyRing.ActiveKey.Id, .. keyRing.RetiredKeys.Select(retired => retired.Id)];
+            KeyIds = [
+                keyRing.ActiveKey.Id,
+                .. keyRing.RetiredKeys
+                    .Select(retired => retired.Id)
+                    .Where(id => keysSomethingWasWrittenUnder?.Contains(id) ?? true)];
             KeyStorePath = keyStorePath;
             LegacyDefaultPresent = keyRing.TryGet(LegacyDefaultEncryptionKey.Id, out _);
             SecretsUnderPublishedKey = secretsUnderPublishedKey;
@@ -32,6 +37,11 @@ namespace Lighthouse.Backend.API.DTO
 
         public string ActiveKeyId { get; }
 
+        // The key in force, and the earlier keys something is still stored under. A key nothing was ever
+        // written under stays on the ring and is still read with - it is only kept off this list, because
+        // every ring carries the key published with the product and a first install would otherwise
+        // appear to be holding a key named after a legacy it never had. Nothing is removed, so a restore
+        // that brings back older values makes its key appear here again on its own.
         public IReadOnlyList<string> KeyIds { get; }
 
         public string KeyStorePath { get; }

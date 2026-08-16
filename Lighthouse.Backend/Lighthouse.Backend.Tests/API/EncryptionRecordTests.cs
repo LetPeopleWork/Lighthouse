@@ -138,6 +138,16 @@ namespace Lighthouse.Backend.Tests.API
             return new ClaimsPrincipal(new ClaimsIdentity([new Claim(claim, value)], "test"));
         }
 
+        // These tests are about what a rotation records, not about which keys the panel lists, so the
+        // reader says every key is in use and the ring reaches the payload exactly as it did before.
+        private sealed class EveryKeyOnTheRingIsInUse : IReferencedKeyIds
+        {
+            public Task<IReadOnlyCollection<string>> ReadAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult<IReadOnlyCollection<string>>([ActiveKey.Id]);
+            }
+        }
+
         private EncryptionController ControllerOver(ISecretCustodyService custodyService, ClaimsPrincipal? asWhom = null)
         {
             var configuration = new ConfigurationBuilder().AddInMemoryCollection([]).Build();
@@ -152,6 +162,7 @@ namespace Lighthouse.Backend.Tests.API
                 custodyService,
                 custodyService,
                 new NothingIsUnderThePublishedKey(),
+                new EveryKeyOnTheRingIsInUse(),
                 logger.Object)
             {
                 ControllerContext = new ControllerContext

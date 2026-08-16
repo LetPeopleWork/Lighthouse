@@ -71,8 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static readonly string ReportedKeyStore = Path.Combine(Path.GetTempPath(), "lighthouse-key-store-under-test");
 
-        private static readonly string[] ExpectedOwnKeyIds = [MintedKeyId, OlderKeyId];
-
         private const string CheckedConnection = "Contoso Board";
 
         private const string OnTheKeyInForce = "PersonalAccessToken";
@@ -198,7 +196,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), payload.Raw);
                 Assert.That(payload.String("custody"), Is.EqualTo(ring.Custody.ToString()));
                 Assert.That(payload.String("activeKeyId"), Is.EqualTo(ring.ActiveKey.Id));
-                Assert.That(payload.Strings("keyIds"), Is.EqualTo(IdsOn(ring)).AsCollection);
+                Assert.That(payload.Strings("keyIds"), Is.EqualTo(new[] { ring.ActiveKey.Id }).AsCollection,
+                    "this host has stored nothing, so no earlier key has anything written under it - and every "
+                    + "ring carries the published key, which would otherwise make a first install look like it "
+                    + "was holding a key named after a legacy it never had");
                 Assert.That(payload.String("keyStorePath"), Is.Not.Empty,
                     "an operator who cannot see where the key is kept cannot back it up");
             }
@@ -231,7 +232,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(ownKey.Bool("canMint"), Is.True,
                     "an instance that wrote its own key can write another and still find it after a restart");
                 Assert.That(ownKey.String("activeKeyId"), Is.EqualTo(MintedKeyId));
-                Assert.That(ownKey.Strings("keyIds"), Is.EqualTo(ExpectedOwnKeyIds).AsCollection);
+                Assert.That(ownKey.Strings("keyIds"), Is.EqualTo(new[] { MintedKeyId }).AsCollection,
+                    "the older key on this ring has nothing written under it, and the one value this host does "
+                    + "hold was written before the envelope format existed, so it names no key at all");
                 Assert.That(ownKey.String("keyStorePath"), Is.EqualTo(ReportedKeyStore),
                     "the path is resolved from the key-store settings rather than reported from somewhere of its own");
             }
@@ -252,8 +255,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(payload.Bool("legacyDefaultPresent"), Is.True.And.EqualTo(keyIds.Contains(LegacyDefaultEncryptionKey.Id)),
+                Assert.That(payload.Bool("legacyDefaultPresent"), Is.True,
                     "an upgraded instance keeps the published key behind its own so that what it already stored stays readable");
+                Assert.That(keyIds, Does.Not.Contain(LegacyDefaultEncryptionKey.Id),
+                    "holding a key and having written something under it are different questions: this one is on "
+                    + "every ring and nothing here was written under it, so it is read with and not listed");
                 Assert.That(ownKey.Bool("legacyDefaultPresent"), Is.False,
                     "this ring does not hold the published key, and the flag is a statement about the ring");
                 Assert.That(payload.PropertyNames, Is.EquivalentTo(EverythingTheKeyStatePayloadCarries),
@@ -658,6 +664,28 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That((await ReadJsonAsync(startedPastIt)).Bool("allowsStartWithUnreadableSecrets"), Is.True);
                 Assert.That((await ReadJsonAsync(startedNormally)).Bool("allowsStartWithUnreadableSecrets"), Is.False,
                     "an instance that never needed the switch is not taught to worry about a hatch it never opened");
+            }
+        }
+
+        /// <summary>
+        /// The other half of hiding a key nothing references. An earlier key that something is still
+        /// stored under is the one an operator has to keep — losing it loses that credential — so it
+        /// stays on the list however long ago the instance stopped writing with it.
+        /// </summary>
+        [Test]
+        public async Task ThePayload_ListsAnEarlierKeySomethingIsStillStoredUnder()
+        {
+            using var client = checkableFactory.CreateClient().AsSystemAdmin();
+
+            using var response = await client.GetAsync(LatestRoute);
+            var payload = await ReadJsonAsync(response);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(payload.Strings("keyIds"), Does.Contain(LegacyDefaultEncryptionKey.Id),
+                    "this host holds a secret written under the published key, which is exactly the case where "
+                    + "listing it tells the operator something true");
+                Assert.That(payload.Bool("legacyDefaultPresent"), Is.True);
             }
         }
 

@@ -51,6 +51,8 @@ namespace Lighthouse.Backend.API
 
         private readonly IPublishedKeySecretCount publishedKeySecrets;
 
+        private readonly IReferencedKeyIds referencedKeys;
+
         private readonly ILogger<EncryptionController> logger;
 
         public EncryptionController(
@@ -60,6 +62,7 @@ namespace Lighthouse.Backend.API
             ISecretCustodyService custodyService,
             ISecretCustodyReader secretReader,
             IPublishedKeySecretCount publishedKeySecrets,
+            IReferencedKeyIds referencedKeys,
             ILogger<EncryptionController> logger)
         {
             this.keyRingHolder = keyRingHolder ?? throw new ArgumentNullException(nameof(keyRingHolder));
@@ -68,6 +71,7 @@ namespace Lighthouse.Backend.API
             this.custodyService = custodyService ?? throw new ArgumentNullException(nameof(custodyService));
             this.secretReader = secretReader ?? throw new ArgumentNullException(nameof(secretReader));
             this.publishedKeySecrets = publishedKeySecrets ?? throw new ArgumentNullException(nameof(publishedKeySecrets));
+            this.referencedKeys = referencedKeys ?? throw new ArgumentNullException(nameof(referencedKeys));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -79,7 +83,8 @@ namespace Lighthouse.Backend.API
                 keyRingHolder.Current,
                 WhereTheKeyIsKept().Directory,
                 await publishedKeySecrets.CountAsync(cancellationToken),
-                configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey)));
+                configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey),
+                await referencedKeys.ReadAsync(cancellationToken)));
         }
 
         // Nothing is recorded about a check, and that is deliberate: nothing changed, and a running record
