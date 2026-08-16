@@ -20,6 +20,8 @@ namespace Lighthouse.Backend.Tests.Startup
 
         private const string OAuthStateSecretBlobFileName = "oauth-state-secret.protected";
 
+        private const string RingFileName = GeneratedKeyRingStore.RingFileName;
+
         // What appsettings.json ships: a bare file name, resolved against the content root. It is the
         // input that tells a resolution that ran too early apart from one that ran after the standalone
         // profile wrote its own paths.
@@ -175,8 +177,7 @@ namespace Lighthouse.Backend.Tests.Startup
             var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<key a>"));
             var resolved = EmptyDirectory("resolved");
             KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
-            File.WriteAllText(
-                Path.Combine(resolved, "encryption-keyring.protected"), "<the key this instance minted>");
+            File.WriteAllText(Path.Combine(resolved, RingFileName), "<the key this instance minted>");
 
             var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
 
@@ -231,10 +232,10 @@ namespace Lighthouse.Backend.Tests.Startup
         }
 
         [Test]
-        public void CarryOverLegacyKeyStore_BothPopulatedAndDifferent_StopsStartupAndModifiesNeither()
+        public void CarryOverLegacyKeyStore_EachDirectoryHoldsADifferentKeyRing_StopsStartupAndModifiesNeither()
         {
-            var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<the key this instance used to have>"));
-            var resolved = PopulatedDirectory("resolved", ("key-b.xml", "<a different key>"));
+            var legacy = PopulatedDirectory("legacy", (RingFileName, "<the ring one instance minted>"));
+            var resolved = PopulatedDirectory("resolved", (RingFileName, "<the ring another instance minted>"));
 
             var legacyBefore = ContentsOf(legacy);
             var resolvedBefore = ContentsOf(resolved);
@@ -254,14 +255,43 @@ namespace Lighthouse.Backend.Tests.Startup
         }
 
         [Test]
-        public void CarryOverLegacyKeyStore_TheSameKeyFileHoldingDifferentKeys_StopsStartup()
+        public void CarryOverLegacyKeyStore_BothDirectoriesHoldTheSameKeyRing_CarriesNothingAndDoesNotRefuse()
         {
-            var legacy = PopulatedDirectory("legacy", ("key-a.xml", "<the key this instance used to have>"));
-            var resolved = PopulatedDirectory("resolved", ("key-a.xml", "<a key from somewhere else>"));
+            var legacy = PopulatedDirectory("legacy", (RingFileName, "<the one ring this instance has>"));
+            var resolved = PopulatedDirectory("resolved", (RingFileName, "<the one ring this instance has>"));
 
-            Assert.That(
-                () => KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy),
-                Throws.InvalidOperationException);
+            var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
+
+            Assert.That(outcome.ContentsWereCarriedOver, Is.False);
+        }
+
+        // The old location is still where an instance with no database file to sit beside keeps its keys,
+        // so a deployment that has run on both providers has a live store in each directory. Neither is a
+        // rival: only a key ring names a store, and neither of these holds one.
+        [Test]
+        public void CarryOverLegacyKeyStore_TwoLiveStoresNeitherHoldingAKeyRing_CarriesTheMissingKeysAcross()
+        {
+            var legacy = PopulatedDirectory(
+                "legacy",
+                ("key-from-the-default-location.xml", "<a data protection key>"),
+                ("oauth-state-secret.protected", "<the secret written there>"));
+            var resolved = PopulatedDirectory(
+                "resolved",
+                ("key-from-beside-the-database.xml", "<another data protection key>"),
+                ("oauth-state-secret.protected", "<the secret written here>"));
+
+            var outcome = KeyStoreMigration.CarryOverLegacyKeyStore(resolved, legacy);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.ContentsWereCarriedOver, Is.True);
+                Assert.That(
+                    File.ReadAllText(Path.Combine(resolved, "key-from-the-default-location.xml")),
+                    Is.EqualTo("<a data protection key>"));
+                Assert.That(
+                    File.ReadAllText(Path.Combine(resolved, "oauth-state-secret.protected")),
+                    Is.EqualTo("<the secret written here>"));
+            }
         }
 
         [Test]

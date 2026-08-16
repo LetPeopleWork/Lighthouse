@@ -9,6 +9,13 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     // writable layer a recreate throws away. Moving it is therefore a read-both, write-new step: an
     // existing key store is carried across, never ignored and never replaced by a fresh one, because a
     // fresh one leaves every stored secret unreadable with nothing to point at as the cause.
+    //
+    // The old location is also the one an instance with no database file to sit beside keeps its keys in
+    // today, so finding a populated directory there is not evidence of a rival instance - the same
+    // deployment run once on Postgres and once on SQLite fills both. What names a key store is its key
+    // ring, and two rings that are not the same key cannot both belong to this database. That is the one
+    // case worth refusing to start over; everything else is carried across, which can only make more of
+    // what is already stored readable.
     public static class KeyStoreMigration
     {
         public static KeyStoreMigrationOutcome CarryOverLegacyKeyStore(string resolvedDirectory, string legacyDirectory)
@@ -27,21 +34,56 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             }
 
             var resolvedContents = ContentsOf(resolvedDirectory);
-            if (resolvedContents.Count == 0)
+
+            RefuseWhenEachHoldsADifferentKeyRing(
+                legacyDirectory, legacyContents, resolvedDirectory, resolvedContents);
+
+            if (Holds(resolvedContents, GeneratedKeyRingStore.RingFileName))
             {
-                CopyAcross(legacyDirectory, resolvedDirectory, legacyContents);
-                return new KeyStoreMigrationOutcome(true, legacyDirectory, resolvedDirectory);
+                return nothingCarriedOver;
             }
 
-            if (!ResolvedHoldsEveryLegacyKey(legacyDirectory, legacyContents, resolvedDirectory, resolvedContents))
+            var missingFromResolved = legacyContents
+                .Where(relativePath => !Holds(resolvedContents, relativePath))
+                .ToList();
+
+            if (missingFromResolved.Count == 0)
             {
-                throw new InvalidOperationException(
-                    $"A key store was found at '{legacyDirectory}' holding keys the one in use at '{resolvedDirectory}' does not. " +
-                    "Lighthouse will not choose between them, because the wrong choice leaves every stored secret unreadable. " +
-                    "Keep the store that belongs to this instance, move the other one elsewhere, and start Lighthouse again.");
+                return nothingCarriedOver;
             }
 
-            return nothingCarriedOver;
+            CopyAcross(legacyDirectory, resolvedDirectory, missingFromResolved);
+
+            return new KeyStoreMigrationOutcome(true, legacyDirectory, resolvedDirectory);
+        }
+
+        private static void RefuseWhenEachHoldsADifferentKeyRing(
+            string legacyDirectory,
+            List<string> legacyContents,
+            string resolvedDirectory,
+            List<string> resolvedContents)
+        {
+            var ring = GeneratedKeyRingStore.RingFileName;
+
+            if (!Holds(legacyContents, ring) || !Holds(resolvedContents, ring))
+            {
+                return;
+            }
+
+            if (AreIdentical(Path.Combine(legacyDirectory, ring), Path.Combine(resolvedDirectory, ring)))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Two key rings were found and they are not the same key: '{legacyDirectory}' and '{resolvedDirectory}' each hold a '{ring}'. " +
+                "Lighthouse will not choose between them, because the wrong choice leaves every stored secret unreadable. " +
+                "Keep the store that belongs to this instance, move the other one elsewhere, and start Lighthouse again.");
+        }
+
+        private static bool Holds(List<string> contents, string relativePath)
+        {
+            return contents.Contains(relativePath, StringComparer.Ordinal);
         }
 
         private static void CopyAcross(string legacyDirectory, string resolvedDirectory, List<string> contents)
@@ -54,23 +96,6 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 File.Copy(Path.Combine(legacyDirectory, relativePath), destination, overwrite: false);
             }
-        }
-
-        // Every carry-over leaves the legacy store where it was, and the instance then writes its own key
-        // into the resolved one - so from the second start onwards the resolved store holds strictly more
-        // than the legacy store does. What has to hold is that nothing in the legacy store would be lost by
-        // walking away from it, not that the two are identical.
-        private static bool ResolvedHoldsEveryLegacyKey(
-            string legacyDirectory,
-            List<string> legacyContents,
-            string resolvedDirectory,
-            List<string> resolvedContents)
-        {
-            return legacyContents.TrueForAll(relativePath =>
-                resolvedContents.Contains(relativePath, StringComparer.Ordinal)
-                && AreIdentical(
-                    Path.Combine(legacyDirectory, relativePath),
-                    Path.Combine(resolvedDirectory, relativePath)));
         }
 
         private static bool AreIdentical(string oneFile, string another)
