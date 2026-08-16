@@ -64,4 +64,31 @@ Slice 06a, for the shortened custody wording. Independent of slices 05 and 06.
 
 ## Verdict
 
-_To be recorded at slice close._
+**Shipped 2026-08-16.** Both halves, and they did turn out to be one decision.
+
+- **The narrowing lives on the record**, naming the two fields only a System Administrator may be told.
+  A test walks the properties by reflection and fails if that set ever changes without somebody
+  deciding — which is exactly how the emergency administrators came to be on an unguarded response in
+  the first place.
+- **A withheld field is left off the wire, not sent empty.** What a viewer receives is byte for byte
+  what it was before this field existed, and the page draws no row. An empty property announces that
+  there is something here you are not being shown.
+- **The custody sentence is written once and rendered twice** — the banner prints its line, the page
+  reports the same string, and neither can be reworded without the other following.
+
+Three things found while building rather than from the brief:
+
+1. **The RBAC question can fail, and must not fail the request.** Deciding who is an administrator
+   reaches the database; everything else on that response is read from configuration and the running
+   process. It is what the application shell fetches before it can draw anything, so a database that
+   will not answer used to leave it working and has to keep doing so. It fails closed instead.
+2. **A caller who never signed in is settled without asking anybody.** Nobody is not an administrator,
+   and the route deliberately admits anonymous callers where there is no authentication at all.
+3. **The custody description is computed once at startup.** Correct today because custody cannot change
+   without a restart — a rotation replaces the key inside a custody, it does not move the key between
+   custodies. Recorded here because that is an assumption, not a guarantee.
+
+One cost paid on the way: Sonar failed the gate on the eight-parameter constructor slice 06a left
+behind, and the two ports the encryption panel used for one screen were merged to fix it. That departs
+from the recorded rule in `docs/ci-learnings.md`, which says to suppress rather than aggregate, and the
+departure is written down there with instructions to revert it.

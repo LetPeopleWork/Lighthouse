@@ -18,15 +18,18 @@ namespace Lighthouse.Backend.API
         private readonly ISystemInfoService systemInfoService;
         private readonly IRefreshLogService refreshLogService;
         private readonly IRbacAdministrationService rbac;
+        private readonly ILogger<SystemInfoController> logger;
 
         public SystemInfoController(
             ISystemInfoService systemInfoService,
             IRefreshLogService refreshLogService,
-            IRbacAdministrationService rbac)
+            IRbacAdministrationService rbac,
+            ILogger<SystemInfoController> logger)
         {
             this.systemInfoService = systemInfoService;
             this.refreshLogService = refreshLogService;
             this.rbac = rbac;
+            this.logger = logger;
         }
 
         // The route stays open to anybody signed in, because the shell cannot render without what is on
@@ -70,8 +73,15 @@ namespace Lighthouse.Backend.API
                 return await rbac.CanSatisfyRequirementAsync(
                     User, RbacGuardRequirement.SystemAdmin, cancellationToken: cancellationToken);
             }
+            // Said out loud on the way past. Withholding is the safe answer to a question that could not
+            // be asked, but it is the same answer a genuine fault in the permission check would produce -
+            // and an authorisation bug that only ever shows up as a missing row is one nobody reports.
             catch (Exception couldNotBeAsked) when (couldNotBeAsked is DbException or InvalidOperationException)
             {
+                logger.LogWarning(
+                    couldNotBeAsked,
+                    "Could not work out whether this caller administers the instance, so the system information was answered without what only an administrator may see.");
+
                 return false;
             }
         }

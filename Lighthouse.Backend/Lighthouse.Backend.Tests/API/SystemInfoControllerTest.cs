@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Startup;
@@ -349,7 +350,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private SystemInfoController CreateSubject()
         {
-            return new SystemInfoController(systemInfoServiceMock.Object, refreshLogServiceMock.Object, rbacMock.Object)
+            return new SystemInfoController(systemInfoServiceMock.Object, refreshLogServiceMock.Object, rbacMock.Object, NullLogger<SystemInfoController>.Instance)
             {
                 // Somebody who signed in. A caller who did not is settled without asking anybody, so a
                 // controller built without a principal would answer every one of these as a stranger.

@@ -416,7 +416,13 @@ Anything the walkthrough turns up lands here, sorted by what it changes. Slice 0
 
 ### Wording — banner
 
-**F-1 · A standalone user never sees the banner** (A1, 2026-08-16). The custody line is correct and
+**F-1 · A standalone user never sees the banner** (A1, 2026-08-16). **FIXED in slice 06b (Story #5793),
+2026-08-16.** The custody line is mirrored onto the system information page, System Administrator only
+— which is where somebody diagnosing an instance looks first, and the one surface a standalone operator
+actually has. One sentence, rendered in two places, so the console and the page cannot drift apart.
+The same change closes the unguarded `emergencyAdminSubjects` on that response.
+
+The custody line is correct and
 complete, and it goes to Serilog — into `~/.config/Lighthouse/logs/log-<date>.txt`, a directory the
 operator has no reason to know exists. Standalone has no terminal. The banner is the design's primary
 custody surface and the entire standalone population is structurally blind to it. Whatever the banner
