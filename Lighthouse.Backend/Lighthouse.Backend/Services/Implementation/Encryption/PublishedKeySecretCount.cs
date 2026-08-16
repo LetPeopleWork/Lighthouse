@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     // some other key while holding this one's bytes, and no predicate over the stored text would find it.
     public sealed class PublishedKeySecretCount : IPublishedKeySecretCount
     {
+        // Stryker disable once String: the separator narrows nothing on its own - every id this could
+        // then also match would still be handed to the same key to read, and rejected there.
         private static readonly string PublishedKeyPrefix = SecretEnvelope.Prefix + LegacyDefaultEncryptionKey.Id + ".";
 
         private readonly LighthouseAppContext context;
@@ -42,12 +44,16 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 .Select(option => option.Value)
                 .ToListAsync(cancellationToken);
 
+            // Stryker disable once Logical: dropping the emptiness guard changes which rows are dragged
+            // out of the database, never the answer - an empty column is not something that key can read.
             var accessTokens = await context.Set<OAuthCredential>()
                 .Where(credential => !string.IsNullOrEmpty(credential.AccessToken)
                     && (credential.AccessToken.StartsWith(PublishedKeyPrefix) || !credential.AccessToken.StartsWith(SecretEnvelope.Prefix)))
                 .Select(credential => credential.AccessToken)
                 .ToListAsync(cancellationToken);
 
+            // Stryker disable once Logical: same as above - the guard is about what is fetched, and the
+            // count is decided afterwards by what that key can read.
             var refreshTokens = await context.Set<OAuthCredential>()
                 .Where(credential => !string.IsNullOrEmpty(credential.RefreshToken)
                     && (credential.RefreshToken.StartsWith(PublishedKeyPrefix) || !credential.RefreshToken.StartsWith(SecretEnvelope.Prefix)))

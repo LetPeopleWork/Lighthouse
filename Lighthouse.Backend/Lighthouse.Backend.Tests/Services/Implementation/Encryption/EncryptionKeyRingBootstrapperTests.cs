@@ -773,9 +773,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(refusal.Message, Does.Contain(ConfiguredKeyRingSource.SingleKeySettingKey),
                     "an operator cannot act on a refusal that does not say which setting carried the key");
                 Assert.That(refusal.Message, Does.Contain("is the key published with Lighthouse"));
+                Assert.That(refusal.Message, Does.Contain("ships inside every copy of the product"),
+                    "an operator who is not told why the key is no good has been given an order rather than a reason");
                 Assert.That(refusal.Message, Does.Contain("would not be protected at all"));
                 Assert.That(refusal.Message, Does.Contain("Nothing has been changed and nothing is lost"));
                 Assert.That(refusal.Message, Does.Contain("Set Encryption__Key to a key of your own"));
+                Assert.That(refusal.Message, Does.Contain("start Lighthouse again"),
+                    "every other refusal on this path ends by saying to start again, and an operator reading two of them should not have to wonder why one does not");
             }
         }
 
@@ -830,6 +834,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                     CryptoServiceHolding(ring).Decrypt(EncryptedUnderThePublishedKey()[0]),
                     Is.EqualTo(CredentialsStoredBeforeTheUpgrade[0]),
                     "behind an active key the same material has to stay welcome, or every upgrade stops being readable");
+            }
+        }
+
+        // A bootstrapper missing any one of these resolves a key from somewhere it was not told about, and
+        // the first anyone would hear of it is a secret written under the wrong key.
+        [Test]
+        public void ABootstrapper_RefusesToBeBuiltWithoutAnyOfWhatItResolvesFrom()
+        {
+            var configuration = new ConfiguredKeyRingSource(null, null, null);
+            var mountedFile = new MountedFileKeyRingSource(null, new StagedKeyStoreFileSystem());
+            var generated = StoreFor(new StagedKeyStoreFileSystem());
+            var keyStore = new KeyStoreLocation(keyStoreDirectory, KeyStoreCase.BesideTheDatabaseFile);
+            var storedSecrets = new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone);
+            var readability = new StagedReadabilityProbe(StoredSecretReadability.NothingStored);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    () => new EncryptionKeyRingBootstrapper(null!, mountedFile, generated, keyStore, storedSecrets, readability),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => new EncryptionKeyRingBootstrapper(configuration, null!, generated, keyStore, storedSecrets, readability),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => new EncryptionKeyRingBootstrapper(configuration, mountedFile, null!, keyStore, storedSecrets, readability),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => new EncryptionKeyRingBootstrapper(configuration, mountedFile, generated, null!, storedSecrets, readability),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => new EncryptionKeyRingBootstrapper(configuration, mountedFile, generated, keyStore, null!, readability),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => new EncryptionKeyRingBootstrapper(configuration, mountedFile, generated, keyStore, storedSecrets, null!),
+                    Throws.ArgumentNullException);
             }
         }
 

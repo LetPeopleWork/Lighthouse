@@ -21,6 +21,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             new("k-2026-08-16-01", RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
 
         [Test]
+        public void AppendedTo_NoRingAtAll_RefusesRatherThanMakingOne()
+        {
+            Assert.That(
+                () => LegacyDefaultEncryptionKey.AppendedTo(null!),
+                Throws.ArgumentNullException,
+                "a ring conjured here would carry this key as the one secrets are written under");
+        }
+
+        [Test]
         public void Matches_ThePublishedKeysOwnMaterial_SaysYes()
         {
             Assert.That(LegacyDefaultEncryptionKey.Matches(ThePublishedKey().Material.Span), Is.True);
