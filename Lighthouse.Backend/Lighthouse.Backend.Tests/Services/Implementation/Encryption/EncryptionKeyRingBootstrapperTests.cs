@@ -145,6 +145,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
+        public void Resolve_KeysFileNamedAndNothingMountedThere_RefusesRatherThanFallingBackToAKeyOfItsOwn()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var bootstrapper = BootstrapperFor(staged, keysFilePath: MountedSecretPath);
+
+            var refusal = Assert.Throws<InvalidOperationException>(() => bootstrapper.Resolve());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain(MountedSecretPath));
+                Assert.That(refusal.Message, Does.Contain("Encryption__KeysFile"));
+                Assert.That(refusal.Message, Does.Contain("will not fall back to a key of its own"));
+                Assert.That(refusal.Message, Does.Contain("everything written in the meantime would be unreadable"));
+                Assert.That(refusal.Message, Does.Contain("Mount the file, or remove the setting"));
+                Assert.That(staged.FileCount, Is.Zero);
+            }
+        }
+
+        [Test]
+        public void Resolve_AMountedFileThatCannotBeParsed_NamesTheFileItCameFrom()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            staged.Place(MountedSecretPath, Encoding.UTF8.GetBytes($"K-SHOUTING:{Convert.ToBase64String(MaterialOf(29))}"));
+
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(staged, keysFilePath: MountedSecretPath).Resolve());
+
+            Assert.That(refusal.Message, Does.Contain($"the file '{MountedSecretPath}'"));
+        }
+
+        [Test]
         public void Resolve_ConfigurationAndAMountedFileBothSupplyAKey_ConfigurationWins()
         {
             var configuredMaterial = MaterialOf(13);
@@ -207,7 +238,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             var refusal = Assert.Throws<InvalidOperationException>(() => bootstrapper.Resolve());
 
-            Assert.That(refusal.Message, Does.Contain(ringFilePath));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal.Message, Does.Contain(ringFilePath));
+                Assert.That(refusal.Message, Does.Contain("did not read back as what was written"));
+                Assert.That(refusal.Message, Does.Contain("cannot be trusted to keep it"));
+                Assert.That(refusal.Message, Does.Contain("every secret written under it would become unreadable"));
+                Assert.That(refusal.Message, Does.Contain("storage that keeps what it is given"));
+                Assert.That(refusal.Message, Does.Contain("supply the key through Encryption__Key"));
+            }
         }
 
         [Test]
@@ -224,9 +263,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(refusal.Message, Does.Contain(ringFilePath));
+                Assert.That(refusal.Message, Does.Contain("is there and could not be read"));
+                Assert.That(refusal.Message, Does.Contain("will not write a replacement"));
+                Assert.That(refusal.Message, Does.Contain("leave every secret already stored unreadable"));
+                Assert.That(refusal.Message, Does.Contain("supply the key through Encryption__Key"));
                 Assert.That(staged.Contents(ringFilePath), Is.EqualTo(unreadable));
                 Assert.That(staged.FileCount, Is.EqualTo(1));
                 Assert.That(staged.Operations, Has.No.Member($"write {ringFilePath}"));
+            }
+        }
+
+        [Test]
+        public void Resolve_AKeyStoreThisInstanceCanReadButCannotParse_NamesTheFileItCameFrom()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var ringFilePath = Path.Combine(keyStoreDirectory, GeneratedKeyRingStore.RingFileName);
+            staged.Place(
+                ringFilePath,
+                AsThisInstanceWouldHaveWrittenIt($"K-SHOUTING:{Convert.ToBase64String(MaterialOf(31))}"));
+
+            var refusal = Assert.Throws<InvalidOperationException>(() => BootstrapperFor(staged).Resolve());
+
+            Assert.That(refusal.Message, Does.Contain($"the file '{ringFilePath}'"));
+        }
+
+        [Test]
+        public void Move_ADestinationThatIsAlreadyThere_IsReplacedRatherThanRefused()
+        {
+            var fileSystem = new PhysicalKeyStoreFileSystem();
+            var writtenAside = Path.Combine(keyStoreDirectory, "ring.writing");
+            var inPlace = Path.Combine(keyStoreDirectory, "ring");
+            var replacement = new byte[] { 1, 2, 3 };
+            fileSystem.WriteAllBytes(writtenAside, replacement);
+            fileSystem.WriteAllBytes(inPlace, [9]);
+
+            fileSystem.Move(writtenAside, inPlace);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fileSystem.ReadAllBytes(inPlace), Is.EqualTo(replacement));
+                Assert.That(fileSystem.FileExists(writtenAside), Is.False);
             }
         }
 
@@ -750,6 +826,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 StoreFor(fileSystem),
                 new KeyStoreLocation(keyStoreDirectory, keyStoreCase),
                 probe ?? storedSecrets ?? (IStoredSecretPresenceProbe)new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone));
+        }
+
+        // Named the same way the store names it, so a ring placed by a test is one this instance can unwrap
+        // and then fail to parse - the only way to reach the refusal that comes after the unwrapping.
+        private byte[] AsThisInstanceWouldHaveWrittenIt(string ringText)
+        {
+            var dataProtectionHost = new ServiceCollection()
+                .AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(keyStoreDirectory))
+                .Services
+                .BuildServiceProvider();
+
+            dataProtectionHosts.Add(dataProtectionHost);
+
+            return dataProtectionHost.GetRequiredService<IDataProtectionProvider>()
+                .CreateProtector("Lighthouse.Encryption.KeyRing.v1")
+                .Protect(Encoding.UTF8.GetBytes(ringText));
         }
 
         private GeneratedKeyRingStore StoreFor(IKeyStoreFileSystem fileSystem)

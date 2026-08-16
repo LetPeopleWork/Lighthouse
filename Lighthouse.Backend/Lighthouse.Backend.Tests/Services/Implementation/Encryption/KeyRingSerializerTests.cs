@@ -149,6 +149,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        [TestCase("", TestName = "Parse_AnEntryNamedWithNothingAtAll_IsRefused")]
         [TestCase("K-2026-08-15-01", TestName = "Parse_AKeyNameCarryingAnUppercaseLetter_IsRefused")]
         [TestCase("k.2026.08.15", TestName = "Parse_AKeyNameCarryingADot_IsRefused")]
         [TestCase(OneCharacterTooLongKeyId, TestName = "Parse_AKeyNameOneCharacterTooLong_IsRefused")]
@@ -165,7 +166,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [TestCase("a")]
+        [TestCase("z")]
         [TestCase("0")]
+        [TestCase("9")]
         [TestCase(FirstKeyId)]
         [TestCase(LegacyKeyId)]
         [TestCase(LongestAllowedKeyId)]

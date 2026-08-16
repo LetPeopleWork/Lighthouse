@@ -57,7 +57,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         [Test]
         public void Ring_BuiltWithNoEntries_IsRefused()
         {
-            Assert.That(() => new EncryptionKeyRing(), Throws.ArgumentException);
+            Assert.That(
+                () => new EncryptionKeyRing(),
+                Throws.ArgumentException.With.Message.Contains("must hold at least one key"));
         }
 
         [Test]

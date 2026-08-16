@@ -4,7 +4,6 @@ import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	KEY_CUSTODY_VALUES,
-	KEY_CUSTODY_WORDING,
 	type KeyCustody,
 } from "../../../models/Encryption/EncryptionKeyState";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -83,6 +82,15 @@ mockEncryptionService.getKeyState = mockGetKeyState;
 const mockGetSystemInfo = vi.fn();
 const mockSystemInfoService: ISystemInfoService = createMockSystemInfoService();
 mockSystemInfoService.getSystemInfo = mockGetSystemInfo;
+
+// Spelled out here rather than read from the wording the component uses, so that changing a phrasing
+// has to be a decision taken twice.
+const CUSTODY_ON_SCREEN: ReadonlyArray<[KeyCustody, string]> = [
+	["NoDurableStore", "the key published with the product"],
+	["GeneratedForThisInstance", "generated for this instance"],
+	["SuppliedByConfiguration", "supplied by configuration"],
+	["SuppliedByExternalSecret", "supplied by a mounted secret file"],
+];
 
 const keyStateFor = (custody: KeyCustody) => ({
 	custody,
@@ -350,7 +358,7 @@ describe("SystemSettingsTab Component", () => {
 			renderWithMockApiProvider();
 
 			await waitFor(() => {
-				expect(screen.getByTestId("encryption-key-state")).toBeInTheDocument();
+				expect(screen.getByTestId("encryption-key-state")).toBeVisible();
 			});
 		});
 
@@ -368,9 +376,9 @@ describe("SystemSettingsTab Component", () => {
 			expect(mockGetKeyState).not.toHaveBeenCalled();
 		});
 
-		it.each(KEY_CUSTODY_VALUES)(
+		it.each(CUSTODY_ON_SCREEN)(
 			"should describe custody %s in words rather than as an enum name",
-			async (custody) => {
+			async (custody, wording) => {
 				mockGetKeyState.mockResolvedValue(keyStateFor(custody));
 
 				renderWithMockApiProvider();
@@ -378,13 +386,19 @@ describe("SystemSettingsTab Component", () => {
 				await waitFor(() => {
 					expect(
 						screen.getByTestId("encryption-key-custody"),
-					).toHaveTextContent(KEY_CUSTODY_WORDING[custody]);
+					).toHaveTextContent(wording);
 				});
 				expect(
 					screen.queryByText(custody, { exact: false }),
 				).not.toBeInTheDocument();
 			},
 		);
+
+		it("should have words on screen for every custody the API can return", () => {
+			expect(CUSTODY_ON_SCREEN.map(([custody]) => custody)).toEqual([
+				...KEY_CUSTODY_VALUES,
+			]);
+		});
 
 		it("should leave the rest of the page working when the key state fetch fails", async () => {
 			mockGetKeyState.mockRejectedValue(new Error("forbidden"));

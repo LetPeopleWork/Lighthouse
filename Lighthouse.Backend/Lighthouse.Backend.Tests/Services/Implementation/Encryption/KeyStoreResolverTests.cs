@@ -84,6 +84,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
         [TestCase("Data/LighthouseAppContext.db", "Data")]
         [TestCase(@"Data\LighthouseAppContext.db", "Data")]
+        [TestCase("db/LighthouseAppContext.db", "db")]
+        [TestCase("9:/lighthouse/LighthouseAppContext.db", "9:/lighthouse")]
+        [TestCase("c:LighthouseAppContext.db", "")]
         public void Resolve_ARelativeDatabasePathInEitherConvention_ResolvesAgainstTheContentRoot(
             string databasePath, string expectedRelativeDirectory)
         {
@@ -96,6 +99,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                     Is.EqualTo(Path.Combine(ContentRoot, expectedRelativeDirectory, KeysDirectoryName)));
                 Assert.That(location.Case, Is.EqualTo(KeyStoreCase.BesideTheDatabaseFile));
                 Assert.That(location.MintingIsPermitted, Is.True);
+            }
+        }
+
+        [Test]
+        public void Resolve_ADatabaseNameNoLongerThanADriveLetter_IsReadAsANameRatherThanADrive()
+        {
+            var location = Resolve(databaseConnectionString: "Data Source=c:");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(location.Directory, Is.EqualTo(Path.Combine(ContentRoot, KeysDirectoryName)));
+                Assert.That(location.Case, Is.EqualTo(KeyStoreCase.BesideTheDatabaseFile));
             }
         }
 
