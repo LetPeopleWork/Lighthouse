@@ -203,6 +203,64 @@ describe("SystemInfoDisplay", () => {
 		});
 	});
 
+	// The startup banner has been the only place this was said, and a standalone operator never sees a
+	// console. Somebody working out why an instance is behaving oddly opens this page first.
+	it("shows whose key the instance is on when it was told", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			encryption: "instance · /app/data/keys",
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Encryption")).toBeInTheDocument();
+		});
+
+		expect(screen.getByText("instance · /app/data/keys")).toBeInTheDocument();
+	});
+
+	// A row drawn empty would tell a viewer that something on this page is being kept from them, which
+	// is most of what keeping it from them was for.
+	it("draws no encryption row at all when it was not told", async () => {
+		mockGetSystemInfo.mockResolvedValue({ ...mockSystemInfo });
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authentication")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("Encryption")).not.toBeInTheDocument();
+	});
+
+	it("draws no emergency admin row when the caller was told none", async () => {
+		mockGetSystemInfo.mockResolvedValue({
+			...mockSystemInfo,
+			emergencyAdminSubjects: [],
+		});
+
+		render(
+			<MockProvider>
+				<SystemInfoDisplay />
+			</MockProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByText("Authorization")).toBeInTheDocument();
+		});
+
+		expect(screen.queryByText("Emergency Admin")).not.toBeInTheDocument();
+	});
+
 	it("renders Authentication, Authorization, and Emergency Admin rows when enabled with subjects", async () => {
 		mockGetSystemInfo.mockResolvedValue({
 			...mockSystemInfo,

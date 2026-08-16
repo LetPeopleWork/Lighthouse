@@ -72,6 +72,14 @@ const SystemInfoDisplay: React.FC = () => {
 						show: systemInfo.logPath !== null,
 					},
 					{
+						// Drawn only when it is there. A row rendered empty would tell a viewer that
+						// something on this page is being kept from them, which is most of what keeping
+						// it from them was for.
+						label: "Encryption",
+						value: systemInfo.encryption ?? null,
+						show: (systemInfo.encryption ?? "") !== "",
+					},
+					{
 						label: "Authentication",
 						value: systemInfo.authenticationEnabled ? "Enabled" : "Disabled",
 					},

@@ -11,6 +11,10 @@ export interface SystemInfo {
 	authenticationEnabled?: boolean;
 	authorizationEnabled?: boolean;
 	emergencyAdminSubjects?: string[];
+	// Whose encryption key this instance is on, and where it is kept. Absent unless the caller is a
+	// System Administrator - the response leaves it off the wire entirely rather than sending it empty,
+	// so there is nothing here to tell a viewer that something was withheld from them.
+	encryption?: string;
 	baseUrl?: string;
 	installTimestamp?: string;
 }
@@ -26,6 +30,7 @@ export const SystemInfoSchema = z.object({
 	authenticationEnabled: z.boolean().optional(),
 	authorizationEnabled: z.boolean().optional(),
 	emergencyAdminSubjects: z.array(z.string()).optional(),
+	encryption: z.string().optional(),
 	baseUrl: z.string().optional(),
 	installTimestamp: z
 		.string()
