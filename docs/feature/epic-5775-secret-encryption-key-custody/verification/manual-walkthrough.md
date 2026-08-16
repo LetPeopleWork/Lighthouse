@@ -320,20 +320,22 @@ Filled in live. Verdict is the operator's, not inferred from code.
 
 | Run | Verdict | Banner said | Panel said | Docs gap | Notes |
 |---|---|---|---|---|---|
-| A1 standalone fresh | | | | | |
+| A1 standalone fresh | **PASS**, behaviour | `generated for this instance (k-2026-08-16-01) · /home/benjamin/.config/Lighthouse/data-protection-keys` — log only, no terminal | source/active/held/kept-in all correct; `k-legacy-default` also listed under Keys held; Rotate + Move + Check all offered; no published-key warning | panel has no header saying what it is for, and no link to docs | Nothing interrupted the launch. `encryption-keyring.protected` created beside the existing DP key and `oauth-state-secret.protected`. Rotate on an empty instance produced `k-2026-08-16-02` and reported "Moved 0 stored secrets". |
+| A1b standalone, real secret on a minted key | **PASS** | — | check: `1 on the active key k-…02`; rotate: `Moved 1 stored secrets onto key k-…03`; check: `1 on the active key k-…03` | — | Added a real connection + team on the dev build, synced. Rotated. Re-synced after the move — works, nothing re-entered. Keys held now **4 chips**. Plural agreement wrong throughout (F-7). |
 | A2 binary fresh | | | | | |
 | A3 docker+volume fresh | | | | | |
 | A4 docker+postgres fresh | | | | | |
 | A4b remedy: key | | | | | |
 | A4c remedy: key store path | | | | | |
-| B1 standalone upgrade | | | | | |
+| B1 standalone upgrade — half 1 | **PASS** | `generated for this instance (k-2026-08-16-01) · …/data-protection-keys` | 2 chips (`k-2026-08-16-01`, `k-legacy-default`); warning fired: `1 stored credentials are still readable with the key published with Lighthouse…` + *Move them now*; check: `0 on the active key, 1 on an earlier key` | — | Launch normal, no prompt. Team refreshed **before** touching any encryption UI — the credential written by v26.8.14.1 still authenticates. `encryption-keyring.protected` created; the old DP key and `oauth-state-secret.protected` untouched. Layout + duplication findings F-8, F-9. |
+| B1 standalone upgrade — half 2 | **PASS** | — | `Moved 1 stored secrets onto key k-2026-08-16-01. 0 could not be read.`; warning replaced by a green success in place; check: `1 on the active key, 0 on an earlier key`; `k-legacy-default` still held | — | Team re-synced after the move — credential travelled from the published key onto the instance's own, nothing re-entered. Maintainer reached for the button at the **bottom**, not the one in the alert. Findings F-10, F-11, F-12. |
 | B2 binary upgrade | | | | | |
 | B3 docker upgrade | | | | | |
 | B4 postgres upgrade | | | | | |
 | C1 old name | | | | | |
 | C1b nudge followed | | | | | |
 | C2 docs name | | | | | |
-| C3 standalone supplied key | | | | | |
+| C3 standalone supplied key | **N/A**, with reason | — | — | — | A standalone install has no writable configuration: `StandaloneInitializer` reads `appsettings.json` out of the packaged resources directory, which is read-only inside the AppImage / Program Files / .app bundle. The only route is an environment variable set before launch, i.e. starting the app from a terminal — outside the edition's whole premise. C1/C2 are therefore not run for standalone either: neither population can exist there. See F-13. |
 | D1 recreate, volume kept | | | | | |
 | D2 key store off volume | | | | | |
 
@@ -346,11 +348,89 @@ Anything the walkthrough turns up lands here, sorted by what it changes. Slice 0
 
 ### Wording — banner
 
-_(to be filled)_
+**F-1 · A standalone user never sees the banner** (A1, 2026-08-16). The custody line is correct and
+complete, and it goes to Serilog — into `~/.config/Lighthouse/logs/log-<date>.txt`, a directory the
+operator has no reason to know exists. Standalone has no terminal. The banner is the design's primary
+custody surface and the entire standalone population is structurally blind to it. Whatever the banner
+is load-bearing for has to be reachable from the panel too, or it is not reachable at all for this
+edition.
 
 ### Wording — encryption panel
 
-_(to be filled)_
+**F-2 · The panel does not say what it is for** (A1, 2026-08-16). Maintainer, reading it as a
+first-time user: "I would genuinely not understand what I'm seeing." The table opens on *Key source*
+with no sentence establishing that this is about the credentials stored in Connections, that they are
+encrypted at rest, and that this key is what encrypts them. Wanted: a short header explaining the
+subject, and a link to the docs page. Everything below the header is fine once the subject is known.
+
+**F-3 · `k-legacy-default` is listed under Keys held on an install that never had a legacy secret**
+(A1, 2026-08-16). Technically true — the published default is appended to every ring as a read-only
+retired entry — but on a first install it is at best noise and at worst alarming: a brand-new instance
+appears to be holding a key called "legacy-default" for no reason the operator can see. Consider
+hiding it where nothing is stored under it, or labelling the chips with their role (active / kept for
+reading) rather than listing bare ids.
+
+**F-4 · "Move stored secrets onto the active key" is offered when there is nothing to move**
+(A1, 2026-08-16). Maintainer: "should this even have been active? I would assume this button only
+appears if we have secrets on an old key and we wanna move it." The button renders unconditionally in
+`EncryptionPanel.tsx`, and on a clean instance it reports `Moved 0 stored secrets onto key k-…`.
+The code already holds the principle this violates — the comment above `summaryOf` says a summary
+counting what moved "would greet an operator with 'Moved 0' on a perfectly healthy instance", which is
+why *Check* was given its own vocabulary. The same reasoning applies to offering the action at all.
+
+**F-7 · The report sentences do not agree in number** (A1b, 2026-08-16). Observed verbatim:
+`Checked 1 stored secrets.` and `Moved 1 stored secrets onto key k-2026-08-16-03.` Both summaries in
+`summaryOf` interpolate a count straight into a hardcoded plural. Singular is not a rare case here —
+one connection with one secret field is the smallest real instance there is, and it is what a first-time
+operator has.
+
+Confirmed again in B1 on the warning banner, which is a different string with the same defect:
+`1 stored credentials are still readable with the key published with Lighthouse`. This is the worst
+place for it — that sentence is the one piece of copy an upgrading operator is most likely to read, and
+quite possibly the only one.
+
+**F-8 · The warning banner's action button wraps to three lines** (B1, 2026-08-16). *Move them now*
+renders as `Move` / `them` / `now` stacked vertically at the right edge. The MUI `Alert action` slot
+gets whatever width the two-line message leaves it, and this message is long. Visible in the B1
+screenshot; it makes the call to action look like a rendering accident.
+
+**F-9 · The same action is offered twice on one screen, and the wrong one looks primary** (B1,
+2026-08-16). In the upgraded state the panel shows *Move them now* inside the warning and *Move stored
+secrets onto the active key* a hundred pixels below it. Both call `reEncryptSecrets`; they are the same
+thing under two names. Meanwhile the only filled, primary-styled button on the screen is **Rotate
+key** — which is not what this instance needs, mints yet another key, and would leave the operator with
+a three-key ring for no reason. The visual hierarchy points away from the action the warning just
+asked for.
+
+**F-10 · The published-key warning is too long to act on** (B1, 2026-08-16). Two sentences of
+explanation before the reader learns what to do. Maintainer's own shape: *"You have credentials
+encrypted with an old key, please move them to an active key"* — the state, then the action, and
+nothing else. Why the published key is bad belongs behind the docs link (F-2), not in the alert. Note
+the alert is also the second place the wrong plural shows up (F-7).
+
+**F-11 · The alert should point at the action, not carry its own copy of it** (B1, 2026-08-16).
+Maintainer, unprompted and before being asked which button he would use: "I would not add a button to
+the alarm, but point to the button on the bottom" — and that is the one he reached for. This is the
+resolution for F-9: keep one action, in the button row, and let the alert name it rather than
+duplicate it.
+
+**F-12 · Drop every zero from the report sentences** (B1, 2026-08-16). Observed:
+`Checked 1 stored secrets. 1 on the active key k-2026-08-16-01, 0 on an earlier key, 0 never
+encrypted, 0 could not be read.` Maintainer, twice in one run: "the 0's I would skip in all the
+messages. I don't need to know that 0 could not be read or 0 are on old keys, just skip it. It's
+interesting if it's > 0 as then there is potentially something I need to do."
+
+This is the strongest signal of the session because it is a rule, not a rewrite: a count of zero is
+not information, it is four categories of nothing competing for attention with the one number that
+matters. A healthy instance should read `Checked 1 stored secret. It is on the active key
+k-2026-08-16-01.` and a sick one should read the same plus only the categories that are non-zero.
+Applies to both summaries in `summaryOf`.
+
+**F-5 · Rotate on an empty instance reports in move-vocabulary** (A1, 2026-08-16). Rotating with
+nothing stored is legitimate and should stay available, but its report reads `Moved 0 stored secrets
+onto key k-2026-08-16-02. 0 could not be read.` — which says nothing about the thing that actually
+happened, namely that a new key was minted and made active. Rotation's success sentence should lead
+with the new key, and mention moved secrets only when there were any.
 
 ### Docs — `configuration.md`
 
@@ -358,7 +438,20 @@ _(to be filled)_
 
 ### Docs — `server.md` / `standalone.md`
 
-_(to be filled)_
+**F-13 · A standalone install cannot be given a key, and the panel offers advice that assumes it can**
+(C3, 2026-08-16). `StandaloneInitializer` loads `appsettings.json` from the packaged resources
+directory — read-only inside an AppImage, Program Files or an `.app` bundle — so the only way to supply
+`Encryption__Key` is an environment variable set before launch, from a terminal. For this edition that
+is not a supported gesture.
+
+This is not a defect: standalone mints its own key, which is the right answer and needs no operator
+input. It matters for two other reasons. First, `standalone.md` should say where the key lives
+(`~/.config/Lighthouse/data-protection-keys` on Linux, the equivalent app-data directory elsewhere) and
+that backing up the database without that directory produces a backup whose credentials cannot be
+read — today the page says nothing about either. Second, `WHO_OWNS_THE_KEY.SuppliedByConfiguration`
+and the two `NoDurableKeyStore` remedies all instruct the reader to set `Encryption__Key`; none of
+those states is reachable in standalone, so no standalone user should ever be shown that text — worth
+confirming when the server and Docker runs exercise those states for real.
 
 ### Release notes / upgrade guidance
 
@@ -366,4 +459,20 @@ _(to be filled)_
 
 ### Behaviour defects (not wording)
 
-_(to be filled)_
+**F-6 · Nothing ever leaves the ring, and there is no surface that would remove it** (A1,
+2026-08-16). After one rotation on an empty instance, Keys held reads
+`k-2026-08-16-02  k-2026-08-16-01  k-legacy-default`. `k-2026-08-16-01` never encrypted anything — it
+was minted and superseded seconds later — and it will be listed forever. Maintainer: "why is the old
+stuff there? Should it not be cleaned if no secret is using it anymore?"
+
+Additive-only rotation is deliberate and right: it is what makes a rotation unable to strand a secret.
+But the other half of that decision was never built. D3 says the published default "can be dropped
+from the ring only once a rotation has left no row referencing it" — and no code drops anything, from
+any position, ever. The check pass already computes exactly the fact the drop would need (which key
+each stored secret is on), so the missing piece is the action and its guard, not the knowledge.
+
+Consequences, in order of how much they matter: an operator who rotates monthly accumulates an
+unbounded list of key ids they cannot interpret or clean up; a key that leaked stays in the ring and
+stays able to decrypt anything still on it; and the panel's Keys held becomes less readable with every
+rotation. Wanted: a way to drop keys that no stored secret references, offered only when the check
+proves the count is zero.
