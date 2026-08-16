@@ -60,4 +60,27 @@ Slices 01–04 (the check pass supplies the to-do list). Independent of slice 05
 
 ## Verdict
 
-_To be recorded at slice close._
+**Shipped 2026-08-16.** Five changes.
+
+- The readability probe reports the key ids the stored values name, gathered from the pass it already
+  makes rather than from a second query.
+- The refusal was rewritten around them: it names the key the instance started on and the key the
+  credentials say wrote them, leads with *remove the key you just set* where there is something to
+  remove, names the way past itself and what that costs, and stops asserting that nothing is lost — it
+  now says the thing that is true in both cases, that this start changed nothing.
+- `Encryption:StartEvenIfNothingStoredCanBeRead` lets an instance past that one refusal. It is applied
+  at the refusal rather than around the whole resolution, so every other refusal still fires and none of
+  their messages offers a setting that would not help. Where it is set the readability question is not
+  asked at all.
+- The startup line and the encryption panel both say so, spelled from the same constant.
+- The re-entry path turned out to need **no production change** — a value an operator types arrives as
+  plaintext, and plaintext has always been encrypted — so it is pinned by a test instead of assumed. The
+  guard that protects a value nobody retyped is untouched.
+
+**One deviation from the roadmap**: the switch (phase 3) was built before the refusal's wording
+(phase 2), because the wording quotes the setting name and a message naming a setting that does nothing
+would have been wrong for the length of one commit.
+
+Owed before the epic closes: the **D2** walkthrough run repeated end to end — start with the switch,
+read the list, type the credentials back in, remove the switch — and **A2d**, whose refusal must now
+lead with removing the key that was just set and name both key ids.

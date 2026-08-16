@@ -510,7 +510,10 @@ in `SuppliedByExternalSecret`, it is what every Kubernetes operator will read to
 It needs the concrete grammar, an example ring, and a docs link.
 
 **F-16 · The refusal never offers the remedy that actually fits: undo what you just set** (A2d,
-2026-08-16). Full text observed:
+2026-08-16). **FIXED in slice 05b (Story #5790), 2026-08-16** — together with F-17: the refusal now
+leads with removing the key that was just set where there is something to remove, names both key ids,
+stops asserting that nothing is lost, and names the way past itself. Owed: the A2d run repeated.
+Full text observed:
 
 > FATAL: This instance has stored credentials and not one of them can be read with the key it started
 > on, so this is not the key they were written under. Nothing has been changed and nothing is lost -
@@ -763,7 +766,14 @@ action that cannot help. Same root as F-4 (offering a move with nothing to move)
 carrying its own copy of an action).
 
 **F-26 · A lost key leaves an instance that can never start again, and no supported way out**
-(D2, 2026-08-16). With the database on a volume and the key store on the container's writable layer, a
+(D2, 2026-08-16).
+
+**FIXED in slice 05b (Story #5790), 2026-08-16.** `Encryption__StartEvenIfNothingStoredCanBeRead` lets
+such an instance start, says so on every start and on the encryption panel for as long as it is set,
+and the check pass hands over the list of Connections and fields to re-enter. Owed before the slice
+closes: the D2 run repeated end to end.
+
+With the database on a volume and the key store on the container's writable layer, a
 recreate destroys the key and keeps the secrets. The refusal is correct and its restraint is right — it
 never suggests deleting anything. Two things about it are not right for this case:
 

@@ -214,7 +214,7 @@ const EncryptionPanel: React.FC = () => {
 					data-testid="started-past-the-refusal-notice"
 				>
 					{
-						"This instance was started with Encryption__StartEvenIfNothingStoredCanBeRead set, so it is running with stored credentials it cannot read. Check the stored secrets below for the Connection and field each one sits in, enter those credentials again, then remove the setting and restart."
+						"This instance was started with Encryption__StartEvenIfNothingStoredCanBeRead set, so it is running with stored credentials it cannot read. Press Check secrets below for the Connection and field each one sits in, enter those credentials again, then remove the setting and restart."
 					}
 				</Alert>
 			)}

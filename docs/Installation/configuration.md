@@ -251,7 +251,33 @@ A key that is valid but isn't the one a stored secret was written under is a dif
 
 If Lighthouse can read some of your stored secrets but not others, it starts, and it tells you which connection holds a value it can no longer read and which field that value sits in. You retype that one value rather than working out for yourself why a work tracking system stopped updating.
 
-If it can read **none** of them, that is not a handful of stale values — it is the wrong key, and starting would leave every connection you have broken with no explanation. Lighthouse **stops startup** and says so, naming the two ways back: set `Encryption__Key` to the key the instance was using before, or set `Encryption__KeyStorePath` to the key store that belongs to this database. Nothing is changed and nothing is lost; your secrets are still there, encrypted under the key they were written with.
+If it can read **none** of them, that is not a handful of stale values — it is the wrong key, and starting would leave every connection you have broken with no explanation. Lighthouse **stops startup** and says so. The message names the key it started on and the key your stored credentials say they were written under, and it offers the remedies in the order they are most likely to be the one you need:
+
+1. **If you have just started supplying an encryption key** to an instance that was managing its own — remove that setting and start Lighthouse again. This is the commonest cause by a distance: the key you supplied displaced the key Lighthouse made for itself, and that key is still sitting in the key store, untouched.
+2. Otherwise set `Encryption__Key` to the key those credentials were written under, or `Encryption__KeyStorePath` to the key store that belongs to this database.
+3. If that key is genuinely gone, see below.
+
+Nothing about the failed start changes anything: every stored value is exactly as it was.
+
+### When the key is genuinely gone
+
+If the key store was destroyed — a container recreated with the key on its writable layer, a volume deleted — no setting will bring those credentials back, and the credentials are not the only thing at stake: your teams, portfolios, forecasts and every hour of history live in the same database, and none of that is encrypted.
+
+**Override Options:**
+- Command Line: `--Encryption:StartEvenIfNothingStoredCanBeRead`
+- Environment Variable: `Encryption__StartEvenIfNothingStoredCanBeRead`
+
+Set it to `true` and Lighthouse starts. Nothing is deleted and nothing is re-encrypted — the credentials that could not be read still cannot be read, and you enter them again by hand.
+
+The sequence back to a working instance:
+
+1. Set `Encryption__StartEvenIfNothingStoredCanBeRead=true` and start Lighthouse.
+2. Open **Settings → Encryption** and press **Check secrets**. Every credential that cannot be read is listed with the Connection and the field that holds it.
+3. Edit each of those Connections and enter the credential again. It is stored under the key this instance is using now.
+4. Check again. When nothing is listed as unreadable, remove the setting and restart.
+
+{: .important}
+While the setting is in force it is printed on every start and shown on the encryption settings page. That is deliberate: it is a way back in, not a configuration you leave behind. Remove it once the credentials have been re-entered.
 
 ### Changing the key without re-entering a single credential
 
