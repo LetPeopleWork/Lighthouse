@@ -346,6 +346,41 @@ Filled in live. Verdict is the operator's, not inferred from code.
 
 ---
 
+## Decisions taken on the findings (2026-08-16, maintainer)
+
+**[V1] F-26 gets an escape hatch, shaped like the emergency admin.** A configuration switch — env var
+or command line, the same delivery as `Authorization:EmergencySystemAdminSubjects` — that skips
+`RefuseWhenNothingStoredCanBeRead` and lets a stuck instance start. The operator then re-enters the
+credentials by hand. Following the emergency-admin precedent, it must be *visible* once used: that
+setting is surfaced through `SystemInfo` and `RbacStatus` precisely so it cannot sit switched on
+unnoticed, and this one needs the same treatment on the encryption panel plus a startup line.
+
+Two things to settle while building it:
+
+- **Saving must actually work in that state.** A guard already stops a save from overwriting a
+  credential it cannot read. That guard is right, but it must not also block an operator supplying a
+  *new* value — otherwise the hatch opens the door and leaves the room locked.
+- The check report already names Connection and field for every unreadable secret, so the panel can
+  hand the operator their exact to-do list rather than making them hunt.
+
+**[V2] F-6: hide unreferenced keys now, offer explicit removal later.** Keeping every key costs
+nothing, and the complaint was that four meaningless chips were confusing, not that the keys existed.
+So: hide keys nothing references, keep them in the ring. A later explicit *Remove unused keys* action,
+gated on a zero-reference check and warning before it executes, is the follow-up — and V1 is what makes
+it safe, since an operator who removes a key they still needed for an old backup would otherwise have
+no way back in.
+
+**[V3] F-27: suppress the move where it cannot achieve anything.** Where the active key *is* the
+published key, do not offer *Move stored secrets onto the active key*, and let the published-key
+warning point at the custody sentence above it — which already names both real remedies — instead of at
+a button that re-encrypts the published key onto itself.
+
+**[V4] F-22, F-23, F-24 are fixed inside this epic** rather than split into their own bug. They land
+naturally with the docs work: the Dockerfile path casing, `server.md`, `configuration.md`, the
+`examples/postgres` compose file, and the website's `lighthouseDownloads.ts` copy button.
+
+---
+
 ## Findings → slice 06
 
 Anything the walkthrough turns up lands here, sorted by what it changes. Slice 06 is
