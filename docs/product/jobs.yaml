@@ -41,6 +41,7 @@ feature_context:
   - epic-5375-manual-sorting
   - epic-5775-secret-encryption-key-custody
   - epic-4365-dependencies
+  - epic-5792-dependency-aware-forecasting
 
 jobs:
   - id: job-rbac-bootstrap
@@ -5249,10 +5250,11 @@ jobs:
   - id: job-forecast-honours-what-cannot-start-yet
     title: Forecast in the order work can actually happen
     persona: delivery-forecaster
-    feature_context: epic-4365-dependencies
+    feature_context: epic-5792-dependency-aware-forecasting
     created: 2026-08-14
     note: >
-      NEW in epic-4365-dependencies (ADO Epic #4365, created 2026-02-23, tagged Premium). The epic's
+      NEW in epic-4365-dependencies (ADO Epic #4365, created 2026-02-23, tagged Premium); moved to
+      epic-5792-dependency-aware-forecasting when that epic was split out on 2026-08-16. The epic's
       one-line ask — "in the forecast, jump over them until the dependent Features are forecasted to be
       done" — turns out to be a statement about WHERE the mechanic lives.
       ForecastService.GetSimulationResultsOfFeatureToUpdate (:201-209) draws each simulated day's
@@ -5304,7 +5306,7 @@ jobs:
   - id: job-forecast-covers-dependencies-that-cross-teams
     title: Count the dependency on the other team's Feature too
     persona: delivery-forecaster
-    feature_context: epic-4365-dependencies
+    feature_context: epic-5792-dependency-aware-forecasting
     created: 2026-08-14
     note: >
       Scored separately from job-forecast-honours-what-cannot-start-yet despite sharing its importance,
@@ -5313,7 +5315,9 @@ jobs:
       simulationResults by team and runs each group's 10,000 trials in its own Task.Run with its own
       day counter, so inside one trial of team T no other team's Features exist and no other team's
       completion day is knowable. A dependency inside one Portfolio very often crosses teams, so this
-      is not an edge case — it is most of the population.
+      is not an edge case — it is most of the population. Moved to
+      epic-5792-dependency-aware-forecasting on 2026-08-16: "the cheaper half ships first" became an
+      epic boundary rather than a slice boundary.
     job_story: >
       When the Feature I am waiting on is being built by another team, I want the forecast to account
       for it just as it would a Feature of my own, so the most common kind of real dependency stops
@@ -5485,14 +5489,16 @@ jobs:
   - id: job-forecaster-know-the-forecast-is-ignoring-a-dependency
     title: Know when these dates do not account for a dependency
     persona: delivery-forecaster
-    feature_context: epic-4365-dependencies
+    feature_context: epic-5792-dependency-aware-forecasting
     created: 2026-08-14
     note: >
       Straight from the epic: "If we don't have a premium license, you will see the warning that the
       item has a dependency together with the hint that it's not taken into account in the forecasting
       unless you have premium." Same posture as epic-5375's licensing decision — show the truth, gate
       the mechanism — and for the same reason: withholding the fact would be withholding an
-      explanation for dates the user is already being shown.
+      explanation for dates the user is already being shown. Moved to
+      epic-5792-dependency-aware-forecasting on 2026-08-16 — the hint names a premium capability, so it
+      ships with that capability rather than ahead of it.
     job_story: >
       When my instance is not licensed for dependency-aware forecasting, I want to be told that a
       Feature has a dependency and that these dates do not account for it, so I do not present them as

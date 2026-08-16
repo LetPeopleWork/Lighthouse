@@ -30,7 +30,7 @@ warning on every dependency Lighthouse will not be able to honour.
 - Adding or removing anything. Lighthouse never authors an edge (D4), so no write path exists in this
   epic at all — this slice is read-only because the whole feature is.
 - Any forecast change. The honour-ability verdict is computed and displayed but drives nothing yet.
-- The premium hint — there is no premium behaviour to hint at until slice 03.
+- The premium hint — there is no premium behaviour to hint at until Epic #5792 ships its first slice.
 
 ## Learning hypothesis
 
@@ -42,8 +42,8 @@ transitive loop walk are the kind of thing that reads as free at 94 Features and
 If it fails, the verdict must be precomputed at ingestion and stored on the edge, which changes slice
 01's storage shape retroactively and makes OQ-5 urgent rather than open.
 
-**Confirms**, if it holds, that slices 03 and 04 can ask "is this edge honoured?" cheaply, inside the
-forecast run, without a cache.
+**Confirms**, if it holds, that Epic #5792's slices can ask "is this edge honoured?" cheaply, inside
+the forecast run, without a cache.
 
 ## Acceptance criteria
 
@@ -58,8 +58,8 @@ AC-2.1 … AC-2.5 and AC-3.1 … AC-3.6 verbatim from `feature-delta.md`. The th
 Slice 01's stored edges and `dependsOnCount`. `IFeatureOrdering` for the ranked-below comparison —
 read only. The loop and throughput-less-blocker shapes are created as **real Predecessor links in the
 dogfood ADO project**; if they are not in place when this slice runs, its loop AC falls back to
-fixtures and the real-data confirmation moves to slice 03's dogfood moment. Creating them first is
-cheap and strictly better — say which happened in the verdict rather than leaving it implied.
+fixtures and the real-data confirmation moves to Epic #5792 slice 01's dogfood moment. Creating them
+first is cheap and strictly better — say which happened in the verdict rather than leaving it implied.
 
 ## Dogfood moment
 
@@ -69,7 +69,7 @@ created first.
 
 ## Commit gate
 
-**No commit without the maintainer's explicit approval.**
+Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 
 ## Learning hypothesis verdict
 

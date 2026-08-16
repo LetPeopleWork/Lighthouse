@@ -5654,11 +5654,18 @@ Plus two new open questions: the count of true legacy-plaintext rows on the `:51
 (OQ-4), and confirmation that an unreadable-secret failure produces a legible operator message on the
 background refresh path as well as on `ValidateConnection` (OQ-5).
 
-## Application Architecture — epic-4365-dependencies (DESIGN delta)
+## Application Architecture — Feature dependencies (DESIGN delta)
 
-Feature: `epic-4365-dependencies` (ADO Epic #4365 "Dependencies") · Wave: DESIGN · Date: 2026-08-14 ·
-Architect: Morgan (Solution Architect), interaction mode = PROPOSE · Paradigm: OOP backend,
-functional-leaning React frontend
+Features: `epic-4365-dependencies` (ADO Epic #4365 "Show Feature Dependencies", community) and
+`epic-5792-dependency-aware-forecasting` (ADO Epic #5792, premium) · Wave: DESIGN · Date: 2026-08-14,
+split across two epics 2026-08-16 · Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+· Paradigm: OOP backend, functional-leaning React frontend
+
+This delta was written for one epic and now describes two. The split runs along the seam the delta
+already names below: reading, storing and judging an edge (#4365, free — ADRs 157 and 158) on one
+side, and honouring it inside the simulation (#5792, premium — ADRs 154, 155, 156-deferred and 159) on
+the other. Slice numbers below are the pre-split ones: old 01, 02, 05, 06 are #4365's 01-04; old 03 and
+04 are #5792's 01 and 02.
 
 ### The one hard problem
 

@@ -44,8 +44,9 @@ two others — without opening Azure DevOps.
 - Anything that says *which* Features it waits on. That is slice 02, and a count alone is a coherent
   product: it tells the user a dependency exists, which today nothing does.
 - Every warning. Cross-Portfolio, ordered-below and loop warnings are slice 02.
-- Any forecast change whatsoever. Slices 03 and 04.
-- The per-Portfolio dependency-field override (slice 06). This slice reads the standard ADO link only.
+- Any forecast change whatsoever. The forecast half is Epic #5792 (Dependency-Aware Forecasting), a
+  separate premium epic that starts once this one has shipped.
+- The per-Portfolio dependency-field override (slice 04). This slice reads the standard ADO link only.
 - Jira, Linear, ServiceNow, CSV (D13).
 - Cycle detection — nothing consumes the edges yet, so a cycle is inert here.
 
@@ -57,8 +58,9 @@ title, so naming the target may cost a follow-up request per relation — the cl
 took this exact path from 468,856 ms to 2,087 ms, and this is the shape that gives it back.
 
 If it fails, the ingestion must move off the synchronous refresh path — a separate pass, or a second
-phase keyed like `GetFeaturesForProject(portfolio, referenceIds)` — and slices 02-06 inherit a
-different ingestion shape. Cheaper to discover in slice 01 than in slice 05.
+phase keyed like `GetFeaturesForProject(portfolio, referenceIds)` — and slices 02-04, plus every
+slice of Epic #5792, inherit a different ingestion shape. Cheaper to discover in slice 01 than in
+slice 03.
 
 **Confirms**, if it holds, that every later slice can assume dependency data is present and current
 after a normal refresh, with no separate trigger.
@@ -90,8 +92,9 @@ refresh timing next to the baseline in this brief.
 
 ## Commit gate
 
-**No commit without the maintainer's explicit approval**, including the migration and test-only
-commits. This epic edits the path every forecast date comes from.
+Normal. The maintainer's approval gate applies to Epic #5792 only (maintainer, 2026-08-16) — this
+epic touches no forecasting code and AC-1.10 asserts it. Commit per focused step; push once CI is
+green.
 
 ## Learning hypothesis verdict
 

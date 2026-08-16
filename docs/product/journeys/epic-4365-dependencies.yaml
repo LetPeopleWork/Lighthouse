@@ -1,8 +1,17 @@
 schema_version: 1
 feature_id: epic-4365-dependencies
-updated: 2026-08-14
+updated: 2026-08-16
 note: >
-  ADO Epic #4365 "Dependencies", created 2026-02-23, tagged Premium / Documentation / Release Notes.
+  ADO Epic #4365 "Show Feature Dependencies", created 2026-02-23, tagged Documentation / Release
+  Notes. SPLIT 2026-08-16: the forecasting half became ADO Epic #5792 "Dependency-Aware Forecasting"
+  (docs/product/journeys/epic-5792-dependency-aware-forecasting.yaml, premium). This epic is the
+  community half and ships first — read dependencies from the tracker, show them, warn about the ones
+  Lighthouse cannot act on, and let a Portfolio name the field they live in. Nothing here moves a
+  forecast date, and that is asserted rather than assumed.
+
+  D2, D3, D8's drop-half and D9's premium behaviour moved with the split; the decisions below are the
+  ones this epic still owns. Epic #5792 inherits D1, D5, D6, D7, D10, D12, D13 and D14 from here
+  unchanged.
   The description was a sketch; this journey is the result of the DISCUSS dive-in on 2026-08-14 and is
   grounded in a pre-DISCUSS code reality check (ForecastService.cs, Feature.cs, WorkItemBase.cs,
   FeatureOrdering.cs, FeatureComparer.cs, ManualRankComparer.cs, FeatureRepository.cs, FeatureDto.cs,
@@ -11,64 +20,56 @@ note: >
   WorkTrackingSystemOptionsOwner.cs, FeaturesView.tsx, FeatureListDataGrid/columns.tsx,
   WarningsIndicator.tsx, useLicenseRestrictions.ts, TerminologyKeys.ts).
 
-  Six load-bearing finds the sketch did not carry:
+  Four load-bearing finds the sketch did not carry. Two others — that "jump over" is not a date shift,
+  and that the per-team independent simulation loop makes cross-team dependencies unreachable — moved
+  to Epic #5792, which is where the code they describe is changed.
 
-  (1) "Jump over" is NOT a date shift. GetSimulationResultsOfFeatureToUpdate (:201-209) draws each
-  simulated day's throughput from the first min(FeatureWIP, remaining) Features in order, so excluding
-  a waiting Feature hands its capacity to the Features BELOW it, which finish EARLIER. Computing
-  max(own, blocker) afterwards would get the waiting Feature roughly right and every other Feature
-  wrong. The mechanic must live inside the trial.
+  (1) TERMINATION is the binding constraint on the epic as a whole. A cycle, or a blocker whose team
+  has no throughput, means the dependent is never eligible and while (GetRemainingItems() > 0) never
+  ends. D7 and D8 exist to prevent a hang, not to be tidy. Detection and the warning land HERE, one
+  epic before anything consumes them, which is the cheapest place to get the vocabulary wrong.
 
-  (2) The simulation is PER-TEAM and INDEPENDENT. RunMonteCarloSimulation (:108-131) groups by team
-  and runs each group's 10,000 trials in its own Task.Run with its own day counter. Cross-team
-  dependencies — most real ones — are unreachable without restructuring that loop. The user chose to
-  restructure it (D3).
-
-  (3) TERMINATION is the binding constraint, not any functional requirement. A cycle, or a blocker
-  whose team has no throughput, means the dependent is never eligible and
-  while (GetRemainingItems() > 0) never ends. D7 and D8 exist to prevent a hang, not to be tidy.
-
-  (4) The surface already exists and was built for this. Epic #5375's D17 says in as many words that
+  (2) The surface already exists and was built for this. Epic #5375's D17 says in as many words that
   the general Features view is "the surface that will later host ADO Epic #4365 'Dependencies'". The
   warnings column the epic asks for is WarningsIndicator.tsx. This epic writes a column and a dialog.
 
-  (5) "Blocked" is already taken. Epic #5074 shipped WorkItem.IsBlocked / BlockedSince, and
+  (3) "Blocked" is already taken. Epic #5074 shipped WorkItem.IsBlocked / BlockedSince, and
   TerminologyKeys.ts:18 makes `blocked` renameable. The UI word here is "depends on" (D10).
 
-  (6) Only three connectors have a standard field, and they return three different shapes. ADO already
+  (4) Only three connectors have a standard field, and they return three different shapes. ADO already
   requests WorkItemExpand.Relations on the parent path (:1043) but its relation URL carries an id and
   no title; Jira sends an explicit fields= list that must gain issuelinks, and returns the summary
   inline; Linear returns titles inline via GraphQL. ServiceNow and CSV have no such field at all.
 
 journeys:
 
-  - name: forecast-in-the-order-work-can-happen
+  - name: see-what-a-feature-is-waiting-on
     goal: >
-      A delivery forecaster whose Portfolio contains work that cannot start yet gets dates that say so:
-      the waiting Feature's percentiles move out, the Features behind it move in because they now get
-      the capacity, and every dependency the forecast could not honour is named on screen rather than
-      silently dropped.
-    persona: "delivery-forecaster (primary: consumes the dates); product-owner (declares the
-      dependency the tracker never had, and owns the order it interacts with); delivery-lead-rte
-      (scans for the edges Lighthouse cannot act on)"
+      A product owner reading a Feature list can tell, without opening the work tracking system, what
+      each Feature waits on and which of those links Lighthouse will not be able to act on — and a
+      configuration admin whose teams keep dependencies in a custom field can point Lighthouse at it
+      once, for the whole Portfolio.
+    persona: "product-owner (primary: reads the column and the dialog while planning); delivery-lead-rte
+      (scans a Portfolio for the edges Lighthouse cannot act on); config-admin (names the field that
+      carries dependencies, once per Portfolio)"
     jobs:
-      - job-forecast-honours-what-cannot-start-yet
-      - job-forecast-covers-dependencies-that-cross-teams
-      - job-forecaster-know-the-forecast-is-ignoring-a-dependency
+      - job-po-see-what-a-feature-is-waiting-on
+      - job-lead-see-where-the-dependency-chain-breaks
+      - job-config-admin-point-at-the-field-that-carries-dependencies
 
     emotional_arc:
       start: >
-        Quietly uneasy — "this Feature cannot start until the platform team finishes theirs, and
-        Lighthouse gives me a date as though it could start tomorrow. I know the number is optimistic
-        and I cannot say by how much, so I add a caveat out loud and hope nobody writes the date down."
+        Blind — "nothing in Lighthouse knows that this Feature cannot start until the platform team
+        finishes theirs. The fact exists, in the tracker, one context switch away that nobody makes
+        while reading a forecast. I find out in the stakeholder review."
       middle: >
         Oriented — "the column says it waits on two. One of them is done, the other is in progress on
         another team. And the warning tells me the third link points outside this Portfolio, so it is
-        not in the number."
+        not something the forecast will ever act on."
       end: >
-        Accountable — "this date already accounts for what we are waiting on, and the ones behind it
-        came in because that capacity went somewhere. If something was excluded, the row says which
-        and why."
+        In control — "I can see every dependency my teams recorded, wherever they recorded it, and
+        every one Lighthouse cannot act on says so and says why. Whether the dates account for them is
+        the next epic's question, and it is now a question I can ask."
 
     design_decisions_resolved:
       - id: D1
@@ -80,48 +81,15 @@ journeys:
       - id: D2
         question: How does the forecast honour a dependency?
         decision: >
-          By EXCLUDING the dependent from the eligible set inside each trial, not by shifting dates
-          afterwards. GetSimulationResultsOfFeatureToUpdate filters Where(x => x.HasWorkRemaining)
-          today and gains one predicate: Where(x => x.HasWorkRemaining && ready). A Feature whose
-          blockers still have remaining work in this trial cannot receive throughput; the FeatureWIP
-          window slides down to the Features below it. The post-hoc max(own, blocker) alternative was
-          considered and rejected because it never frees the capacity, so every Feature ranked below a
-          waiting one keeps a date that assumes work nobody is doing.
-
-          If every eligible Feature is waiting, that day's throughput is DISCARDED rather than carried
-          forward. An idle day is the honest outcome, and it is what makes D7 and D8 load-bearing:
-          with nothing able to unblock, the run would never end.
-
-          NO NEW PER-TRIAL STATE. Each closed item already re-draws independently from the top of the
-          eligible list, so a Feature becomes available again on the very next draw after its blocker
-          clears. Sticky WIP slots — a team holding a Feature until it finishes — were considered and
-          rejected (user, 2026-08-14): they would change dates for Features with no dependencies at
-          all, forfeiting D3's distribution-preserving property.
+          MOVED to epic-5792-dependency-aware-forecasting on 2026-08-16. Recorded here only because it
+          is why nothing in this epic touches ForecastService: the mechanic is one predicate at one
+          call site, and putting half of it here would spread one decision over two epics.
       - id: D3
         question: How are dependencies that cross teams handled?
         decision: >
-          One JOINT simulation replaces the per-team independent runs (user, 2026-08-14). Concretely
-          the loop nesting swaps from team -> trial -> day to trial -> day -> team: one trial advances
-          a single day counter, and each day every team with throughput draws its own throughput and
-          consumes from its own rows. The per-day work is untouched.
-
-          That swap IS the mechanism. Today team A's "day 5" and team B's "day 5" are not the same
-          moment and not even the same trial, so "is A finished yet?" has no answer. Once the clock is
-          shared it means "finished by day 5 in this trial", and the dependency rule becomes one extra
-          predicate in one place (D2).
-
-          Distribution-preserving with no dependency present — a team only ever consumes its own
-          SimulationResult rows, so interleaving other teams between its days cannot change what
-          happens to any row. Existing forecasts do not re-baseline; asserted under a fixed seed.
-
-          Two consequences: teams need SEPARATE RNG STREAMS or a fixed-seed equality test fails on
-          draw order rather than on distribution; and concurrency moves from per-team to per-trial,
-          which is not a free Parallel.For, because ResetRemainingItems() mutates the shared rows and
-          AddSimulationResult writes a plain Dictionary — both safe today only because each team's
-          task owns its group exclusively.
-
-          The alternatives were same-team-only (ships sooner, ignores the majority case) and a
-          post-hoc date shift (cross-team capable but wrong per D2).
+          MOVED to epic-5792-dependency-aware-forecasting on 2026-08-16 — one joint simulation replaces
+          the per-team independent runs. It is the change that carries essentially all of the original
+          epic's technical risk, and separating it is what lets this half ship without it.
       - id: D4
         question: Where does a dependency come from?
         decision: >
@@ -179,14 +147,21 @@ journeys:
           The forecast honours it only when both Features share at least one Portfolio (Feature to
           Portfolio is many-to-many). An edge pointing outside is detected, stored, shown and warned —
           never silently dropped, never forecast. The epic's own reasoning: a Portfolio's forecast
-          should not depend on Features its viewers may not be able to read.
+          should not depend on Features its viewers may not be able to read. Everything in that
+          sentence except the forecast consequence is delivered here; the consequence itself is
+          epic-5792's, and is a no-op until that epic ships.
       - id: D7
         question: What happens to a dependency loop?
         decision: >
-          Detected at ingestion; the edge that closes the loop is excluded from the honoured set and
-          every member is warned. Under D2 this is a termination guarantee: a cycle means no member is
-          ever eligible, so the simulation's while loop never ends. Detecting at ingestion keeps the
-          loop itself free of any cycle logic.
+          The edge that closes the loop is excluded from the honoured set and every member is warned,
+          naming the others. DESIGN refined WHERE this runs: inside the one honour policy rather than
+          at ingestion, because a stored cycle flag would be a second source of truth for half of a
+          verdict that also depends on the licence and the ordering (F-5).
+
+          Under D2 this is a termination guarantee: a cycle means no member is ever eligible, so the
+          simulation's while loop never ends. It lands in THIS epic, one epic before anything consumes
+          it, which is the cheapest place to get it wrong, and it keeps the trial loop free of any
+          cycle logic at all.
       - id: D8
         question: What happens when the blocker can never complete in this run?
         decision: >
@@ -194,15 +169,24 @@ journeys:
           blocker already finished has no SimulationResult row and costs nothing; a blocker whose team
           has no throughput is excluded from the run entirely; a blocker outside the run's Feature set
           likewise never completes. The last two would otherwise make the dependent wait forever.
+
+          Split 2026-08-16: this epic ships the VERDICT and the WARNING, computed from the existing
+          Feature.CanBeForecast / TeamsWithoutForecast. Epic #5792 ships the DROP, which is the half
+          that keeps the loop terminating. Stating the verdict early is what settles the warning
+          vocabulary before any simulation depends on it.
       - id: D9
         question: What does the premium licence gate?
         decision: >
-          The forecast effect, and nothing else. Detection, the count, the dialog, the warnings and
-          the Portfolio's dependency-field setting are all FREE, and an unlicensed instance
-          additionally gets a hint saying the dependency is not in the forecast — verbatim from the
-          epic. Same posture as epic-5375: show the truth, gate the mechanism. The field setting is
-          free because it is what makes detection work at all on an instance whose tracker does not
-          use standard links.
+          The forecast effect, and nothing else. After the 2026-08-16 split this is an epic boundary
+          rather than a licence branch: EVERYTHING in epic-4365 is free, with no licence check anywhere
+          in it, and everything premium is in epic-5792. Detection, the count, the dialog, the warnings
+          and the Portfolio's dependency-field setting are all free — the field setting because it is
+          what makes detection work at all on an instance whose tracker does not use standard links,
+          and gating it would gate the free half behind a licence.
+
+          The "not taken into account in the forecast" hint travels with epic-5792, because a hint
+          naming a capability nobody can buy yet is worse than no hint. Same posture as epic-5375:
+          show the truth, gate the mechanism.
       - id: D10
         question: What is this called in the UI?
         decision: >
@@ -267,20 +251,15 @@ journeys:
           written by WorkItemBase.Update.
       - name: honour-ability verdict
         source_of_truth: >
-          One decision point (D6, D7, D8 combined) consulted by both the warnings and the simulation's
-          eligibility rule. Two independent implementations — one for display, one for the forecast —
-          is the failure mode the "exactly one place decides" KPI exists to catch, because it would
-          show a warning that does not match what the dates actually did.
+          One decision point (D6, D7, D8 combined), WRITTEN here and consulted by the warnings. Once
+          epic-5792 ships, its simulation's eligibility rule reads the same one. Two independent
+          implementations — one for display, one for the forecast — is the failure mode the "exactly
+          one place decides" KPI exists to catch, because it would show a warning that does not match
+          what the dates actually did. The split makes that KPI span two epics.
       - name: Feature order
         source_of_truth: >
-          IFeatureOrdering, owned by epic-5375. Read here for the ranked-below warning and for the
-          sequence the simulation walks. Never written by this feature.
-      - name: per-trial completion state
-        source_of_truth: >
-          The existing SimulationResult remaining count, reset by ResetRemainingItems() at the top of
-          each trial. "Has this blocker finished" is derived from it rather than tracked separately —
-          a second piece of per-trial state would need its own reset and is the obvious place for a
-          trial to leak into the next one.
+          IFeatureOrdering, owned by epic-5375. Read here for the ranked-below warning. Never written
+          by this feature.
 
     error_paths:
       - trigger: A dependency points at a Feature in no shared Portfolio
@@ -289,14 +268,14 @@ journeys:
           the forecast. No date changes.
       - trigger: Dependencies form a loop
         recovery: >
-          The closing edge is excluded at ingestion and every member is warned, naming the others. The
-          forecast completes in normal time. A declaration that would close a loop is refused at the
-          point of the action, with the loop named, rather than accepted and later warned about.
-      - trigger: The blocker's team has no throughput, or the blocker is absent from the run
+          The closing edge is excluded from the honoured set and every member is warned, naming the
+          others. Loops are only ever discovered in data — there is no in-Lighthouse declaration to
+          refuse, because Lighthouse never authors an edge (D4).
+      - trigger: The blocker's team has no throughput, or the blocker is absent from a forecast run
         recovery: >
-          The edge is dropped for that run and the dependent is warned that its date ignores it. The
-          run terminates. Without this the simulation hangs, and only on instances with a
-          throughput-less team — which is most of them, eventually.
+          The dependency is shown with a warning saying the Feature it waits on cannot be forecast.
+          Dropping the edge inside the run is epic-5792's half; until it ships there is no run for the
+          edge to be dropped from.
       - trigger: A relation points at a work item that is not a Feature Lighthouse stores
         recovery: >
           Skipped silently, excluded from the count. The ADO relation URL carries an id and not a
@@ -316,5 +295,6 @@ journeys:
           an unnamed one.
       - trigger: The instance has no premium licence
         recovery: >
-          Detection, count, dialog and warnings all still render, plus a hint naming what is withheld.
-          Forecast values are identical to a run with no dependency data — nothing half-applied.
+          Nothing changes. Detection, count, dialog and warnings all render on every instance, because
+          nothing in this epic is licence-gated. The hint naming what is withheld belongs to
+          epic-5792, which is where something is withheld.

@@ -6,7 +6,9 @@
   DESIGN flagged this as the call in the epic most likely to be overruled and wrote it so that
   overruling it would be a one-place change. It was not overruled.
 - **Date**: 2026-08-14
-- **Feature**: epic-4365-dependencies (ADO Epic #4365, slices 02, 03)
+- **Feature**: epic-5792-dependency-aware-forecasting (ADO Epic #5792, slice 01) — the warning and the
+  verdict ship earlier, in epic-4365-dependencies slice 02; recorded 2026-08-14 under Epic #4365 and
+  re-homed 2026-08-16 when the forecasting half became its own epic
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 
 ## Context

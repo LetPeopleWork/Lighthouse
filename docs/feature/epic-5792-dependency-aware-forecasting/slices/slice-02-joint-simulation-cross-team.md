@@ -1,6 +1,7 @@
-# Slice 04 — Dependencies that cross teams count too (premium)
+# Slice 02 — Dependencies that cross teams count too (premium)
 
-**Feature**: epic-4365-dependencies · **ADO**: Epic #4365 · **Stories**: US-07 `@infrastructure`
+**Feature**: epic-5792-dependency-aware-forecasting · **ADO**: Epic #5792 ·
+**Stories**: US-07 `@infrastructure`
 (precursor commit), US-08 · **Estimate**: ~6h **if** OQ-2 comes back cheap — see the probe below
 **Reference class**: none. This is the highest-risk slice in the epic and the only one whose estimate
 is conditional.
@@ -66,9 +67,9 @@ change to forecasting at a time. ADR-156 holds it if it is ever wanted.
 
 **The story commit (US-08):**
 
-- Cross-team edges become honourable: the eligibility rule from slice 03 now sees every team's rows
+- Cross-team edges become honourable: the eligibility rule from slice 01 now sees every team's rows
   within the trial, so a blocker on team Y constrains a dependent on team X.
-- Slice 03's cross-team warning is deleted for honoured edges (AC-8.2).
+- Slice 01's cross-team warning is deleted for honoured edges (AC-8.2).
 - D7 and D8 extended to cross-team: a cross-team cycle is warned, a cross-team blocker on a
   throughput-less team is dropped and warned (AC-8.4, AC-8.5).
 - Throughput stays per-team. A joint clock shares **time**, never throughput (AC-8.3) — this is the
@@ -76,9 +77,9 @@ change to forecasting at a time. ADR-156 holds it if it is ever wanted.
 
 ## OUT of scope
 
-- Any change to the eligibility rule itself. Slice 03 wrote it; this slice widens what it can see.
+- Any change to the eligibility rule itself. Slice 01 wrote it; this slice widens what it can see.
 - Cross-Portfolio honouring (D6, permanently out for this epic).
-- Jira and Linear (slice 05).
+- Jira and Linear ingestion (Epic #4365, slice 03).
 
 ## Learning hypothesis
 
@@ -113,9 +114,9 @@ the slice:
 
 ## Dependencies
 
-Slice 03's eligibility rule confirmed on real data — reversing the order would mean debugging a new
+Slice 01's eligibility rule confirmed on real data — reversing the order would mean debugging a new
 simulation loop and a new eligibility rule simultaneously. The cross-team Predecessor link created in
-ADO alongside slice 03's shapes. Premium licence. A recorded pre-change forecast wall-clock baseline
+ADO alongside slice 01's shapes. Premium licence. A recorded pre-change forecast wall-clock baseline
 and a fixed-seed percentile snapshot, both captured **before** the precursor commit.
 
 ## Dogfood moment

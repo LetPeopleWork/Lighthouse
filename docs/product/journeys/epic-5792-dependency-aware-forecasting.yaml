@@ -1,0 +1,189 @@
+schema_version: 1
+feature_id: epic-5792-dependency-aware-forecasting
+updated: 2026-08-16
+note: >
+  ADO Epic #5792 "Dependency-Aware Forecasting", created 2026-08-16, tagged Premium / Documentation /
+  Release Notes. Split out of Epic #4365 "Dependencies" on 2026-08-16: #4365 keeps the community half
+  (read dependencies, show them, warn about the ones Lighthouse cannot act on, let a Portfolio name the
+  field they live in) and ships first; this epic is the forecast effect and is premium.
+
+  This journey is the forecasting half of the DISCUSS dive-in run on 2026-08-14 against Epic #4365. It
+  is not self-contained: D1, D5, D6, D7, D10, D12, D13 and D14 stay in
+  docs/product/journeys/epic-4365-dependencies.yaml and are inherited here unchanged. So are the stored
+  edges, the honour-ability verdict and the cycle detector — this epic consumes all three and writes
+  none of them.
+
+  Three load-bearing finds the original sketch did not carry, all of which belong to this half:
+
+  (1) "Jump over" is NOT a date shift. GetSimulationResultsOfFeatureToUpdate (:201-209) draws each
+  simulated day's throughput from the first min(FeatureWIP, remaining) Features in order, so excluding
+  a waiting Feature hands its capacity to the Features BELOW it, which finish EARLIER. Computing
+  max(own, blocker) afterwards would get the waiting Feature roughly right and every other Feature
+  wrong. The mechanic must live inside the trial.
+
+  (2) The simulation is PER-TEAM and INDEPENDENT. RunMonteCarloSimulation (:108-131) groups by team
+  and runs each group's 10,000 trials in its own Task.Run with its own day counter. Cross-team
+  dependencies — most real ones — are unreachable without restructuring that loop. The user chose to
+  restructure it (D3).
+
+  (3) TERMINATION is the binding constraint, not any functional requirement. A cycle, or a blocker
+  whose team has no throughput, means the dependent is never eligible and
+  while (GetRemainingItems() > 0) never ends. D7 and D8 exist to prevent a hang, not to be tidy. Epic
+  #4365 ships the detection and the warning; this epic ships the exclusion and the drop, which is the
+  half that keeps the loop terminating.
+
+  Hard prerequisite: Epic #4365 shipped through at least its slices 01 and 02. Without stored edges and
+  an honour-ability verdict there is nothing here to honour.
+
+journeys:
+
+  - name: forecast-in-the-order-work-can-happen
+    goal: >
+      A delivery forecaster whose Portfolio contains work that cannot start yet gets dates that say so:
+      the waiting Feature's percentiles move out, the Features behind it move in because they now get
+      the capacity, and every dependency the forecast could not honour is named on screen rather than
+      silently dropped.
+    persona: "delivery-forecaster (primary: consumes the dates); product-owner (owns the order the
+      mechanic interacts with, and reads the moved dates); delivery-lead-rte (cross-team is where the
+      dependency pain actually lives)"
+    jobs:
+      - job-forecast-honours-what-cannot-start-yet
+      - job-forecast-covers-dependencies-that-cross-teams
+      - job-forecaster-know-the-forecast-is-ignoring-a-dependency
+
+    emotional_arc:
+      start: >
+        Quietly uneasy — "Epic #4365 told me this Feature waits on two others, and I can see which. The
+        date beside it still assumes it could start tomorrow. I know the number is optimistic and I
+        cannot say by how much, so I add a caveat out loud and hope nobody writes the date down."
+      middle: >
+        Oriented — "the waiting Feature's 85% date moved out, and the one below it moved in, because
+        the capacity went somewhere. The rows that are still not in the number say so and say why."
+      end: >
+        Accountable — "this date already accounts for what we are waiting on, across teams as well as
+        within one. If something was excluded, the row says which and why, and if my instance is not
+        licensed it says that too rather than quietly presenting the same number."
+
+    design_decisions_resolved:
+      - id: D2
+        question: How does the forecast honour a dependency?
+        decision: >
+          By EXCLUDING the dependent from the eligible set inside each trial, not by shifting dates
+          afterwards. GetSimulationResultsOfFeatureToUpdate filters Where(x => x.HasWorkRemaining)
+          today and gains one predicate: Where(x => x.HasWorkRemaining && ready). A Feature whose
+          blockers still have remaining work in this trial cannot receive throughput; the FeatureWIP
+          window slides down to the Features below it. The post-hoc max(own, blocker) alternative was
+          considered and rejected because it never frees the capacity, so every Feature ranked below a
+          waiting one keeps a date that assumes work nobody is doing.
+
+          If every eligible Feature is waiting, that day's throughput is DISCARDED rather than carried
+          forward. An idle day is the honest outcome, and it is what makes D7 and D8 load-bearing:
+          with nothing able to unblock, the run would never end.
+
+          NO NEW PER-TRIAL STATE. Each closed item already re-draws independently from the top of the
+          eligible list, so a Feature becomes available again on the very next draw after its blocker
+          clears. Sticky WIP slots — a team holding a Feature until it finishes — were considered and
+          rejected (user, 2026-08-14): they would change dates for Features with no dependencies at
+          all, forfeiting D3's distribution-preserving property.
+
+          Readiness aggregates across ALL of a blocker's rows: InitializeSimulationResults creates one
+          per (Feature, Team) pair, so a Feature worked by three teams is finished only when all three
+          are at zero.
+      - id: D3
+        question: How are dependencies that cross teams handled?
+        decision: >
+          One JOINT simulation replaces the per-team independent runs (user, 2026-08-14). Concretely
+          the loop nesting swaps from team -> trial -> day to trial -> day -> team: one trial advances
+          a single day counter, and each day every team with throughput draws its own throughput and
+          consumes from its own rows. The per-day work is untouched.
+
+          That swap IS the mechanism. Today team A's "day 5" and team B's "day 5" are not the same
+          moment and not even the same trial, so "is A finished yet?" has no answer. Once the clock is
+          shared it means "finished by day 5 in this trial", and the dependency rule becomes one extra
+          predicate in one place (D2).
+
+          Distribution-preserving with no dependency present — a team only ever consumes its own
+          SimulationResult rows, so interleaving other teams between its days cannot change what
+          happens to any row. Existing forecasts do not re-baseline; asserted under a fixed seed.
+
+          Two consequences: teams need SEPARATE RNG STREAMS or a fixed-seed equality test fails on
+          draw order rather than on distribution; and concurrency moves from per-team to per-trial,
+          which is not a free Parallel.For, because ResetRemainingItems() mutates the shared rows and
+          AddSimulationResult writes a plain Dictionary — both safe today only because each team's
+          task owns its group exclusively.
+
+          The alternatives were same-team-only (ships sooner, ignores the majority case) and a
+          post-hoc date shift (cross-team capable but wrong per D2).
+
+          Correctness lands before speed (user, 2026-08-14): a serial joint loop proved against a
+          fixed seed, then per-trial parallelism proved to leave that equality intact. The serial
+          intermediate is slower than the current release and is never released on its own.
+      - id: D8
+        question: What happens when the blocker can never complete in this run?
+        decision: >
+          The edge is dropped for that run and the dependent is warned. Three cases, one rule: a
+          blocker already finished has no SimulationResult row and costs nothing; a blocker whose team
+          has no throughput is excluded from the run entirely; a blocker outside the run's Feature set
+          likewise never completes. The last two would otherwise make the dependent wait forever.
+
+          Epic #4365 ships the verdict and the warning, computed from Feature.CanBeForecast /
+          TeamsWithoutForecast. This epic ships the drop. The dependent's dates then read as an
+          earliest-possible rather than as a forecast, and the row points at the blocker, which already
+          reports unknown under ADR-112.
+      - id: D9
+        question: What does the premium licence gate?
+        decision: >
+          The forecast effect, and nothing else. After the 2026-08-16 split the free half is a separate
+          epic, so the boundary reads simply: everything here is premium except the hint an unlicensed
+          instance sees instead of the effect. Same posture as epic-5375: show the truth, gate the
+          mechanism.
+
+          The hint ships in this epic rather than in #4365 because it names a premium capability, and
+          shipping it ahead of that capability advertises something nobody can buy. The licence is a
+          FIELD of the honour policy's input rather than a branch around the mechanic, which is what
+          makes "an unlicensed run is byte-identical to a dependency-free run" structural rather than a
+          code path someone has to remember.
+
+    shared_artifacts:
+      - name: honour-ability verdict
+        source_of_truth: >
+          One decision point (D6, D7, D8 combined), owned by Epic #4365 and READ here. Two independent
+          implementations — one for display, one for the forecast — is the failure mode the "exactly
+          one place decides" KPI exists to catch, because it would show a warning that does not match
+          what the dates actually did. The split makes that KPI span two epics: re-deriving any part of
+          the verdict inside the forecast fails it for both.
+      - name: per-trial completion state
+        source_of_truth: >
+          The remaining count per row, reset at the top of each trial and, after the restructure, owned
+          by TrialState rather than by the shared SimulationResult. "Has this blocker finished" is
+          derived from it rather than tracked separately — a second piece of per-trial state would need
+          its own reset and is the obvious place for a trial to leak into the next one.
+      - name: Feature order
+        source_of_truth: >
+          IFeatureOrdering, owned by epic-5375. Read here for the sequence the simulation walks. Never
+          written by this feature.
+
+    error_paths:
+      - trigger: Dependencies form a loop
+        recovery: >
+          Epic #4365's honour policy excludes the closing edge and warns every member, naming the
+          others. No cycle logic enters the trial loop, and the forecast completes in normal time.
+      - trigger: The blocker's team has no throughput, or the blocker is absent from the run
+        recovery: >
+          The edge is dropped for that run and the dependent is warned that its date ignores it. The
+          run terminates. Without this the simulation hangs, and only on instances with a
+          throughput-less team — which is most of them, eventually.
+      - trigger: A dependency points at a Feature in no shared Portfolio
+        recovery: >
+          No date changes (D6). Epic #4365 already stores it and warns; this epic is where "does not
+          change the forecast" becomes an assertion rather than a tautology.
+      - trigger: A trial exceeds the last-resort day ceiling
+        recovery: >
+          The run aborts with a structured forecast.trial.aborted event naming the trial coordinates.
+          This is not how termination is achieved — it is how a mistake in achieving it becomes visible
+          in a background service rather than as a hang.
+      - trigger: The instance has no premium licence
+        recovery: >
+          Everything Epic #4365 ships still renders — count, dialog, warnings — plus a hint naming what
+          is withheld and why. Forecast values are identical to a run with no dependency data; nothing
+          is half-applied.

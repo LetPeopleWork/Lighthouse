@@ -1,7 +1,7 @@
-# Slice 03 — The forecast jumps over a Feature that cannot start (same team, premium)
+# Slice 01 — The forecast jumps over a Feature that cannot start (same team, premium)
 
-**Feature**: epic-4365-dependencies · **ADO**: Epic #4365 · **Stories**: US-05, US-06 ·
-**Estimate**: ~6h
+**Feature**: epic-5792-dependency-aware-forecasting · **ADO**: Epic #5792 ·
+**Stories**: US-05, US-06 · **Estimate**: ~6h
 **Reference class**: none in this repository. The Monte Carlo eligibility rule has never been changed
 since it was written. Treat every estimate here as less certain than the others.
 
@@ -23,11 +23,11 @@ Features behind it get the capacity, so their dates move **in**.
 - If every eligible Feature is waiting, the day's throughput is **discarded**, not carried forward.
   The team simply has an idle day.
 - **Termination guards, both of them, in this slice** (D7, D8): a cycle member is never treated as
-  blocked (slice 02 already excluded the closing edge); a blocker with no `SimulationResult` row, or
-  on a team excluded from the run for having no throughput, is dropped for the run and the dependent
-  warned. Without both, `while (GetRemainingItems() > 0)` does not end.
+  waiting (Epic #4365's slice 02 already excluded the closing edge); a blocker with no
+  `SimulationResult` row, or on a team excluded from the run for having no throughput, is dropped for
+  the run and the dependent warned. Without both, `while (GetRemainingItems() > 0)` does not end.
 - Cross-team edges are **not** honoured here and carry a warning saying so (AC-5.4) — the warning
-  slice 05 exists to delete.
+  slice 02 exists to delete.
 - Cross-Portfolio edges change nothing (AC-5.8).
 - The free-tier hint (US-06): unlicensed instances get the count, the dialog and a warning naming what
   is withheld. Forecast values on an unlicensed instance are byte-identical to a dependency-free run.
@@ -35,10 +35,11 @@ Features behind it get the capacity, so their dates move **in**.
 
 ## OUT of scope
 
-- Touching `RunMonteCarloSimulation`'s grouping. That is slice 04's precursor commit, and keeping it
+- Touching `RunMonteCarloSimulation`'s grouping. That is slice 02's precursor commit, and keeping it
   out is the whole reason this slice exists separately.
-- Cross-team honouring (slice 04).
-- Jira and Linear (slice 05).
+- Cross-team honouring (slice 02).
+- Jira and Linear ingestion (Epic #4365, slice 03) — this slice inherits whichever connectors that
+  epic has already delivered and adds nothing per connector.
 
 ## Learning hypothesis
 
@@ -50,10 +51,10 @@ on real dogfood data, the waiting Feature's date moves out and **no** Feature ra
 successor, and the effect vanishes into noise at 10,000 trials.
 
 If it fails, D2's whole argument for in-simulation exclusion over a post-hoc date shift collapses, and
-the design has to be reconsidered before slice 04 spends a simulation rewrite on it. **This is the
+the design has to be reconsidered before slice 02 spends a simulation rewrite on it. **This is the
 slice that decides whether the epic was worth building.**
 
-**Confirms**, if it holds, that the mechanic is right and slice 04 is generalising something known to
+**Confirms**, if it holds, that the mechanic is right and slice 02 is generalising something known to
 work rather than hoping.
 
 ## Verify the premise first (45 min, before touching the loop)
@@ -75,12 +76,13 @@ AC-5.1 … AC-5.8 and AC-6.1 … AC-6.4 verbatim from `feature-delta.md`. The th
 
 ## Dependencies
 
-Slices 01 and 02. **Real Predecessor links created in the dogfood ADO project before this slice
-starts** — a two-Feature loop, a blocker on a team with no recent throughput, a blocker ranked below
-its dependent. Lighthouse has no way to author these (D4), so they are made with
-`az boards work-item relation add` and are a hard prerequisite rather than a convenience. Premium
-licence **and** an unlicensed profile. Mutation testing is non-negotiable on the eligibility rule: a
-surviving mutant here is a hang or a wrong date.
+Epic #4365 shipped through at least its slices 01 and 02 — the stored edges, the honour-ability
+verdict and the warnings column this slice drives from and writes into. **Real Predecessor links
+created in the dogfood ADO project before this slice starts** — a two-Feature loop, a blocker on a
+team with no recent throughput, a blocker ranked below its dependent. Lighthouse has no way to author
+these (D4), so they are made with `az boards work-item relation add` and are a hard prerequisite
+rather than a convenience. Premium licence **and** an unlicensed profile. Mutation testing is
+non-negotiable on the eligibility rule: a surviving mutant here is a hang or a wrong date.
 
 ## Dogfood moment
 

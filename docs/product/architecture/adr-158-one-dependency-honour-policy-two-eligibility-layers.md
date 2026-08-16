@@ -2,7 +2,10 @@
 
 - **Status**: Proposed (2026-08-14, DESIGN) — awaiting maintainer ratification
 - **Date**: 2026-08-14
-- **Feature**: epic-4365-dependencies (ADO Epic #4365, slices 02, 03, 04)
+- **Feature**: epic-4365-dependencies (ADO Epic #4365, slice 02 — the policy) and
+  epic-5792-dependency-aware-forecasting (ADO Epic #5792, slices 01, 02 — the per-trial layer). This
+  ADR spans both halves of the 2026-08-16 split, which is exactly why it insists there is only one
+  honour-ability decision
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 
 ## Context

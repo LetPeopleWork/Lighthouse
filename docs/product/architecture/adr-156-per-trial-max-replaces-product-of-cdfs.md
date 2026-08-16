@@ -18,7 +18,8 @@
   door ADR-110 left open is still open. Revisit if the conservative residual below is ever measured to
   matter, or if per-trial max is wanted as a simplification in its own right.
 - **Date**: 2026-08-14
-- **Feature**: epic-4365-dependencies (ADO Epic #4365, slice 04)
+- **Feature**: epic-5792-dependency-aware-forecasting (ADO Epic #5792, slice 02) — recorded 2026-08-14
+  under epic-4365-dependencies, re-homed 2026-08-16 when the forecasting half became its own epic
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 
 ## Context

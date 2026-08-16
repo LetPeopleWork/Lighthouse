@@ -2,7 +2,8 @@
 
 - **Status**: Proposed (2026-08-14, DESIGN) — awaiting maintainer ratification
 - **Date**: 2026-08-14
-- **Feature**: epic-4365-dependencies (ADO Epic #4365, slices 01, 05, 06)
+- **Feature**: epic-4365-dependencies (ADO Epic #4365, slices 01, 03, 04) — slices renumbered
+  2026-08-16 when the forecasting half became Epic #5792; these were slices 01, 05, 06
 - **Deciders**: Benjamin Huser-Berta (maintainer)
 
 ## Context

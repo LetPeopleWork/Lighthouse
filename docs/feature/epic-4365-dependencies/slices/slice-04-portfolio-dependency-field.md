@@ -1,4 +1,4 @@
-# Slice 06 — Read dependencies from the field this Portfolio actually uses (free)
+# Slice 04 — Read dependencies from the field this Portfolio actually uses (free)
 
 **Feature**: epic-4365-dependencies · **ADO**: Epic #4365 · **Stories**: US-04 · **Estimate**: ~5h
 **Reference class**: `ParentOverrideAdditionalFieldDefinitionId` end to end — the setting on
@@ -10,7 +10,8 @@ time, with one difference (D15).
 ## Goal
 
 A Portfolio whose teams record dependencies in a custom field rather than the tracker's built-in link
-gets the whole feature — column, dialog, warnings, forecast — by naming that field once.
+gets the whole feature — column, dialog, warnings, and whatever the forecast does with them once
+Epic #5792 ships — by naming that field once.
 
 ## IN scope
 
@@ -41,7 +42,7 @@ gets the whole feature — column, dialog, warnings, forecast — by naming that
 - A configurable separator (D15 fixes comma and semicolon).
 - The same override on a Team. Features are fetched per Portfolio, so the Team owner has no consumer.
 - Jira and Linear override support beyond what falls out of the shared port — their standard links
-  land in slice 05, and the override is connector-agnostic by construction.
+  land in slice 03, and the override is connector-agnostic by construction.
 
 ## Learning hypothesis
 
@@ -79,11 +80,11 @@ AC-4.1 … AC-4.7 verbatim from `feature-delta.md`. The three that carry the sli
 
 - A field reading `1234;5678` yields two edges that appear in the count and the dialog (AC-4.1).
 - With the override set, the connector performs **no** relation fetch (AC-4.2).
-- With the override unset, behaviour is byte-identical to slices 01-05 (AC-4.5).
+- With the override unset, behaviour is byte-identical to slices 01-03 (AC-4.5).
 
 ## Dependencies
 
-Slices 01-05 — this slice changes where edges come from and nothing about what happens to them.
+Slices 01-03 — this slice changes where edges come from and nothing about what happens to them.
 One additional field defined on the dogfood ADO connection carrying a dependency list, created by hand
 for the manual confirmation.
 
@@ -96,7 +97,7 @@ user's instance.
 
 ## Commit gate
 
-**No commit without the maintainer's explicit approval.**
+Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 
 ## Learning hypothesis verdict
 

@@ -25,9 +25,9 @@ primary_jobs:
   - job-forecast-delivery-trend-over-time
   - job-forecast-skip-known-nonworking-days
   - job-delivery-likelihood-covers-every-feature
-  - job-forecast-honours-what-cannot-start-yet  # epic-4365-dependencies (2026-08-14, #4365): the forecast jumps over work that cannot start yet
-  - job-forecast-covers-dependencies-that-cross-teams  # epic-4365-dependencies (2026-08-14, #4365): needs the joint simulation
-  - job-forecaster-know-the-forecast-is-ignoring-a-dependency  # epic-4365-dependencies (2026-08-14, #4365): free-tier honesty
+  - job-forecast-honours-what-cannot-start-yet  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): the forecast jumps over work that cannot start yet
+  - job-forecast-covers-dependencies-that-cross-teams  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): needs the joint simulation
+  - job-forecaster-know-the-forecast-is-ignoring-a-dependency  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): free-tier honesty
 
 goals:
   - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work
