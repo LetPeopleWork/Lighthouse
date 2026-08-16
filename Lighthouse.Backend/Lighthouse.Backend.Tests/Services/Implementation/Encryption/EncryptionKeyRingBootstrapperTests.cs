@@ -837,6 +837,120 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        // The one refusal with no way out, and the switch that provides one. It is deliberately shaped like
+        // the emergency administrator: set on purpose, off by default, and impossible to leave running
+        // unnoticed.
+        [Test]
+        public void Resolve_NothingStoredCanBeReadAndTheSwitchIsSet_StartsAnyway()
+        {
+            var ring = BootstrapperFor(
+                new PhysicalKeyStoreFileSystem(),
+                readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable),
+                startAnyway: true).Resolve();
+
+            Assert.That(ring.ActiveKey, Is.Not.Null,
+                "an instance whose key is genuinely gone owns a database nothing can open, and every team, forecast and hour of history in it");
+        }
+
+        [Test]
+        public void Resolve_NothingStoredCanBeReadAndTheSwitchIsNotSet_StillRefuses()
+        {
+            var bootstrapper = BootstrapperFor(
+                new PhysicalKeyStoreFileSystem(),
+                readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable));
+
+            Assert.That(
+                () => bootstrapper.Resolve(),
+                Throws.InvalidOperationException,
+                "the refusal is right and stays; what it must not be is a dead end");
+        }
+
+        [Test]
+        public void Resolve_TheSwitchIsSetOnAnInstanceThatIsFine_ChangesNothingAndAsksNothing()
+        {
+            var readability = new StagedReadabilityProbe(StoredSecretReadability.SomethingReadable);
+            var material = MaterialOf(67);
+
+            var ring = BootstrapperFor(
+                new StagedKeyStoreFileSystem(),
+                suppliedKey: Convert.ToBase64String(material),
+                readability: readability,
+                startAnyway: true).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.ActiveKey.Material.ToArray(), Is.EqualTo(material));
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.SuppliedByConfiguration));
+                Assert.That(readability.TimesAsked, Is.Zero,
+                    "the answer cannot change anything once the switch is set, and asking costs a read of every stored secret");
+            }
+        }
+
+        [Test]
+        public void Resolve_TheSwitchIsSet_DoesNotTouchTheKeyStore()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+
+            BootstrapperFor(
+                staged,
+                suppliedKey: Convert.ToBase64String(MaterialOf(71)),
+                readability: new StagedReadabilityProbe(StoredSecretReadability.NothingReadable),
+                startAnyway: true).Resolve();
+
+            Assert.That(staged.Operations, Is.Empty,
+                "the switch is a way in, not a repair - nothing is re-encrypted and nothing is discarded");
+        }
+
+        // Every other refusal is a situation the switch cannot help with, so letting it past would only
+        // start an instance that is about to lose credentials rather than one that has already lost them.
+        [Test]
+        public void Resolve_TheSwitchIsSet_LetsPastThatOneRefusalAndNoOther()
+        {
+            var staged = new StagedKeyStoreFileSystem();
+            var readable = new StagedReadabilityProbe(StoredSecretReadability.SomethingReadable);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    () => BootstrapperFor(staged, suppliedKey: Convert.ToBase64String(MaterialOf(31)[..16]), readability: readable, startAnyway: true).Resolve(),
+                    Throws.InvalidOperationException,
+                    "key material of the wrong length");
+                Assert.That(
+                    () => BootstrapperFor(staged, keysFilePath: MountedSecretPath, readability: readable, startAnyway: true).Resolve(),
+                    Throws.InvalidOperationException,
+                    "a key file that is not there");
+                Assert.That(
+                    () => BootstrapperFor(staged, suppliedKey: ThePublishedKeyEncoded(), readability: readable, startAnyway: true).Resolve(),
+                    Throws.InvalidOperationException,
+                    "the key published with the product supplied as the key");
+                Assert.That(
+                    () => BootstrapperFor(
+                        staged,
+                        keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                        storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone),
+                        readability: readable,
+                        startAnyway: true).Resolve(),
+                    Throws.InvalidOperationException,
+                    "nowhere to keep a key, with nothing stored yet");
+            }
+        }
+
+        [Test]
+        public void Resolve_ARefusalTheSwitchCannotHelpWith_DoesNotMentionTheSwitch()
+        {
+            var refusal = Assert.Throws<InvalidOperationException>(
+                () => BootstrapperFor(
+                    new StagedKeyStoreFileSystem(),
+                    keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                    storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone),
+                    startAnyway: true).Resolve());
+
+            Assert.That(
+                refusal.Message,
+                Does.Not.Contain("StartEvenIfNothingStoredCanBeRead"),
+                "offering a setting that would not help is how an operator ends up setting all of them");
+        }
+
         // A bootstrapper missing any one of these resolves a key from somewhere it was not told about, and
         // the first anyone would hear of it is a secret written under the wrong key.
         [Test]
@@ -1047,7 +1161,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             KeyStoreCase keyStoreCase = KeyStoreCase.BesideTheDatabaseFile,
             StagedSecretPresenceProbe? storedSecrets = null,
             DatabaseSecretPresenceProbe? probe = null,
-            IStoredSecretReadabilityProbe? readability = null)
+            IStoredSecretReadabilityProbe? readability = null,
+            bool startAnyway = false)
         {
             return new EncryptionKeyRingBootstrapper(
                 new ConfiguredKeyRingSource(suppliedRing, suppliedKey, suppliedUnderTheRetiredName),
@@ -1055,7 +1170,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 StoreFor(fileSystem),
                 new KeyStoreLocation(keyStoreDirectory, keyStoreCase),
                 probe ?? storedSecrets ?? (IStoredSecretPresenceProbe)new StagedSecretPresenceProbe(StoredSecretPresence.HoldsNone),
-                readability ?? new StagedReadabilityProbe(StoredSecretReadability.NothingStored));
+                readability ?? new StagedReadabilityProbe(StoredSecretReadability.NothingStored),
+                startAnyway);
         }
 
         // Named the same way the store names it, so a ring placed by a test is one this instance can unwrap

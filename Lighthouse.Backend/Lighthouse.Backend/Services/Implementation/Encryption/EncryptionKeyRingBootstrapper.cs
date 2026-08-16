@@ -68,6 +68,11 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
     public sealed class EncryptionKeyRingBootstrapper
     {
+        // Long on purpose. An operator pasting this into a compose file at the worst moment of their week
+        // should not be able to mistake it for a repair: it starts an instance that still cannot read a
+        // single one of its credentials.
+        public const string StartAnywaySettingKey = "Encryption:StartEvenIfNothingStoredCanBeRead";
+
         private readonly ConfiguredKeyRingSource configuration;
 
         private readonly MountedFileKeyRingSource mountedFile;
@@ -80,13 +85,16 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private readonly IStoredSecretReadabilityProbe storedSecretReadability;
 
+        private readonly bool startEvenIfNothingStoredCanBeRead;
+
         public EncryptionKeyRingBootstrapper(
             ConfiguredKeyRingSource configuration,
             MountedFileKeyRingSource mountedFile,
             GeneratedKeyRingStore generated,
             KeyStoreLocation keyStore,
             IStoredSecretPresenceProbe storedSecrets,
-            IStoredSecretReadabilityProbe storedSecretReadability)
+            IStoredSecretReadabilityProbe storedSecretReadability,
+            bool startEvenIfNothingStoredCanBeRead = false)
         {
             ArgumentNullException.ThrowIfNull(configuration);
             ArgumentNullException.ThrowIfNull(mountedFile);
@@ -101,6 +109,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             this.keyStore = keyStore;
             this.storedSecrets = storedSecrets;
             this.storedSecretReadability = storedSecretReadability;
+            this.startEvenIfNothingStoredCanBeRead = startEvenIfNothingStoredCanBeRead;
         }
 
         // The order is the whole design, and it is written down once, here. Note that a key someone else
@@ -130,8 +139,20 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         // which key was chosen - it only says whether that key was the right one. One readable secret is
         // enough to answer yes; anything the database will not tell us is not an answer and does not stop a
         // start, for the same reason the presence probe is allowed to fail quietly.
+        //
+        // This is the one refusal an operator can be let past, and it is let past here rather than around
+        // Resolve, so that every other refusal keeps firing - a switch that let past all of them would be
+        // a way to run with no protection at all rather than a way back into a locked room. Where it is
+        // set, the question is not asked either: the answer cannot change which key was resolved or what
+        // happens next, and asking costs a read of every stored secret on the instance least able to
+        // afford one.
         private void RefuseWhenNothingStoredCanBeRead(EncryptionKeyRing resolved)
         {
+            if (startEvenIfNothingStoredCanBeRead)
+            {
+                return;
+            }
+
             if (storedSecretReadability.Look(resolved).Readability != StoredSecretReadability.NothingReadable)
             {
                 return;

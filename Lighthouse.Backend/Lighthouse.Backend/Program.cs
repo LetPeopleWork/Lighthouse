@@ -473,7 +473,8 @@ namespace Lighthouse.Backend
                     TimeProvider.System),
                 keyStore,
                 new DatabaseSecretPresenceProbe(() => DatabaseConnectionFor(builder)),
-                new DatabaseSecretReadabilityProbe(() => DatabaseConnectionFor(builder)))
+                new DatabaseSecretReadabilityProbe(() => DatabaseConnectionFor(builder)),
+                builder.Configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey))
                 .Resolve();
 
             // The ring is registered as a singleton and never written back into configuration: every value
