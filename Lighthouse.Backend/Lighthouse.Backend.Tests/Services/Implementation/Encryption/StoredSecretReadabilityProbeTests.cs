@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
         private const string AKeyThisInstanceNeverHad = "k-somewhere-else-01";
 
+        private const string AnotherKeyThisInstanceNeverHad = "k-elsewhere-02";
+
         private SqliteConnection keptOpenSoTheInMemoryDatabaseSurvives = null!;
 
         private string connectionString = string.Empty;
@@ -37,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         [Test]
         public void Look_NoSchemaToAsk_CannotTellRatherThanClaimingNothingIsThere()
         {
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.CannotTell));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.CannotTell));
         }
 
         [Test]
@@ -46,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             var probe = new DatabaseSecretReadabilityProbe(
                 () => throw new InvalidOperationException("Database:Provider is not set."));
 
-            Assert.That(probe.Look(RingInForce()), Is.EqualTo(StoredSecretReadability.CannotTell));
+            Assert.That(probe.Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.CannotTell));
         }
 
         [Test]
@@ -54,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             CreateSchema();
 
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.NothingStored));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.NothingStored));
         }
 
         [Test]
@@ -64,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             StoreConnectionSecret(WrittenUnder(AKeyThisInstanceNeverHad));
             StoreOAuthCredential(WrittenUnder(AKeyThisInstanceNeverHad), WrittenUnder(AKeyThisInstanceNeverHad));
 
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.NothingReadable));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.NothingReadable));
         }
 
         [Test]
@@ -74,7 +76,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             StoreConnectionSecret(WrittenUnder(AKeyThisInstanceNeverHad));
             StoreConnectionSecret(WrittenUnder(TheKeyInForce));
 
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.SomethingReadable));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.SomethingReadable));
         }
 
         [Test]
@@ -83,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             CreateSchema();
             StoreOAuthCredential(accessToken: null, refreshToken: WrittenUnder(AKeyThisInstanceNeverHad));
 
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.NothingReadable));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.NothingReadable));
         }
 
         // A row that holds no secret is not a secret that cannot be read. Counting one would refuse to start
@@ -96,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             StoreConnectionSecret(string.Empty);
             StoreOAuthCredential(null, null);
 
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.NothingStored));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.NothingStored));
         }
 
         // Values on connection options that were never marked secret are not encrypted, so reading them as
@@ -107,7 +109,63 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             CreateSchema();
             StoreConnectionSecret(WrittenUnder(AKeyThisInstanceNeverHad), isSecret: false);
 
-            Assert.That(Probe().Look(RingInForce()), Is.EqualTo(StoredSecretReadability.NothingStored));
+            Assert.That(Probe().Look(RingInForce()).Readability, Is.EqualTo(StoredSecretReadability.NothingStored));
+        }
+
+        // The names the stored values put on themselves. An operator staring at a start that stopped is
+        // told which key their credentials were written under and which one the instance came up on, and
+        // neither of those is a secret - a key id is already on the encryption panel.
+        [Test]
+        public void Look_EverySecretUnderOneKeyThisInstanceDoesNotHave_NamesThatKey()
+        {
+            CreateSchema();
+            StoreConnectionSecret(WrittenUnder(AKeyThisInstanceNeverHad));
+            StoreOAuthCredential(WrittenUnder(AKeyThisInstanceNeverHad), null);
+
+            Assert.That(Probe().Look(RingInForce()).KeyIdsSeen, Is.EqualTo(new[] { AKeyThisInstanceNeverHad }).AsCollection);
+        }
+
+        [Test]
+        public void Look_SecretsUnderTwoKeysNeitherOfWhichIsHeld_NamesBothOnceEach()
+        {
+            CreateSchema();
+            StoreConnectionSecret(WrittenUnder(AKeyThisInstanceNeverHad));
+            StoreConnectionSecret(WrittenUnder(AKeyThisInstanceNeverHad));
+            StoreConnectionSecret(WrittenUnder(AnotherKeyThisInstanceNeverHad));
+
+            Assert.That(
+                Probe().Look(RingInForce()).KeyIdsSeen,
+                Is.EqualTo(new[] { AKeyThisInstanceNeverHad, AnotherKeyThisInstanceNeverHad }).AsCollection,
+                "an operator reading the same key id three times learns nothing they did not learn the first time");
+        }
+
+        [Test]
+        public void Look_AValueInTheFormatThisVersionReplaced_NamesNoKey()
+        {
+            CreateSchema();
+            StoreConnectionSecret("this was never an envelope");
+
+            Assert.That(
+                Probe().Look(RingInForce()).KeyIdsSeen,
+                Is.Empty,
+                "a value written before this version carries no key id at all, and inventing one would name a key that never existed");
+        }
+
+        [Test]
+        public void Look_NothingStored_NamesNoKey()
+        {
+            CreateSchema();
+
+            Assert.That(Probe().Look(RingInForce()).KeyIdsSeen, Is.Empty);
+        }
+
+        [Test]
+        public void Look_ADatabaseThatCannotBeAsked_NamesNoKey()
+        {
+            Assert.That(
+                Probe().Look(RingInForce()).KeyIdsSeen,
+                Is.Empty,
+                "no answer is not an answer, and half of one would be quoted at an operator as though it were");
         }
 
         private static string WrittenUnder(string keyId)

@@ -14,9 +14,15 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         NothingReadable,
     }
 
+    // The answer, and the names the stored values put on themselves while it was being worked out. The
+    // names are gathered from the same pass rather than from a second query: a start that reads every
+    // secret column twice gets slow on exactly the instance that is already in trouble. They are only
+    // read when nothing could be read at all, which is the one case where the pass has seen every value.
+    public sealed record StoredSecretFinding(StoredSecretReadability Readability, IReadOnlyList<string> KeyIdsSeen);
+
     public interface IStoredSecretReadabilityProbe
     {
-        StoredSecretReadability Look(EncryptionKeyRing ring);
+        StoredSecretFinding Look(EncryptionKeyRing ring);
     }
 
     // An instance that starts on the wrong key looks exactly like an instance that starts on the right one:
@@ -54,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             this.connectionFactory = connectionFactory;
         }
 
-        public StoredSecretReadability Look(EncryptionKeyRing ring)
+        public StoredSecretFinding Look(EncryptionKeyRing ring)
         {
             ArgumentNullException.ThrowIfNull(ring);
 
@@ -66,18 +72,28 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 connection.Open();
 
                 var stored = 0;
+                var keyIdsSeen = new List<string>();
 
                 foreach (var value in StoredSecretQueries.SelectMany(query => ValuesFrom(connection, query)))
                 {
                     stored++;
 
-                    if (classifier.Classify(value).State != SecretState.Unreadable)
+                    var read = classifier.Classify(value);
+
+                    if (read.KeyId is not null && !keyIdsSeen.Contains(read.KeyId, StringComparer.Ordinal))
                     {
-                        return StoredSecretReadability.SomethingReadable;
+                        keyIdsSeen.Add(read.KeyId);
+                    }
+
+                    if (read.State != SecretState.Unreadable)
+                    {
+                        return new StoredSecretFinding(StoredSecretReadability.SomethingReadable, keyIdsSeen);
                     }
                 }
 
-                return stored == 0 ? StoredSecretReadability.NothingStored : StoredSecretReadability.NothingReadable;
+                return new StoredSecretFinding(
+                    stored == 0 ? StoredSecretReadability.NothingStored : StoredSecretReadability.NothingReadable,
+                    keyIdsSeen);
             }
             // A database that will not answer is not an answer. It refuses in two different ways - the
             // server saying no, and there being no server configured to ask at all - and this question is
@@ -85,7 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             // that are perfectly fine.
             catch (Exception failedToAsk) when (failedToAsk is DbException or InvalidOperationException)
             {
-                return StoredSecretReadability.CannotTell;
+                return new StoredSecretFinding(StoredSecretReadability.CannotTell, []);
             }
         }
 

@@ -1119,21 +1119,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             private readonly StoredSecretReadability answer;
 
-            public StagedReadabilityProbe(StoredSecretReadability answer)
+            private readonly IReadOnlyList<string> keyIdsSeen;
+
+            public StagedReadabilityProbe(StoredSecretReadability answer, params string[] keyIdsSeen)
             {
                 this.answer = answer;
+                this.keyIdsSeen = keyIdsSeen;
             }
 
             public int TimesAsked { get; private set; }
 
             public EncryptionKeyRing? WasAskedAbout { get; private set; }
 
-            public StoredSecretReadability Look(EncryptionKeyRing ring)
+            public StoredSecretFinding Look(EncryptionKeyRing ring)
             {
                 TimesAsked++;
                 WasAskedAbout = ring;
 
-                return answer;
+                return new StoredSecretFinding(answer, keyIdsSeen);
             }
         }
 

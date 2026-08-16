@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         // start, for the same reason the presence probe is allowed to fail quietly.
         private void RefuseWhenNothingStoredCanBeRead(EncryptionKeyRing resolved)
         {
-            if (storedSecretReadability.Look(resolved) != StoredSecretReadability.NothingReadable)
+            if (storedSecretReadability.Look(resolved).Readability != StoredSecretReadability.NothingReadable)
             {
                 return;
             }
