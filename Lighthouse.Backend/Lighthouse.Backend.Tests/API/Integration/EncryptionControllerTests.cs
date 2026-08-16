@@ -130,8 +130,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rootFactory = new TestWebApplicationFactory<Program>();
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
 
+            var ownKeyRing = ARingThisInstanceMadeForItself();
             ownKeyRootFactory = new TestWebApplicationFactory<Program>();
-            ownKeyFactory = AHostRunningOn(ownKeyRootFactory, ARingThisInstanceMadeForItself(), ReportedKeyStore);
+            ownKeyFactory = AHostRunningOn(ownKeyRootFactory, ownKeyRing, ReportedKeyStore);
 
             rotatableKeyStore = Directory.CreateTempSubdirectory("EncryptionControllerRotation_").FullName;
             rotatableRootFactory = new TestWebApplicationFactory<Program>();
@@ -154,6 +155,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             WithSecretsToWalk(checkableFactory);
 
             SeedOneOfEachStateOn(checkableFactory, checkableRing);
+            SeedOneValueInTheOldFormatOn(ownKeyFactory, ownKeyRing.ActiveKey);
         }
 
         private static void WithSecretsToWalk(WebApplicationFactory<Program> host)
@@ -589,9 +591,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         /// <summary>
         /// The number an operator who has just upgraded needs, and it is on the state payload rather than
-        /// behind the check because somebody who knew to press the check did not need telling. It is
-        /// counted without decrypting anything, so the settings page is not slowest for exactly the
-        /// instance that most needs to see it.
+        /// behind the check because somebody who knew to press the check did not need telling. The values
+        /// that could be on that key are narrowed in the database first, so an instance that has moved
+        /// everything - the one that opens this page most often - decrypts nothing to be told so.
         /// </summary>
         [Test]
         public async Task ThePayload_SaysHowManySecretsAreStillOnTheKeyPublishedWithTheProduct()
@@ -611,6 +613,24 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(withNone.Int("secretsUnderPublishedKey"), Is.Zero,
                     "an install holding nothing under that key is never told to fix a problem it does not have");
             }
+        }
+
+        /// <summary>
+        /// The install that did the right thing before this release: a key of its own, set under the
+        /// setting this release retired. Its stored values carry no envelope, which is the same thing the
+        /// default install's values look like — and telling this operator their credentials are public is
+        /// both false and the kind of false that makes them stop believing the panel.
+        /// </summary>
+        [Test]
+        public async Task ThePayload_DoesNotCallACredentialPublicForTheShapeItWasStoredIn()
+        {
+            using var client = ownKeyFactory.CreateClient().AsSystemAdmin();
+
+            using var response = await client.GetAsync(LatestRoute);
+            var payload = await ReadJsonAsync(response);
+
+            Assert.That(payload.Int("secretsUnderPublishedKey"), Is.Zero,
+                "the published key has never been able to read that value, so no number of shapes makes it public");
         }
 
         [Test]
@@ -741,6 +761,37 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     .Where(option => option.WorkTrackingSystemConnectionId == connection.Id && option.Key == field)
                     .ExecuteUpdate(set => set.SetProperty(option => option.Value, storedValue));
             }
+        }
+
+        // One credential in the shape every install written before this release holds, encrypted under a
+        // key that install chose for itself. Written into the column after the save, for the same reason
+        // the four-state seed is: a save encrypts anything that is not already an envelope.
+        private static void SeedOneValueInTheOldFormatOn(WebApplicationFactory<Program> host, EncryptionKey ownKey)
+        {
+            using var scope = host.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var connection = new WorkTrackingSystemConnection
+            {
+                Name = "Fabrikam Board",
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+            };
+
+            connection.Options.Add(new WorkTrackingSystemConnectionOption
+            {
+                Key = InTheOldFormat,
+                Value = "placeholder",
+                IsSecret = true,
+            });
+
+            context.WorkTrackingSystemConnections.Add(connection);
+            context.SaveChanges();
+
+            var storedValue = InTheFormatThisVersionReplaced("never-was-public", ownKey);
+
+            context.Set<WorkTrackingSystemConnectionOption>()
+                .Where(option => option.WorkTrackingSystemConnectionId == connection.Id)
+                .ExecuteUpdate(set => set.SetProperty(option => option.Value, storedValue));
         }
 
         private static string Under(EncryptionKey key, string credential)

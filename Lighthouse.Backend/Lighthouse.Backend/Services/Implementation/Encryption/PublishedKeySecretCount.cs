@@ -6,14 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Encryption
 {
-    // Counted by looking at the stored values, never by decrypting them. The settings page asks this on
-    // every load, and an instance that has never rotated is exactly the one holding every credential it
-    // has under the published key - so a count that decrypted would make the page slowest for the
-    // operator who most needs to see it.
+    // The question is which key wrote a stored value, and the shape of the value cannot answer it. An
+    // install that set a key of its own before this release stores values that look exactly like the ones
+    // the published key wrote, and telling that operator their credentials are public is both false and
+    // the kind of false that makes them stop believing the panel. So the values that could be on that key
+    // are narrowed in the database - an envelope naming it, or anything written before the envelope
+    // format existed - and then that key is asked to read them.
     //
-    // Two shapes are counted. An envelope naming the published key is the obvious one. The other is
-    // anything written before the envelope format existed: an upgraded install carries no key id on its
-    // stored values at all, and the published key is the only one that ever read them.
+    // The settings page asks this on every load, so the narrowing matters: an instance that has moved
+    // everything onto a key of its own has nothing left to ask about and decrypts nothing at all. What is
+    // left to read is bounded by the number of credentials the operator is being told to move.
     public sealed class PublishedKeySecretCount : IPublishedKeySecretCount
     {
         private static readonly string PublishedKeyPrefix = SecretEnvelope.Prefix + LegacyDefaultEncryptionKey.Id + ".";
@@ -30,25 +32,25 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         public async Task<int> CountAsync(CancellationToken cancellationToken = default)
         {
             var options = await context.Set<WorkTrackingSystemConnectionOption>()
-                .CountAsync(
-                    option => option.IsSecret
-                        && !string.IsNullOrEmpty(option.Value)
-                        && (option.Value.StartsWith(PublishedKeyPrefix) || !option.Value.StartsWith(SecretEnvelope.Prefix)),
-                    cancellationToken);
+                .Where(option => option.IsSecret
+                    && !string.IsNullOrEmpty(option.Value)
+                    && (option.Value.StartsWith(PublishedKeyPrefix) || !option.Value.StartsWith(SecretEnvelope.Prefix)))
+                .Select(option => option.Value)
+                .ToListAsync(cancellationToken);
 
             var accessTokens = await context.Set<OAuthCredential>()
-                .CountAsync(
-                    credential => !string.IsNullOrEmpty(credential.AccessToken)
-                        && (credential.AccessToken.StartsWith(PublishedKeyPrefix) || !credential.AccessToken.StartsWith(SecretEnvelope.Prefix)),
-                    cancellationToken);
+                .Where(credential => !string.IsNullOrEmpty(credential.AccessToken)
+                    && (credential.AccessToken.StartsWith(PublishedKeyPrefix) || !credential.AccessToken.StartsWith(SecretEnvelope.Prefix)))
+                .Select(credential => credential.AccessToken)
+                .ToListAsync(cancellationToken);
 
             var refreshTokens = await context.Set<OAuthCredential>()
-                .CountAsync(
-                    credential => !string.IsNullOrEmpty(credential.RefreshToken)
-                        && (credential.RefreshToken.StartsWith(PublishedKeyPrefix) || !credential.RefreshToken.StartsWith(SecretEnvelope.Prefix)),
-                    cancellationToken);
+                .Where(credential => !string.IsNullOrEmpty(credential.RefreshToken)
+                    && (credential.RefreshToken.StartsWith(PublishedKeyPrefix) || !credential.RefreshToken.StartsWith(SecretEnvelope.Prefix)))
+                .Select(credential => credential.RefreshToken)
+                .ToListAsync(cancellationToken);
 
-            return options + accessTokens + refreshTokens;
+            return options.Concat(accessTokens).Concat(refreshTokens).Count(LegacyDefaultEncryptionKey.CanRead);
         }
     }
 }

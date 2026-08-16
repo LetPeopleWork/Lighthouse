@@ -169,6 +169,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
+        public async Task ASecretInTheFormatThisVersionReplacedWrittenUnderTheInstancesOwnKey_IsNotCounted()
+        {
+            await StoreOptionAsync("ClientSecret", InTheFormatThisVersionReplaced("never-was-public", OwnKey));
+
+            Assert.That(await CountAsync(), Is.Zero,
+                "an install that set a key of its own before this release is told its credentials are public, and they never were");
+        }
+
+        [Test]
+        public async Task ATokenInTheFormatThisVersionReplacedWrittenUnderTheInstancesOwnKey_IsNotCounted()
+        {
+            await StoreCredentialAsync(
+                InTheFormatThisVersionReplaced("the-access-token", OwnKey),
+                InTheFormatThisVersionReplaced("the-refresh-token", OwnKey));
+
+            Assert.That(await CountAsync(), Is.Zero);
+        }
+
+        [Test]
+        public async Task AValueThatWasNeverEncryptedAtAll_IsNotCounted()
+        {
+            await StoreOptionAsync("ClientSecret", "not encrypted at all");
+
+            Assert.That(await CountAsync(), Is.Zero,
+                "that is a different problem, and the check reports it in its own state rather than as an exposure to this key");
+        }
+
+        [Test]
+        public async Task AMixtureOfShapes_CountsOnlyWhatThatKeyCanRead()
+        {
+            await StoreOptionAsync("ClientSecret", InTheFormatThisVersionReplaced("public", PublishedKey));
+            await StoreOptionAsync("PersonalAccessToken", InTheFormatThisVersionReplaced("private", OwnKey));
+            await StoreOptionAsync("ApiKey", Under(OwnKey, "already-moved"));
+            await StoreCredentialAsync(Under(PublishedKey, "still-public"), "not encrypted at all");
+
+            Assert.That(await CountAsync(), Is.EqualTo(2),
+                "two of the five are readable with that key, and no shape any of the other three wears changes that");
+        }
+
+        [Test]
         public void TheCount_RefusesToBeBuiltWithoutSomewhereToLook()
         {
             Assert.That(() => new PublishedKeySecretCount(null!), Throws.ArgumentNullException);
@@ -222,11 +262,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         // What every install written before this release holds: AES-CBC, an initialisation vector in front,
-        // and no key id anywhere on the value.
-        private static string InTheFormatThisVersionReplaced(string credential)
+        // and no key id anywhere on the value. The key it was written under is a parameter because that is
+        // the whole point - two values written under different keys are indistinguishable by shape.
+        private static string InTheFormatThisVersionReplaced(string credential, EncryptionKey? writtenUnder = null)
         {
             using var aes = Aes.Create();
-            aes.Key = PublishedKey.Material.ToArray();
+            aes.Key = (writtenUnder ?? PublishedKey).Material.ToArray();
 
             var iv = RandomNumberGenerator.GetBytes(16);
             var cipherText = aes.EncryptCbc(System.Text.Encoding.UTF8.GetBytes(credential), iv);
