@@ -12,6 +12,7 @@ export const SECRET_MOVE_OUTCOMES = [
 	"Moved",
 	"MovedByAnotherWriter",
 	"CouldNotBeRead",
+	"CouldNotBeWritten",
 	"NotEncrypted",
 ] as const;
 
@@ -75,5 +76,6 @@ export const SECRET_OUTCOME_WORDING: Record<SecretMoveOutcome, string> = {
 	Moved: "moved onto the active key",
 	MovedByAnotherWriter: "already on the active key",
 	CouldNotBeRead: "could not be read, and was left untouched",
+	CouldNotBeWritten: "the database would not take the change — run this again",
 	NotEncrypted: "was not encrypted, and was left untouched",
 };

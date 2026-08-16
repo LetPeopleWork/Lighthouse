@@ -3099,8 +3099,11 @@ re-encrypt, which is why rotation is the only thing that moves a stored secret.
 | 69 | A value that was never encrypted is reported rather than encrypted | milestone-10 | `@edge @us-03` |
 | 70 | Running it again moves nothing and says the same thing | milestone-10 | `@property @us-03` |
 | 71 | Interrupted halfway, the instance still works and the next run finishes the rest | milestone-10 | `@edge @us-03` |
-| 72 | The key published with the product leaves the ring once nothing is stored under it | milestone-10 | `@edge @us-03` |
-| 73 | While one secret is still under the published key, that key stays | milestone-10 | `@error @us-03` |
+| 72 | Nothing is left stored under the key published with the product | milestone-10 | `@edge @us-03` |
+| 73 | A secret under the published key that nobody can read is left exactly as it was | milestone-10 | `@error @us-03` |
+| 73a | A rotation only ever adds to the keys an instance can read with | milestone-10 | `@edge @us-03` |
+| 73b | Saving a Connection leaves a secret nobody can read exactly as it was | milestone-10 | `@error @us-03` |
+| 77a | Two rotations started at once do not leave a secret under a key nobody holds | milestone-11 | `@error @us-03` |
 | 74 | A rotation does not reject an edit somebody already had open | milestone-10 | `@regression @us-03` |
 | 75 | A refresh that lands mid-rotation keeps the token it obtained | milestone-11 | `@real-io @adapter-integration @us-03` |
 | 76 | A secret somebody else rewrote is counted as already moved, not as a failure | milestone-11 | `@edge @us-03` |
@@ -3306,6 +3309,73 @@ Three things this wave learned that DELIVER should not rediscover:
 **To the maintainer**: the pre-slice SPIKE ran and its answer is *no lock*, so the brief was not re-cut
 and no EF migration is owed. The one open decision is AC-3.9's second half, recorded in *Upstream
 Issues* above with a recommendation to take it in slice 06.
+
+---
+
+## Wave: DELIVER / [REF] Review — what an adversarial pass found, and what changed
+
+Two reviewers ran against the finished implementation. The second one, asked to break it rather than to
+judge it, found two ways to destroy a credential outright. Both are fixed. Recorded here because both
+change what the slice does, and one of them corrects behaviour slice 01 shipped.
+
+**1. Two rotations at once could leave credentials nobody can ever read.** Nothing serialised the pass.
+Two administrators — or one with two tabs — starting a rotation inside the same file-write window would
+each take their own snapshot of the ring, each mint a key named after the same day, and each write its
+own key store over the other's. Whichever finished second left a key store that had never heard of the
+key the first one had already moved several hundred secrets onto. That material existed nowhere, on
+disk or in memory, and the next start could not bring it back. Both administrators saw an HTTP 200.
+
+Fixed by `OneSecretPassAtATime`, a process-wide gate around the whole of rotate and re-encrypt. One
+process is the right scope, and the reason is worth stating: minting only ever happens where Lighthouse
+keeps its own key, which is a standalone install or a single container. Deployments that run more than
+one replica were handed their key, so they cannot mint at all — and two concurrent *re-encryptions*
+across replicas were already safe, because every write names the value it observed. Scenario 77a.
+
+**2. Saving a Connection re-encrypted a secret it could not read, destroying it.**
+`LighthouseAppContext.NeedsProtecting` asked "is this not already an envelope?" and an unreadable value
+answers yes. So an ordinary save — renaming a Connection, or the OAuth refresh path marking a
+credential failed — wrapped ciphertext nobody could read inside ciphertext they could. That turns a
+**recoverable** state, the one `GeneratedKeyRingStore.ReadExisting` tells the operator to recover from
+by restoring the right key store, into a permanently unrecoverable one, and from then on the row
+reports as healthy so nothing ever flags it again. No rotation is needed to reach it: a wrong
+`Encryption__Key` that still reads one secret is enough, because the boot refuses only when it can read
+*nothing*.
+
+Fixed by naming the two states that are worth encrypting — something typed in, and something in the
+format this version replaced — instead of negating the one that is not. This is the same rule the
+rotation already followed: never write what you did not first read back as the credential it was.
+Scenario 73b. **This is a slice-01 defect, corrected here** rather than left because the slice that
+found it happened not to own the file.
+
+**3. Rotation no longer narrows the ring, and AC-3.9's second half is withdrawn rather than deferred.**
+The pass used to drop the published key from the live ring once nothing readable was left under it. The
+review showed that costs more than it buys. It buys nothing durable — the ring is assembled without
+asking the database, so the next start appends the key again, which the *Upstream Issues* section above
+already recorded. What it costs is real: a request that loaded a credential before the rotation started
+is still holding a legacy-default envelope, and narrowing the ring underneath it turns a credential it
+is about to use into one it cannot read. The rule is now that **a rotation only ever adds to the ring**
+— every key that could read something a moment ago still can — which is also what makes an interruption
+survivable. Scenarios 72, 73 and 73a were rewritten to say that; AC-3.9's first half, moving the last
+row off the published key, is delivered in full.
+
+**Also fixed, smaller.** The staging file a mint writes through was a constant name, so two processes
+sharing a key store could each write the other's bytes into it and then accuse the filesystem of losing
+what it was given — now named per write. And the hundredth key minted in one calendar day raised an
+error the production error handler strips, leaving an administrator with a 500 and no sentence; it now
+raises the refusal the route already turns into a 409.
+
+**Rejected, with the source that contradicts each.** *"The rotation record tests pass because the mock
+is never invoked and asserting an empty list is trivially true"* — they assert `Has.Some.Contains(...)`,
+which fails on an empty list; only the refusal test asserts emptiness, which is its point. *"Plaintext
+keeps the published key on the ring unnecessarily"* — `SecretStateClassifier.cs:46` gives a plaintext
+value a null key id, so it can never match the published key's id and never did.
+
+**Known and out of scope, worth an ADO Bug each.** A plaintext credential that happens to be standard
+base64 decoding to a multiple of 16 bytes is classified unreadable rather than plaintext — deliberate
+in ADR-147, and OQ-4 measured zero such rows, but it means the report can name a perfectly good token.
+And `RbacGuardAttribute` returns without refusing when `IRbacAdministrationService` cannot be resolved;
+not reachable with the current container, but the default direction on a route that rewrites every
+credential in the installation should be deny.
 
 ---
 

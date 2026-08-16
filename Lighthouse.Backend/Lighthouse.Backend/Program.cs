@@ -481,16 +481,16 @@ namespace Lighthouse.Backend
             // is the last place a key belongs
             builder.Services.AddSingleton<IEncryptionKeyRingHolder>(new EncryptionKeyRingHolder(ring));
 
-            // Only registered where the application keeps its own key. Anywhere else the ring is resolved
-            // from what an operator supplied, so a key made here would be written to a place that loses to
-            // the supplied one on the next start - and everything moved onto it would be out of reach. The
-            // moving itself is offered in every deployment; only the making is not.
-            if (ring.CanMint)
-            {
-                builder.Services.AddSingleton<IKeyRingMinter>(
-                    new GeneratedKeyRingMinter(keyStore.Directory, fileSystem, TimeProvider.System));
-            }
+            // Whether this instance can make a key at all is decided here, once, from where the key in force
+            // came from - and an instance that cannot is handed something that refuses rather than something
+            // that works. Anywhere the key was supplied, a key made here would be written to a place that
+            // loses to the supplied one on the next start, and everything moved onto it would be out of
+            // reach. Moving the stored secrets is offered in every deployment; only the making is not.
+            builder.Services.AddSingleton<IKeyRingMinter>(ring.CanMint
+                ? new GeneratedKeyRingMinter(keyStore.Directory, fileSystem, TimeProvider.System)
+                : new AKeyOnlyItsOwnerCanReplace(ring.Custody));
 
+            builder.Services.AddSingleton<OneSecretPassAtATime>();
             builder.Services.AddScoped<ISecretCustodyService, SecretCustodyService>();
             builder.Services.AddScoped<ISecretCustodyReader>(services => services.GetRequiredService<ISecretCustodyService>());
         }

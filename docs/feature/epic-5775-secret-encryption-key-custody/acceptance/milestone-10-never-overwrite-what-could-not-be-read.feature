@@ -44,20 +44,34 @@ Feature: Never overwrite a secret that could not be read, and finish what an int
     And the second run needed nothing to be told about where the first one stopped
 
   @edge @us-03 @slice-03
-  Scenario: The key published with the product leaves the ring once nothing is stored under it
+  Scenario: Nothing is left stored under the key published with the product
     Given an instance where the last secret still under the key published with the product is readable
     When the key is rotated
     Then that secret is moved onto the new key
-    And the key published with the product is no longer one of the keys held
-    And the instance says so when asked about its encryption
+    And nothing readable is stored under the key published with the product any more
 
   @error @us-03 @slice-03
-  Scenario: While one secret is still under the published key, that key stays
+  Scenario: A secret under the published key that nobody can read is left exactly as it was
     Given an instance holding one secret under the key published with the product that nobody can read
     When the key is rotated
     Then that secret is left exactly as it was and named in the report
-    And the key published with the product is still held
-    And the instance still says so when asked about its encryption
+    And the key published with the product is still one of the keys held
+
+  @edge @us-03 @slice-03
+  Scenario: A rotation only ever adds to the keys an instance can read with
+    Given an instance holding several keys, and a request that has already loaded a credential
+    When the key is rotated
+    Then every key that was held before is still held
+    And the credential that request is holding is still readable
+    And taking a key away would have made it unreadable in the middle of somebody's work
+
+  @error @us-03 @slice-03
+  Scenario: Saving a Connection leaves a secret nobody can read exactly as it was
+    Given a Connection holding a stored secret that no held key can read
+    When somebody saves that Connection after changing something else about it
+    Then the stored secret is byte for byte what it was before
+    And it still says it cannot be read, rather than looking healthy from then on
+    And restoring the key store it belongs to would still bring the credential back
 
   @regression @us-03 @slice-03
   Scenario: A rotation does not reject an edit somebody already had open

@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
+using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 {
@@ -48,12 +49,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
         private int credentialId;
 
+        private OneSecretPassAtATime oneAtATime = null!;
+
         [SetUp]
         public async Task SetUp()
         {
             databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-custody-{Guid.NewGuid():N}.db");
             crypto = CryptoOver(NewKey, OldKey);
-            provider = BuildProvider(databaseFile, crypto);
+            oneAtATime = new OneSecretPassAtATime();
+            provider = BuildProvider($"Data Source={databaseFile}", crypto);
 
             await using var scope = provider.CreateAsyncScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -66,6 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         public async Task TearDown()
         {
             await provider.DisposeAsync();
+            oneAtATime.Dispose();
             SqliteConnection.ClearAllPools();
 
             if (File.Exists(databaseFile))
@@ -275,6 +280,71 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        /// <summary>
+        /// A database that will not take the write is a different thing from a credential nobody can read,
+        /// and the two must not arrive at an operator looking the same: one is a token to re-enter, the
+        /// other is a pass to run again. A read-only database is the one way to produce a refused write on
+        /// demand, on every platform, without holding a lock and hoping for a timeout.
+        /// </summary>
+        [Test]
+        public async Task ADatabaseThatWillNotTakeTheWrite_IsReportedAsThat_AndNotAsASecretNobodyCanRead()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            var before = await StoredOptionAsync(PersonalAccessToken);
+
+            await using var readOnly = BuildProvider($"Data Source={databaseFile};Mode=ReadOnly", crypto);
+            using var scope = readOnly.CreateScope();
+
+            var report = await new SecretCustodyService(
+                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>(),
+                crypto,
+                new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey, OldKey)),
+                new AMinterThatMints(NewerKey),
+                oneAtATime).ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.Secrets, Has.Some.Matches<StoredSecretRecord>(
+                    secret => secret.Outcome == SecretMoveOutcome.CouldNotBeWritten));
+                Assert.That(report.UnreadableCount, Is.Zero,
+                    "nothing is wrong with the credential, so nobody should be sent to reissue it");
+                Assert.That(report.MovedCount, Is.Zero);
+                Assert.That(await StoredOptionAsync(PersonalAccessToken), Is.EqualTo(before));
+            }
+        }
+
+        /// <summary>
+        /// Moving a secret is not a change an administrator made, so it must not reject one they are in the
+        /// middle of making. The pass writes outside the save pipeline, which is what keeps the concurrency
+        /// token an open form is holding still valid.
+        /// </summary>
+        [Test]
+        public async Task ARotation_DoesNotRejectAnEditSomebodyAlreadyHadOpen()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+
+            var opened = await ConnectionAsync();
+            var tokenTheFormIsHolding = opened.ConcurrencyToken;
+
+            await CustodyService().ReEncryptAsync();
+
+            await using var scope = provider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var saving = await context.WorkTrackingSystemConnections.SingleAsync(connection => connection.Id == connectionId);
+            saving.Name = "Contoso Board, renamed while the rotation ran";
+            context.ApplyConcurrencyTokenForEdit(saving, tokenTheFormIsHolding);
+
+            Assert.That(async () => await context.SaveChangesAsync(), Throws.Nothing,
+                "a rotation is not a semantic edit, so an administrator must not have their save turned down because one ran");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((await ConnectionAsync()).Name, Is.EqualTo("Contoso Board, renamed while the rotation ran"));
+                Assert.That(crypto.Read(await StoredOptionAsync(PersonalAccessToken)).PlainText, Is.EqualTo("contoso-pat"),
+                    "the secret nobody retyped is still readable after both the move and the save");
+            }
+        }
+
         [Test]
         public async Task Rotating_MakesAKeyAndMovesEverythingOntoIt_AndKeepsTheKeyThatWasInForce()
         {
@@ -301,12 +371,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByConfiguration, NewKey, OldKey));
             var supplied = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+            var minter = new AKeyOnlyItsOwnerCanReplace(KeyCustody.SuppliedByConfiguration);
 
             await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
             var before = await StoredOptionAsync(PersonalAccessToken);
 
             Assert.That(
-                async () => await Rotating(holder, supplied, new AMinterThatMints(NewerKey)).RotateAsync(),
+                async () => await Rotating(holder, supplied, minter).RotateAsync(),
                 Throws.InstanceOf<MintingNotPermittedException>());
 
             using (Assert.EnterMultipleScope())
@@ -334,10 +405,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        /// <summary>
+        /// The ring only ever grows. Anything that could be read a moment before a rotation can still be
+        /// read after it, which is what lets a request that loaded a credential before the pass started go
+        /// on using it - and what lets an interrupted pass leave a working instance.
+        /// </summary>
         [Test]
-        public async Task ThePublishedKey_StopsBeingHeldOnceTheLastSecretUnderItHasMoved()
+        public async Task ARotation_MovesEverythingOffThePublishedKey_AndStillHoldsEveryKeyItHeldBefore()
         {
             var (holder, rotating) = AnInstanceStillHoldingThePublishedKey(out var published);
+            var heldBefore = IdsOn(holder.Current);
 
             await StoreAsync(PersonalAccessToken, Under(published, "written-before-any-of-this"));
             await StoreAsync(ClientSecret, Under(published, "also-written-before"));
@@ -347,13 +424,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(report.MovedCount, Is.EqualTo(4), "the two under the published key and the two the OAuth credential holds");
-                Assert.That(holder.Current.TryGet(LegacyDefaultEncryptionKey.Id, out _), Is.False,
-                    "nothing is stored under it any more, so it is no longer one of the keys held");
+                Assert.That(rotating.Read(await StoredOptionAsync(PersonalAccessToken)).KeyId, Is.EqualTo(NewerKey.Id),
+                    "nothing is stored under the published key any more");
+                Assert.That(IdsOn(holder.Current), Is.SupersetOf(heldBefore),
+                    "a key taken off the ring is a credential an in-flight request is holding that nobody can read any more");
+                Assert.That(holder.Current.ActiveKey.Id, Is.EqualTo(NewerKey.Id));
             }
         }
 
         [Test]
-        public async Task ThePublishedKey_StaysHeldWhileOneSecretUnderItCannotBeRead()
+        public async Task ARotation_LeavesASecretUnderThePublishedKeyThatNobodyCanRead_ExactlyAsItIs()
         {
             var (holder, rotating) = AnInstanceStillHoldingThePublishedKey(out var published);
 
@@ -369,6 +449,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(await StoredOptionAsync(ClientSecret), Is.EqualTo(before));
                 Assert.That(holder.Current.TryGet(LegacyDefaultEncryptionKey.Id, out _), Is.True,
                     "one secret still names it, so letting it go would put that credential out of reach for good");
+            }
+        }
+
+        /// <summary>
+        /// Saving a connection hands back every secret it holds, including ones nobody retyped. A value no
+        /// key here can open is still the credential, encrypted under a key that exists somewhere, and
+        /// restoring that key store brings it back. Encrypting it wraps ciphertext nobody can read inside
+        /// ciphertext they can, which destroys the only copy and then reports the row as healthy - so an
+        /// ordinary save of an unrelated field is enough to lose a credential for good.
+        /// </summary>
+        [Test]
+        public async Task SavingAConnection_LeavesASecretItCannotRead_ExactlyAsItIs()
+        {
+            var beyondReach = Under(KeyNobodyHolds, "written-under-a-key-this-instance-lost");
+            await StoreAsync(ClientSecret, beyondReach);
+
+            await using var scope = provider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var connection = await context.WorkTrackingSystemConnections
+                .Include(stored => stored.Options)
+                .SingleAsync(stored => stored.Id == connectionId);
+
+            connection.Name = "Renamed, without anybody touching a credential";
+            context.WorkTrackingSystemConnections.Update(connection);
+            await context.SaveChangesAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await StoredOptionAsync(ClientSecret), Is.EqualTo(beyondReach),
+                    "restoring the key store that belongs to this database has to bring the credential back, and it cannot if a save wrapped it");
+                Assert.That(crypto.Read(await StoredOptionAsync(ClientSecret)).State, Is.EqualTo(SecretState.Unreadable),
+                    "it must also still say it cannot be read, rather than looking healthy from now on");
+            }
+        }
+
+        /// <summary>
+        /// The one interleaving that can destroy a credential outright. Two rotations each taking their own
+        /// snapshot of the ring would mint two keys named after the same day, write one key store over the
+        /// other, and leave every secret moved onto the losing key unreadable by anything, anywhere.
+        /// </summary>
+        [Test]
+        public async Task TwoRotationsAtOnce_DoNotLeaveASecretUnderAKeyNobodyHolds()
+        {
+            var (holder, rotating) = AnInstanceThatOwnsItsKey();
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var minter = new AMinterThatMintsADifferentKeyEachTime();
+
+            await Task.WhenAll(
+                Rotating(holder, rotating, minter).RotateAsync(),
+                Rotating(holder, rotating, minter).RotateAsync());
+
+            var stored = new[]
+            {
+                await StoredOptionAsync(PersonalAccessToken),
+                await StoredOptionAsync(ClientSecret),
+            };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(minter.TimesAsked, Is.EqualTo(2), "both rotations ran; one did not simply fail");
+                Assert.That(minter.EveryKeyItMade.Select(key => key.Id).Distinct().Count(), Is.EqualTo(2),
+                    "two keys minted from the same snapshot would be given the same name and different material");
+
+                foreach (var value in stored)
+                {
+                    Assert.That(rotating.Read(value).State, Is.EqualTo(SecretState.Envelope),
+                        "every secret is still readable with a key the ring holds");
+                }
             }
         }
 
@@ -398,7 +549,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             var scope = provider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
 
-            return new SecretCustodyService(context, cryptoService, holder, minter);
+            return new SecretCustodyService(context, cryptoService, holder, minter, oneAtATime);
+        }
+
+        private static List<string> IdsOn(EncryptionKeyRing ring)
+        {
+            return [ring.ActiveKey.Id, .. ring.RetiredKeys.Select(key => key.Id)];
         }
 
         private SecretCustodyService CustodyService(ICryptoService? cryptoService = null)
@@ -409,7 +565,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             return new SecretCustodyService(
                 context,
                 cryptoService ?? crypto,
-                new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey, OldKey)));
+                new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, NewKey, OldKey)),
+                new AMinterThatMints(NewerKey),
+                oneAtATime);
         }
 
         // Written straight into the column rather than through a save, because a save encrypts anything it
@@ -446,6 +604,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 .Where(option => option.WorkTrackingSystemConnectionId == connectionId && option.Key == field)
                 .Select(option => option.Value)
                 .SingleAsync();
+        }
+
+        private async Task<WorkTrackingSystemConnection> ConnectionAsync()
+        {
+            await using var scope = provider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            return await context.WorkTrackingSystemConnections
+                .AsNoTracking()
+                .SingleAsync(connection => connection.Id == connectionId);
         }
 
         private async Task<OAuthCredential> StoredCredentialAsync()
@@ -500,13 +668,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             return (connection.Id, credential.Id);
         }
 
-        private static ServiceProvider BuildProvider(string databaseFile, ICryptoService cryptoService)
+        private static ServiceProvider BuildProvider(string connectionString, ICryptoService cryptoService)
         {
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton(cryptoService);
             services.AddDbContext<LighthouseAppContext>(options =>
-                options.UseSqlite($"Data Source={databaseFile}", sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
+                options.UseSqlite(connectionString, sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
 
             return services.BuildServiceProvider();
         }
@@ -520,9 +688,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 this.minted = minted;
             }
 
+            // Drops the published key exactly as the real one does, so what a rotation ends up holding is
+            // the same here as in production.
             public EncryptionKeyRing MintOnto(EncryptionKeyRing existing)
             {
-                return new EncryptionKeyRing(existing.Custody, [minted, existing.ActiveKey, .. existing.RetiredKeys]);
+                var kept = existing.Without(LegacyDefaultEncryptionKey.Id);
+
+                return new EncryptionKeyRing(kept.Custody, [minted, kept.ActiveKey, .. kept.RetiredKeys]);
+            }
+        }
+
+        // Names each key the way the real one does: from what the ring it was handed already holds. Two
+        // mints taken from the same snapshot therefore ask for the same name and get different material,
+        // which is exactly the state that loses a credential.
+        private sealed class AMinterThatMintsADifferentKeyEachTime : IKeyRingMinter
+        {
+            private readonly List<EncryptionKey> made = [];
+
+            public int TimesAsked { get; private set; }
+
+            public IReadOnlyList<EncryptionKey> EveryKeyItMade => made;
+
+            public EncryptionKeyRing MintOnto(EncryptionKeyRing existing)
+            {
+                TimesAsked++;
+
+                var kept = existing.Without(LegacyDefaultEncryptionKey.Id);
+                var name = Enumerable.Range(1, 99)
+                    .Select(madeToday => $"k-2026-08-16-{madeToday:00}")
+                    .First(candidate => !kept.TryGet(candidate, out _));
+
+                var key = new EncryptionKey(name, RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength));
+                made.Add(key);
+
+                return new EncryptionKeyRing(kept.Custody, [key, kept.ActiveKey, .. kept.RetiredKeys]);
             }
         }
 

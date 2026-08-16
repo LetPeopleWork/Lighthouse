@@ -37,6 +37,14 @@ Feature: A token refresh that lands in the middle of a rotation loses nothing (E
     Then it writes only where the stored value is still the one it read
     And this holds on each database Lighthouse supports
 
+  @error @us-03 @slice-03
+  Scenario: Two rotations started at once do not leave a secret under a key nobody holds
+    Given two administrators who both ask to rotate the key at the same moment
+    When both rotations run
+    Then each one made a key with a name of its own
+    And every stored secret is readable with a key the instance still holds
+    And neither rotation left secrets under a key the other one wrote over
+
   @edge @us-03 @slice-03
   Scenario: A secret the database would not let go of this time is taken by the next run
     Given a stored secret the database declined to hand over while the pass was running

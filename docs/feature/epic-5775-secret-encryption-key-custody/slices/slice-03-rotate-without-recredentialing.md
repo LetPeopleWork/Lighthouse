@@ -88,4 +88,28 @@ and confirm none asks for a credential. Record the duration against KPI-3.
 
 ## Verdict
 
-_To be recorded at slice close: confirmed / disproved. The probe's answer is recorded here first._
+**The probe, 2026-08-16 — no lock. The brief was not re-cut.**
+
+Measured against real SQLite arranged the way `DatabaseConfigurator` arranges it (WAL,
+`busy_timeout=10000`) and a real PostgreSQL in a container, not against a fake and not against the
+in-memory provider. A guarded update that names the ciphertext it observed reports zero rows affected
+when a token refresh rewrote the row in between, on **both** providers, and the refreshed token
+survives. A row nobody touched is moved. `OAuthService`'s per-connection gate is an in-memory
+dictionary on a singleton (`OAuthService.cs:184`), so it coordinates nothing across replicas and no
+in-process lock could ever have been the answer.
+
+Committed as `Lighthouse.Backend.Tests/Integration/Containers/ReEncryptionCompareAndSwapProbeTests.cs`
+rather than thrown away: it is the evidence behind ADR-151's first Earned Trust row, on both providers,
+in CI. Fallbacks B and C are unused, so DESIGN F-6's condition does not fire and the slice ships no EF
+migration.
+
+**Learning hypothesis: confirmed.** Rotation is an ordinary operator action rather than a maintenance
+window.
+
+**Slice verdict**: _to be recorded after the dogfood pass on `:5169` — rotate while a sync is running,
+trigger every Connection, confirm none asks for a credential, and time it against KPI-3._
+
+**One thing narrowed rather than delivered**: AC-3.9's second half. Re-encryption moves the last secret
+off the key published with the product permanently, and the live ring stops holding that key — but the
+next start appends it again, because the ring is assembled without asking the database. Recorded with a
+recommendation in `feature-delta.md` under *Wave: DISTILL / [REF] Upstream Issues*, for slice 06.

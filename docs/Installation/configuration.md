@@ -242,6 +242,33 @@ If Lighthouse can read some of your stored secrets but not others, it starts, an
 
 If it can read **none** of them, that is not a handful of stale values — it is the wrong key, and starting would leave every connection you have broken with no explanation. Lighthouse **stops startup** and says so, naming the two ways back: set `Encryption__Key` to the key the instance was using before, or set `Encryption__KeyStorePath` to the key store that belongs to this database. Nothing is changed and nothing is lost; your secrets are still there, encrypted under the key they were written with.
 
+### Changing the key without re-entering a single credential
+
+If a key may have been exposed, you don't have to reconfigure every work tracking system. **Settings → Encryption**, visible to System Administrators only, moves every stored secret onto a new key from inside Lighthouse. Nothing is asked for, nothing is re-entered, and every connection keeps working straight afterwards.
+
+The screen shows where the key in force came from, which keys the instance currently holds, and where they are kept. What it offers depends on who owns the key.
+
+**Where Lighthouse made the key itself** — a standalone install, or Docker with a data volume — the screen offers **Rotate key**. One action makes a new key, proves it can be read back, makes it the key new secrets are written under, moves every readable stored secret onto it, and keeps the previous key so nothing already stored becomes unreadable.
+
+**Where you supplied the key** — through `Encryption__Key`, `Encryption__Keys` or `Encryption__KeysFile` — Lighthouse will not make one, and says so if you ask it to anyway. A key it minted would go to its own key store, and on the next start the key you supplied would win again, leaving everything moved onto the minted key unreadable. Replacing the key is four steps and you do the first two:
+
+1. Put the new key **ahead of** the old one, so the ring reads `new:<base64 key>,old:<base64 key>`. On Kubernetes this is an edit to the Secret you already keep.
+2. Restart Lighthouse — or roll the pod — so it picks the new ring up. New secrets are now written under the new key; everything already stored is still read with the old one.
+3. Open **Settings → Encryption** and choose **Move stored secrets onto the active key**.
+4. Once the result reports nothing left unreadable, remove the old key from your Secret and restart again.
+
+Do not remove the old key before step 3. Nothing is destroyed if you do — the stored secrets are still there — but Lighthouse can no longer read them, and it will name each connection and field it cannot read rather than guessing.
+
+### What the result tells you
+
+Either action reports how many secrets were moved and how many could not be read, per connection, and names each unreadable one by the connection and the field holding it.
+
+**A secret that cannot be read is never overwritten.** Something nobody can decrypt is something nobody can re-encrypt, and writing over it would destroy the only copy. It is left exactly as it is and named in the report so you know which single credential to re-enter — rather than reissuing every token to find out which one it was.
+
+The pass is safe to interrupt and safe to repeat. A rotation only ever **adds** to the keys the instance can read with — the key that was in force is retired, never removed — so a rotation stopped half-way leaves every connection working, and running it again finishes the remainder and reports the same totals once there is nothing left to do. It needs no maintenance window either: a background refresh that stores a newly obtained token while the pass is running keeps that token, because the pass only ever writes over the exact value it read.
+
+Only one rotation or move runs at a time. Starting a second one while the first is still going waits for it rather than running alongside it, and two started at the same moment do not interfere.
+
 ## Certificate
 In order to run Lighthouse via secure https connection, we need to specify a certificate.
 

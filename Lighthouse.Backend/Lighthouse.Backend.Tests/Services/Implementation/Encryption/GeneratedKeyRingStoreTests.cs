@@ -88,8 +88,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(fileSystem.Operations, Does.Contain($"write {ringFile}{GeneratedKeyRingStore.TemporaryFileSuffix}"));
-                Assert.That(fileSystem.Operations, Does.Contain($"move {ringFile}{GeneratedKeyRingStore.TemporaryFileSuffix} -> {ringFile}"));
+                Assert.That(fileSystem.Operations, Has.One.StartsWith($"write {ringFile}.").And.Some.EndsWith(GeneratedKeyRingStore.TemporaryFileSuffix));
+                Assert.That(fileSystem.Operations, Has.One.StartsWith($"move {ringFile}.").And.Some.EndsWith($"-> {ringFile}"));
                 Assert.That(fileSystem.Operations, Does.Contain($"read {ringFile}"));
                 Assert.That(minted.ActiveKey.Material.Length, Is.EqualTo(EncryptionKey.MaterialLength));
             }

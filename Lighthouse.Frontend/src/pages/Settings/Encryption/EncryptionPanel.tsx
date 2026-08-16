@@ -21,6 +21,7 @@ import {
 import {
 	SECRET_OUTCOME_WORDING,
 	type SecretReadabilityReport,
+	type StoredSecret,
 } from "../../../models/Encryption/SecretReadabilityReport";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 
@@ -85,20 +86,25 @@ const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
 	</TableContainer>
 );
 
+// A secret that moved needs no listing - the count already says so. What an operator has to act on is
+// what was left behind, and the only useful thing to say about it is which Connection and which field.
+const wasLeftBehind = (secret: StoredSecret): boolean =>
+	secret.outcome !== "Moved" &&
+	secret.outcome !== "Unmoved" &&
+	secret.outcome !== "MovedByAnotherWriter";
+
 const WhatHappened: React.FC<{ report: SecretReadabilityReport }> = ({
 	report,
 }) => {
-	const troubled = report.secrets.filter(
-		(secret) => secret.outcome !== "Moved" && secret.outcome !== "Unmoved",
-	);
+	const leftBehind = report.secrets.filter(wasLeftBehind);
 
 	return (
 		<Box sx={{ mt: 2 }} data-testid="encryption-report">
-			<Alert severity={report.unreadableCount > 0 ? "warning" : "success"}>
+			<Alert severity={leftBehind.length > 0 ? "warning" : "success"}>
 				{`Moved ${report.movedCount} stored secrets onto key ${report.activeKeyId}. ${report.unreadableCount} could not be read.`}
 			</Alert>
 
-			{troubled.length > 0 && (
+			{leftBehind.length > 0 && (
 				<TableContainer sx={{ mt: 2 }}>
 					<Table size="small" data-testid="encryption-report-secrets">
 						<TableHead>
@@ -109,7 +115,7 @@ const WhatHappened: React.FC<{ report: SecretReadabilityReport }> = ({
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{troubled.map((secret) => (
+							{leftBehind.map((secret) => (
 								<TableRow key={`${secret.connectionId}-${secret.field}`}>
 									<TableCell>{secret.connectionName}</TableCell>
 									<TableCell>{secret.field}</TableCell>

@@ -1,7 +1,10 @@
 namespace Lighthouse.Backend.Models.Encryption
 {
     // What happened to one stored secret when a pass walked past it. A pass that only looks reports
-    // Unmoved for everything it could read; a pass that writes reports one of the other four.
+    // Unmoved for everything it could read; a pass that writes reports one of the others.
+    // "Could not be read" and "could not be written" are kept apart because they send an operator to
+    // different places: the first is a credential to re-enter, the second is a database that was busy and
+    // a pass to run again.
     public enum SecretMoveOutcome
     {
         Unmoved,
@@ -11,6 +14,8 @@ namespace Lighthouse.Backend.Models.Encryption
         MovedByAnotherWriter,
 
         CouldNotBeRead,
+
+        CouldNotBeWritten,
 
         NotEncrypted,
     }

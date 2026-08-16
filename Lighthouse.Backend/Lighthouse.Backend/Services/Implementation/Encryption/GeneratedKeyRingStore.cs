@@ -159,9 +159,10 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 }
             }
 
-            throw new InvalidOperationException(
-                $"This instance has already made {MostKeysMadeInOneDay} keys today. Nothing is wrong with the " +
-                "keys it has; rotating again is worth waiting until tomorrow for.");
+            throw new MintingNotPermittedException(
+                $"This instance has already made {MostKeysMadeInOneDay} keys today, and every name a key made " +
+                "today could be given is taken. Nothing is wrong with the keys it has and nothing has been " +
+                "changed; rotating again is worth waiting until tomorrow for.");
         }
 
         // Written aside and then moved into place, so a process that dies part-way leaves the key that was
@@ -171,7 +172,9 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         // refuse to start than to encrypt anything under a key this machine may not keep.
         private void Write(string canonicalRing)
         {
-            var temporaryPath = RingFilePath + TemporaryFileSuffix;
+            // Named apart per write, so two processes sharing a key store cannot each write the other's
+            // bytes into one staging file and then accuse the filesystem of losing what it was given.
+            var temporaryPath = $"{RingFilePath}.{Guid.NewGuid():n}{TemporaryFileSuffix}";
 
             fileSystem.WriteAllBytes(temporaryPath, protector.Protect(Encoding.UTF8.GetBytes(canonicalRing)));
             fileSystem.Move(temporaryPath, RingFilePath);

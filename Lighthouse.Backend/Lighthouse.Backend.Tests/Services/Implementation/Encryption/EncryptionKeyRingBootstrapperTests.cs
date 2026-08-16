@@ -298,18 +298,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             var staged = new StagedKeyStoreFileSystem();
             var store = StoreFor(staged);
-            var temporaryPath = store.RingFilePath + GeneratedKeyRingStore.TemporaryFileSuffix;
-
-            var expectedOperations = new List<string>
-            {
-                $"write {temporaryPath}",
-                $"move {temporaryPath} -> {store.RingFilePath}",
-                $"read {store.RingFilePath}",
-            };
 
             _ = store.Mint();
 
-            Assert.That(staged.Operations, Is.EqualTo(expectedOperations));
+            // The staging file is named apart per write, so the order and the shape are what is asserted
+            // rather than the name: written somewhere else first, moved into place, then read straight back.
+            var stagedAt = staged.Operations[0]["write ".Length..];
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stagedAt, Does.StartWith(store.RingFilePath).And.EndsWith(GeneratedKeyRingStore.TemporaryFileSuffix));
+                Assert.That(stagedAt, Is.Not.EqualTo(store.RingFilePath), "a ring written straight over the old one is lost if the process dies mid-write");
+                Assert.That(staged.Operations, Is.EqualTo(new List<string>
+                {
+                    $"write {stagedAt}",
+                    $"move {stagedAt} -> {store.RingFilePath}",
+                    $"read {store.RingFilePath}",
+                }));
+            }
         }
 
         [Test]

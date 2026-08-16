@@ -28,9 +28,14 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 timeProvider);
         }
 
+        // The key published with the product is compiled in and put on the end of every ring at startup, so
+        // it is taken off before the ring is written down. Writing it into the file would put a key that is
+        // in every copy of Lighthouse, and in the public source, into this instance's own key store.
         public EncryptionKeyRing MintOnto(EncryptionKeyRing existing)
         {
-            return store.MintOnto(existing);
+            ArgumentNullException.ThrowIfNull(existing);
+
+            return store.MintOnto(existing.Without(LegacyDefaultEncryptionKey.Id));
         }
 
         public void Dispose()
