@@ -496,6 +496,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISecretCustodyReader>(services => services.GetRequiredService<ISecretCustodyService>());
             builder.Services.AddScoped<IPublishedKeySecretCount, PublishedKeySecretCount>();
             builder.Services.AddScoped<IReferencedKeyIds, ReferencedKeyIds>();
+            builder.Services.AddScoped<IStoredSecretSummary, StoredSecretSummaryReader>();
         }
 
         // Asked for lazily, and only on the one path that has nowhere durable to keep a key: every other

@@ -28,6 +28,10 @@ namespace Lighthouse.Backend.API
     public sealed class EncryptionController : ControllerBase
 #pragma warning restore S6960
     {
+        private readonly IEncryptionKeyRingHolder keyRingHolder;
+
+        private readonly IConfiguration configuration;
+
         private const string KeyStorePathSetting = "Encryption:KeyStorePath";
 
         private const string DataProtectionKeyStorePathSetting = "Lighthouse:DataProtection:KeyStorePath";
@@ -35,10 +39,6 @@ namespace Lighthouse.Backend.API
         private const string DatabaseProviderSetting = "Database:Provider";
 
         private const string DatabaseConnectionStringSetting = "Database:ConnectionString";
-
-        private readonly IEncryptionKeyRingHolder keyRingHolder;
-
-        private readonly IConfiguration configuration;
 
         private readonly IWebHostEnvironment environment;
 
@@ -49,9 +49,10 @@ namespace Lighthouse.Backend.API
         // reviewer has to keep noticing, which is why it is a second dependency onto the same object.
         private readonly ISecretCustodyReader secretReader;
 
-        private readonly IPublishedKeySecretCount publishedKeySecrets;
-
-        private readonly IReferencedKeyIds referencedKeys;
+        // Both facts the state payload needs about the stored secrets, asked as one question. They read
+        // the same three columns for the same screen, and two ports here would be two chances for a
+        // caller to ask for one and forget the other.
+        private readonly IStoredSecretSummary storedSecrets;
 
         private readonly ILogger<EncryptionController> logger;
 
@@ -61,8 +62,7 @@ namespace Lighthouse.Backend.API
             IWebHostEnvironment environment,
             ISecretCustodyService custodyService,
             ISecretCustodyReader secretReader,
-            IPublishedKeySecretCount publishedKeySecrets,
-            IReferencedKeyIds referencedKeys,
+            IStoredSecretSummary storedSecrets,
             ILogger<EncryptionController> logger)
         {
             this.keyRingHolder = keyRingHolder ?? throw new ArgumentNullException(nameof(keyRingHolder));
@@ -70,8 +70,7 @@ namespace Lighthouse.Backend.API
             this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
             this.custodyService = custodyService ?? throw new ArgumentNullException(nameof(custodyService));
             this.secretReader = secretReader ?? throw new ArgumentNullException(nameof(secretReader));
-            this.publishedKeySecrets = publishedKeySecrets ?? throw new ArgumentNullException(nameof(publishedKeySecrets));
-            this.referencedKeys = referencedKeys ?? throw new ArgumentNullException(nameof(referencedKeys));
+            this.storedSecrets = storedSecrets ?? throw new ArgumentNullException(nameof(storedSecrets));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -79,12 +78,14 @@ namespace Lighthouse.Backend.API
         [ProducesResponseType<EncryptionStateDto>(StatusCodes.Status200OK)]
         public async Task<ActionResult<EncryptionStateDto>> GetEncryptionState(CancellationToken cancellationToken)
         {
+            var stored = await storedSecrets.ReadAsync(cancellationToken);
+
             return Ok(new EncryptionStateDto(
                 keyRingHolder.Current,
                 WhereTheKeyIsKept().Directory,
-                await publishedKeySecrets.CountAsync(cancellationToken),
+                stored.UnderThePublishedKey,
                 configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey),
-                await referencedKeys.ReadAsync(cancellationToken),
+                stored.KeyIdsSeen,
                 WhatTheKeyArrivedIn()));
         }
 

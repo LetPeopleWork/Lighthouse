@@ -161,8 +161,7 @@ namespace Lighthouse.Backend.Tests.API
                 environment.Object,
                 custodyService,
                 custodyService,
-                new NothingIsUnderThePublishedKey(),
-                new EveryKeyOnTheRingIsInUse(),
+                new StoredSecretSummaryReader(new NothingIsUnderThePublishedKey(), new EveryKeyOnTheRingIsInUse()),
                 logger.Object)
             {
                 ControllerContext = new ControllerContext
