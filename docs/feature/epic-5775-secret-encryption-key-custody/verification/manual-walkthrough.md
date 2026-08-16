@@ -325,8 +325,9 @@ Filled in live. Verdict is the operator's, not inferred from code.
 | A2 binary fresh (SQLite, v26.8.16.7) | **PASS** | `generated for this instance (k-2026-08-16-01) · …/Lighthouse-linux-x64-v26.8.16.7/keys` — **visible in the terminal**, unlike standalone | *generated for this instance*, `k-2026-08-16-01`, 2 chips, Kept in = `…/keys`, no warning | — | Key-store case 3 confirmed: `<app dir>/keys`, not `data-protection-keys`. **Only one key directory exists** — `keys/` holds the ring, the Data Protection key and `oauth-state-secret.protected`; no second folder to confuse an operator or miss in a backup. On the banner: "you don't need to see it, but for debugging/logs it's nice to have" — so F-1 is about the panel carrying the load, not about making the banner louder. |
 | A2c binary, key supplied by configuration | **PASS**, behaviour — **Bug #5776 confirmed dead** | `supplied by configuration (k-cfg-afa1daf1) · …/a2c/keys` | *supplied by configuration*, `k-cfg-afa1daf1`, 2 chips, **Rotate absent**, Move + Check only | the rotation instruction is unactionable (F-15) | `Encryption__Key` reaches the code and the id is derived from the value, not random. `keys/` exists and holds the Data Protection key + `oauth-state-secret.protected` but **no `encryption-keyring.protected`** — nothing minted, exactly right. Findings F-14, F-15. |
 | A2d binary, key supplied *after* secrets exist | **PASS**, behaviour — refuses correctly | `FATAL: This instance has stored credentials and not one of them can be read with the key it started on…` | — | — | Refused to start, wrote nothing. The reassurance sentence ("Nothing has been changed and nothing is lost") is the strongest copy in the feature — it is what stops a stuck operator deleting their key store. Neither remedy offered is the one that fits: F-16, F-17. **Recovery verified**: removing the variable and restarting brings back `generated for this instance (k-2026-08-16-01)` and the team refreshes — so F-16/F-17 are wording, not blocking. |
-| A3 docker+volume fresh | | | | | |
-| A4 docker+postgres fresh | | | | | |
+| A3 docker, documented one-command install | **FAIL — blocking**, see F-22 | — | — | `server.md:81` + the website's copy button + `configuration.md:165` all carry a command that does not run on Linux | `Access to the path '/app/Data/keys' is denied.` — exit 1, nothing created. **Not a regression**: v26.8.14.1 fails the same command with `SQLite Error 14: 'unable to open database file'`. |
+| A3-fix docker, named volume at `/app/data` | **PASS**, on **both** releases | `generated for this instance (k-2026-08-16-01) · /app/data/keys` | — | — | The one-command replacement: no flags, no ownership setup, works on 26.8.14.1 and 26.8.16.7. |
+| A4 docker+postgres, shipped `examples/postgres/docker-compose.yml` | **FAIL — blocking**, see F-24 | first start: `the key published with the product (k-legacy-default) · /app/data-protection-keys` + no-durable-store warning. After restart: `FATAL … nothing stored yet, so Lighthouse will not start` | — | the example sets no encryption key and no key-store path | Starts on `docker compose up`, then **crash-loops on the first restart** under `restart: always`. |
 | A4b remedy: key | | | | | |
 | A4c remedy: key store path | | | | | |
 | B1 standalone upgrade — half 1 | **PASS** | `generated for this instance (k-2026-08-16-01) · …/data-protection-keys` | 2 chips (`k-2026-08-16-01`, `k-legacy-default`); warning fired: `1 stored credentials are still readable with the key published with Lighthouse…` + *Move them now*; check: `0 on the active key, 1 on an earlier key` | — | Launch normal, no prompt. Team refreshed **before** touching any encryption UI — the credential written by v26.8.14.1 still authenticates. `encryption-keyring.protected` created; the old DP key and `oauth-state-secret.protected` untouched. Layout + duplication findings F-8, F-9. |
@@ -532,6 +533,81 @@ confirming when the server and Docker runs exercise those states for real.
 _(to be filled)_
 
 ### Behaviour defects (not wording)
+
+**F-22 · BLOCKING · The documented one-command Docker install does not run on Linux — on either
+release** (A3, 2026-08-16). The command in `docs/Installation/server.md:81`, duplicated byte-for-byte
+in the website's copy-to-clipboard button (`website/src/lib/lighthouseDownloads.ts:10`) and again at
+`configuration.md:165`, bind-mounts a host directory at `/app/Data`. The container runs as
+`uid=1654(app)`; a host directory created by an ordinary user is `uid=1000`, mode 755. The container
+cannot write into it.
+
+- **v26.8.16.7**: `FATAL: Access to the path '/app/Data/keys' is denied.`
+- **v26.8.14.1**: `FATAL: SQLite Error 14: 'unable to open database file'.`
+
+So this is **pre-existing, not caused by this epic** — the epic only made it fail earlier and with a
+clearer message. It is invisible on Docker Desktop for macOS/Windows, whose file-sharing layer
+translates ownership, which is presumably why it has gone unreported. Linux hosts hit it every time.
+
+*Verified fix, one command, no flags, both releases:* mount a **named volume** at the lowercase
+`/app/data` — the path the image already prepares and chowns:
+
+```bash
+docker run -d -p 8081:443 -p 8080:80 \
+  -v lighthouse-data:/app/data \
+  -e "Database__ConnectionString=Data Source=/app/data/LighthouseAppContext.db" \
+  ghcr.io/letpeoplework/lighthouse:latest
+```
+
+Docker initialises a named volume from the image path's contents *and ownership*, so `app` owns it and
+there is nothing for the operator to do. Verified green on 26.8.14.1 and 26.8.16.7.
+
+*Rejected alternative:* bind mount plus `--user $(id -u):$(id -g)` works on 26.8.16.7 but **fails on
+26.8.14.1** with `Access to the path '/app/data-protection-keys' is denied` — the old build kept its
+key store in a root-prepared image path. Worth noting that this epic moving the key store beside the
+database is exactly what makes running as an arbitrary uid viable at all. It is also not portable:
+`$(id -u)` has no PowerShell equivalent for a copy-paste command.
+
+*Consequence for the backup story.* A named volume takes the data off the host filesystem, which
+changes the advice in F-13/F-19 — but arguably for the better here, since the database and the key end
+up in one volume and cannot be backed up separately by accident.
+
+**F-23 · The image prepares `/app/data` and every document mounts `/app/Data`** (A3, 2026-08-16).
+`Dockerfile:61` runs `mkdir -p /app/logs /app/data && chown -R app:app /app/logs /app/data`. Every doc,
+the website command and the compose examples mount **`/app/Data`**, capital D. On Linux those are two
+different directories, so the one directory the image goes out of its way to prepare is never the one
+used. Fixing this is what makes F-22's named-volume command work without any further ceremony.
+
+**F-24 · BLOCKING · The shipped Postgres compose example starts once, then crash-loops forever**
+(A4, 2026-08-16). `examples/postgres/docker-compose.yml` — linked from `configuration.md:173` and
+pinned to `dev-latest`, so its users are already on the new build — sets `Database__Provider: postgres`,
+mounts only `./logs`, and sets **no `Encryption__Key` and no `Encryption__KeyStorePath`**. That is
+key-store case 4: no durable store, minting forbidden.
+
+Observed sequence, verbatim:
+
+1. `docker compose up -d` → **starts**, reporting `the key published with the product
+   (k-legacy-default)` plus the no-durable-store warning. It starts because the Postgres schema does
+   not exist yet at bootstrap, so the stored-secret presence probe cannot answer, and *cannot tell*
+   deliberately warns rather than refuses.
+2. Any restart — `docker compose restart`, a host reboot, a `down`/`up` — now finds the schema present
+   and empty, which is `HoldsNone`, and **refuses**: `FATAL: … it has nothing stored yet, so Lighthouse
+   will not start on the key published with the product.`
+3. `restart: always` turns that into an endless crash loop repeating the same FATAL.
+
+The three-valued probe is right and the refusal is right. The defect is that the two of them together
+make a shipped example that appears to work and then bricks — and the window in which it bricks is
+exactly the first-run window, before the operator has configured a connection. Configure a connection
+first and stored secrets exist, so every later start warns and runs; restart before configuring
+anything and the stack will not come back.
+
+Worse, step 1 is the only moment the operator is told anything, and it is a log line in a container
+they have no reason to be tailing. By the time they see a message they can act on, the application will
+not start.
+
+*Fix.* The example must supply custody: either `Encryption__Key`, or `Encryption__KeyStorePath` on a
+mounted volume. Whichever is chosen, the same treatment is owed to `docs/Installation/configuration.md`
+where the Postgres setup is described, because an operator writing their own compose file from that
+page lands in the identical trap.
 
 **F-20 · BLOCKING · An operator can be pinned to the published key and then told they are safe**
 (B2b, 2026-08-16). Observed end to end, not inferred.
