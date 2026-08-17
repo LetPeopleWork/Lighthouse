@@ -94,14 +94,18 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private async Task<SecretReadabilityReport> WalkAsync(bool moveThem, CancellationToken cancellationToken)
         {
-            var activeKeyId = keyRingHolder.Current.ActiveKey.Id;
+            // Taken once and then used for all three things a pass decides - what is left to do, what each
+            // row is written under, and what the report is labelled with. An operator replacing a mounted
+            // keys file while this runs is a pair of actions the product invites, and asking again per row
+            // would let the three answers come apart without anything noticing.
+            var activeKey = keyRingHolder.Current.ActiveKey;
 
             // A pass that writes asks the database what is left to do, and everything already on the key in
             // force is not it. A pass that only looks is answering a different question - what is stored -
             // and filtering the answered-already rows out of it would leave a freshly rotated instance
             // reporting nothing at all.
             var candidates = await CandidatesAsync(
-                moveThem ? SecretEnvelope.Prefix + activeKeyId + "." : null, cancellationToken);
+                moveThem ? SecretEnvelope.Prefix + activeKey.Id + "." : null, cancellationToken);
 
             var walked = new List<StoredSecretRecord>(candidates.Count);
 
@@ -109,14 +113,14 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                walked.Add(await WalkPastAsync(candidate, moveThem, cancellationToken));
+                walked.Add(await WalkPastAsync(candidate, activeKey, moveThem, cancellationToken));
             }
 
-            return new SecretReadabilityReport(activeKeyId, walked);
+            return new SecretReadabilityReport(activeKey.Id, walked);
         }
 
         private async Task<StoredSecretRecord> WalkPastAsync(
-            Candidate candidate, bool moveThem, CancellationToken cancellationToken)
+            Candidate candidate, EncryptionKey activeKey, bool moveThem, CancellationToken cancellationToken)
         {
             var secret = cryptoService.Read(candidate.StoredValue);
 
@@ -125,7 +129,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 SecretState.Unreadable => SecretMoveOutcome.CouldNotBeRead,
                 SecretState.LegacyPlaintext => SecretMoveOutcome.NotEncrypted,
                 _ when !moveThem => SecretMoveOutcome.Unmoved,
-                _ => await MoveAsync(candidate, cryptoService.Encrypt(secret.PlainText!), cancellationToken),
+                _ => await MoveAsync(candidate, cryptoService.Encrypt(secret.PlainText!, activeKey), cancellationToken),
             };
 
             return new StoredSecretRecord(

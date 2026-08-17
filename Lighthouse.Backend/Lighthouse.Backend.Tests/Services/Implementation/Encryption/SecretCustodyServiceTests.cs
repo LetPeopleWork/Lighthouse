@@ -118,6 +118,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
+        public async Task APassWhoseRingIsReplacedWhileItRuns_WritesEverySecretUnderTheKeyItStartedOn()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            var report = await Rotating(holder, ReplacingTheRingAfter(0, cryptoService, holder, NewerKey, NewKey, OldKey), new AMinterThatMints(NewerKey))
+                .ReEncryptAsync();
+
+            var reader = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+            var pat = reader.Read(await StoredOptionAsync(PersonalAccessToken));
+            var clientSecret = reader.Read(await StoredOptionAsync(ClientSecret));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(pat.KeyId, Is.EqualTo(clientSecret.KeyId),
+                    "a pass split across two keys is one an operator cannot reason about, whichever of the two they still hold");
+                Assert.That(pat.KeyId, Is.EqualTo(NewKey.Id));
+                Assert.That(report.ActiveKeyId, Is.EqualTo(NewKey.Id));
+            }
+        }
+
+        [Test]
         public async Task ASecretNobodyCanRead_IsLeftByteForByte_AndIsNamedByConnectionAndField()
         {
             await StoreAsync(ClientSecret, Under(KeyNobodyHolds, "unrecoverable"));
@@ -972,6 +997,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         private static string Under(EncryptionKey key, string credential)
         {
             return SecretEnvelope.Protect(credential, key.Id, key.Material.Span).Format();
+        }
+
+        // Stands where the reload timer would: an operator replaces the mounted keys file part-way through
+        // a pass, which is the pair of actions this feature invites rather than a strange thing to do.
+        private static WriterThatGetsThereFirst ReplacingTheRingAfter(
+            int rows, ICryptoService inner, EncryptionKeyRingHolder holder, params EncryptionKey[] replacement)
+        {
+            return new WriterThatGetsThereFirst(
+                inner,
+                () =>
+                {
+                    holder.Replace(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, replacement));
+                    return Task.CompletedTask;
+                },
+                rows);
         }
 
         private static CryptoService CryptoOver(params EncryptionKey[] keys)
