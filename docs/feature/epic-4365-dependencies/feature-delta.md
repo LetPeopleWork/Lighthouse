@@ -1181,3 +1181,348 @@ Not invoked. The mandatory consolidated review fires at the end of DISTILL with 
 the same reasoning recorded at the end of DISCUSS. Per-wave triggers were checked: the open forks are
 stated-open-with-a-recommendation rather than ambiguities a reviewer could resolve without the
 maintainer.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+**Artifact model**: this project uses the **unified feature-delta model** — each wave appends
+`## Wave: <NAME> / [REF] <Section>` sections to the single `feature-delta.md`, and wave decisions live
+in that file's *Wave Decisions Summary* sections. There are no `discuss/`, `design/` or `distill/`
+subdirectories and none is owed; their absence is the model, not a missing artifact.
+
+- ✓ `docs/feature/epic-4365-dependencies/feature-delta.md` — all 1183 lines, both waves, read in full.
+- ✓ `docs/feature/epic-4365-dependencies/slices/slice-01-ado-dependencies-visible.md`
+- ✓ `docs/feature/epic-4365-dependencies/slices/slice-02-dependency-detail-and-warnings.md`
+- ✓ `docs/feature/epic-4365-dependencies/slices/slice-03-jira-and-linear-dependencies.md`
+- ✓ `docs/feature/epic-4365-dependencies/slices/slice-04-portfolio-dependency-field.md`
+- ✓ `docs/product/journeys/epic-4365-dependencies.yaml` — one journey, three jobs, three shared
+  artifacts, **eight `error_paths`**, every one of which now carries at least one scenario.
+- ✓ `docs/product/jobs.yaml` — the three `feature_context: epic-4365-dependencies` jobs; the other
+  three moved to `epic-5792-dependency-aware-forecasting` with the split.
+- ✓ `docs/product/architecture/brief.md` — `## Application Architecture — Feature dependencies (DESIGN
+  delta)` (:5657) plus the epic #5375 and #5687 deltas it builds on. **There is no
+  `## For Acceptance Designer` section in this repository's brief** and no sibling feature has one —
+  driving ports come from the delta's own *Driving Ports* tables instead, which is the house pattern.
+- ✓ `docs/product/kpi-contracts.yaml` — read in full. **No `OUT-4365-*` rows exist**; this epic's four
+  KPIs live in the delta's *Outcome KPIs* table only. Soft gate, recorded not silently skipped.
+- ✓ `docs/architecture/atdd-infrastructure-policy.md` — applied under the default `--policy=inherit`.
+- ✓ `docs/ci-learnings.md` — read before authoring anything that becomes code.
+- ✓ `docs/product/outcomes/registry.yaml` — **verified rather than assumed**: the file exists but is an
+  empty stub (`schema_version: "0.1"`, `outcomes: []`). The outcomes-registry pipeline is present but
+  unadopted in this repository — zero `OUT-N` rows across all features. See *Register Outcomes* below.
+- ✓ **Code read to ground the traps rather than re-derive them**:
+  `AzureDevOpsWorkTrackingConnector.GetParentReferenceForWorkItems` (the early return and the single
+  `WorkItemExpand.Relations` request it guards), `LinearWorkTrackingConnector.cs:343`
+  (`Identifier?.ToLowerInvariant()`), `FetchFingerprint.RegisteredProperties` (the *how the answer is
+  read* group and its `FetchShapingPropertyGuardTest`), `WarningsIndicator.tsx` (two warning kinds plus
+  the all-clear), and the sibling test trees named in *Test Placement*.
+- ⊘ `docs/feature/epic-4365-dependencies/devops/` — **not found. No DEVOPS wave ran.** Per the
+  graceful-degradation matrix this is a WARN, not a block. **The project default environment matrix is
+  used**: backend acceptance on the real ASP.NET host with a real EF context (SQLite and Postgres in
+  CI lockstep), frontend on Vitest, end-to-end on Playwright against a locally started application
+  with seeded demo data. No container-backed environment is required by any scenario in this epic —
+  nothing here touches concurrency, migration locking or a shared status store.
+- ⊘ `docs/feature/epic-4365-dependencies/{discover,diverge,spike}/` — not found. No such wave ran.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation
+
+**Reconciliation passed — 0 contradictions.**
+
+DISCUSS's *Locked Decisions* + *Wave Decisions Summary* were checked one by one against DESIGN's
+*Decisions*, *Reuse Analysis* and *Forks and upstream corrections*. Five points where DESIGN diverges
+from DISCUSS were found; **all five are recorded forks with a stated verdict**, not live
+contradictions, so none of them leaves a scenario ambiguous:
+
+| Fork | DISCUSS said | DESIGN says | Verdict | Effect on scenarios |
+|---|---|---|---|---|
+| F-2 | a connector port method is owed | no port method | DESIGN stands, evidenced | none — no scenario asserts a port shape |
+| F-3 | the override sits on the shared query-owner interface | it sits on the Portfolio | DESIGN stands; slice 04's brief is corrected by the fork rather than by an edit | slice-04 scenario asserts the setting is offered per Portfolio and **nowhere on a Team** |
+| F-4 | copy the parent early return "verbatim in shape" | test **both** overrides | **SETTLED by the maintainer, 2026-08-14** | two slice-01 scenarios: the Portfolio path gains dependencies, the Team path is untouched |
+| F-5 | cycles detected at ingestion | cycles detected inside the one policy, nothing stored | DESIGN stands; a stored flag would be the second decision KPI-5 forbids | loop scenario asserts the warning, not a stored flag |
+| F-8 | journey error path spoke of refusing a declaration | no declaration exists to refuse | **already applied** — the journey YAML now reads "Loops are only ever discovered in data" | no scenario for an in-Lighthouse declaration; none exists |
+
+F-10 (commit approval) is likewise resolved: normal slice-boundary discipline, the approval gate binds
+Epic #5792 only.
+
+**DEVOPS**: no wave ran, so no DEVOPS decision can contradict anything. Recorded as a warning above.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports** (from the DESIGN *Driving Ports* table): the Portfolio refresh; the existing
+  Feature list read; the new read-only `GET /api/{v1,latest}/features/{id}/dependencies`; the Depends
+  On column on both Feature surfaces; the dependency dialog; the dependency warnings in the existing
+  warnings column; the Portfolio advanced-settings dependency-field selector. Every one is covered
+  below.
+- **Environment matrix**: project default (no DEVOPS wave) — real ASP.NET host + real EF context,
+  SQLite and Postgres in CI lockstep for the additive migration; Vitest for the frontend; Playwright
+  with seeded demo data for the walking skeleton.
+- **Real data**: real Predecessor links in the dogfood Azure DevOps project covering a same-team pair,
+  a cross-team pair, a cross-Portfolio pair, a blocker positioned below its dependent, a two-Feature
+  loop, and a blocker whose Team has no measured delivery. DISCUSS records this as a prerequisite
+  because Lighthouse has no way to author one. Slice 02's loop scenario falls back to fixtures if they
+  are not in place — say which happened in the slice verdict rather than leaving it implied.
+- **Reconciliation gate**: passed, 0 contradictions (above).
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags)
+
+Scenario SSOT is `docs/feature/epic-4365-dependencies/acceptance/*.feature`. Six files, **44
+scenarios**. Every scenario carries a `@contract-shape:` tag.
+
+| # | Scenario | File | Tags | ACs |
+|---|---|---|---|---|
+| 1 | A product owner sees, without leaving Lighthouse, that a Feature is waiting on two others | walking-skeleton | `@walking_skeleton @real-io @driving_adapter @us-01 @slice-01` · bounded-change | US-01 end to end |
+| 2 | Predecessor links recorded in the tracker become a count on the Feature row | milestone-1 | `@real-io @driving_port @us-01` · bounded-change | AC-1.1 |
+| 3 | The same count is read on both Feature lists, because there is only one of them | milestone-1 | `@real-io @driving_adapter @us-01` · pure-function | AC-1.2 |
+| 4 | A Feature waiting on nothing reads as nothing, not as zero | milestone-1 | `@edge @driving_adapter` · pure-function | AC-1.3 |
+| 5 | A link pointing at something Lighthouse does not keep as a Feature is passed over | milestone-1 | `@edge @driving_port` · bounded-change | AC-1.4 |
+| 6 | A link removed in the tracker lowers the count on the next refresh | milestone-1 | `@regression @driving_port` · bounded-change | AC-1.5 |
+| 7 | Reading dependencies changes nothing else about a Feature | milestone-1 | `@regression @driving_port` · unbounded-preservation | AC-1.6 |
+| 8 | The column speaks the instance's own vocabulary | milestone-1 | `@edge @terminology @driving_adapter` · pure-function | AC-1.7 |
+| 9 | A Portfolio that already names its own parent field still gets its dependencies | milestone-1 | `@error @regression @driving_port` · unbounded-preservation | **AC-1.9 (F-4)** |
+| 10 | A Team that names its own parent field is completely unaffected | milestone-1 | `@error @regression @driving_port` · unbounded-preservation | **AC-1.9 (F-4, the other call site)** |
+| 11 | Reading dependencies costs the refresh nothing extra to speak of | milestone-1 | `@kpi @real-io` · unbounded-preservation | AC-1.8 / KPI-3 |
+| 12 | Opening the list of Features one is waiting on | milestone-2 | `@driving_adapter @us-02` · pure-function | AC-2.1 |
+| 13 | Each entry says where Lighthouse read it from | milestone-2 | `@driving_adapter @us-02` · pure-function | AC-2.2 |
+| 14 | An entry Lighthouse cannot act on says so, in words the reader already uses | milestone-2 | `@driving_adapter @us-02` · pure-function | AC-2.3 |
+| 15 | A Feature the reader may not see is named as withheld, never quietly dropped | milestone-2 | `@error @driving_adapter @us-02` · pure-function | AC-2.5 |
+| 16 | A reader who may not change anything sees the same list and is offered no action | milestone-2 | `@error @rbac @driving_adapter @us-02` · pure-function | AC-2.4 |
+| 17 | Waiting on a Feature outside the Portfolio raises a warning that names it | milestone-2 | `@error @driving_adapter @us-03` · pure-function | AC-3.1 |
+| 18 | Waiting on a Feature positioned below raises a different warning, and nothing is moved | milestone-2 | `@error @driving_adapter @us-03` · unbounded-preservation | AC-3.2 |
+| 19 | A loop warns on every Feature in it and names the others | milestone-2 | `@error @driving_adapter @us-03` · pure-function | AC-3.3 (D7) |
+| 20 | A dependency with nothing wrong with it raises no warning at all | milestone-2 | `@edge @driving_adapter @us-03` · pure-function | **AC-3.4, phrased against the verdict** |
+| 21 | A Feature waiting on one whose Team has no measured delivery is told why | milestone-2 | `@edge @driving_adapter @us-03` · pure-function | AC-2.3 / D8 verdict half |
+| 22 | The warnings that already existed are untouched | milestone-2 | `@regression @driving_adapter @us-03` · unbounded-preservation | AC-3.5 |
+| 23 | No dependency warning uses the word that already names something else | milestone-2 | `@regression @terminology @us-03` · unbounded-preservation | AC-3.6 (D10) |
+| 24 | Exactly one place decides whether a dependency can be acted on | milestone-2 | `@architecture @kpi @us-03` · unbounded-preservation | **KPI-5 / SA-12** |
+| 25 | The verdict is worked out from what the page already loaded | milestone-2 | `@kpi @real-io @us-03` · pure-function | OQ-6 |
+| 26 | A Jira Feature's inward links become dependencies, and its outward ones do not | milestone-3 | `@real-io @driving_port @us-09` · bounded-change | AC-9.1 |
+| 27 | A Linear Feature's dependencies resolve even though the tracker names them differently | milestone-3 | `@error @regression @real-io @driving_port @us-09` · bounded-change | **AC-9.2 — the Linear trap** |
+| 28 | Linear's other direction contributes nothing | milestone-3 | `@edge @real-io @driving_port @us-09` · bounded-change | AC-9.2 (D14) |
+| 29 | A Jira instance that has renamed its link type says so instead of failing quietly | milestone-3 | `@error @us-09` · pure-function | Architectural Enforcement row |
+| 30 | Reading Jira's link information changes nothing else Lighthouse already read | milestone-3 | `@regression @real-io @us-09` · unbounded-preservation | AC-9.3 |
+| 31 | Azure DevOps behaviour is unchanged by the two trackers added beside it | milestone-3 | `@regression @real-io @us-09` · unbounded-preservation | AC-9.7 |
+| 32 | A tracker with no dependency link yields nothing and complains about nothing (× ServiceNow, CSV) | milestone-3 | `@edge @us-09` · pure-function | AC-9.4 (D13) |
+| 33 | Everything the earlier slices delivered behaves the same on every tracker (× ADO, Jira, Linear) | milestone-3 | `@driving_adapter @us-09` · pure-function | **AC-9.5 — parameterised, not duplicated** |
+| 34 | Reading dependencies costs each tracker's refresh nothing extra (× Jira, Linear) | milestone-3 | `@kpi @real-io @us-09` · unbounded-preservation | AC-9.6 |
+| 35 | A Portfolio names the field that carries its dependencies, and the Feature list fills in | milestone-4 | `@driving_adapter @us-04` · bounded-change | AC-4.1 |
+| 36 | Naming a field replaces the tracker's own link rather than adding to it | milestone-4 | `@us-04` · unbounded-preservation | **AC-4.2 — replace, not union** |
+| 37 | The field is read forgivingly, and an empty one is not a problem (× 5 field contents) | milestone-4 | `@edge @us-04` · bounded-change | AC-4.3 |
+| 38 | One mistyped entry does not throw away the good ones beside it | milestone-4 | `@error @us-04` · bounded-change | AC-4.4 (D15) |
+| 39 | A Portfolio that names no field behaves exactly as it did before this slice | milestone-4 | `@regression @us-04` · unbounded-preservation | AC-4.5 |
+| 40 | Changing which field carries dependencies makes the next refresh read everything again | milestone-4 | `@regression @us-04` · bounded-change | **the fetch-fingerprint trap** |
+| 41 | The setting is offered per Portfolio, from that connection's own fields, to the right people | milestone-4 | `@rbac @us-04` · pure-function | AC-4.6 (F-3) |
+| 42 | The setting works on an instance with no premium licence, and moves no date | milestone-4 | `@edge @us-04` · unbounded-preservation | AC-4.7 (D9) |
+| 43 | Adding dependency information to an instance changes no forecast anywhere (× 4 slices) | epic-boundary | `@regression @kpi @architecture @slice-01..04` · unbounded-preservation | **AC-1.10 / KPI-8, at every slice** |
+| 44 | The forecasting code is not touched by this epic at all | epic-boundary | `@regression @architecture @slice-01..04` · unbounded-preservation | the boundary as a structural claim |
+
+**Error / edge / regression coverage = 29 / 44 = 66%** — comfortably above the ≥40% target. Every one
+of the journey's eight `error_paths` has at least one scenario (#17 outside-Portfolio, #19 loop, #21
+no measured delivery, #5 not-a-Feature, #6 link removed, #38 typo, #15 unreadable Feature, #42 no
+licence).
+
+**AC traceability**: all 35 acceptance criteria (AC-1.1…1.10, 2.1…2.5, 3.1…3.6, 4.1…4.7, 9.1…9.7) are
+covered. Four scenarios (#10, #24, #29, #40) carry no AC number — they come from DESIGN's
+*Architectural Enforcement* table and F-4's second call site, and are the reason those rows exist.
+
+**Out of scope, deliberately unwritten**: US-05…US-08, D2, D3, SA-1…SA-7, SA-15, ADRs 154/155/156/159,
+KPI-2/4/6/7 — all of them Epic #5792's. **No scenario in this wave asserts a forecast behaviour.**
+Identifier gaps are the split, not an omission.
+
+---
+
+## Wave: DISTILL / [REF] WS Strategy + Two-Tier Composition
+
+- **Walking skeleton**: exactly one — `walking-skeleton.feature`, `@walking_skeleton @driving_adapter
+  @real-io`, slice 01. It closes the end-to-end loop through the production composition root: a real
+  Predecessor link in the tracker → the refresh that already runs → stored against the Feature → read
+  off the Features view in a real browser. Litmus: a product owner confirms "yes, that is what I
+  need". DISCUSS's *Strategy B* (extend an existing skeleton) is honoured — no new page, no new
+  entry point, the existing Features view and Page Object are the surface.
+- **Architecture-of-Reference treatment** (project defaults, unchanged): driving ports (refresh, the
+  Feature list read, the new dependency read, the UI) = real adapter. Driven-internal (the Feature
+  store and the new reference collection via EF) = **real**. Driven-external / non-deterministic (the
+  three trackers, the licence service, the forecast) = faked at the boundary per the project
+  Infrastructure Policy.
+- **Tier A only** (Mandate 10). The journey is chained (Pillar 2 is active across slices), but the
+  input space is not domain-rich — the observables are a count, a bounded three-value reason, a
+  warning presence and a rendered list. More decisively: **the host is C# / NUnit / Playwright, not
+  the Python + Hypothesis pilot**, so `RuleBasedStateMachine`, `InMemoryComposition` and
+  `tests/common/state_delta` have no implementation here and none is bootstrapped. Recorded, not
+  silently skipped. The one place a generative shape would have paid — the loop detector over
+  arbitrary edge sets — is covered instead by the hundred-Feature chain assertion inside scenario #19
+  and by the mutation-testing floor DESIGN made non-negotiable for that component.
+- **Mandate 8 (`assert_state_delta` universes)**: not applicable in this host stack for the same
+  reason. Its *intent* is carried by the `@contract-shape:` tag on every scenario and by the
+  `unbounded-preservation` scenarios (#7, #9, #10, #30, #31, #36, #39, #43, #44), which are exactly
+  the "and nothing else moved" assertions the universe guard exists to force.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| Azure DevOps connector, relation path | YES | #1 (walking skeleton), #2, #5, #6, #9, #10, #31 |
+| Jira connector — the widened field list carrying `issuelinks` | YES | #26, #29, #30, #33, #34 |
+| Linear connector — the dependencies selection and its identifier case | YES | #27, #28, #33, #34 |
+| Dependency storage on the Feature (new collection + additive migration, SQLite and Postgres) | YES | #2, #6 (reconcile replaces wholesale), #7 (synced values untouched), #37 |
+| Fetch fingerprint | YES | #40 |
+| Feature read path (the new collection joining the existing include chain) | YES | #3, #25 |
+| Feature ordering (read only, owned by epic #5375) | YES | #18 |
+| ServiceNow and CSV connectors | YES — negative | #32, which asserts they yield nothing and error about nothing |
+
+Zero **NO — MISSING** rows.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter (DESIGN) | Exercised through its own protocol by |
+|---|---|
+| Portfolio refresh (scheduled + manual) | #2, #5, #6, #7, #9, #10, #11, #26–#28, #30–#32, #35–#40, #42 — the real refresh raised on the real host, not a service call |
+| `GET /api/{v1,latest}/features` (Feature list, extended payload) | #3 — real host, RBAC-filtered result set |
+| `GET /api/{v1,latest}/features/{id}/dependencies` (new, read-only) | #12–#16 — real host; #16 also asserts no write route exists at all |
+| Features view `/features` (UI, epic #5375's surface) | **#1 walking skeleton** (Playwright through the real browser, via the existing `FeaturesPage` Page Object), plus #3, #4, #8, #17–#23, #33 |
+| Portfolio detail Feature list (UI) | #3, #33 — the same column factory, asserted by the column being defined once |
+| Dependency dialog (UI, opened from the row) | #12–#16, #35, #38 |
+| Dependency warnings in the existing warnings column (`WarningsIndicator`) | #17–#23 |
+| Portfolio → Settings → Advanced → dependency field selector (UI) | #35, #41 |
+
+Zero uncovered entry points. Every UI row is exercised through the real user interface, never by
+calling the component that backs it.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+Precedent is the direct sibling `epic-5375-manual-sorting` (same grid, same column factory, same
+surface) plus `epic-5687-faster-updates` for the fetch fingerprint. Every path below has a real
+existing file beside it.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-4365-dependencies/acceptance/*.feature` | `docs/feature/epic-5427-percentiles-over-time/acceptance/` |
+| Per-slice acceptance / integration | `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/{DependenciesAcceptanceTest.cs, Slice0N…Scenarios.cs, Slice0N…Specifications.cs}` | `API/Integration/ManualSorting/{ManualSortingAcceptanceTest.cs, Slice01FeaturesViewScenarios.cs, Slice01FeaturesViewSpecifications.cs}` |
+| Azure DevOps connector | `…/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs` | `AzureDevOpsIncrementalSyncTest.cs`, `AzureDevOpsWorkTrackingConnectorTest.cs` (same folder) |
+| Jira connector | `…/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs` | `JiraWorkTrackingConnectorTest.cs` |
+| Linear connector (identifier case) | `…/WorkTrackingConnectors/Linear/LinearDependencyIdentifierTest.cs` | `LinearWorkTrackingConnectorHistoryParsingTest.cs` |
+| Honour policy + loop detector (pure) | `…/Services/Implementation/Dependencies/{DependencyHonourPolicyTest.cs, DependencyCycleDetectorTest.cs}` | `Services/Implementation/` unit tree; purity precedent `Architecture/RuleEvaluatorPurityTest.cs` |
+| Reconciler (the one writer) | `…/Services/Implementation/Dependencies/DependencyReconcilerTest.cs` | `Services/Implementation/` unit tree |
+| Model | `Lighthouse.Backend.Tests/Models/FeatureDependencyReferenceTest.cs` | `Models/FeatureTest.cs`, `Models/BlockedCountSnapshotTests.cs` |
+| Architecture seam — one honour decision, one writer, no *blocked*, forecast untouched | `Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs` | `FeatureOrderingSingleSourceArchUnitTest.cs`, `LicenseGateSingleSourceArchUnitTest.cs`, `BlockedItemSinglePathArchUnitTest.cs` |
+| Fetch fingerprint guard | `Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs` — **EXTEND** | itself; the guard already records why each registered property is there |
+| Expand-only migration guard | `Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs` — no change needed | itself |
+| Frontend — the column | `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx` | `columns.position.test.tsx` (the same file's previous new-column slice) |
+| Frontend — the warnings | `…/FeatureListDataGrid/WarningsIndicator.test.tsx` — **EXTEND** | itself |
+| Frontend — the dialog | `…/Common/DependencyDialog/DependencyDialog.test.tsx` | `FeatureListDataGrid/FeatureMoveMenu.test.tsx` |
+| End to end | `Lighthouse.EndToEndTests/tests/specs/features/FeatureDependencies.spec.ts`, driven by `tests/models/features/FeaturesPage.ts` — **EXTEND the Page Object, never an inline locator** | `tests/specs/features/{FeaturesView.spec.ts, ManualSortingMove.spec.ts}` |
+
+---
+
+## Wave: DISTILL / [REF] RED Mechanism (project reconciliation — deviates from Mandate 7)
+
+**Mandate 7's `src/` AssertionError scaffolds do NOT apply here.** This is a statically-typed,
+trunk-green C# repository: a NUnit test referencing a type that does not exist yet fails to
+**compile**, so `dotnet build` goes red and the snapshot classifies the run as BROKEN, not RED. The
+project's established mechanism — precedent `FlowEfficiencyReadApiIntegrationTest.cs` and the whole of
+epic #5427 — is **RED-by-skip**:
+
+- Executable `[Ignore("pending — DELIVER (epic-4365)")]` NUnit tests and `test.fixme` Playwright specs
+  are authored in **DELIVER, per slice, alongside the minimal type skeletons**, so `main` always
+  compiles and always stays green. Each slice un-ignores its scenarios one at a time.
+- DISTILL's committed deliverable is the compile-independent **`.feature` scenario specs** above plus
+  these `[REF]` sections. The pre-DELIVER fail-for-the-right-reason gate becomes each slice's RED
+  entry gate.
+- **The polyglot Python-pilot artifacts do not apply**: no `tests/common/state_delta` port is
+  bootstrapped, no `assert_state_delta` universe assertion is written, no Hypothesis or
+  `RuleBasedStateMachine` harness exists. Stated explicitly rather than skipped in silence. The
+  Infrastructure Policy already records this reconciliation for the whole repository.
+
+---
+
+## Wave: DISTILL / [REF] ATDD Infrastructure Policy
+
+Applied under the default `--policy=inherit`. Most ports this epic drives were already in the policy —
+the real ASP.NET host, the real EF context, the mocked `IWorkTrackingConnector` at the service seam,
+the mocked `ILicenseService`, Playwright with seeded demo data. **Two rows were appended** to *Driven
+internal (real)*, because no existing row covered them:
+
+- **`IFeatureOrdering`** — the real implementation, never mocked. The epic reads the total order for
+  the positioned-below warning and writes no position under any circumstance; substituting the
+  ordering would make scenario #18's "and Lighthouse has moved nothing" vacuous.
+- **`IForecastService` + `IRandomNumberService`, real and seed-pinned, for the `epic-boundary`
+  scenarios only** — the deliberate exception to the policy's existing `Mock<IForecastService>` row. A
+  mocked forecast cannot prove "this epic moves no date": the claim is exactly that the real
+  simulation produces identical output with and without dependency data, so the simulation has to run.
+  Every other scenario in this epic keeps the mock.
+
+**Assumption stated rather than blocked on**: the three trackers stay at the service seam — the real
+`WorkItemService` and the real EF context run, and only the connector boundary is faked — exactly as
+the policy's existing `IWorkTrackingConnector` row prescribes. The `@real-io` tag on the connector
+scenarios therefore means *real payload shapes through the real mapping and storage path*, not *a live
+call to Azure DevOps*. Live-connector coverage stays where the policy already puts it: the
+`AdoIntegration` category and the dogfood instance, once per slice.
+
+---
+
+## Wave: DISTILL / [REF] Register Outcomes
+
+**Verified, not assumed.** `docs/product/outcomes/registry.yaml` exists but is an empty stub —
+`schema_version: "0.1"`, `outcomes: []` — and no feature in this repository has ever registered a row.
+The outcomes-registry pipeline is present but unadopted here, which matches what
+`epic-5427-percentiles-over-time` recorded. **No `OUT-N` row is registered by this wave.** The four
+outcome KPIs live in the delta's own *Outcome KPIs* table (KPI-1, KPI-3, KPI-5, KPI-8) and each has a
+scenario: #2 and #6 (KPI-1), #11 and #34 (KPI-3), #24 (KPI-5), #43 and #44 (KPI-8).
+
+**KPI-5 grep, run in this wave as DISCUSS asked**: `IDependencyHonourPolicy`,
+`DependencyHonourPolicy`, `DependencyCycleDetector`, `NotHonouredReason`, `DependsOnReferences` and
+`DependencyOverrideAdditionalFieldDefinitionId` return **0 matches** across the backend, the frontend
+and the end-to-end suite. Nothing decides honour-ability today, so slice 02 starts from one decision
+and the ArchUnitNET rule (SA-12) has to keep it at one. Recorded as the baseline the rule is measured
+against.
+
+---
+
+## Wave: DISTILL / [REF] Deferred / Open
+
+- **No DEVOPS wave ran.** The project default environment matrix is used and is stated above. If a
+  DEVOPS wave runs later and names a different matrix, scenarios #11 and #34 (the timing budgets) are
+  the only ones whose environment assumption would need revisiting.
+- **No `OUT-4365-*` rows in `kpi-contracts.yaml`.** Soft gate. The KPIs are in the delta and each has a
+  scenario; adding the contract rows is a DEVOPS-wave job that has not run.
+- **The loop and no-measured-delivery shapes** depend on real Predecessor links being created in the
+  dogfood project first. If they are not in place when slice 02 runs, scenarios #19 and #21 fall back
+  to fixtures and the real-data confirmation moves to Epic #5792's first dogfood moment. Say which
+  happened in the slice verdict.
+- **OQ-6 stays open** and scenario #25 is the measurement that answers it. If it fails, the verdict
+  must be worked out at ingestion and stored, which changes slice 01's storage shape retroactively.
+- **OQ-8 stays open** — whether the two additive fields on the Feature payload trigger the
+  Lighthouse-Clients version gate. Additive-only suggests not; the standing rule is to check.
+- **Mandate 12 (typed domain module + step-reuse ratio)**: not applicable as written — it is specified
+  against a Python `domain_types.py` and `pytest-bdd` decorators. Its intent is met by the project's
+  own `Slice0N…Scenarios.cs` / `…Specifications.cs` split, where the Scenarios file reads as the
+  narrative and the Specifications file holds the Given/When/Then helpers that every scenario in the
+  slice reuses. Scenario #33 and #37 and #43 are parameterised over their varying dimension rather
+  than copied per tracker, per separator and per slice, which is the substance the ratio measures.
+- **Mutation testing is non-negotiable on the loop detector and the honour policy** (DESIGN handoff). A
+  surviving mutant there is a wrong warning today and a wrong date once Epic #5792 reads the same
+  verdict.
+
+---
+
+## Next Wave
+
+**Handoff → DELIVER** (`nw-software-crafter`, object-oriented). Slice order is 01 → 02 → 03 → 04, each
+one: create the minimal type skeletons, author and un-ignore that slice's `.feature`-derived NUnit and
+Playwright scenarios one at a time, implement to green, refactor, commit. The walking skeleton is
+slice 01's and ships first. `epic-boundary.feature` runs at **every** slice, not only the first. Run
+Playwright locally before every commit; Stryker ≥ 80% at feature end, with no surviving mutant in the
+loop detector or the honour policy. Commit discipline is normal — the approval gate is Epic #5792's
+alone.
