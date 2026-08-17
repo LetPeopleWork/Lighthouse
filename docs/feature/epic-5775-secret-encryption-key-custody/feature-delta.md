@@ -635,6 +635,18 @@ without asking — the exact conversation that lost the evaluation this epic cam
   implements them"*, which stopped being true at slice 01; correcting that row is part of this AC, not
   a separate errand. Added 2026-08-16 by maintainer decision: an architecture document that is silent
   about how the product protects credentials is the one a security reviewer opens first.
+- AC-6.19 The configuration page states what an instance that has nowhere to keep a key is actually
+  running on: the key published with the product stays in force, so **every credential entered after
+  that point is protected by it too**, and not only the ones stored before the upgrade. Today the page
+  says such an instance "starts and keeps working" and stops there, which reads as a warning about the
+  past. The same section says why the panel offers that instance no way out — there is nowhere to move
+  anything to — so the remedy is one of the two settings, not a button. Added 2026-08-17 from the
+  independent security review, finding E3.
+- AC-6.20 The release notes carry the same fact, for the shapes that reach it: an install on Postgres,
+  or a container whose database file is not on a mounted volume, that already holds credentials and
+  upgrades without setting anything. Such an install shows the warning and keeps running, and the
+  reader has to learn from the notes that new credentials are affected as well, because that is the
+  install least likely to read the configuration reference. Added 2026-08-17 from finding E3.
 
 ---
 
@@ -5277,5 +5289,244 @@ Corrected in `380d5bc6d` to say that it holds only while the keys hold still.
 
 **UI-09-3 — closed.** `InspectAsync` split its own label the same way. Covered by scenario 197 and
 fixed by the same compare, since a check walks through `WalkAsync` too.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 06
+
++ `slices/slice-06-say-what-is-true.md` — the slice brief, including the reference class it names
+  (`docs/Installation/configuration.md` rewritten rather than replaced) and the withdrawal of AC-6.7
++ `Wave: DISCUSS` acceptance criteria AC-6.1 to AC-6.18, plus AC-6.19 and AC-6.20 authored in this wave
++ `verification/security-review-findings.md` — E3 and the remediation table that routes it here, and the
+  maintainer decision that E1-E7 and W1-W2 all block the release
++ `Wave: DELIVER / [REF] Upstream Issues — slice 09` — UI-09-1, the ordering constraint on the
+  `ARCHITECTURE.md` section
++ `docs/Installation/configuration.md:175-313` — the whole Encryption Key section, read line by line
+  against AC-6.1 to AC-6.4, AC-6.10, AC-6.17 and AC-6.19; the audit below is its result
++ `docs/settings/encryption.md` — the panel page shipped by slices 06a/06b, which already carries the
+  four key sources, the four secret states and the after-an-upgrade paragraph
++ `ARCHITECTURE.md` — §8.1 *Secret encryption and key custody*, written by slice 09 for AC-9.4, and the
+  ADR index row for 146-153 that the same commit corrected
++ `SECURITY.md` — reporting path, timelines, scope; last updated 2025-12-30, so silent about this epic
++ `docs/compliance/cra-self-assessment.md:31,33` — rows 1.3 and 1.5 and the evidence text they cite
++ `docs/concepts/worktrackingsystems/{azuredevops,jira,linear,servicenow}.md` — the four isolated
+  one-liners, all four pointing at `configuration.html#encryption-key`
++ `docs/_config.yml` and the `nav_order` of every top-level docs page — where a Security page can sit
++ `chart/README.md` — the three ways to own the key and the rotation sequence, as the chart already
+  documents them, so the docs site links rather than restates
++ `Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx` —
+  `SECRET_HANDLING_DOCS_URL`, the link AC-6.16 repoints
+- `discuss/`, `design/`, `devops/` as directories — never existed for this feature. The DESIGN sections
+  in this file name the driving ports, so the BLOCK condition does not apply.
+
+---
+
+## Wave: DISTILL / [REF] Reference-Class Audit — slice 06
+
+The brief was written when nothing had shipped. Nine slices later, each of which wrote its own
+documentation as it landed, most of what slice 06 was scoped to write already exists. Auditing before
+writing is therefore the first act of this slice, not an optional courtesy — the alternative is a
+rewrite that re-asserts what is already true and misses the four things that are not.
+
+| Criterion | Verdict against shipped documentation | What slice 06 owes |
+|---|---|---|
+| AC-6.1 configuration path + first-boot generation | **Already true** — `configuration.md:178-192` | Nothing |
+| AC-6.2 three custody modes + the observable signal | **Already true** — `configuration.md:180-222` for the modes, `settings/encryption.md` for the signal, which names four key sources because the published key is a fourth state a reader can be in | Nothing |
+| AC-6.3 rotation, no credential re-entry, what the report means | **Already true** — `configuration.md:288-313`, `settings/encryption.md` | Nothing |
+| AC-6.4 what to back up, what is lost | **Already true** — `configuration.md:184` and `:270` | Repeat it on the Security page, where a reviewer is reading |
+| AC-6.5 CRA rows 1.3 and 1.5 | **Stale** — 1.3 cites "unique encryption keys can be specified per installation", which was false when it was written (the documented setting was a no-op) and is true only now; 1.5 cites "encrypted storage" with no key custody, no algorithm and no scope | Re-evidence both rows against shipped behaviour |
+| AC-6.6 `SECURITY.md` | **Half** — the reporting path is there; the file has said nothing since 2025-12-30, so nothing about this epic | Add what this epic changed |
+| AC-6.7 advisory | **Withdrawn** (V7, 2026-08-16) | Nothing |
+| AC-6.8 release notes | **Missing** | Write them, leading with the operator action |
+| AC-6.9 seeded terminology | n/a to prose about keys — the slice touches no configurable term except *Connection*, which is already the seeded word | Check the new pages before commit |
+| AC-6.10 the Kubernetes rotation sequence | **Half** — `configuration.md:296-303` has the four steps with one Kubernetes aside, and `chart/README.md` has the full sequence; `docs/Installation/kubernetes.md` mentions encryption **nowhere**, so a reader who installs from the docs site never meets it | A custody section on the Kubernetes page that links the chart README rather than restating it |
+| AC-6.11 the Docker page | **Missing** — `server.md:81` mounts `/app/Data` and says nothing about where the key store lives or what recreating the container without that volume costs | Write it |
+| AC-6.12 one canonical Security page in the nav | **Missing** — this is the slice | Write it |
+| AC-6.13 two layers at one URL | **Missing** | Write it |
+| AC-6.14 what this does not protect against | **Missing** | Write it |
+| AC-6.15 reporting path in the docs, connector pages relinked | **Half** — `compliance/security-update-policy.html` is in the docs; the root `SECURITY.md` is not, and the four connector pages still send a reader into the configuration reference | Relink four pages, surface the reporting path |
+| AC-6.16 the in-product link resolves to the page | **Missing** — `SECRET_HANDLING_DOCS_URL` points at `configuration.html#encryption-key` | Repoint it; this is the slice's only scenario |
+| AC-6.17 upgrading re-encrypts nothing | **Half** — `settings/encryption.md` says it; `configuration.md:192` says the old key is kept for reading and stops there, which a reader can finish as "so the upgrade fixed it" | Say it in the configuration page, the Security page and the release note |
+| AC-6.18 a dedicated `ARCHITECTURE.md` section | **Half** — slice 09 created §8.1 for AC-9.4 and corrected the ADR row, but it sits inside Persistence and covers custody only | Promote it out of Persistence and complete it |
+| AC-6.19 what an instance with nowhere to keep a key is running on | **Missing** — `configuration.md:246` says such an instance "starts and keeps working" without saying new credentials go under the published key too | Write it |
+| AC-6.20 the same fact in the release notes | **Missing** | Write it |
+
+**Six criteria need nothing, five need a sentence, and nine are the slice.** The learning hypothesis is
+already half-answered: the configuration-path mismatch was *not* the only false claim — the compliance
+self-assessment was the likeliest place and it is indeed the stalest, exactly as the brief predicted.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 06
+
+Reconciliation passed — 0 contradictions. Three decisions had to be checked because they moved after
+the brief was written:
+
+| Decision | Where | Effect on slice 06 |
+|---|---|---|
+| V7 — no GitHub Security Advisory, release notes only | `verification/manual-walkthrough.md`, 06a brief | AC-6.7 withdrawn. The slice's disclosure duty is discharged by AC-6.8 and AC-6.20 |
+| UI-09-1 — the `ARCHITECTURE.md` section is written once, by whichever slice reaches it first | slice 09 DELIVER | **Settled by events**: slice 09 reached it, in `31a254f1e`. Slice 06 extends and promotes rather than authors |
+| E3 is documentation, not code | security review, maintainer 2026-08-17 | Enters this slice as AC-6.19 and AC-6.20, authored above |
+
+No prior decision contradicts another. The one thing that *reads* like a contradiction — the brief's
+dependency "slices 01-05 released, or the documentation describes something nobody can install" — is a
+sequencing constraint rather than a decision, and it is unchanged: the prose can be written now, and the
+publish is a maintainer call. Carried into the handoff.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 06
+
+- **Driving port**: the secret-handling notice on the connection form — `SecretHandlingNotice`, with
+  `SECRET_HANDLING_DOCS_URL` as the one behaviour in the slice a test can reach.
+- **No backend surface.** No endpoint, no service, no data, no migration, no configuration name.
+- **The published documentation is the deliverable**, and it is served by Jekyll / just-the-docs from
+  `docs/` on `main`. A new top-level page needs `title`, `layout: home` and a `nav_order`; the free slot
+  is **4**, between Licensing (3) and Teams (10), which puts Security where a reviewer looks rather than
+  below the settings reference.
+- **The chart README stays the source for chart values.** The Kubernetes page links it. Restating values
+  in two places is how the version-skew this epic exists to fix gets recreated in prose.
+- **One cross-repository item is out of scope and stays flagged**: the marketing website's security copy,
+  per the brief. It is a DELIVER-checklist line, not an edit here.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 06
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 201 | The notice sends someone to the page that answers the question it raises | milestone-36 | `@driving_adapter @us-06` |
+| 202 | The link is one address, whoever it is forwarded to | milestone-36 | `@edge @us-06` |
+
+Both also carry `@slice-06`. Numbering continues from slice 09's 193-200. **2 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Criterion traceability.**
+
+| Criterion | Scenarios |
+|---|---|
+| AC-6.16 — the in-product link resolves to the Security page | 201, 202 |
+| AC-6.1 to AC-6.15, AC-6.17 to AC-6.20 | **No scenario.** Published prose, asserted by review against named files — the checklist in the handoff below |
+
+**Eighteen unscenarioed criteria is the honest shape of a documentation slice, and it is the same
+disposition AC-9.4 took one slice ago.** A test that reads a `.md` file asserts a phrasing, not a
+behaviour: it goes red when a sentence is improved and stays green when a sentence becomes untrue,
+which is the wrong signal in both directions. The one thing here that *is* a behaviour — where a link
+in the product goes — is asserted, and everything else is a named file with a named criterion, checked
+by a person who can tell whether a paragraph is true.
+
+**Error / edge coverage = 1 of 2.** The ≥40 % target is met arithmetically and means little at n=2;
+recorded rather than claimed as evidence.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 06
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from
+slices 01-09. They are translated in DELIVER into Vitest.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `acceptance/milestone-36-the-page-the-notice-points-at.feature` | slice 09's `milestone-35` in the same directory |
+| Where the notice's link goes (201, 202) | `Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx` (extend) | the file already pins the notice's copy and the presence of its link; `Header.test.tsx` and `LighthouseVersion.test.tsx` pin documentation URLs the same way |
+
+**No backend test, no E2E, no container test.** A published page is not reachable from any of them, and
+an E2E that followed the link would assert that `docs.lighthouse.letpeople.work` is up.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 06
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| The secret-handling notice on the connection form | 201, 202 |
+
+**No new entry point.** No endpoint or service participates in this slice.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 06
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| The notice component and the link it renders | YES | 201, 202 — the real component, rendered |
+| The published documentation site | NO — and deliberately | Reachability of a Jekyll build is a deployment property, asserted by the `Deploy Documentation` workflow, not by a feature test. The link's *target* is asserted; the site being up is not this slice's claim |
+
+Zero `NO — MISSING` rows. The one `NO` is reasoned, not absent.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 06
+
+| Environment | Where it is answered |
+|---|---|
+| A standalone or Docker install that keeps its own key | `configuration.md`, already true; repeated plainly on the Security page |
+| Docker where the database is inside the container | AC-6.11 and AC-6.19 — the two that cost a reader their credentials |
+| Postgres with no key set | AC-6.19 — the E3 shape, and the reason the panel offers it nothing |
+| Kubernetes, key owned by the cluster | AC-6.10 — a custody section on the Kubernetes page linking the chart README |
+| An install upgrading from before this epic | AC-6.17 and AC-6.20 — that the upgrade re-encrypted nothing |
+| A prospect's security reviewer, reading only what is published | AC-6.12 to AC-6.14, and the dogfood moment: answer the questionnaire that started this epic from the published pages alone |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 06
+
+**UI-06-1 — the brief's scope is two thirds already delivered, and one third was never in it.** Six of
+its criteria need no work and nine are the whole slice; meanwhile AC-6.19 and AC-6.20 arrived from a
+security review that post-dates the brief, and were referenced by the slice-09 wave before anyone had
+written them. Authored above rather than left as a forward reference. Recorded because it is the
+predictable cost of a documentation slice scheduled last: the code slices document themselves as they
+land, and what survives to the end is the material no single slice owned.
+
+**UI-06-2 — `docs/Installation/kubernetes.md` never mentions the encryption key.** The chart refuses to
+install without one, so a reader following that page hits a render failure the page does not prepare
+them for. The chart README explains it; the docs site does not link there from the Kubernetes page.
+Closed by AC-6.10 in this slice.
+
+**UI-06-3 — the root `SECURITY.md` has no presence in the docs site**, which the brief already names,
+but the corollary it does not: `docs/compliance/security-update-policy.html` *is* published, and
+`SECURITY.md` links out to it, so the two documents point in opposite directions across the boundary.
+The Security page has to be the address both sides resolve to, or this repeats.
+
+**UI-06-4 — CRA row 1.7 claims "no telemetry"**, while `configuration.md:425` documents an opt-in
+metrics and structured-log export. Not a defect — the row means no vendor collection, and the export is
+the operator's own — but it is the same class of drift as rows 1.3 and 1.5, found while auditing them.
+**Not fixed here**: re-evidencing a row outside this epic's surface is scope creep, and the row is
+defensible as written. Flagged for whoever next touches that document.
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 06
+
+**2 scenarios, 20 criteria, and the criteria are the work.** DELIVER's roadmap is at
+`deliver/slice-06/roadmap.json`. The checklist below is the acceptance instrument for everything
+unscenarioed: each row names the file and the criterion, and is answered by reading the result, not by
+running anything.
+
+| # | Criterion | File | Done when |
+|---|---|---|---|
+| 1 | AC-6.12, AC-6.13, AC-6.14, AC-6.4 | `docs/security.md` (new, `nav_order: 4`) | The plain answer stands alone above the fold, the *verify our claims* half below it covers what is encrypted and how, what is hashed instead and why, custody per deployment shape, what to back up, and a *what this does not protect against* section that names an attacker holding the key, host or shell access, and a malicious administrator |
+| 2 | AC-6.15 | `docs/security.md`, `docs/concepts/worktrackingsystems/{azuredevops,jira,linear,servicenow}.md` | The four connector pages carry the plain-language answer plus one link to the Security page instead of a link into the configuration reference; per-connector specifics stay where they are; the vulnerability reporting path is reachable from the docs, not only from the repository root |
+| 3 | AC-6.16 | `SecretHandlingNotice.tsx` + its test | Scenarios 201 and 202 green; `pnpm test`, `pnpm build` and Biome clean |
+| 4 | AC-6.19, AC-6.17 | `docs/Installation/configuration.md` | The nowhere-to-keep-a-key section says new credentials also go under the published key and why the panel offers that instance nothing; the after-an-upgrade note says the upgrade re-encrypted nothing that was already stored |
+| 5 | AC-6.11 | `docs/Installation/server.md` | The Docker section states where the key store lives, that it belongs on the mounted data volume, and what recreating the container without it costs |
+| 6 | AC-6.10 | `docs/Installation/kubernetes.md` | A custody section: the chart refuses to install without a key, the three ways to own one, the four-step rotation, that Lighthouse never writes to the Secret — by link to `chart/README.md`, not by restatement |
+| 7 | AC-6.18 | `ARCHITECTURE.md` | §8.1 promoted out of Persistence to sit with the load-bearing concerns, covering the envelope and where it is written, the ring and its builder-time resolution, the three custody modes and what each can and cannot be asked to do, where the key store sits relative to the database, and the check and the pass as the two things that walk every stored secret |
+| 8 | AC-6.5 | `docs/compliance/cra-self-assessment.md` | Rows 1.3 and 1.5 cite evidence a reader can verify against the shipped build |
+| 9 | AC-6.6 | `SECURITY.md` | States what this epic changed, and its date moves |
+| 10 | AC-6.8, AC-6.20 | the release notes for the release that carries slices 01-09 | Lead with the operator action; carry the E3 sentence and the upgrade-re-encrypts-nothing sentence |
+| 11 | AC-6.9 | every file above | Seeded terminology; no tracker's vocabulary |
+| 12 | Screenshots — maintainer request, 2026-08-17 | `Lighthouse.EndToEndTests/.../screenshots/Screenshots.spec.ts`, `models/settings/`, `docs/assets/settings/` | The encryption panel has a screenshot and `docs/settings/encryption.md` shows it — the page has described the screen in prose since 06a with no picture of it; `settings/systeminfo.png` is regenerated, because slice 06a added an Encryption row the committed image predates. Both taken through a Page Object, both run locally before commit, and the old PNG deleted first — a regenerated image is silently kept when the diff is under half a percent |
+
+**Sequencing, unchanged and still the maintainer's call.** The brief's first dependency is that slices
+01-09 are released, and `Deploy Documentation` publishes `docs/` from `main` on push. So the prose can
+be written and committed now, but pushing publishes pages describing a build nobody can install yet.
+Rows 1-9 are safe to write in either order; **row 10 cannot be finished before the release exists**,
+because release notes name a version.
+
+**What the dogfood moment is for.** Take the security questionnaire that started this epic and answer
+every question from `docs/security.md` alone. Anything that needs a maintainer is a gap in row 1, and
+the point of writing the page is that the next prospect does not have to ask.
 
 ---
