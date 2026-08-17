@@ -4887,3 +4887,311 @@ considered · the fact-to-step table · error-path rationale per `@error` scenar
 187 and 192.
 
 ---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 09
+
++ `slices/slice-09-a-pass-that-survives-a-changing-ring.md` — the slice brief, including the open design
+  question and the pre-slice SPIKE it mandates
++ `verification/security-review-findings.md` — E4 and its four refutation attempts, and E5 with the
+  maintainer's deferral reasoning
++ `Wave: DISTILL / [REF] Handoff — slice 08` — the registration condition slice 09 inherits, which
+  decides which passes can be disturbed at all
++ `Services/Implementation/Encryption/SecretCustodyService.cs` — `WalkAsync`, `WalkPastAsync`,
+  `CandidatesAsync`, and the header comment whose resumability claim this slice qualifies
++ `Services/Interfaces/ICryptoService.cs`, `Services/Implementation/CryptoService.cs` — the port whose
+  shape is the open decision
++ `Models/Encryption/SecretReadabilityReport.cs` — the report, and its rule that every number is counted
+  off the list beside it
++ `docs/Installation/configuration.md:243-260` — the `Encryption__KeyStorePath` section AC-9.4 extends
++ `ARCHITECTURE.md:317` — the only place the epic is mentioned there today
+- `discuss/`, `design/`, `devops/` as directories — never existed for this feature; the DESIGN sections
+  in this file name the driving ports, so the BLOCK condition does not apply.
+
+---
+
+## Wave: DISTILL / [REF] Pre-slice SPIKE Result — slice 09
+
+**Answered before scenarios were written, because the two shapes the brief offers produce different
+scenarios.** Timebox 1h; spent well under it, because the question is a call-site count.
+
+**What `ICryptoService.Encrypt` costs to widen.** Five call sites in production, across three files:
+
+| Call site | Would it change? |
+|---|---|
+| `API/WorkTrackingSystemConnectionsController.cs:173` | No — keeps the existing one-argument form |
+| `Data/LighthouseAppContext.cs:592, 609, 614` | No — same |
+| `Services/Implementation/Encryption/SecretCustodyService.cs:128` | Yes — this is the one that needs a named key |
+
+`SecretEnvelope.cs:62` is `aes.Encrypt`, the primitive, not the port.
+
+**The brief's guess was pessimistic.** It expected the four auth strategies to be in the blast radius.
+They are not: every one of them calls `Decrypt` only. Nothing outside those three files encrypts.
+
+**Implementations that must grow a member**: `CryptoService`, `DesignTimeCryptoService`
+(`Data/LighthouseAppContextFactory.cs`), and three test doubles — `FakeCryptoService`,
+`RecordingCryptoService` (`ServiceNowBasicAuthStrategyTest`), `WriterThatGetsThereFirst`
+(`SecretCustodyServiceTests`). Twenty-nine test files hold a `Mock<ICryptoService>`; **none is strict**,
+so a new member breaks none of them.
+
+**Total: six files, all mechanical.** Well inside the bound the brief set.
+
+**Verdict: take the clean fix.** Widen the port with an overload that encrypts under a named key, and
+have the pass snapshot the ring once and use it for the filter, every write, and the label.
+
+**And the finding the SPIKE turned up: the two shapes are not alternatives.** The brief presents
+"snapshot the ring" and "detect the divergence and report it" as a choice. Snapshotting alone does not
+satisfy AC-9.2 — it makes the pass internally consistent, and in one respect makes the exposure worse,
+because rows written after a replacement now land on a key the current ring may no longer carry. The
+row the filter skipped is unreadable and unnamed either way. **AC-9.2 is only satisfied by the pass
+noticing at the end that the ring is not the one it started on**, and by the rows it skipped being
+walked. Both parts are in scope; the SPIKE's contribution is that the port change is cheap enough that
+there is no reason to buy only one of them.
+
+**Recommended shape** (DELIVER decides the mechanism, the scenarios are written at the observable):
+snapshot the ring at the start; encrypt under the snapshot's active key throughout; compare against the
+holder at the end; if it changed, walk once more against the ring now in force — which turns every row
+the first filter skipped into a candidate again, and reads a row on a dropped key as one nobody can
+read, which is precisely AC-9.2 — and report that the ring changed and the pass must be run again. Bound
+the re-walk at one; a ring that keeps moving reports rather than loops.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 09
+
+**Reconciliation passed — 0 contradictions.**
+
+| Prior decision | Slice 09 | Verdict |
+|---|---|---|
+| Nothing is written that was not first read back as the credential it was (slice 01) | Untouched. This slice adds no write path; it changes which key an existing write encrypts under | Consistent |
+| A write names the value it observed, so a refresh that got there first is left alone (slice 03) | Untouched, and explicitly not the mechanism relied on here — the compare-and-swap protects a row it walked past, and this slice is about rows it never walked past at all | Consistent |
+| The ring only ever grows during a rotation, which is what makes an interruption survivable (slice 03) | Holds for `RotateAsync`. It does **not** hold for a ring replaced from outside, which is the case this slice adds | Consistent — the claim was always about the pass's own minting |
+| What is left to do is written on the data itself (the service's header comment) | True only while the ring holds still. The slice qualifies the claim rather than removing it, and the re-walk is what makes it true again | Consistent, with the qualification recorded |
+| The reload is registered only where the mounted file is the source that answered (slice 08) | Depended on. It is what makes `RotateAsync` and the watcher mutually exclusive, and narrows this slice's exposure to `ReEncryptAsync` and `InspectAsync` under `SuppliedByExternalSecret` | Consistent |
+| A key store belongs beside the database (ADR-149) | Extended by AC-9.4 with the single-writer sentence it never said out loud | Consistent |
+
+**Reconciled, not contradicted: which pass is actually exposed.** After slice 08 the watcher runs only
+under `SuppliedByExternalSecret`, and minting requires `GeneratedForThisInstance`. So `RotateAsync` and
+a ring replaced from outside cannot happen on the same instance. The disturbed pass this slice is
+about is `ReEncryptAsync`, and secondarily `InspectAsync`. Scenarios are written against those two.
+
+**Deliberately not taken.** A lock file, lease, or advisory lock on the key store — out of scope per the
+brief, and the sentence AC-9.4 writes is what a later enforcement would replace.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 09
+
+- **Driving ports** (all built): `ISecretCustodyService.ReEncryptAsync` and `.InspectAsync`;
+  `POST /api/{v1,latest}/encryption/reencrypt` and `GET /api/{v1,latest}/encryption/secrets`; the
+  encryption settings panel that renders the report.
+- **One port changes shape.** `ICryptoService` gains a way to encrypt under a named key. The
+  shared-contract rule applies: extend the test doubles (`FakeCryptoService`, `RecordingCryptoService`,
+  `WriterThatGetsThereFirst`) before the production change, so the blast radius is bounded first.
+- **The report grows one fact** — that the ring changed while the pass ran. `SecretReadabilityReport`
+  and `SecretReadabilityReportDto` both carry it, and the frontend model
+  `models/Encryption/SecretReadabilityReport.ts` and `EncryptionPanel.tsx` render it. This is the only
+  cross-stack piece in the slice.
+- **`IEncryptionKeyRingHolder.Current` is already the seam.** Comparing what it returns at the end
+  against what it returned at the start needs nothing new — `EncryptionKeyRing` already implements
+  `IEquatable<EncryptionKeyRing>`, and `TryGet` already answers "is this key still on the ring".
+- **No new data, no migration, no new configuration name, no new route.**
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 09
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 193 | Every credential one pass moved is on one key | milestone-35 | `@error @driving_port @us-09` |
+| 194 | A pass whose keys changed under it does not report a rotation that finished | milestone-35 | `@error @driving_port @us-09` |
+| 195 | A credential the pass never looked at, on a key that has gone, is still named | milestone-35 | `@error @driving_port @us-09` |
+| 196 | A pass whose keys held still says nothing new about them | milestone-35 | `@driving_port @us-09` |
+| 197 | A check that only looks says which keys it read against | milestone-35 | `@edge @driving_port @us-09` |
+| 198 | What an administrator sees after a pass that was disturbed | milestone-35 | `@driving_adapter @us-09` |
+| 199 | Running it again, as it asked, finishes it | milestone-35 | `@edge @driving_port @us-09` |
+| 200 | Nothing said about the keys having changed is a key | milestone-35 | `@property @error @driving_port @us-09` |
+
+Every scenario also carries `@slice-09`. Numbering continues from slice 08's 186-192. **8 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 6 of 8 (75 %)**, against the ≥40 % target. The two that are not
+are 196, which exists so the fix cannot be made by making the common path noisier, and 198, which is
+the surface the administrator actually reads.
+
+**Criterion traceability.**
+
+| Criterion | Scenarios |
+|---|---|
+| AC-9.1 — finishes against the ring it started on, or says it did not | 193, 194 |
+| AC-9.2 — no row silently excluded by a filter built against a key that has gone | 195 |
+| AC-9.3 — a clean rotation reports exactly what it reports today | 196 |
+| AC-9.4 — the single-writer requirement written down | **No scenario.** Documentation, asserted by review rather than by test — see below |
+
+**AC-9.4 is deliberately unscenarioed, not silently skipped.** It asks for two sentences in
+`ARCHITECTURE.md` and `docs/Installation/configuration.md`. The feature has no test that reads prose,
+and inventing one would assert a phrasing rather than a behaviour. It is carried in the DELIVER handoff
+as a checklist item with named files, in the same way AC-6.19 and AC-6.20 were.
+
+**Carried by no criterion and asserted anyway**: 197, because a read-only check labels its report from
+the same field and misleads in the same way for one less reason; 199, because advice to run it again is
+only honest if running it again works; 200, which applies slice 07's property to the one new sentence.
+
+**The scenarios that are the regression**: 193 and 195. They fail against the build as it stands. 194
+describes what does not exist yet at all.
+
+---
+
+## Wave: DISTILL / [REF] Review Verdict — slice 09
+
+`@nw-acceptance-designer-reviewer`, 2026-08-17: **conditionally approved**. Zero blockers, one high,
+two low. **No scenario was changed as a result** — the three findings are the three upstream issues
+this wave already raised, returned with a disposition.
+
+| Finding | Taken | What changed |
+|---|---|---|
+| High — AC-9.4's two documentation sections do not exist, and the one place `ARCHITECTURE.md` mentions the epic says it is not built | **Recorded, not acted on** | This is UI-09-1 as filed. The reviewer's suggestion to settle it in DISCUSS or DESIGN does not apply: the feature has neither, and the prose *is* slice 09's work. What it does sharpen is the sequencing — the `ARCHITECTURE.md` paragraph must be written once, by whichever of slice 09 and Story #5781 reaches it first. Carried into the handoff as an ordering constraint rather than a scenario |
+| Low — the service header comment states a resumability property that is not true | **Already scheduled** | UI-09-2. The reviewer drafted a replacement sentence; DELIVER writes its own, because the comment must say the reason in plain language rather than quote a criterion |
+| Low — `InspectAsync` splits its own label the same way | **Already scheduled** | UI-09-3, covered by scenario 197 |
+
+What the reviewer checked and confirmed, which is the part worth having: that **195 is decidable** —
+it read `CandidatesAsync` and `WalkPastAsync` and confirmed a row on a dropped key resolves to
+`CouldNotBeRead` and lands in `UnreadableCount`, so the scenario can fail; that **196 can fail**, and
+so does hold AC-9.3 against a fix that makes the clean path noisier; that every scenario has a seam it
+can actually be asserted at, `WriterThatGetsThereFirst` being the existing double whose shape a
+mid-pass ring swap needs; and that **the SPIKE's central claim survives attack** — snapshotting alone
+does not satisfy AC-9.2, so the two shapes are not alternatives.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 09
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from
+slices 01-08. They are translated in DELIVER into NUnit.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `acceptance/milestone-35-*.feature` | slice 08's `milestone-34` in the same directory |
+| The pass against a ring replaced mid-flight (193, 194, 195, 196, 199) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/SecretCustodyServiceTests.cs` (extend) | the file already drives a pass against a holder it controls, and already owns `WriterThatGetsThereFirst`, a double that mutates state between the read and the write — which is the shape a mid-pass ring swap needs |
+| The read-only check (197) | same file (extend) | `ACheck_SeesEveryStoredSecret_IncludingTheOnesAlreadyOnTheKeyInForce` is already there |
+| The new report fact, counted off the list (194, 196) | `.../Encryption/SecretReadabilityReportTests.cs` (extend) | every other count in the report is pinned there |
+| The port's new overload (all) | `.../Encryption/` — a new `CryptoServiceNamedKeyTests.cs`, or extend `SecretEnvelopeTests.cs` | DELIVER's call; the round trip under a retired key is the assertion either way |
+| What the administrator sees (198) | `Lighthouse.Frontend/src/pages/Settings/Encryption/EncryptionPanel.test.tsx` (extend) | the panel's wording for every other report outcome is pinned there |
+| Nothing rendered is key material (200) | `Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs` and the panel test | slice 07 put the same property in both places |
+
+**Not placed in `Integration/Containers/`.** `ReEncryptionCompareAndSwapProbeTests` exists because the
+compare-and-swap is a database guarantee that in-memory cannot show. A ring swap is a process-local
+event with no database dimension, so a container test would cost minutes and prove nothing extra.
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| Nothing the encryption surface renders is key material | Extended to the new report fact and its panel wording by scenario 200 |
+| Every read of a stored secret goes through `ICryptoService` | Strengthened. The pass gets a named-key write on the port rather than reaching for `SecretEnvelope` directly, which is the shortcut this slice must not take |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 09
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| `ISecretCustodyService.ReEncryptAsync` | 193, 194, 195, 196, 199 |
+| `ISecretCustodyService.InspectAsync` | 197 |
+| `POST /api/{v1,latest}/encryption/reencrypt` and the panel that renders its answer | 198 |
+| `ICryptoService`, encrypting under a named key | 193 — the only scenario that can tell a snapshot from a re-read |
+
+**No new entry point.** One existing port gains a member.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 09
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| The database the pass reads candidates from and writes moved values to | YES | 193, 195, 199 — through the in-memory provider the custody tests already use, and the compare-and-swap it pins is already covered against real Postgres by `ReEncryptionCompareAndSwapProbeTests` |
+| The key ring holder as the thing replaced under a running pass | YES | 193, 194, 195, 197 — the real holder, replaced from the test, because a double that never changes cannot show the defect |
+| The envelope, encrypting under a key that is not the active one | YES | 193 — real cryptography, round-tripped, because a fake that returns its input cannot tell which key was used |
+| The encryption settings panel | YES | 198 — the real component against a report fixture |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 09
+
+| Environment | Scenario |
+|---|---|
+| A mounted keys file replaced while a pass runs, the old key still carried by the new set | 193, 194, 199 |
+| A mounted keys file replaced while a pass runs, the old key **dropped** by the new set | 195 |
+| A pass that runs to the end with nothing touching the ring | 196 |
+| A read-only check while the file is replaced | 197 |
+| An instance that mints its own key | Not reachable — after slice 08 the reload is registered only under `SuppliedByExternalSecret`, and minting requires `GeneratedForThisInstance`. Recorded rather than asserted |
+| Two replicas sharing one key store | Not asserted. This is E5, documented rather than built — AC-9.4 |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 09
+
+**UI-09-1 — `ARCHITECTURE.md` has nowhere to put AC-9.4's sentence, and what it does say is now false.**
+AC-9.4 asks for the single-writer rule "beside the custody modes" in `ARCHITECTURE.md`. There are no
+custody modes there. The only mention of this epic is the ADR index row at line 317, which reads
+"**Designed, not yet built — nothing in this release implements them**" — untrue since slice 01
+shipped. So AC-9.4 in `ARCHITECTURE.md` is not an edit to an existing paragraph but a new one, and it
+lands next to a correction. That correction overlaps Story #5781 (slice 06 documentation), which is
+still open and blocked on the release. **DELIVER must not write the two independently** — whichever
+lands first owns the section, and the other extends it.
+
+**UI-09-2 — the service's header comment states a property that is not true.** "What is left to do is
+written on the data itself — so an interrupted pass needs no bookkeeping to resume from" is exactly the
+claim E4 breaks: it holds only while the ring holds still. The comment is the reason the defect was
+invisible in review. It has to change with the code, not after it.
+
+**UI-09-3 — `InspectAsync` reports a label it may not have read against.** The read-only check takes the
+same `activeKeyId` snapshot and computes `OnActiveKeyCount` and `OnRetiredKeyCount` from it. A ring
+replaced mid-check leaves those two counts split across two meanings of "active". Not raised by the
+security review, because a check writes nothing and so cannot strand a credential — but it misleads an
+operator in the same sentence. Scenario 197 covers it; it is recorded here because it widens E4 beyond
+what the finding says.
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 09
+
+**To DELIVER.** Eight scenarios in one milestone, no walking skeleton, one port widened, no migration.
+
+1. **Extend the test doubles first** — `FakeCryptoService`, `RecordingCryptoService`,
+   `WriterThatGetsThereFirst`. Shared-contract rule: bound the blast radius before touching
+   `ICryptoService`.
+2. Widen `ICryptoService` with an encrypt-under-a-named-key overload; `CryptoService`'s existing
+   one-argument form delegates to it with the active key. `DesignTimeCryptoService` grows the member
+   too. Three production call sites keep the form they have.
+3. Snapshot the ring in `WalkAsync`; use it for the candidate filter, every write, and the report label
+   (193, 196).
+4. Compare against the holder at the end; when it changed, walk once more against the ring in force and
+   report that the ring changed and the pass must be run again (194, 195, 199).
+5. Carry the new fact through `SecretReadabilityReportDto` to the panel (198), and keep it a fact about
+   keys and never key material (200).
+6. **AC-9.4, the documentation criterion with no scenario**: the single-writer sentence in
+   `docs/Installation/configuration.md` beside `Encryption__KeyStorePath`, and in `ARCHITECTURE.md` —
+   see UI-09-1 before writing the second. Both say the same thing: a key store belongs to one instance
+   unless the key was supplied from outside, and what it costs to ignore that.
+
+**Write the failing test for 195 first.** It is the scenario that costs an operator credentials, and it
+is the one neither the compare-and-swap nor a re-run heals once the old key is gone.
+
+**No scaffolds.** Every type these scenarios touch already exists and ships; the port gains a member
+rather than being created.
+
+**What DELIVER must not do.**
+- Do not reach for `SecretEnvelope.Protect` from the custody service to avoid widening the port. It
+  would work and it would put the knowledge of the wire format in two places.
+- Do not let the re-walk loop. One extra pass, then report.
+- Do not make the clean path say anything new — 196 exists to catch exactly that trade.
+- Do not build a lock file for E5. The brief rules it out; a sentence is the answer.
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered · the fact-to-step table · error-path rationale per `@error` scenario · property notes for
+200 · the discarded reporting-only shape and why the SPIKE closed it.
+
+---
