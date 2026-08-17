@@ -37,7 +37,9 @@ clause. Reading the codebase during DISCUSS turned it into something less obviou
 3. **The relation payloads are three different shapes, and only three connectors have one.** ADO already
    fetches `WorkItemExpand.Relations` on the parent path
    (`AzureDevOpsWorkTrackingConnector.cs:1043`) — the extension point is open. Jira sends an explicit
-   `fields=` list (`:1613`), so `issuelinks` must be added to it, and returns the summary inline. Linear
+   `fields=` list only on its identity sweep (`:1613`); its data fetch already returns `issuelinks`
+   — `*all` on Cloud (`:1494`), Jira's `*navigable` default on Data Center, which names no `fields=`
+   at all (`:1462`) — and returns the summary inline. Linear
    is GraphQL and returns titles inline for free. **ServiceNow and CSV have no standard dependency field
    at all** — they are out of scope, not deferred-with-a-plan.
 
@@ -139,7 +141,7 @@ Full job stories, dimensions, four forces and opportunity scores are written to
 | Synced fields | `Models/WorkItemBase.cs:18-56` | `ParentReferenceId` is the only inter-item link, a single string, overwritten from source on every sync. |
 | Connector port | `IWorkTrackingConnector.cs` | Ten methods, none returning relations. DESIGN found none is owed — see F-2. |
 | ADO relations | `AzureDevOpsWorkTrackingConnector.cs:1043` | Already requests `WorkItemExpand.Relations` for the parent path; `WorkItemExtensions.cs:25-27` already walks `workItem.Relations`. Relation URLs carry an id, not a title. |
-| Jira fields | `JiraWorkTrackingConnector.cs:1560`, `:1613` | Explicit `fields=` list per request. `issuelinks` is not in it. |
+| Jira fields | `JiraWorkTrackingConnector.cs:1494`, `:1462`, `:1613` | Two different requests. The data fetch already carries `issuelinks`: Cloud asks for `AllFields = "*all"` (`:1494`), Data Center names no `fields=` at all (`:1462`) and so gets Jira's `*navigable` default. Only the identity sweep restricts to `SweepFields = "key,updated"` (`:1613`), and it must stay that narrow. |
 | Linear query | `LinearWorkTrackingConnector.cs:660-726` | Hand-built GraphQL with `parent { … }` already selected. `dependencies` is a sibling selection. |
 | ServiceNow / CSV | `ServiceNowWorkItemMapper.cs`, `CsvWorkTrackingConnector.cs` | No dependency field exists in either. Out of scope (D13). |
 | Feature list UI | `FeatureListDataGrid/columns.tsx` | Column factories: name, forecasts, state, warnings, active work, parent, position, ordering actions. A dependency column is one more factory used by both surfaces. |
@@ -550,7 +552,8 @@ Decision enabled: the same decisions as US-01 through US-03, on the tracker the 
   Asserted on a fixture whose `identifier` is upper case — without the fold this passes ingestion and
   yields zero resolved dependencies, which is indistinguishable from an instance that has none. Its
   `blocking` connection yields nothing (D14).
-- **AC-9.3** Adding `issuelinks` to the Jira `fields=` list does not change any existing mapped value —
+- **AC-9.3** Reading `issuelinks` changes no existing mapped value, and the identity sweep still asks
+  for `key,updated` and nothing more —
   asserted by an unchanged fixture comparison.
 - **AC-9.4** A ServiceNow or CSV Feature yields no edges and renders no dependency warning — the
   absence of a field is not an error condition.
@@ -659,7 +662,7 @@ rather than adding a second one.
 |---|---|---|---|
 | 1 | Business value articulated | ✅ | A dependency that nothing in the product can express is one the plan silently assumes away. KPI-1 carries the outcome |
 | 2 | Job traceability | ✅ | 3 jobs in `docs/product/jobs.yaml`; all 5 value stories carry a real `job_id`; no `@infrastructure` story remains in this epic |
-| 3 | Acceptance criteria testable | ✅ | 34 ACs, each observable from a rendered cell, a dialog, a tooltip, an HTTP status, a stored edge, an outbound request, or a wall-clock measurement |
+| 3 | Acceptance criteria testable | ✅ | 34 ACs, each observable from a rendered cell, a dialog, a tooltip, an HTTP status, a stored edge, an outbound request, or a wall-clock measurement. The concrete worked examples this item also asks for live in `docs/product/jobs.yaml` under the three `feature_context` entries, not repeated in the story bodies — that file is the source of truth for them |
 | 4 | Dependencies identified | ✅ | Epic #5375's Feature view shipped; `:5169` restored from a real backup; real Predecessor links created in ADO; `CreateMigration`; a pre-slice-01 timing baseline |
 | 5 | Sliced ≤ 1 day each | ✅ | 4 briefs, each 5-6h. The epic's one conditional estimate (the simulation restructure) left with Epic #5792 |
 | 6 | No known blockers | ✅ | None. The wave's one open question (where a dependency comes from) was resolved by the user on 2026-08-14 |
@@ -860,7 +863,7 @@ existing layout.
 | `HonouredDependencies`, `DependencyVerdict`, `NotHonouredReason` | `Models/Dependencies/` | **CREATE NEW** | Immutable verdict set; closed reason enum so no caller can invent a fifth reason or default to "probably fine" | 02 |
 | `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** | Reads dependency relations from the response it already fetches; the early return now needs **both** overrides set | 01 |
 | `WorkItemExtensions` | `…/AzureDevOps/WorkItemExtensions.cs` | **EXTEND** | `ExtractDependencyReferences` beside `ExtractParentFromWorkItem`, walking the same `Relations` | 01 |
-| `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** | `issuelinks` added to the `fields=` list; inward links only; emits `dependency.jira.unknown_link_type` when it recognises none | 03 |
+| `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** | Reads `issuelinks` off the response the data fetch already returns — no `fields=` change on either deployment; inward links only; emits `dependency.jira.unknown_link_type` when it recognises none | 03 |
 | `LinearWorkTrackingConnector` | `…/Linear/LinearWorkTrackingConnector.cs` | **EXTEND** | `dependencies` selection beside `parent`; identifiers folded to lower case to land in `ReferenceId` space | 03 |
 | `IWorkTrackingConnector` | `Services/Interfaces/WorkTrackingConnectors/…` | **NO CHANGE** | A Feature carries its own references; the existing call already returns Features — see F-2 | — |
 | `FeatureDto` | `API/DTO/FeatureDto.cs` | **EXTEND** | `DependsOnCount` and `DependencyWarnings` (reason code + blocker name, never a sentence). **Lighthouse-Clients contract — version gate applies** | 01, 02 |
@@ -1139,9 +1142,14 @@ mechanic and moved to Epic #5792.
 
 ## Wave: DESIGN / [REF] Open questions carried into DISTILL
 
-- **OQ-4 — ANSWERED** (SA-12). One pure policy for honour-ability; the per-trial readiness collaborator
-  belongs to Epic #5792, and the ArchUnitNET rule that makes the alternative uncompilable is written
-  there alongside it.
+- **OQ-4 — ANSWERED** (SA-12), and **revised 2026-08-17 after the DISTILL review gate**. One pure
+  policy for honour-ability; the per-trial readiness collaborator belongs to Epic #5792. The
+  ArchUnitNET rule that makes the alternative uncompilable is written **here, in slice 02** — not,
+  as this answer first had it, in #5792 alongside the collaborator. The decision it guards is written
+  in this epic and merely consulted by the other, so deferring the guard would ship the invariant
+  behind nothing but a grep, in the epic that was split off precisely so it could ship alone. The
+  rule asserts *at most one* implementation; #5792 tightens it to *exactly one* when it adds the
+  second consumer.
 - **OQ-5 — ANSWERED** (SA-13). Whole edge set, iteratively, inside the policy, writing nothing.
 - **OQ-6** — the read path's honour-policy cost on `/features` at instance scale. Slice 02 owes a
   measurement from the `:5169` restored backup before anyone argues about caching.
@@ -1514,6 +1522,86 @@ against.
 - **Mutation testing is non-negotiable on the loop detector and the honour policy** (DESIGN handoff). A
   surviving mutant there is a wrong warning today and a wrong date once Epic #5792 reads the same
   verdict.
+
+---
+
+## Wave: DISTILL / [REF] Final Wave Review Gate (4 reviewers, 2026-08-17)
+
+Consolidated review over DISCUSS + DESIGN + DEVOPS-skip + DISTILL.
+
+| Reviewer | Wave | Verdict | Findings |
+|---|---|---|---|
+| Eclipse (`nw-product-owner-reviewer`) | DISCUSS | **approved** | 1 medium, 1 low — both fixed |
+| Architect (`nw-solution-architect-reviewer`) | DESIGN | **conditionally_approved** | 4 high, 2 medium — all fixed |
+| Forge (`nw-platform-architect-reviewer`) | DEVOPS-skip | **needs_revision** | 2 blocker, 1 critical, 4 high — 5 fixed, 2 downgraded |
+| Sentinel (`nw-acceptance-designer-reviewer`) | DISTILL | **approved** | 0 |
+
+Sentinel's first pass returned "DISTILL wave not executed" against every deliverable. It had resolved
+relative paths against the main checkout rather than this worktree, where the wave's commit does not
+exist. Re-run with absolute paths, it verified the counts independently: 44 scenarios, 29 non-happy-path,
+one walking skeleton, all 35 ACs traced, zero Pillar-1 violations. Noted because the failure mode is
+indistinguishable from real absence, and the answer was not to trust the reviewer's first report.
+
+### Decided and applied
+
+- **The KPI-5 ArchUnitNET rule moves into this epic's slice 02** (maintainer, 2026-08-17), reversing
+  OQ-4's original answer. Rationale in that entry and in the slice brief.
+- **F-4 resolved: the caller passes an explicit `bool`.** Neither a per-owner method split nor a
+  downcast inside the base-typed method — the second reproduces the shape that caused the trap. Code
+  sketch in the slice-01 brief.
+- **`Feature.DependsOnReferences` gets both an `IReadOnlyCollection<>` type and an ArchUnitNET rule.**
+  The type stops the accident; the rule stops it being widened back.
+- **OQ-6's threshold and fallback are fixed before slice 01 stores anything** — 200 ms added to the
+  `/features` read, no per-Feature query at any size; fallback is a precomputed verdict on the edge.
+  The measurement stays in slice 02, but a failure is now a planned branch rather than a migration of
+  shipped data.
+- **Reconcile dedupes on `(FeatureId, ReferenceId)`**, chosen so a self-reference survives and slice
+  02's loop warning can name it.
+- **Four `OUT-4365-*` rows added to `kpi-contracts.yaml`** — the registration a DEVOPS wave would have
+  done.
+- **The KPI-3 baseline is now a required written number** in the slice-01 brief, in a fixed shape.
+  "≤110% of baseline" is unfalsifiable while the baseline is only an intention.
+- **Two operator log events, sized against the noise already present**: one `WARN` per detected loop,
+  one aggregated line per refresh for unforecastable blockers. Forge asked for per-edge `INFO`;
+  rejected because `ForecastService` already buries the `TeamUpdater` summary operators actually read.
+- **AC-1.4 now covers a malformed relation URL**, not only an unresolvable one.
+- **AC-1.10's mechanics are specified** — backend NUnit, pinned seed, exact array equality, no
+  tolerance.
+- **DoR item 3 cites `jobs.yaml`** as the home of the worked examples.
+
+### Corrected — a DESIGN claim that was wrong about the code
+
+Jira does **not** need `issuelinks` added to a `fields=` list, and the line naming `:1613` as the place
+to add it pointed at the identity sweep — the one request that must stay narrow, and the reason a Data
+Center refresh went from 468,856 ms to 2,087 ms in Epic #5687. The data fetch already returns
+`issuelinks` on both deployments: `AllFields = "*all"` on Cloud (`:1494`), and no `fields=` parameter
+at all on Data Center (`:1462`), which yields Jira's `*navigable` default. KPI-3 is therefore defended
+more strongly than the design claimed. Corrected in five places across this file and the slice-03
+brief; slice 03 confirms it against a real payload before writing the mapping.
+
+### Downgraded, with reasons
+
+- **"`Portfolio.DependencyOverrideAdditionalFieldDefinitionId` not found in the model"** — the code is
+  not written yet. That is what DISTILL means. Forge's own evidence line concedes it.
+- **"`FetchFingerprint` invalidation has no code shown"** — no code is due at DISTILL, and scenario #40
+  already covers the behaviour, as Forge's own citation shows.
+
+### Still open, carried into DELIVER
+
+- **OQ-8** — whether `FeatureDto`'s two additive fields trip the Lighthouse-Clients version gate.
+  Additive-only suggests not; the standing rule is to check rather than assume.
+- **Scenarios #19 and #21** need real loop and no-throughput Predecessor links in the dogfood project.
+  If they are absent when slice 02 runs, the scenarios fall back to fixtures — and the slice verdict
+  says which happened rather than leaving it implied.
+- **Contract tests for the three connectors** (Architect, high): PactNet is a standing recommendation,
+  not yet a mandate. Jira's inward link-type name is admin-editable per instance, so a renamed type
+  degrades silently. Slice 03 decides whether the `dependency.jira.unknown_link_type` event is enough
+  or a contract test is owed.
+
+**Gate outcome**: Eclipse, Architect and Sentinel approved or conditionally approved. Forge's
+`needs_revision` is resolved by the decisions above — its two observability blockers are answered at a
+different level than requested, its KPI-registration blocker is closed, and its two remaining highs
+were downgraded with reasons. **DELIVER handoff unblocked.**
 
 ---
 

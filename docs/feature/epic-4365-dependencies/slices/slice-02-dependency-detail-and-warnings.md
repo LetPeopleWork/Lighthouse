@@ -24,6 +24,26 @@ warning on every dependency Lighthouse will not be able to honour.
 - A dependency the forecast *would* honour produces **no** warning (AC-3.4) — the presence of a
   dependency is not a problem, only an unhonourable one is.
 - A Feature the user cannot read renders as a redacted row with the reason, never omitted (AC-2.5).
+- **The ArchUnitNET rule enforcing KPI-5 is written here, not in Epic #5792** (maintainer,
+  2026-08-17, overriding the DESIGN wave's OQ-4 answer). KPI-5 claims exactly one place decides
+  whether a dependency is honoured. That decision is written in this slice and merely consulted by
+  #5792 — so if its enforcement ships with #5792, this epic goes to production with the invariant
+  guarded by nothing but a grep, and the split existed precisely so this epic could ship alone. The
+  rule asserts **at most one** implementation of `IDependencyHonourPolicy`, and that only that
+  implementation may depend on `DependencyCycleDetector`. #5792 tightens `at most` to `exactly` when
+  it adds the second consumer.
+- **The policy is a pure lookup, and a rule says so.** ADR-158 notes that the two consumers inject
+  different predicates; nothing yet forbids one of those predicates from logging, caching, or writing
+  state, and a predicate with side effects makes the verdict differ between the read path and the
+  forecast path — the exact failure KPI-5 exists to prevent. Extend the same ArchUnitNET rule: the
+  honour policy may not depend on any service that writes state.
+- **Two operator log events, sized against the noise already in the log.** A detected loop emits one
+  `WARN` naming its members — rare, genuinely wrong, and the operator wants it. Unforecastable
+  blockers emit **one aggregated line per refresh carrying a count**, not one line per edge. Both
+  verdicts are already visible to users in the warnings column; these exist so a support conversation
+  can be had from a log rather than a screenshot. Per-edge `INFO` was rejected: `ForecastService`
+  already floods the log on every team update, and per-Feature-per-refresh lines would bury the
+  `TeamUpdater: Update completed` summary that operators actually read.
 
 ## OUT of scope
 
@@ -39,8 +59,12 @@ plus rank" **if** computing it per row on a Portfolio's Feature list needs a que
 loop detection over the dogfood edge set is not instant. Both the many-to-many Portfolio join and the
 transitive loop walk are the kind of thing that reads as free at 94 Features and is not at 10,000.
 
-If it fails, the verdict must be precomputed at ingestion and stored on the edge, which changes slice
-01's storage shape retroactively and makes OQ-5 urgent rather than open.
+If it fails, the verdict must be precomputed at ingestion and stored on the edge. The threshold and
+the fallback design are both fixed in slice 01's brief before any storage ships — no more than 200 ms
+added to the `/features` read on `:5169`, and no per-Feature query at any list size — so a failure
+here is a planned branch into a design already written down, not a rewrite of shipped storage. Record
+the measured number in the verdict below either way; a hypothesis that passes without a number is
+not a measurement.
 
 **Confirms**, if it holds, that Epic #5792's slices can ask "is this edge honoured?" cheaply, inside
 the forecast run, without a cache.

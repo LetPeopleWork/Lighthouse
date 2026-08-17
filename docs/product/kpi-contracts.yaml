@@ -1005,3 +1005,77 @@ outcomes:
     alerting:
       - condition: "two identical renders differ, or a generation primitive appears in any template"
         action: "chart CI fails (red) — blocks publish"
+
+  - id: OUT-4365-dependencies-become-visible
+    feature: epic-4365-dependencies
+    title: A Feature says what it is waiting on
+    target: "100% of ADO Predecessor links between Features in a shared Portfolio appear in the Depends On column after one refresh; 0 silently dropped"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      On the restored dogfood instance, count the stored edges for one Portfolio against the tracker's
+      own link list for the same Features. The two numbers match, or the difference is named.
+    measurement_window: per-slice dogfood, starting at slice 01
+    rationale: >
+      The whole point of the epic is that the data already exists in the tracker and is invisible where
+      the forecast is read. A count that silently under-reports is worse than no column at all, because
+      a product owner reads "waiting on nothing" as an answer rather than as a gap.
+    alerting: []
+
+  - id: OUT-4365-sync-stays-fast
+    feature: epic-4365-dependencies
+    title: Reading dependencies costs no extra requests
+    target: "full portfolio refresh <= 110% of the pre-slice-01 baseline, per connector"
+    measurement_scope: per_instance + vendor_demo_only
+    measured_by: >
+      The `TeamUpdater: Update completed` summary timing on the dogfood instance, compared against a
+      baseline number captured and written into the slice-01 brief before its first commit. Every slice
+      records its own timing against that line.
+    measurement_window: every slice, and once more at epic close
+    rationale: >
+      Dependency data rides payload growth on requests all three connectors already make — ADO reads
+      relations it already fetches, Jira reads issuelinks the data fetch already returns, Linear adds a
+      sibling GraphQL selection. If the number moves anyway, the ingestion is doing something the design
+      did not intend, most likely a follow-up request per link. Epic #5687 spent its whole length
+      recovering exactly that cost, so this is the KPI most worth watching.
+    alerting:
+      - condition: "a slice's refresh timing exceeds 110% of the recorded baseline"
+        action: "stop; the ingestion moves off the synchronous refresh path before the next slice"
+
+  - id: OUT-4365-one-eligibility-decision
+    feature: epic-4365-dependencies
+    title: Exactly one place decides whether a dependency is honoured
+    target: "at most 1 implementation of IDependencyHonourPolicy in this epic; exactly 1 once Epic #5792 adds its consumer"
+    measurement_scope: per_instance
+    measured_by: >
+      An ArchUnitNET rule written in this epic's slice 02 — not deferred to Epic #5792 — asserting a
+      single implementation, that only it may depend on DependencyCycleDetector, and that it depends on
+      no service which writes state. The grep baseline recorded at DISTILL was 0 matches.
+    measurement_window: every CI run from slice 02 onward
+    rationale: >
+      This KPI spans two epics: the decision is written here and only consulted by the forecast half. A
+      second decision point appearing inside the forecast would make the warning a user reads and the
+      eligibility the simulation applies drift apart, silently and in opposite directions. Enforcement
+      lives here because this epic ships first and alone; a grep is a check someone runs, a rule is a
+      check nobody can forget.
+    alerting:
+      - condition: "a second implementation appears, or the policy gains a state-writing dependency"
+        action: "backend build fails (red) — blocks merge"
+
+  - id: OUT-4365-forecast-untouched
+    feature: epic-4365-dependencies
+    title: Seeing dependencies moves no forecast date
+    target: "0 percentile values differ, under a fixed seed, between a run with dependency data present and one without, at every slice"
+    measurement_scope: per_instance
+    measured_by: >
+      A backend NUnit test (AC-1.10) building a fixture portfolio and running the forecast twice under a
+      pinned seed — once with dependency edges, once with the same fixture stripped of them — asserting
+      the percentile arrays are equal exactly, not within a tolerance.
+    measurement_window: every CI run, from slice 01 onward
+    rationale: >
+      This epic and Epic #5792 were split so the visible half could ship to community users without the
+      premium forecasting behaviour. That boundary is a claim about code nobody is otherwise touching,
+      and claims like it rot quietly. Running the assertion at every slice rather than only the first
+      guards the thing that actually happens: not a deliberate change, an accidental import.
+    alerting:
+      - condition: "any percentile differs between the two runs"
+        action: "backend build fails (red) — the epic boundary has been crossed"

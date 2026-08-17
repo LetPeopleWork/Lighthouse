@@ -11,7 +11,17 @@ later — from its own tracker's links, with nothing re-entered by hand.
 
 ## IN scope
 
-- **Jira**: add `issuelinks` to the `fields=` list (`JiraWorkTrackingConnector.cs:1560`, `:1613`).
+- **Jira**: read `issuelinks` off the response the data fetch **already returns**. Cloud asks for
+  `AllFields = "*all"` (`:1494`); Data Center names no `fields=` at all (`:1462`) and so receives
+  Jira's `*navigable` default, which carries `issuelinks` too. Confirm both against a real payload
+  before writing the mapping — it is one request each and settles the question permanently.
+
+  **Do not widen the identity sweep.** `SweepFields = "key,updated"` (`:1542`, `:1613`) is the
+  change-detection pass, and keeping it minimal is the whole reason a Data Center portfolio refresh
+  went from 468,856 ms to 2,087 ms in Epic #5687. Adding `issuelinks` there would hand that back for
+  no gain, since the sweep never maps a field. The DESIGN wave named `:1613` as the place to edit;
+  that was wrong, and it is the one edit in this slice that could do real damage.
+
   One edge per link where `type.inward = "is blocked by"` **and** an `inwardIssue` is present.
   An entry with only an `outwardIssue` means *this issue blocks that one* and yields nothing (D14).
   The summary is returned inline, so no follow-up request.
@@ -68,7 +78,8 @@ AC-9.1 … AC-9.6 verbatim from `feature-delta.md`. The three that carry the sli
 
 - A Jira link with `inwardIssue` yields a reference; one with only `outwardIssue` yields none (AC-9.1).
 - An upper-case Linear `identifier` resolves to a Feature — the lower-casing trap (AC-9.2).
-- Adding `issuelinks` to the `fields=` list changes no existing mapped value (AC-9.3).
+- Reading `issuelinks` changes no existing mapped value, and the identity sweep still requests
+  `key,updated` and nothing more (AC-9.3).
 - Slice 02's ACs pass parameterised over connector rather than duplicated (AC-9.5).
 
 ## Dependencies
