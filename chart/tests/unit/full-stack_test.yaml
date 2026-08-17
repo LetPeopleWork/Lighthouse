@@ -88,6 +88,10 @@ tests:
       externalDatabase.user: lh
       externalDatabase.password: extpass
     template: templates/secret.yaml
+    # Named rather than taken by position: secret.yaml also renders the encryption key now (slice-05).
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-lighthouse-db
     asserts:
       - matchRegex:
           path: stringData.Database__ConnectionString

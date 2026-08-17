@@ -9,6 +9,10 @@ data:
   # Lighthouse reads config via env; "__" maps to ":" (e.g. Database__Provider -> Database:Provider).
   # The chart is Postgres-only (ADR-080) — provider is never sqlite.
   Database__Provider: "postgres"
+  # A path, not key material: the ring itself is mounted from a Secret at this location. It is named
+  # here, in the open, because that is where the rest of the non-secret configuration lives, and
+  # because an environment variable holding the key would be readable in a process dump.
+  Encryption__KeysFile: {{ include "lighthouse.encryption.keysFile" . | quote }}
   Telemetry__Enabled: {{ .Values.telemetry.enabled | quote }}
   Shutdown__TimeoutSeconds: {{ .Values.shutdownTimeoutSeconds | quote }}
   # Epic #5674: the embed surface is opt-in, and the chart is the only way a hosted tenant can

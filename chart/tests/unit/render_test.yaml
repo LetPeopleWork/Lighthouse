@@ -96,9 +96,13 @@ tests:
       postgresql.auth.existingSecret: tenant-lpw-db
     template: templates/secret.yaml
     asserts:
-      # No OIDC, no chart-rendered DB keys → the chart owns no Secret at all.
+      # No OIDC and no chart-rendered DB keys, so the only Secret left is the encryption key every
+      # install must now supply — here from this suite's fixture (slice-05).
       - hasDocuments:
-          count: 0
+          count: 1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-lighthouse-encryption
 
   - it: existingSecret does not render chart-owned DB keys but still renders the OIDC secret
     set:
@@ -108,9 +112,12 @@ tests:
       oidc.clientId: lighthouse
       oidc.clientSecret: shh
     template: templates/secret.yaml
+    # Named rather than counted: secret.yaml also renders the encryption key now (slice-05), and this
+    # test is about what the shared Secret does and does not carry.
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-lighthouse-db
     asserts:
-      - hasDocuments:
-          count: 1
       - notExists:
           path: stringData.Database__ConnectionString
       - notExists:
@@ -153,10 +160,12 @@ tests:
       oidc.clientId: lighthouse
       oidc.existingSecret: tenant-lpw-oidc
     template: templates/secret.yaml
+    # Chart still owns the DB Secret (no DB existingSecret here) but NOT the OIDC key. Named rather
+    # than counted: secret.yaml also renders the encryption key now (slice-05).
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-lighthouse-db
     asserts:
-      # Chart still owns the DB Secret (no DB existingSecret here) but NOT the OIDC key.
-      - hasDocuments:
-          count: 1
       - exists:
           path: stringData.Database__ConnectionString
       - notExists:
@@ -178,13 +187,18 @@ tests:
           path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.key
           value: Authentication__ClientSecret
 
-  - it: both DB and OIDC existingSecret set → chart owns no Secret at all
+  - it: every credential owned elsewhere → chart owns no Secret at all
     set:
       postgresql.auth.existingSecret: tenant-lpw-db
       oidc.enabled: true
       oidc.issuer: https://idp.example
       oidc.clientId: lighthouse
       oidc.existingSecret: tenant-lpw-oidc
+      # The third credential, added in slice-05. With all three owned by an external store there is
+      # nothing left for the chart to render — which is the property this test has always been about.
+      # The suite fixture's key is cleared here, because naming both ways to own the key is refused.
+      encryption.key: ""
+      encryption.existingSecret: tenant-lpw-encryption
     template: templates/secret.yaml
     asserts:
       - hasDocuments:

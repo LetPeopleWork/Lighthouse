@@ -63,3 +63,136 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "replicaCount>1 requires redis.connectionString"
+
+  # --- Custody: where the key comes from, and how it reaches the container ---
+
+  - it: a key supplied directly is carried in the release's own Secret
+    set:
+      encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    template: templates/secret.yaml
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-lighthouse-encryption
+    asserts:
+      - isKind:
+          of: Secret
+      - equal:
+          path: stringData.keys
+          value: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
+  - it: a Secret an external store owns leaves the chart rendering no key of its own
+    set:
+      encryption.existingSecret: tenant-encryption
+    template: templates/secret.yaml
+    asserts:
+      # Only the database Secret is left: no encryption Secret is rendered at all, which is the whole
+      # point of naming one an external store populates.
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-lighthouse-db
+
+  - it: the volume points at the release's own Secret when the key was supplied
+    set:
+      encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=='encryption-keys')].secret.secretName
+          value: RELEASE-NAME-lighthouse-encryption
+
+  - it: the volume points at the operator's Secret when they named one
+    set:
+      encryption.existingSecret: tenant-encryption
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=='encryption-keys')].secret.secretName
+          value: tenant-encryption
+
+  # 0444 rather than 0400 on purpose: the runtime image ends on a non-root user, the chart sets no pod
+  # security context, and a projected Secret file is owned by root. At owner-only the application
+  # cannot open its own keys and the pod crash-loops. The trust boundary is a pod running one process.
+  - it: the keys are mounted read-only, and readable by the non-root user the application runs as
+    set:
+      encryption.existingSecret: tenant-encryption
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[?(@.name=='encryption-keys')].secret.defaultMode
+          value: 292
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name=='encryption-keys')].mountPath
+          value: /etc/lighthouse/encryption
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[?(@.name=='encryption-keys')].readOnly
+          value: true
+
+  # A missing Secret must leave the pod unschedulable and visible in `kubectl describe`, not boot an
+  # instance with no keys at all.
+  - it: the projection is not optional
+    set:
+      encryption.existingSecret: tenant-encryption
+    template: templates/deployment-api.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.volumes[?(@.name=='encryption-keys')].secret.optional
+
+  - it: the container is told where to read the keys, and told it in the open
+    set:
+      encryption.existingSecret: tenant-encryption
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Encryption__KeysFile
+          value: /etc/lighthouse/encryption/keys
+
+  # The path is not key material, so it belongs with the rest of the non-secret configuration. What
+  # must never appear anywhere is the key itself, in a ConfigMap or in the container's environment,
+  # where a process dump would carry it.
+  - it: no environment variable on the container is the key
+    set:
+      encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    template: templates/deployment-api.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Encryption__Key
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Encryption__Keys
+          any: true
+
+  # The ring is a mounted file precisely so that a key an operator adds is noticed without the pod
+  # being restarted. Watching that Secret for changes would roll the pod on every rotation and trade
+  # away the property the mount was chosen for.
+  - it: a tenant whose only managed credential is the encryption Secret is never rolled for it
+    set:
+      encryption.existingSecret: tenant-encryption
+    template: templates/deployment-api.yaml
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["secret.reloader.stakater.com/reload"]
+      - notExists:
+          path: spec.template.metadata.annotations["checksum/config"]
+
+  - it: the database and sign-in credentials still travel exactly as they did
+    set:
+      encryption.existingSecret: tenant-encryption
+      oidc.enabled: true
+      oidc.issuer: https://idp.example
+      oidc.clientId: lighthouse
+      oidc.clientSecret: sso-secret
+      ingress.host: lh.example
+    template: templates/deployment-api.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=='Database__ConnectionString')].valueFrom.secretKeyRef.key
+          value: Database__ConnectionString
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name=='Authentication__ClientSecret')].valueFrom.secretKeyRef.key
+          value: Authentication__ClientSecret

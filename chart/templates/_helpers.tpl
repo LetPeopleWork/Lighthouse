@@ -105,6 +105,29 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/* Encryption Secret name — the one an external store owns (encryption.existingSecret) or the one this
+     release renders from encryption.key. Deliberately NOT the shared -db Secret: a tenant whose
+     database credential is owned elsewhere renders no shared Secret at all, and the key still has to
+     come from somewhere. */}}
+{{- define "lighthouse.encryption.secretName" -}}
+{{- $encryption := .Values.encryption | default dict -}}
+{{- if $encryption.existingSecret -}}
+{{- $encryption.existingSecret -}}
+{{- else -}}
+{{- printf "%s-encryption" (include "lighthouse.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Where the key ring is mounted, and the file the application is pointed at. The path is not key
+     material, so it travels in the ConfigMap with the rest of the non-secret configuration. */}}
+{{- define "lighthouse.encryption.mountPath" -}}
+/etc/lighthouse/encryption
+{{- end -}}
+
+{{- define "lighthouse.encryption.keysFile" -}}
+{{- printf "%s/keys" (include "lighthouse.encryption.mountPath" .) -}}
+{{- end -}}
+
 {{/* Managed secrets the API must reload on when they rotate OUT-OF-BAND of Helm (ESO/OpenBao, slice-04).
      Only existingSecret-sourced credentials are listed: ESO materialises them after Helm has rendered,
      so a config checksum (a render-time hash) never sees the rotated value — a reloader watch on the

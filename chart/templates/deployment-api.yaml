@@ -62,6 +62,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "lighthouse.fullname" . }}-config
+          volumeMounts:
+            - name: encryption-keys
+              mountPath: {{ include "lighthouse.encryption.mountPath" . }}
+              readOnly: true
           env:
             - name: Database__ConnectionString
               valueFrom:
@@ -99,3 +103,16 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        # The key ring arrives as a file rather than as an environment variable: a variable is readable
+        # in a process dump, and it cannot change under a running process - which would make picking up
+        # a key an operator added impossible without rolling the pod.
+        - name: encryption-keys
+          secret:
+            secretName: {{ include "lighthouse.encryption.secretName" . }}
+            # 0444, not 0400. The runtime image ends on a non-root user, this chart sets no pod
+            # security context, and a projected Secret file is owned by root - so at owner-only the
+            # application cannot open its own keys and the pod crash-loops. The trust boundary here is
+            # a pod running one process, not the file mode. If a pod security context with an fsGroup
+            # is ever added, 0440 becomes available and should be taken.
+            defaultMode: 0444
