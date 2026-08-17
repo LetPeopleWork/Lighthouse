@@ -164,9 +164,6 @@ const couldNotBeRead = (report: SecretReadabilityReport) =>
 		? ` ${secrets(report.unreadableCount)} could not be read.`
 		: "";
 
-// Rotation leads with the key it made, because that is what happened and it happens whether or not
-// there was anything to move. On an empty instance this used to read "Moved 0 stored secrets onto key
-// k-…", which is the one fact it did not report.
 const summaryOf = (asked: WhatWasAsked, report: SecretReadabilityReport) => {
 	// Said instead of the counts rather than after them. Those counts describe a rotation that did not
 	// finish, and an operator who reads "moved 46" stops there - the one thing they have to do is run it
@@ -175,6 +172,9 @@ const summaryOf = (asked: WhatWasAsked, report: SecretReadabilityReport) => {
 		return `The encryption keys changed while this was running, so it did not finish - run it again.${couldNotBeRead(report)}`;
 	}
 
+	// Rotation leads with the key it made, because that is what happened and it happens whether or not
+	// there was anything to move. On an empty instance this used to read "Moved 0 stored secrets onto key
+	// k-…", which is the one fact it did not report.
 	if (asked === "rotate") {
 		const moved =
 			report.movedCount > 0
@@ -200,16 +200,11 @@ const WhatHappened: React.FC<{
 	report: SecretReadabilityReport;
 }> = ({ asked, report }) => {
 	const leftBehind = report.secrets.filter(wasLeftBehind);
+	const needsAttention = leftBehind.length > 0 || report.keysChangedWhileItRan;
 
 	return (
 		<Box sx={{ mt: 2 }} data-testid="encryption-report">
-			<Alert
-				severity={
-					leftBehind.length > 0 || report.keysChangedWhileItRan
-						? "warning"
-						: "success"
-				}
-			>
+			<Alert severity={needsAttention ? "warning" : "success"}>
 				{summaryOf(asked, report)}
 			</Alert>
 

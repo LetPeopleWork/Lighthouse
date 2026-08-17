@@ -152,15 +152,21 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         private static List<StoredSecretRecord> WhatEachCredentialEndedUpAs(
             List<StoredSecretRecord> walked, List<StoredSecretRecord> walkedAgain)
         {
-            var lookedAtAgain = walkedAgain
-                .Select(record => (record.ConnectionId, record.Field))
-                .ToHashSet();
+            var lookedAtAgain = walkedAgain.Select(WhichCredential).ToHashSet();
 
             return
             [
-                .. walked.Where(record => !lookedAtAgain.Contains((record.ConnectionId, record.Field))),
+                .. walked.Where(record => !lookedAtAgain.Contains(WhichCredential(record))),
                 .. walkedAgain,
             ];
+        }
+
+        // Which stored credential a record is about. Two walks name the same one when a pass had to look
+        // twice, and a Connection and a field is what tells them apart - the key it is under is the thing
+        // that changed between the looks, so it cannot be part of the answer.
+        private static (int ConnectionId, string Field) WhichCredential(StoredSecretRecord record)
+        {
+            return (record.ConnectionId, record.Field);
         }
 
         private async Task<StoredSecretRecord> WalkPastAsync(
