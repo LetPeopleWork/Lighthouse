@@ -144,6 +144,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
+        public async Task KeysReplacedAndPutBackWhileAPassRuns_StrandNothingInTheWindow()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var held = new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey);
+            var holder = new EncryptionKeyRingHolder(held);
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            // Replaced before the first credential is written and put back before the second, so what is
+            // held at the end is what was held at the start and the end-of-pass comparison has nothing to
+            // report. Nothing looks twice. A credential written inside that window under whatever was
+            // briefly in force would sit on a key this instance never carries again - lost silently, by a
+            // pass reporting a clean finish, which is the one outcome this slice exists to prevent.
+            var replacedThenPutBack = new WriterThatGetsThereFirst(
+                new WriterThatGetsThereFirst(
+                    cryptoService,
+                    () =>
+                    {
+                        holder.Replace(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewerKey, NewKey, OldKey));
+                        return Task.CompletedTask;
+                    },
+                    0),
+                () =>
+                {
+                    holder.Replace(held);
+                    return Task.CompletedTask;
+                },
+                1);
+
+            var report = await Rotating(holder, replacedThenPutBack, new AMinterThatMints(NewerKey))
+                .ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cryptoService.Read(await StoredOptionAsync(PersonalAccessToken)).PlainText, Is.EqualTo("contoso-pat"));
+                Assert.That(cryptoService.Read(await StoredOptionAsync(ClientSecret)).PlainText, Is.EqualTo("contoso-secret"));
+                Assert.That(report.UnreadableCount, Is.Zero);
+            }
+        }
+
+        [Test]
         public async Task ACredentialThePassNeverLookedAt_OnAKeyThatHasGone_IsStillNamed()
         {
             // Already on the key in force, so the filter takes it off the list before anything is replaced.
