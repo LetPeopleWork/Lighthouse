@@ -1025,11 +1025,26 @@ get re-applied.
 - **Fix**: none in code. Re-run the failed job. Note `gh run rerun --failed` is refused while any job in the run is still `waiting`/`in_progress` ("This workflow is already running") — wait for the run to settle, or re-run the single job by id.
 - **Rule going forward**: before diagnosing any red job, ask `gh api repos/<owner>/<repo>/actions/jobs/<jobId> --jq '.steps[] | select(.conclusion=="failure") | "\(.number) \(.name)"'`. If the only failed step is **`Set up job`** (or `Set up runner` / `Initialize containers`), stop — it is infrastructure, re-run and change nothing. Failed steps numbered ≥ 2 are ours and deserve a real diagnosis. `--log-failed` refuses while the run is still in progress, so triage a job that failed inside a still-running workflow through the API, not the logs. Recurrence: 1.
 
-### 2026-07-25 — SQLite `disk I/O error` thrown from `EnsureCreated()` in `IntegrationTestBase.Init` is a runner IO flake, not a code regression (epic-5427 slice-02)
+### 2026-08-17 (first seen 2026-07-25) — SQLite `disk I/O error` thrown from `EnsureCreated()` in `IntegrationTestBase.Init` is a runner IO flake, not a code regression
 - **Symptom**: `Verify Backend` red with **1 failed / 3376 passed** on `TeamInProject_WithExistingForecasts_DeleteTeam_SucceedsAsync`. Stack: `Microsoft.Data.Sqlite.SqliteException : SQLite Error 10: 'disk I/O error'` (`SqliteExtendedErrorCode 5898`) raised from `SqliteDatabaseCreator.Create()` → `EnsureCreated()` inside the NUnit `[SetUp]` of `IntegrationTestBase.Init` — i.e. **before the test body ran at all**. The identical commit was green locally (3601 passed) and green on a re-run of the same job.
 - **Root cause**: SQLite error 10 is the engine reporting that the OS-level read/write on the database file failed. It comes from the GitHub runner's disk/IO layer under parallel-fixture load, not from anything the test or the schema does. The tell is the location: the throw is in `EnsureCreated()` during `SetUp`, so no application code under test had executed, and the failing test name is unrelated to the diff (the slice touched percentile snapshots, not team deletion or forecasts).
 - **Fix**: none in code. Re-ran the failed job on the same commit — passed. Did **not** quarantine, retry-wrap, or touch `IntegrationTestBase`.
-- **Rule going forward**: a backend failure whose exception is `SqliteException` with `SqliteErrorCode 10` (`disk I/O error`) thrown out of `EnsureCreated()` / `SqliteDatabaseCreator.Create()` / any `[SetUp]` **before the test body executes** is runner disk/IO infrastructure — re-run the failed job and change nothing. Confirm first that no *deterministic* failure is also present in the same run (those are real and re-running won't clear them). Escalate to a durable fix (`[NonParallelizable]` on the integration base, per the 2026-05-18 SQLite-pool precedent) only if it recurs across **three** runs on **different** commits. Recurrence: 1.
+- **Rule going forward**: a backend failure whose exception is `SqliteException` with `SqliteErrorCode 10` (`disk I/O error`) thrown out of `EnsureCreated()` / `SqliteDatabaseCreator.Create()` / any `[SetUp]` **before the test body executes** is runner disk/IO infrastructure — re-run the failed job and change nothing. Confirm first that no *deterministic* failure is also present in the same run (those are real and re-running won't clear them). Escalate to a durable fix (`[NonParallelizable]` on the integration base, per the 2026-05-18 SQLite-pool precedent) only if it recurs across **three** runs on **different** commits. Recurrence: 2.
+- **2026-08-17, second occurrence, run 32040943909 on `31a254f1`**: **1 failed / 5656 passed** on
+  `UpdateProject_AsNonPremiumUser_AboveLimit_Returns403`, same stack, extended code 5898 again — which
+  decodes to `SQLITE_IOERR_DELETE_NOENT`: the engine tried to unlink a database file that was already
+  gone. `Init` calls `EnsureDeleted()` immediately before `EnsureCreated()`, so under parallel-fixture
+  load the create races the delete it just issued on the runner's filesystem. A different commit and a
+  different test from the first occurrence, which is what makes it a flake rather than a defect: the
+  failing test is unrelated to the diff (a documentation commit), and the same job had already been
+  re-run once that day for two *other* infrastructure failures (codeload 503/429 on
+  `actions/download-artifact`, and the unauthenticated-GitHub-API rate limit taking out
+  `GithubServiceTest` plus the `InstallUpdate_*` knock-on — both cleared on the re-run).
+  **Two of three consumed. A third occurrence on a third commit buys the durable fix**, and the shape it
+  should take is now visible: not `[NonParallelizable]` (the guard forbids it, and the 2026-06-16 fix
+  deliberately removed it), but dropping the redundant `EnsureDeleted()` from `[SetUp]` — `[TearDown]`
+  already deletes, so the setup call only exists to cover a crashed previous run, and it is the half of
+  the pair that creates the unlink race.
 
 ### 2026-07-07 — Suspected flake: `Integration/Containers/*` Testcontainers tests flake individually under parallel container load
 - **Symptom**: `Verify Backend / backend` red with exactly ONE container-test failure that **rotates per run** — parent main run (`33e848b8`): `UpdateStatusStoreContainerTests…`; the next run (`30bd94fa`): `ClusterSubstrateHealthCheckTests.Probe_RealPostgresAndRedis_ReportsHealthy` — which had **passed** in the parent. ~3159 other tests green each time.
