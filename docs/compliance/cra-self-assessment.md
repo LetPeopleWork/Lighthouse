@@ -16,7 +16,7 @@ This checklist documents the self-assessment of Lighthouse against the essential
 | **Product** | Lighthouse |
 | **Version Assessed** | All versions from implementation date forward |
 | **CRA Classification** | Standard product with digital elements |
-| **Assessment Date** | 2025-12-30 |
+| **Assessment Date** | 2025-12-30, rows 1.3 and 1.5 re-evidenced 2026-08-17 |
 | **Assessor** | Benjamin Huser-Berta (CRA Compliance Owner) |
 | **Next Review** | 2026-12-30 |
 
@@ -28,9 +28,9 @@ This checklist documents the self-assessment of Lighthouse against the essential
 |-----|-------------|--------|------------------|
 | 1.1 | Products shall be designed, developed, and produced to ensure an appropriate level of cybersecurity | ✅ Implemented | Secure coding practices, code review, SonarCloud analysis |
 | 1.2 | Products shall be delivered without known exploitable vulnerabilities | ✅ Implemented | Dependency scanning via Dependabot, pre-release testing |
-| 1.3 | Products shall be delivered with a secure by default configuration | ✅ Implemented | Unique encryption keys can be specified per installation, HTTPS enabled, security.txt |
+| 1.3 | Products shall be delivered with a secure by default configuration | ✅ Implemented | An installation encrypts stored credentials under a key of its own **without being configured to**: on first start it generates one and keeps it beside the database (`EncryptionKeyRingBootstrapper`). An operator can supply the key instead, through configuration or a mounted secret file, and the key published with the product is **rejected** as an active key rather than accepted — an instance that would fall back to it refuses to start once anything is stored. HTTPS enabled, security.txt. Evidence: [Encryption Key](../Installation/configuration.html#encryption-key), [Security](../security.html) |
 | 1.4 | Products shall ensure protection from unauthorized access | ✅ Implemented | HTTPS by default, token encryption at rest |
-| 1.5 | Products shall protect the confidentiality of data | ✅ Implemented | Encrypted storage for sensitive data (tokens, credentials) |
+| 1.5 | Products shall protect the confidentiality of data | ✅ Implemented | Work tracking credentials and OAuth tokens are stored as authenticated envelopes (AES-256-GCM, per-value nonce, key identifier bound as associated data) and are never returned to the browser for any role. Values that need no read-back are hashed rather than encrypted: API keys with PBKDF2-SHA256 and a per-key salt, embed session secrets with SHA-256. Downloaded database backups are encrypted as a whole under an operator-supplied password. The key can be rotated from inside the product without re-entering any credential, and a value that cannot be read is reported rather than overwritten. Scope and limits: [Security](../security.html) |
 | 1.6 | Products shall protect the integrity of data | ✅ Implemented | Database integrity, input validation |
 | 1.7 | Products shall process only data necessary for intended purpose | ✅ Implemented | Minimal data collection, no telemetry |
 | 1.8 | Products shall protect availability and minimize negative impact | ✅ Implemented | Self-hosted architecture, user controls availability |
@@ -97,6 +97,6 @@ Based on this self-assessment, Lighthouse **fully meets** the essential cybersec
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-12-30  
+**Document Version**: 1.1  
+**Last Updated**: 2026-08-17  
 **Next Review**: 2026-12-30

@@ -1,5 +1,9 @@
 # Security Policy
 
+This file is the reporting path and the policy behind it. If what you want is **how Lighthouse protects
+the credentials you give it** — what is encrypted, who owns the key, and what none of it protects against
+— that is one page: <https://docs.lighthouse.letpeople.work/security.html>.
+
 ## Reporting a Vulnerability
 
 We take the security of Lighthouse seriously. If you believe you have found a security vulnerability, please report it to us as described below.
@@ -87,10 +91,29 @@ This policy does **not** cover:
 - User-deployed infrastructure or configurations
 - Forks or modified versions of Lighthouse
 
+## Encryption of stored credentials
+
+Up to and including the releases before secret-encryption key custody shipped, Lighthouse encrypted
+stored credentials with a key that was written into the product and is readable in this repository.
+That was documented behaviour rather than a defect — the key was never withheld — but it meant every
+install that had not overridden the key shared one, and the documented override read a setting the code
+did not. Both are fixed:
+
+- An instance now generates and keeps a key of its own on first start, or takes one you supply through
+  configuration or a mounted secret file. The published key is **refused** as an active key.
+- The key can be rotated from Settings → Encryption without re-entering a single credential, and a
+  credential that cannot be read is named rather than overwritten.
+- **Upgrading re-encrypts nothing.** Anything stored before the upgrade stays under the previously
+  published key until a rotation is run, and the product says so on its own.
+
+No security advisory was published for this, deliberately: the key shipped in the open in every build, so
+an advisory would describe the fix rather than a breach. What an operator needs is the upgrade and the
+rotation, and the release notes carry both.
+
 ## Acknowledgments
 
 We appreciate the security research community and will acknowledge researchers who report valid vulnerabilities (with their permission) in our release notes and security advisories.
 
 ---
 
-**Last Updated**: 2025-12-30
+**Last Updated**: 2026-08-17

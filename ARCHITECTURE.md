@@ -8,7 +8,7 @@
 > - [`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md) — C4 Context / Container / Component diagrams.
 > - `adr-001 … adr-153` — point decisions (in that folder). The index at the end maps the load-bearing ones.
 >
-> **Status.** The dispatcher seam, the seven enforced module boundaries, optimistic-concurrency tokens, the config-gated cluster substrate (§2), and the embed surface (§10) described below are all **implemented**, not aspirational. Where something is deliberately *not* built, it says so.
+> **Status.** The dispatcher seam, the seven enforced module boundaries, optimistic-concurrency tokens, the config-gated cluster substrate (§2), the secret-encryption envelope and key custody (§9), and the embed surface (§11) described below are all **implemented**, not aspirational. Where something is deliberately *not* built, it says so.
 >
 > **Maintenance.** Keep this overview current with the **general concepts** — not feature-level detail. When an architectural concept changes (a module, a seam, a cross-cutting mechanism, a topology, a load-bearing constraint), update the affected section here in the same change. Per-feature specifics stay in `brief.md` / the ADRs, never here.
 
@@ -50,7 +50,7 @@ graph LR
 - **Single-writer per entity is load-bearing; single-*instance* is the default, not the only shape.** Three seams assume one owner of the data: the **update queue** (`UpdateQueueService`, a single-reader `Channel<Func<Task>>`), the **maintenance gate** (`DatabaseMaintenanceGate`), and the **SignalR hub**. By default all three are in-process, and a standalone instance must keep working with **zero external dependencies** (ADR-027 D1).
 - **The cluster branch is config-gated behind the same ports** (epic #5305, ADRs 075–078, which *amend* ADR-027 rather than replace it). When `ConnectionStrings:Redis` is present, SignalR gains a Redis backplane, the queue swaps `IUpdateStatusStore` / `IUpdateExecutionLock` / `IUpdateCompletionNotifier` from their in-process adapters to a Redis status store + a Postgres advisory lock + Redis pub/sub, the data-protection key ring moves to Redis, and boot-time `Database.Migrate()` runs under a Postgres advisory lock so one replica migrates while the rest wait. **Absent that connection string the code path is the single-instance one, unchanged** — a guard test pins this. What stays rejected is *unconditional* distribution: an always-on broker, microservices, a second store (ADR-027 D4).
 - **Paradigm.** Backend is OOP C# (.NET 10). Frontend is React 19 + TypeScript, functional-leaning (hooks, pure components) but part of an overall OOP project.
-- **One architecture serves every topology** (standalone single binary, docker + Postgres, k8s at one or many replicas, namespace-per-tenant hosting) **without forking** — via the provider-switched EF boundary and the substrate adapters above, not per-topology builds. §11 lists them.
+- **One architecture serves every topology** (standalone single binary, docker + Postgres, k8s at one or many replicas, namespace-per-tenant hosting) **without forking** — via the provider-switched EF boundary and the substrate adapters above, not per-topology builds. §13 lists them.
 
 ---
 
@@ -208,13 +208,22 @@ sequenceDiagram
 
 - **EF Core**, provider-switched in `DatabaseConfigurator`: `UseSqlite` (default; WAL mode) or `UseNpgsql` (server), chosen from the `Database:Provider` config string.
 - **Two migration assemblies** — `Lighthouse.Migrations.Sqlite` and `Lighthouse.Migrations.Postgres`. Generate migrations only via the **`Create-Migration.ps1`** script (spins up an ephemeral Docker Postgres for the Postgres half) — never `dotnet ef migrations add` directly.
-- `LighthouseAppContext` overrides `SaveChangesAsync` to `PreprocessDataBeforeSave` (encrypt secrets, stamp initial concurrency tokens on `Added`) then `SaveWithRetry` (§7).
+- `LighthouseAppContext` overrides `SaveChangesAsync` to `PreprocessDataBeforeSave` (encrypt secrets, stamp initial concurrency tokens on `Added`) then `SaveWithRetry` (§7). Which values are encrypted, under which key, and who owns that key is §9.
 
-### 8.1 Secret encryption and key custody
+---
 
+## 9. Secret encryption & key custody
+
+Credentials for the work tracking systems are the only data Lighthouse holds that is worth more to an attacker than the instance itself, so custody of the key that protects them is a load-bearing concern rather than a detail of persistence.
+
+- **What is encrypted is a closed set**: the connection options a connector declares as secret, plus OAuth access and refresh tokens. Everything else — teams, portfolios, work-item history, forecasts — is stored as it is, because none of it is a secret. API keys and embed session secrets are *hashed* instead (PBKDF2-SHA256 per-key salted, SHA-256 respectively): nothing needs to read them back, so nothing can.
 - **Stored secrets are envelopes**, not ciphertext blobs: version token, key id, nonce and ciphertext, with the version and key id bound as associated data. A value relabelled with another key's name fails its authentication tag rather than being read under it. `SecretStateClassifier` tells the four states apart — envelope, legacy CBC, never-encrypted plaintext, and unreadable — by inspecting the stored value, so what is left to do is written on the data itself.
 - **A key ring, not a key.** Position is state: the first entry is what new secrets are written under, later entries only ever read older ones. The ring grows rather than shrinks during a rotation, which is what makes an interrupted pass survivable.
 - **Custody is one ordered decision**, made once in `EncryptionKeyRingBootstrapper.Resolve`: a key in configuration, then a mounted keys file, then a key store beside the database, then one the instance mints for itself. That order holds at startup *and* after it — the mounted-file reload is registered only where the file is the source that answered.
+- **Resolution happens at builder time into a singleton holder**, never through `IConfiguration`. Nothing that renders configuration can print key material, which is a flaw a neighbouring startup concern still has (`GetDebugView()`).
+- **Three custody modes, and each can be asked for different things.** *Generated for this instance* — Lighthouse minted the key and keeps it in a store beside the database; it may mint again, so it may rotate. *Supplied by configuration* and *supplied by an external secret file* — the key is the operator's; Lighthouse reads it, never writes it, and may move secrets onto whatever is in force but may never mint. An instance with nowhere durable to keep a key of its own is the fourth state rather than a mode: the published key stays in force and the surface offers no action, because there is nothing to move to.
+- **The key store sits beside the database, not beside the binary.** A key in a container's writable layer while the database is on a mounted volume is the failure this placement exists to prevent: the data survives a recreated container and the key does not, which is worse than losing both.
+- **Two things walk every stored secret**: a read-only check that classifies each one and names the connection and field holding anything unreadable, and the re-encryption pass that moves what it can read onto the key in force. Neither ever overwrites a value it could not read — something nobody can decrypt is something nobody can re-encrypt, and writing over it would destroy the only copy.
 - **Who owns the key decides what is offered.** Only an instance that minted its own key may rotate; an instance given a key can move secrets onto it but never make one, because a minted key would lose the argument on the next start and take every secret written under it with it.
 - **A re-encryption pass is consistent about the keys it works against.** It takes the ring once — for the candidate filter, every write and the report label — and compares at the end. If the keys were replaced from outside while it ran, it walks once more against what is held now and reports that it must be run again, rather than claiming a rotation nobody finished.
 
@@ -222,16 +231,16 @@ sequenceDiagram
 
 ---
 
-## 9. Cross-cutting concerns
+## 10. Cross-cutting concerns
 
 - **Authorization (RBAC).** All RBAC business logic flows through the single inbound port **`IRbacAdministrationService`**; controllers call only the interface. On the frontend, **all UI gating derives from the `useRbac()` hook** — no component fetches `/authorization/my-summary` directly. A permissive fallback (`isRbacEnabled:false, isSystemAdmin:true` on a failed summary call) guarantees an RBAC-infrastructure failure never locks users out. (ADR-001.)
-- **Authentication — four schemes, one selector.** `SmartAuthSchemeSelector` forwards each request to the scheme its credential implies: the interactive **OIDC cookie** (browser); **`LighthouseApiKey`** (`X-Api-Key`, owner-resolved and per-key-scoped — CLI and stdio MCP); **`LighthouseJwtBearer`**, an IdP-issued JWT validated against the *same* OIDC authority, off unless an authority is configured — this is what lets the hosted MCP server pass the caller's own credential through instead of a shared baked key (ADR-079); and **`LighthouseEmbedCookie`** (§10). Group claims resolve to roles at read time. When no authority is configured the instance runs unauthenticated and the schemes are not registered at all, so the standalone build is unaffected. OAuth credentials for *connectors* are an unrelated concern with their own store and single-flight refresh (ADR-007/008/010).
+- **Authentication — four schemes, one selector.** `SmartAuthSchemeSelector` forwards each request to the scheme its credential implies: the interactive **OIDC cookie** (browser); **`LighthouseApiKey`** (`X-Api-Key`, owner-resolved and per-key-scoped — CLI and stdio MCP); **`LighthouseJwtBearer`**, an IdP-issued JWT validated against the *same* OIDC authority, off unless an authority is configured — this is what lets the hosted MCP server pass the caller's own credential through instead of a shared baked key (ADR-079); and **`LighthouseEmbedCookie`** (§11). Group claims resolve to roles at read time. When no authority is configured the instance runs unauthenticated and the schemes are not registered at all, so the standalone build is unaffected. OAuth credentials for *connectors* are an unrelated concern with their own store and single-flight refresh (ADR-007/008/010).
 - **Licensing / premium.** A license gate (`canUsePremiumFeatures`) flows through `IForecastFilterRuleService.GetEffectiveRuleSet`, not via a direct `ILicenseService` dependency on metrics services (enforced).
 - **CORS fail-closed, rate limiting, security headers** at the API edge (ADR-005).
 
 ---
 
-## 10. Embed sessions — Lighthouse inside someone else's page
+## 11. Embed sessions — Lighthouse inside someone else's page
 
 The Jira Forge app (epic #5146) frames Lighthouse in a Jira issue panel. Framing an *authenticated* app is not a cookie tweak: every identity provider refuses to be framed, and the interactive session cookie is `SameSite=Lax`, so the login can never happen inside the frame. The shipped answer is **three hops and a second cookie scheme** (ADR-137, superseding ADR-129; ADR-130 and ADR-131 stand):
 
@@ -251,7 +260,7 @@ Hop 1 is the whole point: it happens at top level, against **whatever provider t
 
 ---
 
-## 11. Frontend architecture
+## 12. Frontend architecture
 
 - React 19 + TypeScript (strict), MUI, React Router, Vite. Built into the backend's `wwwroot` and served by the same process (SPA fallback).
 - **Schema-first at trust boundaries** (Zod) for API responses/forms; plain `type` for internal data.
@@ -260,7 +269,7 @@ Hop 1 is the whole point: it happens at top level, against **whatever provider t
 
 ---
 
-## 12. Scale & deployment topologies
+## 13. Scale & deployment topologies
 
 Vertically scaled first (sizing ≈ 30 QPS peak, 30–100× headroom over the real load). One provider-switched binary serves all topologies:
 
@@ -271,13 +280,13 @@ Vertically scaled first (sizing ≈ 30 QPS peak, 30–100× headroom over the re
 | **Kubernetes, one replica** | The same image; the in-repo Helm `chart/` renders it. Startup/readiness/liveness probes hit `/health/startup`, `/health/ready` (drain-aware) and `/health/live`; credentials come from Secrets. No Redis needed. |
 | **Kubernetes, N replicas** | Adds the cluster substrate of §2: Postgres (advisory locks for the update queue and for boot migration) + Redis (SignalR backplane, update status store, data-protection key ring). Same image, same code path selection made from configuration. ADR-075/076/077. |
 | **Hosted / multi-tenant** | Namespace-per-tenant over the chart above, driven by GitOps with externally-managed secrets (ADR-086/087/092), per-tenant CNPG backups (ADR-091) and an automated upgrade flow (ADR-093/094). The cluster manifests live in a separate private platform repo; the chart itself is public. |
-| **MCP server** | Optional, orthogonal workload (`mcp.enabled`, ADR-085) running the lighthouse-clients `mcp-http` image against the in-cluster API. It is *not* backend code — Lighthouse only supplies the inbound-auth surface (§9). |
+| **MCP server** | Optional, orthogonal workload (`mcp.enabled`, ADR-085) running the lighthouse-clients `mcp-http` image against the in-cluster API. It is *not* backend code — Lighthouse only supplies the inbound-auth surface (§10). |
 
 Rejected regardless of scale: microservices, full CQRS / a separate read store, Event Sourcing, MediatR (commercial licence + ROI). Horizontal scale-out is no longer rejected outright — it is **opt-in and must never become something the standalone build depends on** (ADR-027 D1/D4 as amended by ADR-075/076/077). See ADR-027 "Alternatives Considered".
 
 ---
 
-## 13. Quality attributes & enforcement
+## 14. Quality attributes & enforcement
 
 - **Correctness** — single-writer queue + single RBAC port + permissive RBAC fallback + optimistic tokens on config edits.
 - **Maintainability** — adding a reaction is "add a handler", not "edit a controller"; adding a guarded UI control touches only the component + `useRbac`.
@@ -286,7 +295,7 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 
 ---
 
-## 14. How the app is built & run
+## 15. How the app is built & run
 
 **Build / run locally**
 - Backend: `dotnet build` (zero warnings — `TreatWarningsAsErrors`), `dotnet test`.
@@ -300,7 +309,7 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 
 ---
 
-## 15. ADR index (load-bearing)
+## 16. ADR index (load-bearing)
 
 | ADR | Topic |
 |---|---|
@@ -320,10 +329,10 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 106 / 107 / 108 | Percentiles-over-time snapshots + the series contract |
 | 110 / 113 | Multi-team and delivery-grain joint completion probability |
 | 114 – 128 | ServiceNow connector: validation verdict ladder, record classes as work-item types, board picker |
-| **130 / 131 / 137** | **Embed sessions: the embed-only cookie scheme, database-enforced single use, viewer identity (§10; 137 supersedes 129)** |
+| **130 / 131 / 137** | **Embed sessions: the embed-only cookie scheme, database-enforced single use, viewer identity (§11; 137 supersedes 129)** |
 | 132 – 136 | Feature ordering: a derived total order (no ordering aggregate), rank-change domain event, ordering-policy setting |
 | **138 – 141** | **Two-phase incremental sync: sweep-then-download, the per-connection capability probe, the fetch fingerprint, time-driven derivations over the stored set (§ background refresh)** |
 | 142 – 145 | Write-back: optimistic notification suppression with a 403 retry, per-item batching with an unbatched retry, the collection seam (145 superseded, never built) |
-| **146 – 153** | **Secret encryption and key custody: the envelope wire format, stored-secret states classified by inspection, the key ring and its retired default, the key store beside the database, builder-time resolution, per-row compare-and-swap re-encryption, the custody-mode admin surface, operator-supplied custody on Kubernetes (§8.1)** |
+| **146 – 153** | **Secret encryption and key custody: the envelope wire format, stored-secret states classified by inspection, the key ring and its retired default, the key store beside the database, builder-time resolution, per-row compare-and-swap re-encryption, the custody-mode admin surface, operator-supplied custody on Kubernetes (§9)** |
 
 The full set (001–153), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
