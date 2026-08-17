@@ -214,6 +214,131 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             }
         }
 
+        // The file is mounted readable by everyone in the container because the runtime user is not root
+        // and a projected Secret is owned by root. If that ever tightens, this is the path an instance takes:
+        // it must keep the keys it has rather than fall over, and say why once.
+        [Test]
+        public void ReadOnce_AFileThePodIsNotAllowedToRead_LeavesTheKeysInForce()
+        {
+            var files = new MountedKeysFile();
+            var holder = HolderOn(TheKeyItStartedOn);
+            var before = holder.Current;
+
+            files.Place(MountedPath, RingTextFor((TheKeyTheOperatorAdded, MaterialOf(41))));
+            files.WhatHappensOnRead = () => throw new UnauthorizedAccessException("Access to the path is denied.");
+
+            var watcher = WatcherOver(files, holder, out var logger);
+            watcher.ReadOnce();
+            watcher.ReadOnce();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holder.Current, Is.EqualTo(before));
+                Assert.That(TimesLogged(logger, LogLevel.Error), Is.EqualTo(1));
+                Assert.That(Logged(logger, LogLevel.Error), Has.Some.Contains("denied"));
+            }
+        }
+
+        [Test]
+        public void ReadOnce_AFileThatCannotBeReadAtAll_LeavesTheKeysInForce()
+        {
+            var files = new MountedKeysFile();
+            var holder = HolderOn(TheKeyItStartedOn);
+            var before = holder.Current;
+
+            files.Place(MountedPath, RingTextFor((TheKeyTheOperatorAdded, MaterialOf(41))));
+            files.WhatHappensOnRead = () => throw new IOException("The device is not ready.");
+
+            var watcher = WatcherOver(files, holder, out var logger);
+            watcher.ReadOnce();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holder.Current, Is.EqualTo(before));
+                Assert.That(Logged(logger, LogLevel.Error), Has.Some.Contains("device is not ready"));
+            }
+        }
+
+        [Test]
+        public void ReadOnce_AFileThatBecomesReadableAgain_IsPickedUp()
+        {
+            var files = new MountedKeysFile();
+            var holder = HolderOn(TheKeyItStartedOn);
+
+            files.Place(MountedPath, RingTextFor((TheKeyTheOperatorAdded, MaterialOf(41))));
+            files.WhatHappensOnRead = () => throw new UnauthorizedAccessException("denied");
+
+            var watcher = WatcherOver(files, holder, out _);
+            watcher.ReadOnce();
+
+            files.WhatHappensOnRead = null;
+            watcher.ReadOnce();
+
+            Assert.That(holder.Current.ActiveKey.Id, Is.EqualTo(TheKeyTheOperatorAdded));
+        }
+
+        // The first id is the key new secrets are written under, and an operator matching the line against
+        // their own store reads it that way round.
+        [Test]
+        public void ReadOnce_TheKeysItNowHolds_AreNamedActiveKeyFirstAndSeparated()
+        {
+            var files = new MountedKeysFile();
+            var holder = HolderOn(TheKeyItStartedOn);
+
+            files.Place(MountedPath, RingTextFor((TheKeyTheOperatorAdded, MaterialOf(41)), (TheKeyItStartedOn, MaterialOf(7))));
+
+            var watcher = WatcherOver(files, holder, out var logger);
+            watcher.ReadOnce();
+
+            Assert.That(
+                Logged(logger, LogLevel.Information),
+                Has.Some.Contains($"{TheKeyTheOperatorAdded}, {TheKeyItStartedOn}, {LegacyDefaultEncryptionKey.Id}"));
+        }
+
+        [Test]
+        public void ReadOnce_TheKeysThatWentAway_AreNamedAndSeparated()
+        {
+            var files = new MountedKeysFile();
+            var material = MaterialOf(7);
+            var holder = new EncryptionKeyRingHolder(
+                new EncryptionKeyRing(
+                    KeyCustody.SuppliedByExternalSecret,
+                    new EncryptionKey(TheKeyItStartedOn, material),
+                    new EncryptionKey("k-2026-07-01-01", MaterialOf(23)))
+                    .WithLegacyDefault());
+
+            files.Place(MountedPath, RingTextFor((TheKeyTheOperatorAdded, MaterialOf(41))));
+
+            var watcher = WatcherOver(files, holder, out var logger);
+            watcher.ReadOnce();
+
+            Assert.That(
+                Logged(logger, LogLevel.Warning),
+                Has.Some.Contains($"{TheKeyItStartedOn}, k-2026-07-01-01"));
+        }
+
+        [Test]
+        public void Constructor_WithoutWhatItNeeds_RefusesRatherThanFailingOnTheFirstTick()
+        {
+            var files = new MountedKeysFile();
+            var source = new MountedFileKeyRingSource(MountedPath, files);
+            var holder = HolderOn(TheKeyItStartedOn);
+            var logger = Mock.Of<ILogger<KeyRingFileWatcher>>();
+            var interval = TimeSpan.FromSeconds(30);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => new KeyRingFileWatcher(null!, holder, TimeProvider.System, interval, logger),
+                    Throws.ArgumentNullException);
+                Assert.That(() => new KeyRingFileWatcher(source, null!, TimeProvider.System, interval, logger),
+                    Throws.ArgumentNullException);
+                Assert.That(() => new KeyRingFileWatcher(source, holder, null!, interval, logger),
+                    Throws.ArgumentNullException);
+                Assert.That(() => new KeyRingFileWatcher(source, holder, TimeProvider.System, interval, null!),
+                    Throws.ArgumentNullException);
+            }
+        }
+
         [Test]
         public void ReadOnce_AFileThatComesBackAfterAFailure_IsJudgedAfresh()
         {
@@ -446,6 +571,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
 
             public int TimesRead { get; private set; }
 
+            // A mounted file can be there and still refuse to be read - a tightened mode, a substrate that
+            // went away underneath the pod. Neither is reachable by staging content.
+            public Func<byte[]>? WhatHappensOnRead { get; set; }
+
             public void Place(string path, string contents)
             {
                 files[path] = Encoding.UTF8.GetBytes(contents);
@@ -460,7 +589,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             {
                 TimesRead++;
 
-                return files[path];
+                return WhatHappensOnRead is null ? files[path] : WhatHappensOnRead();
             }
 
             public void WriteAllBytes(string path, byte[] contents)
