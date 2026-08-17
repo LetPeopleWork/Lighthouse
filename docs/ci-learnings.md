@@ -1025,6 +1025,31 @@ get re-applied.
 - **Fix**: none in code. Re-run the failed job. Note `gh run rerun --failed` is refused while any job in the run is still `waiting`/`in_progress` ("This workflow is already running") — wait for the run to settle, or re-run the single job by id.
 - **Rule going forward**: before diagnosing any red job, ask `gh api repos/<owner>/<repo>/actions/jobs/<jobId> --jq '.steps[] | select(.conclusion=="failure") | "\(.number) \(.name)"'`. If the only failed step is **`Set up job`** (or `Set up runner` / `Initialize containers`), stop — it is infrastructure, re-run and change nothing. Failed steps numbered ≥ 2 are ours and deserve a real diagnosis. `--log-failed` refuses while the run is still in progress, so triage a job that failed inside a still-running workflow through the API, not the logs. Recurrence: 1.
 
+### 2026-08-17 — a watcher that reads its exit condition and its assertion at two instants reports the race it was written to catch
+
+- **Symptom**: `EnqueueUpdate_TriggerArrivesWhileInFlight_KeyStaysActiveAcrossTheHandover` failed twice in
+  one afternoon on `main` (runs 32040943909 and 32053858348), `Assert.That(observedIdle, Is.False)` /
+  `Expected: False, But was: True`, 1 of 5421 — while the same 5421 tests passed locally with zero
+  failures. The 2026-08-07 entry below fixed a real defect with this same signature, so the obvious read
+  was that the fix had regressed.
+- **Root cause**: the production invariant holds. `TryScheduleRerun` calls `statusStore.Requeue` (Queued,
+  which `HasActiveWork` counts) *before* writing the follow-up to the channel, and the coalesced path
+  never advances to a terminal status, so the key goes Queued → InProgress → Queued with no gap. The
+  defect was in the watcher: `while (!followUpStarted.Task.IsCompleted) { if (!store.HasActiveWork()) …`
+  reads the loop condition and the store at **two different instants**. On a contended runner the
+  follow-up can start, finish and be removed between them, and the perfectly ordinary idle that leaves
+  behind gets recorded as the forbidden one.
+- **Fix**: re-read the follow-up flag together with the store —
+  `if (!store.HasActiveWork() && !followUpStarted.Task.IsCompleted)`. An idle store that already has a
+  follow-up running is indistinguishable from normal completion, so it must not count.
+- **Rule going forward**: a polling watcher that decides "the system was in a forbidden state" must
+  re-check the condition that makes the state forbidden **in the same iteration as the observation**,
+  not only in the loop guard. Two reads separated by a scheduling point are two different moments, and
+  under CI contention the gap between them is where the false failure lives. The tell that it is the
+  watcher rather than the system: the failure only appears on a loaded runner, the assertion is about an
+  interval rather than a value, and the production path has no statement between the two states it
+  claims to have observed.
+
 ### 2026-08-17 — a new property on an API DTO fails the pinned payload-shape test, and that test is right
 
 - **Symptom**: `Verify Backend` red with `EncryptionControllerTests.ThePayload_SaysWhetherTheKeyPublished

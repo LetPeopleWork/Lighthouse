@@ -211,7 +211,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             {
                 while (!followUpStarted.Task.IsCompleted)
                 {
-                    if (!store.HasActiveWork())
+                    // Both conditions are read again together, because the loop condition and the store
+                    // read are two separate instants: on a loaded runner the follow-up can start, finish
+                    // and be removed between them, and the idle that leaves behind is the ordinary kind.
+                    // Only an idle store that still has no follow-up running is the one this test forbids.
+                    if (!store.HasActiveWork() && !followUpStarted.Task.IsCompleted)
                     {
                         observedIdle = true;
                         return;
