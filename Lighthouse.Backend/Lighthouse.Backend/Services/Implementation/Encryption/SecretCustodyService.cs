@@ -22,7 +22,11 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     // without going back to the work tracking system for a new one.
     //
     // What is left to do is written on the data itself - a stored secret names the key it is under - so an
-    // interrupted pass needs no bookkeeping to resume from and a finished one finds nothing to do.
+    // interrupted pass needs no bookkeeping to resume from and a finished one finds nothing to do. That
+    // holds only while the keys hold still: a key replaced from outside mid-pass changes the question, and
+    // rows already excluded as done were excluded against a key that may no longer be held. So a pass that
+    // finds the keys have moved under it walks a second time against what is held now, and says it has to
+    // be run again rather than reporting a rotation nobody finished.
     public sealed class SecretCustodyService : ISecretCustodyService
     {
         internal const string AccessTokenField = "Access token";
@@ -94,12 +98,36 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         private async Task<SecretReadabilityReport> WalkAsync(bool moveThem, CancellationToken cancellationToken)
         {
-            // Taken once and then used for all three things a pass decides - what is left to do, what each
-            // row is written under, and what the report is labelled with. An operator replacing a mounted
-            // keys file while this runs is a pair of actions the product invites, and asking again per row
-            // would let the three answers come apart without anything noticing.
-            var activeKey = keyRingHolder.Current.ActiveKey;
+            var ringItStartedOn = keyRingHolder.Current;
 
+            var walked = await WalkOnceAsync(ringItStartedOn.ActiveKey, moveThem, cancellationToken);
+
+            var ringNowInForce = keyRingHolder.Current;
+
+            if (ringNowInForce.Equals(ringItStartedOn))
+            {
+                return new SecretReadabilityReport(ringItStartedOn.ActiveKey.Id, walked);
+            }
+
+            // Keys replaced from outside while the walk was running - an operator rotating a mounted secret
+            // while an administrator moves credentials, which is the pair of actions this invites. The rows
+            // the first pass took off its list were excluded against a key that may no longer be held at
+            // all, and a row that was never a candidate cannot be named. Walking once more against what is
+            // held now turns every one of them back into a candidate, so a credential stranded on a key
+            // that has gone is read as one nobody can read and reported as exactly that.
+            //
+            // Once, not until it settles. Keys that keep moving are reported rather than chased.
+            var walkedAgain = await WalkOnceAsync(ringNowInForce.ActiveKey, moveThem, cancellationToken);
+
+            return new SecretReadabilityReport(
+                ringNowInForce.ActiveKey.Id,
+                WhatEachCredentialEndedUpAs(walked, walkedAgain),
+                keysChangedWhileItRan: true);
+        }
+
+        private async Task<List<StoredSecretRecord>> WalkOnceAsync(
+            EncryptionKey activeKey, bool moveThem, CancellationToken cancellationToken)
+        {
             // A pass that writes asks the database what is left to do, and everything already on the key in
             // force is not it. A pass that only looks is answering a different question - what is stored -
             // and filtering the answered-already rows out of it would leave a freshly rotated instance
@@ -116,7 +144,23 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                 walked.Add(await WalkPastAsync(candidate, activeKey, moveThem, cancellationToken));
             }
 
-            return new SecretReadabilityReport(activeKey.Id, walked);
+            return walked;
+        }
+
+        // One line per credential, and the later look at it wins. A credential named twice would be counted
+        // twice, and an operator reads these numbers to decide whether anything is still wrong.
+        private static List<StoredSecretRecord> WhatEachCredentialEndedUpAs(
+            List<StoredSecretRecord> walked, List<StoredSecretRecord> walkedAgain)
+        {
+            var lookedAtAgain = walkedAgain
+                .Select(record => (record.ConnectionId, record.Field))
+                .ToHashSet();
+
+            return
+            [
+                .. walked.Where(record => !lookedAtAgain.Contains((record.ConnectionId, record.Field))),
+                .. walkedAgain,
+            ];
         }
 
         private async Task<StoredSecretRecord> WalkPastAsync(

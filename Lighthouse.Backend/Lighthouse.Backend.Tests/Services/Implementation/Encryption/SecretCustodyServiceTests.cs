@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
-        public async Task APassWhoseRingIsReplacedWhileItRuns_WritesEverySecretUnderTheKeyItStartedOn()
+        public async Task APassWhoseKeysAreReplacedWhileItRuns_LeavesEverySecretItMovedUnderOneKey()
         {
             await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
             await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
@@ -137,8 +137,92 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             {
                 Assert.That(pat.KeyId, Is.EqualTo(clientSecret.KeyId),
                     "a pass split across two keys is one an operator cannot reason about, whichever of the two they still hold");
-                Assert.That(pat.KeyId, Is.EqualTo(NewKey.Id));
-                Assert.That(report.ActiveKeyId, Is.EqualTo(NewKey.Id));
+                Assert.That(report.ActiveKeyId, Is.EqualTo(pat.KeyId),
+                    "the key the report names is the key the credentials it names are actually under");
+                Assert.That(report.KeysChangedWhileItRan, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task ACredentialThePassNeverLookedAt_OnAKeyThatHasGone_IsStillNamed()
+        {
+            // Already on the key in force, so the filter takes it off the list before anything is replaced.
+            await StoreAsync(PersonalAccessToken, Under(NewKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            var report = await Rotating(holder, ReplacingTheRingAfter(0, cryptoService, holder, NewerKey), new AMinterThatMints(NewerKey))
+                .ReEncryptAsync();
+
+            var stranded = report.Secrets.Where(secret => secret.Outcome == SecretMoveOutcome.CouldNotBeRead).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stranded.Select(secret => secret.Field), Does.Contain(PersonalAccessToken),
+                    "a credential the filter excluded against a key that has since gone is unreadable, and naming it is the only way an operator hears about it");
+                Assert.That(report.UnreadableCount, Is.EqualTo(stranded.Count));
+                Assert.That(report.KeysChangedWhileItRan, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task APassWhoseKeysHeldStill_SaysNothingAboutThemHavingChanged()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+
+            var report = await CustodyService().ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.KeysChangedWhileItRan, Is.False);
+                Assert.That(report.MovedCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task APassRunAgainAfterTheKeysChanged_FinishesItAndSaysNothingAboutAChange()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            var disturbed = await Rotating(holder, ReplacingTheRingAfter(0, cryptoService, holder, NewerKey, NewKey, OldKey), new AMinterThatMints(NewerKey))
+                .ReEncryptAsync();
+
+            var again = await Rotating(holder, cryptoService, new AMinterThatMints(NewerKey)).ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(disturbed.KeysChangedWhileItRan, Is.True);
+                Assert.That(again.KeysChangedWhileItRan, Is.False);
+                Assert.That(again.Secrets, Is.Empty,
+                    "advice to run it again is only honest if running it again leaves nothing behind");
+                Assert.That(cryptoService.Read(await StoredOptionAsync(PersonalAccessToken)).KeyId, Is.EqualTo(NewerKey.Id));
+                Assert.That(cryptoService.Read(await StoredOptionAsync(ClientSecret)).KeyId, Is.EqualTo(NewerKey.Id));
+            }
+        }
+
+        [Test]
+        public async Task ACheckThatOnlyLooks_SaysTheKeysChangedAndNamesOneItReadAgainst()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            var report = await Rotating(holder, new ReaderThatReplacesTheRing(cryptoService, holder, NewerKey, NewKey, OldKey), new AMinterThatMints(NewerKey))
+                .InspectAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.KeysChangedWhileItRan, Is.True);
+                Assert.That(report.ActiveKeyId, Is.EqualTo(NewerKey.Id),
+                    "a check labelled with a key it stopped reading against sends an operator to count secrets under the wrong one");
             }
         }
 
@@ -1244,6 +1328,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 {
                     getThereFirst().GetAwaiter().GetResult();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Stands where the reload timer would during a check that only looks. Nothing is encrypted on that
+        /// path, so between one row being read and the next is the only moment a replacement can land in.
+        /// </summary>
+        private sealed class ReaderThatReplacesTheRing : ICryptoService
+        {
+            private readonly ICryptoService inner;
+
+            private readonly EncryptionKeyRingHolder holder;
+
+            private readonly EncryptionKey[] replacement;
+
+            private bool replaced;
+
+            public ReaderThatReplacesTheRing(
+                ICryptoService inner, EncryptionKeyRingHolder holder, params EncryptionKey[] replacement)
+            {
+                this.inner = inner;
+                this.holder = holder;
+                this.replacement = replacement;
+            }
+
+            public string Encrypt(string plainText)
+            {
+                return inner.Encrypt(plainText);
+            }
+
+            public string Encrypt(string plainText, EncryptionKey key)
+            {
+                return inner.Encrypt(plainText, key);
+            }
+
+            public string Decrypt(string cipherText)
+            {
+                return inner.Decrypt(cipherText);
+            }
+
+            public SecretReadResult Read(string storedValue)
+            {
+                var secret = inner.Read(storedValue);
+
+                if (!replaced)
+                {
+                    replaced = true;
+                    holder.Replace(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, replacement));
+                }
+
+                return secret;
             }
         }
     }

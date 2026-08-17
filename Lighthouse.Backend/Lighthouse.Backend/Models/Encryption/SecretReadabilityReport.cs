@@ -42,12 +42,14 @@ namespace Lighthouse.Backend.Models.Encryption
     // is fine, or leave them believing a rotation finished when it did not.
     public sealed class SecretReadabilityReport
     {
-        public SecretReadabilityReport(string activeKeyId, IEnumerable<StoredSecretRecord> secrets)
+        public SecretReadabilityReport(
+            string activeKeyId, IEnumerable<StoredSecretRecord> secrets, bool keysChangedWhileItRan = false)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(activeKeyId);
             ArgumentNullException.ThrowIfNull(secrets);
 
             ActiveKeyId = activeKeyId;
+            KeysChangedWhileItRan = keysChangedWhileItRan;
             Secrets = [.. secrets];
 
             MovedCount = Secrets.Count(secret => secret.Outcome == SecretMoveOutcome.Moved);
@@ -67,6 +69,11 @@ namespace Lighthouse.Backend.Models.Encryption
         }
 
         public string ActiveKeyId { get; }
+
+        // The keys an instance holds can be replaced from outside while a pass is walking, and a pass that
+        // was disturbed has to be run again - so an operator is told rather than left reading counts that
+        // describe a rotation nobody finished.
+        public bool KeysChangedWhileItRan { get; }
 
         public IReadOnlyList<StoredSecretRecord> Secrets { get; }
 
