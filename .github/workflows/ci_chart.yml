@@ -56,9 +56,13 @@ jobs:
         run: helm unittest -f 'tests/unit/*.yaml' ./chart
 
       - name: Standalone gate — default values render exactly one API workload, postgres provider
+        env:
+          # Any 32 bytes will do here: the chart never looks at the value, only at whether one of the
+          # two ways to own the key was named. A render without it is refused, which is the point.
+          CI_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         run: |
           set -euo pipefail
-          render="$(helm template l8e ./chart --set postgresql.auth.password=ci)"
+          render="$(helm template l8e ./chart --set postgresql.auth.password=ci --set encryption.key="$CI_ENCRYPTION_KEY")"
           deploys="$(printf '%s\n' "$render" | grep -c '^kind: Deployment' || true)"
           [ "$deploys" = "1" ] || { echo "standalone gate: expected 1 Deployment, got $deploys"; exit 1; }
           printf '%s\n' "$render" | grep -qE 'Database__Provider' || { echo "standalone gate: Database__Provider missing"; exit 1; }
@@ -66,6 +70,39 @@ jobs:
           printf '%s\n' "$render" | grep -iE '[:=]\s*"?sqlite' && { echo "standalone gate: chart must never set provider sqlite"; exit 1; }
           printf '%s\n' "$render" | grep -A1 'Database__Provider' | grep -qi 'postgres' || { echo "standalone gate: provider is not postgres"; exit 1; }
           echo "standalone gate OK"
+
+      - name: No template can invent an encryption key
+        # The chart refuses to render without a key rather than generating one, because the only
+        # mechanism for generate-once asks the cluster what already exists and comes back empty on
+        # every render with no cluster to ask - which is every ArgoCD sync. A generator smuggled back
+        # in would mint a fresh key per sync and orphan a tenant's whole credential set. Rendering
+        # twice cannot catch that: a lookup-guarded generator renders the same empty answer every time
+        # and still mints on a real install. So the templates are read directly.
+        run: |
+          set -euo pipefail
+          # Matched inside a template action rather than anywhere in the file, so that prose naming
+          # these functions - including the comment next to the guard explaining why none of them is
+          # used - is not mistaken for a call to one.
+          if grep -nE '\{\{[^}]*\b(randAlphaNum|randBytes|randAscii|uuidv4|genPrivateKey|derivePassword|lookup)\b' chart/templates/*.yaml chart/templates/*.tpl; then
+            echo "a template can invent a value; the encryption key must be supplied, never generated"
+            exit 1
+          fi
+          echo "no-generation gate OK"
+
+      - name: The same values render the same manifests
+        # Upgrade safety is structural rather than defended: nothing is minted, so nothing can be
+        # regenerated. This is what holds that property - two renders of identical values, compared
+        # byte for byte.
+        env:
+          CI_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        run: |
+          set -euo pipefail
+          args=(l8e ./chart --set postgresql.auth.password=ci --set encryption.key="$CI_ENCRYPTION_KEY")
+          helm template "${args[@]}" > /tmp/render-1.yaml
+          helm template "${args[@]}" > /tmp/render-2.yaml
+          diff -u /tmp/render-1.yaml /tmp/render-2.yaml \
+            || { echo "two renders of identical values differ; something in the chart is not deterministic"; exit 1; }
+          echo "render determinism gate OK"
 
       - name: config-ref drift gate (helm-docs is regenerated; README must already match)
         # ADR-084 — the chart/README.md Values table is generated from values.yaml `# --` comments.
@@ -98,10 +135,13 @@ jobs:
           cluster_name: lighthouse-chart-smoke
 
       - name: helm install (bundled Postgres, embedded SPA, no ingress) into kind
+        env:
+          CI_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
         run: |
           helm install l8e ./chart \
             --set ingress.enabled=false \
-            --set postgresql.auth.password=ci-smoke-pw \
+            --set postgresql.auth.password=ci \
+            --set encryption.key="$CI_ENCRYPTION_KEY" \
             --wait --timeout 5m
           kubectl get pods -o wide
 
@@ -119,12 +159,55 @@ jobs:
           curl -fsS http://127.0.0.1:8080/ | grep -q '<title>Lighthouse</title>'
           kill $pf || true
 
+      # The path every tenant on the platform actually uses, and the only one where a real kubelet
+      # decides two things no render can: whether a projected Secret file is readable by the non-root
+      # user the application runs as, and whether the volume resolves to the Secret an operator made
+      # rather than to one the chart owns. Installed into the same cluster, so it costs a Secret and
+      # an install rather than a second kind.
+      - name: helm install, with the key owned by a Secret the operator made
+        env:
+          CI_ENCRYPTION_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        run: |
+          set -euo pipefail
+          kubectl create namespace tenant
+          kubectl -n tenant create secret generic tenant-encryption \
+            --from-literal=keys="k-ci-01:$CI_ENCRYPTION_KEY"
+          helm install tenant ./chart \
+            --namespace tenant \
+            --set ingress.enabled=false \
+            --set postgresql.auth.password=ci \
+            --set encryption.existingSecret=tenant-encryption \
+            --wait --timeout 5m
+          kubectl -n tenant rollout status deploy -l app.kubernetes.io/instance=tenant --timeout=300s
+
+      - name: The operator's key reaches the container, and the user it runs as can read it
+        # This asserts the projection, not what the application makes of it. The chart pins appVersion
+        # to the last RELEASED image, so a chart job installs an application that predates whatever is
+        # unreleased on main - it cannot be asked whether it reports the right custody. What a real
+        # kubelet does decide here, and nothing else can, is whether a Secret projected at 0444 into a
+        # container whose user is not root is readable at all. At 0400 it is not, and the pod
+        # crash-loops. Whether the instance then reports the right custody is a dogfood question,
+        # answered on Tenant Zero against an image built from main.
+        run: |
+          set -euo pipefail
+          kubectl -n tenant exec deploy/tenant-lighthouse-api -c api -- id | grep -qv 'uid=0(' \
+            || { echo "the runtime user is root, so this proves nothing about a non-root read"; exit 1; }
+          kubectl -n tenant exec deploy/tenant-lighthouse-api -c api -- \
+            sh -c 'cat "$Encryption__KeysFile" > /dev/null' \
+            || { echo "the projected key file is not readable by the user the application runs as"; exit 1; }
+          kubectl -n tenant exec deploy/tenant-lighthouse-api -c api -- \
+            sh -c 'grep -q "^k-ci-01:" "$Encryption__KeysFile"' \
+            || { echo "the mounted file is not the key the operator's Secret carries"; exit 1; }
+          echo "external-secret projection OK"
+
       - name: Dump diagnostics on failure
         if: failure()
         run: |
           kubectl get pods -A
           kubectl describe pods -l app.kubernetes.io/instance=l8e || true
           kubectl logs -l app.kubernetes.io/instance=l8e --tail=200 --all-containers || true
+          kubectl -n tenant describe pods -l app.kubernetes.io/instance=tenant || true
+          kubectl -n tenant logs -l app.kubernetes.io/instance=tenant --tail=200 --all-containers || true
 
   # Decide whether there is a new chart version to publish, so the Release gate only appears when
   # there is actually something to ship. On a push to main: "Chart.yaml version not yet in

@@ -50,6 +50,16 @@ postgresql:
     size: 20Gi
     storageClass: ""          # empty = cluster default
 
+# --- Encryption key ----------------------------------------------------------
+# The key stored credentials are encrypted with. One of the two below is REQUIRED: an install that
+# names neither is refused at render. This chart never generates a key, so a key you do not supply is
+# a key nobody owns.
+encryption:
+  key: ""                     # REQUIRED unless existingSecret — openssl rand -base64 32
+  # Or let your own secret store (External Secrets / OpenBao) own it, and name the Secret it fills.
+  # The Secret must carry the key `keys`. Set this OR encryption.key, never both.
+  # existingSecret: "lighthouse-encryption"
+
 # Bring-your-own Postgres (used when postgresql.enabled=false). Wired in slice-03.
 # externalDatabase:
 #   host: "my-postgres.internal"
