@@ -9,7 +9,7 @@
     ],
     "thresholds": { "high": 90, "low": 80, "break": 0 },
     "coverage-analysis": "perTestInIsolation",
-    "test-case-filter": "(FullyQualifiedName~KeyRingFileWatcher|FullyQualifiedName~MountedFileKeyRingSource|FullyQualifiedName~KeyRingSerializer|FullyQualifiedName~EncryptionKeyRingBootstrapper)&(FullyQualifiedName!~Containers)",
+    "test-case-filter": "(FullyQualifiedName~KeyRingFileWatcher|FullyQualifiedName~KeyRingFileReload|FullyQualifiedName~MountedFileKeyRingSource|FullyQualifiedName~KeyRingSerializer|FullyQualifiedName~EncryptionKeyRingBootstrapper)&(FullyQualifiedName!~Containers)",
     "reporters": ["progress", "json", "cleartext"],
     "concurrency": 4,
     "additional-timeout": 30000,

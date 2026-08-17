@@ -72,29 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         public void ReadOnce()
         {
-            string? contents;
-
-            try
-            {
-                contents = mountedFile.ReadContents();
-            }
-            catch (InvalidOperationException unreadable)
-            {
-                ReportUnreadable(unreadable.Message);
-                return;
-            }
-            catch (IOException unreadable)
-            {
-                ReportUnreadable(unreadable.Message);
-                return;
-            }
-            catch (UnauthorizedAccessException unreadable)
-            {
-                ReportUnreadable(unreadable.Message);
-                return;
-            }
-
-            failureAlreadyReported = null;
+            var contents = ContentsOrNothing();
 
             // Content this instance has already made up its mind about is not judged twice. Without that, a
             // file an operator got wrong would be complained about every half minute for as long as it sat
@@ -107,6 +85,34 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             contentAlreadyJudged = contents;
 
             Apply(contents);
+        }
+
+        // Nothing is the answer both when there is no file to read and when reading it failed, because both
+        // end the same way: what is running stays running.
+        private string? ContentsOrNothing()
+        {
+            try
+            {
+                var contents = mountedFile.ReadContents();
+                failureAlreadyReported = null;
+
+                return contents;
+            }
+            catch (InvalidOperationException unreadable)
+            {
+                ReportUnreadable(unreadable.Message);
+                return null;
+            }
+            catch (IOException unreadable)
+            {
+                ReportUnreadable(unreadable.Message);
+                return null;
+            }
+            catch (UnauthorizedAccessException unreadable)
+            {
+                ReportUnreadable(unreadable.Message);
+                return null;
+            }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -128,24 +134,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private void Apply(string contents)
         {
-            EncryptionKeyRing candidate;
-
-            try
-            {
-                // The published key goes on the end of a reloaded ring for the same reason it goes on the end
-                // of a resolved one: an instance that upgraded still holds secrets written under it, and a
-                // rotation is no moment to make them unreadable.
-                candidate = mountedFile.RingFrom(contents).WithLegacyDefault();
-            }
-            catch (InvalidOperationException defect)
-            {
-                logger.LogError(defect, "encryption.keyring.rejected {Defect}", defect.Message);
-                return;
-            }
-
+            var candidate = RingOrNothing(contents);
             var inForce = holder.Current;
 
-            if (candidate.Equals(inForce))
+            if (candidate is null || candidate.Equals(inForce))
             {
                 return;
             }
@@ -153,6 +145,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
             holder.Replace(candidate);
 
             Announce(candidate, inForce);
+        }
+
+        private EncryptionKeyRing? RingOrNothing(string contents)
+        {
+            try
+            {
+                // The published key goes on the end of a reloaded ring for the same reason it goes on the end
+                // of a resolved one: an instance that upgraded still holds secrets written under it, and a
+                // rotation is no moment to make them unreadable.
+                return mountedFile.RingFrom(contents).WithLegacyDefault();
+            }
+            catch (InvalidOperationException defect)
+            {
+                logger.LogError(defect, "encryption.keyring.rejected {Defect}", defect.Message);
+                return null;
+            }
         }
 
         // A key that went away is applied rather than argued with, because custody belongs to whoever owns
