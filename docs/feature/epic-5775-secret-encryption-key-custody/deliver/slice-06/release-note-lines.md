@@ -25,6 +25,47 @@ open in every build, so an advisory would describe the fix rather than a breach.
 > published with every copy of Lighthouse — until you run that one action. Until then, anyone holding a
 > copy of Lighthouse can still read those values out of a copy of your database.
 
+## ACTION REQUIRED — put this at the top, in a callout
+
+Confirmed on a real deployment on 2026-08-17, not a hypothetical: a Docker Compose stack on Postgres,
+in the shape the shipped example has, upgraded and came up on the published key with no way to fix it
+from the interface.
+
+> ## ⚠️ Action required if Lighthouse stores your data in Postgres, or in a container without a mounted data volume
+>
+> **Open Settings → Encryption after upgrading and read the first row.**
+>
+> If **Key source** says *the key published with the product*, this instance has nowhere to keep a key
+> of its own — so it is protecting your stored credentials with the key that ships inside every copy of
+> Lighthouse, and it will keep doing that for credentials you enter from now on. The screen offers you
+> no *Move* or *Rotate* button in this state, and that is not a bug: a move needs a destination key and
+> this instance has none. **Nothing is broken and nothing is lost — but nothing is protected either.**
+>
+> Two settings fix it; pick one and restart:
+>
+> | If you want | Set |
+> |---|---|
+> | Lighthouse to make and keep the key for you (recommended for Docker) | `Encryption__KeyStorePath` to a directory on a volume that outlives the container — on the official image, `/app/data/keys`, with `/app/data` on a named volume |
+> | To own the key yourself | `Encryption__Key` to a 32-byte base64 key you keep somewhere safe |
+>
+> For a Compose file, that is one line in the `environment:` block:
+>
+> ```yaml
+>       Encryption__KeyStorePath: /app/data/keys
+> ```
+>
+> ```yaml
+>     volumes:
+>       - data:/app/data          # a named volume, not a host path
+> ```
+>
+> Then restart, confirm **Key source** no longer says *published with the product*, and press
+> **Move stored secrets**. Your credentials move across and nothing has to be re-entered.
+>
+> **Use a named volume, not a bind mount.** The container runs as a non-root user and cannot write into
+> a host directory your own account owns. Kubernetes users are unaffected: the chart refuses to install
+> without a key you supplied, so the situation cannot arise.
+
 ## The install that gets no button (finding E3)
 
 > **If Lighthouse has nowhere to keep a key of its own, it stays on the published key — including for

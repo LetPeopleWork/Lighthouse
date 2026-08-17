@@ -590,7 +590,28 @@ with the new key, and mention moved secrets only when there were any.
 
 ### Docs — `configuration.md`
 
-_(to be filled)_
+**F-28 · F-24 confirmed in the wild, on a maintainer's own deployment** (2026-08-17). A Compose stack on
+Postgres — same shape as the shipped example, a named volume at `/app/data`, no `Encryption__Key` and no
+`Encryption__KeyStorePath` — upgraded to `26.8.17.16`, migrated cleanly, started, served, and reported
+`🔑 Encryption : published key · /app/data-protection-keys` with the no-durable-store warning. It did not
+refuse, because it holds two credentials, so the probe answers *HoldsSome* rather than *HoldsNone*. That
+is the F-24 crash-loop's quieter sibling and the more likely one for an existing user: **it keeps
+working, on the published key, indefinitely, for old and new credentials alike**.
+
+The remedy verified on that instance, and the one the documentation should lead with:
+`Encryption__KeyStorePath: /app/data/keys` on the existing named volume. One line, one restart. The
+banner then reads `instance · /app/data/keys`, the key store contains
+`encryption-keyring.protected` + the key XML at mode `0600` owned by `app`, and a `--force-recreate`
+leaves the same key id in place. **Move stored secrets** appears once there is a destination key.
+
+**F-29 · The published-key warning tells the operator to press a button that is not offered.** On that
+same instance the amber banner read *"2 stored credentials are still encrypted with the key published
+with Lighthouse. Move them onto this instance's own key — nothing has to be re-entered."* while the
+panel offered only *Check secrets*. Suppressing the move there is correct and deliberate (decision V3 —
+there is nowhere to move to), but the sentence beside it was not updated to match, so it reads as an
+instruction that cannot be followed. The maintainer's first question on seeing the screen was "I can
+check but I cannot move the secrets?", which is the defect stated exactly. The wording must point at the
+custody sentence above it — the one that names the two settings — instead of at a move.
 
 ### Docs — `server.md` / `standalone.md`
 
