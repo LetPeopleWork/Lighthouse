@@ -722,7 +722,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public void TheStatePayload_RefusesToBeBuiltWithoutARing()
         {
             Assert.That(
-                () => new EncryptionStateDto(null!, ReportedKeyStore, 0),
+                () => new EncryptionStateDto(null!, ReportedKeyStore, 0, 0),
                 Throws.ArgumentNullException,
                 "every field on this payload is read off the ring, so one built without it would answer with defaults that look like facts");
         }

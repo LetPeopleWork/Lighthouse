@@ -84,6 +84,7 @@ namespace Lighthouse.Backend.API
                 keyRingHolder.Current,
                 WhereTheKeyIsKept().Directory,
                 stored.UnderThePublishedKey,
+                stored.ReadableNotOnTheActiveKey,
                 configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey),
                 stored.KeyIdsSeen,
                 WhatTheKeyArrivedIn()));

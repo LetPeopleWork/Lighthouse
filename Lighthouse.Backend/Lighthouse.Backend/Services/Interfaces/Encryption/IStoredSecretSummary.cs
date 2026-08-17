@@ -6,10 +6,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Encryption
     // configuration and arrive at a different answer than the key in force.
     public sealed record KeyCustodyDescription(string Line);
 
-    // What the encryption settings need to know about the stored secrets without decrypting any of them:
-    // how many are still readable with the key published with the product, and which keys the rest say
-    // wrote them.
-    public sealed record StoredSecretSummary(int UnderThePublishedKey, IReadOnlyCollection<string> KeyIdsSeen);
+    // What the encryption settings need to know about the stored secrets: how many are still readable with
+    // the key published with the product, which keys the rest say wrote them, and how many could be moved
+    // onto the key in force. The last one is its own fact rather than something inferred from the second,
+    // because a credential written before the envelope format says nothing about which key wrote it.
+    public sealed record StoredSecretSummary(
+        int UnderThePublishedKey, IReadOnlyCollection<string> KeyIdsSeen, int ReadableNotOnTheActiveKey);
 
     // Asked as one question because it is one screen. The two answers read the same three columns for
     // the same payload, and separate ports would be two chances for a caller to ask for one, forget the

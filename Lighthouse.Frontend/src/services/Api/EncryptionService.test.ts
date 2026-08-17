@@ -14,6 +14,7 @@ const validKeyState = {
 	keyStorePath: "/app/data/keys",
 	legacyDefaultPresent: true,
 	secretsUnderPublishedKey: 2,
+	readableSecretsNotOnTheActiveKey: 2,
 	allowsStartWithUnreadableSecrets: false,
 	keySuppliedThrough: null,
 };

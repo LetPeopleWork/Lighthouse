@@ -17,6 +17,10 @@ export interface EncryptionKeyState {
 	keyStorePath: string;
 	legacyDefaultPresent: boolean;
 	secretsUnderPublishedKey: number;
+	// How many stored credentials can be read and are not on the key in force - the number that decides
+	// whether moving them would achieve anything. It cannot be worked out from the key list: a credential
+	// written before the envelope format carries no key id, so nothing names the key that wrote it.
+	readableSecretsNotOnTheActiveKey: number;
 	allowsStartWithUnreadableSecrets: boolean;
 	// The setting the key arrived in, or null where Lighthouse keeps the key itself. It is what the
 	// rotation instruction has to name: the one observed named a setting the operator had not set.
@@ -31,6 +35,7 @@ export const EncryptionKeyStateSchema = z.object({
 	keyStorePath: z.string(),
 	legacyDefaultPresent: z.boolean(),
 	secretsUnderPublishedKey: z.number(),
+	readableSecretsNotOnTheActiveKey: z.number(),
 	allowsStartWithUnreadableSecrets: z.boolean(),
 	keySuppliedThrough: z.string().nullable(),
 });

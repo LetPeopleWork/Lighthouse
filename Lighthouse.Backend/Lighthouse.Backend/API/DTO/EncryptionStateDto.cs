@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.API.DTO
             EncryptionKeyRing keyRing,
             string keyStorePath,
             int secretsUnderPublishedKey,
+            int readableSecretsNotOnTheActiveKey,
             bool allowsStartWithUnreadableSecrets = false,
             IReadOnlyCollection<string>? keysSomethingWasWrittenUnder = null,
             string? keySuppliedThrough = null)
@@ -29,6 +30,7 @@ namespace Lighthouse.Backend.API.DTO
             KeyStorePath = keyStorePath;
             LegacyDefaultPresent = keyRing.TryGet(LegacyDefaultEncryptionKey.Id, out _);
             SecretsUnderPublishedKey = secretsUnderPublishedKey;
+            ReadableSecretsNotOnTheActiveKey = readableSecretsNotOnTheActiveKey;
             AllowsStartWithUnreadableSecrets = allowsStartWithUnreadableSecrets;
             KeySuppliedThrough = keySuppliedThrough;
         }
@@ -61,6 +63,12 @@ namespace Lighthouse.Backend.API.DTO
         // properties because an operator who confused them would either panic or relax for the wrong
         // reason.
         public int SecretsUnderPublishedKey { get; }
+
+        // How many stored credentials can be read and are not on the key in force - what decides whether
+        // moving them would achieve anything. It is not derivable from the key list above: a credential
+        // written before the envelope format carries no key id, so an instance whose credentials all predate
+        // the format lists one key, the one in force, while every credential it holds is on another.
+        public int ReadableSecretsNotOnTheActiveKey { get; }
 
         // Whether this instance was told to start even though it cannot read a single credential it holds.
         // It is on the settings page and not only in a log because the operator who set it is usually not

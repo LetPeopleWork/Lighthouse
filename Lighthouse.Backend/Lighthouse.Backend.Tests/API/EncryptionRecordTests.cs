@@ -161,7 +161,8 @@ namespace Lighthouse.Backend.Tests.API
                 environment.Object,
                 custodyService,
                 custodyService,
-                new StoredSecretSummaryReader(new NothingIsUnderThePublishedKey(), new EveryKeyOnTheRingIsInUse()),
+                new StoredSecretSummaryReader(
+                    new NothingIsUnderThePublishedKey(), new EveryKeyOnTheRingIsInUse(), new NothingCouldMove()),
                 logger.Object)
             {
                 ControllerContext = new ControllerContext
@@ -234,6 +235,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         private sealed class NothingIsUnderThePublishedKey : IPublishedKeySecretCount
+        {
+            public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
+        }
+
+        private sealed class NothingCouldMove : IReadableSecretsNotOnTheActiveKey
         {
             public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
         }

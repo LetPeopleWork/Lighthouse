@@ -93,6 +93,7 @@ export const createMockEncryptionService = (): IEncryptionService => {
 			keyStorePath: "/app/data/keys",
 			legacyDefaultPresent: false,
 			secretsUnderPublishedKey: 0,
+			readableSecretsNotOnTheActiveKey: 0,
 			allowsStartWithUnreadableSecrets: false,
 			keySuppliedThrough: null,
 		}),

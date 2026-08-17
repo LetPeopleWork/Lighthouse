@@ -120,9 +120,14 @@ const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
 // Where the key in force IS the published key there is nowhere to move anything to: the move would
 // re-encrypt that key onto itself, change nothing, and leave the warning standing. What fixes that
 // instance is giving it a key of its own, which the custody sentence above the buttons already says.
+//
+// Everywhere else the question is whether anything readable is off the key in force, and only the server
+// can answer it. Asking the list of keys instead - as this did until a real upgraded instance showed
+// otherwise - misses every credential written before the envelope format, because such a value carries no
+// key id for anything to list.
 const movingWouldAchieveSomething = (keyState: EncryptionKeyState) =>
 	keyState.custody !== "NoDurableStore" &&
-	keyState.keyIds.some((keyId) => keyId !== keyState.activeKeyId);
+	keyState.readableSecretsNotOnTheActiveKey > 0;
 
 // A secret that moved needs no listing - the count already says so. What an operator has to act on is
 // what was left behind, and the only useful thing to say about it is which Connection and which field.

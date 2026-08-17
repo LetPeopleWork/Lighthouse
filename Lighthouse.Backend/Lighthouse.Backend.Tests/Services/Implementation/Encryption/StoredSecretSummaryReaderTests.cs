@@ -20,12 +20,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         public async Task ReadAsync_CarriesBothAnswersThroughUntouched()
         {
             var summary = await new StoredSecretSummaryReader(
-                new SaysThisManyAreExposed(3), new SaysTheseKeysAreInUse(TwoKeys)).ReadAsync();
+                new SaysThisManyAreExposed(3),
+                new SaysTheseKeysAreInUse(TwoKeys),
+                new SaysThisManyCouldMove(4)).ReadAsync();
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(summary.UnderThePublishedKey, Is.EqualTo(3));
                 Assert.That(summary.KeyIdsSeen, Is.EquivalentTo(TwoKeys));
+                Assert.That(summary.ReadableNotOnTheActiveKey, Is.EqualTo(4),
+                    "the count that decides whether a move is offered is its own answer, not one inferred from the keys");
             }
         }
 
@@ -37,10 +41,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(
-                    () => new StoredSecretSummaryReader(null!, new SaysTheseKeysAreInUse(TwoKeys)),
+                    () => new StoredSecretSummaryReader(null!, new SaysTheseKeysAreInUse(TwoKeys), new SaysThisManyCouldMove(0)),
                     Throws.ArgumentNullException);
                 Assert.That(
-                    () => new StoredSecretSummaryReader(new SaysThisManyAreExposed(0), null!),
+                    () => new StoredSecretSummaryReader(new SaysThisManyAreExposed(0), null!, new SaysThisManyCouldMove(0)),
+                    Throws.ArgumentNullException);
+                Assert.That(
+                    () => new StoredSecretSummaryReader(new SaysThisManyAreExposed(0), new SaysTheseKeysAreInUse(TwoKeys), null!),
                     Throws.ArgumentNullException);
             }
         }
@@ -72,6 +79,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             public Task<IReadOnlyCollection<string>> ReadAsync(CancellationToken cancellationToken = default)
             {
                 return Task.FromResult(keyIds);
+            }
+        }
+
+        private sealed class SaysThisManyCouldMove : IReadableSecretsNotOnTheActiveKey
+        {
+            private readonly int howMany;
+
+            public SaysThisManyCouldMove(int howMany)
+            {
+                this.howMany = howMany;
+            }
+
+            public Task<int> CountAsync(CancellationToken cancellationToken = default)
+            {
+                return Task.FromResult(howMany);
             }
         }
     }

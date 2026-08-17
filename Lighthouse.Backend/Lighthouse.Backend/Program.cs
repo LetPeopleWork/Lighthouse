@@ -498,6 +498,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISecretCustodyReader>(services => services.GetRequiredService<ISecretCustodyService>());
             builder.Services.AddScoped<IPublishedKeySecretCount, PublishedKeySecretCount>();
             builder.Services.AddScoped<IReferencedKeyIds, ReferencedKeyIds>();
+            builder.Services.AddScoped<IReadableSecretsNotOnTheActiveKey, ReadableSecretsNotOnTheActiveKey>();
             builder.Services.AddScoped<IStoredSecretSummary, StoredSecretSummaryReader>();
 
             builder.Services.AddSingleton(new KeyCustodyDescription(

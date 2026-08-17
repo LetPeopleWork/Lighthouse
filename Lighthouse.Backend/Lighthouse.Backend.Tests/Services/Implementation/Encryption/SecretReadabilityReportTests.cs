@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 Assert.That(() => new StoredSecretDto(null!), Throws.ArgumentNullException);
                 Assert.That(() => new ConnectionSecretSummaryDto(null!), Throws.ArgumentNullException);
                 Assert.That(() => new SecretReadabilityReportDto(new SecretReadabilityReport(ActiveKeyId, [secret])), Throws.Nothing);
-                Assert.That(() => new EncryptionStateDto(null!, "/app/data/keys", 0), Throws.ArgumentNullException,
+                Assert.That(() => new EncryptionStateDto(null!, "/app/data/keys", 0, 0), Throws.ArgumentNullException,
                     "a payload describing a ring it was not given describes nothing");
             }
         }

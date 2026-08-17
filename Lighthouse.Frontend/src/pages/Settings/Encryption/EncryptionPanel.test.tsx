@@ -18,6 +18,7 @@ const ownKey: EncryptionKeyState = {
 	keyStorePath: "/app/data/keys",
 	legacyDefaultPresent: false,
 	secretsUnderPublishedKey: 0,
+	readableSecretsNotOnTheActiveKey: 3,
 	allowsStartWithUnreadableSecrets: false,
 	keySuppliedThrough: null,
 };
@@ -27,17 +28,30 @@ const startedPastTheRefusal: EncryptionKeyState = {
 	allowsStartWithUnreadableSecrets: true,
 };
 
+// An upgraded instance whose credentials were written before the envelope format existed. They carry no
+// key id, so nothing names the key that wrote them and the key list holds only the key in force - but
+// they are readable, they are not on that key, and moving them is the whole point of the screen.
+const writtenBeforeTheEnvelope: EncryptionKeyState = {
+	...ownKey,
+	keyIds: ["k-2026-08-16-01"],
+	legacyDefaultPresent: true,
+	secretsUnderPublishedKey: 2,
+	readableSecretsNotOnTheActiveKey: 2,
+};
+
 // An instance that has rotated and has nothing left under the earlier key: the panel lists only the
 // keys something is stored under, so the key in force is the only one there is.
 const nothingLeftToMove: EncryptionKeyState = {
 	...ownKey,
 	keyIds: ["k-2026-08-16-01"],
+	readableSecretsNotOnTheActiveKey: 0,
 };
 
 const justUpgraded: EncryptionKeyState = {
 	...ownKey,
 	legacyDefaultPresent: true,
 	secretsUnderPublishedKey: 12,
+	readableSecretsNotOnTheActiveKey: 12,
 };
 
 const operatorOwned: Record<string, EncryptionKeyState> = {
@@ -646,6 +660,30 @@ describe("EncryptionPanel", () => {
 
 		expect(rotate.className).not.toContain("MuiButton-contained");
 		expect(screen.getByTestId("check-secrets-button")).toBeInTheDocument();
+	});
+
+	// Observed on a real deployment, 2026-08-17: a Postgres instance given a key store, holding two
+	// credentials from before the envelope format. The panel showed one key, no move, and a banner telling
+	// the operator to move them. The gate was reading key ids off the stored values, and a value written
+	// before the envelope has none to read.
+	it("offers the move for credentials that name no key but are not on the key in force", async () => {
+		renderPanelOn(writtenBeforeTheEnvelope);
+
+		expect(await screen.findByTestId("reencrypt-button")).toBeInTheDocument();
+	});
+
+	// The severe half of the same defect. Where the operator supplies the key nothing can be minted, so a
+	// hidden move leaves that instance with no way at all to get its credentials off the published key.
+	it("offers the move on a supplied key, which cannot rotate its way out", async () => {
+		renderPanelOn({
+			...writtenBeforeTheEnvelope,
+			custody: "SuppliedByConfiguration",
+			canMint: false,
+			keySuppliedThrough: "Encryption__Key",
+		});
+
+		expect(await screen.findByTestId("reencrypt-button")).toBeInTheDocument();
+		expect(screen.queryByTestId("rotate-key-button")).not.toBeInTheDocument();
 	});
 
 	it("does not offer a move when there is nothing to move", async () => {
