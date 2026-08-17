@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
@@ -84,6 +85,13 @@ namespace Lighthouse.Backend.Tests.Startup
         ];
 
         private const string KeyTheRingSettingCarries = "VGhlUmluZ1NldHRpbmdXaW5zT3ZlclRoZVNpbmdsZSE=";
+
+        // Made from bytes rather than written down as base64. A 32-byte key spelled out in a source file
+        // is indistinguishable from a real one to a secret scanner, and the pre-commit hook is right to
+        // stop it - the whole point of these two is that they have exactly the shape of a real key.
+        private static readonly string KeyTheMountedFileCarries = AKeyMadeOf(0x4D);
+
+        private static readonly string AKeyTheOperatorAdded = AKeyMadeOf(0x5A);
 
         // Each route names the setting that carries it and the provider that has to be the one parsing that
         // setting. Naming the provider is the point: the environment provider has binding rules of its own,
@@ -453,6 +461,81 @@ namespace Lighthouse.Backend.Tests.Startup
             }
         }
 
+        // The ordering says configuration comes before a mounted file, and until this slice that only held
+        // at the moment of a start. The reload was set up whenever a keys file was named, whether or not the
+        // file was the source that answered - so an instance given a key both ways moved onto the file's key
+        // on the first tick, and back again on the next restart, losing whatever was written in between.
+        [Test]
+        public void AKeyFromConfiguration_IsStillTheKeyInForceAfterTheMountedFileHasBeenReReadManyTimes()
+        {
+            var builder = BuilderResolvedWith(
+                SupplyingAKeyInConfigurationAndAnotherInAMountedFile(),
+                ADurableKeyStore());
+
+            var whatItStartedOn = RingOf(builder);
+
+            var watchersDriven = EnoughTimePassesForTheMountedFileToBeReRead(builder, times: 5);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(watchersDriven, Is.Zero,
+                    "Something is still re-reading the mounted file on an instance whose key came from " +
+                    "configuration. The assertions below would pass just as well if it happened to read " +
+                    "the same key back, so the absence is the thing worth pinning.");
+                Assert.That(
+                    Convert.ToBase64String(RingOf(builder).ActiveKey.Material.Span),
+                    Is.EqualTo(IntegrationTestEncryptionKey.Value),
+                    "The key an operator supplied in configuration was replaced by the one in the mounted " +
+                    "file while the instance was running. Every credential written under the configured key " +
+                    "is unreadable from that moment, and the next restart resolves configuration again and " +
+                    "makes the file's key unreadable in turn.");
+                Assert.That(RingOf(builder), Is.EqualTo(whatItStartedOn),
+                    "The ring in force changed without a restart on an instance whose key did not come from " +
+                    "the file being watched.");
+            }
+        }
+
+        [Test]
+        public void AKeyFromConfigurationWhileAKeysFileIsAlsoNamed_IsReportedAsHavingComeFromConfiguration()
+        {
+            var builder = BuilderResolvedWith(
+                SupplyingAKeyInConfigurationAndAnotherInAMountedFile(),
+                ADurableKeyStore());
+
+            Assert.That(RingOf(builder).Custody, Is.EqualTo(KeyCustody.SuppliedByConfiguration),
+                "Custody says the key came from an external secret while configuration is what answered, so " +
+                "the encryption settings send an administrator to edit a setting that is not in force.");
+        }
+
+        // The reload exists so that an operator whose secret store owns the key can add one without a
+        // restart. Narrowing when it is set up must not take that away from the deployment it was built for.
+        [Test]
+        public void AKeyFromAMountedFileAndNowhereElse_IsStillPickedUpWhenTheFileChanges()
+        {
+            var keysFile = AMountedKeysFileHolding(KeyTheMountedFileCarries);
+
+            var builder = BuilderResolvedWith(
+                configuration => configuration.AddCommandLine(
+                    [$"--{MountedFileKeyRingSource.PathSettingKey}={keysFile}"]),
+                ADurableKeyStore());
+
+            File.WriteAllText(keysFile, $"{AKeyTheOperatorAdded}\n".Trim());
+            var watchersDriven = EnoughTimePassesForTheMountedFileToBeReRead(builder, times: 1);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(watchersDriven, Is.EqualTo(1),
+                    "Nothing was arranged to re-read the mounted file on the one deployment the reload " +
+                    "exists for, so the assertion below would be judging a key nobody could have changed.");
+                Assert.That(
+                    Convert.ToBase64String(RingOf(builder).ActiveKey.Material.Span),
+                    Is.EqualTo(AKeyTheOperatorAdded),
+                    "A key added to the mounted file was not picked up. The reload is the whole reason the " +
+                    "key arrives as a file rather than as a setting, and narrowing when it runs must not " +
+                    "cost the deployment it exists for.");
+            }
+        }
+
         [Test]
         public void AnInstanceNamingADatabaseProviderNobodyRecognises_RefusesToStartAndSaysWhichNameItWasGiven()
         {
@@ -628,6 +711,70 @@ namespace Lighthouse.Backend.Tests.Startup
             return [.. ((IConfigurationRoot)builder.Configuration).Providers
                 .Where(provider => provider.TryGet(settingKey, out _))
                 .Select(provider => provider.GetType().Name)];
+        }
+
+        private WebApplicationBuilder BuilderResolvedWith(
+            Action<IConfigurationBuilder> supply, KeyStoreLocation keyStore)
+        {
+            var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions());
+
+            supply(builder.Configuration);
+
+            Backend.Program.EnsureEncryptionKeyRing(builder, keyStore);
+
+            return builder;
+        }
+
+        private Action<IConfigurationBuilder> SupplyingAKeyInConfigurationAndAnotherInAMountedFile()
+        {
+            var keysFile = AMountedKeysFileHolding(KeyTheMountedFileCarries);
+
+            return configuration => configuration.AddCommandLine(
+            [
+                $"--{IntegrationTestEncryptionKey.ConfigurationKey}={IntegrationTestEncryptionKey.Value}",
+                $"--{MountedFileKeyRingSource.PathSettingKey}={keysFile}",
+            ]);
+        }
+
+        private string AMountedKeysFileHolding(string key)
+        {
+            var keysFile = Path.Combine(ATemporaryDirectory(), "keys");
+
+            File.WriteAllText(keysFile, key);
+
+            return keysFile;
+        }
+
+        // Whatever the boot arranged to re-read that file is asked to do it, as many times as an operator
+        // would have waited through. Driving what was registered rather than asserting on the registration
+        // is the difference between pinning the outcome and pinning today's wiring.
+        //
+        // How many were driven is handed back rather than swallowed, because "nothing re-read the file"
+        // and "the file was re-read and changed nothing" are the same picture from the outside and the
+        // opposite thing to have proved. A caller that expects a reload has to be able to say so.
+        private static int EnoughTimePassesForTheMountedFileToBeReRead(WebApplicationBuilder builder, int times)
+        {
+            using var services = builder.Services.BuildServiceProvider();
+
+            var watchers = services.GetServices<IHostedService>().OfType<KeyRingFileWatcher>().ToList();
+
+            foreach (var watcher in watchers)
+            {
+                for (var tick = 0; tick < times; tick++)
+                {
+                    watcher.ReadOnce();
+                }
+            }
+
+            return watchers.Count;
+        }
+
+        private static string AKeyMadeOf(byte seed)
+        {
+            var material = new byte[EncryptionKey.MaterialLength];
+            Array.Fill(material, seed);
+
+            return Convert.ToBase64String(material);
         }
 
         private static EncryptionKeyRing RingOf(WebApplicationBuilder builder)

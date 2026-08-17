@@ -18,6 +18,12 @@ namespace Lighthouse.Backend.Tests
 
         private static readonly byte[] ActiveMaterial = RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength);
 
+        private const string TheSettingInForce = "Encryption__Key";
+
+        private const string TheSettingBeingIgnored = "EncryptionSettings__EncryptionKey";
+
+        private static readonly string[] EverySettingTheOperatorSet = [TheSettingInForce, TheSettingBeingIgnored];
+
         private static readonly string[] EveryOtherBannerLabel =
         [
             "Url",
@@ -144,6 +150,90 @@ namespace Lighthouse.Backend.Tests
                 Assert.That(lines, Has.Count.EqualTo(1));
                 Assert.That(lines[0], Does.Not.Contain("EncryptionSettings"));
             }
+        }
+
+        // An operator moving a key from a setting into a file their secret store owns leaves the old
+        // setting behind more often than not, and the ordering quietly decides between them. Until they
+        // are told which one won, editing the other looks like it should change the key and does not.
+        [Test]
+        public void AKeySuppliedInMoreThanOnePlace_IsSaidSoNamingEveryPlaceAndTheOneInForce()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: false,
+                keySupply: new KeySupply(EverySettingTheOperatorSet, TheSettingInForce));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines, Has.Count.EqualTo(2),
+                    "The instance is being run on one of several supplied keys and says nothing about it.");
+                Assert.That(lines[1], Does.Contain(LabelColumn("Warning")),
+                    "The notice is not marked as a warning, so it reads as an ordinary fact about a healthy " +
+                    "instance rather than as something to go and tidy up.");
+                Assert.That(lines[1], Does.Contain(TheSettingInForce));
+                Assert.That(lines[1], Does.Contain(TheSettingBeingIgnored),
+                    "The place that is being ignored is not named, so an operator has no way to know which " +
+                    "of the settings they wrote is the one doing nothing.");
+
+                // The three things the sentence has to do, each pinned by the phrase that does it: say
+                // there is more than one, say which one is winning, and say what to do about the rest.
+                // Without all three it is a statement of fact an operator cannot act on.
+                Assert.That(lines[1], Does.Contain("more than one place"));
+                Assert.That(lines[1], Does.Contain("reading nothing from the others"));
+                Assert.That(lines[1], Does.Contain("Remove the ones you are not using"));
+            }
+        }
+
+        [Test]
+        public void AKeySuppliedInMoreThanOnePlace_IsSaidOnceHoweverManyPlacesWereNamed()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: false,
+                keySupply: new KeySupply([.. EverySettingTheOperatorSet, "Encryption__KeysFile"], TheSettingInForce));
+
+            Assert.That(
+                lines.Count(line => line.Contains("more than one place", StringComparison.Ordinal)),
+                Is.EqualTo(1),
+                "The notice is emitted per named setting rather than per start, so an operator with three " +
+                "of them set reads the same sentence three times.");
+        }
+
+        [TestCase(1, TestName = "AKeySuppliedInOnePlaceOnly_IsNotWorthSayingAnythingAbout")]
+        [TestCase(0, TestName = "AKeySuppliedInNoSettingAtAll_IsNotWorthSayingAnythingAbout")]
+        public void AKeySuppliedNoMoreThanOnce_SaysNothingAboutWhereItCameFrom(int placesCarryingAKey)
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: false,
+                keySupply: new KeySupply([.. EverySettingTheOperatorSet.Take(placesCarryingAKey)], TheSettingInForce));
+
+            Assert.That(lines, Has.Count.EqualTo(1),
+                "An instance with nothing ambiguous about where its key came from is being warned anyway.");
+        }
+
+        [Test]
+        public void TheNoticeAboutSeveralPlaces_NamesSettingsAndNoKeyMaterial()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.SuppliedByConfiguration),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: false,
+                keySupply: new KeySupply(EverySettingTheOperatorSet, TheSettingInForce));
+
+            Assert.That(
+                EveryWayTheKeyCouldBeWrittenDown()
+                    .Where(written => lines.Any(line => line.Contains(written, StringComparison.OrdinalIgnoreCase)))
+                    .ToList(),
+                Is.Empty,
+                "The notice names a key rather than only the settings that carry one.");
         }
 
         // An instance running past the refusal looks entirely normal from every other angle, and the

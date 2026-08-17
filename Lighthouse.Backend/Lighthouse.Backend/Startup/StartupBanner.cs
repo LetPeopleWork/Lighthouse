@@ -16,7 +16,8 @@ namespace Lighthouse.Backend.Startup
         EncryptionKeyRing KeyRing,
         KeyStoreLocation KeyStore,
         bool KeyCameFromTheRetiredSetting,
-        bool AllowsStartWithUnreadableSecrets = false);
+        bool AllowsStartWithUnreadableSecrets = false,
+        KeySupply? KeySupply = null);
 
     // Said on every start for as long as the old name keeps working, because the only thing that makes it
     // safe to eventually stop reading that name is everyone having moved off it first.
@@ -26,6 +27,25 @@ namespace Lighthouse.Backend.Startup
             "The encryption key is being read from EncryptionSettings__EncryptionKey, which this release " +
             "retired. It still works today and will stop being read in a future release. Set the same value " +
             "as Encryption__Key and remove the old one.";
+    }
+
+    // Said once, however many places were named. An operator moving their key from a setting into a file
+    // their secret store owns leaves the old setting behind more often than not, and every one of those
+    // places is honoured on its own. Only the ordering decides between them, and until they are told which
+    // one won, editing any of the others looks like it should change the key and does not.
+    public static class AKeySuppliedInMoreThanOnePlace
+    {
+        public static string? Notice(KeySupply? keySupply)
+        {
+            if (keySupply is not { InMoreThanOnePlace: true })
+            {
+                return null;
+            }
+
+            return $"An encryption key was supplied in more than one place: {string.Join(", ", keySupply.Settings)}. " +
+                $"Lighthouse is using the one from {keySupply.TheOneInForce} and reading nothing from the others. " +
+                "Remove the ones you are not using, so that changing them cannot look like changing the key.";
+        }
     }
 
     // Said on every start for as long as the setting is in force, and shaped like the emergency
@@ -112,7 +132,8 @@ namespace Lighthouse.Backend.Startup
                 facts.KeyRing,
                 facts.KeyStore,
                 facts.KeyCameFromTheRetiredSetting,
-                facts.AllowsStartWithUnreadableSecrets));
+                facts.AllowsStartWithUnreadableSecrets,
+                facts.KeySupply));
 
             // Stryker disable once all: the gap that separates the banner from whatever logs next.
             info.Add("");
@@ -135,7 +156,8 @@ namespace Lighthouse.Backend.Startup
             EncryptionKeyRing keyRing,
             KeyStoreLocation keyStore,
             bool keyCameFromTheRetiredSetting,
-            bool allowsStartWithUnreadableSecrets = false)
+            bool allowsStartWithUnreadableSecrets = false,
+            KeySupply? keySupply = null)
         {
             ArgumentNullException.ThrowIfNull(keyRing);
             ArgumentNullException.ThrowIfNull(keyStore);
@@ -153,6 +175,11 @@ namespace Lighthouse.Backend.Startup
             if (keyCameFromTheRetiredSetting)
             {
                 lines.Add(Line("⚠️", "Warning", RetiredKeySettingName.Nudge));
+            }
+
+            if (AKeySuppliedInMoreThanOnePlace.Notice(keySupply) is { } suppliedTwice)
+            {
+                lines.Add(Line("⚠️", "Warning", suppliedTwice));
             }
 
             if (allowsStartWithUnreadableSecrets)

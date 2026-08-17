@@ -159,33 +159,16 @@ namespace Lighthouse.Backend.API
                 ?? "unknown";
         }
 
-        // The ring decides whether anybody supplied this key at all, and only then is configuration asked
-        // which setting they used. Asking configuration on its own would name a setting on an instance
-        // running on a key it made for itself - a value can sit in a setting without having won the
-        // resolution - and that sends an operator to edit something that is not in force.
-        //
-        // Within a supplied key it is asked in the order the resolution asks it, configuration before a
-        // mounted file, so an instance with both set is told about the one that answered.
+        // Shared with the startup line, which has to name the same setting: an operator who reads one and
+        // then the other must not be sent to two different places.
         private string? WhatTheKeyArrivedIn()
         {
-            if (keyRingHolder.Current.Custody is not (KeyCustody.SuppliedByConfiguration or KeyCustody.SuppliedByExternalSecret))
-            {
-                return null;
-            }
-
-            var configured = ConfiguredKeyRingSource.SettingThatAnswered(
+            return WhereTheKeyCameFrom.SettingThatAnswered(
+                keyRingHolder.Current.Custody,
                 configuration[ConfiguredKeyRingSource.RingSettingKey],
                 configuration[ConfiguredKeyRingSource.SingleKeySettingKey],
-                configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey]);
-
-            if (configured is not null)
-            {
-                return configured;
-            }
-
-            return string.IsNullOrWhiteSpace(configuration[MountedFileKeyRingSource.PathSettingKey])
-                ? null
-                : ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(MountedFileKeyRingSource.PathSettingKey);
+                configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey],
+                configuration[MountedFileKeyRingSource.PathSettingKey]);
         }
 
         // Asked the same way startup asked it, off the same settings, so the path an operator is shown

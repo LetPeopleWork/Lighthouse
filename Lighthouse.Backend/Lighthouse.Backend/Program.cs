@@ -3,6 +3,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -502,13 +503,23 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton(new KeyCustodyDescription(
                 WhoseKeyThisIs.AndWhereItIsKept(ring.Custody, keyStore.Directory)));
 
-            WatchTheMountedKeysFile(builder);
+            WatchTheMountedKeysFile(builder, ring);
         }
 
-        // Only where a key arrives in a file is there anything to re-read, so nowhere else gains a background
-        // service: an instance holding its key any other way would be re-reading a path it was never given.
-        private static void WatchTheMountedKeysFile(WebApplicationBuilder builder)
+        // Only where the mounted file is the source that actually answered is there anything to re-read.
+        // Naming a file is not the same as being run from one: configuration comes first in the ordering, and
+        // an instance given a key both ways is running on the configured one. Re-reading the file there would
+        // hand it the other key thirty seconds after a start that had already decided against it, take every
+        // credential written under the configured key out of reach, and hand them back on the next restart
+        // while taking away whatever had been written in between. The ordering is decided once, in Resolve,
+        // and this is the other place that has to agree with it.
+        private static void WatchTheMountedKeysFile(WebApplicationBuilder builder, EncryptionKeyRing ring)
         {
+            if (ring.Custody != KeyCustody.SuppliedByExternalSecret)
+            {
+                return;
+            }
+
             var keysFilePath = builder.Configuration[MountedFileKeyRingSource.PathSettingKey];
 
             if (string.IsNullOrWhiteSpace(keysFilePath))
@@ -1448,19 +1459,26 @@ namespace Lighthouse.Backend
                 "           -----------------------------------           "
             };
 
+            var ringInForce = app.Services.GetRequiredService<IEncryptionKeyRingHolder>().Current;
+
+            var suppliedRing = builder.Configuration[ConfiguredKeyRingSource.RingSettingKey];
+            var suppliedKey = builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey];
+            var suppliedUnderTheRetiredName = builder.Configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey];
+            var keysFilePath = builder.Configuration[MountedFileKeyRingSource.PathSettingKey];
+
             var info = StartupBanner.BuildInfoLines(new StartupBannerFacts(
                 Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown",
                 [.. app.Urls.Select(AsSeenFromTheMachineItRunsOn)],
                 builder.Configuration.GetValue<string>(DatabaseProviderConfigKey) ?? "Unknown",
                 TryGetLogFilePath(builder.Configuration),
                 builder.Configuration,
-                app.Services.GetRequiredService<IEncryptionKeyRingHolder>().Current,
+                ringInForce,
                 KeyStoreLocationFor(builder),
                 ConfiguredKeyRingSource.AnsweredByTheRetiredName(
-                    builder.Configuration[ConfiguredKeyRingSource.RingSettingKey],
-                    builder.Configuration[ConfiguredKeyRingSource.SingleKeySettingKey],
-                    builder.Configuration[ConfiguredKeyRingSource.RetiredSingleKeySettingKey]),
-                builder.Configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey)));
+                    suppliedRing, suppliedKey, suppliedUnderTheRetiredName),
+                builder.Configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey),
+                WhereTheKeyCameFrom.Resolve(
+                    ringInForce.Custody, suppliedRing, suppliedKey, suppliedUnderTheRetiredName, keysFilePath)));
 
             var startupBannerBuilder = new StringBuilder();
 

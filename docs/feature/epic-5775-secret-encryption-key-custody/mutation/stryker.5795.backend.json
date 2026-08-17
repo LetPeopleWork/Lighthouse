@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Encryption/WhereTheKeyCameFrom.cs",
+      "**/Startup/StartupBanner.cs"
+    ],
+    "thresholds": { "high": 90, "low": 80, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~StartupBanner|FullyQualifiedName~Encryption|FullyQualifiedName~AuthPosture)&(FullyQualifiedName!~Containers)&(FullyQualifiedName!~Integration)",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
