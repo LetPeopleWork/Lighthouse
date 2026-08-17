@@ -245,6 +245,10 @@ Some deployments leave Lighthouse nowhere to put a key it would still find tomor
 
 If nothing sensitive is stored yet, Lighthouse **stops instead of starting**: a key it cannot keep would make every token entered afterwards unreadable at the next restart. If something is already stored, it starts and keeps working, and repeats the warning on every start until you do one of the two things above.
 
+**A key store belongs to one instance.** Unless you supplied the key yourself — through `Encryption__Key`, `Encryption__Keys` or `Encryption__KeysFile` — do not point two Lighthouse instances at the same key store. An instance with no key of its own makes one and writes it there, and two instances doing that at the same moment both succeed: the last one to write wins the file, and the other carries on encrypting under a key the file no longer names. Everything it writes in the meantime becomes unreadable the moment it restarts, and nothing warns you while it is happening.
+
+This is not a shape Lighthouse supports, and it takes deliberate effort to reach — two containers sharing one bind mount or NFS share, or a Compose file scaled past one replica. If you want to run more than one instance, supply the key to all of them; then no instance is making a key and there is nothing to collide. The Kubernetes chart already works this way and refuses to install without a key you supplied.
+
 ### What happens if the key changes
 
 A key that Lighthouse cannot use — not base64, not 32 bytes, or an entry it cannot read — **stops startup**, and the log names the entry at fault. Lighthouse will not quietly start on some other key.

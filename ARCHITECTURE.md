@@ -210,6 +210,16 @@ sequenceDiagram
 - **Two migration assemblies** — `Lighthouse.Migrations.Sqlite` and `Lighthouse.Migrations.Postgres`. Generate migrations only via the **`Create-Migration.ps1`** script (spins up an ephemeral Docker Postgres for the Postgres half) — never `dotnet ef migrations add` directly.
 - `LighthouseAppContext` overrides `SaveChangesAsync` to `PreprocessDataBeforeSave` (encrypt secrets, stamp initial concurrency tokens on `Added`) then `SaveWithRetry` (§7).
 
+### 8.1 Secret encryption and key custody
+
+- **Stored secrets are envelopes**, not ciphertext blobs: version token, key id, nonce and ciphertext, with the version and key id bound as associated data. A value relabelled with another key's name fails its authentication tag rather than being read under it. `SecretStateClassifier` tells the four states apart — envelope, legacy CBC, never-encrypted plaintext, and unreadable — by inspecting the stored value, so what is left to do is written on the data itself.
+- **A key ring, not a key.** Position is state: the first entry is what new secrets are written under, later entries only ever read older ones. The ring grows rather than shrinks during a rotation, which is what makes an interrupted pass survivable.
+- **Custody is one ordered decision**, made once in `EncryptionKeyRingBootstrapper.Resolve`: a key in configuration, then a mounted keys file, then a key store beside the database, then one the instance mints for itself. That order holds at startup *and* after it — the mounted-file reload is registered only where the file is the source that answered.
+- **Who owns the key decides what is offered.** Only an instance that minted its own key may rotate; an instance given a key can move secrets onto it but never make one, because a minted key would lose the argument on the next start and take every secret written under it with it.
+- **A re-encryption pass is consistent about the keys it works against.** It takes the ring once — for the candidate filter, every write and the report label — and compares at the end. If the keys were replaced from outside while it ran, it walks once more against what is held now and reports that it must be run again, rather than claiming a rotation nobody finished.
+
+**A key store belongs to one instance**, unless the key was supplied from outside it. Minting is the reason: an instance with no key of its own makes one and writes it to the store, and two instances sharing a store can both find no ring, both mint, and both write — the last `Move` wins and the loser holds a key the file no longer names, encrypting under it until it restarts. The read-back-and-compare in `GeneratedKeyRingStore.Write` narrows the window but does not close it; it is a race, not a guarantee. There is no lock file and deliberately so: the one supported multi-replica topology is the chart, which refuses to install without an operator-supplied key, so the minter is a refusal object there. Reaching the collision requires a shape the product does not claim to support — two containers on one bind mount or NFS share, or a Compose file scaled past one. Supply the key to every instance and nothing mints, so nothing collides.
+
 ---
 
 ## 9. Cross-cutting concerns
@@ -314,6 +324,6 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 132 – 136 | Feature ordering: a derived total order (no ordering aggregate), rank-change domain event, ordering-policy setting |
 | **138 – 141** | **Two-phase incremental sync: sweep-then-download, the per-connection capability probe, the fetch fingerprint, time-driven derivations over the stored set (§ background refresh)** |
 | 142 – 145 | Write-back: optimistic notification suppression with a 403 retry, per-item batching with an unbatched retry, the collection seam (145 superseded, never built) |
-| 146 – 153 | Secret encryption and key custody: the envelope wire format, stored-secret states classified by inspection, the key ring and its retired default, the key store beside the database, builder-time resolution, per-row compare-and-swap re-encryption, the custody-mode admin surface, operator-supplied custody on Kubernetes. **Designed, not yet built — nothing in this release implements them** |
+| **146 – 153** | **Secret encryption and key custody: the envelope wire format, stored-secret states classified by inspection, the key ring and its retired default, the key store beside the database, builder-time resolution, per-row compare-and-swap re-encryption, the custody-mode admin surface, operator-supplied custody on Kubernetes (§8.1)** |
 
 The full set (001–153), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
