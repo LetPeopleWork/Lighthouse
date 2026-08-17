@@ -2,7 +2,7 @@
   "stryker-config": {
     "project": "Lighthouse.Backend.csproj",
     "solution": "../Lighthouse.sln",
-    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "test-projects": ["../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"],
     "mutate": [
       "**/Services/Implementation/Encryption/SecretCustodyService.cs",
       "**/Services/Implementation/CryptoService.cs",

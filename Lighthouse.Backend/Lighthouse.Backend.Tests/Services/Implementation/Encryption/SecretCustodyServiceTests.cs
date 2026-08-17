@@ -186,6 +186,69 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         }
 
         [Test]
+        public async Task AKeyAddedBehindTheOneInForce_StillNamesWhatTheFirstLookAlreadyMoved()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(OldKey, "contoso-secret"));
+
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            // A key added behind the one in force. What is held is not what was held, so the pass looks a
+            // second time - but the key credentials are written under has not moved, so nothing it just
+            // moved is a candidate again and the second look sees none of them. They are named once, by the
+            // first look, and that is the only thing carrying them into what the operator reads.
+            var report = await Rotating(
+                    holder,
+                    ReplacingTheRingAfter(0, cryptoService, holder, NewKey, OldKey, NewerKey),
+                    new AMinterThatMints(NewerKey))
+                .ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.KeysChangedWhileItRan, Is.True);
+                Assert.That(report.MovedCount, Is.EqualTo(2));
+                Assert.That(
+                    report.Secrets.Select(secret => secret.Field),
+                    Is.EquivalentTo(new[] { PersonalAccessToken, ClientSecret }),
+                    "each credential is named once - a second look that saw none of them must not drop them, and must not name them twice");
+            }
+        }
+
+        [Test]
+        public async Task WhenTheKeysChange_EachCredentialIsNamedOnceWithItsOwnOutcome()
+        {
+            await StoreAsync(PersonalAccessToken, Under(OldKey, "contoso-pat"));
+            await StoreAsync(ClientSecret, Under(KeyNobodyHolds, "unrecoverable"));
+
+            var holder = new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.SuppliedByExternalSecret, NewKey, OldKey));
+            var cryptoService = new CryptoService(holder, NullLogger<CryptoService>.Instance);
+
+            // The two looks overlap without matching. The credential that moved is on the key in force and
+            // the second look does not ask about it again; the one nobody can read is still where it was, so
+            // the second look finds it a second time. Both have to reach the operator, each once and each
+            // with what actually happened to it - which is the whole job of reconciling the two looks.
+            var report = await Rotating(
+                    holder,
+                    ReplacingTheRingAfter(0, cryptoService, holder, NewKey, OldKey, NewerKey),
+                    new AMinterThatMints(NewerKey))
+                .ReEncryptAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(report.Secrets, Has.Count.EqualTo(2));
+                Assert.That(report.MovedCount, Is.EqualTo(1));
+                Assert.That(report.UnreadableCount, Is.EqualTo(1));
+                Assert.That(
+                    report.Secrets.Single(secret => secret.Outcome == SecretMoveOutcome.Moved).Field,
+                    Is.EqualTo(PersonalAccessToken));
+                Assert.That(
+                    report.Secrets.Single(secret => secret.Outcome == SecretMoveOutcome.CouldNotBeRead).Field,
+                    Is.EqualTo(ClientSecret));
+            }
+        }
+
+        [Test]
         public async Task ACredentialThePassNeverLookedAt_OnAKeyThatHasGone_IsStillNamed()
         {
             // Already on the key in force, so the filter takes it off the list before anything is replaced.

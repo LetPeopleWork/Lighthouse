@@ -5195,3 +5195,87 @@ considered · the fact-to-step table · error-path rationale per `@error` scenar
 200 · the discarded reporting-only shape and why the SPIKE closed it.
 
 ---
+
+# Wave: DELIVER — slice 09
+
+## Wave: DELIVER / [REF] Implementation Summary — slice 09
+
+Four steps, six commits. `ICryptoService` gained an overload that encrypts under a named key; the pass
+takes the ring once and uses it for the filter, every write and the label; it compares the holder
+against that ring at the end and, when they differ, walks a second time against what is held now and
+reports that the keys changed and it has to be run again; the panel says so instead of the counts.
+
+| Step | Commit | What |
+|---|---|---|
+| 01-01 | `c77021d32` | The port takes a named key. Three doubles extended first |
+| 02-01 | `06bb95659` | The pass snapshots the ring |
+| 03-01 | `380d5bc6d` | Compare, bounded re-walk, the new report fact, header comment corrected |
+| 04-01 | `f44e18620` | The panel tells the administrator |
+| refactor | `dedffbf04` | L1/L2 pass, behaviour unchanged |
+| test | `98cbba75a` | The test that actually pins the snapshot |
+
+**AC-9.4 is not in these commits.** Held on UI-09-1 — see below.
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates — slice 09
+
+| Gate | Outcome |
+|---|---|
+| `dotnet build` | Zero errors, zero warnings |
+| `dotnet test` (full backend) | 5634 passed, 0 failed |
+| `pnpm test` | 4160 passed, 0 failed |
+| `pnpm build` | Clean |
+| Biome | 701 files, zero |
+| Refactor L1-L6 | Run. Three findings, all L1/L2 |
+| Adversarial review | Run. Verdict below |
+| Mutation | Backend **96.34 %**, frontend **92.31 %**, against an 80 % gate. Three backend runs; two survivors in the merge closed by two new scenarios. `mutation/results-5796.md` |
+
+---
+
+## Wave: DELIVER / [REF] Review Verdict — slice 09
+
+`@nw-software-crafter-reviewer`, 2026-08-17: **needs_revision**, one blocker, one high. It passed the
+implementation on all seven attack vectors it was pointed at — the merge, the bounded re-walk,
+`EncryptionKeyRing.Equals` as the change detector, `RotateAsync` not seeing its own `Replace`, the
+frontend, nullability, cancellation. Both findings are handled below, one by rejecting it and one by
+correcting where it pointed.
+
+| Finding | Taken | What changed |
+|---|---|---|
+| **Blocker** — AC-9.4's two documentation sentences are missing, and `ARCHITECTURE.md` still says the epic is not built | **Rejected as a finding** | This is UI-09-1, deliberately held, and the review brief said not to flag it. It is an open decision, not a defect. It does still have to land before the story closes |
+| **High** — the stranded-credential test does not independently verify the snapshot | **Taken, but not as written** | The reviewer said `ACredentialThePassNeverLookedAt_OnAKeyThatHasGone_IsStillNamed` depends on the snapshot. It does not. Reverting the snapshot leaves it green, and leaves `APassWhoseKeysAreReplacedWhileItRuns_LeavesEverySecretItMovedUnderOneKey` green too. Nothing pinned the snapshot at all |
+
+**Why nothing pinned it, and what does.** The second walk hides the snapshot. Whatever the first walk
+wrote under, the second re-reads against what is held at the end and lands everything in the same
+place, so with a re-walk in the code the two designs are indistinguishable at the end of a pass — with
+one exception. Keys replaced and then **put back** inside a single walk leave what is held at the end
+equal to what was held at the start, so the comparison reports nothing and no second walk happens. A
+credential written inside that window sits on a key the instance never carries again, and the pass
+reports a clean finish over the top of it.
+
+`KeysReplacedAndPutBackWhileAPassRuns_StrandNothingInTheWindow` drives exactly that, and was verified
+in both directions before it was committed: green with the snapshot, red without it.
+
+**This corrects something recorded earlier in this wave.** The hand-off notes said the snapshot was
+defence-in-depth and not independently observable. That was wrong. It is load-bearing, and the case
+that needs it is the one where the keys flap and settle back.
+
+---
+
+## Wave: DELIVER / [REF] Upstream Issues — slice 09
+
+**UI-09-1 — open, and it blocks the story rather than the code.** AC-9.4 asks for the single-writer
+sentence in `ARCHITECTURE.md` and in `docs/Installation/configuration.md`. `ARCHITECTURE.md` has no
+custody section to extend, and the one line naming this epic still reads "Designed, not yet built —
+nothing in this release implements them", which has been false since slice 01. That paragraph overlaps
+Story #5781, which is open and blocked on the release. Whichever of the two reaches the section first
+owns it; the other extends it. Awaiting a maintainer decision on which.
+
+**UI-09-2 — closed.** The service header comment claimed the resumability property this defect breaks.
+Corrected in `380d5bc6d` to say that it holds only while the keys hold still.
+
+**UI-09-3 — closed.** `InspectAsync` split its own label the same way. Covered by scenario 197 and
+fixed by the same compare, since a check walks through `WalkAsync` too.
+
+---
