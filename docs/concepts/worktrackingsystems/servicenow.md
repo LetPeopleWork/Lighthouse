@@ -50,7 +50,7 @@ To create a connection to a ServiceNow instance, you need three things:
 ![Create ServiceNow Connection](../../assets/concepts/worktrackingsystem_ServiceNow.png)
 
 {: .important}
-The password shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+Treat the password as what it is: don't share it, and don't keep it anywhere in plain text. Lighthouse encrypts it before it is written to the database, never sends it back to the browser, and you can revoke the account's access in ServiceNow at any time. [Security](../../security.html) explains how that works, and what it does not protect against.
 
 # Authentication
 

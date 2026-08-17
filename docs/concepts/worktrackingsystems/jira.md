@@ -96,7 +96,7 @@ Instead of an *API Token*, you have to provide a *Personal Access Token*. See th
 A *Personal Access Token* will not require you to specify a username, as it's part of the token itself.
 
 {: .important}
-The API/Access Tokens shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse is storing it encrypted in its database (see [Encryption Key](../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+Treat the API or access token like a password: don't share it, and don't keep it anywhere in plain text. Lighthouse encrypts it before it is written to the database, never sends it back to the browser, and you can revoke it in Jira at any time. [Security](../../security.html) explains how that works, and what it does not protect against.
 
 # Quiet Data Sync (Notifications)
 

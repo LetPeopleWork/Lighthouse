@@ -97,7 +97,7 @@ For deeper issues, capture the failing callback URL from the browser's address b
 If you cannot use OAuth (on-premises Azure DevOps Server, or no Premium licence), authenticate with a PAT. See the [Microsoft documentation](https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows/) for how to mint one.
 
 {: .important}
-The Personal Access Token shall be treated like a password. Do not share this with anyone or store it in plaintext. Lighthouse stores it encrypted in its database (see [Encryption Key](../../Installation/configuration.html#encryption-key) for more details) and will not send it to any client in the frontend.
+Treat the Personal Access Token like a password: don't share it, and don't keep it anywhere in plain text. Lighthouse encrypts it before it is written to the database, never sends it back to the browser, and you can revoke it in Azure DevOps at any time. [Security](../../security.html) explains how that works, and what it does not protect against.
 # Additional Fields
 
 Lighthouse allows you to configure **Additional Fields** for Azure DevOps connections. These fields are used to retrieve and display extra information from your work items, such as custom properties or metadata that are not part of the default set.
