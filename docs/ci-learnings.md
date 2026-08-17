@@ -1025,6 +1025,44 @@ get re-applied.
 - **Fix**: none in code. Re-run the failed job. Note `gh run rerun --failed` is refused while any job in the run is still `waiting`/`in_progress` ("This workflow is already running") — wait for the run to settle, or re-run the single job by id.
 - **Rule going forward**: before diagnosing any red job, ask `gh api repos/<owner>/<repo>/actions/jobs/<jobId> --jq '.steps[] | select(.conclusion=="failure") | "\(.number) \(.name)"'`. If the only failed step is **`Set up job`** (or `Set up runner` / `Initialize containers`), stop — it is infrastructure, re-run and change nothing. Failed steps numbered ≥ 2 are ours and deserve a real diagnosis. `--log-failed` refuses while the run is still in progress, so triage a job that failed inside a still-running workflow through the API, not the logs. Recurrence: 1.
 
+### 2026-08-17 — a new property on an API DTO fails the pinned payload-shape test, and that test is right
+
+- **Symptom**: `Verify Backend` red with `EncryptionControllerTests.ThePayload_SaysWhetherTheKeyPublished
+  WithTheProductIsStillHeld`, on a commit that added `ReadableSecretsNotOnTheActiveKey` to
+  `EncryptionStateDto`. Deterministic — a re-run could never clear it, and one was spent finding that out
+  while the afternoon's genuine infrastructure flakes made "probably a flake" the obvious read.
+- **Root cause**: that test asserts `payload.PropertyNames` is **equivalent to** a hard-coded list,
+  `EverythingTheKeyStatePayloadCarries`. The list is the contract the frontend parses; adding a property
+  without adding it there is precisely the drift it exists to catch. The local runs that passed were the
+  new class's own tests and the `epic-5775-secret-encryption` category — neither includes the controller
+  integration fixture, so nothing local contradicted the change.
+- **Fix**: add the property to the list, and pin the new field's *meaning* with a test that reads it from
+  the endpoint on a host where it cannot be inferred from the neighbouring fields.
+- **Rule going forward**: when adding a property to a DTO that a payload-shape test guards, grep the test
+  project for the property list before running anything —
+  `grep -rn "PropertyNames" Lighthouse.Backend.Tests` finds them. More generally, a filtered local run
+  (`--filter Category=...` or a single class) is not evidence about a contract: run the controller
+  integration tests for the endpoint you changed, or expect CI to find it. And when a red job lands in
+  the middle of an infrastructure-flaky day, read the failing **test name** before accepting "flake" —
+  the name here named the payload, which is the thing that changed.
+
+### 2026-08-17 — `Deploy Documentation` red on the deploy step with a 503 is a GitHub Pages outage, not our content
+
+- **Symptom**: run 32053857841 — the `build` job **succeeded**, and `deploy` failed on *Deploy to GitHub
+  Pages*: `HttpError: No server is currently available to service your request`, then `Failed to create
+  deployment (status: 503) ... Server error, is githubstatus.com reporting a Pages outage? Please re-run
+  the deployment at a later time.` The same commit's site content had deployed successfully one commit
+  earlier.
+- **Root cause**: GitHub's Pages deployment API, during the same afternoon of broad GitHub instability
+  that produced codeload 503/429s on `actions/download-artifact` and 503s on the job-rerun API. Nothing
+  in `docs/` was involved — Jekyll had already built the site in the job before.
+- **Fix**: none. Re-run the workflow once Pages is healthy.
+- **Rule going forward**: split the two jobs before diagnosing. A red `Deploy Documentation` whose
+  **`build` job is green** and whose failing step is *Deploy to GitHub Pages* is never a documentation
+  defect — read the status code, and if it is 5xx from `deploy-pages`, re-run and change nothing. Only a
+  failure inside `build` (Jekyll, front matter, a broken Liquid tag) is ours. Note the published site is
+  unaffected by a failed deployment: the previous deployment stays live, so this is never urgent.
+
 ### 2026-08-17 (first seen 2026-07-25) — SQLite `disk I/O error` thrown from `EnsureCreated()` in `IntegrationTestBase.Init` is a runner IO flake, not a code regression
 - **Symptom**: `Verify Backend` red with **1 failed / 3376 passed** on `TeamInProject_WithExistingForecasts_DeleteTeam_SucceedsAsync`. Stack: `Microsoft.Data.Sqlite.SqliteException : SQLite Error 10: 'disk I/O error'` (`SqliteExtendedErrorCode 5898`) raised from `SqliteDatabaseCreator.Create()` → `EnsureCreated()` inside the NUnit `[SetUp]` of `IntegrationTestBase.Init` — i.e. **before the test body ran at all**. The identical commit was green locally (3601 passed) and green on a re-run of the same job.
 - **Root cause**: SQLite error 10 is the engine reporting that the OS-level read/write on the database file failed. It comes from the GitHub runner's disk/IO layer under parallel-fixture load, not from anything the test or the schema does. The tell is the location: the throw is in `EnsureCreated()` during `SetUp`, so no application code under test had executed, and the failing test name is unrelated to the diff (the slice touched percentile snapshots, not team deletion or forecasts).
