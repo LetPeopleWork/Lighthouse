@@ -5530,3 +5530,80 @@ every question from `docs/security.md` alone. Anything that needs a maintainer i
 the point of writing the page is that the next prospect does not have to ask.
 
 ---
+
+## Wave: DELIVER / [REF] Implementation Summary — slice 06
+
+Seven commits, one per roadmap step, all local — **not pushed**, see Sequencing below.
+
+| Step | Commit | What landed |
+|---|---|---|
+| 01-01 | `docs(security): give the question one address` | `docs/security.md` at `nav_order: 4`, two layers at one URL, including the limits section; the four connector pages relinked |
+| 02-01 | `fix(encryption): send the notice to the page that answers it` | `SECRET_HANDLING_DOCS_URL` → `security.html`; scenarios 201 and 202 as three assertions |
+| 03-01 | `docs(encryption): say what an instance with nowhere to keep a key is running on` | AC-6.19 (finding E3) and AC-6.17 in the configuration reference |
+| 04-01 | `docs(encryption): say where the key lives on Docker and on Kubernetes` | The Docker key-store sentence and its cost; a custody section on the Kubernetes page, linking the chart README |
+| 05-01 | `docs(encryption): put credential protection where a reviewer looks first` | `ARCHITECTURE.md` §9 promoted out of Persistence and completed, §§9-15 renumbered; CRA rows 1.3 and 1.5 re-evidenced; `SECURITY.md` |
+| 06-01 | `docs(encryption): show the screen the page describes` | `EncryptionSettingsPage` Page Object, one `@screenshot` test, `settings/encryption.png` new and `settings/systeminfo{,_auth}.png` regenerated; the system-information page documents the Encryption row |
+| 07-01 | this commit | `deliver/slice-06/release-note-lines.md` |
+
+**Three things the audit changed about the work.** The configuration reference was **not** rewritten —
+it was already true, and two sentences were added to it instead of a new section. The `ARCHITECTURE.md`
+section was **extended**, not authored, because slice 09 reached it first (UI-09-1, settled by events).
+And three of the four connector pages turned out to be linking to
+`../Installation/configuration.html` from `concepts/worktrackingsystems/`, which resolves nowhere — so
+those links had been dead for as long as they had existed, and the relink fixed a defect nobody had
+filed.
+
+**One deliverable was dropped on inspection.** The screenshot spec first captured the check-secrets
+report as well. On the screenshot substrate — a clean instance holding no credentials — the report has
+nothing in it, and a 3.7 KB picture of an empty state teaches less than the four-state table already on
+the page. The prose stands alone until there is a substrate with stored credentials worth photographing.
+
+---
+
+## Wave: DELIVER / [REF] Quality Gates — slice 06
+
+| Gate | Result |
+|---|---|
+| `SecretHandlingNotice.test.tsx` | 15 passed. Genuine RED first: the two address assertions failed against the shipped constant before the change |
+| Frontend suite (`pnpm test`) | 308 files, 4165 tests, all passed, after the constant changed |
+| `pnpm build` (tsc + vite, Biome as `prebuild`) | Clean — run before the screenshots, since the screenshot substrate is the built frontend |
+| Biome on the E2E project | 109 files checked, clean |
+| `tsc --noEmit` on the E2E project | Clean |
+| Playwright, the two screenshot tests by name | 2 passed. Run by name deliberately: the full screenshot suite would regenerate images this slice has no business touching, and the premium-licence tests would fail and lose theirs |
+| Backend | Untouched. No C# in this slice, so `dotnet build` / `dotnet test` carry no new risk |
+
+---
+
+## Wave: DELIVER / [REF] Verdict — slice 06
+
+**Learning hypothesis: confirmed, and the disproof half landed too.**
+
+The brief predicted that writing the three custody modes end to end would surface further gaps between
+what the documentation asserts and what the build does, and named the compliance self-assessment as the
+likeliest place. It was: row 1.3 claimed unique per-installation keys could be specified, which was
+false when it was written because the documented setting was not the setting the code read. Two gaps the
+brief did not predict were worse, because both are pages a reader installs from — the Kubernetes
+quick-start command would have failed to render against a chart that refuses without a key, and the
+Docker page never said the key store belongs on the mounted volume.
+
+**Still open, and it is the dogfood moment, not a gap in the code**: answering the original security
+questionnaire from `docs/security.md` alone. That is the test of whether this slice worked, and it needs
+the questionnaire in front of the person reading the page.
+
+---
+
+## Wave: DELIVER / [REF] Upstream Issues — slice 06
+
+**UI-06-1 to UI-06-3 — closed** by steps 01-01, 04-01 and 05-01 respectively.
+
+**UI-06-4 — open, deliberately.** CRA row 1.7's "no telemetry" wording, left as written: it means no
+vendor collection, and the export it appears to contradict is the operator's own. Outside this epic's
+surface.
+
+**UI-06-5 — new. The connector pages' link was dead, and nothing would have told us.** Three of four
+pointed one directory level too high. There is no link checker over `docs/`, so a broken relative link
+survives indefinitely — this one until a slice happened to rewrite the sentence around it. Not fixed as
+a class here: adding link checking to the documentation build is its own change with its own noise
+budget, and it is worth filing.
+
+---
