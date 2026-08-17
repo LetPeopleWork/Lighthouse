@@ -10,7 +10,6 @@ namespace Lighthouse.Backend.Tests.API
         private static readonly HashSet<Type> AllowedAnonymousControllers =
         [
             typeof(AuthController),
-            typeof(VersionController),
 
             // Epic 5146 D26: the embed token is the credential, and a challenge here would render a
             // blank rectangle inside the frame instead of a legible refusal.
@@ -29,10 +28,14 @@ namespace Lighthouse.Backend.Tests.API
         {
             var expectations = new Dictionary<Type, string[]?>
     {
-        // Entire controller must be anonymous
-        { typeof(VersionController), null },
-
         // Only these actions must be anonymous
+        {
+            typeof(VersionController),
+            new[]
+            {
+                nameof(VersionController.GetCurrentVersion),
+            }
+        },
         {
             typeof(AuthController),
             new[]

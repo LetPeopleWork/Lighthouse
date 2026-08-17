@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         [
             "/api/latest/auth",
             "/api/latest/license",
-            "/api/latest/version",
+            "/api/latest/version/current",
         ];
 
         private readonly IAuthModeResolver authModeResolver;

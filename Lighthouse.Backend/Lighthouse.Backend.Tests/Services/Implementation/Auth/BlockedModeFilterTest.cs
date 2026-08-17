@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         }
 
         [Test]
-        public async Task OnActionExecutionAsync_Blocked_AllowsVersionEndpoints()
+        public async Task OnActionExecutionAsync_Blocked_AllowsCurrentVersion()
         {
             authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
             var context = CreateContext("/api/latest/version/current");
@@ -123,6 +123,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 Assert.That(nextCalled, Is.True);
                 Assert.That(context.Result, Is.Null);
             }
+        }
+
+        [TestCase("/api/latest/version/installUpdate")]
+        [TestCase("/api/latest/version/new")]
+        public async Task OnActionExecutionAsync_Blocked_DeniesVersionEndpointsOtherThanCurrent(string path)
+        {
+            authModeResolverMock.Setup(r => r.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Blocked });
+            var context = CreateContext(path);
+
+            await subject.OnActionExecutionAsync(context, () =>
+            {
+                Assert.Fail("Next should not be called for blocked non-allowlisted endpoints.");
+                return Task.FromResult(new ActionExecutedContext(context, [], null!));
+            });
+
+            Assert.That(context.Result, Is.InstanceOf<ObjectResult>());
         }
 
         [Test]

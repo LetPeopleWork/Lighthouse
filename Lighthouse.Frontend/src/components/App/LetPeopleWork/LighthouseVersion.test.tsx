@@ -6,7 +6,10 @@ import {
 } from "../../../models/LighthouseRelease/LighthouseRelease";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IVersionService } from "../../../services/Api/VersionService";
-import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import {
+	createMockApiServiceContext,
+	createMockRbacService,
+} from "../../../tests/MockApiServiceProvider";
 import LighthouseVersion from "./LighthouseVersion";
 
 const mockGetCurrentVersion = vi.fn();
@@ -29,6 +32,7 @@ vi.mock("./LatestReleaseInformationDialog", () => ({
 	default: ({
 		open,
 		newReleases,
+		isUpdateSupported,
 	}: {
 		open: boolean;
 		onClose: () => void;
@@ -45,6 +49,7 @@ vi.mock("./LatestReleaseInformationDialog", () => ({
 
 		return (
 			<div data-testid="ReleaseInfoDialog">
+				<span data-testid="isUpdateSupported">{String(isUpdateSupported)}</span>
 				{newReleases.map((release) => (
 					<span key={release.name}>{release.name}</span>
 				))}
@@ -344,6 +349,56 @@ describe("LighthouseVersion component", () => {
 		const button = screen.queryByTestId("UpdateIcon");
 		expect(button).not.toBeInTheDocument();
 	});
+
+	const renderAsSystemAdmin = (isSystemAdmin: boolean) => {
+		const context = createMockApiServiceContext({
+			versionService: mockVersionService,
+			rbacService: {
+				...createMockRbacService(),
+				getAuthorizationSummary: vi.fn().mockResolvedValue({
+					isRbacEnabled: true,
+					isSystemAdmin,
+					canCreateTeam: true,
+					canCreatePortfolio: true,
+					adminTeamIds: [],
+					adminPortfolioIds: [],
+				}),
+			},
+		});
+
+		return render(
+			<ApiServiceContext.Provider value={context}>
+				<Router>
+					<LighthouseVersion />
+				</Router>
+			</ApiServiceContext.Provider>,
+		);
+	};
+
+	it.each([
+		[true, "true"],
+		[false, "false"],
+	])(
+		"offers the in-app update only to a system admin (admin: %s)",
+		async (isSystemAdmin, expected) => {
+			mockIsUpdateAvailable.mockResolvedValue(true);
+			mockIsUpdateSupported.mockResolvedValue(true);
+			mockGetNewReleases.mockResolvedValue([
+				new LighthouseRelease("Release 1", "link", "1.33.8", "highlights", []),
+			]);
+
+			renderAsSystemAdmin(isSystemAdmin);
+
+			await screen.findByText("1.33.7");
+			fireEvent.click(screen.getByTestId("UpdateIcon"));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("isUpdateSupported")).toHaveTextContent(
+					expected,
+				);
+			});
+		},
+	);
 
 	it("does not call isUpdateSupported for standalone distributions", async () => {
 		mockIsUpdateAvailable.mockResolvedValue(true);

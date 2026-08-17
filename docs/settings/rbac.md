@@ -65,6 +65,7 @@ The System Admin role is the only role that is **not** scoped to a specific team
 | Manage users / group mappings | ✅ | ❌ | ❌ | ❌ |
 | Manage work tracking system connections | ✅ | ❌ | ❌ | ❌ |
 | List work tracking system connections | ✅ | ✅ | ✅ | ✅ |
+| Install a Lighthouse update from within the app | ✅ | ❌ | ❌ | ❌ |
 
 † **Portfolio creation also requires at least one team to exist in the system.** This applies even to System Admin: a portfolio without any team to roll up is structurally meaningless, so the **Add Portfolio** button stays hidden until the first team is created.
 

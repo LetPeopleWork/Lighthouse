@@ -17,6 +17,7 @@ import {
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useRbac } from "../../../hooks/useRbac";
 import type { ILighthouseRelease } from "../../../models/LighthouseRelease/LighthouseRelease";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import LoadingAnimation from "../../Common/LoadingAnimation/LoadingAnimation";
@@ -41,6 +42,7 @@ const LighthouseVersion: React.FC = () => {
 	const [notificationPreference, setNotificationPreference] = useState("show");
 
 	const { versionService } = useContext(ApiServiceContext);
+	const { isSystemAdmin } = useRbac();
 
 	// localStorage utilities for managing notification preferences
 	const getNotificationKey = useCallback(
@@ -264,7 +266,7 @@ const LighthouseVersion: React.FC = () => {
 				open={isDialogOpen}
 				onClose={handleDialogClose}
 				newReleases={newReleases}
-				isUpdateSupported={isUpdateSupported}
+				isUpdateSupported={isUpdateSupported && isSystemAdmin}
 				isInstalling={isInstalling}
 				installError={installError}
 				installSuccess={installSuccess}

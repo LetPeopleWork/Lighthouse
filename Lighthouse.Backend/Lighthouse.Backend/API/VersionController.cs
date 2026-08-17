@@ -1,5 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Distribution;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +11,6 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    [AllowAnonymous]
     public class VersionController : ControllerBase
     {
         private readonly ILighthouseReleaseService lighthouseReleaseService;
@@ -19,6 +20,9 @@ namespace Lighthouse.Backend.API
             this.lighthouseReleaseService = lighthouseReleaseService;
         }
 
+        // The Jira app and the platform's served-version probe both call this from outside Lighthouse
+        // with no session, against instances nobody here upgrades, so it has to keep answering anonymously.
+        [AllowAnonymous]
         [HttpGet("current")]
         [ProducesResponseType<string>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -62,6 +66,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpPost("installUpdate")]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<bool>> InstallUpdate()
         {
             var result = await lighthouseReleaseService.InstallUpdate();
