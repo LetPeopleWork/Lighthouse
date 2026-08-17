@@ -1222,3 +1222,19 @@ get re-applied.
 - **Rule going forward**: a single backend test failing once with a duration several times its solo
   runtime is contention until proven otherwise — re-run it alone and re-run the suite before treating it
   as a regression, and never in parallel with a mutation run.
+
+### 2026-08-17 — suspected flake: `JiraIssuesPerRequestTest` throws `KeyNotFoundException` from a shared field-key cache
+- **Symptom**: `GetWorkItemsForTeam_DataCenter_UsesConfiguredIssuesPerRequest` failed once in a local
+  full-suite run after 2 ms with
+  `KeyNotFoundException: The given key '9009' was not present in the dictionary` thrown from
+  `JiraWorkTrackingConnector.SetStoredFieldKeys`. The whole fixture passes alone in 127 ms. Not seen in
+  CI.
+- **Root cause**: not established. `SetStoredFieldKeys` reads a cache keyed by work-tracking-connection
+  id, and the fixture's id (`9009`) is not scoped to the fixture — the same shape as the recorded
+  AzureDevOps `ClientCache` collision, where connection-keyed static state is shared across fixtures that
+  run in parallel.
+- **Fix**: none. Recorded, not quarantined.
+- **Rule going forward**: a connector test that fails on a *missing* cache entry, not a wrong one, is
+  reading state another fixture cleared — re-run the fixture alone before suspecting the connector. When
+  adding a connector fixture, give it a connection id no other fixture uses, and never assume the field-key
+  cache survives a parallel run.
