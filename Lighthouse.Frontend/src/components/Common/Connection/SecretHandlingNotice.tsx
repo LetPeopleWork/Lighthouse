@@ -5,7 +5,7 @@ import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/Wor
 export const SECRET_HANDLING_NOTICE_TEST_ID = "secret-handling-notice";
 
 export const SECRET_HANDLING_DOCS_URL =
-	"https://docs.lighthouse.letpeople.work/Installation/configuration.html#encryption-key";
+	"https://docs.lighthouse.letpeople.work/security.html";
 
 // Every claim below has to hold on every install, including one still running the published
 // default encryption key. That is why it promises nothing about the key itself, and why it reads

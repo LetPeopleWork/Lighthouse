@@ -80,6 +80,26 @@ describe("SecretHandlingNotice", () => {
 			expect(noticeText()).toMatch(/immediately\.\s+How Lighthouse protects/);
 		});
 
+		it("sends someone to the canonical page about how credentials are protected", () => {
+			expect(SECRET_HANDLING_DOCS_URL).toBe(
+				"https://docs.lighthouse.letpeople.work/security.html",
+			);
+		});
+
+		it("does not send someone into the configuration reference", () => {
+			expect(SECRET_HANDLING_DOCS_URL).not.toMatch(/configuration/i);
+			expect(SECRET_HANDLING_DOCS_URL).not.toContain("#");
+		});
+
+		it("is the same address on every connection form", () => {
+			const { unmount } = render(<SecretHandlingNotice />);
+			const firstForm = screen.getByRole("link").getAttribute("href");
+			unmount();
+
+			render(<SecretHandlingNotice />);
+			expect(screen.getByRole("link")).toHaveAttribute("href", firstForm);
+		});
+
 		it("lets a host repoint the link once a dedicated page exists", () => {
 			render(<SecretHandlingNotice docsUrl="https://example.test/security" />);
 			expect(screen.getByRole("link")).toHaveAttribute(
