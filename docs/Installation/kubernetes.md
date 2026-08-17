@@ -83,9 +83,16 @@ helm search repo lighthouse          # CHART 0.1.12 / APP 26.8.14.1
 
 helm install l8e letpeoplework/lighthouse \
   --set postgresql.auth.password='change-me' \
+  --set encryption.key=$(openssl rand -base64 32) \
   --set ingress.enabled=false \
   --wait --timeout 5m
 ```
+
+{: .important}
+`encryption.key` is the key your stored credentials are encrypted with, and from chart 0.1.13 onward an
+install that names neither it nor `encryption.existingSecret` is **refused at render**. Keep the value
+you generate here: it is the only thing that can read those credentials back. See
+[the encryption key the cluster owns](#the-encryption-key-the-cluster-owns).
 
 When the install returns, reach the app:
 
@@ -122,6 +129,38 @@ for every option. The common production knobs:
 | **Login (OIDC)** | `oidc.enabled=true`, `oidc.issuer`, `oidc.clientId`, `oidc.clientSecret`, plus `app.proxy.trustedProxies`/`trustedNetworks`. See [Login (OIDC)](#login-oidc) — **Premium**. |
 | **MCP server** | `mcp.enabled=true`, `mcp.image`, `mcp.auth.mode` |
 | **Horizontal scaling** | `replicaCount: N` **and** `redis.connectionString` (required together) |
+| **Encryption key** | `encryption.key` **or** `encryption.existingSecret` — one of the two is required, see below |
+
+### The encryption key the cluster owns
+
+The chart **refuses to render** without `encryption.key` or `encryption.existingSecret`. That is not a
+missing default: in the cluster the application cannot own its key. It has no durable place to keep one
+that survives a rescheduled pod, and every replica would make a different one. So the key is yours, and
+Lighthouse only ever reads it.
+
+| How you own it | What you set |
+|---|---|
+| The chart makes the Secret from a value you supply | `encryption.key` |
+| You (or an external secrets operator, or a secret store) already keep the Secret | `encryption.existingSecret` |
+
+Either way the key reaches the container as a read-only mounted file, and **Lighthouse never writes to
+the Secret**. Nothing in the release grants it permission to, deliberately: an application that can
+rewrite its own key can also lock itself out of every credential it holds, and an external secrets
+operator would overwrite the change on its next sync anyway.
+
+That is also why rotating is a sequence rather than a button. You add the new key to the Secret **ahead
+of** the old one, wait for the running pods to re-read the file — they check about every thirty seconds,
+tunable with `encryption.keysReloadSeconds`, so no restart is needed — then press **Move stored secrets**
+in Settings → Encryption, and only then remove the old key from the Secret. Nothing is re-entered and no
+connection breaks. The four steps in full, with the values and the `kubectl` commands, are in the
+[chart README](https://github.com/LetPeopleWork/Lighthouse/blob/main/chart/README.md#the-encryption-key),
+and what the screen reports while you do it is in [Secret Encryption Key](../settings/encryption.html).
+
+{: .important}
+On a scaled-out release (`replicaCount: N`) every replica reads the same Secret, so the key is the one
+thing that already behaves correctly across replicas. Do not try to give them a shared key *store*
+instead — [Configuration](./configuration.html#when-lighthouse-has-nowhere-to-keep-a-key) explains why a
+key store belongs to a single instance.
 
 ### Login (OIDC)
 

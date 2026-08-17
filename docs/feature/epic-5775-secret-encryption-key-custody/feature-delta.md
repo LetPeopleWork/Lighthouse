@@ -5331,7 +5331,7 @@ rewrite that re-asserts what is already true and misses the four things that are
 | Criterion | Verdict against shipped documentation | What slice 06 owes |
 |---|---|---|
 | AC-6.1 configuration path + first-boot generation | **Already true** — `configuration.md:178-192` | Nothing |
-| AC-6.2 three custody modes + the observable signal | **Already true** — `configuration.md:180-222` for the modes, `settings/encryption.md` for the signal, which names four key sources because the published key is a fourth state a reader can be in | Nothing |
+| AC-6.2 three custody modes + the observable signal | **Already true** — `configuration.md:175-313` end to end for the modes (`:180-222` names the three settings, `:224-251` the two states a reader can be stuck in, `:252-313` what changes when a key does), `settings/encryption.md` for the signal, which names four key sources because the published key is a fourth state a reader can be in | Nothing |
 | AC-6.3 rotation, no credential re-entry, what the report means | **Already true** — `configuration.md:288-313`, `settings/encryption.md` | Nothing |
 | AC-6.4 what to back up, what is lost | **Already true** — `configuration.md:184` and `:270` | Repeat it on the Security page, where a reviewer is reading |
 | AC-6.5 CRA rows 1.3 and 1.5 | **Stale** — 1.3 cites "unique encryption keys can be specified per installation", which was false when it was written (the documented setting was a no-op) and is true only now; 1.5 cites "encrypted storage" with no key custody, no algorithm and no scope | Re-evidence both rows against shipped behaviour |

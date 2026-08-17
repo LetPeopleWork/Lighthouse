@@ -86,6 +86,9 @@ This will:
 - Map host port 8080 to container port 80 (HTTP)
 - Use the directory you run the command from as storage for your database and logs
 
+{: .important}
+The mounted directory holds more than the database. On its first start Lighthouse creates the key that encrypts your stored credentials and keeps it in a folder beside the database file — so on this command, inside `/app/Data`. Both have to be on the mount. Recreate the container without that volume and the database goes with it; recreate it with a volume that has the database but not the key folder and it is worse, because everything looks intact while every stored credential has become unreadable. Back the two up together, or supply the key yourself with `Encryption__Key` so the container has nothing of its own to lose — see [Encryption Key](./configuration.html#encryption-key).
+
 You can find more information on the configuration options under [Configuration](./configuration.html).
 
 ---

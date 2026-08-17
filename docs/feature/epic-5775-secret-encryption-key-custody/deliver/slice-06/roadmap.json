@@ -62,9 +62,9 @@
             "test_file": "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.test.tsx",
             "scenario_name": "Scenarios 201, 202",
             "red_to_green_tests": [
-              "The notice's link resolves to the Security page",
-              "It is not a section inside the configuration reference",
-              "The address is the same on every connection form"
+              "Scenario 201, first assertion: the notice's link resolves to the Security page",
+              "Scenario 201, second assertion: it is not a section inside the configuration reference, and carries no fragment",
+              "Scenario 202: the address is the same on every connection form"
             ],
             "files_to_modify": [
               "Lighthouse.Frontend/src/components/Common/Connection/SecretHandlingNotice.tsx",
@@ -149,7 +149,7 @@
             "dependencies": [],
             "criteria": [
               "The architecture section is extended, not re-authored - slice 09 wrote it first and owns its sentences.",
-              "Every compliance evidence phrase is checkable against a file in the repository.",
+              "Every compliance evidence phrase is checkable against a file in the repository - named against the shipped implementation (the bootstrapper that resolves the ring, the envelope, the panel that reports state), never against the design intent the row was written from.",
               "Row 1.7's telemetry wording is left alone and stays flagged - it is outside this epic's surface."
             ],
             "estimated_hours": 1.0,
