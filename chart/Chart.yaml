@@ -21,7 +21,12 @@ type: application
 #         before this (Epic #5674).
 # 0.1.12: track the v26.8.14.1 release — incremental work-tracking sync behind an opt-in toggle
 #         (Epic 5687) and quiet Jira write-back (Epic 5500).
-version: 0.1.12
+# 0.1.13: encryption.key / encryption.existingSecret — the key stored credentials are encrypted with
+#         is owned by the operator or their secret store, and an install naming neither is refused at
+#         render. BREAKING for an existing install: one of the two values must now be supplied, and
+#         for a GitOps tenant the Secret has to exist before its chart version moves, or the render
+#         fails and the sync stops (Epic 5775).
+version: 0.1.13
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
 appVersion: "26.8.14.1"
 home: https://docs.lighthouse.letpeople.work

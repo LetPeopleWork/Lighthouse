@@ -77,7 +77,8 @@
       "type": "object",
       "properties": {
         "key": { "type": "string" },
-        "existingSecret": { "type": "string" }
+        "existingSecret": { "type": "string" },
+        "keysReloadSeconds": { "type": ["string", "integer"] }
       }
     },
     "redis": {

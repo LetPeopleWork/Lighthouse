@@ -17,7 +17,8 @@ workload and OIDC — with one command.
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
 helm search repo lighthouse          # shows CHART {{ .Version }} / APP {{ .AppVersion }}
-helm install l8e letpeoplework/lighthouse --version {{ .Version }} -f values-enterprise.yaml
+helm install l8e letpeoplework/lighthouse --version {{ .Version }} -f values-enterprise.yaml \
+  --set encryption.key=$(openssl rand -base64 32)
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,
@@ -27,8 +28,66 @@ REQUIRED values (host, TLS secret, Redis when scaling, OIDC, MCP, external DB) a
 ## Install from a source checkout (development)
 
 ```sh
-helm install l8e ./chart -f chart/values-enterprise.yaml
+helm install l8e ./chart -f chart/values-enterprise.yaml \
+  --set encryption.key=$(openssl rand -base64 32)
 ```
+
+## The encryption key
+
+Lighthouse encrypts the credentials it stores for your work tracking systems. **An install that names
+neither `encryption.key` nor `encryption.existingSecret` is refused at render**, and the chart never
+generates a key of its own. That is deliberate: the only mechanism Helm offers for "generate once"
+asks the cluster what already exists, and that question comes back empty on every render with no
+cluster to ask — which is every `helm template` and therefore every ArgoCD sync. A chart that
+generated would mint a fresh key on each sync and leave every credential stored under the previous
+one unreadable. A key you do not supply is a key nobody owns.
+
+There are two ways to own it.
+
+**You hold it.** Pass it as a value, and this release keeps it in a Secret of its own:
+
+```sh
+--set encryption.key=$(openssl rand -base64 32)
+```
+
+**Your secret store holds it.** Point the chart at a Secret that External Secrets Operator, OpenBao
+or an operator fills. The Secret must carry the key `keys`:
+
+```sh
+kubectl create secret generic lighthouse-encryption \
+  --from-literal=keys="k-2026-08-17-01:$(openssl rand -base64 32)"
+helm install l8e letpeoplework/lighthouse --set encryption.existingSecret=lighthouse-encryption
+```
+
+Set one or the other, never both.
+
+The key reaches the container as a **mounted file**, not an environment variable — unlike the
+database password and the OIDC client secret, which still travel as environment variables. The
+difference is on purpose and worth not "aligning" away: an environment variable is readable in a
+process dump, and it cannot change under a running process, which would make the rotation below
+impossible without restarting the pod.
+
+### Rotating the key
+
+The ring is one line, `id:base64[,id:base64]*`, and the **first entry is the key new secrets are
+written under**. Every later entry is only ever read from. Lighthouse never writes to your Secret and
+holds no permission to, so all four steps are yours:
+
+1. **Add the new key in front of the old one** in your Secret:
+   `keys: k-new:BASE64NEW,k-old:BASE64OLD`
+2. **Wait for the instance to pick it up.** It re-reads the file about every thirty seconds and logs
+   `encryption.keyring.reloaded` with the key ids it now holds. Rolling the pod also works, but is
+   not needed.
+3. **Re-encrypt onto the new key** from Settings → Encryption. Existing credentials move to the first
+   entry; nothing has to be re-entered.
+4. **Drop the old entry** from your Secret, leaving `keys: k-new:BASE64NEW`.
+
+Do step 4 before step 3 and the credentials still on the old key report as unreadable rather than
+failing against your work tracking system — recoverable by putting the old entry back and re-running
+step 3. A file that does not parse is refused outright: the keys already in force stay in force and
+the reason is logged.
+
+Set `encryption.keysReloadSeconds` if thirty seconds is the wrong interval for your secret store.
 
 ## Versioning (ADR-083)
 

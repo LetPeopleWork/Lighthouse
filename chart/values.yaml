@@ -86,6 +86,10 @@ encryption:
   #    rendering it from encryption.key. The Secret MUST provide the key `keys`, in the same one-line
   #    form. Reaches the container as a mounted file, not an environment variable.
   existingSecret: ""
+  # -- How often the mounted key file is re-read, in seconds. Empty uses 30. Raise it if your secret
+  #    store is slow to materialise a change; a key an operator adds is picked up on the next read,
+  #    without the pod being restarted.
+  keysReloadSeconds: ""
 
 redis:
   # -- Redis connection string (ConnectionStrings:Redis). REQUIRED when replicaCount>1 — enables the

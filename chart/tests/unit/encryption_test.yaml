@@ -147,6 +147,20 @@ tests:
       - equal:
           path: data.Encryption__KeysFile
           value: /etc/lighthouse/encryption/keys
+      # Left unsaid unless an operator says otherwise, so the application's own default is the one
+      # answer rather than a number the chart repeats and can then disagree with.
+      - notExists:
+          path: data.Encryption__KeysReloadSeconds
+
+  - it: an operator whose secret store is slow can widen the interval
+    set:
+      encryption.existingSecret: tenant-encryption
+      encryption.keysReloadSeconds: 120
+    template: templates/configmap.yaml
+    asserts:
+      - equal:
+          path: data.Encryption__KeysReloadSeconds
+          value: "120"
 
   # The path is not key material, so it belongs with the rest of the non-secret configuration. What
   # must never appear anywhere is the key itself, in a ConfigMap or in the container's environment,

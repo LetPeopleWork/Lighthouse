@@ -4,7 +4,7 @@ Flow metrics and probabilistic forecasting for Kubernetes. Postgres-only (ADR-08
 brings the whole stack up — API (SPA served in-process), bundled or external Postgres, optional MCP
 workload and OIDC — with one command.
 
-- **Chart version:** `0.1.12`
+- **Chart version:** `0.1.13`
 - **App image (appVersion):** `26.8.14.1`
 
 > This README's **Values** section is generated from `values.yaml` by [`helm-docs`](https://github.com/norwoodj/helm-docs).
@@ -16,8 +16,9 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.12 / APP 26.8.14.1
-helm install l8e letpeoplework/lighthouse --version 0.1.12 -f values-enterprise.yaml
+helm search repo lighthouse          # shows CHART 0.1.13 / APP 26.8.14.1
+helm install l8e letpeoplework/lighthouse --version 0.1.13 -f values-enterprise.yaml \
+  --set encryption.key=$(openssl rand -base64 32)
 ```
 
 The default values render the standalone-parity shape (`frontend.mode=embedded`, one API workload,
@@ -27,8 +28,66 @@ REQUIRED values (host, TLS secret, Redis when scaling, OIDC, MCP, external DB) a
 ## Install from a source checkout (development)
 
 ```sh
-helm install l8e ./chart -f chart/values-enterprise.yaml
+helm install l8e ./chart -f chart/values-enterprise.yaml \
+  --set encryption.key=$(openssl rand -base64 32)
 ```
+
+## The encryption key
+
+Lighthouse encrypts the credentials it stores for your work tracking systems. **An install that names
+neither `encryption.key` nor `encryption.existingSecret` is refused at render**, and the chart never
+generates a key of its own. That is deliberate: the only mechanism Helm offers for "generate once"
+asks the cluster what already exists, and that question comes back empty on every render with no
+cluster to ask — which is every `helm template` and therefore every ArgoCD sync. A chart that
+generated would mint a fresh key on each sync and leave every credential stored under the previous
+one unreadable. A key you do not supply is a key nobody owns.
+
+There are two ways to own it.
+
+**You hold it.** Pass it as a value, and this release keeps it in a Secret of its own:
+
+```sh
+--set encryption.key=$(openssl rand -base64 32)
+```
+
+**Your secret store holds it.** Point the chart at a Secret that External Secrets Operator, OpenBao
+or an operator fills. The Secret must carry the key `keys`:
+
+```sh
+kubectl create secret generic lighthouse-encryption \
+  --from-literal=keys="k-2026-08-17-01:$(openssl rand -base64 32)"
+helm install l8e letpeoplework/lighthouse --set encryption.existingSecret=lighthouse-encryption
+```
+
+Set one or the other, never both.
+
+The key reaches the container as a **mounted file**, not an environment variable — unlike the
+database password and the OIDC client secret, which still travel as environment variables. The
+difference is on purpose and worth not "aligning" away: an environment variable is readable in a
+process dump, and it cannot change under a running process, which would make the rotation below
+impossible without restarting the pod.
+
+### Rotating the key
+
+The ring is one line, `id:base64[,id:base64]*`, and the **first entry is the key new secrets are
+written under**. Every later entry is only ever read from. Lighthouse never writes to your Secret and
+holds no permission to, so all four steps are yours:
+
+1. **Add the new key in front of the old one** in your Secret:
+   `keys: k-new:BASE64NEW,k-old:BASE64OLD`
+2. **Wait for the instance to pick it up.** It re-reads the file about every thirty seconds and logs
+   `encryption.keyring.reloaded` with the key ids it now holds. Rolling the pod also works, but is
+   not needed.
+3. **Re-encrypt onto the new key** from Settings → Encryption. Existing credentials move to the first
+   entry; nothing has to be re-entered.
+4. **Drop the old entry** from your Secret, leaving `keys: k-new:BASE64NEW`.
+
+Do step 4 before step 3 and the credentials still on the old key report as unreadable rather than
+failing against your work tracking system — recoverable by putting the old entry back and re-running
+step 3. A file that does not parse is refused outright: the keys already in force stay in force and
+the reason is logged.
+
+Set `encryption.keysReloadSeconds` if thirty seconds is the wrong interval for your secret store.
 
 ## Versioning (ADR-083)
 
@@ -73,6 +132,7 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | telemetry.enabled | bool | `false` | Enable OpenTelemetry /metrics + JSON logs (epic-5305 #5312). Off by default (self-hoster). |
 | encryption.key | string | `""` | The key stored credentials are encrypted with, as one line: `id:base64[,id:base64]*`, first    entry active. REQUIRED unless existingSecret is set — this chart never generates one. Make one    with `openssl rand -base64 32`. |
 | encryption.existingSecret | string | `""` | Read the key from a pre-existing Secret an external store (ESO/OpenBao) owns, instead of    rendering it from encryption.key. The Secret MUST provide the key `keys`, in the same one-line    form. Reaches the container as a mounted file, not an environment variable. |
+| encryption.keysReloadSeconds | string | `""` | How often the mounted key file is re-read, in seconds. Empty uses 30. Raise it if your secret    store is slow to materialise a change; a key an operator adds is picked up on the next read,    without the pod being restarted. |
 | redis.connectionString | string | `""` | Redis connection string (ConnectionStrings:Redis). REQUIRED when replicaCount>1 — enables the    epic-5305 #5304 SignalR backplane + single-instance background work so the fleet syncs once.    Operator-provided (the chart bundles no Redis; vendor-neutral). Empty = single-replica only. |
 | externalDatabase | object | `{"database":"","host":"","password":"","port":5432,"user":""}` | Bring-your-own Postgres (used when postgresql.enabled=false). Vendor-neutral (managed / CNPG / RDS / Azure). |
 | oidc.enabled | bool | `false` | Enable OIDC login (Authentication:*). Off = no auth (standalone parity). Needs forwarded-headers behind ingress. |
