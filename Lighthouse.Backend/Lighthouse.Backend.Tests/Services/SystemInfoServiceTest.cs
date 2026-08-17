@@ -173,6 +173,71 @@ namespace Lighthouse.Backend.Tests.Services
             }
         }
 
+        // Npgsql accepts a quoted password, so a semicolon inside one is a password a real operator can
+        // have. Anything that reads the connection string by splitting on semicolons sees the tail of it
+        // as a setting of its own and reports it.
+        [Test]
+        public void GetSystemInfo_PostgresPasswordContainsSemicolon_ReportsNoPartOfIt()
+        {
+            SetupDatabaseProvider("postgres");
+            SetupConnectionString("Host=dbserver;Port=5432;Database=lighthouse;Username=appuser;Password='first;second'");
+
+            var subject = CreateSubject();
+
+            var result = subject.GetSystemInfo();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DatabaseConnection, Does.Not.Contain("first"));
+                Assert.That(result.DatabaseConnection, Does.Not.Contain("second"));
+            }
+        }
+
+        // psw and pwd are both Npgsql's own aliases for password. A rule written as a list of names is
+        // only as good as the list, and the connection string is parsed by something that knows all of them.
+        [TestCase("psw")]
+        [TestCase("PSW")]
+        [TestCase("pwd")]
+        public void GetSystemInfo_PostgresPasswordUsesAnAlias_ReportsNoPartOfIt(string alias)
+        {
+            SetupDatabaseProvider("postgres");
+            SetupConnectionString($"Host=dbserver;Port=5432;Database=lighthouse;Username=appuser;{alias}=hunter-two");
+
+            var subject = CreateSubject();
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.DatabaseConnection, Does.Not.Contain("hunter-two"));
+        }
+
+        [Test]
+        public void GetSystemInfo_PostgresProvider_ReportsWhereTheDatabaseIsAndNothingElse()
+        {
+            SetupDatabaseProvider("postgres");
+            SetupConnectionString("Host=dbserver;Port=6432;Database=lighthouse;Username=appuser;Password=hunter-two;SSL Mode=Require;Include Error Detail=true");
+
+            var subject = CreateSubject();
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.DatabaseConnection, Is.EqualTo("Host=dbserver;Port=6432;Database=lighthouse"));
+        }
+
+        // This response is what the application shell fetches before it can draw anything, so a connection
+        // string the parser rejects must cost the operator one field rather than the whole interface.
+        [Test]
+        public void GetSystemInfo_PostgresConnectionStringCannotBeParsed_ReturnsNullDatabaseConnection()
+        {
+            SetupDatabaseProvider("postgres");
+            SetupConnectionString("this is not a connection string");
+
+            var subject = CreateSubject();
+
+            var result = subject.GetSystemInfo();
+
+            Assert.That(result.DatabaseConnection, Is.Null);
+        }
+
         [Test]
         public void GetSystemInfo_UnknownProvider_ReturnNullDatabaseConnection()
         {

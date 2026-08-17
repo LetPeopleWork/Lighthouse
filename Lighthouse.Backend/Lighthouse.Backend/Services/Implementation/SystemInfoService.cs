@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
@@ -11,11 +12,6 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class SystemInfoService : ISystemInfoService
     {
-        private static readonly HashSet<string> PostgresSensitiveKeys = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "password", "pwd", "user id", "uid", "username", "user name"
-        };
-
         private readonly IConfiguration configuration;
         private readonly ILogConfiguration logConfiguration;
         private readonly IServiceConfig serviceConfig;
@@ -73,7 +69,12 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private static string? GetSafeDatabaseConnection(string provider, string? connectionString)
+        // Names what may be published rather than what may not. A connection string is a format with
+        // quoting and aliases, not a list of semicolon-separated pairs: a password may legitimately
+        // contain a semicolon, and the driver answers to more than one spelling of "password". Removing
+        // the names somebody thought of leaves everything nobody thought of on the wire, so this reads
+        // the string with the driver's own parser and reports back only the three fields named here.
+        private string? GetSafeDatabaseConnection(string provider, string? connectionString)
         {
             if (string.IsNullOrEmpty(connectionString))
             {
@@ -82,23 +83,31 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var normalizedProvider = provider.ToLowerInvariant();
 
-            if (normalizedProvider == "sqlite")
+            try
             {
-                var builder = new SqliteConnectionStringBuilder(connectionString);
-                return builder.DataSource;
+                if (normalizedProvider == "sqlite")
+                {
+                    return new SqliteConnectionStringBuilder(connectionString).DataSource;
+                }
+
+                if (normalizedProvider is "postgresql" or "postgres")
+                {
+                    var configured = new NpgsqlConnectionStringBuilder(connectionString);
+
+                    var reported = new NpgsqlConnectionStringBuilder();
+                    reported["Host"] = configured.Host;
+                    reported["Port"] = configured.Port;
+                    reported["Database"] = configured.Database;
+
+                    return reported.ConnectionString;
+                }
             }
-
-            if (normalizedProvider is "postgresql" or "postgres")
+            // A connection string the driver will not read is one the application is not running on, so
+            // there is nothing here worth reporting. This response is what the interface fetches before it
+            // can draw anything, and it costs the operator one field instead of the whole page.
+            catch (Exception unreadable) when (unreadable is ArgumentException or FormatException)
             {
-                var safeParts = connectionString
-                    .Split(';', StringSplitOptions.RemoveEmptyEntries)
-                    .Where(part =>
-                    {
-                        var key = part.Split('=')[0].Trim();
-                        return !PostgresSensitiveKeys.Contains(key);
-                    });
-
-                return string.Join(";", safeParts);
+                logger.LogWarning(unreadable, "The configured database connection string could not be parsed, so the system information reports no connection details");
             }
 
             return null;

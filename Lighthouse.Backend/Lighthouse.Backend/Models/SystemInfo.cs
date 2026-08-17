@@ -24,15 +24,16 @@ namespace Lighthouse.Backend.Models
         // This response answers before anybody is authorised, because the application shell needs the
         // version and the authentication posture to render at all - and a viewer who opens Lighthouse
         // inside an embedded frame satisfies "signed in". Most of what is here is fine to hand to them.
-        // Two things are not, and they are named here rather than at the call site so that a third one
+        // Three things are not, and they are named here rather than at the call site so that a fourth one
         // added later is withheld by this sentence instead of by somebody remembering to guard it.
         //
         // The emergency administrators are not a category: they are the names of real people who can
         // administer this installation. Which key it runs on and where that key is kept is the security
-        // posture of the whole instance.
+        // posture of the whole instance. Where the database lives and what it is called is the address of
+        // the one thing worth attacking.
         public SystemInfo WithoutWhatOnlyAnAdministratorMaySee()
         {
-            return this with { EmergencyAdminSubjects = [], Encryption = null };
+            return this with { EmergencyAdminSubjects = [], Encryption = null, DatabaseConnection = null };
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API
         private static readonly string[] TwoEmergencyAdmins = ["alice@example.com", "bob@example.com"];
 
         private static readonly string[] WhatOnlyAnAdministratorMaySee =
-            [nameof(SystemInfo.EmergencyAdminSubjects), nameof(SystemInfo.Encryption)];
+            [nameof(SystemInfo.EmergencyAdminSubjects), nameof(SystemInfo.Encryption), nameof(SystemInfo.DatabaseConnection)];
 
         [SetUp]
         public void Setup()
@@ -244,8 +244,8 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(
                 answered,
-                Is.EqualTo(whole with { EmergencyAdminSubjects = [], Encryption = null }),
-                "exactly two fields are withheld; anything else going missing breaks a page every viewer loads");
+                Is.EqualTo(whole with { EmergencyAdminSubjects = [], Encryption = null, DatabaseConnection = null }),
+                "only the named fields are withheld; anything else going missing breaks a page every viewer loads");
         }
 
         /// <summary>
