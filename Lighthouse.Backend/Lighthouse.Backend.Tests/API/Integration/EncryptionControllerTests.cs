@@ -101,6 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "keyStorePath",
             "legacyDefaultPresent",
             "secretsUnderPublishedKey",
+            "readableSecretsNotOnTheActiveKey",
             "allowsStartWithUnreadableSecrets",
             "keySuppliedThrough",
         ];
@@ -238,6 +239,30 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     + "hold was written before the envelope format existed, so it names no key at all");
                 Assert.That(ownKey.String("keyStorePath"), Is.EqualTo(ReportedKeyStore),
                     "the path is resolved from the key-store settings rather than reported from somewhere of its own");
+            }
+        }
+
+        /// <summary>
+        /// The panel decides whether to offer the move from this number, and it is the same host as above:
+        /// one stored value, written before the envelope format, so the key list holds only the key in force.
+        /// A panel inferring the answer from that list would offer nothing to the population this whole
+        /// feature exists to migrate - which is what a real upgraded deployment found on 2026-08-17.
+        /// </summary>
+        [Test]
+        public async Task ThePayload_CountsWhatCouldBeMovedEvenWhenNothingNamesAnEarlierKey()
+        {
+            using var ownKeyClient = ownKeyFactory.CreateClient().AsSystemAdmin();
+
+            using var ownKeyResponse = await ownKeyClient.GetAsync(LatestRoute);
+
+            var ownKey = await ReadJsonAsync(ownKeyResponse);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ownKey.Strings("keyIds"), Does.Not.Contain(LegacyDefaultEncryptionKey.Id),
+                    "nothing names the key that wrote it, which is the whole difficulty");
+                Assert.That(ownKey.Int("readableSecretsNotOnTheActiveKey"), Is.GreaterThan(0),
+                    "it is readable and it is not on the key in force, so the move has something to do");
             }
         }
 
