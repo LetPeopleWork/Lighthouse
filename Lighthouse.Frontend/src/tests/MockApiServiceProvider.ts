@@ -74,6 +74,7 @@ export const createMockApiServiceContext = (
 export const createMockEncryptionService = (): IEncryptionService => {
 	const nothingToReport = {
 		activeKeyId: "lighthouse-instance",
+		keysChangedWhileItRan: false,
 		movedCount: 0,
 		unreadableCount: 0,
 		onActiveKeyCount: 0,

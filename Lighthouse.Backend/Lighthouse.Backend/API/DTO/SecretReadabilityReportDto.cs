@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.API.DTO
             ArgumentNullException.ThrowIfNull(report);
 
             ActiveKeyId = report.ActiveKeyId;
+            KeysChangedWhileItRan = report.KeysChangedWhileItRan;
             MovedCount = report.MovedCount;
             UnreadableCount = report.UnreadableCount;
             OnActiveKeyCount = report.OnActiveKeyCount;
@@ -19,6 +20,8 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         public string ActiveKeyId { get; }
+
+        public bool KeysChangedWhileItRan { get; }
 
         public int MovedCount { get; }
 

@@ -20,6 +20,7 @@ const validKeyState = {
 
 const validReport = {
 	activeKeyId: "k-2026-08-16-01",
+	keysChangedWhileItRan: false,
 	movedCount: 47,
 	unreadableCount: 1,
 	onActiveKeyCount: 45,

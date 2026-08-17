@@ -65,6 +65,7 @@ const operatorOwned: Record<string, EncryptionKeyState> = {
 
 const aReportNamingWhatCouldNotBeRead: SecretReadabilityReport = {
 	activeKeyId: "k-2026-08-16-02",
+	keysChangedWhileItRan: false,
 	movedCount: 46,
 	unreadableCount: 1,
 	onActiveKeyCount: 46,
@@ -179,6 +180,7 @@ describe("EncryptionPanel", () => {
 	it("lists only the secrets that need somebody to do something", async () => {
 		const mixed: SecretReadabilityReport = {
 			activeKeyId: "k-2026-08-16-02",
+			keysChangedWhileItRan: false,
 			movedCount: 2,
 			unreadableCount: 1,
 			onActiveKeyCount: 2,
@@ -252,9 +254,61 @@ describe("EncryptionPanel", () => {
 		expect(screen.getByRole("alert").className).toMatch(/Warning/);
 	});
 
+	it("does not show a disturbed move as completed, and says to run it again", async () => {
+		const disturbed: SecretReadabilityReport = {
+			...aReportNamingWhatCouldNotBeRead,
+			keysChangedWhileItRan: true,
+		};
+
+		renderPanelOn(ownKey, disturbed);
+
+		await userEvent.click(await screen.findByTestId("reencrypt-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("keys changed while this was running");
+		expect(report).toHaveTextContent("run it again");
+
+		// The counts describe a rotation nobody finished, and an operator who reads one of them stops
+		// there instead of doing the one thing that is actually left to do.
+		expect(report).not.toHaveTextContent("Moved 46 stored secrets onto key");
+
+		expect(screen.getByRole("alert").className).toMatch(/Warning/);
+	});
+
+	it("says nothing about the keys having changed when they did not", async () => {
+		renderPanelOn(ownKey, aReportNamingWhatCouldNotBeRead);
+
+		await userEvent.click(await screen.findByTestId("reencrypt-button"));
+
+		const report = await screen.findByTestId("encryption-report");
+
+		expect(report).toHaveTextContent("Moved 46 stored secrets onto key");
+		expect(report).not.toHaveTextContent("keys changed while this was running");
+	});
+
+	it("names no key material when it says the keys changed", async () => {
+		const disturbed: SecretReadabilityReport = {
+			...aReportNamingWhatCouldNotBeRead,
+			keysChangedWhileItRan: true,
+		};
+
+		renderPanelOn(ownKey, disturbed);
+
+		await userEvent.click(await screen.findByTestId("reencrypt-button"));
+
+		const said =
+			(await screen.findByTestId("encryption-report")).textContent ?? "";
+
+		// Key identifiers are the only thing about a key an operator is ever shown. Anything base64-shaped
+		// in a sentence about keys is the one thing that must never reach a browser or a log.
+		expect(said).not.toMatch(/[A-Za-z0-9+/]{40,}={0,2}/);
+	});
+
 	it("shows no table at all when nothing was left behind", async () => {
 		const clean: SecretReadabilityReport = {
 			activeKeyId: "k-2026-08-16-02",
+			keysChangedWhileItRan: false,
 			movedCount: 3,
 			unreadableCount: 0,
 			onActiveKeyCount: 3,
@@ -618,6 +672,7 @@ describe("EncryptionPanel", () => {
 	it("says only the states that have something in them", async () => {
 		renderPanelOn(ownKey, {
 			activeKeyId: "k-2026-08-16-01",
+			keysChangedWhileItRan: false,
 			movedCount: 0,
 			unreadableCount: 0,
 			onActiveKeyCount: 1,
@@ -649,6 +704,7 @@ describe("EncryptionPanel", () => {
 	it("writes one secret in the singular", async () => {
 		renderPanelOn(ownKey, {
 			activeKeyId: "k-2026-08-16-01",
+			keysChangedWhileItRan: false,
 			movedCount: 0,
 			unreadableCount: 0,
 			onActiveKeyCount: 1,
@@ -678,6 +734,7 @@ describe("EncryptionPanel", () => {
 	it("says a key was made when a rotation had nothing to move", async () => {
 		renderPanelOn(ownKey, {
 			activeKeyId: "k-2026-08-16-02",
+			keysChangedWhileItRan: false,
 			movedCount: 0,
 			unreadableCount: 0,
 			onActiveKeyCount: 0,
@@ -700,6 +757,7 @@ describe("EncryptionPanel", () => {
 	it("says nothing needed moving rather than that nothing moved", async () => {
 		const encryptionService = renderPanelOn(justUpgraded, {
 			activeKeyId: "k-2026-08-16-01",
+			keysChangedWhileItRan: false,
 			movedCount: 0,
 			unreadableCount: 0,
 			onActiveKeyCount: 4,
@@ -734,6 +792,7 @@ describe("EncryptionPanel", () => {
 	it("says what every stored secret is on, and never that anything was moved", async () => {
 		const checked: SecretReadabilityReport = {
 			activeKeyId: "k-2026-08-16-01",
+			keysChangedWhileItRan: false,
 			movedCount: 0,
 			unreadableCount: 1,
 			onActiveKeyCount: 45,
