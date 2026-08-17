@@ -4,7 +4,7 @@
     "solution": "../Lighthouse.sln",
     "test-projects": ["Lighthouse.Backend.Tests.csproj"],
     "mutate": [
-      "**/Services/Implementation/Encryption/KeyRingFileWatcher.cs",
+      "**/Services/Implementation/BackgroundServices/KeyRingFileWatcher.cs",
       "**/Services/Implementation/Encryption/MountedFileKeyRingSource.cs"
     ],
     "thresholds": { "high": 90, "low": 80, "break": 0 },

@@ -23,6 +23,14 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         public EncryptionKeyRing? Resolve()
         {
+            return ReadContents() is { } contents ? RingFrom(contents) : null;
+        }
+
+        // Reading and parsing are separate because the reload asks them separately: it re-reads on a timer and
+        // has to be able to tell content it has already judged from content it has not, without parsing every
+        // half minute and without a second copy of what counts as a readable file.
+        public string? ReadContents()
+        {
             if (string.IsNullOrWhiteSpace(keysFilePath))
             {
                 return null;
@@ -37,8 +45,11 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
                     "Mount the file, or remove the setting, and start Lighthouse again.");
             }
 
-            var contents = Encoding.UTF8.GetString(fileSystem.ReadAllBytes(keysFilePath)).Trim();
+            return Encoding.UTF8.GetString(fileSystem.ReadAllBytes(keysFilePath)).Trim();
+        }
 
+        public EncryptionKeyRing RingFrom(string contents)
+        {
             return SuppliedKeyRing.ParsedFrom(
                 contents, KeyCustody.SuppliedByExternalSecret, $"the file '{keysFilePath}'");
         }

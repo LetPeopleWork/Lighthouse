@@ -147,6 +147,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// key material to have no way of writing one. Every source, the store and the bootstrapper raise
         /// what goes wrong instead, so the sentence an operator reads is written once, where the caller
         /// decides what to do about it.
+        ///
+        /// Two types have to both handle keys and say something, and both live outside this namespace for
+        /// that reason: CryptoService, which is pinned by the test below, and KeyRingFileWatcher, which runs
+        /// on a timer and so has no caller to hand a sentence to - what it writes is pinned by its own tests.
         /// </summary>
         [Test]
         public void NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll()

@@ -12,6 +12,7 @@ using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.OAuth;
 using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Licensing;
@@ -500,6 +501,30 @@ namespace Lighthouse.Backend
 
             builder.Services.AddSingleton(new KeyCustodyDescription(
                 WhoseKeyThisIs.AndWhereItIsKept(ring.Custody, keyStore.Directory)));
+
+            WatchTheMountedKeysFile(builder);
+        }
+
+        // Only where a key arrives in a file is there anything to re-read, so nowhere else gains a background
+        // service: an instance holding its key any other way would be re-reading a path it was never given.
+        private static void WatchTheMountedKeysFile(WebApplicationBuilder builder)
+        {
+            var keysFilePath = builder.Configuration[MountedFileKeyRingSource.PathSettingKey];
+
+            if (string.IsNullOrWhiteSpace(keysFilePath))
+            {
+                return;
+            }
+
+            var interval = KeyRingFileWatcher.IntervalFrom(
+                builder.Configuration.GetValue<int?>(KeyRingFileWatcher.IntervalSettingKey));
+
+            builder.Services.AddHostedService(services => new KeyRingFileWatcher(
+                new MountedFileKeyRingSource(keysFilePath, new PhysicalKeyStoreFileSystem()),
+                services.GetRequiredService<IEncryptionKeyRingHolder>(),
+                TimeProvider.System,
+                interval,
+                services.GetRequiredService<ILogger<KeyRingFileWatcher>>()));
         }
 
         // Asked for lazily, and only on the one path that has nowhere durable to keep a key: every other
