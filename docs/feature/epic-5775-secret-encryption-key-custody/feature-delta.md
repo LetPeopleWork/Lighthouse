@@ -4460,3 +4460,234 @@ emphasis table · error-path rationale per `@error` scenario · tagging cookbook
 notes for scenarios 146, 151, 162 and 165 · domain-language fact-to-step table.
 
 ---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 07
+
++ `slices/slice-07-a-refusal-that-cannot-quote-the-key.md` — the slice brief
++ `verification/security-review-findings.md` — E1, E6 and E7, and the refutation attempts behind each
++ `verification/security-review-brief.md` — the prompt the review ran from, and the claims it judged
++ `acceptance/milestone-17-the-published-key-is-never-the-key-in-force.feature` — scenario 114
++ `docs/product/architecture/adr-148-key-ring-canonical-form-and-retired-default.md`
++ `Wave: DESIGN / [REF] Architectural Enforcement` — the seam rules this slice repairs rather than adds
+- `discuss/`, `design/`, `devops/` as directories — this feature has never had them; every wave writes
+  into `feature-delta.md`, and the graceful-degradation matrix's BLOCK condition (driving ports unknown)
+  does not apply, because the DESIGN sections name them.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 07
+
+**Reconciliation passed — 0 contradictions.** One confirmed upstream defect, recorded below rather than
+treated as a contradiction.
+
+| Prior decision | Slice 07 | Verdict |
+|---|---|---|
+| `KeyRingFileWatcher` sits outside `Services.Implementation.Encryption` so that it may log (slice 05) | Kept. The slice adds a guarantee about the sentences handed to it rather than moving the type | Consistent |
+| ADR-148: a malformed ring "stops startup with a message naming the entry at fault" | Kept exactly. Naming the entry is the commitment; quoting its contents at unbounded length never was | Consistent |
+| ADR-152: nothing the encryption surface renders is key material | Extended from the panel to the refusals | Consistent |
+| Scenario 114 (slice 04b): "No refusal repeats a byte of the key it refused" | **Already specified, and not held by the shipped build** | Upstream issue |
+
+Scenario 114 is not a contradiction — it is this slice's specification, written three slices early and
+translated into a test narrower than the sentence it came from. Slice 07 does not restate it as a new
+commitment; it re-specifies it in the shapes that reach the defect, and repairs the translation.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 07
+
+- **Driving ports** (from DESIGN, all already built): the startup bootstrap
+  `Program.EnsureEncryptionKeyRing`, reading configuration and the mounted file through
+  `SuppliedKeyRing.ParsedFrom`; the reload timer `KeyRingFileWatcher.ReadOnce`; and the key store
+  filesystem as a driven adapter whose file modes are the observable.
+- **No new configuration name, no new route, no new data, no migration.** Every scenario exercises a
+  path that shipped in slices 02-05.
+- **`MaxKeyIdLength` (32) is the bound scenario 173 quotes.** It already exists in
+  `KeyRingSerializer`; this slice does not introduce a second number for the same thing.
+- **`UnixCreateMode` on `FileStreamOptions`** is the platform mechanism behind milestone 33. It is a
+  no-op on Windows, which is why those scenarios say "the account Lighthouse runs as" rather than
+  naming a mode — the property is who can read the file, not which integer expresses it.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 07
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 169 | A key written before its name is refused without the key being repeated | milestone-31 | `@error @driving_port @us-07` |
+| 170 | A keys file written one key to a line is refused without the key being repeated | milestone-31 | `@error @driving_port @us-07` |
+| 171 | A key left with a colon after it is refused without the key being repeated | milestone-31 | `@error @edge @us-07` |
+| 172 | A mistyped key name is still named, so it can be found | milestone-31 | `@edge @us-07` |
+| 173 | Nothing a refusal names is longer than a name is allowed to be | milestone-31 | `@property @error @us-07` |
+| 174 | No sentence about a key ring carries the key, however the key is written down | milestone-31 | `@property @error @us-07` |
+| 175 | A refusal read from a console says no more than one read from a log | milestone-31 | `@error @driving_port @us-07` |
+| 176 | A refusal that carries the key is caught before it can ship | milestone-32 | `@error @us-07` |
+| 177 | Every way a key ring can be malformed is one the checks try | milestone-32 | `@property @error @us-07` |
+| 178 | A new thing the answer tells a signed-in caller is refused until somebody names it | milestone-32 | `@error @us-07` |
+| 179 | A field left out when it is empty is still one of the things the answer promises | milestone-32 | `@edge @us-07` |
+| 180 | Which values an example happens to carry cannot change what the answer promises | milestone-32 | `@property @us-07` |
+| 181 | A key this instance made for itself is readable only by the account that made it | milestone-33 | `@edge @us-07` |
+| 182 | The secret that signs the sign-in handshake is kept the same way | milestone-33 | `@edge @us-07` |
+| 183 | Every file in the key store is as closed as the most closed of them | milestone-33 | `@property @us-07` |
+| 184 | A key store carried across from an earlier version keeps what it had | milestone-33 | `@edge @us-07` |
+| 185 | A key store the account cannot open stops the start rather than being written around | milestone-33 | `@error @edge @us-07` |
+
+Every scenario also carries `@slice-07`. Numbering continues from slice 06a's 143-168. **17 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 17 of 17 (100%)**, against the ≥40% target. That is not padding.
+The slice has no happy path of its own: every scenario is a malformed input, a bound, or a property of
+what gets written down, because what the slice delivers is what happens when something is wrong.
+
+**Finding traceability** — E1 → 169, 170, 171, 172, 173, 174, 175 · E6 → 176, 177, 178, 179, 180 ·
+E7 → 181, 182, 183, 184. Carried by no finding and asserted anyway: 185, because the refusal it names
+already ships, nothing pins it, and a slice that touches file creation modes is exactly where it would
+break without anybody noticing.
+
+**Re-specified from an earlier slice**: 174 is scenario 114 said again in the shapes that reach it. 114
+stays where it is — it was never wrong.
+
+---
+
+## Wave: DISTILL / [REF] Review Verdict — slice 07
+
+`@nw-acceptance-designer-reviewer`, 2026-08-17: **conditionally approved**. Zero blockers, two high,
+two medium, all four against milestone 32. Every acceptance criterion covered, numbering and
+traceability correct, milestones 31 and 33 passed without a finding.
+
+| Finding | Taken | What changed |
+|---|---|---|
+| 177 and 180 describe what a test does rather than what must be true | **Accepted** | Both rewritten. 177 now quantifies over *the ways a supplied key ring can be malformed* and asserts every one of them is tried; 180 asserts the compared set is invariant across examples. Neither names a test's internals |
+| 177 wore `@property` without quantifying over anything | **Accepted** | It quantifies now, so the tag is earned. 176 and 178 lost the tag instead of gaining a quantifier — they are single assertions and were mislabelled |
+| Milestone 32's vocabulary — *guard*, *shape*, *quoting* — is unexplained | **Accepted** | Retitled *Checks that can fail*; "guard" became "check", "the response" became "the answer", and the scenarios now speak about the build failing rather than about a rule running. File renamed to match |
+| *disclosure* obscures meaning | **Not taken as phrased, fixed anyway** | It is this epic's established word — phase 05 of the roadmap is "disclosure, one step per surface", and slice 06b is built on it. It was not a euphemism. It is gone from milestone 32 regardless, because "a new thing the answer tells a signed-in caller" reads better than either |
+
+The reviewer's underlying objection was right and is worth keeping in view for DELIVER: this slice's
+deliverable is two checks, and it is very easy to specify a check by describing its code. The scenarios
+now state what must be true; how it is asserted is DELIVER's business.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 07
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from
+slices 01-06a. They are translated in DELIVER into NUnit.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `acceptance/milestone-{31,32,33}-*.feature` | slice 06a's `milestone-{23..26}` in the same directory |
+| What a refusal may quote (169-173) | `Lighthouse.Backend.Tests/Services/Implementation/Encryption/KeyRingSerializerTests.cs` (extend) | the same file already pins all five defect sentences by shape |
+| The same refusal reaching a start (169, 171, 175) | `.../Encryption/ConfiguredKeyRingSourceTests.cs` and `EncryptionKeyRingBootstrapperTests.cs` (extend) | both already assert refusal wording through the bootstrap |
+| The same refusal reaching a reload (170, 174) | `.../BackgroundServices/KeyRingFileWatcherTests.cs` (**repair**, then extend) | `ReadOnce_NothingItWrites_CarriesKeyMaterialInAnyEncoding` is the test being repaired, not a new one |
+| The seam guards themselves (176-180) | `Lighthouse.Backend.Tests/Architecture/SecretCustodySeamArchUnitTest.cs` (repair + extend) | the file already owns both guards this slice fixes |
+| File modes on a fresh key store (181-183) | `.../Encryption/GeneratedKeyRingStoreTests.cs` (extend) | the same file already drives an injected `IKeyStoreFileSystem` and a real temp directory |
+| Modes preserved by a carry-across (184) | `Lighthouse.Backend.Tests/Startup/KeyStoreDirectoryResolutionTests.cs` (extend) | the only place `KeyStoreMigration.CarryOverLegacyKeyStore` is driven today; there is no `KeyStoreMigrationTests.cs` and this slice does not create one for four assertions |
+| A key store that will not open (185) | `.../Encryption/EncryptionKeyRingBootstrapperTests.cs` (extend) | the unreadable-ring refusal is asserted there, not in `GeneratedKeyRingStoreTests` |
+| The dogfood run | Manual, recorded in the slice verdict | slices 04b and 05b owe their runs the same way |
+
+**Test-mode caveat for 181-184.** File modes are a Unix property. The assertions run on Linux and macOS
+and are inconclusive on Windows, so they are written to assert the mode where the platform has one and
+to assert nothing where it does not — never to skip silently, because a silently skipped mode assertion
+is how this defect survived in the first place.
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| Nothing in `Services.Implementation.Encryption` may depend on `Microsoft.Extensions.Logging` | Unchanged. `NothingThatResolvesOrKeepsAKey_CanWriteToALogAtAll` keeps guarding the namespace; this slice adds the guarantee about what leaves it as an exception message |
+| A sentence composed inside the seam is safe to write down | New. Asserted at the composer (`KeyRingSerializer`) rather than at every writer, because the writers are the part that keeps changing |
+| The system information response discloses a fixed set | Unchanged as a rule; the guard is repaired to read the record's declared shape rather than one constructed instance |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 07
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| Startup bootstrap — `Encryption__Key`, `Encryption__Keys`, `Encryption__KeysFile` through the real configuration provider | 169, 171, 172, 173, 175 |
+| The reload timer — `KeyRingFileWatcher.ReadOnce` against an injected file source and a driven clock | 170, 174, 177 |
+| The key store filesystem, as a driven adapter with observable modes | 181, 182, 183, 184, 185 |
+| `GET /api/{v1,latest}/systeminfo` — the response whose shape the guard pins | 178, 179, 180 (through the guard, not over HTTP: the runtime behaviour is already covered by slice 06b's scenarios and is unchanged here) |
+
+**No new entry point.** Every route, setting and timer in this slice shipped in slices 02-05; the slice
+changes what they say and what they leave on disk, not what they are.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 07
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `PhysicalKeyStoreFileSystem` (create + read back) | YES | 181, 182, 183 — a real temp directory, real modes read off the filesystem |
+| `KeyStoreMigration` file copy | YES | 184 — two real directories, modes compared before and after |
+| Configuration provider (environment, command line, settings file) | YES | 169, 171, 172, 173 — the real provider, as slice 02 established, because the binding behaviour is what the grammar routes around |
+| Mounted keys file | YES | 170, 174 — through the injected file source the watcher tests already use |
+| Logging pipeline | YES | 174, 177 — captured at the `ILogger` boundary so structured properties are visible, not only the rendered sentence |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 07
+
+| Environment | Scenario |
+|---|---|
+| A fresh instance with nothing in its key store | 181, 182, 183 |
+| An instance carrying a key store across from before this epic | 184 |
+| An instance whose key arrives in a mounted file | 170, 174 |
+| An instance whose key arrives in configuration | 169, 171, 172, 173, 175 |
+| A key store the account cannot read | 185 |
+| Windows, where file modes do not apply | 181-184 assert nothing rather than skipping — see the test-mode caveat above |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 07
+
+**UI-07-1 — Scenario 114 was specified correctly and translated too narrowly.**
+`milestone-17` scenario 114 says "no refusal repeats a byte of the key it refused". The build does not
+hold it. What was written into `KeyRingFileWatcherTests` asserts the property against the single input
+`"not a key ring"`, which contains no colon and therefore cannot reach the branch that quotes anything.
+The specification was right; the test was written against one example of a malformed ring rather than
+against the malformed rings that exist.
+
+This is worth recording rather than fixing quietly, because it names a failure mode this epic can repeat:
+a `@property` scenario translated into a single-example test looks like coverage and is not. The other
+`@property` scenarios in this feature — 146, 151, 162, 165 and 174 — should be read against the same
+question before the epic closes: *is the input this test uses able to fail?*
+
+**UI-07-2 — ADR-148 does not say what a refusal may quote.**
+It says a malformed ring "stops startup with a message naming the entry at fault", which is satisfied by
+naming the entry's position and also by quoting its whole contents. The ADR is not wrong; it is silent
+where this slice needs it to be specific. Proposed amendment, to be taken at slice close rather than
+now: a refusal names the entry by position, and any text it quotes back is bounded by the longest name a
+key may have.
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 07
+
+**To DELIVER.** 17 scenarios across three milestones, no walking skeleton, no new driving port, no
+migration, no configuration name. The slice is three edits and two test repairs:
+
+1. `KeyRingSerializer.TryParseEntry` stops quoting the supplied name at its own length (169-175).
+2. `SecretCustodySeamArchUnitTest` reads the declared shape of `SystemInfo` rather than one instance,
+   and `KeyRingFileWatcherTests` gains the inputs that reach the quoting branch (176-180).
+3. The two key-store creation sites pass an explicit file mode (181-185).
+
+**Order matters between 1 and 2.** Repairing the guards first makes them red against the shipped
+behaviour, which is the honest RED for this slice — the tests fail because the property does not hold,
+not because a scaffold is missing. Do the guards, watch them fail, then fix the parser.
+
+**No scaffolds.** Mandate 7 does not apply: every production type these scenarios touch already exists
+and ships. There is nothing to stub, and a scaffold marker would be false.
+
+**What DELIVER must not do.** Do not move `KeyRingFileWatcher` into the guarded namespace to "fix" the
+seam — that decision was taken deliberately in slice 05 and the reconciliation above keeps it. Do not
+remove the entry name from the refusal entirely; scenario 172 exists because an operator with a mistyped
+name still has to find it.
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered · edge-case enumeration for the quoting bound · error-path rationale per `@error` scenario ·
+property-based testing notes for 173, 174, 180 and 183 · the fact-to-step table for the three milestones.
+
+---
