@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
         {
-            logger.LogInformation("Predicting Work Item Creation for team {TeamName} in the next {Days} days for Work Items {WorkItems} based on the time from {Start} to {End}",
+            logger.LogDebug("Predicting Work Item Creation for team {TeamName} in the next {Days} days for Work Items {WorkItems} based on the time from {Start} to {End}",
                 team.Name, daysToForecast, string.Join(", ", workItemTypes), startDate, endDate);
 
             var createdItemsRunChart = teamMetricsService.GetCreatedItemsForTeam(team, workItemTypes, startDate, endDate);
@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         public HowManyForecast HowMany(RunChartData throughput, int days)
         {
-            logger.LogInformation("Running Monte Carlo Forecast How Many for {Days} days.", days);
+            logger.LogDebug("Running Monte Carlo Forecast How Many for {Days} days.", days);
 
             var simulationResults = new Dictionary<int, int>();
 
@@ -43,19 +43,19 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 AddSimulationResult(simulationResults, simulatedThroughput);
             });
 
-            logger.LogInformation("Finished running Monte Carlo How Many for {Days} days.", days);
+            logger.LogDebug("Finished running Monte Carlo How Many for {Days} days.", days);
 
             return new HowManyForecast(simulationResults, days);
         }
 
         public async Task<WhenForecast> When(Team team, int remainingItems, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
-            logger.LogInformation("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items (mode {Mode}).", team.Name, remainingItems, mode);
+            logger.LogDebug("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items (mode {Mode}).", team.Name, remainingItems, mode);
 
             var fakeFeature = new Feature(team, remainingItems);
             await ForecastFeatures([fakeFeature], mode);
 
-            logger.LogInformation("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
+            logger.LogDebug("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
             return fakeFeature.Forecast;
         }
