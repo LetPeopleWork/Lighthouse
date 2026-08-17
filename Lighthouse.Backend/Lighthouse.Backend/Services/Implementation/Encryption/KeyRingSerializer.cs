@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Encryption;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Services.Implementation.Encryption
@@ -81,8 +82,13 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             return string.Concat(ConfiguredKeyIdPrefix, Convert.ToHexStringLower(fingerprint[..ConfiguredKeyIdFingerprintBytes]));
         }
 
-        // Every refusal names the entry at fault and says what is wrong with it, and none of them repeats a
-        // character of what was supplied: a startup failure is read from a console or a log that keeps it.
+        // Every refusal names the entry at fault and says what is wrong with it. Only one of them can repeat
+        // any of what was supplied - the one about a name - and it is bounded so that what it repeats cannot
+        // be a key: a key is 32 bytes, which is 44 characters written down, and a name may be at most 32. An
+        // operator who mistyped a name still gets to see it; a value too long to be a name is described
+        // rather than quoted. Everything before the first colon is read as a name, so a ring written with the
+        // key first, or with a stray colon after it, arrives here as a name made of key material - and a
+        // startup failure is read from a console, and a reload failure from a log that keeps it.
         private static bool TryParseEntry(string entry, int position, [NotNullWhen(true)] out EncryptionKey? key, [NotNullWhen(false)] out string? defect)
         {
             key = null;
@@ -99,7 +105,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
             if (keyId is not null && !IsUsableKeyId(keyId))
             {
-                defect = $"Entry {position} of the encryption key ring is named '{keyId}', which is not allowed: a key name may only use lowercase letters, digits and hyphens, and may be at most {MaxKeyIdLength} characters long.";
+                defect = $"Entry {position} of the encryption key ring {HowItIsNamed(keyId)}, which is not allowed: a key name may only use lowercase letters, digits and hyphens, and may be at most {MaxKeyIdLength} characters long.";
                 return false;
             }
 
@@ -131,6 +137,16 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             defect = null;
 
             return true;
+        }
+
+        // Quoted only where quoting it cannot hand back a key. Anything longer than a name may be is
+        // described by its length instead, which is enough for an operator to find the entry and is the
+        // whole of what a key arriving here would be reduced to.
+        private static string HowItIsNamed(string keyId)
+        {
+            return keyId.Length <= MaxKeyIdLength
+                ? $"is named '{keyId}'"
+                : string.Create(CultureInfo.InvariantCulture, $"is named with {keyId.Length} characters");
         }
 
         private static bool IsUsableKeyId(string keyId)

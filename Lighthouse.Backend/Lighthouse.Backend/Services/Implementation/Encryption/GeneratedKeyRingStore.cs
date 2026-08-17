@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
         public void WriteAllBytes(string path, byte[] contents)
         {
-            File.WriteAllBytes(path, contents);
+            KeyStoreFile.Write(path, contents);
         }
 
         public void Move(string sourcePath, string destinationPath)

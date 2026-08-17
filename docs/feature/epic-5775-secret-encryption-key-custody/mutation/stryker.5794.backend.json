@@ -1,0 +1,18 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Encryption/KeyRingSerializer.cs",
+      "**/Services/Implementation/Encryption/KeyStoreFile.cs"
+    ],
+    "thresholds": { "high": 90, "low": 80, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Encryption|FullyQualifiedName~KeyRingFileWatcher|FullyQualifiedName~SecretCustodySeam|FullyQualifiedName~KeyStoreDirectoryResolution)&(FullyQualifiedName!~Containers)&(FullyQualifiedName!~Integration)",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -64,6 +66,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "emergencyAdminSubjects",
             "baseUrl",
             "installTimestamp",
+            "encryption",
         ];
 
         [Test]
@@ -282,34 +285,66 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// set rather than the absence of a key field, because the way key state would arrive is somebody
         /// adding a convenient "which key is active" line for support - and a test that lists only what is
         /// forbidden cannot see a field nobody thought to forbid.
+        ///
+        /// Read off the type rather than off a serialised example. An example only shows the fields whose
+        /// values it happened to set, and a field that is left out of the response when it is empty is
+        /// invisible in one - which is exactly how the encryption line, the field this rule exists for, sat
+        /// outside the compared set from the day it was added.
         /// </summary>
         [Test]
         public void SystemInfo_DisclosesExactlyThisPropertySetAndNothingAboutKeys()
         {
-            var systemInfo = new SystemInfo(
-                "linux",
-                "net10.0",
-                "x64",
-                1234,
-                "sqlite",
-                "Data Source=lighthouse.db",
-                "/logs/lighthouse.log",
-                true,
-                true,
-                [],
-                "https://lighthouse.example",
-                "2026-01-01T00:00:00Z");
+            var declared = EveryPropertySystemInfoDeclares();
 
-            var serialised = JsonSerializer.Serialize(systemInfo, JsonSerializerOptions.Web);
-
-            using var document = JsonDocument.Parse(serialised);
-            var propertyNames = document.RootElement.EnumerateObject().Select(property => property.Name).ToList();
-
-            Assert.That(propertyNames, Is.EquivalentTo(EverythingSystemInfoDiscloses),
+            Assert.That(declared, Is.EquivalentTo(EverythingSystemInfoDiscloses),
                 "The system information endpoint has grown or lost a field. Anything added here is readable by " +
                 "every signed-in caller, so a field naming an encryption key, its state or its origin does not " +
                 "belong. If the new field is genuinely safe to publish, add it to this list deliberately. " +
-                $"Serialised response was: {serialised}");
+                $"Declared: {string.Join(", ", declared)}");
+        }
+
+        /// <summary>
+        /// The rule above is only worth anything if it sees a field that carries no value. Two of the fields
+        /// on this response are written that way, and one of them is the encryption line.
+        /// </summary>
+        [Test]
+        public void SystemInfo_AFieldLeftOffTheResponseWhenEmpty_IsStillInsideTheRule()
+        {
+            var nothingIsSetOnIt = new SystemInfo(
+                string.Empty, string.Empty, string.Empty, 0, string.Empty, null, null, false, false, [], string.Empty, null);
+
+            var serialised = JsonSerializer.Serialize(nothingIsSetOnIt, JsonSerializerOptions.Web);
+            using var document = JsonDocument.Parse(serialised);
+            var onTheWire = document.RootElement.EnumerateObject().Select(property => property.Name).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(onTheWire, Does.Not.Contain("encryption"),
+                    "This response no longer leaves the encryption line off when it is empty, so the example " +
+                    "this rule used to be written against would now see it and the regression is no longer " +
+                    "expressible. Rewrite this test rather than deleting it.");
+
+                Assert.That(EveryPropertySystemInfoDeclares(), Contains.Item("encryption"),
+                    "The rule is reading a serialised example again. A field omitted when empty is invisible " +
+                    "in one, which is how key state got onto this response without the rule noticing.");
+            }
+        }
+
+        // The name each property answers to on the wire, so the compared set is the set a caller receives
+        // rather than the set the C# happens to spell.
+        private static List<string> EveryPropertySystemInfoDeclares()
+        {
+            return [.. typeof(SystemInfo)
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(property => property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition != JsonIgnoreCondition.Always)
+                .Select(NameOnTheWire)
+                .OrderBy(name => name, StringComparer.Ordinal)];
+        }
+
+        private static string NameOnTheWire(PropertyInfo property)
+        {
+            return property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
+                ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
         }
     }
 }

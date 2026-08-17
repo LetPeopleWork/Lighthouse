@@ -372,8 +372,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             Assert.That(TimesLogged(logger, LogLevel.Error), Is.EqualTo(1));
         }
 
-        [Test]
-        public void ReadOnce_NothingItWrites_CarriesKeyMaterialInAnyEncoding()
+        // Every shape a malformed ring can take that puts key material where a key name is read from.
+        // The first three are the ones that reach the branch which quotes what was supplied; "not a key
+        // ring" is the input this test used to run on alone, and it has no colon, so it never reached
+        // that branch and the test passed against the one input that could not have failed it.
+        private static IEnumerable<TestCaseData> MalformedRingsThatCarryAKey()
+        {
+            var material = Convert.ToBase64String(MaterialOf(41));
+
+            yield return new TestCaseData($"{material}\nk-old-01:{Convert.ToBase64String(MaterialOf(7))}")
+                .SetName("a file written one key to a line, the second of them named");
+            yield return new TestCaseData($"{material}:k-2026-08-17-01")
+                .SetName("the key and its name written the wrong way round");
+            yield return new TestCaseData($"{material}:")
+                .SetName("a key left with a colon after it");
+            yield return new TestCaseData("not a key ring")
+                .SetName("content that is not a ring at all");
+        }
+
+        [TestCaseSource(nameof(MalformedRingsThatCarryAKey))]
+        public void ReadOnce_NothingItWrites_CarriesKeyMaterialInAnyEncoding(string malformed)
         {
             var files = new MountedKeysFile();
             var holder = HolderOn(TheKeyItStartedOn);
@@ -384,7 +402,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
             files.Place(MountedPath, RingTextFor((TheKeyTheOperatorAdded, added)));
             watcher.ReadOnce();
 
-            files.Place(MountedPath, "not a key ring");
+            files.Place(MountedPath, malformed);
             watcher.ReadOnce();
 
             var written = EverythingHandedToTheLoggingPipeline(logger);
@@ -397,6 +415,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                     "Key material reached the logging pipeline. A structured property is how it gets there " +
                     "unnoticed: the sentence looks harmless while the property beside it carries the key " +
                     "into every sink the log is shipped to.");
+            }
+        }
+
+        // Guards the guard. Three of the four inputs above must actually reach the branch that reports a
+        // ring it could not parse - an input that leaves the running ring alone for some other reason
+        // would make the test above vacuous again, in a way nobody would notice for another release.
+        [TestCaseSource(nameof(MalformedRingsThatCarryAKey))]
+        public void ReadOnce_EveryMalformedShape_IsActuallyRefusedAndReported(string malformed)
+        {
+            var files = new MountedKeysFile();
+            var holder = HolderOn(TheKeyItStartedOn);
+            var before = holder.Current;
+
+            files.Place(MountedPath, malformed);
+
+            var watcher = WatcherOver(files, holder, out var logger);
+            watcher.ReadOnce();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holder.Current, Is.EqualTo(before));
+                Assert.That(Logged(logger, LogLevel.Error), Is.Not.Empty,
+                    "This shape was accepted or ignored rather than refused, so asserting that nothing was " +
+                    "written about it proves nothing.");
             }
         }
 

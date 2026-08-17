@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -152,7 +153,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         [TestCase("", TestName = "Parse_AnEntryNamedWithNothingAtAll_IsRefused")]
         [TestCase("K-2026-08-15-01", TestName = "Parse_AKeyNameCarryingAnUppercaseLetter_IsRefused")]
         [TestCase("k.2026.08.15", TestName = "Parse_AKeyNameCarryingADot_IsRefused")]
-        [TestCase(OneCharacterTooLongKeyId, TestName = "Parse_AKeyNameOneCharacterTooLong_IsRefused")]
         public void Parse_AKeyNameOutsideWhatAKeyMayBeCalled_IsRefusedSayingWhichNameIsNotAllowed(string keyId)
         {
             var parsed = KeyRingSerializer.TryParse($"{keyId}:{Convert.ToBase64String(MaterialFor(FirstKeyId))}", out _, out var defect);
@@ -161,6 +161,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             {
                 Assert.That(parsed, Is.False);
                 Assert.That(defect, Does.Contain(keyId));
+                Assert.That(defect, Does.Contain("not allowed"));
+            }
+        }
+
+        // Split off from the cases above, which quote what was typed, because this one deliberately does
+        // not. Everything before the first colon is read as a name, so a ring written key-first arrives
+        // here as a name made of key material - and no rule can tell that apart from a name somebody
+        // typed too long. The length is where the line goes: a name may be at most 32 characters, a key
+        // written down is always 44, so refusing to quote anything longer than a name refuses to quote a
+        // key. What an operator loses is seeing a 33-character name they can still find from its
+        // position and its length.
+        [TestCase(OneCharacterTooLongKeyId, TestName = "Parse_AKeyNameOneCharacterTooLong_IsRefused")]
+        public void Parse_AKeyNameLongerThanANameMayBe_IsRefusedWithoutBeingQuoted(string keyId)
+        {
+            var parsed = KeyRingSerializer.TryParse($"{keyId}:{Convert.ToBase64String(MaterialFor(FirstKeyId))}", out _, out var defect);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parsed, Is.False);
+                Assert.That(defect, Does.Not.Contain(keyId));
+                Assert.That(defect, Does.Contain(keyId.Length.ToString(CultureInfo.InvariantCulture)));
                 Assert.That(defect, Does.Contain("not allowed"));
             }
         }
@@ -188,6 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
         {
             var wrongLength = Convert.ToBase64String(RandomNumberGenerator.GetBytes(31));
             var usable = Convert.ToBase64String(MaterialFor(FirstKeyId));
+            var second = Convert.ToBase64String(MaterialFor(SecondKeyId));
             var undecodable = NotBase64Material();
 
             using (Assert.EnterMultipleScope())
@@ -197,6 +219,67 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 AssertQuotesNothingOf($"{FirstKeyId}:{usable},{FirstKeyId}:{usable}", usable);
                 AssertQuotesNothingOf($"NOT-A-NAME:{usable}", usable);
                 AssertQuotesNothingOf(usable[..20], usable[..20]);
+
+                // Everything before the first colon is read as a name, so these three arrive here as a
+                // name made of key material. Until this slice they were the only shapes that reached the
+                // branch which quotes a name back, and none of the five cases above can reach it.
+                AssertQuotesNothingOf($"{usable}:{FirstKeyId}", usable);
+                AssertQuotesNothingOf($"{usable}:", usable);
+                AssertQuotesNothingOf($"{usable}\n{SecondKeyId}:{second}", usable);
+            }
+        }
+
+        // The refusal is only useful if it still points at what was typed. The bound is what makes that
+        // safe, so both halves are asserted together - dropping the name entirely would pass the test
+        // above and leave an operator with nothing to go on.
+        [Test]
+        public void Parse_AMistypedName_IsStillQuotedSoTheOperatorCanFindIt()
+        {
+            var usable = Convert.ToBase64String(MaterialFor(FirstKeyId));
+
+            var parsed = KeyRingSerializer.TryParse($"K_One:{usable}", out _, out var defect);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parsed, Is.False);
+                Assert.That(defect, Does.Contain("K_One"));
+            }
+        }
+
+        // The bound is inclusive, and which side of it the longest allowed name falls on is the whole
+        // difference between helping an operator and describing their name back to them as a length.
+        [Test]
+        public void Parse_ANameAsLongAsANameMayBe_IsStillQuotedWhenItsCharactersAreWrong()
+        {
+            var usable = Convert.ToBase64String(MaterialFor(FirstKeyId));
+            var asLongAsAllowedButWrong = string.Concat(new string('a', LongestAllowedKeyId.Length - 1), "A");
+
+            var parsed = KeyRingSerializer.TryParse($"{asLongAsAllowedButWrong}:{usable}", out _, out var defect);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parsed, Is.False);
+                Assert.That(asLongAsAllowedButWrong, Has.Length.EqualTo(LongestAllowedKeyId.Length));
+                Assert.That(defect, Does.Contain(asLongAsAllowedButWrong));
+            }
+        }
+
+        // The bound and the length of a key written down are the same fact seen twice: a name may be at
+        // most 32 characters and a key is always 44, so a name long enough to be a key is never quoted.
+        // If someone raises the bound past 44 this fails, which is the point.
+        [Test]
+        public void Parse_ANameAsLongAsAKeyWrittenDown_IsDescribedRatherThanQuoted()
+        {
+            var usable = Convert.ToBase64String(MaterialFor(FirstKeyId));
+            var nameAsLongAsAKey = new string('A', usable.Length);
+
+            var parsed = KeyRingSerializer.TryParse($"{nameAsLongAsAKey}:{usable}", out _, out var defect);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parsed, Is.False);
+                Assert.That(defect, Does.Not.Contain(nameAsLongAsAKey));
+                Assert.That(defect, Does.Contain(usable.Length.ToString(CultureInfo.InvariantCulture)));
             }
         }
 

@@ -616,7 +616,7 @@ namespace Lighthouse.Backend
 
             var freshSecret = System.Security.Cryptography.RandomNumberGenerator.GetBytes(OAuthStateSecretByteLength);
             var protectedSecret = protector.Protect(freshSecret);
-            File.WriteAllBytes(blobPath, protectedSecret);
+            KeyStoreFile.Write(blobPath, protectedSecret);
             return Convert.ToBase64String(freshSecret);
         }
 
