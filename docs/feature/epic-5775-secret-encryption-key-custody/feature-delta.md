@@ -4691,3 +4691,199 @@ considered · edge-case enumeration for the quoting bound · error-path rational
 property-based testing notes for 173, 174, 180 and 183 · the fact-to-step table for the three milestones.
 
 ---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation — slice 08
+
++ `slices/slice-08-the-key-that-won-is-the-key-that-stays.md` — the slice brief
++ `verification/security-review-findings.md` — E2, and the four refutation attempts behind it
++ `Wave: DISTILL / [REF] Handoff — slice 07` — the ordering constraint this slice inherits
++ `Services/Implementation/Encryption/EncryptionKeyRingBootstrapper.cs` — the ordered list itself, and
+  the comment above `Resolve` that states the property this slice restores
++ `Program.cs:510-528` — `WatchTheMountedKeysFile`, the registration condition at fault
+- `discuss/`, `design/`, `devops/` as directories — never existed for this feature; the DESIGN sections
+  in this file name the driving ports, so the BLOCK condition does not apply.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation — slice 08
+
+**Reconciliation passed — 0 contradictions.**
+
+| Prior decision | Slice 08 | Verdict |
+|---|---|---|
+| The resolution order is configuration, mounted file, generated, mint — written once, in `Resolve` | Restored as a property that also holds after boot. The list itself is not edited | Consistent |
+| A key an operator supplied stops Lighthouse minting one of its own (slice 02) | Untouched. This slice is about which *supplied* key wins, not about minting | Consistent |
+| The reload exists so an operator can add a key without a restart (slice 05) | Kept whole for the deployment it was built for — scenario 188 is there to stop this slice paying for 186 by weakening it | Consistent |
+| Slice 07's repaired checks | Nothing here re-opens them; scenario 192 is the same property applied to one new sentence | Consistent |
+
+**Deliberately not taken.** Refusing to start when a key is supplied both ways would match the shape
+`assertEncryptionCustody` already uses in the chart, and it is the tidier rule. It is out of scope
+because it would stop instances that boot correctly today over a misconfiguration that, once the
+registration is fixed, costs them nothing. The slice says it out loud instead. If the saying turns out
+to be ignored, refusing is a one-line change from where this leaves the code.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites — slice 08
+
+- **Driving ports** (all built): the startup bootstrap `Program.EnsureEncryptionKeyRing`, which already
+  holds the resolved ring and therefore already knows which source answered; the reload timer
+  `KeyRingFileWatcher.ReadOnce`; the startup banner; and `GET /api/{v1,latest}/encryption` for the
+  setting the panel names.
+- **No new configuration name, no new route, no new data, no migration.** The fix is a condition on an
+  existing registration plus one new startup line.
+- **`KeyCustody.SuppliedByExternalSecret` is the fact the registration must consult.** It already exists
+  and is already what the panel and the minter decide from, so this slice adds no new notion of *which
+  source answered* — it uses the one the epic already has.
+- **Scenario 189's line is a fourth banner line**, alongside the retired-setting nudge and the
+  start-anyway notice. Both of those are already conditional in `StartupBanner`, so there is a shape to
+  follow rather than one to invent.
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags) — slice 08
+
+| # | Scenario | File | Tags |
+|---|---|---|---|
+| 186 | A key supplied two ways is the one the ordering names | milestone-34 | `@error @driving_port @us-08` |
+| 187 | The key that won at startup is still the key in force later | milestone-34 | `@error @property @driving_port @us-08` |
+| 188 | Where the file is the only place a key came from, a key added to it is still picked up | milestone-34 | `@edge @driving_port @us-08` |
+| 189 | A file that appears after the instance started does not take the key away from configuration | milestone-34 | `@error @edge @driving_port @us-08` |
+| 190 | An instance told a key two ways says so, once | milestone-34 | `@edge @driving_port @us-08` |
+| 191 | The encryption settings name the place the key actually came from | milestone-34 | `@driving_adapter @us-08` |
+| 192 | Nothing said about a key having been supplied twice is a key | milestone-34 | `@property @error @driving_port @us-08` |
+
+Every scenario also carries `@slice-08`. Numbering continues from slice 07's 169-185. **7 scenarios.**
+
+**No new `@walking_skeleton`.** The feature has exactly one, authored in slice 01.
+
+**Error / edge / property coverage = 6 of 7 (86 %)**, against the ≥40 % target. The one that is not is
+191, the panel naming a setting — and it is in the list because it is the surface that misdirects an
+operator while the defect is live, not because the slice needs a happy path.
+
+**Finding traceability** — E2 → 186, 187, 189, 190, 191. Carried by no finding and asserted anyway:
+188, which exists to stop the fix being made by breaking the reload, and 192, which applies slice 07's
+property to the one sentence this slice adds.
+
+**The scenario that is the regression**: 187. Everything else describes the shape; 187 is the one that
+fails against the build as it stands today.
+
+---
+
+## Wave: DISTILL / [REF] Review Verdict — slice 08
+
+`@nw-acceptance-designer-reviewer`, 2026-08-17: **conditionally approved**. Zero blockers, two high,
+one low. All three taken.
+
+| Finding | Taken | What changed |
+|---|---|---|
+| 189 exercises the bootstrap but does not carry `@driving_port` | **Accepted** | Tag added. It sits in `EncryptionBootstrapOrderTests` beside 186-188, which all carry it |
+| 192 carries no port tag at all, though it exercises the banner as 190 does | **Accepted** | Tag added |
+| AC-8.3 says the instance says it *once*, and 190 asserts what is said but never that it is said once | **Accepted** | A fourth `And` added. The word was in the acceptance criterion and in the milestone's own title and was asserted nowhere — exactly the gap that lets a line be emitted per named setting instead of per start |
+
+The reviewer also checked the two boundaries the brief sets and confirmed both hold: every scenario
+that sets a key two ways still boots, so nothing here quietly introduces the refusal the brief rules
+out, and 188 keeps the reload whole for the deployment it exists for. It read `WatchTheMountedKeysFile`
+and confirmed 187 is the scenario that fails against the build as it stands.
+
+It queried whether `@property` on 187 and 192 is earned, given they are not `Scenario Outline`s. Kept:
+187 quantifies over elapsed reload intervals and 192 over encodings, which is what the tag means in
+this feature — slice 07's scenario 174 is tagged on the same basis.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement — slice 08
+
+**`.feature` files here are specification SSOT documents, not executable tests** — unchanged from
+slices 01-07. They are translated in DELIVER into NUnit.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `acceptance/milestone-34-*.feature` | slice 07's `milestone-{31,32,33}` in the same directory |
+| Which source answered, and the registration that follows from it (186, 187, 188, 189) | `Lighthouse.Backend.Tests/Startup/EncryptionBootstrapOrderTests.cs` (extend) | the same file already boots through `TestWebApplicationFactory` and already asserts the four-ways-one-key property from slice 02 |
+| The reload still works where the file is the only source (188) | `.../BackgroundServices/KeyRingFileWatcherTests.cs` (extend) | the watcher's own behaviour is pinned there and must not change |
+| The banner line (190, 192) | `Lighthouse.Backend.Tests/StartupBannerEncryptionKeyLineTest.cs` (extend) | the same file already tells the four custodies apart by wording alone, and already owns the retired-setting nudge |
+| The setting the panel names (191) | `Lighthouse.Backend.Tests/API/Integration/EncryptionControllerTests.cs` (extend) | `WhatTheKeyArrivedIn` is asserted there over HTTP under the System Administrator guard |
+
+**Structural rules that belong to this slice**, from `Wave: DESIGN / [REF] Architectural Enforcement`:
+
+| Rule | Where it lands |
+|---|---|
+| The resolution order is written down once | Strengthened rather than added. The registration stops deciding independently of `Resolve`, so there is no second list to disagree with the first |
+| Nothing the encryption surface renders is key material | Extended to the new banner line by scenario 192 |
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage — slice 08
+
+| Entry point in DESIGN | Exercised by |
+|---|---|
+| Startup bootstrap through the real configuration provider, with both `Encryption__Key` and `Encryption__KeysFile` set | 186, 187, 189 |
+| The reload timer — `KeyRingFileWatcher.ReadOnce` on a driven clock | 187, 188 |
+| The startup banner | 190, 192 |
+| `GET /api/{v1,latest}/encryption` | 191 |
+
+**No new entry point.**
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6) — slice 08
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| Configuration provider (environment, command line, settings file) | YES | 186, 187, 189 — the real provider, because a pre-populated dictionary would not reproduce the binding this grammar exists to route around |
+| Mounted keys file | YES | 187, 188, 189 — through the injected file source the watcher tests already use |
+| The key ring holder as the thing both the boot and the timer write to | YES | 187 — the whole point is that only one of them writes to it |
+
+Zero `NO — MISSING` rows.
+
+---
+
+## Wave: DISTILL / [REF] Environment Coverage — slice 08
+
+| Environment | Scenario |
+|---|---|
+| A key in configuration and a keys file, both present at boot | 186, 187, 190, 191, 192 |
+| A key in configuration and a keys file that arrives later | 189 |
+| A keys file and nothing else — the deployment the reload exists for | 188 |
+| The chart, which sets only the file and has no way to set both | Not reachable there; recorded in the slice brief rather than asserted |
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues — slice 08
+
+**UI-08-1 — the reload constructs its own view of where the key came from.**
+`WatchTheMountedKeysFile` builds a second `MountedFileKeyRingSource` from the raw configuration value
+rather than being handed the one the bootstrapper already used. Fixing the registration condition does
+not remove that second construction, and while it stands there are two objects that believe they know
+what the mounted file says. It is not a defect today — both read the same path — but it is the shape
+the defect grew in. Whether the bootstrapper should hand its source to the watcher is a question for
+DELIVER with the wiring in front of it, and is recorded here so it is a decision rather than an
+oversight.
+
+---
+
+## Wave: DISTILL / [REF] Handoff — slice 08
+
+**To DELIVER.** Seven scenarios in one milestone, no walking skeleton, no new port, no migration.
+
+1. Register the reload only where the resolved custody is `SuppliedByExternalSecret` (186-189).
+2. Say once at startup when a key arrived in more than one place, naming both and which won (190, 192).
+3. 191 should hold with no edit at all — once custody and the setting that answered can no longer
+   disagree, `WhatTheKeyArrivedIn` is already correct. If it needs a change, the fix in step 1 is
+   incomplete and that is the thing to look at, not the panel.
+
+**Write the failing test for 187 first.** It is the only scenario that fails against the build as it
+stands, and it is the one an operator pays for. The rest describe the shape around it.
+
+**No scaffolds.** Every type these scenarios touch already exists and ships.
+
+**What DELIVER must not do.** Do not make the instance refuse to start when both are set — that is
+recorded above as deliberately out of scope. Do not narrow the reload to fix the precedence; scenario
+188 exists to catch exactly that trade.
+
+**Tier-2 catalogue — available on request, not written at lean density**: scenario alternatives
+considered · the fact-to-step table · error-path rationale per `@error` scenario · property notes for
+187 and 192.
+
+---
