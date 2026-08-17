@@ -1176,12 +1176,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             public string Encrypt(string plainText)
             {
-                if (reached++ == letThrough)
-                {
-                    getThereFirst().GetAwaiter().GetResult();
-                }
+                GetThereFirstIfItIsTime();
 
                 return inner.Encrypt(plainText);
+            }
+
+            public string Encrypt(string plainText, EncryptionKey key)
+            {
+                GetThereFirstIfItIsTime();
+
+                return inner.Encrypt(plainText, key);
             }
 
             public string Decrypt(string cipherText)
@@ -1192,6 +1196,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             public SecretReadResult Read(string storedValue)
             {
                 return inner.Read(storedValue);
+            }
+
+            private void GetThereFirstIfItIsTime()
+            {
+                if (reached++ == letThrough)
+                {
+                    getThereFirst().GetAwaiter().GetResult();
+                }
             }
         }
     }

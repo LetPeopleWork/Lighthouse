@@ -44,6 +44,8 @@ namespace Lighthouse.Backend.Data
     {
         public string Encrypt(string plainText) => plainText;
 
+        public string Encrypt(string plainText, EncryptionKey key) => plainText;
+
         public string Decrypt(string cipherText) => cipherText;
 
         public SecretReadResult Read(string storedValue) => new(SecretState.LegacyPlaintext, storedValue, null);

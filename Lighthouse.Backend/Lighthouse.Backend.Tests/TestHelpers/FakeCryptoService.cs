@@ -15,6 +15,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return plainText;
         }
 
+        public string Encrypt(string plainText, EncryptionKey key)
+        {
+            return plainText;
+        }
+
         public SecretReadResult Read(string storedValue)
         {
             return new SecretReadResult(SecretState.LegacyPlaintext, storedValue, null);

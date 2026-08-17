@@ -120,6 +120,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public string Encrypt(string plainText) => plainText;
 
+            public string Encrypt(string plainText, EncryptionKey key) => plainText;
+
             public SecretReadResult Read(string storedValue) => new(SecretState.LegacyPlaintext, storedValue, null);
         }
 

@@ -29,9 +29,14 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public string Encrypt(string plainText)
         {
-            var activeKey = keyRingHolder.Current.ActiveKey;
+            return Encrypt(plainText, keyRingHolder.Current.ActiveKey);
+        }
 
-            return SecretEnvelope.Protect(plainText, activeKey.Id, activeKey.Material.Span).Format();
+        public string Encrypt(string plainText, EncryptionKey key)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+
+            return SecretEnvelope.Protect(plainText, key.Id, key.Material.Span).Format();
         }
 
         // A secret nobody can read is not a secret, and handing the stored bytes back in its place is how a
