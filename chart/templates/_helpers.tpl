@@ -90,6 +90,21 @@ true
 {{- end -}}
 {{- end -}}
 
+{{/* Encryption custody guard — one of the two ways to own the key must be named, and only one of them.
+     The chart never generates a key: `lookup` is the only mechanism for generate-once and it returns
+     empty on every render with no cluster to ask, which is every `helm template` and therefore every
+     ArgoCD sync, so a generated key would be minted afresh on each sync and orphan the whole credential
+     set. Refusing removes that by construction. Same shape ADR-082 already set for the Postgres
+     password, for the same reason: a security-relevant value a chart invents is a value nobody owns. */}}
+{{- define "lighthouse.assertEncryptionCustody" -}}
+{{- $encryption := .Values.encryption | default dict -}}
+{{- if and $encryption.key $encryption.existingSecret -}}
+{{- fail "\nencryption.key and encryption.existingSecret are both set, and only one of them can own the key. Remove whichever is not the one your secret store manages." -}}
+{{- else if not (or $encryption.key $encryption.existingSecret) -}}
+{{- fail "\nencryption.key or encryption.existingSecret is required: Lighthouse encrypts stored credentials and this chart will not invent the key for you.\n  Generate one:  --set encryption.key=$(openssl rand -base64 32)\n  Or point at a Secret your own store owns:  --set encryption.existingSecret=my-lighthouse-encryption" -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Managed secrets the API must reload on when they rotate OUT-OF-BAND of Helm (ESO/OpenBao, slice-04).
      Only existingSecret-sourced credentials are listed: ESO materialises them after Helm has rendered,
      so a config checksum (a render-time hash) never sees the rotated value — a reloader watch on the

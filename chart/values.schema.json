@@ -73,6 +73,13 @@
         "password": { "type": "string" }
       }
     },
+    "encryption": {
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "existingSecret": { "type": "string" }
+      }
+    },
     "redis": {
       "type": "object",
       "properties": {

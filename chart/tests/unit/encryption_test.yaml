@@ -1,0 +1,65 @@
+suite: encryption key custody (slice-05)
+# Greens milestone-28-an-install-that-names-no-key-is-refused.feature.
+#
+# helm-unittest renders with no cluster connection by construction — it is `helm template`, not
+# `helm install`. So a failedTemplate here is not a stand-in by analogy for what ArgoCD does; it is
+# literally the same render path, which is what makes it the right place to prove that no install can
+# reach a shipped default key.
+#
+# Note this suite deliberately carries NO suite-level encryption fixture: supplying nothing is the
+# case under test.
+set:
+  postgresql.auth.password: testpass
+tests:
+  # No template is pinned on the refusal cases. Helm stops the whole render at the first refusal, so
+  # which template the failure is attributed to is an accident of render order rather than something
+  # this chart decides - and an install is refused as a whole either way.
+  - it: an install naming no key at all is refused, and told both ways forward
+    asserts:
+      - failedTemplate:
+          errorPattern: "encryption.key or encryption.existingSecret is required"
+      - failedTemplate:
+          errorPattern: "--set encryption.key=\\$\\(openssl rand -base64 32\\)"
+      - failedTemplate:
+          errorPattern: "--set encryption.existingSecret="
+
+  - it: naming both a key and a Secret that holds one is refused rather than resolved
+    set:
+      encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      encryption.existingSecret: lighthouse-encryption
+    asserts:
+      - failedTemplate:
+          errorPattern: "only one of them can own the key"
+
+  # The guard belongs to the install, not to the Secret the chart may or may not be rendering. A tenant
+  # whose database and sign-in credentials are both owned by an external store renders no chart Secret
+  # at all, and must still be refused.
+  - it: an install whose other credentials are externally owned is still refused
+    set:
+      postgresql.auth.existingSecret: tenant-db
+      oidc.enabled: true
+      oidc.existingSecret: tenant-oidc
+    asserts:
+      - failedTemplate:
+          errorPattern: "encryption.key or encryption.existingSecret is required"
+
+  # The two guards that were already there keep saying exactly what they said. A new guard that fired
+  # ahead of them would answer a question about scaling, or about a frontend mode, with a sentence
+  # about encryption - so the guard is ordered behind both and this is what holds it there.
+  - it: the frontend-mode refusal is unchanged by the new guard
+    set:
+      encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      frontend.mode: split
+    template: templates/deployment-api.yaml
+    asserts:
+      - failedTemplate:
+          errorMessage: "frontend.mode=split is not implemented in this chart version; use frontend.mode=embedded (ADR-081)"
+
+  - it: the scaling refusal is unchanged by the new guard
+    set:
+      encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      replicaCount: 2
+    template: templates/deployment-api.yaml
+    asserts:
+      - failedTemplate:
+          errorPattern: "replicaCount>1 requires redis.connectionString"

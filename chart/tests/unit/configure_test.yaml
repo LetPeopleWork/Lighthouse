@@ -1,5 +1,8 @@
 suite: configure via values (slice-02)
 # Greens install-and-configure.feature: image tag, ingress host, replicaCount+Redis.
+# The encryption key is a suite-level fixture — see the note in render_test.yaml.
+set:
+  encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 tests:
   - it: API image tag comes from values
     set:

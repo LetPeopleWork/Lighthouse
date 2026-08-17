@@ -2,6 +2,9 @@ suite: wildcard routing + auto-reload (slice-05)
 # Greens slice-05-wildcard-routing.feature @in-memory band: host-mandatory routing + the config
 # checksum + the managed-secret reloader watch that lets an out-of-band ESO/OpenBao rotation reach
 # the running API without a manual `rollout restart` (carry-over finding #3).
+# The encryption key is a suite-level fixture — see the note in render_test.yaml.
+set:
+  encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 tests:
   # --- @error: Routing a tenant without a host fails fast ---
   - it: ingress enabled with an empty host fails fast naming the missing host

@@ -1,4 +1,9 @@
 suite: render — skeleton workloads (slice-01)
+# A key every test in this file inherits. The encryption guard (slice-05) refuses to render without
+# one, and helm-unittest renders every template in the chart before selecting the one under test, so
+# without this line suites that never mention encryption go red too. Per-test `set:` still overrides.
+set:
+  encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 tests:
   - it: missing Postgres password fails fast naming the key (ADR-082)
     template: templates/secret.yaml

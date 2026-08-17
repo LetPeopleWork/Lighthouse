@@ -1,5 +1,8 @@
 suite: standalone gate (slice-01)
 # Greens walking-skeleton.feature: "Default values preserve the single-container (embedded) shape".
+# The encryption key is a suite-level fixture — see the note in render_test.yaml.
+set:
+  encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 templates:
   - templates/deployment-api.yaml
   - templates/configmap.yaml

@@ -77,6 +77,16 @@ telemetry:
   # -- Enable OpenTelemetry /metrics + JSON logs (epic-5305 #5312). Off by default (self-hoster).
   enabled: false
 
+encryption:
+  # -- The key stored credentials are encrypted with, as one line: `id:base64[,id:base64]*`, first
+  #    entry active. REQUIRED unless existingSecret is set — this chart never generates one. Make one
+  #    with `openssl rand -base64 32`.
+  key: ""
+  # -- Read the key from a pre-existing Secret an external store (ESO/OpenBao) owns, instead of
+  #    rendering it from encryption.key. The Secret MUST provide the key `keys`, in the same one-line
+  #    form. Reaches the container as a mounted file, not an environment variable.
+  existingSecret: ""
+
 redis:
   # -- Redis connection string (ConnectionStrings:Redis). REQUIRED when replicaCount>1 — enables the
   #    epic-5305 #5304 SignalR backplane + single-instance background work so the fleet syncs once.

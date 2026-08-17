@@ -1,4 +1,7 @@
 suite: full stack — MCP, OIDC, external DB (slice-03)
+# The encryption key is a suite-level fixture — see the note in render_test.yaml.
+set:
+  encryption.key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
 tests:
   - it: MCP workload is rendered when enabled
     set:

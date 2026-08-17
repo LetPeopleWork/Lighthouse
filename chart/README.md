@@ -71,6 +71,8 @@ git add docs/charts chart && git commit && git push   # pages.yml serves docs/ch
 | postgresql.persistence.storageClass | string | `""` | StorageClass for the PVC. Empty uses the cluster default. |
 | shutdownTimeoutSeconds | int | `30` | Bounded graceful-shutdown drain window (seconds); maps to Shutdown:TimeoutSeconds + terminationGracePeriodSeconds (epic-5305 #5309). |
 | telemetry.enabled | bool | `false` | Enable OpenTelemetry /metrics + JSON logs (epic-5305 #5312). Off by default (self-hoster). |
+| encryption.key | string | `""` | The key stored credentials are encrypted with, as one line: `id:base64[,id:base64]*`, first    entry active. REQUIRED unless existingSecret is set — this chart never generates one. Make one    with `openssl rand -base64 32`. |
+| encryption.existingSecret | string | `""` | Read the key from a pre-existing Secret an external store (ESO/OpenBao) owns, instead of    rendering it from encryption.key. The Secret MUST provide the key `keys`, in the same one-line    form. Reaches the container as a mounted file, not an environment variable. |
 | redis.connectionString | string | `""` | Redis connection string (ConnectionStrings:Redis). REQUIRED when replicaCount>1 — enables the    epic-5305 #5304 SignalR backplane + single-instance background work so the fleet syncs once.    Operator-provided (the chart bundles no Redis; vendor-neutral). Empty = single-replica only. |
 | externalDatabase | object | `{"database":"","host":"","password":"","port":5432,"user":""}` | Bring-your-own Postgres (used when postgresql.enabled=false). Vendor-neutral (managed / CNPG / RDS / Azure). |
 | oidc.enabled | bool | `false` | Enable OIDC login (Authentication:*). Off = no auth (standalone parity). Needs forwarded-headers behind ingress. |
