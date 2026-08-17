@@ -124,6 +124,15 @@ test("Take @screenshot of the system info settings page", async ({
 	await takeElementScreenshot(systemInfoTable, "settings/systeminfo_auth.png");
 });
 
+test("Take @screenshot of the encryption settings page", async ({
+	overviewPage,
+}) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
+	const encryption = await settingsPage.goToEncryption();
+
+	await takePageScreenshot(encryption.page, "settings/encryption.png");
+});
+
 test("Take @screenshot of the database management settings page", async ({
 	overviewPage,
 }) => {

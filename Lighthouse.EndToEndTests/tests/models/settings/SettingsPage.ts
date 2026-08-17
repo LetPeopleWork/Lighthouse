@@ -3,6 +3,7 @@ import { RbacSettingsPage } from "../auth/rbac/RbacSettingsPage";
 import { DemoDataPage } from "../teams/DemoDataPage";
 import { ApiKeysSettingsPage } from "./ApiKeys/ApiKeysSettingsPage";
 import { DatabaseManagementPage } from "./DatabaseManagement/DatabaseManagementPage";
+import { EncryptionSettingsPage } from "./Encryption/EncryptionSettingsPage";
 import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
 import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
 
@@ -35,6 +36,15 @@ export class SettingsPage {
 		await this.page.getByTestId("database-tab").click();
 
 		return new DatabaseManagementPage(this.page);
+	}
+
+	async goToEncryption(): Promise<EncryptionSettingsPage> {
+		await this.page.getByTestId("encryption-tab").click();
+
+		const encryptionPage = new EncryptionSettingsPage(this.page);
+		await encryptionPage.keyRing.waitFor();
+
+		return encryptionPage;
 	}
 
 	async goToApiKeys(): Promise<ApiKeysSettingsPage> {

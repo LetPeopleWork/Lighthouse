@@ -11,6 +11,8 @@ To reach Jira, Azure DevOps, ServiceNow and the rest, Lighthouse has to store th
 
 Everything here is System Administrator only.
 
+![Secret Encryption Key](../assets/settings/encryption.png)
+
 If you are looking for how to *set* a key rather than what to do with the one you have, that is in [Configuration](../Installation/configuration.html#encryption-key).
 
 ## What the screen tells you
