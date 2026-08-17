@@ -191,6 +191,8 @@ Set the length to 32 as otherwise it will not work.
 {: .note}
 Instances created before this version encrypted with a key that ships inside the product. After an upgrade, Lighthouse keeps that key for reading only, so everything already stored keeps working, and writes anything new under a key of its own.
 
+**Upgrading re-encrypts nothing.** What you stored before it stays exactly where it was, under the key that is published with every copy of Lighthouse and can be read out of the public source — so it stays readable by anyone holding one, until you run a rotation. **Settings → Encryption** says how many credentials that applies to on this instance and moves them across without asking you to re-enter a single one; the procedure is [below](#changing-the-key-without-re-entering-a-single-credential).
+
 ### Supplying more than one key
 
 `Encryption__Key` also accepts several keys at once, written as `id:key` and separated by commas:
@@ -244,6 +246,8 @@ Some deployments leave Lighthouse nowhere to put a key it would still find tomor
 - Environment Variable: `Encryption__KeyStorePath`
 
 If nothing sensitive is stored yet, Lighthouse **stops instead of starting**: a key it cannot keep would make every token entered afterwards unreadable at the next restart. If something is already stored, it starts and keeps working, and repeats the warning on every start until you do one of the two things above.
+
+What that instance is running on while you have not is the key that ships with the product — and not only for what was stored before. **Every credential entered afterwards is written under it too**, so this is a warning about now, not about the past. The encryption settings screen offers that instance no way out from inside Lighthouse either: moving stored secrets needs somewhere to move them to, and there is no other key. The two settings above are the whole remedy.
 
 **A key store belongs to one instance.** Unless you supplied the key yourself — through `Encryption__Key`, `Encryption__Keys` or `Encryption__KeysFile` — do not point two Lighthouse instances at the same key store. An instance with no key of its own makes one and writes it there, and two instances doing that at the same moment both succeed: the last one to write wins the file, and the other carries on encrypting under a key the file no longer names. Everything it writes in the meantime becomes unreadable the moment it restarts, and nothing warns you while it is happening.
 
