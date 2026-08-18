@@ -28,6 +28,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheSeam = "ReplaceDependsOnReferences";
 
+        private const string TheOnlyFileThatMayChangeIt =
+            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs";
+
         private const string TheWordThatIsAlreadyTaken = "blocked";
 
         private const string BackendProjectDirectory = "Lighthouse.Backend";
@@ -89,6 +92,65 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "else - WorkItemService reaching past the reconciler it already calls, most of all - is the " +
                     "regression this catches. If a second writer is genuinely needed, take IDependencyReconciler.")
                 .Check(Architecture);
+        }
+
+        /// <summary>
+        /// The rule above reads the compiled assembly, so it sees a call however many methods it travels
+        /// through, and even a delegate handed the seam rather than called. What it cannot see is a call
+        /// that compiles to no edge at all: assign the Feature to a dynamic local and the seam's name
+        /// becomes a string the runtime looks up, invisible to anything reading the assembly and plain to
+        /// anything reading the file. That is not a hypothetical - it was tried against both rules, and
+        /// only this one went red. Both stay: one catches what is compiled, the other what is written.
+        /// </summary>
+        [Test]
+        public void NoBackendSourceOutsideTheReconciler_CallsTheSeam()
+        {
+            var secondWriters = TheBackendSourceOutsideTheReconciler()
+                .SelectMany(file => LinesMatching(file, ACallToTheSeam))
+                .ToList();
+
+            Assert.That(secondWriters, Is.Empty,
+                "Reconciling is a wholesale replacement, so a second caller does not add to what a Feature " +
+                "waits on - it discards whatever the first one wrote, with nothing logged and nothing left to " +
+                "see but a count that is short. DependencyReconciler is the only thing that may change what a " +
+                "Feature already on file waits on; a Feature the tracker has only just handed over takes its " +
+                "references through the constructor, which cannot reach a stored one. If a second writer is " +
+                "genuinely needed, take IDependencyReconciler. Found: " + string.Join(", ", secondWriters));
+        }
+
+        // The seam's name anywhere it is written as code, rather than only where a bracket follows it: a
+        // name handed to a delegate, or to reflection as a string, reaches the seam without ever looking
+        // like a call. The line that declares it is not a use of it, and prose about it is not code.
+        private static bool ACallToTheSeam(string line)
+        {
+            var code = line.TrimStart();
+
+            return code.Contains(TheSeam, StringComparison.Ordinal)
+                && !code.StartsWith("//", StringComparison.Ordinal)
+                && !code.StartsWith("*", StringComparison.Ordinal)
+                && !code.Contains($"void {TheSeam}(", StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Everything the scan is allowed to find nothing in. Reading the reconciler's own call first is what
+        /// keeps the rest honest: rename the seam and the scan would be hunting a name no longer in the code,
+        /// finding nothing everywhere and passing for the wrong reason. Finding it there says the name is live.
+        /// </summary>
+        private static List<SourceFile> TheBackendSourceOutsideTheReconciler()
+        {
+            var backendSource = TheWholeBackendSource();
+
+            var theReconcilersOwnCall = backendSource
+                .Where(file => file.RelativePath == TheOnlyFileThatMayChangeIt)
+                .SelectMany(file => LinesMatching(file, ACallToTheSeam))
+                .ToList();
+
+            Assert.That(theReconcilersOwnCall, Is.Not.Empty,
+                $"{TheOnlyFileThatMayChangeIt} no longer calls {TheSeam} - it was renamed, moved or deleted - so " +
+                "this scan is looking for a name nothing in the code uses and would stay green whatever the rest " +
+                "of the source did. Point it at whatever the single writer and its seam are called now.");
+
+            return backendSource.Where(file => file.RelativePath != TheOnlyFileThatMayChangeIt).ToList();
         }
 
         /// <summary>
@@ -296,6 +358,35 @@ namespace Lighthouse.Backend.Tests.Architecture
             files.Add(TheDependsOnColumn());
 
             return files;
+        }
+
+        /// <summary>
+        /// Every line of backend production source, build output left out. The single-writer scan has to read
+        /// all of it rather than the folders this epic added, because the writer it is looking for would be
+        /// somewhere else by definition - a connector, the work item service, a controller.
+        /// </summary>
+        private static List<SourceFile> TheWholeBackendSource()
+        {
+            var solutionRoot = SolutionRoot();
+            var backendRoot = Path.Combine(solutionRoot, BackendProjectDirectory);
+
+            Assert.That(Directory.Exists(backendRoot), Is.True,
+                $"{backendRoot} was moved or deleted, so the rule it carries is no longer being enforced.");
+
+            return Directory.EnumerateFiles(backendRoot, "*.cs", SearchOption.AllDirectories)
+                .Select(file => Path.GetRelativePath(solutionRoot, file).Replace('\\', '/'))
+                .Where(relativePath => !TheBuildWroteIt(relativePath))
+                .Select(relativePath => new SourceFile(
+                    relativePath,
+                    File.ReadAllText(Path.Combine(solutionRoot, relativePath.Replace('/', Path.DirectorySeparatorChar))),
+                    FirstLine: 1))
+                .ToList();
+        }
+
+        private static bool TheBuildWroteIt(string relativePath)
+        {
+            return relativePath.Contains("/obj/", StringComparison.Ordinal)
+                || relativePath.Contains("/bin/", StringComparison.Ordinal);
         }
 
         private static List<SourceFile> BackendSourceThisEpicAdded()

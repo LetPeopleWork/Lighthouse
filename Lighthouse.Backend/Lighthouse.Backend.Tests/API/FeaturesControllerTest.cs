@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -19,6 +20,12 @@ namespace Lighthouse.Backend.Tests.API
         private readonly List<WorkItem> workItems = new List<WorkItem>();
 
         private static int featureCounter = 0;
+
+        private const string TheFeatureThatWaits = "F-WAITING";
+
+        private const string TheBlockerBehindTheWall = "F-HIDDEN";
+
+        private static readonly string[] OnlyTheFeatureThatWaits = [TheFeatureThatWaits];
 
         private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
@@ -271,6 +278,51 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result![0].Projects.Select(x => x.Id), Is.EqualTo(new[] { visiblePortfolio.Id }));
         }
 
+        /// <summary>
+        /// Deliberate, and deliberately unlike the field beside it. The count of what a Feature waits on is
+        /// taken across every Feature this Lighthouse holds, including ones the caller may not open, while
+        /// the list of Portfolios standing in the way of a move next to it shows only what the caller may
+        /// see. Counting only readable blockers would report nothing at all here, and a Feature that is
+        /// waiting would look like a Feature that is free to go - the one thing the number exists to deny.
+        /// Saying "waiting on one, and I cannot show you which" tells the truth and leaves the reader
+        /// somewhere to go and ask; the blocker's name, its Portfolio and its state never leave the server.
+        /// </summary>
+        [Test]
+        public async Task GetFeatureDetails_BlockerInAnUnreadablePortfolio_IsStillCounted()
+        {
+            var visiblePortfolio = new Portfolio { Id = 1, Name = "Visible" };
+            var hiddenPortfolio = new Portfolio { Id = 2, Name = "Hidden" };
+
+            var blocker = new Feature { Id = 4365, ReferenceId = TheBlockerBehindTheWall, Name = "Rebuild the search index" };
+            blocker.Portfolios.Add(hiddenPortfolio);
+
+            var waiting = new Feature { Id = 4366, ReferenceId = TheFeatureThatWaits, Name = "Publish the partner catalogue" };
+            waiting.Portfolios.Add(visiblePortfolio);
+            waiting.ReplaceDependsOnReferences(
+                [new FeatureDependencyReference(waiting.Id, TheBlockerBehindTheWall, DependencySource.TrackerLink)]);
+
+            features.Add(waiting);
+            features.Add(blocker);
+
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([visiblePortfolio.Id]);
+
+            var subject = CreateSubject();
+
+            var response = await subject.GetFeatureDetailsById([waiting.Id, blocker.Id]);
+            var result = (response.Result as OkObjectResult)!.Value as List<FeatureDto>;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result!.Select(dto => dto.ReferenceId), Is.EqualTo(OnlyTheFeatureThatWaits),
+                    "The blocker has to stay out of the payload, or a count that reaches past the wall would not be what this is measuring.");
+
+                Assert.That(result[0].DependsOnCount, Is.EqualTo(1),
+                    "The Feature waits on one thing the caller may not read, and the count has to say so.");
+            }
+        }
+
         [Test]
         public async Task GetFeatureDetails_MultipleIds_AllExists_ReturnsFeatureDtos()
         {
@@ -433,9 +485,9 @@ namespace Lighthouse.Backend.Tests.API
                     .Select((feature, index) => (feature.Id, Position: index + 1))
                     .ToDictionary(entry => entry.Id, entry => entry.Position));
 
-            // These tests are about the read paths, so the move surface answers "may move" for everything -
-            // a verdict of its own would make every row's authorization this fixture's opinion rather than
-            // ADR-136's, and that rule is judged in Slice03RelativeMovesScenarios.
+            // These tests are about the read paths, so the move surface answers "may move" for everything.
+            // Deciding here who may move what would make every row's authorization this fixture's opinion
+            // rather than the real rule's; that rule is judged where it lives, against the real service.
             var featureMoveAuthorizationMock = new Mock<IFeatureMoveAuthorization>();
             featureMoveAuthorizationMock
                 .Setup(x => x.GetVerdictsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IReadOnlyCollection<Feature>>(), It.IsAny<ISet<int>>(), It.IsAny<CancellationToken>()))
