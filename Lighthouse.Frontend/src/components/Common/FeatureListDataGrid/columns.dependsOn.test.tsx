@@ -49,6 +49,18 @@ describe("createDependsOnColumn", () => {
 		expect(screen.getByText("2")).toBeInTheDocument();
 	});
 
+	it("leaves the cell empty when the Feature waits on nothing", () => {
+		const { container } = renderCell(feature());
+
+		expect(container.textContent).toBe("");
+	});
+
+	it("reads a counted none as nothing too, never as a literal zero", () => {
+		const { container } = renderCell(feature({ dependsOnCount: 0 }));
+
+		expect(container.textContent).toBe("");
+	});
+
 	it("takes the vocabulary it is given rather than naming the concept itself", () => {
 		expect(createDependsOnColumn("Epics").headerName).toBe("Depends On Epics");
 	});

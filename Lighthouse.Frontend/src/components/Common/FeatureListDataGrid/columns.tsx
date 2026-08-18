@@ -131,6 +131,16 @@ export const createActiveWorkColumn = (
 	renderCell: ({ row }) => <ActiveWorkIndicator teams={getTeams(row)} />,
 });
 
+// Most features wait on nothing, so the cell stays blank in that case, the same way a missing
+// position is left blank. A printed 0 would sit in the column looking like a number worth reading.
+const renderDependsOnCount = (count: number | undefined) => {
+	if ((count ?? 0) > 0) {
+		return <span>{count}</span>;
+	}
+
+	return <span />;
+};
+
 export const createDependsOnColumn = (
 	featuresTerm: string,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({
@@ -139,7 +149,7 @@ export const createDependsOnColumn = (
 	width: 150,
 	sortable: true,
 	valueGetter: (_, row) => row.dependsOnCount,
-	renderCell: ({ row }) => <span>{row.dependsOnCount}</span>,
+	renderCell: ({ row }) => renderDependsOnCount(row.dependsOnCount),
 });
 
 export const createParentColumn = (
