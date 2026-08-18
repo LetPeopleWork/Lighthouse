@@ -127,3 +127,41 @@ No Redis and no distributed-lock provider ⇒ the lock is a **no-op** (B) / the 
 | Substrate probe runs before serving; refuses on lie | Composition-root probe emits `health.startup.refused`; the three-layer adapter-probe contract (subtype/structural/behavioural) verifies the probe exists and exercises (a)(b)(c) |
 | Standalone (no Redis/no lock) path is byte-identical | Existing `UpdateQueueService` tests + `PortfolioDeleteSerialisationTests` run unchanged (US-07 AC4) |
 | Idempotency on `UpdateKey` preserved end-to-end | Re-running a completed sync re-derives the same DB state (DDD Confirmation 3 caveat) — asserted by re-execution test |
+
+---
+
+## Known Gap — trigger coalescing was added after this ADR and is not cluster-aware (recorded 2026-08-18)
+
+Discovered while designing Epic #5792. **Not scheduled** — recorded here because one half of it fails
+silently, and because ADR-076 is where a reader goes to ask "is the update queue safe on N pods?" The
+honest answer today is "the lock and the status store are; the coalescing is not."
+
+After this ADR was accepted, `UpdateQueueService` gained **trigger coalescing**: a trigger whose
+`UpdateKey` is already admitted parks a follow-up in `pendingReruns`, and `TryScheduleRerun` runs it once
+when the in-flight execution finishes. That is what caps N Team triggers at two Forecast executions for a
+Portfolio instead of N. It was designed against the single-pod topology and has no cluster-aware
+counterpart.
+
+**Gap 1 — a coalesced follow-up is lost across pods, silently.** `pendingReruns` is an in-process
+`ConcurrentDictionary`. Only the pod *executing* a key calls `TryScheduleRerun`. If pod A's trigger is
+refused admission because pod B holds the key, A parks the follow-up in its own dictionary and B never
+looks there. B finishes, the key is released, and A's entry sits until A itself happens to enqueue that
+key again. The write that caused the trigger is not reflected until the next periodic refresh, with no
+error and no log line saying anything was dropped. This is the dangerous half: the shared status store and
+the advisory lock both behave correctly, so the queue looks healthy while an update is quietly missing.
+
+**Gap 2 — the advisory lock head-of-line-blocks a pod's whole queue.** `PostgresUpdateExecutionLock`
+calls `pg_advisory_lock`, which blocks. It is awaited inside the single-reader loop in
+`StartProcessingQueue`, so a pod waiting on a key another pod is running stalls every *unrelated* update
+behind it. Correctness is unaffected; throughput collapses to the slowest holder. Epic #5792 makes this
+worse by turning the per-team parallel forecast into one long joint run.
+
+**Rough cost to close, if it is ever wanted: 1–2 days.** Gap 1: move the pending-rerun map into
+`IUpdateStatusStore`, reusing the Lua-guarded pattern `Requeue` already uses, with the same
+decide-before-terminal ordering the in-process version documents. Gap 2: `pg_try_advisory_lock` plus
+requeue-to-tail rather than blocking — smaller in lines but riskier, because it changes queue ordering
+semantics that `PortfolioDeleteSerialisationTests` pins.
+
+**Not urgent while every deployment is single-pod**, which the tenant-zero Kubernetes instance is as of
+2026-08-18. It becomes urgent the moment a replica count goes above one, and Gap 1 must be closed before
+that happens rather than after, because its symptom is a stale forecast that nobody gets told about.
