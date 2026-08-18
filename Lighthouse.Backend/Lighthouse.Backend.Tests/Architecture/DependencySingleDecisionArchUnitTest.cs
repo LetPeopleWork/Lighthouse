@@ -1,7 +1,15 @@
-using ArchUnitNET.NUnit;
+﻿using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.API;
+using Microsoft.Extensions.Logging;
+using Moq;
 using NUnit.Framework;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
@@ -32,6 +40,16 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Everything this epic added on the backend lives under these three folders, so the terminology rule
         // can be scoped by folder rather than by file and still cover whatever the next slice adds.
+        // Both forecast runs draw from a Random built on this one number, so they see the same sequence.
+        private const int TheSeedBothRunsShare = 20260818;
+
+        private static readonly int[] TheThroughputBothRunsForecastFrom =
+            [2, 0, 0, 5, 1, 3, 2, 4, 0, 0, 1, 1, 2, 4, 0, 0, 0, 1, 0, 1, 2, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0];
+
+        private static readonly int[] TheRemainingWorkPerFeature = [7, 3, 11];
+
+        private static readonly int[] ThePercentilesLighthouseShows = [50, 70, 85, 95];
+
         private static readonly string[] WhatThisEpicAddedToTheBackend =
         [
             "Models/Dependencies/",
@@ -83,6 +101,84 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "can rename under Settings. A dependency is a different thing, and a Feature can be both at once " +
                 "on the same row. Say what this actually is - waiting on, depends on, not honoured. Found: " +
                 string.Join(", ", offenders));
+        }
+
+        /// <summary>
+        /// Every other test in this epic hands the forecast a stand-in. This one runs the real Monte Carlo
+        /// simulation, because the claim being checked is precisely that the real simulation lands on the same
+        /// days whether or not dependency data is present - a stand-in could never tell you that.
+        /// </summary>
+        [Test]
+        public async Task StoringWhatAFeatureWaitsOn_MovesNoForecastDate()
+        {
+            var withoutDependencyData = await TheDaysTheForecastLandsOn(storeDependencies: false);
+            var withDependencyData = await TheDaysTheForecastLandsOn(storeDependencies: true);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(withoutDependencyData, Has.All.GreaterThan(0),
+                    "The fixture forecast produced no days at all, so comparing the two runs would compare nothing.");
+
+                Assert.That(withDependencyData, Is.EqualTo(withoutDependencyData),
+                    "Storing what a Feature waits on moved a forecast date. Nothing in this epic may reach the " +
+                    "simulation - the day Lighthouse shows has to be the same day it showed before dependencies " +
+                    "existed. Deciding what a dependency does to a date is a separate piece of work.");
+            }
+        }
+
+        private static async Task<int[]> TheDaysTheForecastLandsOn(bool storeDependencies)
+        {
+            var team = new Team { Id = 1, Name = "Team", FeatureWIP = 3 };
+            var throughput = new RunChartData(RunChartDataGenerator.GenerateRunChartData(TheThroughputBothRunsForecastFrom));
+
+            var teamMetricsService = new Mock<ITeamMetricsService>();
+            teamMetricsService
+                .Setup(service => service.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting))
+                .Returns(new ForecastThroughputStatus(throughput, false, null));
+
+            var features = TheFixturePortfolio(team, storeDependencies);
+
+            var featureRepository = new Mock<IRepository<Feature>>();
+            featureRepository.Setup(repository => repository.GetAll()).Returns(features);
+
+            var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
+            portfolio.UpdateFeatures(features);
+
+            var forecastService = new ForecastService(
+                new SeededRandomNumberService(TheSeedBothRunsShare),
+                Mock.Of<ILogger<ForecastService>>(),
+                teamMetricsService.Object,
+                featureRepository.Object);
+
+            await forecastService.UpdateForecastsForPortfolio(portfolio);
+
+            return features
+                .SelectMany(feature => ThePercentilesLighthouseShows.Select(feature.Forecast.GetProbability))
+                .ToArray();
+        }
+
+        private static List<Feature> TheFixturePortfolio(Team team, bool storeDependencies)
+        {
+            var features = TheRemainingWorkPerFeature
+                .Select((remainingItems, index) => new Feature(team, remainingItems)
+                {
+                    Id = index + 1,
+                    Name = $"Feature {index + 1}",
+                    ReferenceId = $"F-{index + 1}",
+                })
+                .ToList();
+
+            if (storeDependencies)
+            {
+                foreach (var feature in features)
+                {
+                    feature.ReplaceDependsOnReferences(features
+                        .Where(other => other != feature)
+                        .Select(other => new FeatureDependencyReference(feature.Id, other.ReferenceId, DependencySource.TrackerLink)));
+                }
+            }
+
+            return features;
         }
 
         private static List<SourceFile> TheSourceThisEpicAdded()
@@ -161,6 +257,20 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(directory, Is.Not.Null, "Could not locate Lighthouse.sln to anchor the dependency source scan.");
 
             return directory!.FullName;
+        }
+
+        /// <summary>
+        /// The shipped randomness source builds a fresh, unseeded Random for every single draw, so two runs of
+        /// it can never be compared to each other. This one starts from a fixed number and therefore draws the
+        /// same sequence every time, on any machine, which is what makes "the same forecast with and without
+        /// dependency data" a statement about the code rather than about luck. Only one team is forecast here,
+        /// and the simulation runs one thread per team, so the draws are handed out in a fixed order.
+        /// </summary>
+        private sealed class SeededRandomNumberService(int seed) : IRandomNumberService
+        {
+            private readonly Random random = new(seed);
+
+            public int GetRandomNumber(int maxValue) => random.Next(maxValue);
         }
 
         private sealed record SourceFile(string RelativePath, string Source, int FirstLine);
