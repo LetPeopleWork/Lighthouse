@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             return code.Contains(TheSeam, StringComparison.Ordinal)
                 && !code.StartsWith("//", StringComparison.Ordinal)
-                && !code.StartsWith("*", StringComparison.Ordinal)
+                && !code.StartsWith('*')
                 && !code.Contains($"void {TheSeam}(", StringComparison.Ordinal);
         }
 
