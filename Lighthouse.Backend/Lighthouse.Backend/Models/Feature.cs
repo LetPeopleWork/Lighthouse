@@ -12,8 +12,19 @@ namespace Lighthouse.Backend.Models
         {
         }
 
-        public Feature(WorkItemBase workItemBase) : base(workItemBase)
+        public Feature(WorkItemBase workItemBase) : this(workItemBase, [])
         {
+        }
+
+        /// <summary>
+        /// A Feature built straight from what a work tracking system just handed over, links and all. A
+        /// connector reads those links off a work item that has no row here yet, so it has nowhere to put
+        /// them; taking them at construction means it never needs the rewrite that changes what a Feature
+        /// already on file waits on, and that rewrite therefore stays the reconciler's alone.
+        /// </summary>
+        public Feature(WorkItemBase workItemBase, IEnumerable<FeatureDependencyReference> dependsOn) : base(workItemBase)
+        {
+            dependsOnReferences.AddRange(dependsOn);
         }
 
         public Feature(Team team, int remainingItems) : this([(team, remainingItems, remainingItems)])
@@ -44,7 +55,7 @@ namespace Lighthouse.Backend.Models
 
         // Handed out read-only because the sync rewrites this list wholesale on every refresh. A caller
         // that added or removed a reference here would be writing half a graph that the next refresh
-        // silently throws away, so only the reconciler that owns the rewrite may touch it.
+        // silently throws away, so only the reconciler that owns the rewrite may change a stored one.
         public IReadOnlyCollection<FeatureDependencyReference> DependsOnReferences => dependsOnReferences;
 
         public bool IsParentFeature { get; set; } = false;

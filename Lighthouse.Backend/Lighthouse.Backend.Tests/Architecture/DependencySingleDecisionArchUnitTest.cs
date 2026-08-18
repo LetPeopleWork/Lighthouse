@@ -4,7 +4,6 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Forecast;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
@@ -17,9 +16,9 @@ using static ArchUnitNET.Fluent.ArchRuleDefinition;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// What a Feature waits on is decided in one place. The collection is exposed read-only and is changed
-    /// through an internal seam, which stops the accident; this file stops someone widening the seam back
-    /// open later, which a type cannot.
+    /// What a Feature waits on is decided in one place. The collection is exposed read-only and a stored
+    /// one is changed through a single internal seam, which stops the accident; this file stops someone
+    /// widening the seam back open later, which a type cannot.
     /// </summary>
     [TestFixture]
     [Category("epic-4365-dependencies")]
@@ -79,17 +78,16 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .HaveNameStartingWith(TheSeam);
 
             MethodMembers().That()
-                .AreNotDeclaredIn(typeof(DependencyReconciler)).And()
-                .AreNotDeclaredIn(typeof(AzureDevOpsWorkTrackingConnector))
+                .AreNotDeclaredIn(typeof(DependencyReconciler))
                 .Should().NotCallAny(theSeamOnFeature)
                 .Because(
                     "Reconciling is a wholesale replacement, so a second caller does not add to what a Feature " +
-                    "waits on - it silently discards whatever the first one wrote. Two callers exist and each " +
-                    "earns it: DependencyReconciler decides what is stored, and the Azure DevOps connector fills " +
-                    "in the links it just read off a work item that has no row yet, which the reconciler then " +
-                    "re-keys and de-duplicates onto the Feature that is saved. Anything else - WorkItemService " +
-                    "reaching past the reconciler it already calls, most of all - is the regression this catches. " +
-                    "If a third caller is genuinely needed, take IDependencyReconciler instead.")
+                    "waits on - it silently discards whatever the first one wrote. DependencyReconciler is the " +
+                    "only thing that decides what a Feature already on file waits on. A connector reading links " +
+                    "off a work item that has no row here yet hands them to the Feature constructor instead, " +
+                    "which can only ever fill in an object being built and cannot reach a stored one. Anything " +
+                    "else - WorkItemService reaching past the reconciler it already calls, most of all - is the " +
+                    "regression this catches. If a second writer is genuinely needed, take IDependencyReconciler.")
                 .Check(Architecture);
         }
 
