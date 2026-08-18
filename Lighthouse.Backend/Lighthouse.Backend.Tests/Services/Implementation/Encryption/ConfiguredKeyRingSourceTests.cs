@@ -66,7 +66,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             var refusal = Assert.Throws<InvalidOperationException>(
                 () => new ConfiguredKeyRingSource(null, null, "not base64 at all").Resolve());
 
-            Assert.That(refusal.Message, Does.Contain(ConfiguredKeyRingSource.RetiredSingleKeySettingKey));
+            Assert.That(
+                refusal.Message,
+                Does.Contain(ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(ConfiguredKeyRingSource.RetiredSingleKeySettingKey)),
+                "a defect message names a setting so it can be found, and it is found under the spelling it was typed in");
         }
     }
 }

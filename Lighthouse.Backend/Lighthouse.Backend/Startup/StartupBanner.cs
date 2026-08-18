@@ -58,7 +58,9 @@ namespace Lighthouse.Backend.Startup
             EncryptionKeyRingBootstrapper.StartAnywaySettingKey.Replace(":", "__", StringComparison.Ordinal) +
             " set, so it is running with stored credentials it cannot read. Every one of them has to be " +
             "entered again; the encryption settings name the Connection and the field each one sits in. " +
-            "Remove the setting once they have been.";
+            "Remove the setting once they have been - and if this instance has nowhere durable to keep a " +
+            "key, give it one with Encryption__KeyStorePath or Encryption__Key before entering anything, " +
+            "because removing the setting means restarting and a restart would take the new key with it.";
     }
 
     // One sentence, rendered in two places. The startup line is read from a console by whoever runs the

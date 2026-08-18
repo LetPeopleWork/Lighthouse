@@ -77,6 +77,15 @@ const operatorOwned: Record<string, EncryptionKeyState> = {
 	},
 };
 
+// The population that upgraded while relying on the setting name this release retired. Their key works,
+// and the panel is the only place most of them will ever be told it is going away.
+const readFromTheRetiredSetting: EncryptionKeyState = {
+	...ownKey,
+	custody: "SuppliedByConfiguration",
+	canMint: false,
+	keySuppliedThrough: "EncryptionSettings__EncryptionKey",
+};
+
 const aReportNamingWhatCouldNotBeRead: SecretReadabilityReport = {
 	activeKeyId: "k-2026-08-16-02",
 	keysChangedWhileItRan: false,
@@ -265,7 +274,9 @@ describe("EncryptionPanel", () => {
 		expect(table).toHaveTextContent("RefreshToken");
 		expect(table).toHaveTextContent("run this again");
 
-		expect(screen.getByRole("alert").className).toMatch(/Warning/);
+		expect(screen.getByTestId("encryption-report-summary").className).toMatch(
+			/Warning/,
+		);
 	});
 
 	it("does not show a disturbed move as completed, and says to run it again", async () => {
@@ -287,7 +298,9 @@ describe("EncryptionPanel", () => {
 		// there instead of doing the one thing that is actually left to do.
 		expect(report).not.toHaveTextContent("Moved 46 stored secrets onto key");
 
-		expect(screen.getByRole("alert").className).toMatch(/Warning/);
+		expect(screen.getByTestId("encryption-report-summary").className).toMatch(
+			/Warning/,
+		);
 	});
 
 	it("says nothing about the keys having changed when they did not", async () => {
@@ -358,7 +371,9 @@ describe("EncryptionPanel", () => {
 
 		// Nothing was left behind, so the result must not be dressed as a warning - an operator who is
 		// warned when there is nothing to do stops reading the ones that matter.
-		expect(screen.getByRole("alert").className).toMatch(/Success/);
+		expect(screen.getByTestId("encryption-report-summary").className).toMatch(
+			/Success/,
+		);
 	});
 
 	it("tells an administrator who owns the key in every custody mode", async () => {
@@ -880,6 +895,111 @@ describe("EncryptionPanel", () => {
 
 		expect(secrets).toHaveTextContent("Contoso Board");
 		expect(secrets).toHaveTextContent("ClientSecret");
+	});
+
+	// F-30. The key store directory exists in every custody and holds the data protection key and the
+	// OAuth state secret, so it looks exactly like somewhere an encryption key would be. Naming it where
+	// the key came from a setting is how an operator ends up backing up a folder that cannot restore
+	// their credentials.
+	it("names the key store directory only where Lighthouse keeps the key", async () => {
+		renderPanelOn(ownKey);
+
+		expect(
+			await screen.findByTestId("encryption-key-store-path"),
+		).toHaveTextContent("/app/data/keys");
+	});
+
+	it.each([
+		["SuppliedByConfiguration", "Encryption__Key"],
+		["SuppliedByExternalSecret", "Encryption__KeysFile"],
+	])(
+		"names the setting rather than a directory where the key is %s",
+		async (custody, setting) => {
+			renderPanelOn(operatorOwned[custody]);
+
+			const where = await screen.findByTestId("encryption-key-store-path");
+
+			expect(where).toHaveTextContent(setting);
+			expect(where).not.toHaveTextContent("/app/data/keys");
+		},
+	);
+
+	it("says the key is nowhere where the instance has no key of its own", async () => {
+		renderPanelOn(operatorOwned.NoDurableStore);
+
+		expect(
+			await screen.findByTestId("encryption-key-store-path"),
+		).toHaveTextContent("nowhere");
+	});
+
+	// F-29. This is the one state where the published key IS the key in force, so there is nothing to move
+	// anything onto - and the panel offers no move. An alert telling the operator to press it anyway sends
+	// them looking for a button that is not there.
+	it("does not tell an instance on the published key to move anything", async () => {
+		// Postgres with no key store configured, holding credentials: the key in force is the published
+		// key, so every stored credential is under it and moving them would re-encrypt it onto itself.
+		renderPanelOn({
+			...operatorOwned.NoDurableStore,
+			secretsUnderPublishedKey: 4,
+			readableSecretsNotOnTheActiveKey: 4,
+		});
+
+		const notice = await screen.findByTestId("published-key-notice");
+
+		expect(notice).toHaveTextContent("no key of its own");
+		expect(notice).not.toHaveTextContent(
+			"Move them onto this instance's own key",
+		);
+		expect(screen.queryByTestId("reencrypt-button")).not.toBeInTheDocument();
+	});
+
+	// F-31. A move offered with nothing on screen explaining it: the report says the credentials are on the
+	// key in force, because they are - what differs is the format they were written in.
+	it("says why a move is offered when nothing is on the published key", async () => {
+		renderPanelOn(ownKey);
+
+		const notice = await screen.findByTestId("not-on-the-active-key-notice");
+
+		expect(notice).toHaveTextContent("3 stored credentials are");
+		expect(notice).toHaveTextContent("not on the key in force");
+		expect(notice).toHaveTextContent("Nothing has to be re-entered");
+	});
+
+	it("says nothing about keys in force when there is nothing to move", async () => {
+		renderPanelOn(nothingLeftToMove);
+
+		await screen.findByTestId("encryption-key-ring");
+
+		expect(
+			screen.queryByTestId("not-on-the-active-key-notice"),
+		).not.toBeInTheDocument();
+	});
+
+	// F-32. The instruction echoed whichever setting answered. Under the retired name that told the
+	// operator to keep using the setting the startup banner says is going away - and a service or a
+	// container never shows anybody a startup banner.
+	it("sends a retired-setting instance to the setting that has a future", async () => {
+		renderPanelOn(readFromTheRetiredSetting);
+
+		const explanation = await screen.findByTestId(
+			"encryption-custody-explanation",
+		);
+
+		expect(explanation).toHaveTextContent("this release retired");
+		expect(explanation).toHaveTextContent(
+			"put the new key first in Encryption__Key",
+		);
+		expect(explanation).not.toHaveTextContent(
+			"put the new key first in EncryptionSettings__EncryptionKey",
+		);
+	});
+
+	it("says nothing about a retirement where the setting is current", async () => {
+		renderPanelOn(operatorOwned.SuppliedByConfiguration);
+
+		expect(
+			await screen.findByTestId("encryption-custody-explanation"),
+		).not.toHaveTextContent("this release retired");
 	});
 
 	it("shows no key material of any kind", async () => {

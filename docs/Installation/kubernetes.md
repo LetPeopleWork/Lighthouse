@@ -149,9 +149,15 @@ rewrite its own key can also lock itself out of every credential it holds, and a
 operator would overwrite the change on its next sync anyway.
 
 That is also why rotating is a sequence rather than a button. You add the new key to the Secret **ahead
-of** the old one, wait for the running pods to re-read the file — they check about every thirty seconds,
-tunable with `encryption.keysReloadSeconds`, so no restart is needed — then press **Move stored secrets**
-in Settings → Encryption, and only then remove the old key from the Secret. Nothing is re-entered and no
+of** the old one, wait for the running pods to re-read the file — no restart is needed — then press
+**Move stored secrets** in Settings → Encryption, and only then remove the old key from the Secret.
+
+The wait is made of two parts, and only the second is Lighthouse's. Kubernetes projects a changed Secret
+into a running pod on its own schedule, which on a default cluster can take up to a minute; Lighthouse
+then re-reads the mounted file about every thirty seconds, tunable with `encryption.keysReloadSeconds`.
+Measured end to end on a default cluster it took **around seventy seconds** from writing the Secret to
+the new key being the one in force. Watch **Settings → Encryption** and move the secrets when the new key
+id appears there, rather than counting seconds. Nothing is re-entered and no
 connection breaks. The four steps in full, with the values and the `kubectl` commands, are in the
 [chart README](https://github.com/LetPeopleWork/Lighthouse/blob/main/chart/README.md#the-encryption-key),
 and what the screen reports while you do it is in [Secret Encryption Key](../settings/encryption.html).

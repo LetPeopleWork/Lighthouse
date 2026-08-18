@@ -49,14 +49,26 @@ const WHO_OWNS_THE_KEY: Record<KeyCustody, string> = {
 //
 // The same sentence reaches every Kubernetes operator through the mounted-secret custody, so it is
 // written once and told where to put the value rather than twice.
+const RETIRED_SETTING = "EncryptionSettings__EncryptionKey";
+
 const howToReplaceIt = (keyState: EncryptionKeyState) => {
-	const setting = keyState.keySuppliedThrough ?? "Encryption__Key";
+	const answered = keyState.keySuppliedThrough ?? "Encryption__Key";
+	// Where the retired name is what answered, it is the one setting the instruction must not send an
+	// operator back to: a key put there works today and stops being read in a future release. The
+	// startup banner says so, and nobody running as a service or a container ever reads a banner.
+	const setting = answered === RETIRED_SETTING ? "Encryption__Key" : answered;
 	const where =
 		keyState.custody === "SuppliedByExternalSecret"
 			? `the file ${setting} points at, then restart the pod`
 			: `${setting}, then start Lighthouse again`;
 
 	return (
+		(answered === RETIRED_SETTING
+			? `This instance read its key from ${RETIRED_SETTING}, which this release retired. It still ` +
+				"works today and will stop being read in a future release: set the same value as " +
+				"Encryption__Key and remove the old one. The key itself does not change, and nothing " +
+				"stored has to be re-entered. "
+			: "") +
 		`To replace it, put the new key first in ${where}. ` +
 		"More than one key is written as a comma-separated list, each entry either the base64 key on its " +
 		"own or name:base64, and the first entry is the one new secrets are written under - the rest are " +
@@ -64,6 +76,27 @@ const howToReplaceIt = (keyState: EncryptionKeyState) => {
 		"take that list and the plural wins if you set both, so leaving the old one in place is harmless. " +
 		"Then move the stored secrets onto the new key."
 	);
+};
+
+// Only an instance that made its own key keeps one. Everywhere else the key store directory exists,
+// is full of key-shaped files - the data protection key, the OAuth state secret - and does not hold the
+// encryption key at all. An operator who backed that folder up alongside the database had every reason
+// to believe they had taken their key with them, and had not.
+const whereTheKeyIsLabel = (keyState: EncryptionKeyState) =>
+	keyState.custody === "GeneratedForThisInstance"
+		? "Kept in"
+		: "Supplied through";
+
+const whereTheKeyIs = (keyState: EncryptionKeyState) => {
+	if (keyState.custody === "GeneratedForThisInstance") {
+		return keyState.keyStorePath;
+	}
+
+	if (keyState.custody === "NoDurableStore") {
+		return "nowhere - this instance has no key of its own";
+	}
+
+	return keyState.keySuppliedThrough ?? "Encryption__Key";
 };
 
 const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
@@ -103,9 +136,9 @@ const KeyRing: React.FC<{ keyState: EncryptionKeyState }> = ({ keyState }) => (
 					</TableCell>
 				</TableRow>
 				<TableRow>
-					<TableCell>Kept in</TableCell>
+					<TableCell>{whereTheKeyIsLabel(keyState)}</TableCell>
 					<TableCell data-testid="encryption-key-store-path">
-						{keyState.keyStorePath}
+						{whereTheKeyIs(keyState)}
 					</TableCell>
 				</TableRow>
 			</TableBody>
@@ -209,7 +242,10 @@ const WhatHappened: React.FC<{
 
 	return (
 		<Box sx={{ mt: 2 }} data-testid="encryption-report">
-			<Alert severity={needsAttention ? "warning" : "success"}>
+			<Alert
+				severity={needsAttention ? "warning" : "success"}
+				data-testid="encryption-report-summary"
+			>
 				{summaryOf(asked, report)}
 			</Alert>
 
@@ -329,10 +365,21 @@ const EncryptionPanel: React.FC = () => {
 					data-testid="started-past-the-refusal-notice"
 				>
 					{
-						"This instance was started with Encryption__StartEvenIfNothingStoredCanBeRead set, so it is running with stored credentials it cannot read. Press Check secrets below for the Connection and field each one sits in, enter those credentials again, then remove the setting and restart."
+						"This instance was started with Encryption__StartEvenIfNothingStoredCanBeRead set, so it is running with stored credentials it cannot read. Press Check secrets below for the Connection and field each one sits in, enter those credentials again, then remove the setting and restart. If this instance has nowhere durable to keep a key — a container keeping its key store on the writable layer — give it one first with Encryption__KeyStorePath or Encryption__Key: removing the setting means restarting, and a restart would take the new key with it."
 					}
 				</Alert>
 			)}
+
+			{keyState.secretsUnderPublishedKey === 0 &&
+				movingWouldAchieveSomething(keyState) && (
+					<Alert
+						severity="info"
+						sx={{ mt: 2 }}
+						data-testid="not-on-the-active-key-notice"
+					>
+						{`${credentials(keyState.readableSecretsNotOnTheActiveKey)} readable and not on the key in force — written under an earlier key, or in the older format this release replaced. Moving ${keyState.readableSecretsNotOnTheActiveKey === 1 ? "it" : "them"} re-encrypts ${keyState.readableSecretsNotOnTheActiveKey === 1 ? "it" : "them"} under the active key. Nothing has to be re-entered.`}
+					</Alert>
+				)}
 
 			{keyState.secretsUnderPublishedKey > 0 && (
 				<Alert
@@ -340,7 +387,11 @@ const EncryptionPanel: React.FC = () => {
 					sx={{ mt: 2 }}
 					data-testid="published-key-notice"
 				>
-					{`${credentials(keyState.secretsUnderPublishedKey)} still encrypted with the key published with Lighthouse. Move ${keyState.secretsUnderPublishedKey === 1 ? "it" : "them"} onto this instance's own key — nothing has to be re-entered.`}
+					{`${credentials(keyState.secretsUnderPublishedKey)} still encrypted with the key published with Lighthouse. ${
+						movingWouldAchieveSomething(keyState)
+							? `Move ${keyState.secretsUnderPublishedKey === 1 ? "it" : "them"} onto this instance's own key — nothing has to be re-entered.`
+							: "This instance has no key of its own to move them onto: give it one as described above, start Lighthouse again, and the move is offered here."
+					}`}
 				</Alert>
 			)}
 

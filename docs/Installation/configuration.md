@@ -281,10 +281,11 @@ Set it to `true` and Lighthouse starts. Nothing is deleted and nothing is re-enc
 
 The sequence back to a working instance:
 
-1. Set `Encryption__StartEvenIfNothingStoredCanBeRead=true` and start Lighthouse.
-2. Open **Settings → Encryption** and press **Check secrets**. Every credential that cannot be read is listed with the Connection and the field that holds it.
-3. Edit each of those Connections and enter the credential again. It is stored under the key this instance is using now.
-4. Check again. When nothing is listed as unreadable, remove the setting and restart.
+1. **First give the instance somewhere durable to keep a key**, if it does not have one. This is the step that is easy to skip and the one that decides whether the rest of the sequence ends. In a container, removing the setting in step 4 means recreating the container — and if the key store is on the container's writable layer, that destroys the key again, so the credentials you just re-entered are unreadable on the very next start. Set `Encryption__KeyStorePath` to a directory on a volume that outlives the container, or supply the key with `Encryption__Key`, *before* re-entering anything.
+2. Set `Encryption__StartEvenIfNothingStoredCanBeRead=true` and start Lighthouse.
+3. Open **Settings → Encryption** and press **Check secrets**. Every credential that cannot be read is listed with the Connection and the field that holds it.
+4. Edit each of those Connections and enter the credential again. It is stored under the key this instance is using now.
+5. Check again. When nothing is listed as unreadable, remove the setting and restart.
 
 {: .important}
 While the setting is in force it is printed on every start and shown on the encryption settings page. That is deliberate: it is a way back in, not a configuration you leave behind. Remove it once the credentials have been re-entered.

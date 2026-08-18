@@ -63,7 +63,9 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         }
 
         // Settings are spelled with a colon inside the application and with two underscores everywhere an
-        // operator types them, and it is the second spelling they have to recognise.
+        // operator types them, and it is the second spelling they have to recognise. It matters most in a
+        // refusal: an instance that will not start names the setting it read the key from, and an operator
+        // greps their compose file or manifest for that string. The colon spelling appears in neither.
         public static string AsAnOperatorWouldWriteIt(string settingKey)
         {
             ArgumentNullException.ThrowIfNull(settingKey);
@@ -75,18 +77,22 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         {
             if (!string.IsNullOrWhiteSpace(suppliedRing))
             {
-                return SuppliedKeyRing.ParsedFrom(suppliedRing, KeyCustody.SuppliedByConfiguration, RingSettingKey);
+                return SuppliedKeyRing.ParsedFrom(
+                    suppliedRing, KeyCustody.SuppliedByConfiguration, AsAnOperatorWouldWriteIt(RingSettingKey));
             }
 
             if (!string.IsNullOrWhiteSpace(suppliedKey))
             {
-                return SuppliedKeyRing.ParsedFrom(suppliedKey, KeyCustody.SuppliedByConfiguration, SingleKeySettingKey);
+                return SuppliedKeyRing.ParsedFrom(
+                    suppliedKey, KeyCustody.SuppliedByConfiguration, AsAnOperatorWouldWriteIt(SingleKeySettingKey));
             }
 
             if (!string.IsNullOrWhiteSpace(suppliedUnderTheRetiredName))
             {
                 return SuppliedKeyRing.ParsedFrom(
-                    suppliedUnderTheRetiredName, KeyCustody.SuppliedByConfiguration, RetiredSingleKeySettingKey);
+                    suppliedUnderTheRetiredName,
+                    KeyCustody.SuppliedByConfiguration,
+                    AsAnOperatorWouldWriteIt(RetiredSingleKeySettingKey));
             }
 
             return null;

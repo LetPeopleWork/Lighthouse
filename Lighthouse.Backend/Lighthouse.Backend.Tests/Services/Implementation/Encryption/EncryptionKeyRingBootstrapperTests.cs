@@ -769,8 +769,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(refusal.Message, Does.Contain(ConfiguredKeyRingSource.SingleKeySettingKey),
+                Assert.That(
+                    refusal.Message,
+                    Does.Contain(ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(ConfiguredKeyRingSource.SingleKeySettingKey)),
                     "an operator cannot act on a refusal that does not say which setting carried the key");
+                Assert.That(
+                    refusal.Message,
+                    Does.Not.Contain(ConfiguredKeyRingSource.SingleKeySettingKey),
+                    "the colon spelling appears in no compose file, manifest or environment an operator can search");
                 Assert.That(refusal.Message, Does.Contain("is the key published with Lighthouse"));
                 Assert.That(refusal.Message, Does.Contain("ships inside every copy of the product"),
                     "an operator who is not told why the key is no good has been given an order rather than a reason");
@@ -792,7 +798,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
 
             Assert.That(
                 refusal.Message,
-                Does.Contain(ConfiguredKeyRingSource.RetiredSingleKeySettingKey),
+                Does.Contain(ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(ConfiguredKeyRingSource.RetiredSingleKeySettingKey)),
                 "this is the file an operator kept across the upgrade, and the setting they have to go and find is the old one");
         }
 
@@ -804,7 +810,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             var refusal = Assert.Throws<InvalidOperationException>(
                 () => BootstrapperFor(new StagedKeyStoreFileSystem(), suppliedRing: supplied).Resolve());
 
-            Assert.That(refusal.Message, Does.Contain(ConfiguredKeyRingSource.RingSettingKey));
+            Assert.That(
+                refusal.Message,
+                Does.Contain(ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(ConfiguredKeyRingSource.RingSettingKey)));
         }
 
         [Test]
