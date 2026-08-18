@@ -162,15 +162,15 @@ Independent of which *provider* you are using, there are a few things to be awar
 When using *sqlite*, you probably want to map the database to a file on your system, as otherwise you'll lose the data if your container gets removed. You can do so by specifying a volume and adjust the connection string to point to this volume:
 
 ```bash
-docker run -v ".:/app/Data" -e "Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
+docker run -v lighthouse-data:/app/data -e "Database__ConnectionString=Data Source=/app/data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
 
 {: .note}
 The environment variable `-e "Database__Provider=sqlite"` is omitted because it's the default value.
 
-This will create a volume in the local folder (`-v ".:/app/Data`) and then overwrites the configuration via environment variable to point to this volume (`-e "Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db"`). This will result in the file *LighthouseAppContext.db* to be created in the local folder where you run the container from. Check out the [docker sqlite example on GitHub](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/sqlite).
+This creates a Docker volume named *lighthouse-data* (`-v lighthouse-data:/app/data`) and then overwrites the configuration via environment variable to point at it (`-e "Database__ConnectionString=Data Source=/app/data/LighthouseAppContext.db"`), so *LighthouseAppContext.db* lives in that volume and survives the container being replaced. It also holds the key that encrypts your stored credentials, in `/app/data/keys`. Use a volume rather than a folder from your machine: the image runs as a non-root user and cannot write a directory owned by whoever ran the command. Check out the [docker sqlite example on GitHub](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/sqlite).
 
-In a similar way, you can adjust the provider and connection string postgres. If you want to host your postgres database as well in a docker container, we provide a [docker-compose.yml](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/postgres/docker-compose.yml) that you can use as inspiration. It sets up two containers, one for postgres (which a mapping to your local filesystem to store the data) and one for the Lighthouse itself, configured to store the data in postgres.
+In a similar way, you can adjust the provider and connection string postgres. If you want to host your postgres database as well in a docker container, we provide a [docker-compose.yml](https://github.com/LetPeopleWork/Lighthouse/blob/main/examples/postgres/docker-compose.yml) that you can use as inspiration. It sets up two containers, one for postgres and one for Lighthouse itself, configured to store the data in postgres. Both keep their data in Docker volumes, and the Lighthouse container is given `Encryption__KeyStorePath` so it has a durable place for the key that encrypts your credentials — without one it refuses to start rather than fall back to the key published with the product.
 
 ## Encryption Key
 In order to connect to Jira, Azure DevOps, etc., sensitive information (tokens) are needed. While we need to store them (as otherwise the continuous updating will not work), we don't want to keep those values in clear text.
@@ -359,10 +359,13 @@ Lighthouse.exe --Certificate:Path="MyCustomCertificate.pfx" --Certificate:Passwo
 If you then navigate to the Lighthouse URL, your browser might ask you to trust the certificate first. You can also inspect it and it should show the data you provided during the creation process.
 
 ### Docker
-To provide the custom certificate to you instance running in docker, you can map a volume and specify the path through that volume. In the following example, we assume that *MyCustomCertificate.pfx* is in the local folder: 
+To provide the custom certificate to your instance running in docker, mount the certificate file itself read-only and point at it. In the following example, we assume that *MyCustomCertificate.pfx* is in the local folder:
 ```bash
-docker run -v ".:/app/Data" -e "Certificate__Path=/app/Data/MyCustomCertificate.pfx" -e "Certificate__Password=Password" ghcr.io/letpeoplework/lighthouse:latest
+docker run -v "./MyCustomCertificate.pfx:/app/certs/MyCustomCertificate.pfx:ro" -e "Certificate__Path=/app/certs/MyCustomCertificate.pfx" -e "Certificate__Password=Password" ghcr.io/letpeoplework/lighthouse:latest
 ```
+
+{: .note}
+Reading a file from your machine is fine; writing to a folder on it is not, because the image runs as a non-root user. That is why the certificate is mounted read-only and on its own path, rather than through the data directory.
 
 ## Authentication
 

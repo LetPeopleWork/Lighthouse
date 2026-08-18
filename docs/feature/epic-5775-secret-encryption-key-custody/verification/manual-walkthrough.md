@@ -913,3 +913,33 @@ unbounded list of key ids they cannot interpret or clean up; a key that leaked s
 stays able to decrypt anything still on it; and the panel's Keys held becomes less readable with every
 rotation. Wanted: a way to drop keys that no stored secret references, offered only when the check
 proves the count is zero.
+
+---
+
+## The 2026-08-18 re-runs
+
+All nine runs the slice verdicts owed have been run against this branch and are written up in
+`run-log-2026-08-18.md`, with their substrates, verdicts and evidence: **A2c, A2d, C1, B2b, D2**, the
+**slice 05 cluster** checks on a throwaway `kind` cluster, and the standalone **A1, A1b, B1** on the
+AppImage built by run 32104826180.
+
+Everything the earlier runs raised as blocking is fixed and was re-proved end to end. Nothing found on
+this pass is a behaviour defect. The new finding ids live in that file so nothing here is renumbered:
+
+- **F-30** — `Kept in` still names a directory the key is not in, in the very custody F-14 was about.
+- **F-31** — the panel offers a move that Check secrets says is unnecessary; the real difference is the
+  storage format and it is nowhere on screen.
+- **F-32** — under the retired setting name the rotation instruction tells the operator to keep using
+  it, and the retirement nudge is still banner-only.
+- **F-33** — the published-key refusal names `EncryptionSettings:EncryptionKey`, the internal
+  configuration path, whichever way the value was supplied. Slice 04b's own criterion asked for the
+  `__` spelling an operator actually sets.
+- **F-34** — the re-entry script does not terminate on the substrate that produces the failure: the key
+  store has to move onto the volume before the credentials are typed back in.
+- **F-35** — the Kubernetes reload is documented as thirty seconds and measured at seventy, because
+  kubelet's own projection of the changed Secret comes first.
+
+Two runs stayed unexercised for stated reasons: **Tenant Zero** (the cluster assertions were run on
+`kind` instead; the tenant run needs the maintainer) and the **rendered standalone panel** (the
+standalone sidecar serves no SPA, so only the API behind the panel could be graded from outside the
+Tauri window).

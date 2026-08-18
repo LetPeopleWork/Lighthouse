@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     restart: always
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
@@ -19,7 +19,7 @@ services:
       retries: 5
 
   lighthouse:
-    image: ghcr.io/letpeoplework/lighthouse:dev-latest
+    image: ghcr.io/letpeoplework/lighthouse:latest
     container_name: lighthouse-app
     depends_on:
       postgres:
@@ -27,11 +27,16 @@ services:
     environment:
       Database__Provider: postgres
       Database__ConnectionString: "Host=postgres;Database=lighthouse;Username=postgres;Password=postgres"
+      # Postgres keeps the data, so the container has no database directory to keep a key beside.
+      # Without a directory that outlives the container Lighthouse will not make a key at all, and
+      # refuses to start rather than fall back to the key published with the product.
+      Encryption__KeyStorePath: /app/data/keys
     ports:
       - "48332:443"
       - "48331:80"
     volumes:
-      - ./logs:/app/logs
+      - lighthouse-data:/app/data
+      - lighthouse-logs:/app/logs
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/health/ready"]
@@ -39,3 +44,10 @@ services:
       timeout: 3s
       retries: 5
       start_period: 30s
+
+# Named volumes, not host directories: the image runs as a non-root user that cannot write a folder
+# owned by whoever ran docker compose.
+volumes:
+  postgres-data:
+  lighthouse-data:
+  lighthouse-logs:

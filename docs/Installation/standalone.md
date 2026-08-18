@@ -75,6 +75,27 @@ The app checks for updates on startup and prompts you to install them automatica
 
 ---
 
+## Where your data lives
+
+Everything the Standalone edition keeps sits in one folder:
+
+| Platform | Folder |
+|---|---|
+| Windows | `%APPDATA%\Lighthouse` |
+| macOS | `~/Library/Application Support/Lighthouse` |
+| Linux | `~/.config/Lighthouse` (or `$XDG_CONFIG_HOME/Lighthouse`) |
+
+It holds `LighthouseAppContext.db`, your logs, and `data-protection-keys` — the folder with the key
+that encrypts the credentials you enter for your work tracking systems. The startup line names the
+same path, and **Settings → Encryption** shows which key is in force.
+
+{: .important}
+A backup of the database without that key folder cannot be restored. The credentials in it stay
+encrypted under a key that is no longer anywhere, and Lighthouse refuses to start rather than run
+with credentials it cannot read. Back the whole folder up, not just the `.db` file.
+
+---
+
 ## Constraints
 
 {: .note}

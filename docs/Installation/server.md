@@ -78,16 +78,19 @@ If you don't have Docker installed, you can find installation instructions in th
 ### Running Lighthouse
 
 ```bash
-docker run -d -p 8081:443 -p 8080:80 -v ".:/app/Data" -v "./logs:/app/logs" -e "Database__ConnectionString=Data Source=/app/Data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
+docker run -d -p 8081:443 -p 8080:80 -v lighthouse-data:/app/data -v lighthouse-logs:/app/logs -e "Database__ConnectionString=Data Source=/app/data/LighthouseAppContext.db" ghcr.io/letpeoplework/lighthouse:latest
 ```
 
 This will:
 - Map host port 8081 to container port 443 (HTTPS)
 - Map host port 8080 to container port 80 (HTTP)
-- Use the directory you run the command from as storage for your database and logs
+- Keep the database, the key that encrypts your credentials, and the logs in Docker volumes that outlive the container
 
 {: .important}
-The mounted directory holds more than the database. On its first start Lighthouse creates the key that encrypts your stored credentials and keeps it in a folder beside the database file — so on this command, inside `/app/Data`. Both have to be on the mount. Recreate the container without that volume and the database goes with it; recreate it with a volume that has the database but not the key folder and it is worse, because everything looks intact while every stored credential has become unreadable. Back the two up together, or supply the key yourself with `Encryption__Key` so the container has nothing of its own to lose — see [Encryption Key](./configuration.html#encryption-key).
+The `lighthouse-data` volume holds more than the database. On its first start Lighthouse creates the key that encrypts your stored credentials and keeps it in a folder beside the database file — `/app/data/keys` on this command. Both have to be on the same volume. Recreate the container without it and the database goes with it; restore a backup that has the database but not the key folder and it is worse, because everything looks intact while every stored credential has become unreadable. Back the two up together, or supply the key yourself with `Encryption__Key` so the container has nothing of its own to lose — see [Encryption Key](./configuration.html#encryption-key).
+
+{: .important}
+Use Docker volumes, not folders from your machine. The image runs as a non-root user, so a bind mount like `-v ".:/app/data"` is a directory it is not allowed to write: Lighthouse stops with `Access to the path '/app/data/keys' is denied.` A bind mount for the logs fails more quietly — Lighthouse starts, says it is logging to `/app/logs`, and writes nothing there. Both are why the command above names volumes.
 
 You can find more information on the configuration options under [Configuration](./configuration.html).
 
