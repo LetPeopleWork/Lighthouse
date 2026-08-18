@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
@@ -26,7 +27,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IBlockedItemService blockedItemService,
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
         IFeatureOrdering featureOrdering,
-        IRepository<OptionalFeature> optionalFeatureRepository)
+        IRepository<OptionalFeature> optionalFeatureRepository,
+        IDependencyReconciler dependencyReconciler)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -998,6 +1000,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         private Feature AddOrUpdateFeature(Feature feature, Feature? featureFromDatabase)
+        {
+            var referencesFromTracker = feature.DependsOnReferences.ToList();
+            var storedFeature = TheStoredFeatureFor(feature, featureFromDatabase);
+
+            // On both branches: a Feature seen for the first time carries the links somebody drew on it
+            // just as one already on file does, so reconciling only where a row existed would leave a new
+            // Feature's dependencies to appear a refresh late - which reads as eventual consistency and
+            // hides.
+            dependencyReconciler.Reconcile(storedFeature, referencesFromTracker);
+
+            return storedFeature;
+        }
+
+        private Feature TheStoredFeatureFor(Feature feature, Feature? featureFromDatabase)
         {
             if (featureFromDatabase == null)
             {

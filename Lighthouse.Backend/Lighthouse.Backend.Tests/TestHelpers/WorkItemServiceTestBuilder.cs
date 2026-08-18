@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -111,7 +112,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new BlockedItemService(new RuleEvaluator<WorkItem>(), new WorkItemFieldProvider()),
                 NoOpenBlockedSpells(),
                 FeatureOrderingTestHelper.FollowingTheTracker(),
-                Mock.Of<IRepository<OptionalFeature>>());
+                Mock.Of<IRepository<OptionalFeature>>(),
+                new DependencyReconciler());
 
         /// <summary>No portfolio has a blocked spell already running, which is the state every fixture assumed.</summary>
         private static IFeatureBlockedTransitionRepository NoOpenBlockedSpells()
