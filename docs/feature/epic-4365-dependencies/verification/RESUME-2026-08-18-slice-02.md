@@ -70,6 +70,6 @@ shipped `blocked` concept in the same grid — scope it by region rather than ca
 
 A stale second Data Protection key ring (`Lighthouse.Backend/Lighthouse.Backend/keys/`, dated 08-16,
 alongside today's `data-protection-keys/`) was aborting 9 `WebApplicationFactory` integration tests with
-`FATAL: Two key rings were found` before any of this work started. Moved to the session scratchpad, not
+`FATAL: Two key rings were found` before any of this work started. Moved to `~/lighthouse-stale-keyring-2026-08-16`, not
 deleted. If the `:5169` dev instance turns out to have been keyed to it, restore it from there — and note
 that the dogfood step in `06-02` needs that instance readable.
