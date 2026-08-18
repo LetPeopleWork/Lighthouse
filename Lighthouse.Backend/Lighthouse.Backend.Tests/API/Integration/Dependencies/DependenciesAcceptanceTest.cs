@@ -21,6 +21,7 @@ using NUnit.Framework;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 {
@@ -107,7 +108,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                     });
                 });
 
-            Client = Factory.CreateClient();
+            // Scenarios here are about what a Feature waits on, not about who may read it, so the client
+            // reads everything. A narrower identity would make a count come back short for a reason no
+            // scenario states.
+            Client = Factory.CreateClient().AsSystemAdmin();
 
             using var setupScope = Factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -240,6 +244,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 .Where(idsHeld.Contains)
                 .Order()
                 .ToList();
+        }
+
+        /// <summary>
+        /// One Feature as a client is handed it, over the real HTTP route the Features screen calls.
+        /// Reading the store instead would say nothing about whether the count ever left the server.
+        /// </summary>
+        protected async Task<JsonElement?> ReadTheFeatureThePayloadCarries(string featureReferenceId)
+        {
+            using var response = await Client.GetAsync("/api/latest/features");
+            response.EnsureSuccessStatusCode();
+
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            foreach (var feature in payload.RootElement.EnumerateArray())
+            {
+                if (feature.GetProperty("referenceId").GetString() == featureReferenceId)
+                {
+                    return feature.Clone();
+                }
+            }
+
+            return null;
         }
 
         protected Feature? ReadTheFeatureRow(string featureReferenceId)

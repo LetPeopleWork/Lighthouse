@@ -29,6 +29,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             ThenTheFeatureWaitsOnExactly("F-3", TheTwoItWaitsOn);
             ThenEveryStoredReferenceNamesTheFeatureThatWaits();
+            await ThenThePayloadSaysItWaitsOn("F-3", 2);
+        }
+
+        // The count is worked out from the ids that match, so a link naming something this instance does
+        // not hold has to fall out of it. Storing two and reporting two would pass a scenario where every
+        // link resolves and mislead every reader the day one of them does not.
+        [Test]
+        public async Task The_count_a_client_reads_leaves_out_a_link_naming_nothing_lighthouse_holds()
+        {
+            var platform = GivenAPortfolio("Platform");
+
+            await WhenARefreshRuns(
+                platform,
+                AFeatureTheTrackerHolds("F-1", "Rebuild the search index"),
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", OneHeldAndOneNobodyHolds));
+
+            ThenTheFeatureWaitsOnExactly("F-3", OneHeldAndOneNobodyHolds);
+            await ThenThePayloadSaysItWaitsOn("F-3", 1);
+            await ThenThePayloadSaysItWaitsOn("F-1", 0);
         }
 
         // The links a Feature already on file picks up. A Feature that arrives with its links already

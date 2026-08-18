@@ -25,6 +25,9 @@ export interface IFeature extends IWorkItem {
 	canMove?: boolean;
 	moveBlockReason?: string;
 	blockingPortfolios?: IEntityReference[];
+	// How many of the Features this Lighthouse holds this one is waiting on. The server has already
+	// left out any link naming something it does not hold, so this is not the number of links drawn.
+	dependsOnCount?: number;
 
 	getRemainingWorkForFeature(): number;
 	getRemainingWorkForTeam(id: number): number;
@@ -61,6 +64,7 @@ export const FeatureSchema = z.object({
 	canMove: z.boolean().nullable().optional(),
 	moveBlockReason: z.string().nullable().optional(),
 	blockingPortfolios: z.array(EntityReferenceSchema).optional().default([]),
+	dependsOnCount: z.number().nullable().optional(),
 });
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
@@ -85,6 +89,7 @@ export class Feature implements IFeature {
 	canMove?: boolean;
 	moveBlockReason?: string;
 	blockingPortfolios: IEntityReference[] = [];
+	dependsOnCount?: number;
 
 	owningTeam!: string;
 
@@ -184,6 +189,7 @@ export class Feature implements IFeature {
 		feature.canMove = data.canMove ?? undefined;
 		feature.moveBlockReason = data.moveBlockReason ?? undefined;
 		feature.blockingPortfolios = data.blockingPortfolios;
+		feature.dependsOnCount = data.dependsOnCount ?? undefined;
 		return feature;
 	}
 }

@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using NUnit.Framework;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 {
@@ -108,6 +109,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             Assert.That(resolved, Is.EqualTo(expectedTargets.Order().ToArray()),
                 $"An id naming nothing Lighthouse holds must count for nothing, and must cost nothing beside it. Resolved: {string.Join(", ", resolved)}");
+        }
+
+        /// <summary>
+        /// The number a client is handed. It has to be the resolved count rather than the stored one, so
+        /// a link naming something this instance does not hold cannot inflate what a reader sees.
+        /// </summary>
+        private async Task ThenThePayloadSaysItWaitsOn(string featureReferenceId, int expectedCount)
+        {
+            var feature = await ReadTheFeatureThePayloadCarries(featureReferenceId)
+                ?? throw new InvalidOperationException($"The payload carried no {featureReferenceId} for its count to be judged.");
+
+            var count = feature.TryGetProperty("dependsOnCount", out var property) && property.ValueKind == JsonValueKind.Number
+                ? property.GetInt32()
+                : (int?)null;
+
+            Assert.That(count, Is.EqualTo(expectedCount),
+                $"{featureReferenceId} must reach a client already knowing how many of the Features Lighthouse holds it waits on. Payload: {feature}");
         }
 
         private void ThenNobodyComplained()

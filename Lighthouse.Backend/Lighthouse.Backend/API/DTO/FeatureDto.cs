@@ -83,5 +83,11 @@ namespace Lighthouse.Backend.API.DTO
 
         // Only Portfolios the caller may read are ever named (ADR-136 §3).
         public List<EntityReferenceDto> BlockingPortfolios { get; } = [];
+
+        // How many of the Features this Lighthouse holds the Feature is waiting on. A link naming
+        // something not held is stored but does not count, so this is never the stored total. Null on
+        // read paths that never match the links up, because absent means "not worked out here" rather
+        // than "waiting on nothing".
+        public int? DependsOnCount { get; set; }
     }
 }

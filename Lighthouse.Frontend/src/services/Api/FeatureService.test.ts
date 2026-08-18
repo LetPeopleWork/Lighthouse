@@ -210,6 +210,49 @@ describe("FeatureService", () => {
 		expect(features[0].closedDate).toBeNull();
 	});
 
+	// The response is parsed against a schema that drops anything it does not name, so a field the
+	// server sends and the schema omits vanishes without an error anywhere.
+	it("should keep the dependency count the server sent, and leave it unset when it sends none", async () => {
+		const waitingFeature = {
+			name: "Waiting Feature",
+			id: 8,
+			referenceId: "FTR-8",
+			state: "In Progress",
+			type: "Feature",
+			size: 5,
+			lastUpdated: new Date(),
+			isUsingDefaultFeatureSize: false,
+			owningTeam: "",
+			parentWorkItemReference: "",
+			projects: [],
+			remainingWork: { 1: 5 },
+			totalWork: { 1: 10 },
+			forecasts: [],
+			url: "",
+			stateCategory: "Doing",
+			startedDate: null,
+			closedDate: null,
+			cycleTime: 0,
+			workItemAge: 3,
+			isBlocked: false,
+			dependsOnCount: 2,
+		};
+		const unresolvedFeature = {
+			...waitingFeature,
+			id: 9,
+			referenceId: "FTR-9",
+		};
+		delete (unresolvedFeature as { dependsOnCount?: number }).dependsOnCount;
+		mockedAxios.get.mockResolvedValueOnce({
+			data: [waitingFeature, unresolvedFeature],
+		});
+
+		const features = await featureService.getFeaturesByIds([8, 9]);
+
+		expect(features[0].dependsOnCount).toBe(2);
+		expect(features[1].dependsOnCount).toBeUndefined();
+	});
+
 	it("should reject a feature response missing required fields with a structured ApiError", async () => {
 		const driftedResponse = [
 			{ id: 1, name: "Feature 1", referenceId: "FTR-1" },

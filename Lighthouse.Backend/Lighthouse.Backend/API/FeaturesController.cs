@@ -204,18 +204,28 @@ namespace Lighthouse.Backend.API
 
             var readable = features.Where(f => IsReadableBy(f, readablePortfolioIdSet)).ToList();
             var verdicts = await featureMoveAuthorization.GetVerdictsAsync(User, readable, readablePortfolioIdSet, RequestAborted);
+            var referenceIdsHeld = ReferenceIdsHeld();
 
             return readable
-                .Select(f => BuildFeatureDto(f, blackoutPeriods, readablePortfolioIdSet, positions, verdicts[f.Id]))
+                .Select(f => BuildFeatureDto(f, blackoutPeriods, readablePortfolioIdSet, positions, verdicts[f.Id], referenceIdsHeld))
                 .ToList();
         }
+
+        /// <summary>
+        /// Every Feature id this Lighthouse holds. A dependency is only ever an id string the tracker
+        /// wrote, so nothing knows whether it names a Feature until it is matched against these — and a
+        /// request for a handful of Features still has to match against all of them.
+        /// </summary>
+        private HashSet<string> ReferenceIdsHeld()
+            => featureRepository.GetAll().Select(f => f.ReferenceId).ToHashSet(StringComparer.Ordinal);
 
         private FeatureDto BuildFeatureDto(
             Feature feature,
             IReadOnlyList<BlackoutPeriod> blackoutPeriods,
             HashSet<int> readablePortfolioIds,
             IReadOnlyDictionary<int, int> positions,
-            FeatureMoveVerdict verdict)
+            FeatureMoveVerdict verdict,
+            HashSet<string> referenceIdsHeld)
         {
             var isBlocked = feature.Portfolios.Any(p => blockedItemService.IsBlocked(feature, p));
 
@@ -225,6 +235,7 @@ namespace Lighthouse.Backend.API
                 Position = positions.TryGetValue(feature.Id, out var position) ? position : null,
                 CanMove = verdict.CanMove,
                 MoveBlockReason = verdict.BlockReason,
+                DependsOnCount = feature.DependsOnReferences.Count(r => referenceIdsHeld.Contains(r.ReferenceId)),
             };
 
             dto.BlockingPortfolios.AddRange(verdict.BlockingPortfolios.Select(p => new EntityReferenceDto(p.Id, p.Name)));
