@@ -160,6 +160,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task GetFeaturesForProject_ReadingTheDependenciesCostsTheRefreshNoRequestOfItsOwn()
+        {
+            var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature");
+
+            var feature = (await subject.GetFeaturesForProject(APortfolio())).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheOneItemItWaitsOn),
+                    "A refresh that read no dependency at all would satisfy every count below for free.");
+                Assert.That(payloadReads.Count(read => read.Expand == WorkItemExpand.Relations), Is.EqualTo(1),
+                    "The relations are read once per refresh, for the parent, and the dependencies were already in "
+                    + "that answer. Reading them a second time doubles the most expensive request a refresh makes, "
+                    + "and a portfolio of a few hundred features feels that in minutes, not milliseconds.");
+                Assert.That(payloadReads.SelectMany(read => read.Ids), Has.None.EqualTo(TheItemTheFeatureWaitsOn),
+                    "A relation names the item it points at by id, so saying which feature this one waits on is a "
+                    + "lookup among the features already in hand. Fetching the target instead would cost one "
+                    + "request per dependency, on top of the refresh, every time.");
+            }
+        }
+
         private static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio) APortfolioWhoseParentComesFromACustomField()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature");
@@ -243,6 +265,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static Portfolio APortfolioReadingItsParentFromAField()
         {
+            var portfolio = APortfolio();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+
+            return portfolio;
+        }
+
+        private static Portfolio APortfolio()
+        {
             var portfolio = new Portfolio
             {
                 Id = 1,
@@ -250,7 +280,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DataRetrievalValue = TheFilterTheProjectIsFetchedBy,
                 WorkTrackingSystemConnectionId = 1,
                 WorkTrackingSystemConnection = AConnectionDefiningTheParentField(),
-                ParentOverrideAdditionalFieldDefinitionId = 1,
             };
 
             TheTypeAndStatesItFetches(portfolio, "Feature");
