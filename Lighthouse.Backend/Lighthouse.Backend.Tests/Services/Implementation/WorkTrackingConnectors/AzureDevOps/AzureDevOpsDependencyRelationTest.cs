@@ -1,5 +1,13 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
+using Moq;
+using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
@@ -26,6 +34,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] TheOneItemItWaitsOn = ["1801"];
 
         private static readonly string[] TheTwoItemsItWaitsOn = ["1801", "1799"];
+
+        private const int TheFeature = 42;
+
+        private const int TheItemTheFeatureWaitsOn = 1801;
+
+        private const string TheParentFieldTheProjectNames = "Custom.RemoteFeatureID";
+
+        private const string TheParentThatFieldPointsAt = "4711";
 
         [Test]
         public void ExtractDependencyReferences_YieldsTheItemAPredecessorPointsAt()
@@ -97,16 +113,138 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void ExtractDependencyReferences_YieldsNothingWhenTheItemCarriesNoRelationsAtAll()
         {
-            var workItem = new WorkItem();
+            var workItem = new AdoWorkItem();
 
             var references = workItem.ExtractDependencyReferences();
 
             Assert.That(references, Is.Empty);
         }
 
-        private static WorkItem AWorkItemRelatedTo(params WorkItemRelation[] relations)
+        [Test]
+        public async Task GetFeaturesForProject_APortfolioThatAlreadyNamesItsOwnParentFieldStillGetsItsDependencies()
         {
-            return new WorkItem { Relations = relations.ToList() };
+            var (subject, portfolio) = APortfolioWhoseParentComesFromACustomField();
+
+            var feature = (await subject.GetFeaturesForProject(portfolio)).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheOneItemItWaitsOn),
+                    "Naming a field to read the parent from says nothing about dependencies, and both arrive in the "
+                    + "same relations. A portfolio that names one would otherwise report no dependencies at all, for "
+                    + "good - and an empty column is a believable answer, so nobody would go looking.");
+                Assert.That(feature.ParentReferenceId, Is.EqualTo(TheParentThatFieldPointsAt),
+                    "The named field stays the parent's only source. Reading the relations for the dependencies must "
+                    + "not start overriding a parent the project deliberately keeps somewhere else.");
+            }
+        }
+
+        private static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio) APortfolioWhoseParentComesFromACustomField()
+        {
+            var clientMock = new Mock<WorkItemTrackingHttpClient>(new Uri("https://dev.azure.com/lighthouse-test"), new VssCredentials());
+
+            clientMock
+                .Setup(client => client.QueryByWiqlAsync(It.IsAny<Wiql>(), It.IsAny<bool?>(), It.IsAny<int?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new WorkItemQueryResult { WorkItems = [new WorkItemReference { Id = TheFeature }] });
+
+            clientMock
+                .Setup(client => client.GetWorkItemFieldsAsync(It.IsAny<GetFieldsExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new WorkItemField2 { Name = TheParentFieldTheProjectNames, ReferenceName = TheParentFieldTheProjectNames }]);
+
+            clientMock
+                .Setup(client => client.GetWorkItemsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DateTime?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<WorkItemErrorPolicy?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .Returns((IEnumerable<int> ids, IEnumerable<string> _, DateTime? _, WorkItemExpand? expand, WorkItemErrorPolicy? _, object _, CancellationToken _) =>
+                    Task.FromResult<List<AdoWorkItem>>(
+                        [.. ids.Select(id => expand == WorkItemExpand.Relations ? TheRelationsOf(id) : ThePayloadOf(id))]));
+
+            clientMock
+                .Setup(client => client.GetRevisionsAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+
+            return (new RecordedAzureDevOpsConnector(clientMock.Object), APortfolioReadingItsParentFromAField());
+        }
+
+        private static AdoWorkItem ThePayloadOf(int id)
+        {
+            var item = new AdoWorkItem
+            {
+                Id = id,
+                Links = new ReferenceLinks(),
+                Fields = new Dictionary<string, object>
+                {
+                    [AzureDevOpsFieldNames.Id] = id,
+                    [AzureDevOpsFieldNames.State] = "Active",
+                    [AzureDevOpsFieldNames.Title] = $"Item {id}",
+                    [AzureDevOpsFieldNames.WorkItemType] = "Feature",
+                    [AzureDevOpsFieldNames.CreatedDate] = new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc),
+                    [AzureDevOpsFieldNames.StackRank] = $"{id}",
+                    [TheParentFieldTheProjectNames] = TheParentThatFieldPointsAt,
+                },
+            };
+
+            item.Links.AddLink(AzureDevOpsFieldNames.UrlPropertyName, $"https://dev.azure.com/lighthouse-test/_workitems/edit/{id}");
+
+            return item;
+        }
+
+        private static AdoWorkItem TheRelationsOf(int id)
+        {
+            return new AdoWorkItem
+            {
+                Id = id,
+                Relations = [APredecessorPointingAt(TheItemTheFeatureWaitsOn)],
+            };
+        }
+
+        private static Portfolio APortfolioReadingItsParentFromAField()
+        {
+            var connection = new WorkTrackingSystemConnection
+            {
+                Id = 1,
+                WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+                Name = "Test Setting",
+                AuthenticationMethodKey = AuthenticationMethodKeys.AzureDevOpsPat,
+            };
+
+            connection.Options.AddRange([
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.Url, Value = "https://dev.azure.com/lighthouse-test", IsSecret = false },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken, Value = "encrypted-token", IsSecret = true },
+                new WorkTrackingSystemConnectionOption { Key = AzureDevOpsWorkTrackingOptionNames.RequestTimeoutInSeconds, Value = "1", IsSecret = false },
+            ]);
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Field",
+                Reference = TheParentFieldTheProjectNames,
+            });
+
+            var portfolio = new Portfolio
+            {
+                Id = 1,
+                Name = "TestProject",
+                DataRetrievalValue = "[System.TeamProject] = 'TestProject'",
+                WorkTrackingSystemConnectionId = 1,
+                WorkTrackingSystemConnection = connection,
+                ParentOverrideAdditionalFieldDefinitionId = 1,
+            };
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Feature");
+
+            portfolio.ToDoStates.Clear();
+            portfolio.ToDoStates.Add("New");
+            portfolio.DoingStates.Clear();
+            portfolio.DoingStates.Add("Active");
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("Closed");
+
+            return portfolio;
+        }
+
+        private static AdoWorkItem AWorkItemRelatedTo(params WorkItemRelation[] relations)
+        {
+            return new AdoWorkItem { Relations = relations.ToList() };
         }
 
         private static WorkItemRelation APredecessorPointingAt(int id)

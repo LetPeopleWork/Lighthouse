@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
@@ -34,6 +35,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private const int MaxChunkSize = 200;
 
         private static readonly string[] TheChangeStampOnly = [AzureDevOpsFieldNames.ChangedDate];
+
+        private static readonly string[] NoFieldsBesideTheRelations = [];
+
+        /// <summary>
+        /// What one read of a batch of work items' relations yields, per work item: the parent it hangs
+        /// under, and the other items it is waiting on. Both come out of the same response because that
+        /// response is expensive - a second read of the same items to fetch the other half would double
+        /// the cost of every refresh.
+        /// </summary>
+        private sealed record RelationsOfWorkItems(
+            Dictionary<string, string> ParentReferences,
+            Dictionary<string, List<string>> DependencyReferences)
+        {
+            public static RelationsOfWorkItems None() => new([], []);
+        }
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
@@ -84,14 +100,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
             Team team, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
         {
-            var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, team);
+            var relationsTask = GetParentReferenceForWorkItems(adoWorkItems, team, dependenciesComeFromRelations: false);
             var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldReferences);
 
-            var parentReferences = await parentReferencesTask;
+            var relations = await relationsTask;
 
             foreach (var workItem in workItems)
             {
-                var parentReference = GetParentReference(team, workItem, parentReferences);
+                var parentReference = GetParentReference(team, workItem, relations.ParentReferences);
                 workItem.ParentReferenceId = parentReference;
             }
 
@@ -606,16 +622,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
         {
-            var parentReferencesTask = GetParentReferenceForWorkItems(adoWorkItems, portfolio);
+            var relationsTask = GetParentReferenceForWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations: true);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences);
 
-            var parentReferences = await parentReferencesTask;
+            var relations = await relationsTask;
             var features = new List<Feature>();
 
             foreach (var workItem in workItemBase)
             {
-                var parentReference = GetParentReference(portfolio, workItem, parentReferences);
+                var parentReference = GetParentReference(portfolio, workItem, relations.ParentReferences);
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
@@ -625,6 +641,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     OwningTeam = owningTeam,
                     ParentReferenceId = parentReference,
                 };
+
+                feature.ReplaceDependsOnReferences(TheDependenciesOf(feature, relations));
 
                 features.Add(feature);
             }
@@ -1009,19 +1027,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return !string.IsNullOrEmpty(result.state) && result.changedDate != DateTime.MinValue;
         }
 
-        private async Task<Dictionary<string, string>> GetParentReferenceForWorkItems(IEnumerable<AdoWorkItem> adoWorkItems, WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner)
+        private async Task<RelationsOfWorkItems> GetParentReferenceForWorkItems(
+            IEnumerable<AdoWorkItem> adoWorkItems,
+            WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner,
+            bool dependenciesComeFromRelations)
         {
-            if (workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId.HasValue)
+            // The relations carry two different things at once: the link to the parent, and the links to
+            // whatever this item is waiting on. So naming a field to read the parent from is no longer
+            // reason enough on its own to skip reading them - skipping it while the dependencies still
+            // live there leaves every dependency unread, for good, and an empty list of dependencies is a
+            // believable answer, so nothing about it looks wrong.
+            if (workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId.HasValue && !dependenciesComeFromRelations)
             {
-                // No need to load stuff if we have an override anyway.
-                return new Dictionary<string, string>();
+                return RelationsOfWorkItems.None();
             }
 
             var itemIds = adoWorkItems.Select(wi => wi.Id ?? -1).Where(i => i >= 0).ToList();
 
             if (itemIds.Count == 0)
             {
-                return new Dictionary<string, string>();
+                return RelationsOfWorkItems.None();
             }
 
             logger.LogDebug("Getting Parent Ids for Work Items with IDs {ItemIds}", string.Join(",", itemIds));
@@ -1029,26 +1054,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return await GetParentReferencesFromRelationFields(workTrackingSystemOptionOwner, itemIds);
         }
 
-        private async Task<Dictionary<string, string>> GetParentReferencesFromRelationFields(WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner, List<int> itemIds)
+        private async Task<RelationsOfWorkItems> GetParentReferencesFromRelationFields(WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner, List<int> itemIds)
         {
             logger.LogDebug("Getting Parent Ids for Work Items with Parent Field");
 
-            var parentReferences = new Dictionary<string, string>();
+            var relations = RelationsOfWorkItems.None();
             foreach (var id in itemIds)
             {
-                parentReferences.Add($"{id}", string.Empty);
+                relations.ParentReferences.Add($"{id}", string.Empty);
             }
 
             var witClient = await GetWorkItemTrackingHttpClientAsync(workTrackingSystemOptionOwner.WorkTrackingSystemConnection);
-            var workItemsWithParentRelation = await GetWorkItemsInChunks(itemIds, witClient, WorkItemExpand.Relations, []);
+            var workItemsWithRelations = await GetWorkItemsInChunks(itemIds, witClient, WorkItemExpand.Relations, NoFieldsBesideTheRelations);
 
-            foreach (var adoWorkItem in workItemsWithParentRelation)
+            foreach (var adoWorkItem in workItemsWithRelations)
             {
-                var parentReference = adoWorkItem.ExtractParentFromWorkItem();
-                parentReferences[adoWorkItem.Id.ToString() ?? "-1"] = parentReference;
+                var referenceId = adoWorkItem.Id.ToString() ?? "-1";
+
+                relations.ParentReferences[referenceId] = adoWorkItem.ExtractParentFromWorkItem();
+                relations.DependencyReferences[referenceId] = adoWorkItem.ExtractDependencyReferences();
             }
 
-            return parentReferences;
+            return relations;
+        }
+
+        private static List<FeatureDependencyReference> TheDependenciesOf(Feature feature, RelationsOfWorkItems relations)
+        {
+            if (!relations.DependencyReferences.TryGetValue(feature.ReferenceId, out var references))
+            {
+                return [];
+            }
+
+            return references.ConvertAll(reference => new FeatureDependencyReference(feature.Id, reference, DependencySource.TrackerLink));
         }
 
         private static string GetOwningTeam(Portfolio portfolio, WorkItemBase workItem)
