@@ -213,6 +213,12 @@ get re-applied.
 
 ## Formatting & linting
 
+### 2026-08-18 — CA1865 promoted to warning; a fix written *after* the last analyzer sweep is the one that escapes
+- **Symptom**: `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes` exited 2 with one finding on new code — `DependencySingleDecisionArchUnitTest.cs(130,36): info CA1865: Use 'string.StartsWith(char)' instead of 'string.StartsWith(string)' when you have a string with a single char`. `dotnet build` reported zero warnings, and both full suites were green.
+- **Root cause**: `code.StartsWith("*", StringComparison.Ordinal)` on a single-character prefix. CA1865 is INFO severity, so it is invisible to the build and only the analyzer command or the Sonar `new_violations = 0` gate reports it.
+- **Fix**: `StartsWith('*')` — the char overload is ordinal by definition, so behaviour is identical (`4ce7bbae1`). CA1865 added to the promoted block in `Lighthouse.Backend/.editorconfig`, so `TreatWarningsAsErrors` now stops it at write time.
+- **Rule going forward**: use `StartsWith(char)` / `EndsWith(char)` for a single-character prefix or suffix — never the string overload with a `StringComparison`. And run the analyzer command **after the last code change of a slice, not after the last feature step**: this finding was written during the review-fix pass, after every step agent had already run its own clean sweep, so every individual check was green and the slice as a whole was not.
+
 ### 2026-08-16 — a stale `node_modules` in a git worktree runs an OLD Biome and invents 20 formatting errors
 - **Symptom**: `pnpm biome check ./src` in a worktree reported "Formatter would have printed the following content" across ~20 untouched test files (multi-line `it.each([...])(…)` callbacks reflowed onto one line). CI was green on those same files, and the last commit touching one of them was `e16d59423 style(frontend): apply Biome 2.5.4 formatting to test files`.
 - **Root cause**: `pnpm biome --version` printed `2.3.10` while `package.json` pins `@biomejs/biome: 2.5.7` — the worktree's `node_modules` predated the bump. Biome's formatter changed how it breaks arrow-function arguments between those versions, so the old binary "unformatted" what the pinned one had formatted. Nothing was wrong with the code.
