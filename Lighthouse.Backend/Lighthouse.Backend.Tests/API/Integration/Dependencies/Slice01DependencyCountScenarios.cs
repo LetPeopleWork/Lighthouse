@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private static readonly string[] TheTwoItWaitsOn = ["F-1", "F-2"];
         private static readonly string[] OneHeldAndOneNobodyHolds = ["F-1", "F-404"];
         private static readonly string[] OnlyTheOneHeld = ["F-1"];
+        private static readonly string[] OnlyTheSecondOfThem = ["F-2"];
 
         // @walking_skeleton @driving_port
         [Test]
@@ -30,23 +31,47 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenEveryStoredReferenceNamesTheFeatureThatWaits();
         }
 
-        // The links a Feature already on file picks up, and the ones it loses again. A Feature that
-        // arrives with its links already drawn is the scenario above; this is the other half of the
-        // refresh, where a row that exists has to follow the tracker rather than keep what it had.
+        // The links a Feature already on file picks up. A Feature that arrives with its links already
+        // drawn is the scenario above; this is the other branch of the refresh, where a row that already
+        // exists has to take on links it was not stored with.
         [Test]
-        public async Task What_a_feature_waits_on_follows_the_tracker_across_refreshes()
+        public async Task A_feature_already_on_file_picks_up_the_links_drawn_on_it_later()
         {
             var platform = GivenAPortfolio("Platform");
-            var withNoLinksDrawnOnIt = AFeatureTheTrackerHolds("F-3", "Publish the partner catalogue");
-            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(platform, withNoLinksDrawnOnIt);
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(
+                platform, AFeatureTheTrackerHolds("F-3", "Publish the partner catalogue"));
 
             await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheTwoItWaitsOn));
 
             ThenTheFeatureWaitsOnExactly("F-3", TheTwoItWaitsOn);
             ThenEveryStoredReferenceNamesTheFeatureThatWaits();
+        }
 
-            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(platform, withNoLinksDrawnOnIt);
+        // Links coming off again, in the three shapes that fail differently. Refreshing on the same
+        // links has to leave the stored set as it was rather than a second copy of itself; dropping one
+        // has to leave the other one specifically, not merely one of them; dropping the last has to
+        // leave nothing. A write that added to what was there instead of replacing it would pass the
+        // middle case by luck and fail the two around it.
+        [Test]
+        public async Task A_link_removed_in_the_tracker_lowers_the_count_on_the_next_refresh()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var waitingOnBoth = AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheTwoItWaitsOn);
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(platform, waitingOnBoth);
+
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(platform, waitingOnBoth);
+
+            ThenTheFeatureWaitsOnExactly("F-3", TheTwoItWaitsOn);
+
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", OnlyTheSecondOfThem));
+
+            ThenTheFeatureWaitsOnExactly("F-3", OnlyTheSecondOfThem);
+            ThenEveryStoredReferenceNamesTheFeatureThatWaits();
+
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(
+                platform, AFeatureTheTrackerHolds("F-3", "Publish the partner catalogue"));
 
             ThenTheFeatureWaitsOnNothing("F-3");
         }
