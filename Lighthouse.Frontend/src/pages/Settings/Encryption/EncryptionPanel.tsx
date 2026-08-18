@@ -183,6 +183,27 @@ const secrets = (count: number) =>
 const credentials = (count: number) =>
 	count === 1 ? "1 stored credential is" : `${count} stored credentials are`;
 
+const itOrThem = (count: number) => (count === 1 ? "it" : "them");
+
+// Both sentences are built here rather than inline: a ternary inside a template-literal slot counts as
+// nested under any enclosing conditional, and each alert sits inside one.
+const whatToDoAboutThePublishedKey = (keyState: EncryptionKeyState) => {
+	const opening = `${credentials(keyState.secretsUnderPublishedKey)} still encrypted with the key published with Lighthouse.`;
+
+	if (!movingWouldAchieveSomething(keyState)) {
+		return `${opening} This instance has no key of its own to move them onto: give it one as described above, start Lighthouse again, and the move is offered here.`;
+	}
+
+	return `${opening} Move ${itOrThem(keyState.secretsUnderPublishedKey)} onto this instance's own key — nothing has to be re-entered.`;
+};
+
+const whatIsOffTheKeyInForce = (keyState: EncryptionKeyState) => {
+	const count = keyState.readableSecretsNotOnTheActiveKey;
+	const pronoun = itOrThem(count);
+
+	return `${credentials(count)} readable and not on the key in force — written under an earlier key, or in the older format this release replaced. Moving ${pronoun} re-encrypts ${pronoun} under the active key. Nothing has to be re-entered.`;
+};
+
 // A count of zero is not information. Four categories of nothing compete with the one number that
 // matters, and the number that matters is always one of the few that are not zero - so only those are
 // said. An operator reads a count above zero as something they may have to do.
@@ -377,7 +398,7 @@ const EncryptionPanel: React.FC = () => {
 						sx={{ mt: 2 }}
 						data-testid="not-on-the-active-key-notice"
 					>
-						{`${credentials(keyState.readableSecretsNotOnTheActiveKey)} readable and not on the key in force — written under an earlier key, or in the older format this release replaced. Moving ${keyState.readableSecretsNotOnTheActiveKey === 1 ? "it" : "them"} re-encrypts ${keyState.readableSecretsNotOnTheActiveKey === 1 ? "it" : "them"} under the active key. Nothing has to be re-entered.`}
+						{whatIsOffTheKeyInForce(keyState)}
 					</Alert>
 				)}
 
@@ -387,11 +408,7 @@ const EncryptionPanel: React.FC = () => {
 					sx={{ mt: 2 }}
 					data-testid="published-key-notice"
 				>
-					{`${credentials(keyState.secretsUnderPublishedKey)} still encrypted with the key published with Lighthouse. ${
-						movingWouldAchieveSomething(keyState)
-							? `Move ${keyState.secretsUnderPublishedKey === 1 ? "it" : "them"} onto this instance's own key — nothing has to be re-entered.`
-							: "This instance has no key of its own to move them onto: give it one as described above, start Lighthouse again, and the move is offered here."
-					}`}
+					{whatToDoAboutThePublishedKey(keyState)}
 				</Alert>
 			)}
 

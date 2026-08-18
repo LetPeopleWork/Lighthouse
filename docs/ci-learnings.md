@@ -912,6 +912,11 @@ get re-applied.
 - **Root cause**: Sonar counts ternaries inside template-literal `${...}` slots as nested under any enclosing ternary, even though template literals look like "plain string interpolation". Two pluralisation ternaries inline therefore fail the rule twice (once each).
 - **Fix**: Extracted a `buildTooltip(count: number): string` helper above the component using early-return `if` for the zero case and named locals (`noun`, `verb`) for the singular/plural choices. Zero ternaries remain.
 - **Rule going forward**: In TypeScript components, never inline pluralisation/branching ternaries inside template-literal interpolation when the template literal itself sits inside another conditional expression. Extract a named helper function with early returns. The general heuristic: if a single line contains two or more `?` operators (counting those inside `${}` slots), refactor before pushing.
+- **Recurrence: 2** — 2026-08-18, epic-5775 (`EncryptionPanel.tsx:392`). Same construct: a pluralisation ternary inside a `${...}` slot, inside an alert whose text is chosen by an outer ternary. Predicted by this entry word for word, and the ledger was open in the session that wrote it — the index was read, the rule was not applied to the diff. Fixed the recorded way: `itOrThem(count)` plus one sentence-builder per alert with early returns, zero ternaries inline. **The greppable check, run it before pushing any touched `.tsx`:**
+  ```bash
+  git diff -U0 origin/main... -- '*.tsx' | grep '^+' | grep -v '^+++' | grep -c '?'
+  ```
+  Any added line carrying two or more `?` is the one to refactor.
 
 ### 2026-05-20 — typescript:S107 / S3776 / S3358 land together when a UI feature grows a third axis-mode in one component
 
