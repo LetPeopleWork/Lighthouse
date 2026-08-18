@@ -98,6 +98,48 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
+        /// <summary>
+        /// The count a reader arrives at, which is not the same as what is stored. An id is only ever a
+        /// string until somebody matches it, so an id matching no Feature held simply falls out here.
+        /// </summary>
+        private void ThenAmongTheFeaturesHeldItWaitsOnExactly(string featureReferenceId, string[] expectedTargets)
+        {
+            var resolved = ReadWhatItWaitsOnAmongTheFeaturesHeld(featureReferenceId);
+
+            Assert.That(resolved, Is.EqualTo(expectedTargets.Order().ToArray()),
+                $"An id naming nothing Lighthouse holds must count for nothing, and must cost nothing beside it. Resolved: {string.Join(", ", resolved)}");
+        }
+
+        private void ThenNobodyComplained()
+        {
+            var problems = ReadProblemsLogged();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CapturedLogs.SawAnything, Is.True,
+                    "A capture that quietly stopped working would make the assertion below unable to fail.");
+                Assert.That(problems, Is.Empty,
+                    $"A link Lighthouse cannot match is an ordinary outcome, not a fault to report. Logged: {string.Join(" | ", problems)}");
+            }
+        }
+
+        /// <summary>
+        /// The rest of the Feature, so a scenario about one link that resolves to nothing can say the
+        /// refresh wrote a whole row rather than an abandoned half of one.
+        /// </summary>
+        private void ThenTheRestOfTheRowIsThere(string featureReferenceId, string expectedName)
+        {
+            var row = ReadTheFeatureRow(featureReferenceId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(row?.Name, Is.EqualTo(expectedName), $"The refresh must have written {featureReferenceId} in full.");
+                Assert.That(row?.Type, Is.EqualTo("Epic"), $"The refresh must have written {featureReferenceId} in full.");
+                Assert.That(row?.State, Is.EqualTo("New"), $"The refresh must have written {featureReferenceId} in full.");
+                Assert.That(row?.StateCategory, Is.EqualTo(StateCategories.ToDo), $"The refresh must have written {featureReferenceId} in full.");
+            }
+        }
+
         private static void ThenEveryReferenceNames(Feature feature)
         {
             Assert.That(feature.DependsOnReferences.Select(reference => reference.FeatureId), Has.All.EqualTo(feature.Id),

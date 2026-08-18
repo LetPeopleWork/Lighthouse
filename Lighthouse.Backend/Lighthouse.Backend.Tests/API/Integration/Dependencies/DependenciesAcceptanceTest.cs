@@ -15,8 +15,12 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 {
@@ -34,6 +38,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
         protected Mock<IForecastService> ForecastServiceMock = null!;
+
+        protected CapturedLogMessages CapturedLogs = null!;
 
         /// <summary>
         /// One row the tracker hands back for a Feature, and the ids of the Features it is waiting on.
@@ -54,6 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         [SetUp]
         public void Init()
         {
+            CapturedLogs = new CapturedLogMessages();
             RootFactory = new TestWebApplicationFactory<Program>();
 
             LicenseServiceMock = new Mock<ILicenseService>();
@@ -89,6 +96,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
                         services.RemoveAll<IForecastService>();
                         services.AddScoped(_ => ForecastServiceMock.Object);
+
+                        // Serilog is the whole logging pipeline here, and it ignores anything added as
+                        // an ILoggerProvider, so replacing the factory is the only way a scenario gets
+                        // to read what the refresh logged.
+                        services.RemoveAll<ILoggerFactory>();
+                        services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                            new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(CapturedLogs).CreateLogger(),
+                            dispose: true));
                     });
                 });
 
@@ -169,6 +184,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var portfolio = sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)
                 ?? throw new InvalidOperationException($"Portfolio {portfolioId} not found");
 
+            // Host startup and fixture seeding log through the same sink, so a scenario asking what the
+            // refresh had to say has to start listening here.
+            CapturedLogs.Clear();
+
             await sp.GetRequiredService<IWorkItemService>().UpdateFeaturesForPortfolio(portfolio);
         }
 
@@ -197,6 +216,41 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                     reference.Source)))
                 .ToList();
         }
+
+        /// <summary>
+        /// What a Feature waits on, worked out the way anything reading the graph has to work it out:
+        /// the stored id strings matched against the Features Lighthouse actually holds. An id matching
+        /// none of them yields nothing here, and yields something again the day it does match one.
+        /// </summary>
+        protected List<string> ReadWhatItWaitsOnAmongTheFeaturesHeld(string featureReferenceId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var featuresHeld = context.Features
+                .AsNoTracking()
+                .Include(feature => feature.DependsOnReferences)
+                .ToList();
+
+            var idsHeld = featuresHeld.Select(feature => feature.ReferenceId).ToHashSet();
+
+            return featuresHeld
+                .Where(feature => feature.ReferenceId == featureReferenceId)
+                .SelectMany(feature => feature.DependsOnReferences.Select(reference => reference.ReferenceId))
+                .Where(idsHeld.Contains)
+                .Order()
+                .ToList();
+        }
+
+        protected Feature? ReadTheFeatureRow(string featureReferenceId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            return context.Features.AsNoTracking().FirstOrDefault(feature => feature.ReferenceId == featureReferenceId);
+        }
+
+        protected List<string> ReadProblemsLogged() => [.. CapturedLogs.AtOrAbove(LogEventLevel.Error)];
 
         private static Feature TheConnectorPayloadFor(TrackedFeature row)
         {

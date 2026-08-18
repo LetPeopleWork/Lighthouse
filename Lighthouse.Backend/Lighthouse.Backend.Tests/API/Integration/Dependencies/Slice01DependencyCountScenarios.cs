@@ -14,6 +14,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     public partial class Slice01DependencyCountTest
     {
         private static readonly string[] TheTwoItWaitsOn = ["F-1", "F-2"];
+        private static readonly string[] OneHeldAndOneNobodyHolds = ["F-1", "F-404"];
+        private static readonly string[] OnlyTheOneHeld = ["F-1"];
 
         // @walking_skeleton @driving_port
         [Test]
@@ -47,6 +49,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(platform, withNoLinksDrawnOnIt);
 
             ThenTheFeatureWaitsOnNothing("F-3");
+        }
+
+        // A Predecessor link names an id and never says what kind of thing it is, so a link drawn to a
+        // Bug, to a Task, or to a Feature this Portfolio has not imported yet all arrive as the same
+        // thing: an id matching nothing Lighthouse holds. It is kept as written rather than rejected,
+        // because the day that item does show up the link starts counting on its own.
+        [Test]
+        public async Task A_link_pointing_at_something_lighthouse_does_not_keep_as_a_feature_is_passed_over()
+        {
+            var platform = GivenAPortfolio("Platform");
+
+            await WhenARefreshRuns(
+                platform,
+                AFeatureTheTrackerHolds("F-1", "Rebuild the search index"),
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", OneHeldAndOneNobodyHolds));
+
+            ThenAmongTheFeaturesHeldItWaitsOnExactly("F-3", OnlyTheOneHeld);
+            ThenTheFeatureWaitsOnExactly("F-3", OneHeldAndOneNobodyHolds);
+            ThenTheRestOfTheRowIsThere("F-3", "Publish the partner catalogue");
+            ThenNobodyComplained();
         }
 
         // The one writer is wired up, and it re-keys. A connector reads links off a Feature it has not
