@@ -302,6 +302,34 @@ Full job stories, dimensions, four forces and opportunity scores are written to
   Fetching the forward direction too would double the request cost to learn something the stored
   reference set already contains.
 
+- **[D16] A Portfolio may set its dependencies aside without hiding them** (user, 2026-08-18, after
+  DISTILL). A per-Portfolio **Ignore dependencies** switch makes every dependency in that Portfolio
+  **un-honoured**: the count, the dialog, the source and the resolved blockers all stay exactly as
+  they are, and the one honour-ability decision (SA-12) answers "no" for every edge, with a reason of
+  its own. It exists because the forecast Epic #5792 ships will argue back on every re-order, and a
+  lead trying out a different plan needs to ask the question without editing links in the tracker.
+
+  **Ingestion is deliberately untouched.** The alternative — skip reading dependencies altogether
+  while the switch is on — was considered and rejected on 2026-08-18. It reaches the same place for
+  the forecast, since Epic #5792 consumes the honoured set and nothing else, but it costs three
+  things. An ignored Portfolio's column would read the same as an instance that genuinely has no
+  dependencies, which is the exact confusion this epic refuses for unresolvable references (D15,
+  AC-9.2). Turning the switch on would have to delete stored edges, and turning it off would have to
+  re-download everything through `FetchFingerprint`. And the reader would lose sight of what they
+  chose to set aside. Honouring nothing costs one field on the policy's input and deletes nothing.
+
+  Off by default, free (D9), per Portfolio and never on a Team (D4). **No warning is raised while it
+  is on** — the state is a deliberate choice, not a broken link, and a warning on every Feature in the
+  Portfolio would train the reader to ignore the column US-03 exists to make worth reading. The dialog
+  says it instead, per entry.
+
+  **Where a Feature belongs to more than one Portfolio** (Feature to Portfolio is many-to-many, D6),
+  an edge is un-honoured by this switch only when **every** Portfolio containing both its ends has the
+  switch set. On a single-Portfolio instance — the ordinary case — that reads simply as "this
+  Portfolio ignores dependencies". It is stated because a dependency only ever has a consequence
+  inside a Portfolio holding both Features (D6), so any other rule would let one Portfolio's what-if
+  setting quietly change another Portfolio's plan.
+
 ---
 
 ## Wave: DISCUSS / [REF] Scope Assessment
@@ -380,6 +408,10 @@ A premium licence is **not** a prerequisite for any slice in this epic (D9).
   suppressing a tracker-sourced one. Considered and rejected under D4: it would make Lighthouse an
   author of dependency data. To change a dependency, change it in the tracker.
 - **A configurable *separator* for the override field.** Comma and semicolon, fixed (D15).
+- **Ignoring dependencies anywhere other than a Portfolio.** D16's switch is per Portfolio. A global
+  one and a per-Feature one were both rejected: a global switch has no owner and no place to be seen
+  from, and a per-Feature one is a suppression, which is Lighthouse authoring dependency data by the
+  back door (D4).
 - **ServiceNow and CSV.** No standard field exists (D13).
 - **Auto-reordering to satisfy a dependency** (D12).
 - **A dependency graph visualisation.** The epic asks for a column, a warning and a list. A graph view
@@ -529,6 +561,51 @@ re-recording links in a format the tracker's UI does not offer.
 
 ---
 
+### US-10 — Set the dependencies aside to try a different plan
+
+`job_id: job-lead-plan-without-the-dependencies` · persona `delivery-lead-rte` ·
+**slice 04** · free
+
+As a delivery lead, I want to switch dependencies off for a Portfolio without deleting them, so that I
+can re-order Features to see what a different plan looks like and still see what I set aside.
+
+### Elevator Pitch
+Before: the only way to ask what a plan looks like without its dependencies is to edit the links in
+the tracker — changing the real plan in order to ask a hypothetical question.
+After: open **Portfolio → Settings → Advanced**, tick **Ignore dependencies** → the Depends On column
+still shows every dependency, and every entry in the dialog reads *ignored for this Portfolio*.
+Decision enabled: whether the order you want is worth the dependencies it breaks — asked without
+touching the tracker.
+
+**Acceptance criteria**
+
+- **AC-10.1** With the switch on, every dependency in that Portfolio is un-honoured with the reason
+  *this Portfolio ignores dependencies*, and the count and the dialog list are identical to what they
+  show with the switch off.
+- **AC-10.2** With the switch on, the warnings column raises **no** dependency warning anywhere in
+  that Portfolio — not for an outside-Portfolio edge, not for a loop, not for a blocker positioned
+  below its dependent. Warnings that existed before this epic are untouched.
+- **AC-10.3** The switch takes effect on the next read: no refresh, no re-download, and no stored
+  reference deleted or altered — asserted by comparing the stored reference set across a toggle.
+- **AC-10.4** With the switch off, behaviour is byte-identical to slices 01-03, asserted by toggling
+  on and back off and comparing every verdict.
+- **AC-10.5** An edge whose two ends share more than one Portfolio is un-honoured by this switch only
+  when every Portfolio containing both ends has it set (D16); otherwise it keeps the verdict it would
+  have had.
+- **AC-10.6** `FetchFingerprint` does **not** change with this setting, asserted directly. The
+  opposite is the reflex — its two siblings on this form both belong there — but nothing about what is
+  fetched depends on it, and a fingerprint entry would force a full re-download on every toggle.
+- **AC-10.7** Per Portfolio, offered nowhere on a Team, needing the same permission the dependency
+  field needs, available unlicensed, and off for every Portfolio that already exists after the
+  migration.
+- **AC-10.8** `IgnoredByPortfolio` takes precedence over the three data reasons when more than one
+  applies; `NotLicensed` stays outermost, because it describes the instance rather than the plan and is
+  the more actionable thing to be told. Cycle detection still runs while the switch is on: the verdict
+  a Feature carries the moment the switch is turned off must be the one it would have had all along,
+  not one computed for the first time on a plan already being read.
+
+---
+
 ### US-09 — Jira and Linear dependencies
 
 `job_id: job-po-see-what-a-feature-is-waiting-on` · persona `product-owner` · **slice 03**
@@ -569,14 +646,14 @@ Decision enabled: the same decisions as US-01 through US-03, on the tracker the 
 
 **Backbone** (user activities, left to right):
 *Discover a dependency* → *Understand it* → *Use it on my tracker* → *Read it from the field we
-actually use*
+actually use* → *Set them aside to try something*
 
 | Slice | Stories | Outcome shipped | Licence |
 |---|---|---|---|
 | **01** ADO dependencies visible | US-01 | A Feature list that knows what waits on what | free |
 | **02** Detail and warnings | US-02, US-03 | The specifics, and every link Lighthouse cannot act on | free |
 | **03** Jira and Linear | US-09 | Everything above, on the other two trackers | free |
-| **04** Per-Portfolio dependency field | US-04 | Instances whose dependencies live in a custom field | free |
+| **04** Per-Portfolio dependency settings | US-04, US-10 | Instances whose dependencies live in a custom field, and Portfolios that want to set theirs aside | free |
 
 **Slice composition gate**: every slice carries at least one user-visible value story. This epic
 contains no `@infrastructure` story — the one that existed (US-07) went with the forecast half.
@@ -592,7 +669,7 @@ no story or AC identifier moved.
 | Any slice shipping 4+ new components? | **Pass after re-cut.** The original slice 01 carried ingestion + storage + column + dialog + warnings. Split into 01 (ingest + count) and 02 (dialog + warnings). |
 | Every slice depending on a new abstraction? | **Pass.** The dependency-edge store (D5) ships in slice 01 with the smallest thing that uses it, and every later slice reads it rather than extending it. |
 | Does any slice disprove a pre-commitment? | **Pass.** Slice 01 can disprove that relation reads are affordable (KPI-3). Slice 02 can disprove that the honour-ability verdict is cheap enough to compute per row (OQ-6). |
-| Synthetic-only data anywhere? | **Pass with one stated exception.** Every slice's dogfood moment runs on `:5169` restored from a real backup, and the awkward shapes (a cycle, a throughput-less blocker) are created as **real ADO links** rather than fixtures. The exception is slice 04: no reachable instance keeps dependencies in a custom field, so its acceptance is fixture-led with one manual confirmation against a deliberately-created additional field. Recorded rather than hidden. |
+| Synthetic-only data anywhere? | **Pass with one stated exception.** Every slice's dogfood moment runs on `:5169` restored from a real backup, and the awkward shapes (a cycle, a throughput-less blocker) are created as **real ADO links** rather than fixtures. The exception is US-04 in slice 04: no reachable instance keeps dependencies in a custom field, so its acceptance is fixture-led with one manual confirmation against a deliberately-created additional field. Recorded rather than hidden. US-10, added to the same slice on 2026-08-18, has no such exception — it is dogfoodable on `:5169` the day it lands. |
 | Two slices identical except for scale? | **Pass, with one deliberate merge.** Jira and Linear are one slice, not two — same slice shape, and splitting them would produce exactly the pair this test forbids. |
 
 ---
@@ -620,6 +697,10 @@ no story or AC identifier moved.
    confirmation on `:5169` using a deliberately-created additional field. Shipping it last means it
    inherits a mechanic already proven rather than proving one through an unusual configuration.
 
+   US-10 (added 2026-08-18) joins the same slice because it is the same form, the same permission and
+   the same migration, and because it needs the verdict vocabulary slice 02 settles. It does not
+   inherit slice 04's dogfood weakness: it is verifiable on `:5169` on the day it lands.
+
 **Dogfood cadence**: same-day on `:5169` for every slice.
 
 ---
@@ -636,6 +717,9 @@ no story or AC identifier moved.
 KPI-2, KPI-4, KPI-6 and KPI-7 moved to Epic #5792 with the outcomes they measure. KPI-5 stays here
 because the single honour-ability decision is written here, in slice 02, and Epic #5792 consults it
 rather than adding a second one.
+
+D16's ignore switch does not add a second one: it is a field of that policy's input (SA-17), so the
+ArchUnitNET rule behind KPI-5 stands unchanged and Epic #5792 needs no knowledge of the setting.
 
 ---
 
@@ -661,10 +745,10 @@ rather than adding a second one.
 | # | Item | Verdict | Evidence |
 |---|---|---|---|
 | 1 | Business value articulated | ✅ | A dependency that nothing in the product can express is one the plan silently assumes away. KPI-1 carries the outcome |
-| 2 | Job traceability | ✅ | 3 jobs in `docs/product/jobs.yaml`; all 5 value stories carry a real `job_id`; no `@infrastructure` story remains in this epic |
-| 3 | Acceptance criteria testable | ✅ | 34 ACs, each observable from a rendered cell, a dialog, a tooltip, an HTTP status, a stored edge, an outbound request, or a wall-clock measurement. The concrete worked examples this item also asks for live in `docs/product/jobs.yaml` under the three `feature_context` entries, not repeated in the story bodies — that file is the source of truth for them |
+| 2 | Job traceability | ✅ | 4 jobs in `docs/product/jobs.yaml`; all 6 value stories carry a real `job_id`; no `@infrastructure` story remains in this epic |
+| 3 | Acceptance criteria testable | ✅ | 42 ACs, each observable from a rendered cell, a dialog, a tooltip, an HTTP status, a stored edge, an outbound request, or a wall-clock measurement. The concrete worked examples this item also asks for live in `docs/product/jobs.yaml` under the three `feature_context` entries, not repeated in the story bodies — that file is the source of truth for them |
 | 4 | Dependencies identified | ✅ | Epic #5375's Feature view shipped; `:5169` restored from a real backup; real Predecessor links created in ADO; `CreateMigration`; a pre-slice-01 timing baseline |
-| 5 | Sliced ≤ 1 day each | ✅ | 4 briefs, each 5-6h. The epic's one conditional estimate (the simulation restructure) left with Epic #5792 |
+| 5 | Sliced ≤ 1 day each | ⚠️ | 4 briefs. Three at 5-6h. Slice 04 became ~7h on 2026-08-18 when US-10 joined it, which exceeds the ≤6h dispatch target — a **stated exception**, taken because both stories are one form, one migration and one permission, and splitting them would ship two settings to the same page in two releases. If the slice runs long, US-10 is the clean cut line: it depends on slice 02 and on nothing in US-04. The epic's one conditional estimate (the simulation restructure) left with Epic #5792 |
 | 6 | No known blockers | ✅ | None. The wave's one open question (where a dependency comes from) was resolved by the user on 2026-08-14 |
 | 7 | Observable surface defined | ✅ | Driving Ports table; the forecast is explicitly named as a port this epic does not touch |
 | 8 | Test data / environment available | ⚠️ | `:5169` has real ADO/Jira/Linear Features but contains no cycle and no dependency-carrying custom field. Both are created directly in ADO before slice 02, because D4 leaves Lighthouse no way to author them |
@@ -679,7 +763,7 @@ guessed at.
 
 ### Key decisions
 
-See Locked Decisions above. The four that shape everything downstream in this half:
+See Locked Decisions above. The five that shape everything downstream in this half:
 
 - **[D4] + [D15]** Lighthouse reads dependencies and never authors them; a Portfolio may name the field
   they live in, copying the parent override. The list-valued field is the one place the two mechanisms
@@ -690,12 +774,15 @@ See Locked Decisions above. The four that shape everything downstream in this ha
   before anything depends on them. That is the cheapest place to get the vocabulary wrong.
 - **[D11] + [D10]** Two existing surfaces and one deliberate refusal of the tracker's vocabulary,
   because `blocked` already names a different shipped concept and is renameable.
+- **[D16]** A Portfolio can set its dependencies aside without hiding or deleting them. Ignoring is a
+  field of the one honour policy's input, so nothing about ingestion changes and Epic #5792 needs no
+  knowledge of the setting.
 
 ### Requirements summary
 
 - **Primary needs**: a Feature list that says what each Feature waits on; a plain statement of every
-  link Lighthouse cannot act on; and a way to read dependencies from whichever field a Portfolio
-  actually keeps them in.
+  link Lighthouse cannot act on; a way to read dependencies from whichever field a Portfolio actually
+  keeps them in; and a way to set them aside while trying out a different plan.
 - **Walking skeleton scope**: none built (strategy B). Slice 01 is the thin end-to-end proof through the
   existing sync, storage, ordering and grid path.
 - **Feature type**: cross-cutting.
@@ -720,18 +807,34 @@ See Locked Decisions above. The four that shape everything downstream in this ha
 None. No DISCOVER or DIVERGE wave ran for this feature, so no prior assumption was altered. Epic
 #5375's D17 anticipated this feature and is carried forward intact rather than revised.
 
+### Amendment — 2026-08-18, after DISTILL
+
+US-10 and D16 were added to slice 04 at the maintainer's request, one wave later than the rest of this
+document. What moved: D16, US-10 with AC-10.1…10.8, SA-17, one job in `docs/product/jobs.yaml`, six
+scenarios in `milestone-4`, one line in `milestone-2` (the closed reason set is four, not three), and
+slice 04's brief. What did not move: no existing AC, no existing decision, no scenario already written,
+and no identifier. Slice 04's estimate went from ~5h to ~7h, recorded as a stated exception in DoR
+item 5 rather than absorbed silently.
+
+The amendment reaches DISTILL artifacts because DISTILL had already run. The alternative — a new slice
+05 with its own ADO Story — was weighed and rejected: the two stories share one settings form, one
+migration and one permission, and would otherwise ship two controls to the same page in two releases.
+
 ---
 
 ## Wave: DISCUSS / [REF] SSOT Updates
 
 - `docs/product/jobs.yaml` — 6 jobs appended 2026-08-14; on 2026-08-16 three had their
-  `feature_context` re-pointed at `epic-5792-dependency-aware-forecasting`.
+  `feature_context` re-pointed at `epic-5792-dependency-aware-forecasting`; a seventh,
+  `job-lead-plan-without-the-dependencies`, appended 2026-08-18 with US-10.
 - `docs/product/journeys/epic-4365-dependencies.yaml` — created; split 2026-08-16, with the
-  forecasting journey moved to `docs/product/journeys/epic-5792-dependency-aware-forecasting.yaml`.
+  forecasting journey moved to `docs/product/journeys/epic-5792-dependency-aware-forecasting.yaml`;
+  D16 and the new job added 2026-08-18, and the honour-ability artifact now records that ignoring is a
+  field of its input rather than a second decision.
 - `docs/product/personas/product-owner.yaml` — 1 job appended to `primary_jobs`.
 - `docs/product/personas/delivery-forecaster.yaml` — 3 jobs appended; the feature they name is now
   Epic #5792.
-- `docs/product/personas/delivery-lead-rte.yaml` — 1 job appended.
+- `docs/product/personas/delivery-lead-rte.yaml` — 1 job appended 2026-08-14, a second 2026-08-18.
 - `docs/product/personas/config-admin.yaml` — 1 job appended.
 
 ---
@@ -855,12 +958,12 @@ existing layout.
 | `FeatureDependencyReference` | `Models/FeatureDependencyReference.cs` | **CREATE NEW** | `(Id, FeatureId, ReferenceId, Source)`. Owned collection on `Feature`; expand-only migration via `CreateMigration` | 01 |
 | `DependencySource` | `Models/Dependencies/DependencySource.cs` | **CREATE NEW** | `TrackerLink` \| `PortfolioField` — which part of the work tracking system the edge was read from (AC-2.2) | 01 |
 | `Feature` | `Models/Feature.cs` | **EXTEND** | `DependsOnReferences` collection, deliberately absent from `Update` — the `ManualRank` precedent | 01 |
-| `Portfolio` | `Models/Portfolio.cs` | **EXTEND** | `DependencyOverrideAdditionalFieldDefinitionId`, third of its kind on this type. **Not** on `IWorkItemQueryOwner` — see F-3 | 04 |
+| `Portfolio` | `Models/Portfolio.cs` | **EXTEND** | `DependencyOverrideAdditionalFieldDefinitionId`, third of its kind on this type, plus the `IgnoreDependencies` flag (D16), non-null, default false. **Not** on `IWorkItemQueryOwner` — see F-3 | 04 |
 | `FetchFingerprint` | `Services/Implementation/WorkItems/FetchFingerprint.cs` | **EXTEND** | One registered property under *how the answer is read*, so changing the setting forces a full re-download | 04 |
 | `DependencyReconciler` | `Services/Implementation/Dependencies/DependencyReconciler.cs` | **CREATE NEW** | The one writer. Replaces a Feature's references wholesale; dedupes; keeps a self-reference so the loop warning can name it | 01 |
-| `IDependencyHonourPolicy` / `DependencyHonourPolicy` | `Services/{Interfaces,Implementation}/Dependencies/` | **CREATE NEW** | The single honour-ability decision, pure. The `${honour-ability verdict}` shared artifact. Epic #5792 consults it; it is written here | 02 |
+| `IDependencyHonourPolicy` / `DependencyHonourPolicy` | `Services/{Interfaces,Implementation}/Dependencies/` | **CREATE NEW** | The single honour-ability decision, pure. The `${honour-ability verdict}` shared artifact. Epic #5792 consults it; it is written here. Its input gains the ignore flag in slice 04, beside the licence field it already carries (SA-14, SA-17) | 02, 04 |
 | `DependencyCycleDetector` | `Services/Implementation/Dependencies/DependencyCycleDetector.cs` | **CREATE NEW** | Iterative DFS over the edge set — iterative because a long chain must not be a stack overflow in a background service | 02 |
-| `HonouredDependencies`, `DependencyVerdict`, `NotHonouredReason` | `Models/Dependencies/` | **CREATE NEW** | Immutable verdict set; closed reason enum so no caller can invent a fifth reason or default to "probably fine" | 02 |
+| `HonouredDependencies`, `DependencyVerdict`, `NotHonouredReason` | `Models/Dependencies/` | **CREATE NEW** | Immutable verdict set; closed reason enum — five members: `OutsideThisPortfolio`, `InALoop`, `BlockerCannotBeForecast`, `NotLicensed`, `IgnoredByPortfolio` — so no caller can invent a sixth or default to "probably fine". `NotLicensed` is unreachable in this epic (D9: nothing here is gated) and `IgnoredByPortfolio` is declared in slice 02, produced from slice 04 | 02, 04 |
 | `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** | Reads dependency relations from the response it already fetches; the early return now needs **both** overrides set | 01 |
 | `WorkItemExtensions` | `…/AzureDevOps/WorkItemExtensions.cs` | **EXTEND** | `ExtractDependencyReferences` beside `ExtractParentFromWorkItem`, walking the same `Relations` | 01 |
 | `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** | Reads `issuelinks` off the response the data fetch already returns — no `fields=` change on either deployment; inward links only; emits `dependency.jira.unknown_link_type` when it recognises none | 03 |
@@ -876,7 +979,7 @@ existing layout.
 | `WarningsIndicator` | `…/FeatureListDataGrid/WarningsIndicator.tsx` | **EXTEND** | Accepts a list of dependency warnings alongside the two existing kinds; still renders the green check when there are none | 02 |
 | `DependencyDialog` | `…/Common/DependencyDialog/DependencyDialog.tsx` | **CREATE NEW** | Row-opened list following the existing work-items dialog pattern | 02 |
 | `IFeature` | `Lighthouse.Frontend/src/models/Feature/…` | **EXTEND** | `dependsOnCount`, `dependencyWarnings` | 01, 02 |
-| Portfolio advanced settings | `…/pages/Portfolios/Edit/…` | **EXTEND** | Dependency-field selector beside the parent-override selector | 04 |
+| Portfolio advanced settings | `…/pages/Portfolios/Edit/…` | **EXTEND** | Dependency-field selector beside the parent-override selector, and the ignore-dependencies switch beside it | 04 |
 | `ForecastService` | `Services/Implementation/Forecast/ForecastService.cs` | **NO CHANGE** | Named explicitly. Every change to this file belongs to Epic #5792 | — |
 | `SimulationResult` | `Models/SimulationResult.cs` | **NO CHANGE** | As above | — |
 | `useLicenseRestrictions` | `Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts` | **NO CHANGE** | Nothing in this epic is licence-gated | — |
@@ -957,6 +1060,7 @@ introduced.
 | **SA-13** | Cycle detection runs over the whole edge set inside that policy, iteratively, writing nothing. No stored cycle flag | **OQ-5**; refines D7 | 158 |
 | **SA-14** | The premium licence is a **field of the policy's input**, not a branch around the mechanic. On this epic's own the field is unread, because no verdict has a forecast consequence yet; Epic #5792 turns it on. Designing it in now is what keeps that epic's AC-6.2 structural rather than retrofitted | D9 | 158 |
 | **SA-16** | `FeatureDto` carries `DependsOnCount` and `DependencyWarnings` (reason code + blocker name); the full edge list comes from a separate route when the dialog opens. **The DTO never carries a rendered sentence** | The DTO shape the delta asked DESIGN to settle | 159 |
+| **SA-17** | Ignoring dependencies is a **field of the honour policy's input**, exactly as the premium licence is (SA-14) — never a branch around ingestion and never a check inside the forecast. Epic #5792 consumes the honoured set and needs no knowledge of the setting | **D16**; KPI-5 | 158 |
 
 SA-1 through SA-7 and SA-15 describe the forecasting mechanic and live in Epic #5792's delta, with
 ADRs 154, 155, 156 (deferred) and 159. ADRs 157 and 158 are this epic's.
@@ -979,7 +1083,7 @@ its verdict. Contract shape and mutation universe per DDD-4.
 | `JiraWorkTrackingConnector` / `LinearWorkTrackingConnector` | **EXTEND** | One field-list entry and one GraphQL selection respectively; both are additive to an existing request |
 | `ServiceNowWorkTrackingConnector` / `CsvWorkTrackingConnector` | **NO CHANGE** | `GetFeaturesForProject` throws `NotSupportedException` (`:751-757`). ServiceNow has no Features, so there is nothing for a dependency to be between. The field override does not rescue them: it changes where a reference is read from, not whether the objects it points at exist |
 | `IWorkItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId` | **PATTERN REUSED, NOT EXTENDED** | The override mechanism is copied; the field is declared on `Portfolio` instead, beside `FeatureOwnerAdditionalFieldDefinitionId`, because a Team-level setting would have no consumer and `FetchFingerprint` already records that reasoning for its two siblings |
-| `FetchFingerprint` | **EXTEND** | One property, in the *how the answer is read* group, so the setting change forces a re-download exactly like the parent override does |
+| `FetchFingerprint` | **EXTEND, ONCE ONLY** | One property for the dependency field, in the *how the answer is read* group, so that setting change forces a re-download exactly like the parent override does. The ignore switch pointedly does **not** join it (AC-10.6): nothing about what is fetched depends on it, and registering it would re-download the whole Portfolio on every toggle of a what-if |
 | `IFeatureOrdering` | **READ, NOT EXTENDED** | This feature consumes the total order for the ranked-below advisory. It writes no rank under any circumstance (ADR-132/134; epic #5375's whole premise) |
 | `FeatureRepository.GetAll` | **EXTEND** | One `Include` on the existing chain; split queries are already configured globally |
 | `ILicenseService.CanUsePremiumFeatures` | **DESIGNED FOR, NOT READ** | The policy input carries the flag (SA-14) so Epic #5792 does not have to re-cut the type. No call site in this epic reads it |
@@ -1282,8 +1386,9 @@ Epic #5792 only.
 
 ## Wave: DISTILL / [REF] Scenario List (tags)
 
-Scenario SSOT is `docs/feature/epic-4365-dependencies/acceptance/*.feature`. Six files, **44
-scenarios**. Every scenario carries a `@contract-shape:` tag.
+Scenario SSOT is `docs/feature/epic-4365-dependencies/acceptance/*.feature`. Six files, **50
+scenarios** (44 at DISTILL, plus six for US-10 on 2026-08-18). Every scenario carries a
+`@contract-shape:` tag.
 
 | # | Scenario | File | Tags | ACs |
 |---|---|---|---|---|
@@ -1331,14 +1436,20 @@ scenarios**. Every scenario carries a `@contract-shape:` tag.
 | 42 | The setting works on an instance with no premium licence, and moves no date | milestone-4 | `@edge @us-04` · unbounded-preservation | AC-4.7 (D9) |
 | 43 | Adding dependency information to an instance changes no forecast anywhere (× 4 slices) | epic-boundary | `@regression @kpi @architecture @slice-01..04` · unbounded-preservation | **AC-1.10 / KPI-8, at every slice** |
 | 44 | The forecasting code is not touched by this epic at all | epic-boundary | `@regression @architecture @slice-01..04` · unbounded-preservation | the boundary as a structural claim |
+| 45 | Setting the dependencies aside leaves every one of them in plain sight | milestone-4 | `@driving_adapter @us-10` · pure-function | AC-10.1 |
+| 46 | Nothing is warned about while the dependencies are set aside | milestone-4 | `@edge @driving_adapter @us-10` · pure-function | AC-10.2 |
+| 47 | The switch takes hold without a refresh, and putting it back changes nothing | milestone-4 | `@regression @us-10` · unbounded-preservation | AC-10.3, AC-10.4, AC-10.6 |
+| 48 | A dependency another Portfolio still honours keeps the verdict it had | milestone-4 | `@edge @us-10` · pure-function | **AC-10.5 — the many-to-many rule** |
+| 49 | The switch is offered per Portfolio, unlicensed, and starts off everywhere | milestone-4 | `@rbac @us-10` · pure-function | AC-10.7 |
+| 50 | A loop is still found while the dependencies are set aside | milestone-4 | `@error @us-10` · pure-function | **AC-10.8 — the hang guard must not go quiet** |
 
-**Error / edge / regression coverage = 29 / 44 = 66%** — comfortably above the ≥40% target. Every one
+**Error / edge / regression coverage = 33 / 50 = 66%** — comfortably above the ≥40% target. Every one
 of the journey's eight `error_paths` has at least one scenario (#17 outside-Portfolio, #19 loop, #21
 no measured delivery, #5 not-a-Feature, #6 link removed, #38 typo, #15 unreadable Feature, #42 no
 licence).
 
-**AC traceability**: all 35 acceptance criteria (AC-1.1…1.10, 2.1…2.5, 3.1…3.6, 4.1…4.7, 9.1…9.7) are
-covered. Four scenarios (#10, #24, #29, #40) carry no AC number — they come from DESIGN's
+**AC traceability**: all 43 acceptance criteria (AC-1.1…1.10, 2.1…2.5, 3.1…3.6, 4.1…4.7, 9.1…9.7,
+10.1…10.8) are covered. Four scenarios (#10, #24, #29, #40) carry no AC number — they come from DESIGN's
 *Architectural Enforcement* table and F-4's second call site, and are the reason those rows exist.
 
 **Out of scope, deliberately unwritten**: US-05…US-08, D2, D3, SA-1…SA-7, SA-15, ADRs 154/155/156/159,
@@ -1383,7 +1494,7 @@ Identifier gaps are the split, not an omission.
 | Jira connector — the widened field list carrying `issuelinks` | YES | #26, #29, #30, #33, #34 |
 | Linear connector — the dependencies selection and its identifier case | YES | #27, #28, #33, #34 |
 | Dependency storage on the Feature (new collection + additive migration, SQLite and Postgres) | YES | #2, #6 (reconcile replaces wholesale), #7 (synced values untouched), #37 |
-| Fetch fingerprint | YES | #40 |
+| Fetch fingerprint | YES | #40 (the dependency field belongs in it) and #47 (the ignore switch pointedly does not) |
 | Feature read path (the new collection joining the existing include chain) | YES | #3, #25 |
 | Feature ordering (read only, owned by epic #5375) | YES | #18 |
 | ServiceNow and CSV connectors | YES — negative | #32, which asserts they yield nothing and error about nothing |
@@ -1401,9 +1512,10 @@ Zero **NO — MISSING** rows.
 | `GET /api/{v1,latest}/features/{id}/dependencies` (new, read-only) | #12–#16 — real host; #16 also asserts no write route exists at all |
 | Features view `/features` (UI, epic #5375's surface) | **#1 walking skeleton** (Playwright through the real browser, via the existing `FeaturesPage` Page Object), plus #3, #4, #8, #17–#23, #33 |
 | Portfolio detail Feature list (UI) | #3, #33 — the same column factory, asserted by the column being defined once |
-| Dependency dialog (UI, opened from the row) | #12–#16, #35, #38 |
-| Dependency warnings in the existing warnings column (`WarningsIndicator`) | #17–#23 |
+| Dependency dialog (UI, opened from the row) | #12–#16, #35, #38, #45, #50 |
+| Dependency warnings in the existing warnings column (`WarningsIndicator`) | #17–#23, and #46 for the silence the ignore switch buys |
 | Portfolio → Settings → Advanced → dependency field selector (UI) | #35, #41 |
+| Portfolio → Settings → Advanced → ignore-dependencies switch (UI) | #45, #46, #47, #49 |
 
 Zero uncovered entry points. Every UI row is exercised through the real user interface, never by
 calling the component that backs it.
@@ -1427,7 +1539,7 @@ existing file beside it.
 | Reconciler (the one writer) | `…/Services/Implementation/Dependencies/DependencyReconcilerTest.cs` | `Services/Implementation/` unit tree |
 | Model | `Lighthouse.Backend.Tests/Models/FeatureDependencyReferenceTest.cs` | `Models/FeatureTest.cs`, `Models/BlockedCountSnapshotTests.cs` |
 | Architecture seam — one honour decision, one writer, no *blocked*, forecast untouched | `Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs` | `FeatureOrderingSingleSourceArchUnitTest.cs`, `LicenseGateSingleSourceArchUnitTest.cs`, `BlockedItemSinglePathArchUnitTest.cs` |
-| Fetch fingerprint guard | `Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs` — **EXTEND** | itself; the guard already records why each registered property is there |
+| Fetch fingerprint guard | `Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs` — **EXTEND** | itself; the guard already records why each registered property is there. It gains the dependency field and, separately, the assertion that `IgnoreDependencies` is **absent** — the one setting on that form that must not force a re-download (AC-10.6) |
 | Expand-only migration guard | `Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs` — no change needed | itself |
 | Frontend — the column | `Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx` | `columns.position.test.tsx` (the same file's previous new-column slice) |
 | Frontend — the warnings | `…/FeatureListDataGrid/WarningsIndicator.test.tsx` — **EXTEND** | itself |

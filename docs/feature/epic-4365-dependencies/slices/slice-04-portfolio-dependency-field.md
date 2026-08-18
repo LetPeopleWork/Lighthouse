@@ -1,6 +1,7 @@
-# Slice 04 — Read dependencies from the field this Portfolio actually uses (free)
+# Slice 04 — The two dependency settings a Portfolio owns (free)
 
-**Feature**: epic-4365-dependencies · **ADO**: Epic #4365 · **Stories**: US-04 · **Estimate**: ~5h
+**Feature**: epic-4365-dependencies · **ADO**: Epic #4365 · **Stories**: US-04, US-10 ·
+**Estimate**: ~7h
 **Reference class**: `ParentOverrideAdditionalFieldDefinitionId` end to end — the setting on
 `IWorkItemQueryOwner:27`, its selector in the Portfolio settings form, its carry-through in
 `PortfolioExtensions.cs:31` and `FetchFingerprint.cs:38`, and its read path at
@@ -11,7 +12,13 @@ time, with one difference (D15).
 
 A Portfolio whose teams record dependencies in a custom field rather than the tracker's built-in link
 gets the whole feature — column, dialog, warnings, and whatever the forecast does with them once
-Epic #5792 ships — by naming that field once.
+Epic #5792 ships — by naming that field once. And a Portfolio that wants to try a plan without its
+dependencies can set them aside without hiding or deleting a single one.
+
+Two settings, one form, one migration, one permission. **~7h, which is over the ≤6h dispatch target**
+and is a stated exception rather than an oversight: splitting them ships two controls to the same
+settings page in two releases. If the slice runs long, US-10 is the clean cut — it depends on slice 02
+and on nothing in US-04.
 
 ## IN scope
 
@@ -35,12 +42,39 @@ Epic #5792 ships — by naming that field once.
   nothing until an unrelated change forces a refresh.
 - Free on every instance (D9) — it feeds detection, and detection is free.
 
+### US-10 — Ignore dependencies (D16)
+
+- `IgnoreDependencies` on `Portfolio`, non-null, default false, in the same additive migration.
+- **A field of the honour policy's input**, exactly where the premium licence already sits (SA-14,
+  SA-17). Not a branch around ingestion, not a check in the forecast: Epic #5792 consumes the honoured
+  set and never learns this setting exists. Edges keep being read, stored and shown; they are simply
+  never honoured.
+- `IgnoredByPortfolio`, a fifth member of `NotHonouredReason`, which **takes precedence** over the
+  three data reasons when more than one applies. `NotLicensed` stays outermost — it describes the
+  instance, not the plan — and is unreachable in this epic anyway (D9). Cycle detection keeps running regardless — the verdict a Feature carries the
+  moment the switch goes back off must be the one it would have had all along.
+- **No warning** while it is on. A deliberate choice is not a broken link, and a warning on every
+  Feature in the Portfolio teaches the reader to stop reading the column slice 02 exists to fill.
+- The many-to-many rule: an edge is un-honoured by the switch only when **every** Portfolio containing
+  both of its ends has it set (D16). Otherwise one Portfolio's what-if would rewrite another's plan.
+- The switch beside the dependency-field selector, same permission, effective on the next read — no
+  refresh, no re-download.
+- **`FetchFingerprint` deliberately does NOT learn this one.** Its two siblings on this form belong
+  there, so leaving it out looks like the bug; it is the opposite. Nothing about what is fetched
+  depends on it, and registering it would re-download the whole Portfolio on every toggle of a
+  what-if. Asserted directly (AC-10.6).
+
 ## OUT of scope
 
 - Any per-Feature authoring of a dependency inside Lighthouse. Rejected under D4 and not in this epic
   in any form.
 - A configurable separator (D15 fixes comma and semicolon).
 - The same override on a Team. Features are fetched per Portfolio, so the Team owner has no consumer.
+- A global or per-Feature "ignore dependencies". A global one has no owner and no place to be seen
+  from; a per-Feature one is a suppression, which is Lighthouse authoring dependency data by the back
+  door (D4).
+- Any forecast consequence of ignoring. There is none to have in this epic; the setting starts paying
+  the day Epic #5792 ships, and needs nothing there.
 - Jira and Linear override support beyond what falls out of the shared port — their standard links
   land in slice 03, and the override is connector-agnostic by construction.
 
@@ -56,6 +90,13 @@ If it fails, the slice needs a normalisation step — parse a URL down to its id
 is a second slice, not a bigger version of this one.
 
 **Confirms**, if it holds, that a third override of this shape is a copy of a known pattern.
+
+**US-10's own hypothesis** — **disproves** "ignoring is a read-time verdict" **if** any consumer turns
+out to need the edge set itself to be empty rather than un-honoured. If it fails, the setting has to
+move into ingestion after all, and everything the delta rejected on 2026-08-18 (deleting stored edges,
+a fingerprint entry, a re-download per toggle, a column that reads the same as an instance with no
+dependencies at all) comes back with it. Cheapest place to find out is here, one epic before anything
+honours a dependency.
 
 ## Why this slice exists (and what it is NOT for)
 
@@ -82,6 +123,15 @@ AC-4.1 … AC-4.7 verbatim from `feature-delta.md`. The three that carry the sli
 - With the override set, the connector performs **no** relation fetch (AC-4.2).
 - With the override unset, behaviour is byte-identical to slices 01-03 (AC-4.5).
 
+AC-10.1 … AC-10.8 verbatim from `feature-delta.md`. The three that carry US-10:
+
+- With the switch on, the count and the dialog are identical to the switch being off, and every entry
+  reads *ignored for this Portfolio* (AC-10.1).
+- The switch takes effect on the next read; nothing is deleted, nothing re-downloaded, and toggling
+  back restores every verdict (AC-10.3, AC-10.4).
+- An edge whose ends share a Portfolio that has **not** set the switch keeps the verdict it had
+  (AC-10.5).
+
 ## Dependencies
 
 Slices 01-03 — this slice changes where edges come from and nothing about what happens to them.
@@ -94,6 +144,11 @@ Same day: on `:5169`, define an additional field on the ADO connection, put a de
 two Features, point one Portfolio at it, refresh, and confirm the column matches what the standard
 links produced for the same pair. That comparison is the strongest evidence available without a real
 user's instance.
+
+US-10 has no such weakness — it is dogfoodable directly. `:5169` already carries 11 real relations over
+7 Features, including the epic split itself (#5792 → #4365). Turn the switch on, confirm all 11 stay
+visible and every one reads as ignored, confirm the warnings column goes quiet, turn it off and confirm
+every verdict comes back. No fixture, no hand-made field.
 
 ## Commit gate
 

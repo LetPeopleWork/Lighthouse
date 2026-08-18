@@ -33,13 +33,14 @@ implementation that both consumers call.**
 ### Layer 1 — honour-ability, decided once, by `IDependencyHonourPolicy`
 
 A pure function from a `DependencyContext` to a set of per-edge verdicts. The context carries the
-Features in scope with their Portfolios, ranks and stored references, the licence flag, and a predicate
-naming which Features can be simulated at all. The verdict per edge is `Honoured`, or `NotHonoured`
-with one reason from a closed set: `OutsideThisPortfolio`, `InALoop`, `BlockerCannotBeForecast`,
-`NotLicensed`. `BlockerRankedBelow` is carried alongside as an advisory that does **not** change
-honouring, because Lighthouse never reorders to satisfy a dependency.
+Features in scope with their Portfolios, ranks and stored references, the licence flag, the per-Portfolio
+ignore flag, and a predicate naming which Features can be simulated at all. The verdict per edge is
+`Honoured`, or `NotHonoured` with one reason from a closed set: `OutsideThisPortfolio`, `InALoop`,
+`BlockerCannotBeForecast`, `NotLicensed`, `IgnoredByPortfolio`. `BlockerRankedBelow` is carried
+alongside as an advisory that does **not** change honouring, because Lighthouse never reorders to
+satisfy a dependency.
 
-Four points that are part of the decision:
+Five points that are part of the decision:
 
 1. **Cycle detection lives inside the policy, not in the sync, and writes nothing.** A stored cycle
    flag would be a second source of truth for half of the verdict, which is the thing this ADR exists
@@ -53,13 +54,29 @@ Four points that are part of the decision:
    dependency-free run is *structural* rather than a code path that could be half-applied. Detection,
    the count, the dialog, the warnings and the Portfolio's dependency-field setting stay free.
 
-3. **The two consumers differ in exactly one input, and the difference is named.** The read path passes
+3. **Ignoring is a second field of the context, for the same reason the licence is one** (added
+   2026-08-18). A Portfolio may set its dependencies aside while trying out a different order of its
+   Features, and it does so without hiding or deleting any of them: every edge is still read, stored
+   and shown, and every one comes back `NotHonoured(IgnoredByPortfolio)`. Skipping ingestion instead
+   would have made an ignored Portfolio's column read exactly like an instance that has no
+   dependencies at all, would have needed stored edges deleted to turn on and a full re-download to
+   turn off, and would have taken from the reader the one thing worth seeing — what they chose to set
+   aside.
+
+   `IgnoredByPortfolio` takes precedence over the three data reasons; `NotLicensed` stays outermost,
+   because it describes the instance rather than the plan. Cycle detection keeps running while the
+   switch is on, so the verdict an edge carries the moment the switch goes back off is the one it
+   would have had all along. And because a Feature may belong to several Portfolios, an edge is
+   ignored only when **every** Portfolio containing both of its ends has the switch set — otherwise
+   one Portfolio's what-if would rewrite another Portfolio's plan.
+
+4. **The two consumers differ in exactly one input, and the difference is named.** The read path passes
    `feature => feature.CanBeForecast`, which reads the last completed run. The forecast path passes
    `feature => run covers every one of its teams`, which is live. They differ because a Portfolio page
    has no run in flight and a run has no interest in last night's answer; everything else — the
    Portfolio rule, the loop rule, the rank advisory, the licence — is the same call on the same code.
 
-4. **`ForecastService` does not construct verdicts.** It receives a `HonouredDependencies` value object
+5. **`ForecastService` does not construct verdicts.** It receives a `HonouredDependencies` value object
    and consults it. An ArchUnitNET rule keeps `Lighthouse.Backend.Services.Implementation.Forecast`
    free of any dependency on the cycle detector, the reason enum's construction, or the ordering
    service — so there is nowhere else the verdict *could* be decided.

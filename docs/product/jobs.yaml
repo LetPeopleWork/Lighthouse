@@ -5442,6 +5442,56 @@ jobs:
         for the instances it applies to it is worth 5, and for the rest it is worth nothing. Current
         satisfaction: 0 — such an instance sees an empty column with no explanation. Gap: 4.
 
+  - id: job-lead-plan-without-the-dependencies
+    title: Try a plan with the dependencies set aside
+    persona: delivery-lead-rte
+    feature_context: epic-4365-dependencies
+    created: 2026-08-18
+    note: >
+      Added 2026-08-18, after the epic's DISTILL wave, at the maintainer's request. It is small in this
+      epic — nothing honours a dependency here, so setting them aside changes only what the dialog says
+      — and it is the point of the setting once Epic #5792 ships: a lead re-ordering Features to see
+      what a different plan looks like does not want the forecast arguing back on every move.
+
+      The setting deliberately does NOT stop dependencies being read. Not reading them would make
+      "ignored" and "none" the same empty column — the confusion this epic already refuses for
+      unresolvable references — and it would make the switch delete stored data and need a full
+      re-download to undo. Ignoring is a read-time verdict instead: everything stays visible, nothing
+      is acted on.
+    job_story: >
+      When I am trying out a different order of Features to see what plan it produces, I want to set
+      the dependencies aside without deleting them, so I see the plan I asked for rather than the one
+      the dependencies allow.
+    dimensions:
+      functional: >
+        A per-Portfolio switch that makes every dependency in it un-honoured, while the count, the
+        list and the source of each stay exactly where they were.
+      emotional: >
+        Move from "the tool keeps correcting me" to "I asked a what-if question and got an answer".
+      social: >
+        Present a scenario without having to explain why the tool disagrees with the slide.
+    forces:
+      push: >
+        Once Epic #5792 ships, every re-order is argued with by a forecast that honours dependencies,
+        and the only way out is editing links in the tracker — changing the real plan to ask a
+        hypothetical question.
+      pull: >
+        One checkbox on the Portfolio, effective on the next page load, with nothing deleted.
+      anxiety: >
+        "Will I forget it is on and read a wrong forecast?" Mitigated because the state is on every
+        dependency entry in the dialog, not only on a settings page nobody revisits.
+      habit: >
+        Leads already re-order Features by hand (epic #5375); this is the switch that turns that
+        re-ordering into a question with an answer.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 0
+      gap: 3
+      rationale: >
+        Importance: 3 in this epic, where nothing honours a dependency yet, and 5 once Epic #5792 makes
+        them move dates. Current satisfaction: 0 — there is no way to ask the question today at all.
+        Gap: 3, and it grows the day the forecast half ships.
+
   - id: job-lead-see-where-the-dependency-chain-breaks
     title: Find the dependencies Lighthouse cannot act on
     persona: delivery-lead-rte

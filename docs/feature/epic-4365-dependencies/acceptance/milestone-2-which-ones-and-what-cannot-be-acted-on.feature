@@ -37,8 +37,13 @@ Feature: Which Features exactly, and which of those Lighthouse cannot act on (Ep
     When the product owner opens what "Checkout redesign" is waiting on
     Then the entry for "Warehouse sync" is marked as one Lighthouse cannot act on
     And the reason given is that it is outside this Portfolio
-    And the reason is one of exactly three: outside this Portfolio, part of a loop,
-      or the Feature it waits on cannot be forecast
+    And the reason is one of exactly four this epic can produce: outside this Portfolio, part of a
+      loop, the Feature it waits on cannot be forecast, or this Portfolio ignores dependencies
+    # The fourth cannot occur before Slice 04 gives a Portfolio the switch that produces it, and the
+    # closed set holds a fifth — not licensed — that nothing in this epic can reach, because nothing
+    # in this epic is licensed. They are all named because the set being closed is the point: a caller
+    # meeting a reason it has never heard of has to guess, and the guess this feature exists to
+    # prevent is "probably fine".
 
   @error @driving_adapter @us-02 @slice-02 @contract-shape:pure-function
   Scenario: A Feature the reader may not see is named as withheld, never quietly dropped

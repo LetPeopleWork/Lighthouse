@@ -56,6 +56,7 @@ journeys:
       - job-po-see-what-a-feature-is-waiting-on
       - job-lead-see-where-the-dependency-chain-breaks
       - job-config-admin-point-at-the-field-that-carries-dependencies
+      - job-lead-plan-without-the-dependencies
 
     emotional_arc:
       start: >
@@ -243,6 +244,30 @@ journeys:
           The reverse direction is derived by inverting stored references rather than fetched, which
           would double the request cost to learn something already held.
 
+      - id: D16
+        question: Can a Portfolio work without its dependencies for a while?
+        decision: >
+          Yes, and without hiding or deleting them. A per-Portfolio "ignore dependencies" switch makes
+          every edge in that Portfolio un-honoured: the count, the dialog, the source and the resolved
+          blockers all stay exactly as they are, and the one honour policy answers "no" for every edge
+          with a reason of its own — IgnoredByPortfolio, which takes precedence over the three data
+          reasons, while NotLicensed stays outermost because it describes the instance, not the plan.
+
+          Skipping ingestion while the switch is on was considered and rejected. It reaches the same
+          place for the forecast, since epic-5792 consumes the honoured set and nothing else, but an
+          ignored Portfolio's column would then read the same as an instance with no dependencies at
+          all — the confusion D15 already refuses for unresolvable entries — the switch would have to
+          delete stored edges to turn on and re-download everything to turn off, and the reader would
+          lose sight of what they chose to set aside.
+
+          No warning is raised while it is on: a deliberate choice is not a broken link, and a warning
+          on every Feature in the Portfolio teaches the reader to stop reading the column that exists
+          to be read. The dialog says it per entry instead.
+
+          Where a Feature belongs to more than one Portfolio, an edge is un-honoured by the switch only
+          when EVERY Portfolio containing both of its ends has it set — otherwise one Portfolio's
+          what-if would quietly rewrite another Portfolio's plan.
+
     shared_artifacts:
       - name: dependency edge
         source_of_truth: >
@@ -255,7 +280,9 @@ journeys:
           epic-5792 ships, its simulation's eligibility rule reads the same one. Two independent
           implementations — one for display, one for the forecast — is the failure mode the "exactly
           one place decides" KPI exists to catch, because it would show a warning that does not match
-          what the dates actually did. The split makes that KPI span two epics.
+          what the dates actually did. The split makes that KPI span two epics. The ignore switch (D16) is a FIELD of
+          that decision's input, beside the premium licence, so it adds no second decision point and
+          epic-5792 never learns the setting exists.
       - name: Feature order
         source_of_truth: >
           IFeatureOrdering, owned by epic-5375. Read here for the ranked-below warning. Never written

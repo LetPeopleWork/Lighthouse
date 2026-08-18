@@ -62,6 +62,7 @@ not restate the reasoning:
 | **D13 / D14** — ADO first, then Jira and Linear; ServiceNow and CSV out | Which instances have edges at all. This epic is connector-agnostic by construction: it reads stored references and never a payload |
 | **SA-12 / ADR-158** — one pure `IDependencyHonourPolicy`, written in #4365 slice 02 | The verdict this epic consults rather than re-deriving. **KPI-5 spans both epics**: a second decision point introduced here fails it |
 | **SA-14** — the licence is a field of the policy's input, not a branch around the mechanic | What makes AC-6.2 structural instead of a code path that has to be remembered |
+| **D16 / SA-17** — a Portfolio may ignore its dependencies; ignoring is a second field of that same input, added in #4365 slice 04 | **Nothing here.** That is the point: this epic consumes the honoured set, and a Portfolio that ignores its dependencies simply presents an empty one. No setting is read here, no branch is added, and no AC in this epic mentions the switch. It is why the switch was designed as a verdict rather than as skipped ingestion |
 | **#4365's prerequisites** — `:5169` restored from a real backup, real Predecessor links created in ADO with `az boards work-item relation add` | The awkward shapes (a loop, a throughput-less blocker, a cross-team pair, a ranked-below pair) this epic cannot be verified without |
 
 **Hard prerequisite**: Epic #4365 shipped through at least its slices 01 and 02. Without stored edges
