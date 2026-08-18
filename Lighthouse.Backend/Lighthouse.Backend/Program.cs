@@ -1217,6 +1217,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IFeatureOrderingPolicyProvider, FeatureOrderingPolicyProvider>();
             builder.Services.AddScoped<IFeatureOrdering, FeatureOrdering>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyReconciler, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyReconciler>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyHonourPolicy, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy>();
             builder.Services.AddScoped<IFeatureRankSeeder, FeatureRankSeeder>();
             builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();
             builder.Services.AddScoped<IFeatureMoveAuthorization, FeatureMoveAuthorization>();
