@@ -18,6 +18,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
 import {
 	createActiveWorkColumn,
+	createDependsOnColumn,
 	createFeatureOrderingActionsColumn,
 	createPositionColumn,
 	createWarningsColumn,
@@ -96,6 +97,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		createWarningsColumn(),
 		...(activeWorkColumn ? [activeWorkColumn] : []),
 		...surfaceColumns,
+		createDependsOnColumn(featuresTerm),
 		// The two surfaces that show a place are the two that let you change it (D10), so one flag names
 		// both and neither caller passes the menu in.
 		...(showPosition

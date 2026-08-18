@@ -131,6 +131,17 @@ export const createActiveWorkColumn = (
 	renderCell: ({ row }) => <ActiveWorkIndicator teams={getTeams(row)} />,
 });
 
+export const createDependsOnColumn = (
+	featuresTerm: string,
+): DataGridColumn<IFeature & GridValidRowModel> => ({
+	field: "dependsOnCount",
+	headerName: `Depends On ${featuresTerm}`,
+	width: 150,
+	sortable: true,
+	valueGetter: (_, row) => row.dependsOnCount,
+	renderCell: ({ row }) => <span>{row.dependsOnCount}</span>,
+});
+
 export const createParentColumn = (
 	parentMap: Map<string, ParentWorkItem>,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({
