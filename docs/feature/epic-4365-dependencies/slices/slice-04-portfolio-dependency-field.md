@@ -157,3 +157,26 @@ Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 ## Learning hypothesis verdict
 
 _Not yet run._
+
+## The tracker's cycle guard does not come with the override
+
+Azure DevOps refuses to store a dependency cycle — `TF201035`, transitively, measured 2026-08-18 (see
+the slice-02 brief). Every edge this epic reads from ADO relations therefore arrives pre-validated, and
+it is tempting to read that as "loops are somebody else's problem".
+
+**This slice is where that stops being true.** The override field is free text a Portfolio owner types:
+comma-separated references, no tracker validation of any kind, so `#A` can name `#B` while `#B` names
+`#A`, or a Feature can name itself. Jira has no guard either (`blocks` links close loops happily), and a
+reference resolving across two Portfolios can close a loop neither tracker sees whole.
+
+So the detection written in slice 02 is not belt-and-braces for ADO — it is the *only* guard on this
+path, and the one that keeps `while (GetRemainingItems() > 0)` terminating once Epic #5792 consumes the
+verdict. Two consequences for this slice:
+
+- The override's parse must feed the same `IDependencyHonourPolicy` as tracker links, not a shortcut
+  around it. KPI-5's one-decision rule is what makes that automatic.
+- A self-reference typed into the field must survive to the warning, which is why the dedup key is
+  `(FeatureId, ReferenceId)` rather than "targets other than me".
+
+Worth an explicit AC here: a loop typed into the override field warns on every member, and the
+dogfood evidence AC-3.3 could not get from ADO lands on this path instead.

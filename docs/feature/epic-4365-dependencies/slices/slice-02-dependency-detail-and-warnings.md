@@ -98,3 +98,53 @@ Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 ## Learning hypothesis verdict
 
 _Not yet run._
+
+## Prerequisite state, measured 2026-08-18 (before this slice ran)
+
+**Azure DevOps refuses to store a dependency cycle, and the guard is transitive.** Adding a Predecessor
+link that would close a loop fails with `TF201035: … would result in a circular relationship` — both for
+a two-item loop (`#4365` waits on `#5792`, which already waits on `#4365`) and for a three-hop one
+(`#5510 → #5511 → #5512 → #5510`, rejected on the closing link). So AC-3.3's loop **cannot** be
+dogfooded on ADO at any hop count, and this slice's loop scenario runs on fixtures.
+
+That does not make cycle detection speculative. Three real sources remain: Jira's `blocks` links carry
+no such guard (slice 03), the per-Portfolio dependency field is free text a user can point back at the
+Feature itself (slice 04, which is why the dedup key keeps a self-reference), and a reference that
+resolves across two Portfolios can close a loop that neither tracker sees whole. Detection ships here as
+planned; only its dogfood evidence moves to slice 03.
+
+Real ADO links created for this slice instead:
+
+| Feature | waits on | why it is here |
+| --- | --- | --- |
+| `#5510 Sizing Poker` | `#5511 Task Manager` | a two-hop chain, so the dialog shows a blocker that is itself waiting |
+| `#5511 Task Manager` | `#5512 Gitlab Integration`, `#5733 Opt-In Telemtry` | two blockers on one Feature, and `#5733` has no child Work Items at all — a genuinely unforecastable blocker on real data — the verdict half of AC-2.3, not AC-3.6, which is the terminology criterion |
+
+`#5512` and `#5733` carry only the mirrored Successor link and must still read empty, which keeps
+slice 01's direction guard under test as the edge set grows.
+
+Cross-Portfolio (AC-3.1) needs a blocker outside the Feature's own Portfolio; the `:5169` instance has
+one Portfolio today, so confirm during the dogfood step whether a second Portfolio is worth creating
+there or whether AC-3.1 also runs on fixtures. Say which in the verdict.
+
+## Contract deviations found while cutting the types (2026-08-18, step 01-01)
+
+Three places where the code that shipped departs from what an upstream document says, each deliberate:
+
+- **The reason set is closed at three values, not ADR-158's four.** `NotLicensed` is absent because the
+  licence half moved to Epic #5792 with the split, and nothing in this epic may ask a licence question.
+  The ADR text is stale on that point; #5792 adds the fourth value when it turns the flag on.
+- **The policy's input carries a `bool CanBeForecast` per Feature, not ADR-158's "predicate naming which
+  Features can be simulated".** Same information, materialised by the caller. It keeps the input a
+  genuinely inert projection — a `Func<>` in the contract would have been the one thing in the input able
+  to do work — and leaves the two consumers' one legitimate difference (last completed run versus live
+  run coverage) on their side of the call.
+- **`HasPremiumLicence` is declared but must never be read here, and nothing yet stops that.** The
+  shipped guard scans for `CanUsePremiumFeatures`, `LicenseGuard`, `ILicenseService` and
+  `useLicenseRestrictions` — none of which is the new property's name. The architecture rule must name it,
+  and must forbid the *read* while permitting the declaration, since the declaration site is the one place
+  it is legitimately mentioned.
+
+Also owed: `DependencyRefreshReporter` has no row in the Component Decomposition table. The two operator
+log events were added at the DISTILL review gate after DESIGN closed, and the honour policy is now
+rule-enforced pure, so the aggregation cannot live there. Write the row before the reporter ships.
