@@ -32,6 +32,17 @@ export class FeaturesPage {
 		return Number.parseInt(text, 10);
 	}
 
+	/**
+	 * How many other Features this row is waiting on, as the Depends On column renders it. Addressed
+	 * by the column the cell belongs to rather than by what it prints: a Feature that waits on nothing
+	 * gets a blank cell, so there is no text, dash or icon to look for.
+	 */
+	getDependsOnCell(featureName: string): Locator {
+		return this.getFeatureRow(featureName).locator(
+			'[data-field="dependsOnCount"]',
+		);
+	}
+
 	/** Epic 5375 slice 02 — the sequence itself, which is what "nothing moved" is judged against. */
 	async getListedFeatureNames(): Promise<string[]> {
 		const cells = await this.featureRows
