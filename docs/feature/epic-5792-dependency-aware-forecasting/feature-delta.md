@@ -192,13 +192,44 @@ Epic #4365's inventory and is not repeated.
   effect.** The hint ships here rather than in #4365 because a hint naming a capability nobody can buy
   yet is worse than no hint at all.
 
+- **[D10] One forecast per refresh batch, and it is this epic's to fix** (user, 2026-08-18). Discovered
+  while designing slice 02. Two paths trigger a Portfolio forecast and neither knows about the other:
+  `PortfolioUpdater` runs `UpdateForecastsForPortfolio` **inline** under the `(Features, portfolioId)`
+  key, invisible to the `(Forecasts, portfolioId)` admission check; and
+  `TeamDataRefreshedForecastTriggerHandler` fires the moment *one* Team finishes, which under **Update
+  All** is the moment the other Teams are still refreshing. A Portfolio therefore gets two or three
+  forecast executions per batch.
+
+  **Update All is the ordinary case, not an edge.** `TeamsController.update-all`,
+  `PortfoliosController.refresh-all`, the periodic refresh and the standalone offline auto-update all
+  fan out this way; the user reports hitting it first thing every morning.
+
+  **The redundant run is visible, not merely wasteful.** `RandomNumberService.GetRandomNumber` is
+  `new Random().Next(maxValue)` — unseeded — so two executions over byte-identical data return
+  different percentiles. The date settles and then changes again seconds later, for a reason no user
+  can see. This is *not* fixed by ADR-154: it deliberately keeps a fresh production seed per run, so
+  the only available cure is to stop running the second forecast.
+
+  **Why in this epic rather than a backlog.** D3 turns a forecast from one short task per team into one
+  joint run that lasts until the slowest team finishes. A redundant execution is cheap today and is not
+  cheap after slice 02, which makes this a prerequisite rather than adjacent cleanup — and the user is
+  explicit that it would not be prioritised standalone.
+
+  **Not in scope, and recorded rather than scheduled**: making the forecast deterministic (a constant
+  seed freezes one draw of sampling error into every date forever; an input-hash seed is a separate
+  epic whose failure mode — sticky dates that silently stop moving — is worse than the wobble), and
+  the cluster-awareness gap in the update queue's coalescing, which is written up as a Known Gap on
+  ADR-076 because every deployment is single-pod today.
+
 ---
 
 ## Wave: DISCUSS / [REF] Scope Assessment
 
 **Verdict: right-sized, and deliberately the riskier half.**
 
-Two slices, both premium, both inside `ForecastService`. The slicing rule that shaped them: the
+Three slices. Two are premium and inside `ForecastService`; slice 00 is `@infrastructure` in the
+update queue, added 2026-08-18 (D10) and touching no forecasting code. The slicing rule that shaped
+the other two: the
 `RunMonteCarloSimulation` restructure (D3) is **not** a slice — it is three precursor commits inside
 slice 02, because it has no user-visible output of its own by design.
 
@@ -389,6 +420,56 @@ hand and comparing them in a spreadsheet.
 
 ---
 
+### US-10 — One forecast per Portfolio per refresh batch
+
+`job_id: job-trust-the-date-i-am-looking-at` · persona `delivery-forecaster` · **slice 00** · no licence gate
+
+As a delivery forecaster, I want a refresh to produce one date rather than a sequence of them, so that I
+can trust the number on screen instead of waiting to see whether it settles.
+
+### Elevator Pitch
+Before: hit **Update All**, watch a Portfolio's dates land, then watch them change again a few seconds
+later — because two or three forecasts ran, and an unseeded simulation returns a different answer each
+time over identical data.
+After: one forecast per Portfolio per batch, one date.
+Decision enabled: reading a forecast the moment it appears, rather than refreshing twice to check.
+
+**Acceptance criteria**
+
+- **AC-10.1** An Update All across N Teams sharing one Portfolio runs exactly one Forecasts execution
+  for that Portfolio.
+- **AC-10.2** A Portfolio refresh and a Team refresh overlapping in time produce one forecast, not two.
+  `PortfolioUpdater`'s inline `UpdateForecastsForPortfolio` moves onto the shared
+  `(Forecasts, portfolioId)` key so the two paths can see each other at all.
+- **AC-10.3** Write-back volume per Portfolio refresh does not increase, asserted on the connector call
+  count. This is the number ADR-144 was written to protect, and splitting `PortfolioUpdater`'s single
+  flush is only safe because its two staging passes are disjoint by construction —
+  `ResolvePortfolioWriteBack` partitions mappings on `ForecastSources.Contains(m.ValueSource)`.
+
+---
+
+### US-11 — The forecast waits for the whole batch `@infrastructure`
+
+`job_id: infrastructure-only` · **slice 00**
+
+`infrastructure_rationale`: the debounce has no surface of its own — it is the mechanism US-10's
+acceptance criteria measure, and it ships in the same slice as the story that makes it observable. It
+is separated from US-10 because it changes `IUpdateStatusStore`, a shared port with two implementations,
+and that blast radius deserves its own commit and its own review.
+
+**Acceptance criteria**
+
+- **AC-11.1** A trigger raised while sibling work is in flight is **parked**, never dropped. The forecast
+  that eventually runs reflects every Team's refreshed data — dropping would lose the write that caused
+  the trigger, which is the failure the existing coalescing was built to avoid.
+- **AC-11.2** A Team update with no sibling work in flight still triggers its forecast immediately. The
+  debounce must add no latency to the single-Team case.
+- **AC-11.3** `IUpdateStatusStore` gains a per-Portfolio active-work query implemented in **both**
+  `InProcessUpdateStatusStore` and `RedisUpdateStatusStore`; `HasActiveWork()` is global and cannot
+  answer it.
+
+---
+
 ## Wave: DISCUSS / [REF] Story Map
 
 **Backbone** (user activities, left to right):
@@ -396,11 +477,12 @@ hand and comparing them in a spreadsheet.
 
 | Slice | Stories | Outcome shipped | Licence |
 |---|---|---|---|
+| **00** One forecast per refresh batch `@infrastructure` | US-10, US-11 | Update All produces one forecast per Portfolio, so a date stops changing twice for no visible reason | none — a queue fix, not a gated effect |
 | **01** Forecast jumps over a same-team blocker | US-05, US-06 | Dates that account for waiting — and honesty when they do not | premium (US-06's hint is what the unlicensed instance gets instead) |
 | **02** Joint simulation, cross-team | US-07 `@infrastructure` (three precursor commits), US-08 | The dependency kind that is actually most common | premium |
 
-**Slice composition gate**: both slices carry a user-visible value story. US-07 is precursor commits
-inside slice 02, not a slice.
+**Slice composition gate**: all three slices carry a user-visible value story — slice 00's is the date
+that stops moving on its own. US-07 is precursor commits inside slice 02, not a slice.
 
 **Re-numbered 2026-08-16** by the split: these were Epic #4365's slices 03 and 04. No slice content
 changed and no story or AC identifier moved.
@@ -419,15 +501,19 @@ changed and no story or AC identifier moved.
 
 ## Wave: DISCUSS / [REF] Prioritization
 
-1. **Slice 01** first because it is where the epic becomes true, and it is deliberately the *same-team*
+1. **Slice 00** first, and not because slice 01 needs it — it is cheapest to prove "one forecast per
+   batch" while a forecast is still the thing it is today. Landing it after slice 02 would mean
+   changing the trigger topology and the simulation loop inside the same window, and the wobble
+   measurement it carries wants a pre-restructure number.
+2. **Slice 01** because it is where the epic becomes true, and it is deliberately the *same-team*
    half: it proves the exclusion mechanic, cycle handling and termination against real data without
    touching `RunMonteCarloSimulation`. If D2 is wrong about capacity redistribution, this is the
    cheapest place to find out — before a simulation rewrite has been spent on it.
-2. **Slice 02** carries the highest technical risk (D3) and is sequenced after slice 01 has confirmed
+3. **Slice 02** carries the highest technical risk (D3) and is sequenced after slice 01 has confirmed
    the mechanic it generalises. Reversing them would mean debugging a new simulation loop and a new
    eligibility rule at the same time.
 
-**Dogfood cadence**: same-day on `:5169` for both slices, and each leaves a **before/after date
+**Dogfood cadence**: same-day on `:5169` for every slice, and each leaves a **before/after date
 comparison** in its brief. "The dates moved" is the only evidence that matters here and it does not
 appear in a test run.
 
@@ -616,6 +702,21 @@ layout. Everything under `Services/…/Dependencies/` is Epic #4365's and is con
 | `useLicenseRestrictions` | `Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts` | **NO CHANGE** | The existing premium signal is exactly what the hint needs | — |
 | `IDependencyHonourPolicy` | `Services/Interfaces/Dependencies/…` | **CONSUMED, NOT CHANGED** | Epic #4365's. A second implementation, or a second decision point here, fails KPI-5 for both epics | — |
 | `DependencyCycleDetector` | `Services/Implementation/Dependencies/…` | **CONSUMED, NOT CHANGED** | As above. No cycle logic enters the trial loop | — |
+| `IUpdateStatusStore` | `Services/Interfaces/Update/IUpdateStatusStore.cs` | **EXTEND** | One member: does any key in a caller-supplied set stand `Queued`. The existing global `HasActiveWork()` is untouched | 00 |
+| `InProcessUpdateStatusStore` | `…/BackgroundServices/Update/InProcessUpdateStatusStore.cs` | **EXTEND** | The new member over the injected `ConcurrentDictionary` | 00 |
+| `RedisUpdateStatusStore` | `…/BackgroundServices/Update/RedisUpdateStatusStore.cs` | **EXTEND** | The new member as one batched read of the `lighthouse:update-status` hash. This adapter runs only where Redis is configured, so a wrong answer here is invisible to every test that does not stand one up | 00 |
+| `ForecastUpdater` | `…/BackgroundServices/Update/ForecastUpdater.cs` | **EXTEND** | Overrides `TriggerUpdate`: reads the Portfolio's Team set, asks the store whether any sibling key is `Queued`, and calls `base.TriggerUpdate` when none is. One repository read per forecast trigger, in a scope the base class already knows how to create | 00 |
+| `UpdateServiceBase` | `…/BackgroundServices/Update/UpdateServiceBase.cs` | **EXTEND (one keyword)** | `TriggerUpdate` becomes `virtual`. Nothing else moves — the write-back flush contract in its `finally` is untouched | 00 |
+| `PortfolioUpdater` | `…/BackgroundServices/Update/PortfolioUpdater.cs` | **EXTEND (narrowed)** | The inline `UpdateForecastsForPortfolio`, the forecast write-back staging beside it and the `PortfolioForecastsUpdated` publish all leave; a trigger on `(Forecasts, portfolioId)` replaces them. Gains an `IForecastUpdater` dependency — singleton to singleton, and `ForecastUpdater` does not depend on `IPortfolioUpdater`, so no cycle | 00 |
+
+Slice 00 adds no type and touches nothing under `Services/…/Forecast/`. It lives one layer upstream, in
+the refresh queue that decides *how often* a forecast runs, which is why it appears in no C4 diagram this
+epic renders — the L3 diagram starts after the trigger it changes.
+
+`ForecastUpdater` is the only updater registered as a plain singleton and **not** also as a hosted
+service (`Program.cs:1259`, against `AddHostedService<PortfolioUpdater>()` + `AddSingleton<IPortfolioUpdater,
+PortfolioUpdater>()` at `:1256-1257`, which construct two instances). It is therefore the only updater
+with a single instance for a scheduling rule to live in.
 
 **Shared-artifact binding**: *per-trial completion state* → `TrialState` (this epic's only new owner).
 *honour-ability verdict* → `DependencyHonourPolicy`, owned by Epic #4365 and read here. *Feature order*
@@ -634,8 +735,20 @@ layout. Everything under `Services/…/Dependencies/` is Epic #4365's and is con
 
 ## Wave: DESIGN / [REF] Driven Ports and Adapters
 
-**Driven (extended):** none — no connector is touched, and no additional request is made to any
-tracker. This epic reads stored references and writes forecast histograms.
+**Driven (extended):** `IUpdateStatusStore`, in slice 00. It gains one member — does any key in a
+caller-supplied set stand `Queued` — and **both** adapters implement it: `InProcessUpdateStatusStore`
+over its injected `ConcurrentDictionary`, `RedisUpdateStatusStore` as a batched read of the
+`lighthouse:update-status` hash. The existing `HasActiveWork()` cannot answer the question. It scans the
+whole store, so on any instance with a second Portfolio or an unrelated Team it is true whenever anything
+anywhere is refreshing, and a debounce built on it would park every forecast behind every other update in
+the system.
+
+The port is shared across epics — `DatabaseMaintenanceGate` reads `HasActiveWork()`, and ADR-076's INV-1
+and INV-2 bind it — so the extension is additive by construction: no existing member changes signature or
+meaning.
+
+No connector is touched and no additional request is made to any tracker. Slices 01 and 02 read stored
+references and write forecast histograms.
 
 **Driven (new):** none. No new outbound integration, no new store, no new transport.
 
@@ -673,7 +786,20 @@ introduced.
 | **SA-15** | A blocker that cannot be simulated drops the edge; the dependent's dates are presented as an **earliest-possible**, and the row points at the blocker, which already reports unknown under ADR-112 | The ADR-112 / D8 interaction | [159](../../product/architecture/adr-159-un-forecastable-blocker-drops-and-the-date-reads-as-a-floor.md) |
 
 SA-8 through SA-14 and SA-16 describe ingestion, storage, the honour policy and the DTO, and live in
-Epic #4365's delta with ADRs 157 and 158. This epic consumes them.
+Epic #4365's delta with ADRs 157 and 158. This epic consumes them. SA-17 to SA-19 below are slice 00's,
+added 2026-08-18 with the slice.
+
+| # | Decision | Resolves | ADR |
+|---|---|---|---|
+| **SA-17** | **The debounce lives in `ForecastUpdater`, overriding `TriggerUpdate`.** Every forecast trigger reaches the queue through that one method — the three trigger handlers, both `ForecastController` routes, and slice 00's new `PortfolioUpdater` call — and `ForecastUpdater` is the only updater with a single instance to hold a rule in. Rejected: **(a)** putting it in `TeamDataRefreshedForecastTriggerHandler`, which covers one of the three handlers and leaves rank changes and ordering-policy changes undebounced; **(b)** a general "this key waits on those keys" concept in `UpdateQueueService.EnqueueUpdate` — the largest blast radius, and it grows the very class ADR-076's Known Gap already says is not cluster-safe. **Accepted cost**: a forecast-specific scheduling rule lands in a method inherited from `UpdateServiceBase`, and that method becomes `virtual` to allow it | D10; US-11 | — (ADR-076's orbit; see *No new ADR* below) |
+| **SA-18** | **Park on `Queued` siblings; ignore `InProgress`.** `TeamDataService.UpdateTeamData` publishes `TeamDataRefreshed` while `(Team, id)` is still `InProgress`, so a rule that parked on "Queued **or** InProgress" would park every trigger on its own execution and fire none. The single-reader consumer in `UpdateQueueService.StartProcessingQueue` awaits one task at a time, so the only `InProgress` key is the caller's own — which is what makes ignoring it correct rather than merely convenient. **This is parking, not dropping**: every key the debounce waits on is itself a forecast trigger source, so the last sibling to finish is the one that triggers. Rejected: returning without enqueueing, which loses the write that caused the trigger — the failure `pendingReruns` exists to avoid. The rule depends on a single consumer and does not survive N pods; that is ADR-076's Known Gap, referenced not designed | AC-11.1, AC-11.2 | — |
+| **SA-19** | **`PortfolioUpdater` triggers `(Forecasts, portfolioId)` instead of forecasting inline**, making `ForecastUpdater` the one caller of `IForecastService.UpdateForecastsForPortfolio`. The forecast pass then runs in its own execution with its own write-back flush. The **connector call count is unchanged**, which is the number AC-10.3 asserts and the number ADR-144 was written to protect: `ResolvePortfolioWriteBack` partitions mappings on `ForecastSources.Contains(m.ValueSource)`, one resolver taking the set and the other its complement, so the collector's last-stage-wins dedup never fired between the two passes and the shared flush was saving nothing. Consequence to know: `PortfolioForecastsUpdated` goes from two publishes per batch to one, which `DeliveryMetricSnapshotRecordingHandler` absorbs because its snapshot is day-keyed and idempotent | AC-10.2, AC-10.3 | [144](../../product/architecture/adr-144-writeback-collection-seam.md) |
+
+**No new ADR.** SA-17 to SA-19 are a scheduling rule inside one updater and a call-site move: they bind
+one class, one port member and one method, and nothing about them outlives the update queue as it stands.
+The decision a future reader will need — "is the update queue safe on N pods?" — is already written down,
+on ADR-076 under *Known Gap*, and SA-18 belongs to that gap's orbit rather than to a document of its own.
+SA-19's line not to cross is ADR-144's, and it is restated there.
 
 ---
 
@@ -696,6 +822,13 @@ Epic #4365's delta with ADRs 157 and 158. This epic consumes them.
 | `WarningsIndicator` | **EXTEND** | Additive by construction; Epic #4365 already widened it once for dependency warnings |
 | `AggregatedWhenForecast` for the delivery grain (ADR-113) | **NO CHANGE** | It consumes the aggregate and is indifferent to how the aggregate is produced |
 | ArchUnitNET test fixtures | **PATTERN REUSED** | Five existing seam tests; the new rules follow their shape |
+| `IUpdateStatusStore` | **EXTEND** | The port already owns "what state is this key in" and already answers a Queued-or-InProgress question over the whole store. The new member is the same question with the universe supplied by the caller. A separate per-Portfolio store would be a second place that knows which updates are in flight, and the two would disagree the first time one of them missed a `Remove` |
+| `ForecastUpdater` | **EXTEND** | It already is the one component that turns "this Portfolio's forecast is stale" into a queue entry. The rule about *when* that entry may be written belongs to whoever writes it. A separate debouncer would need every trigger site to remember to call it, which is the defect being fixed, one level up |
+| `PortfolioUpdater` | **EXTEND (narrowed)** | Work is removed, not added: three statements leave and one arrives. The Features refresh, the delivery-rule recompute and the feature write-back staging all stay exactly where they are |
+| `UpdateQueueService`'s `pendingReruns` coalescing | **COMPOSED WITH, NOT REPLACED** | The two solve different halves and both are needed. `pendingReruns` parks a trigger blocked by *its own key* and is what caps N Team triggers at two Forecasts executions today; the debounce parks a trigger blocked by *other* keys and takes that two to one. After slice 00 `pendingReruns` still catches the residual races the debounce cannot see — a rank change raised from a controller thread while a Team refresh is running, for instance. Nothing about it is removed, reworded or re-tuned |
+| `UpdateServiceBase.TriggerUpdate` | **EXTEND (one keyword)** | `virtual`, so one subclass can add a precondition. The alternative — a separate `TriggerUpdateDebounced` that callers must remember to prefer — makes the safe path opt-in, and the whole slice exists because a trigger path was easy to miss |
+| `IUpdateCompletionNotifier` | **DELIBERATE NON-REUSE** | It looks like the obvious signal for "a sibling finished, re-evaluate the parked trigger", and it is not one. `InProcessUpdateCompletionNotifier.Subscribe` returns a no-op subscription and `PublishCompletionAsync` returns `Task.CompletedTask` — it is a cross-pod path only, so on every deployment that exists today it never fires. Making it real would give `EnqueueAndAwaitAsync` a second in-process route to release its awaiters, which is a larger change than slice 00 buys. Named here because building the debounce on it would compile, pass a Redis-backed test and do nothing in production |
+| Any new class | **NONE CREATED** | Slice 00 is EXTEND throughout. No new type, no new port, no parallel mechanism, so there is no CREATE NEW row to carry evidence for |
 
 ---
 
@@ -768,6 +901,12 @@ and no external system.
 | Every trial terminates | Gold test with a loop, a throughput-less blocker and a cross-Portfolio edge all present in one run, asserting completion within the pre-epic p99 (KPI-4) |
 | An unlicensed instance is byte-identical to a dependency-free run | Gold test comparing percentiles with the licence off against the same data with the references removed (AC-6.2) |
 | The word *blocked* does not enter this feature | Structural test over the new backend types and a rendered-string assertion on the hint text (AC-6.4) |
+| **Slice 00** — no updater forecasts inline | ArchUnitNET: within `Services.Implementation.BackgroundServices.Update`, only `ForecastUpdater` may depend on `IForecastService`. This is the rule that stops the second call site growing back; the defect slice 00 fixes is precisely a second component forecasting where the admission check could not see it |
+| **Slice 00** — both status-store adapters answer the new query, and answer it the same way | A contract test parameterised over `InProcessUpdateStatusStore` and `RedisUpdateStatusStore`, following `UpdateStatusStoreTest`'s shape. Putting the member on `IUpdateStatusStore` makes a *missing* Redis implementation a build error, so what needs asserting is a present one that is wrong — a whole-hash scan instead of a keyed read, or a different reading of `Queued`. The Redis half runs only where a Redis is stood up, which is the gap that lets a wrong answer reach production unseen; DISTILL owns whether that runs in CI or as a dogfood step |
+| **Slice 00** — write-back volume per Portfolio refresh does not increase | Connector call count over a full Portfolio refresh, before and after, in the `QuietWriteBackAcceptanceTest` shape. Flush count rises from one to two by design; the assertion is on calls, not flushes, because the two staging passes are disjoint (AC-10.3) |
+| **Slice 00** — an Update All over N Teams in one Portfolio runs one Forecasts execution | Acceptance test counting `(Forecasts, portfolioId)` executions across a fanned-out refresh (AC-10.1) |
+| **Slice 00** — a lone Team refresh is not delayed | Acceptance test: one Team, no siblings admitted, forecast enqueued on the same trigger (AC-11.2). Without it the debounce can pass AC-10.1 by simply making every forecast late |
+| **Slice 00** — the `InProgress` exclusion has **no** automated enforcement | Stated rather than pinned. It holds because `UpdateQueueService` has one consumer, and there is no test that would fail if a second one appeared. A reader who needs to know why lives at ADR-076's *Known Gap*; a second consumer is the change that breaks SA-18 |
 
 ---
 
@@ -814,6 +953,39 @@ this epic's, and each needs the maintainer's confirmation before the affected sl
   declares a null team (ADR-111); the EF mapping needs confirming at the start of slice 02's fourth
   commit.
 
+- **OQ-9 — what counts as a sibling.** The debounce needs the set of keys whose completion could change
+  this Portfolio's forecast, and the two candidate relations are not the same relation.
+  `Portfolio.Teams` is **derived** — `Features → FeatureWork → Team` — while
+  `TeamDataRefreshedForecastTriggerHandler` fans out over `Team.Portfolios`, which is a persisted
+  many-to-many (`LighthouseAppContext.cs:259`). A Team linked to a Portfolio that contributes no
+  `FeatureWork` triggers a forecast while being invisible to a sibling set built from `Portfolio.Teams`,
+  and the reverse holds for a Team that contributes work without the link. **Recommendation**: build the
+  sibling set from the same relation the trigger fans out over, so the set that parks a trigger and the
+  set that raises it can never disagree — which means asking the Portfolio repository for the Teams whose
+  `Portfolios` contain it, not reading `Portfolio.Teams`.
+
+  The wider half of the question is that two of the three trigger handlers are not Team-scoped at all.
+  `FeatureRankChanged` and `FeatureOrderingPolicyChanged` are raised from a controller thread with no
+  Team refresh in flight, so a Team-keyed sibling set is empty for them and they trigger immediately.
+  That is today's behaviour and not a regression — `pendingReruns` still caps the result — but it means
+  the debounce is a *refresh-batch* rule, not a general "wait for anything that could move this date"
+  rule, and the ACs should say which one they are measuring.
+
+- **OQ-10 — a parked trigger whose last sibling never triggers.** SA-18 rests on every awaited key being
+  a trigger source. Two paths break that, both inside `TeamUpdater.Update`: the premium gate returns
+  before `UpdateTeamData` when an unlicensed instance has more than three Teams, and an exception inside
+  `UpdateTeamData` is caught and logged by `UpdateServiceBase.TriggerUpdate` after
+  `TeamDataService` has already skipped the `TeamDataRefreshed` publish. Today the first Team to finish
+  has already triggered the forecast, so a later Team failing costs nothing. After the debounce, if the
+  *last* Queued sibling is the one that fails, the Portfolio gets no forecast until the next periodic
+  refresh — and the other Teams' refreshed data is genuinely unreflected, so the forecast was owed.
+  **Recommendation**: drain the parked trigger from a path that runs on every terminal outcome rather
+  than only on success. `UpdateServiceBase.TriggerUpdate` already has a `finally` that always runs, which
+  is the same inherited method SA-17 already touches. Named here rather than decided because the choice
+  between a direct drain call and a domain event is a mechanism question DISTILL and the crafter are
+  better placed to settle, and because it may be cheaper to accept the residue for slice 00 and log it —
+  but not silently, which is what would happen if nobody chose.
+
 OQ-1, OQ-3, OQ-4, OQ-5, OQ-6 and OQ-8 concern ingestion, storage, the policy and the DTO, and are
 carried by Epic #4365.
 
@@ -824,8 +996,22 @@ carried by Epic #4365.
 **To**: `nw-acceptance-designer` (DISTILL) — full artifact set, together with Epic #4365's delta, which
 this one is not self-contained without. `nw-platform-architect` (DEVOPS) — the Outcome KPIs.
 
+Three slices, and slice 00 goes first. Its DESIGN was added on 2026-08-18, after slices 01 and 02 were
+already designed and reviewed; nothing in their design changed to accommodate it, because it sits
+upstream of the forecast rather than inside it.
+
 **Tightenings DISTILL should apply to the existing acceptance criteria**
 
+- **AC-11.3 names the query "active work"; the design narrows it to `Queued`.** Not a wording nit: a
+  query that counted `InProgress` would count the caller's own execution, park every trigger and fire
+  none (SA-18). Whatever the member is called, the acceptance criterion should measure the `Queued`
+  predicate over a caller-supplied key set, not "is anything active".
+- **AC-10.3 asserts connector calls, and must not be relaxed to flushes.** Slice 00 deliberately takes
+  the Portfolio refresh from one flush to two. The number that may not move is the number ADR-144 was
+  written to protect, and only the connector count is that number.
+- **AC-11.1's "reflects every Team's refreshed data" is conditional on OQ-10.** As designed it holds for
+  every Team that refreshed successfully. A Team whose refresh threw did not produce data to reflect, but
+  its siblings did — assert the parked trigger still fires, or record that it does not.
 - **AC-5.3, AC-7.1, AC-8.6** — "within Monte Carlo noise" can and should become **exact equality** for
   slice 02's first three commits, because the addressable draw stream lands first. Exactness is the
   point: a statistical assertion cannot distinguish "the restructure is correct" from "the restructure
@@ -840,7 +1026,9 @@ this one is not self-contained without. `nw-platform-architect` (DEVOPS) — the
 
 **Non-negotiable for mutation testing**: the eligibility predicate and the readiness aggregation. A
 surviving mutant there is a hang or a wrong date, not a metric. (The cycle detector and the honour
-policy carry the same rule in Epic #4365.)
+policy carry the same rule in Epic #4365.) Slice 00 adds one: the debounce predicate in
+`ForecastUpdater`. A mutant that flips it either drops a forecast or restores the redundant one, and
+both look like a passing refresh from outside.
 
 **Standing constraint, restated**: no commit lands without the maintainer's explicit approval, for the
 whole length of this epic, including test-only and refactor commits. This epic is the reason that
@@ -855,3 +1043,9 @@ Per-wave triggers were checked: the two load-bearing ADR interactions (110 and 1
 alternatives, evidence and a named fallback each, and the three open forks are
 stated-open-with-a-recommendation rather than ambiguities a reviewer could resolve without the
 maintainer.
+
+Re-checked on 2026-08-18 when slice 00's design was added, now covering three slices. The triggers were
+checked again and the verdict is unchanged: the debounce's two rejected alternatives are named with the
+reason each was rejected (SA-17), the one decision that could go wrong silently is stated with its
+recommendation rather than decided quietly (OQ-10), and the enforcement gap that has no test is written
+down as a gap (the `InProgress` exclusion) instead of being presented as covered.

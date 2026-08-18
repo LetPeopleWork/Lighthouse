@@ -5880,3 +5880,40 @@ before the affected slice is dispatched. The ones that change scope rather than 
 Plus three new open questions: the read path's honour-policy cost at instance scale (OQ-6), the EF
 mapping of the aggregate forecast histogram (OQ-7), and whether `FeatureDto`'s two additive fields
 trip the Lighthouse-Clients version gate (OQ-8).
+
+---
+
+## Application Architecture — one forecast per refresh batch (Epic #5792 slice 00)
+
+Two facts here bind code outside the epic that introduced them, which is why they are in the SSOT rather
+than only in `docs/feature/epic-5792-dependency-aware-forecasting/feature-delta.md`. Everything else
+about the slice — the debounce rule, its rejected alternatives, its open questions — lives there, under
+*Wave: DESIGN*, decisions SA-17 to SA-19.
+
+### `IUpdateStatusStore` is no longer closed at the shape ADR-076 froze
+
+The port gains one member: does any key in a **caller-supplied set** stand `Queued`. The existing
+`HasActiveWork()` is untouched and still global, and `DatabaseMaintenanceGate` still reads it. Both
+adapters implement the new member — `InProcessUpdateStatusStore` over its `ConcurrentDictionary`,
+`RedisUpdateStatusStore` over the `lighthouse:update-status` hash. ADR-076's INV-1 (monotonic progress)
+and INV-2 (bounded-stale reads) are unaffected: the new member reads and never advances.
+
+The Redis adapter runs only where Redis is configured, so an implementation that compiles and answers
+wrongly is invisible to any test that does not stand one up. Anything added to this port needs a contract
+test parameterised over both adapters, not a test of whichever one the suite happens to construct.
+
+### `IForecastService.UpdateForecastsForPortfolio` has exactly one caller
+
+`ForecastUpdater`. `PortfolioUpdater` used to call it inline, under the `(Features, portfolioId)` queue
+key, where the `(Forecasts, portfolioId)` admission check could not see it — so a Portfolio refresh and a
+Team-triggered forecast could not coalesce and each ran its own simulation. `PortfolioUpdater` now
+triggers the shared key instead. An ArchUnitNET rule pins it: within
+`Services.Implementation.BackgroundServices.Update`, only `ForecastUpdater` may depend on
+`IForecastService`.
+
+The consequence for write-back is worth knowing before touching either updater. The Portfolio refresh
+now flushes twice rather than once, and that is safe only because the two staging passes are disjoint by
+construction — `ResolvePortfolioWriteBack` partitions mappings on `ForecastSources.Contains(m.ValueSource)`,
+one resolver taking the set and the other its complement, so ADR-144's last-stage-wins dedup never fired
+between them. The number that may not increase is the **connector call count**, which is what ADR-144 was
+written to protect; flush count is not that number.
