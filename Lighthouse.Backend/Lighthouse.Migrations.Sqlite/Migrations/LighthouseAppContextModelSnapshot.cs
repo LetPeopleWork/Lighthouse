@@ -575,6 +575,30 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("FeatureBlockedTransitions");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.FeatureDependencyReference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FeatureId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ReferenceId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeatureId", "ReferenceId")
+                        .IsUnique();
+
+                    b.ToTable("FeatureDependencyReference");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureStateTransition", b =>
                 {
                     b.Property<int>("Id")
@@ -1577,6 +1601,15 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.FeatureDependencyReference", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Feature", null)
+                        .WithMany("DependsOnReferences")
+                        .HasForeignKey("FeatureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.FeatureStateTransition", b =>
                 {
                     b.HasOne("Lighthouse.Backend.Models.Feature", null)
@@ -1747,6 +1780,8 @@ namespace Lighthouse.Backend.Migrations
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Feature", b =>
                 {
+                    b.Navigation("DependsOnReferences");
+
                     b.Navigation("FeatureWork");
 
                     b.Navigation("Forecasts");
