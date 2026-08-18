@@ -1,0 +1,491 @@
+{
+  "roadmap": {
+    "project_id": "epic-4365-dependencies",
+    "created_at": "2026-08-18T00:00:00Z",
+    "total_steps": 21,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-01-ado-dependencies-visible",
+    "goal": "Show, on both Feature lists, how many other Features each Feature is waiting on, read from Azure DevOps System.LinkTypes.Dependency-Reverse relations already returned by the portfolio Feature fetch. Slice 01 of Epic #4365 (Show Feature Dependencies): a count only, no dialog, no warnings, no cycle detection, no Jira or Linear, no Portfolio field override, and no change to any forecast date."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Storage for what a Feature waits on",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Reference type and its dependency source",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "FeatureDependencyReference exposes Id, FeatureId, ReferenceId and Source, with no public setter reachable from outside EF.",
+            "DependencySource is TrackerLink or PortfolioField; this slice writes only TrackerLink.",
+            "The type carries no read-model or verdict field, so slice 02 adds verdict columns additively rather than reshaping.",
+            "Tests are authored [Ignore(\"pending — DELIVER (epic-4365)\")] beside the skeleton; dotnet build stays warning-free."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureDependencyReferenceTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/FeatureDependencyReference.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Dependencies/DependencySource.cs"
+          ],
+          "implementation_notes": "RED MECHANISM (project reconciliation, DISTILL [REF] RED Mechanism): this is a statically-typed trunk-green C# repo, so a test naming an absent type fails to COMPILE and the run is BROKEN, not RED. Author every NUnit test [Ignore(\"pending — DELIVER (epic-4365)\")] alongside the minimal type skeleton and un-ignore one at a time. main must always compile. No src/ AssertionError scaffolds.\n\nEXEMPT FROM PARADIGM: the Hypothesis + assert_state_delta mandate is specified against the Python pilot; no tests/common/state_delta port, no Hypothesis harness and no RuleBasedStateMachine exists in this host. DISTILL recorded this explicitly rather than skipping it. Compensate with the @contract-shape assertions the scenarios already carry.\n\nOQ-6 STORAGE CONSTRAINT (binding): keep the row free of read-model fields. If slice 02's read-path measurement fails, the honour verdict moves to ingestion and becomes additive columns on this row — an expand-only migration, never a reshape. Assuming the row is final here is what makes that migration a data migration instead of a design choice.\n\nPath split is the Component Decomposition table's, not a slip: FeatureDependencyReference sits at Models/, DependencySource at Models/Dependencies/.\n\nTerminology: \"Depends On\". The word blocked already names epic #5074's shipped, renameable concept and must not appear in a type name, property, log message or UI string."
+        },
+        {
+          "id": "01-02",
+          "name": "Feature owns a read-only reference collection",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "Feature.DependsOnReferences is IReadOnlyCollection<FeatureDependencyReference>; nothing outside DependencyReconciler can add or remove.",
+            "The collection is absent from Feature.Update, following the ManualRank precedent, or every refresh wipes it.",
+            "LighthouseAppContext configures the owned collection; FeatureRepository.GetAll includes it on the existing chain.",
+            "Model tests un-ignored and green; dotnet build warning-free, no new SonarQube issue."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/FeatureDependencyReferenceTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nThe ManualRank precedent is literal — Feature.cs already carries `public int? ManualRank { get; set; }` outside `internal void Update(Feature feature)`, which only assigns EstimatedSize and OwningTeam on top of base.Update. Put DependsOnReferences in the same position. Anything inside Update is overwritten on every sync.\n\nThe type is only half the guarantee: the ArchUnitNET rule in 06-01 is the other half. The type stops the accident, the rule stops someone widening it back later.\n\nFeatureRepository.GetAll is an EXTEND verdict in the DESIGN Reuse Analysis table (one Include on the existing chain). Split queries are already configured globally, so no Cartesian explosion — and watch S8733 (EF Cartesian explosion), which the Sonar gate raises on repository code.\n\nExisting Feature tests are the regression surface: a new navigation property that InMemory tolerates can still be missing a migration (ci-learnings, 2026-06-01)."
+        },
+        {
+          "id": "01-03",
+          "name": "Expand-only migration across all providers",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-02"
+          ],
+          "criteria": [
+            "Lighthouse.Backend/Create-Migration.ps1 generates both provider migrations; dotnet ef migrations add is never invoked directly.",
+            "The migration adds one table and drops or renames nothing.",
+            "ExpandOnlyMigrationGuardTest passes unchanged.",
+            "A real-provider read-your-writes test covers SQLite and Postgres; EF InMemory never exercises a migration."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nRun `dotnet build` on the backend BEFORE the script — `dotnet ef` cannot resolve LighthouseAppContext against stale output. Create-Migration.ps1 starts a throwaway Postgres 17.2 container, so Docker must be up; the script cleans it up in its finally block.\n\nThe script writes into Lighthouse.Migrations.Sqlite and Lighthouse.Migrations.Postgres with --startup-project Lighthouse.Backend --context LighthouseAppContext. Both providers move in lockstep; a one-provider commit is the drift CI catches late.\n\nAvoid a non-default sentinel default value on any new column: `= true` makes the EF model-differ non-idempotent (ci-learnings, 2026-06-01).\n\nIntegrationTestBase is per-fixture isolated with an allowlist guard; a SQLite `disk I/O error` from EnsureCreated is a runner IO flake, not this change."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Azure DevOps relations, read from the fetch already made",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Extract Dependency-Reverse references from the relation payload",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "ExtractDependencyReferences sits beside ExtractParentFromWorkItem and walks the same workItem.Relations collection.",
+            "Only System.LinkTypes.Dependency-Reverse contributes; Dependency-Forward relations leave the result untouched.",
+            "The reference is the trailing segment of relation.Url, matching ADO's ReferenceId of the work item id.",
+            "A malformed or unparseable relation URL yields nothing, throws nothing and writes no partial row."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nAdd a sibling, do not merge into ExtractParentFromWorkItem — one call returning two unrelated things is the shape DESIGN rejected. The existing method already reads `relation.Attributes.TryGetValue(\"name\", …)` and splits relation.Url on \"/\" taking the last segment; the dependency read is the same walk with a different link type, keyed on relation.Rel rather than the display name where possible, because the attributes name is a localisable/renameable string.\n\nVerified against the real dogfood payload on 2026-08-18: the relation is `{rel, url, attributes.name}` and carries an id but no title. Naming a target is a local lookup against Features already held, so a count costs no follow-up request — the N+1 the learning hypothesis was written against does not arise here.\n\nThe same payload also holds 4 Dependency-Forward (Successor) links. #3533 carries nothing but a Successor and must therefore read as empty; if it reads as 1, the direction filter is wrong.\n\nA malformed URL is deliberately the same case as an unresolvable reference — skipped, no error. That is what makes a broken payload unable to half-write an edge."
+        },
+        {
+          "id": "02-02",
+          "name": "Parent override no longer skips the relations fetch",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-01"
+          ],
+          "scenario_name": "A Portfolio that already names its own parent field still gets its dependencies",
+          "criteria": [
+            "GetParentReferenceForWorkItems takes an explicit bool dependenciesComeFromRelations; no downcast to Portfolio appears inside it.",
+            "The early return fires only when the parent override is set and dependencies do not come from relations.",
+            "The Portfolio call site passes true at this slice, because the dependency override does not exist until slice 04.",
+            "The scenario asserts both halves: dependencies appear, and the parent is still read from the named custom field."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nF-4, settled by the maintainer 2026-08-17. GetParentReferenceForWorkItems (~:1012) is the ONLY place WorkItemExpand.Relations is ever requested (~:1043, inside GetParentReferencesFromRelationFields), and SA-9 has dependency ingestion ride exactly that fetch. Copied verbatim, its early return skips the fetch whenever the PARENT override is set, and an ordinary Portfolio with a parent override would report zero dependencies permanently — silently, because an empty column is a legitimate answer.\n\nThe method is typed on the base WorkTrackingSystemOptionsOwner while the dependency override lives on Portfolio alone, and it is called for a Team as well. Two alternatives were weighed and REJECTED: splitting the method per owner type duplicates the relation-fetch body, and downcasting to Portfolio inside a base-typed method reproduces the very shape that caused the trap. Do not reintroduce either.\n\nThe Portfolio call site (~:609) will read `portfolio.DependencyOverrideAdditionalFieldDefinitionId is null` from slice 04 onward; at slice 01 that property does not exist, so it passes a literal true. Leave the call site shaped so slice 04 substitutes the expression without moving the decision.\n\nGetParentReferencesFromRelationFields currently returns Dictionary<string,string> of parent references. Dependency references must come out of the SAME batched response — widen the return rather than adding a second call.\n\nGAP FLAGGED, NOT ADDED: the reconciler's call site is WorkItemService.AddOrUpdateFeature (~:1000-1009, `featureFromDatabase.Update(feature)`). WorkItemService.cs is absent from the DESIGN Component Decomposition table, so it is deliberately not listed in files_to_modify. Raise it with the architect before editing; note also that touching Program.cs would force the full backend Integration suite."
+        },
+        {
+          "id": "02-03",
+          "name": "Team refresh behaviour stays byte-identical",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-02"
+          ],
+          "scenario_name": "A Team that names its own parent field is completely unaffected",
+          "criteria": [
+            "The Team call site passes false, so a Team with a parent override still skips the relations fetch.",
+            "No dependency reference is read on any Team path; dependencies are between Features only.",
+            "Existing AzureDevOps connector and incremental-sync tests pass with no edit."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nThis is F-4's second call site and the second half of AC-1.9. The Team path (TheTeamsWorkItemsFrom, ~:87) passes false so its behaviour stays byte-identical to today. Both call sites are asserted; asserting only the Portfolio one leaves the regression that made this fork necessary undetectable in the other direction.\n\n@real-io here means real payload shapes through the real mapping and storage path, not a live Azure DevOps call — the project ATDD policy fakes the connector boundary and runs everything above it for real. Live-connector coverage stays in the AdoIntegration category, which is path-scoped and only runs when the connector changes.\n\nStatic VssConnection/ClientCache in this connector keys by conn:{id} only, so parallel fixtures with Id=0 collide (ci-learnings, 2026-05-17). Fixtures must set AuthenticationMethodKey after the auth-strategy refactor."
+        },
+        {
+          "id": "02-04",
+          "name": "Refresh makes no additional Azure DevOps request",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-02"
+          ],
+          "scenario_name": "Reading dependencies costs the refresh nothing extra to speak of",
+          "criteria": [
+            "Dependency references come out of the single chunked GetWorkItemsInChunks call; no second fetch is introduced.",
+            "A request assertion on the outbound client proves the call count is unchanged by this slice.",
+            "The relation carries an id and no title, so resolving a target never costs a follow-up request."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nThis step owns the structural half of AC-1.8 / KPI-3 — zero additional requests, defended by construction rather than by optimisation. The wall-clock half (110% of the recorded baseline) is measured in 06-04; scenario #11 covers both and is named once, here.\n\nWhy it matters concretely: epic #5687 took this exact refresh path from 468,856 ms to 2,087 ms. An N+1 introduced here gives that back. If the request-count assertion cannot be made to hold, the learning hypothesis has failed and ingestion must move off the synchronous refresh path — a separate pass, or a second phase keyed like GetFeaturesForProject(portfolio, referenceIds) — and slices 02-04 inherit a different ingestion shape. Report that outcome rather than absorbing it.\n\nCA1861 applies: do not pass constant arrays inline to repeated calls (the existing `[]` argument to GetWorkItemsInChunks is a call site to watch)."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Reconcile: one writer, replace wholesale",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Reconciler replaces wholesale, dedupes, keeps self-reference",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-02",
+            "02-01"
+          ],
+          "criteria": [
+            "DependencyReconciler is the only writer; it replaces a Feature's stored references with what the tracker now says.",
+            "The dedupe key is (FeatureId, ReferenceId), so a Feature listing itself survives dedup.",
+            "The same target returned twice, or reached by two link kinds, collapses to one reference.",
+            "An empty relation set clears that Feature's references rather than leaving stale ones behind."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencyReconcilerTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nReplace-wholesale is safe for the whole epic precisely because Lighthouse never authors an edge (D4) — there is nothing of the user's to preserve, so reconcile stays a replace rather than a merge.\n\nThe dedupe key matters in one specific way: a self-reference, a Feature listing itself, must SURVIVE dedup, because slice 02's loop warning has to be able to name it. Anything coarser — deduping to \"targets other than me\" — drops it and a one-Feature loop becomes invisible. Write that case as its own test, not as a footnote.\n\nSource is always DependencySource.TrackerLink at this slice; PortfolioField arrives in slice 04.\n\nSonar cluster that reliably fires on new backend test code: NUnit2045/NUnit2056 (use Assert.EnterMultipleScope, never a bare assert pair in a Then helper — recurrence 8+), NUnit4002 (Is.Zero, Is.Default), NUnit2046 (Has.Count.EqualTo), CA1859 (concrete type on private helper params AND returns), S2325/S1144 on new private members."
+        },
+        {
+          "id": "03-02",
+          "name": "Refresh turns Predecessor links into stored references",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-01",
+            "02-02"
+          ],
+          "scenario_name": "Predecessor links recorded in the tracker become a count on the Feature row",
+          "criteria": [
+            "DependenciesAcceptanceTest mirrors ManualSortingAcceptanceTest: real ASP.NET host, real EF, only the connector faked.",
+            "Two Predecessor links to Features in the same Portfolio store two references and read back as two.",
+            "Slice01DependencyCountSpecifications holds the Given/When/Then helpers every slice-01 scenario reuses.",
+            "The scenarios file reads as narrative; the specifications file holds the reusable steps."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/Slice01DependencyCountScenarios.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nCreate all three files of the harness triple named by the DISTILL Test Placement table: DependenciesAcceptanceTest.cs (abstract base), Slice01DependencyCountScenarios.cs, Slice01DependencyCountSpecifications.cs, all under Lighthouse.Backend.Tests/API/Integration/Dependencies/. The precedent to copy is API/Integration/ManualSorting/ — same three-file split, same TestWebApplicationFactory<Program> over real SQLite, same Mock<IWorkTrackingConnector> at the one driven port a refresh scenario may not reach for real. Keep Mock<IForecastService> for every scenario in this phase; the real seed-pinned forecast is the epic-boundary exception only (06-02).\n\nThis satisfies Mandate 12's intent in this host: the Specifications file is the reused-step surface, which is why the ratio target is informational rather than a gate here.\n\nGAP FLAGGED: wiring the reconciler into the refresh means editing WorkItemService.AddOrUpdateFeature (~:1000-1009), which the Component Decomposition table does not list. Not added to files_to_modify — confirm with the architect first.\n\nIntegrationTestBase fixtures are per-fixture isolated behind an allowlist guard; register the new fixture there rather than reaching for [NonParallelizable]."
+        },
+        {
+          "id": "03-03",
+          "name": "An unresolvable reference is passed over",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-02"
+          ],
+          "scenario_name": "A link pointing at something Lighthouse does not keep as a Feature is passed over",
+          "criteria": [
+            "Resolution happens at read: a reference naming no held Feature contributes nothing to the count.",
+            "No error is logged and no partial row is written; the refresh completes normally.",
+            "The row is complete in every other respect, so one bad link never costs the good ones beside it."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/Slice01DependencyCountScenarios.cs",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nThe relation URL carries an id and no type, so a Predecessor pointing at a Bug or a Task is exactly this case rather than an exception. A reference to a Feature not yet imported heals on the next read — which is the whole reason D5 stores strings rather than foreign keys. Do not resolve to a foreign key at write time; that would turn a healable gap into a write failure.\n\nThe dogfood Portfolio exercises this for free: #1812 waits on #3533 and #3534, and #3534 is not a Feature this Portfolio holds. #1812 must render 1, not 2, and must not error. Use that as the confirming real-data check after the fixture test is green.\n\nA malformed relation URL (02-01) is deliberately the same case, so both arrive at the same assertion."
+        },
+        {
+          "id": "03-04",
+          "name": "A removed link lowers the count next refresh",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-02"
+          ],
+          "scenario_name": "A link removed in the tracker lowers the count on the next refresh",
+          "criteria": [
+            "After a refresh with two links and a second refresh with one, the Feature is waiting on one.",
+            "The surviving reference is the correct one; the count is reconciled, never accumulated.",
+            "Two consecutive refreshes with the same links leave the stored set identical, not duplicated."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/Slice01DependencyCountScenarios.cs",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nAC-1.5, and the reason the reconcile is a replace rather than an upsert. The idempotence half — refresh twice, get the same set — is not in the scenario text but is the cheapest way to catch an append-instead-of-replace bug, and duplicate ReferenceIds on re-sync have already crashed RefreshWorkItems once in this repository (ci-learnings, 2026-05-25, Postgres-only).\n\nRun this against real providers, not EF InMemory: the delete-then-insert path inside one SaveChanges is exactly where provider behaviour diverges."
+        },
+        {
+          "id": "03-05",
+          "name": "Reading dependencies changes nothing else",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-02"
+          ],
+          "scenario_name": "Reading dependencies changes nothing else about a Feature",
+          "criteria": [
+            "A refresh with dependency data present leaves ManualRank and every WorkItemBase.Update field unchanged.",
+            "Every value recorded before the refresh is recorded identical after it, not only the ones under suspicion.",
+            "A hand-chosen position survives the first refresh that reads dependency information."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/Slice01DependencyCountScenarios.cs",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01. This scenario is the closest thing this host has to a declared mutation universe — assert the WHOLE recorded snapshot, not a handful of fields, because the bug it guards against is one nobody predicted.\n\nAC-1.6, and the gold test named in the DESIGN Architectural Enforcement table. It is the mirror of 01-02: the collection sits outside Feature.Update so the sync cannot wipe it, and this asserts the converse — that adding the collection did not make the sync write something it did not write before.\n\nManualRank is the specific value to name, because epic #5375 shipped it and a regression there is user-visible ordering loss rather than a missing number."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "The count on the payload and on both Feature lists",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The count reaches the payload and the client model",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-02"
+          ],
+          "criteria": [
+            "FeatureDto.DependsOnCount is additive, beside Position, CanMove, MoveBlockReason and BlockingPortfolios.",
+            "Grep the test project for payload-shape property lists first and add the field wherever one guards this endpoint.",
+            "Extend the Feature test factories both suites use before changing the shared contract.",
+            "IFeature gains dependsOnCount; check whether the Lighthouse-Clients version gate applies and record the answer."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/Slice01DependencyCountScenarios.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureDto.cs",
+            "Lighthouse.Frontend/src/models/Feature.ts"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nFeatureDto is a shared contract consumed by the Lighthouse-Clients CLI and MCP. Per CLAUDE.md, grep usages and extend the test factory/builder BEFORE changing it. There is no central frontend Feature factory — each test file builds its own (FeatureGrid.test.tsx createMockFeature, FeatureSelector.test.tsx getMockFeature), so an optional field is the low-blast-radius shape.\n\nci-learnings 2026-08-17: a new DTO property fails a pinned payload-shape test, and that test is right. `grep -rn \"PropertyNames\" Lighthouse.Backend.Tests` finds them — today none pins FeatureDto, but re-check rather than trusting this note. A filtered local run is not evidence about a contract: run the controller integration tests for the endpoint you changed.\n\nDependencyWarnings is slice 02's half of this DTO row. Do not add it here.\n\nS6964: value-type properties on [FromBody] DTOs must be opt-in — this is a response DTO, but the rule has recurred three times in this repo. S107 (ctor params) already carries a narrow pragma on FeatureDto's constructor; do not widen it.\n\nThe frontend model lives at Lighthouse.Frontend/src/models/Feature.ts; the Component Decomposition table's `models/Feature/…` is directory-approximate."
+        },
+        {
+          "id": "04-02",
+          "name": "One Depends On column, both Feature lists",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-01"
+          ],
+          "scenario_name": "The same count is read on both Feature lists, because there is only one of them",
+          "criteria": [
+            "createDependsOnColumn is the ninth factory in columns.tsx and is defined exactly once.",
+            "The Features view and the Portfolio detail list both render that same factory.",
+            "The test asserts one definition, not two lists that happen to agree.",
+            "pnpm test green, pnpm build zero warnings, Biome clean on ./src."
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/index.ts"
+          ],
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01; on the frontend the equivalent is a skipped Vitest case, un-skipped as the factory lands.\n\nThe precedent is columns.position.test.tsx, the same file's previous new-column slice: it imports the factory directly from \"./columns\" and asserts headerName, sortable and renderCell in isolation. Copy that shape.\n\nAC-1.2 is asserted BY the column being written once — that is what makes \"both lists agree\" structural rather than coincidental. Two factories that produce the same cell would pass a naive both-lists test and fail the point.\n\nGAP FLAGGED, NOT ADDED: the factory has to be wired in FeatureListDataGrid.tsx (which already composes createPositionColumn conditionally at ~:94) and re-exported from index.ts. Neither file appears in the Component Decomposition table, whose row names only columns.tsx, so neither is listed in files_to_modify. They are the same component directory and are required for the column to render — confirm with the architect, then wire.\n\nMUI strips data-testid from ICONS in production builds; if the empty state renders an icon, do not build an E2E locator on it."
+        },
+        {
+          "id": "04-03",
+          "name": "Waiting on nothing shows the empty marker",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-02"
+          ],
+          "scenario_name": "A Feature waiting on nothing reads as nothing, not as zero",
+          "criteria": [
+            "A Feature with no references renders the grid's existing empty marker.",
+            "The cell never renders a literal 0, which would read as a measured absence rather than nothing.",
+            "The empty case matches the marker the other columns already use, not a new one."
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nAC-1.3. Eighty of the dogfood Portfolio's 82 Features are in this state, so it is the common case, not the edge — an ugly or noisy empty cell degrades the whole list.\n\nReuse the marker the sibling columns already render rather than inventing one; a second empty convention in the same grid is the kind of drift a reader notices before a test does.\n\nS7735 (unexpected negated condition) and S3358 (nested ternaries, including inside template literals) both fire on exactly this kind of render branch — write it as a positive early return."
+        },
+        {
+          "id": "04-04",
+          "name": "The column speaks the instance's own vocabulary",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-02"
+          ],
+          "scenario_name": "The column speaks the instance's own vocabulary",
+          "criteria": [
+            "The heading is built through getTerm, so a renamed Feature term renders in the instance's own word.",
+            "No heading, cell or tooltip in the column contains the word this instance reserves for a held-up item.",
+            "The literal string is Depends On; the seeded default term is Feature / Features."
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nD10 / AC-1.7. blocked already names epic #5074's shipped, user-renameable concept. Using it here would make two different things share one word on the same screen — and the term is renameable, so the collision follows the instance's own rename. The structural half of this guard (no `blocked` literal in the new backend types or frontend component) is 06-01; this step is the rendered-string half.\n\nTerminology is user-configurable under Settings → Terminology; the seeded defaults come from TerminologySeeder.cs. Never hard-code Epic, Initiative or Story.\n\nRender the heading through getTerm rather than interpolating a term into a pre-built string — the latter passes a default-terminology test and breaks the moment anyone renames."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "The walking skeleton closes end to end",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "The walking skeleton closes in a browser",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-02",
+            "03-02"
+          ],
+          "scenario_name": "A product owner sees, without leaving Lighthouse, that a Feature is waiting on two others",
+          "criteria": [
+            "Playwright drives the real Features view through the existing FeaturesPage Page Object, never an inline locator.",
+            "The dependent row says it is waiting on 2; its blocker's row says nothing.",
+            "The spec is authored test.fixme and un-fixmed only after it passes against a running Lighthouse.",
+            "One walking skeleton per flow — this spec stays a thin sanity check, not a second assertion layer."
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/features/FeatureDependencies.spec.ts",
+          "implementation_notes": "RED MECHANISM: Playwright's half of RED-by-skip is test.fixme, removed once the spec passes locally.\n\nEXEMPT FROM PARADIGM: E2E verifies wiring, not invariants, and stays single-example by design.\n\nExtend tests/models/features/FeaturesPage.ts — never an inline page.locator() in the spec. Precedents in the same folder: FeaturesView.spec.ts and ManualSortingMove.spec.ts. Drive it from seeded demo data.\n\nNEVER commit a Playwright spec or POM locator you have not actually run against a running Lighthouse (standing rule, ci-learnings 2026-05-17). Run it here, do not defer it.\n\nStrict-mode traps that have bitten this exact grid: a shared test-id reused on a page that already hosts the component matches two elements; getByRole(\"tooltip\") is the same trap via ARIA; getByRole({name}) is case-insensitive substring matching by default. Prefer a column-scoped role query over a page-global one.\n\nThis closes the loop the slice exists to close: a real Predecessor link in the tracker, the refresh that already runs, storage, and a person reading the answer without opening Azure DevOps. If it needs a new page or a new entry point to pass, something upstream drifted from Strategy B."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Standing guards and the KPI measurement",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "One writer, and no word that means blocked",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-01"
+          ],
+          "criteria": [
+            "ArchUnitNET forbids mutation of Feature.DependsOnReferences anywhere but DependencyReconciler; a second writer fails the build.",
+            "A structural test rejects the literal blocked or Blocked in the new backend types and frontend component.",
+            "The rule is written now, not deferred — without it the immutable type is a convention, not a guarantee."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nPrecedents in the same folder set the shape: FeatureOrderingSingleSourceArchUnitTest, LicenseGateSingleSourceArchUnitTest, BlockedItemSinglePathArchUnitTest. ArchUnitNET is already referenced; no new tool and no new licence.\n\nThe honour-policy half of this file (exactly one IDependencyHonourPolicy implementation, SA-12/KPI-5) is slice 02's. Write only the writer rule and the terminology rule here, and leave the file shaped so slice 02 appends rather than restructures.\n\nBaseline recorded in DISTILL, worth keeping: IDependencyHonourPolicy, DependencyHonourPolicy, DependencyCycleDetector, NotHonouredReason, DependsOnReferences and DependencyOverrideAdditionalFieldDefinitionId return 0 matches across backend, frontend and E2E today. That zero is what the rule is measured against.\n\nNUnit1028: only test methods should be public — a TestCaseSource provider left public fails the Sonar gate."
+        },
+        {
+          "id": "06-02",
+          "name": "Dependency data moves no forecast date",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-02"
+          ],
+          "scenario_name": "Adding dependency information to an instance changes no forecast anywhere",
+          "criteria": [
+            "A backend NUnit gold test, not an E2E: fixture portfolio, seed pinned as a constant in the test.",
+            "Run the forecast with edges present and with the same fixture stripped of them.",
+            "Assert the percentile arrays equal exactly; a tolerance comparison would let real drift hide under rounding.",
+            "Only the slice 01, dependencies read and counted example row runs at this slice."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nAC-1.10 / KPI-8. This is the epic boundary as a test, and it runs at EVERY slice, not only this one — what it guards against is an accidental import, not a deliberate change, so it has to be standing at the door on whichever day that happens.\n\nThe ATDD policy's deliberate exception applies here and only here: real IForecastService and real IRandomNumberService, seed-pinned. A mocked forecast cannot prove this epic moves no date — the claim is exactly that the real simulation produces identical output with and without dependency data. Every other scenario in this epic keeps Mock<IForecastService>.\n\nThe seed is a constant in the test, so the run is reproducible on any machine and in CI without touching the :5169 dev instance.\n\nThe DISTILL Test Placement table puts the forecast-untouched guard in this Architecture file; that is why a seeded gold test lives beside structural rules rather than in the forecast test tree.\n\nExactly equal means Is.EqualTo on the arrays. NUnit4002 pushes Is.EqualTo(0) to Is.Zero on any scalar you compare alongside them."
+        },
+        {
+          "id": "06-03",
+          "name": "The forecasting code is untouched",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "06-02"
+          ],
+          "scenario_name": "The forecasting code is not touched by this epic at all",
+          "criteria": [
+            "ForecastService and SimulationResult are asserted unchanged; both are NO CHANGE in the component decomposition.",
+            "Nothing in this slice reads ILicenseService.CanUsePremiumFeatures, and no premium route exists.",
+            "The structural claim complements the seeded gold test; neither alone proves the boundary held."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+          "implementation_notes": "RED MECHANISM + PARADIGM EXEMPTION: as 01-01.\n\nThe components named as untouched are ForecastService.cs, SimulationResult.cs and the randomness source. The forecast half of dependencies is Epic #5792 (Dependency-Aware Forecasting), a separate premium epic that starts once this one ships; its maintainer approval gate binds that epic only, which is why this slice commits under normal discipline.\n\nThe licence half is not incidental. SA-14 puts the premium flag in the honour policy's INPUT so #5792 need not re-cut the type — but on this epic's own the field is unread, and this test is what keeps that true.\n\nuseLicenseRestrictions is NO CHANGE on the frontend for the same reason: nothing in this epic is licence-gated."
+        },
+        {
+          "id": "06-04",
+          "name": "Dogfood refresh timed against the recorded baseline",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-01",
+            "02-04"
+          ],
+          "criteria": [
+            "Refresh :5169 with DeltaSync off, twice, reading the Update completed summary lines with mode=Full.",
+            "Portfolio refresh at or under 10802 ms, which is 110% of the 9820 ms pre-slice mean.",
+            "Write the measured numbers and the learning-hypothesis verdict into the slice brief.",
+            "Screenshot the Depends On column against real Azure DevOps data the same day.",
+            "All CI-parity gates green before push: pnpm test, pnpm build, Biome, dotnet build, dotnet test."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: this step is a measurement and a dogfood confirmation, not a test. The structural no-extra-request half is already asserted in 02-04.\n\nThe baseline is a number, not an intention (slice brief, measured 2026-08-18): 82 Features, 1 Team of 396 Work Items; PortfolioUpdater 9868 ms and 9771 ms, mean 9820 ms; TeamUpdater 22025 ms and 21684 ms, mean 21855 ms. DeltaSync off so the number is reproducible rather than a function of what happened to change. The delta path measured 7257 ms for the Portfolio on the same afternoon — recorded for context, NOT the gate.\n\nExpected dogfood shape: 3 Dependency-Reverse links over 2 Features. #1812 waits on #3533 and #3534 and must render 1 because #3534 is not held; #3532 waits on #1812 and must render 1; #3533 carries only a Successor and must render empty. Two rows carry a number and eighty are empty — thin but real.\n\nIf the 110% budget fails, say so in the learning-hypothesis verdict rather than tuning around it: ingestion then has to move off the synchronous refresh path and slices 02-04 inherit a different shape. Cheaper to discover here than in slice 03.\n\nCommit gate is normal for this epic (F-10). Commit per focused step; push once at the slice boundary with CI green. Never push red — skip the not-yet-passing acceptance test and un-skip to resume."
+        }
+      ]
+    }
+  ],
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-4365-dependencies/feature-delta.md",
+    "slice_brief": "docs/feature/epic-4365-dependencies/slices/slice-01-ado-dependencies-visible.md",
+    "acceptance": [
+      "docs/feature/epic-4365-dependencies/acceptance/walking-skeleton.feature",
+      "docs/feature/epic-4365-dependencies/acceptance/milestone-1-what-a-feature-is-waiting-on.feature",
+      "docs/feature/epic-4365-dependencies/acceptance/epic-boundary.feature"
+    ],
+    "architecture": "docs/product/architecture/brief.md",
+    "ci_learnings": "docs/ci-learnings.md"
+  },
+  "walking_skeleton": {
+    "step": "05-01",
+    "scenario": "A product owner sees, without leaving Lighthouse, that a Feature is waiting on two others",
+    "file": "docs/feature/epic-4365-dependencies/acceptance/walking-skeleton.feature"
+  },
+  "out_of_scope": [
+    "Any change to a forecast date, percentile or eligibility - Epic #5792 owns all of it, and epic-boundary.feature asserts the boundary here.",
+    "Which Features a Feature waits on: the dialog, the warnings and cycle detection are slice 02.",
+    "Jira and Linear ingestion - slice 03. ServiceNow and CSV are out of the epic entirely.",
+    "The per-Portfolio dependency field override and DependencyOverrideAdditionalFieldDefinitionId - slice 04.",
+    "Writing, authoring, editing or suppressing a dependency in Lighthouse, in any form.",
+    "Auto-reordering to satisfy a dependency."
+  ],
+  "quality_gates": {
+    "backend": [
+      "dotnet build with zero warnings (TreatWarningsAsErrors)",
+      "dotnet test all NUnit suites green"
+    ],
+    "frontend": [
+      "pnpm test",
+      "pnpm build with zero errors and zero warnings",
+      "biome check ./src clean"
+    ],
+    "e2e": "Playwright run locally before every commit that touches a spec or a Page Object",
+    "sonar": "no new SonarQube Cloud issues of any severity",
+    "kpi_3": "full ADO portfolio refresh on :5169 at or under 10802 ms (110% of the 9820 ms pre-slice baseline)",
+    "mutation": "Stryker per-feature, kill rate >= 80%"
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-08-18",
+    "reviewer_verdict": "needs_revision",
+    "verdict_overridden_by": "orchestrator",
+    "override_evidence": "The reviewer's sole blocker claimed three scenarios were unmapped to any step id: 'The same count is read on both Feature lists', 'A Feature waiting on nothing reads as nothing, not as zero' and 'The column speaks the instance's own vocabulary'. All three are mapped — to 04-02, 04-03 and 04-04 respectively. The reviewer paired scenario_name occurrences with step ids by line order rather than by containing object, which shifted every pairing after 03-02 and left three with no id; its own report marks those three '[Unknown step before 05-01]', which is the misparse rather than an absence. Verified by `jq '[.phases[].steps[] | select(.scenario_name != null) | .id + \" :: \" + .scenario_name]'`, which returns 13 of 13 in-scope scenarios each against an explicit step id.",
+    "second_finding_already_satisfied": "The reviewer asked that 06-02 gain a criterion naming the pinned-seed exact-equality mechanism. Step 06-02 already carries four criteria saying precisely that: backend NUnit and not an E2E, seed pinned as a constant in the test, percentile arrays equal exactly, and a tolerance comparison explicitly rejected.",
+    "findings_accepted": [
+      "F-4 is properly represented: both GetParentReferenceForWorkItems call sites asserted, at 02-02 (Portfolio) and 02-03 (Team).",
+      "No scope leakage into slices 02, 03 or 04.",
+      "No step covers 8 or more scenarios; no sizing review needed.",
+      "Every populated test_file matches the DISTILL Test Placement table.",
+      "Walking skeleton placement at 05-01 is on the critical path and sound."
+    ],
+    "gates_passed": [
+      "des-verify-integrity --roadmap-only: roadmap format OK, validator no errors",
+      "roadmap_gate.py: steps/unique-files ratio 1.31 (flag threshold 2.5); 3 of 16 paths not yet on disk, all sanctioned CREATE NEW components",
+      "step-id and phase-id format, criteria count and length, step-name length, no AC citing a private method: all pass"
+    ]
+  }
+}

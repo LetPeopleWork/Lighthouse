@@ -870,6 +870,8 @@ existing layout.
 | `FeatureDependencyDto` | `API/DTO/FeatureDependencyDto.cs` | **CREATE NEW** | One per edge for the dialog: reference, resolved Feature or redaction, state, Portfolios, tracker URL, source, verdict | 02 |
 | `FeaturesController` | `API/FeaturesController.cs` | **EXTEND** | `GET /api/{v1,latest}/features/{id}/dependencies`, read-only, free, RBAC-filtered | 02 |
 | `LighthouseAppContext` | `Data/LighthouseAppContext.cs` | **EXTEND** | Entity configuration for the new table | 01 |
+| `WorkItemService` | `Services/Implementation/WorkItems/WorkItemService.cs` | **EXTEND** | Calls the reconciler from `AddOrUpdateFeature` (`:1000-1012`) — both branches, since a brand-new Feature has references too. Added at DELIVER (see below) | 01 |
+| `FeatureListDataGrid` | `…/FeatureListDataGrid/FeatureListDataGrid.tsx` + `index.ts` | **EXTEND** | Composes and re-exports the new factory, the way `:94` already does for `createPositionColumn`. Added at DELIVER (see below) | 01 |
 | `createDependsOnColumn` | `…/FeatureListDataGrid/columns.tsx` | **EXTEND (new factory)** | Ninth factory in an existing file; used by both surfaces so the column is written once | 01 |
 | `WarningsIndicator` | `…/FeatureListDataGrid/WarningsIndicator.tsx` | **EXTEND** | Accepts a list of dependency warnings alongside the two existing kinds; still renders the green check when there are none | 02 |
 | `DependencyDialog` | `…/Common/DependencyDialog/DependencyDialog.tsx` | **CREATE NEW** | Row-opened list following the existing work-items dialog pattern | 02 |
@@ -1588,8 +1590,15 @@ brief; slice 03 confirms it against a real payload before writing the mapping.
 
 ### Still open, carried into DELIVER
 
-- **OQ-8** — whether `FeatureDto`'s two additive fields trip the Lighthouse-Clients version gate.
-  Additive-only suggests not; the standing rule is to check rather than assume.
+- **OQ-8 — ANSWERED 2026-08-18: no version-gate entry is owed by this epic's payload fields.** The
+  gate is `FEATURE_REQUIRES_SERVER_NEWER_THAN` in `packages/client/src/index.ts` of the
+  `lighthouse-clients` repository, and it guards **routes that did not exist in an older release** —
+  `ensureServerSupports(feature)` runs before the call, not over the response. Feature payloads are
+  decoded as `readonly unknown[]`: no zod, no strict schema, no field whitelist, so an additive field
+  cannot break a client of any age. The `deliveryMetricsHistory` entry already records this exact
+  precedent in a comment, for per-epic size fields that arrived long after their endpoint.
+  Slice 02's `GET /features/{id}/dependencies` **is** a new route, so it earns a gate entry — but only
+  once a client chooses to expose it, and the baseline is then the last release without it.
 - **Scenarios #19 and #21** need real loop and no-throughput Predecessor links in the dogfood project.
   If they are absent when slice 02 runs, the scenarios fall back to fixtures — and the slice verdict
   says which happened rather than leaving it implied.
@@ -1602,6 +1611,107 @@ brief; slice 03 confirms it against a real payload before writing the mapping.
 `needs_revision` is resolved by the decisions above — its two observability blockers are answered at a
 different level than requested, its KPI-registration blocker is closed, and its two remaining highs
 were downgraded with reasons. **DELIVER handoff unblocked.**
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+### The Component Decomposition table omitted three files the slice cannot be built without
+
+Found while building slice 01's roadmap, 2026-08-18. Each was verified against the code before being
+added, and none of them is a new component — all three are the composition points that make an
+already-designed component reachable:
+
+- **`WorkItemService.cs`.** `DependencyReconciler` is the one writer, but nothing called it. Its only
+  sensible call site is `AddOrUpdateFeature` (`:1000-1012`), where `featureFromDatabase.Update(feature)`
+  runs — and it has to fire on **both** branches, because a Feature seen for the first time
+  (`featureRepository.Add`, `:1004`) carries references just as one being updated does. Left out, the
+  reconciler is dead code and the wiring smoke check fails the slice.
+- **`FeatureListDataGrid.tsx` and `index.ts`.** The table names `columns.tsx` for the factory, which is
+  where it is *written* — but a factory still has to be composed into the grid and re-exported.
+  `:94` already does exactly this for `createPositionColumn`. Without both, AC-1.2 cannot pass, since
+  the column would exist and appear on neither surface.
+- **`FeatureRepository.cs`** was already sanctioned — the DESIGN *Reuse Analysis* table carries an
+  explicit **EXTEND** verdict for it (one `Include` on the existing chain). It is listed here only
+  because the two tables in the same wave document disagreed about it.
+
+The table rows are now added above. The general lesson: the Component Decomposition table describes
+**components**, and a component's call site is not always a component. A future wave should read it as
+a manifest of what changes conceptually, not as a complete file list — or should list composition
+points explicitly.
+
+One further correction, silent in the roadmap: the table's frontend path `src/models/Feature/…` is
+directory-approximate. `IFeature` actually lives at `Lighthouse.Frontend/src/models/Feature.ts`.
+
+### Jira link types are instance data, not constants — the match cannot be a literal label
+
+Raised by the maintainer 2026-08-18 while seeding real Jira link data, and it upgrades a known risk
+into a design change slice 03 has to make.
+
+D14 says to match `issuelinks` where `type.inward = "is blocked by"`. Jira returns a link type as:
+
+```json
+"type": { "id": "10000", "name": "Blocks", "inward": "is blocked by", "outward": "blocks" }
+```
+
+**All four fields are instance data.** `inward` and `outward` are display labels an administrator can
+rename; `name` is editable too; `id` is stable within one instance but differs across instances. Jira
+models link types as user-created records — "Blocks" is *seeded*, not built in, and it can be renamed
+or deleted outright.
+
+Azure DevOps is the opposite and is why that half is safe: `System.LinkTypes.Dependency-Reverse` is a
+genuine system constant, identical in every organisation. There is no Jira equivalent to match on.
+
+So a literal-label match reads **zero dependencies** on a renamed instance, and zero is a legitimate
+answer — the failure is silent and indistinguishable from a Portfolio that genuinely has none. This is
+the same shape as the Linear fold below and as the parent-override trap: a wrong answer that looks
+exactly like a right one.
+
+**Decision for slice 03**: match the seeded defaults out of the box, but carry the link type as a
+**per-connection setting** beside the existing additional-field definitions, and emit the already-named
+`dependency.jira.unknown_link_type` event when a Jira instance returns links whose type nothing
+recognises. Detection has to be loud, because silence is the one outcome that cannot be distinguished
+from correctness. Confirm the real payload against the dogfood instance before writing the mapping.
+
+**Test data now exists on the dogfood Jira** (maintainer, 2026-08-18), seeded as a chain rather than
+isolated pairs: `LGHTHSDMO-10` blocks `LGHTHSDMO-9` blocks `LGHTHSDMO-7`, and `LGHTHSDMO-8` blocks
+`LGHTHSDMO-7`. Expected once slice 03 ships: **-7 reads 2, -9 reads 1, -8 and -10 read empty**. That
+covers the multi-dependency count, the direction guard and a transitive chain at once. The instance
+reports the seeded English labels today, so the default match will work — which is exactly why the
+rename case needs its own test rather than a dogfood check.
+
+### D14's Linear row is wrong about the code — found 2026-08-18, during slice 01
+
+**D14 says a Linear dependency reference is `issue.Identifier?.ToLowerInvariant()` (`:343`), and calls
+the lower-casing "the trap in this feature". On the Feature path, neither half is true.**
+
+`:343` is inside `CreateWorkItemFromIssue` — the **Work Item** path, where a Linear Issue becomes a
+`WorkItemBase`. Features are built somewhere else entirely: `GetFeaturesForProject` (`:113`) fetches
+Linear **Projects**, and `CreateFeatureFromProject` (`:411-421`) assigns `ReferenceId = projectNode.Id`
+— a raw UUID, with no case fold applied and none wanted. The Linear Portfolio on the dogfood instance
+confirms it: its seven Features are keyed `00c1acac-f18e-4bd8-9919-25099d648011` and so on, not
+`abc-123`.
+
+Two consequences for slice 03, neither of them small:
+
+- **AC-9.2 asserts a fold that must not happen.** Applying `ToLowerInvariant` to a UUID that already
+  arrives lower-case is harmless by luck rather than by design, and the acceptance criterion as
+  written describes a defect being fixed that does not exist on this path. The criterion needs
+  rewriting against Project ids before anyone implements it.
+- **The source field is probably wrong too.** `dependencies` is a connection on **Issue**. A
+  Feature-to-Feature edge on Linear is between Projects, which is a different GraphQL relation. Slice
+  03 must confirm what the Linear API actually exposes for project relations before writing any
+  mapping — and must treat "Linear cannot express this between Projects" as a live possible answer,
+  the way ServiceNow's `NotSupportedException` was (D13).
+
+Jira is unaffected: a Jira Feature is an Epic, which is an issue, so `issue.Key` and `issuelinks` hold
+as D14 states. The dogfood Jira Portfolio's Features are keyed `LGHTHSDMO-7`…`-10`, which are issue
+keys.
+
+Nothing in slice 01 depends on any of this. Recorded here so slice 03 opens with it instead of
+building to a design that names the wrong field on the wrong entity. Setting up real Jira and Linear
+link data was deferred to slice 03 by the maintainer on 2026-08-18, which is also when this should be
+re-checked against the live API.
 
 ---
 

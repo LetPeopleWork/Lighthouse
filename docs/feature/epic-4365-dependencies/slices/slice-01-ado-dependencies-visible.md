@@ -128,12 +128,40 @@ rather than choosing a design.
   `FeatureDependencyReference` free of read-model fields so adding verdict columns later is an
   additive, expand-only migration rather than a reshape.
 
-## Verify the premise first (30 min, before the migration)
+## Verify the premise first — done 2026-08-18, before the migration
 
-On `:5169`, dump the ADO relation payload for one Portfolio's Features and count how many are
-`Dependency-Reverse`, how many point at Features Lighthouse stores, and whether the target title is
-reachable without a second call. If nothing in the dogfood data has a Predecessor link, the slice
-still ships, but its dogfood moment needs a link created in ADO first — find that out now.
+The relation payload for all 82 Features of the ADO Portfolio was dumped and counted, then dumped
+again after the maintainer added two more links on 2026-08-18. **11 dependency relations exist over 7
+Features** — 5 Predecessor and 6 Successor. What the column must read:
+
+| Feature | Carries | Depends On reads |
+|---|---|---|
+| #1812 Flexible Feature-to-Milestone Assignment | Predecessor → #3533, #3534; 3 Successors | **1** |
+| #3532 Modern Data Grid Implementation | Predecessor → #1812 | **1** |
+| #5565 Sync Delivery Dates with the Work Tracking System | Predecessor → #5698 | **1** |
+| #5792 Dependency-Aware Forecasting | Predecessor → #4365 | **1** |
+| #3533, #4365, #5698 | Successor only | **empty** |
+| the other 75 | nothing | **empty** |
+
+Three things this data buys:
+
+- **An unresolvable target, free.** #3534 is not a Feature this Portfolio holds, so #1812 must render
+  1 and not 2, and must not error — AC-1.4 against real data rather than a fixture.
+- **A direction guard.** #4365 and #5698 carry a dependency relation and must still read empty,
+  because this slice reads only `Dependency-Reverse` (D14). A crafter who walks every relation whose
+  name starts with `Dependency` turns those two into `1` and silently doubles counts across the
+  instance. The pre-2026-08-18 data could not catch this: #1812 held both directions at once, so a
+  both-directions bug still produced a plausible number there.
+- **A screenshot that explains itself.** #5792 waits on #4365 — the epic split, rendered as the thing
+  the epic ships.
+
+**The relation carries an id and no title.** The payload is `{rel, url, attributes.name}` and the
+target id is the trailing URL segment — exactly what D5 assumed. Naming a target is a local lookup
+against Features already held, so nothing here costs a second request, and the N+1 the learning
+hypothesis was written against does not arise for a count.
+
+Four rows carry a number and 78 are empty. Enough to prove the loop closes, and not enough for the
+loop and no-throughput shapes scenarios #19/#21 want, which still need their own links before slice 02.
 
 ## Acceptance criteria
 
@@ -158,16 +186,73 @@ a real backup. `CreateMigration`.
 and write it into this brief in this shape, so KPI-3 stays checkable months later without
 reconstructing anything from git history:
 
-> Pre-slice-01 baseline (YYYY-MM-DD): full ADO portfolio refresh on `:5169`, N Features, M Teams,
-> T seconds, measured from the `TeamUpdater: Update completed` summary line.
+> Pre-slice-01 baseline (2026-08-18): full ADO portfolio refresh on `:5169`, 82 Features, 1 Team
+> (396 Work Items), **9.82 s** for the Portfolio and **21.86 s** for the Team, measured from the
+> `Update completed` summary lines with `mode=Full`.
+
+Two consecutive runs, `DeltaSync` turned off so the number is reproducible rather than a function of
+what happened to have changed since the last cycle:
+
+| Run | `PortfolioUpdater` 'Lighthouse' | `TeamUpdater` 'Lighthouse Dev Team' |
+|-----|--------------------------------|-------------------------------------|
+| 1 | 9868 ms (scanned 82, fetched 82) | 22025 ms (scanned 396, fetched 396) |
+| 2 | 9771 ms (scanned 82, fetched 82) | 21684 ms (scanned 396, fetched 396) |
+| mean | **9820 ms** | **21855 ms** |
+
+So AC-1.8 passes while the portfolio refresh stays at or under **10802 ms**. The delta path, which is
+what the instance actually runs day to day, measured 7257 ms (fetched 27) for the Portfolio and
+1520-3508 ms (fetched 16-25) for the Team on the same afternoon — recorded for context, not as the
+gate, because its number moves with whatever the tracker happened to change.
 
 Every later slice records its own refresh timing against that line. A baseline that exists only as a
 promise makes "≤110% of baseline" unfalsifiable, which is the same as having no KPI at all.
 
-## Dogfood moment
+## Dogfood moment — done 2026-08-18, and KPI-3 passes
 
-Same day: refresh `:5169`, open `/features`, screenshot the column against real ADO data. Record the
-refresh timing next to the baseline in this brief.
+`:5169` was rebuilt from this slice's code (frontend into `wwwroot`, current backend), `DeltaSync`
+turned off, and the ADO Portfolio refreshed three times.
+
+| Run | `PortfolioUpdater` 'Lighthouse', `mode=Full` | vs the 9820 ms baseline |
+|---|---|---|
+| 1 — first refresh after process start | 12409 ms | 126% |
+| 2 — warm | 9204 ms | 94% |
+| 3 — warm | 9337 ms | 95% |
+| **warm mean** | **9270 ms** | **94%** |
+
+**AC-1.8 passes: 9270 ms against a 10802 ms ceiling.** Reading dependencies costs the refresh nothing
+measurable, which is what the zero-extra-request structure predicted — the count comes out of a
+response the refresh already fetched, so there was never a request for it to add.
+
+**The honest caveat about run 1.** The baseline was measured on a warm process, so warm-to-warm is the
+comparison that means anything. There is no cold-start baseline to compare 12409 ms against, so that
+number is *not* evidence of a regression — it is evidence that a cold start costs roughly three
+seconds of JIT and connection setup, which was equally true before this slice. Recorded rather than
+dropped, because dropping the inconvenient run is how a budget stops being falsifiable.
+
+### What the column shows on real data
+
+Read from the live `/features` payload after the refresh, and confirmed in a browser:
+
+| Feature | Reads | Why |
+|---|---|---|
+| #5792 Dependency-Aware Forecasting | **2** | waits on #4365 and #5698, both held |
+| #5565 Sync Delivery Dates | 1 | waits on #5698 |
+| #1812 Flexible Feature-to-Milestone Assignment | **1** | waits on #3533 (held) and #3534 (**not** held) |
+| #3532 Modern Data Grid Implementation | 1 | waits on #1812 |
+| #4365, #5698, #3533 | empty | they carry Successor links only |
+| the other 90 | empty | no dependency links |
+
+Two of those rows are the ones worth having:
+
+- **#1812 is AC-1.4 confirmed against real data rather than a fixture.** It has two Predecessors and
+  renders 1, because #3534 is not a Feature this Portfolio holds. The unresolvable reference is passed
+  over silently and the good one beside it survives, which is the whole point of resolving at read.
+- **#4365, #5698 and #3533 are the direction guard.** Each carries a dependency relation and must still
+  read empty, because only `Dependency-Reverse` is read. A crafter walking every relation whose name
+  starts with `Dependency` would turn these into 1 and silently inflate counts across the instance.
+
+The browser screenshot was taken the same day against this data, with the "Dependency-Aware
+Forecasting" cell reading `2` off the rendered page.
 
 ## Commit gate
 
@@ -177,4 +262,34 @@ green.
 
 ## Learning hypothesis verdict
 
-_Not yet run._
+**CONFIRMED, 2026-08-18, at the close of phase 02** — reading ADO relations is affordable inside the
+sync, and every later slice may assume dependency data is present and current after a normal refresh
+with no separate trigger.
+
+The guarantee holds **by construction rather than by tuning**, which is the stronger outcome.
+`GetParentReferencesFromRelationFields` makes one `GetWorkItemsInChunks(…, WorkItemExpand.Relations, …)`
+call and reads the parent references and the dependency references out of that single response; the
+mapping then resolves each reference against Features already in hand. There is no code path on which
+a dependency causes a request, so there is nothing to regress into an N+1 later.
+
+Pinned by `GetFeaturesForProject_ReadingTheDependenciesCostsTheRefreshNoRequestOfItsOwn`, which asserts
+three things rather than one:
+
+1. the Feature really came back carrying its dependency — without this the two cost assertions are
+   satisfied trivially by a refresh that read nothing;
+2. exactly **one** payload read requested `WorkItemExpand.Relations` — the no-second-fetch half;
+3. no payload read names the blocker's id — the no-follow-up-per-target half.
+
+The third assertion is not redundant. A follow-up read to resolve a target's title would be a `Links`
+read, not a `Relations` one, and would sail straight past a relations-only count. The N+1 this slice
+was written to fear is exactly that shape, so it is named directly.
+
+Proven falsifiable: the connector was temporarily perturbed to fetch relations twice and then to fetch
+each target, and both cost assertions went red (`Expected: 1 / But was: 2`, and
+`Expected: no item equal to 1801 / But was: < 42, 42, 42, 1801 >`) while the first assertion stayed
+green — the perturbed code still produced the dependency, it just paid for it. The perturbation was
+reverted and is not committed.
+
+So the escalation path the hypothesis named — moving ingestion off the synchronous refresh onto a
+separate pass or a second phase keyed like `GetFeaturesForProject(portfolio, referenceIds)` — is **not
+needed**, and slices 02 through 04 keep the ingestion shape they were designed against.
