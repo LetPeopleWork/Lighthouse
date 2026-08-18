@@ -33,6 +33,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private static FeatureDependencyReference AReferenceTheConnectorBuiltBeforeSaving(string waitsOn)
             => new(0, waitsOn, DependencySource.TrackerLink);
 
+        private void GivenSomebodyPutItInPlace(string featureReferenceId, int place)
+            => PlaceTheFeatureByHand(featureReferenceId, place);
+
+        private Dictionary<string, string> GivenEverythingRecordedAboutIt(string featureReferenceId)
+            => ReadEveryValueRecordedFor(featureReferenceId);
+
         // --- When ---
 
         private Task WhenARefreshRuns(int portfolioId, params TrackedFeature[] rowsFromTheTracker)
@@ -157,6 +163,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 Assert.That(row?.StateCategory, Is.EqualTo(StateCategories.ToDo), $"The refresh must have written {featureReferenceId} in full.");
             }
         }
+
+        /// <summary>
+        /// The whole row, compared against the whole row - not the handful of fields anybody currently
+        /// suspects. A refresh that read links and quietly wrote something else at the same time would be
+        /// invisible to every other assertion in this slice, which only ever looks at what it expects.
+        /// </summary>
+        private void ThenEverythingRecordedAboutItIsWhatItWas(string featureReferenceId, Dictionary<string, string> before)
+        {
+            var after = ReadEveryValueRecordedFor(featureReferenceId);
+
+            var moved = before.Keys.Union(after.Keys)
+                .Where(column => ValueOf(before, column) != ValueOf(after, column))
+                .Select(column => $"{column}: was {ValueOf(before, column)}, now {ValueOf(after, column)}")
+                .ToList();
+
+            Assert.That(moved, Is.Empty,
+                $"Reading what {featureReferenceId} waits on must leave everything else about it alone. Moved: {string.Join(" | ", moved)}");
+        }
+
+        private static string ValueOf(Dictionary<string, string> row, string column)
+            => row.TryGetValue(column, out var value) ? value : "<no such column>";
 
         private static void ThenEveryReferenceNames(Feature feature)
         {

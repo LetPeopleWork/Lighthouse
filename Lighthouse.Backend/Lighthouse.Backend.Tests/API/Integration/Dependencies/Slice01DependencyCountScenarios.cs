@@ -115,6 +115,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNobodyComplained();
         }
 
+        // The guard the rest of this slice leans on. Somebody's chosen place for a Feature is held apart
+        // from everything a sync writes, precisely so a refresh cannot undo a move nobody could redo; what
+        // a Feature waits on is held apart for the same reason. A refresh that started reading links and
+        // moved the Feature while it was there would destroy an ordering silently, and a count on the row
+        // would never show it. So the whole row is taken before and compared after, field by field.
+        [Test]
+        public async Task Reading_dependencies_changes_nothing_else_about_a_Feature()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(
+                platform, AFeatureTheTrackerHolds("F-3", "Publish the partner catalogue"));
+            GivenSomebodyPutItInPlace("F-3", 7);
+            var beforeItEverReadALink = GivenEverythingRecordedAboutIt("F-3");
+
+            await WhenARefreshRunsAlongsideTheFeaturesItCanWaitOn(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheTwoItWaitsOn));
+
+            ThenTheFeatureWaitsOnExactly("F-3", TheTwoItWaitsOn);
+            ThenEverythingRecordedAboutItIsWhatItWas("F-3", beforeItEverReadALink);
+        }
+
         // The one writer is wired up, and it re-keys. A connector reads links off a Feature it has not
         // saved, so every reference it builds names Feature nought; left that way the deduplication key
         // is a constant and anything reading a reference in memory is told the wrong Feature.

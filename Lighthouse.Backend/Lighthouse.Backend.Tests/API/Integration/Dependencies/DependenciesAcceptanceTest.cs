@@ -21,6 +21,7 @@ using NUnit.Framework;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
@@ -168,6 +169,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             return portfolio.Id;
         }
 
+        /// <summary>
+        /// Puts a Feature in a place the way the ranking service puts one there: a single column write,
+        /// never a save over the loaded graph, which would re-insert join rows nobody asked for.
+        /// </summary>
+        protected void PlaceTheFeatureByHand(string featureReferenceId, int place)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var rowsPlaced = context.Features
+                .Where(feature => feature.ReferenceId == featureReferenceId)
+                .ExecuteUpdate(setters => setters.SetProperty(feature => feature.ManualRank, place));
+
+            if (rowsPlaced != 1)
+            {
+                throw new InvalidOperationException($"There was no single {featureReferenceId} on file to place by hand.");
+            }
+        }
+
         // --- Driving-port interaction ---
 
         /// <summary>
@@ -274,6 +294,40 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
 
             return context.Features.AsNoTracking().FirstOrDefault(feature => feature.ReferenceId == featureReferenceId);
+        }
+
+        /// <summary>
+        /// Every value the Feature row holds, taken column by column from the mapping itself rather than
+        /// from a list somebody typed out. A field added to a Feature next year is compared here without
+        /// anyone remembering to come back, which is the point: this is the probe for "and nothing else
+        /// moved", and a hand-written list only ever covers what its author already suspected.
+        /// </summary>
+        protected Dictionary<string, string> ReadEveryValueRecordedFor(string featureReferenceId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var feature = context.Features.FirstOrDefault(candidate => candidate.ReferenceId == featureReferenceId)
+                ?? throw new InvalidOperationException($"There is no {featureReferenceId} on file to read.");
+
+            var row = context.Entry(feature);
+
+            return row.Metadata.GetProperties().ToDictionary(
+                column => column.Name,
+                column => AsComparableText(row.Property(column.Name).CurrentValue));
+        }
+
+        private static string AsComparableText(object? value)
+        {
+            return value switch
+            {
+                null => "<nothing>",
+                string text => text,
+                IEnumerable<KeyValuePair<int, string?>> pairs => string.Join(", ",
+                    pairs.OrderBy(pair => pair.Key).Select(pair => $"{pair.Key}={AsComparableText(pair.Value)}")),
+                System.Collections.IEnumerable items => string.Join(", ", items.Cast<object?>().Select(AsComparableText)),
+                _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+            };
         }
 
         protected List<string> ReadProblemsLogged() => [.. CapturedLogs.AtOrAbove(LogEventLevel.Error)];
