@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Models
 {
     public class Feature : WorkItemBase
     {
+        private readonly List<FeatureDependencyReference> dependsOnReferences = [];
+
         public Feature() : this([])
         {
         }
@@ -39,6 +41,11 @@ namespace Lighthouse.Backend.Models
         public List<FeatureWork> FeatureWork { get; } = new List<FeatureWork>();
 
         public List<Portfolio> Portfolios { get; } = [];
+
+        // Handed out read-only because the sync rewrites this list wholesale on every refresh. A caller
+        // that added or removed a reference here would be writing half a graph that the next refresh
+        // silently throws away, so only the reconciler that owns the rewrite may touch it.
+        public IReadOnlyCollection<FeatureDependencyReference> DependsOnReferences => dependsOnReferences;
 
         public bool IsParentFeature { get; set; } = false;
 
@@ -193,6 +200,12 @@ namespace Lighthouse.Backend.Models
             {
                 featureWork.Clear();
             }
+        }
+
+        internal void ReplaceDependsOnReferences(IEnumerable<FeatureDependencyReference> references)
+        {
+            dependsOnReferences.Clear();
+            dependsOnReferences.AddRange(references);
         }
 
         internal void Update(Feature feature)

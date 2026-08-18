@@ -227,6 +227,29 @@ namespace Lighthouse.Backend.Data
                 .HasMany(f => f.Portfolios)
                 .WithMany(p => p.Features);
 
+            modelBuilder.Entity<Feature>()
+                .HasMany(f => f.DependsOnReferences)
+                .WithOne()
+                .HasForeignKey(r => r.FeatureId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // The navigation hands out a read-only view, so EF has to reach the list behind it to fill it.
+            modelBuilder.Entity<Feature>()
+                .Navigation(f => f.DependsOnReferences)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            // Every member is read-only, which convention does not pick up, so each one is named here.
+            modelBuilder.Entity<FeatureDependencyReference>(entity =>
+            {
+                entity.HasKey(r => r.Id);
+
+                entity.Property(r => r.ReferenceId).IsRequired();
+
+                entity.Property(r => r.Source);
+
+                entity.HasIndex(r => new { r.FeatureId, r.ReferenceId }).IsUnique();
+            });
+
             modelBuilder.Entity<Team>()
                 .Property(t => t.ConcurrencyToken)
                 .IsConcurrencyToken();
