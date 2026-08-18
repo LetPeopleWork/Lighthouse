@@ -18,15 +18,39 @@ vi.mock("../../../hooks/useFeatureOrdering", () => ({
 	}),
 }));
 
+const SEEDED_TERMS: Record<string, string> = {
+	feature: "Feature",
+	features: "Features",
+	blocked: "Blocked",
+};
+
+const terminology = vi.hoisted(() => ({
+	terms: {} as Record<string, string>,
+}));
+
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => {
-			if (key === "feature") return "Feature";
-			if (key === "features") return "Features";
-			return "Unknown";
-		},
+		getTerm: (key: string) => terminology.terms[key] ?? "Unknown",
 	}),
 }));
+
+beforeEach(() => {
+	terminology.terms = { ...SEEDED_TERMS };
+	localStorage.clear();
+	Object.defineProperty(globalThis, "matchMedia", {
+		writable: true,
+		value: vi.fn().mockImplementation((query) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
+});
 
 const feature = (overrides: Partial<IFeature> = {}): IFeature =>
 	({
@@ -100,41 +124,56 @@ const featureRow = (dependsOnCount?: number): Feature => {
 	return row;
 };
 
-describe("the same count is read on both Feature lists, because there is only one of them", () => {
-	beforeEach(() => {
-		localStorage.clear();
-		Object.defineProperty(globalThis, "matchMedia", {
-			writable: true,
-			value: vi.fn().mockImplementation((query) => ({
-				matches: false,
-				media: query,
-				onchange: null,
-				addListener: vi.fn(),
-				removeListener: vi.fn(),
-				addEventListener: vi.fn(),
-				removeEventListener: vi.fn(),
-				dispatchEvent: vi.fn(),
-			})),
-		});
-	});
+const renderGrid = (dependsOnCount = 2) =>
+	render(
+		<MemoryRouter>
+			<FeatureListDataGrid
+				features={[featureRow(dependsOnCount)]}
+				columns={[createStateColumn()]}
+				storageKey="depends-on-shared-grid"
+				hideCompletedStorageKey="depends-on-shared-grid-hide-completed"
+			/>
+		</MemoryRouter>,
+	);
 
+describe("the same count is read on both Feature lists, because there is only one of them", () => {
 	// Neither Feature list can supply this column: the shared grid composes it, so there is one
 	// definition to disagree with itself. A caller passing only its own columns still gets it.
 	it("comes from the shared grid, so no surface can hand in its own version", () => {
-		render(
-			<MemoryRouter>
-				<FeatureListDataGrid
-					features={[featureRow(2)]}
-					columns={[createStateColumn()]}
-					storageKey="depends-on-shared-grid"
-					hideCompletedStorageKey="depends-on-shared-grid-hide-completed"
-				/>
-			</MemoryRouter>,
-		);
+		renderGrid();
 
 		expect(
 			screen.getByRole("columnheader", { name: "Depends On Features" }),
 		).toBeInTheDocument();
 		expect(screen.getByText("2")).toBeInTheDocument();
+	});
+});
+
+describe("the column speaks the instance's own vocabulary", () => {
+	it("names the thing being waited on with the word this instance chose", () => {
+		terminology.terms.features = "Epics";
+
+		renderGrid();
+
+		expect(
+			screen.getByRole("columnheader", { name: "Depends On Epics" }),
+		).toBeInTheDocument();
+	});
+
+	// An instance can rename what it calls held-up work, and one screen carrying that word in two
+	// meanings is unreadable. Whatever the instance chose, this column must not have borrowed it.
+	it("never borrows the word this instance keeps for held-up work", () => {
+		terminology.terms.blocked = "Impeded";
+
+		const { container } = renderGrid();
+		const columnCells = container.querySelectorAll(
+			'[data-field="dependsOnCount"]',
+		);
+
+		expect(columnCells.length).toBeGreaterThan(0);
+		for (const cell of columnCells) {
+			expect(cell.textContent).not.toMatch(/impeded/i);
+			expect(cell.textContent).not.toMatch(/block/i);
+		}
 	});
 });
