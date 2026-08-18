@@ -51,7 +51,7 @@ export class FeaturesPage {
 		return cells.map((text) => text.trim());
 	}
 
-	/** "#" while the tracker owns the order, the manual heading once this instance does (AC-5.4). */
+	/** "#" while the tracker owns the order, the manual heading once this instance does. */
 	async getPositionColumnHeading(): Promise<string> {
 		const header = this.page.locator(
 			'.MuiDataGrid-columnHeader[data-field="position"] .MuiDataGrid-columnHeaderTitle',
@@ -60,10 +60,9 @@ export class FeaturesPage {
 	}
 
 	/**
-	 * Epic 5375 slice 03 — the row action menu behind D18's four gestures. Waits on the move itself
-	 * rather than on a rendered state: the grid reorders optimistically, so a row that has already
-	 * jumped says nothing about whether the instance accepted the move
-	 * (`project_e2e_debounced_autosave_navigation_race`).
+	 * The row action menu holding the four move gestures. Waits on the move request itself rather than
+	 * on a rendered state: the grid reorders optimistically, so a row that has already jumped says
+	 * nothing about whether the instance accepted the move.
 	 */
 	async moveToTop(featureName: string): Promise<void> {
 		await this.getFeatureRow(featureName)

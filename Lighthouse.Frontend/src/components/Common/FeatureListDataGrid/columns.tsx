@@ -57,7 +57,7 @@ export const createForecastsColumn = (
 	),
 });
 
-// The value is the backend-supplied global position, never the row index (ADR-135).
+// The value is the backend-supplied global position, never the row index - the grid may be filtered.
 export const createPositionColumn = (
 	headerLabel: string,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({
@@ -69,7 +69,7 @@ export const createPositionColumn = (
 	renderCell: ({ row }) => <span>{row.position ?? ""}</span>,
 });
 
-// The four gestures live behind one menu so a row gains one control, not four (D18).
+// The four gestures live behind one menu so a row gains one control, not four.
 export const createFeatureOrderingActionsColumn = (
 	binding: FeatureOrderingBinding,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({

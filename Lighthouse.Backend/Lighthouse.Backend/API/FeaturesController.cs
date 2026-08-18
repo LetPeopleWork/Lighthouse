@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.API
 
         /// <summary>
         /// Every Feature the caller may read, across every Portfolio, in the order the forecast draws from.
-        /// Not premium-gated (D12) - the view is general infrastructure, not the sorting page.
+        /// Free on every instance - this is the list every screen reads, not the paid re-ordering page.
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<FeatureDto>>> GetAllFeatures()
@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.API
         }
 
         /// <summary>
-        /// Moves one Feature to the place another one holds (D4). Every gesture in the UI — Top, Up, Down,
+        /// Moves one Feature to the place another one holds. Every gesture in the UI — Top, Up, Down,
         /// Bottom, and "above/below a named Feature" — arrives here, because they differ only in which row
         /// the client names as the target.
         /// </summary>
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.API
         }
 
         /// <summary>
-        /// The command carries exactly one target (DDD-7). <c>beforeFeatureId: null</c> is the end of the
+        /// The command carries exactly one target. <c>beforeFeatureId: null</c> is the end of the
         /// order; naming both, or neither, is not a move and is not guessed at.
         /// </summary>
         private static bool TryReadTheTarget(JsonElement move, out int? targetFeatureId, out bool placeBefore)
@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.API
             return await featureMoveAuthorization.GetVerdictsAsync(User, features, readablePortfolioIdSet, RequestAborted);
         }
 
-        // ADR-136: a Feature in no Portfolio is visible to everyone; otherwise one readable Portfolio is enough.
+        // A Feature in no Portfolio is visible to everyone; otherwise one readable Portfolio is enough.
         private static bool IsReadableBy(Feature feature, HashSet<int> readablePortfolioIds)
         {
             return feature.Portfolios.Count == 0 || feature.Portfolios.Any(p => readablePortfolioIds.Contains(p.Id));

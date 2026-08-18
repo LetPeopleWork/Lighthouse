@@ -77,8 +77,8 @@ namespace Lighthouse.Backend.Models
 
         public int EstimatedSize { get; set; } = 0;
 
-        // This instance's own place for the Feature, never the tracker's (ADR-132). Deliberately absent
-        // from Update - the sync writes Order and nothing else (ADR-134 SA-4).
+        // This instance's own place for the Feature, never the tracker's. Deliberately absent from
+        // Update - the sync writes Order and nothing else, so a refresh cannot undo a manual move.
         public int? ManualRank { get; set; }
 
         public string OwningTeam { get; set; } = string.Empty;
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Models
         public bool CanBeForecast => !TeamsWithoutForecast.Any();
 
         // A team that must still finish but has no throughput leaves the feature with no honest
-        // completion distribution (ADR-112). A feature with no remaining work is exempt - it carries
+        // completion distribution. A feature with no remaining work is exempt - it carries
         // ForecastService's day-0 sentinel, which has no trials either, but is a fact, not a forecast.
         [NotMapped]
         public IEnumerable<Team> TeamsWithoutForecast
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Models
                     .Select(TeamFor);
 
                 // A pair added by work-item sync after the last forecast run has no row at all, which
-                // is strictly worse than a zero-trial one (ADR-113 DDD-8).
+                // is strictly worse than a zero-trial one - nothing has been simulated for it.
                 var withoutAnyRow = FeatureWork
                     .Where(work => work.RemainingWorkItems > 0)
                     .Where(work => !HasForecastRowFor(work))
@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Models
         {
             if (date != default && FeatureWork.Sum(r => r.RemainingWorkItems) > 0)
             {
-                // An un-forecastable feature reports "unknown", not a number (ADR-112).
+                // An un-forecastable feature reports "unknown", not a number.
                 if (!CanBeForecast)
                 {
                     return null;

@@ -16,12 +16,13 @@ export interface IFeature extends IWorkItem {
 	totalWork: { [key: number]: number };
 	projects: IEntityReference[];
 	forecasts: IWhenForecast[];
-	// Non-empty means no forecast exists at all, and names the teams to chase (ADR-112).
+	// Non-empty means no forecast exists at all, and names the teams to chase.
 	teamsWithoutForecast?: string[];
-	// The place in the order across the whole instance, supplied by the backend (ADR-135).
+	// The place in the order across the whole instance, supplied by the backend and never counted here.
 	position?: number;
-	// The move verdict is the SERVER's, never re-derived here. `projects` is already read-filtered and is
-	// empty for an orphan, so any client-side conjunction over it fails open twice (ADR-136 SA-10).
+	// The move verdict is the SERVER's, never re-derived here. `projects` has already had the Portfolios
+	// the caller cannot read removed from it, and is empty for a Feature in no Portfolio at all, so a
+	// client-side rule written over it would grant the move in both of those cases.
 	canMove?: boolean;
 	moveBlockReason?: string;
 	blockingPortfolios?: IEntityReference[];

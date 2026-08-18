@@ -932,8 +932,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var feature = syncedFeature.PersistedFeature;
             var events = new List<IDomainEvent>();
 
-            // A feature already blocked when capture FIRST sees it opens no spell (US-02 AC4 — "—" preserved):
-            // without a prior not-blocked baseline there is no rising edge to record.
+            // A feature already blocked the first time capture sees it opens no spell. Without an earlier
+            // not-blocked reading there is no moment when it became blocked, and inventing one would date
+            // the spell from whenever this instance happened to start looking.
             if (!syncedFeature.WasObservedBeforeSync)
             {
                 return events;
@@ -1005,9 +1006,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var storedFeature = TheStoredFeatureFor(feature, featureFromDatabase);
 
             // On both branches: a Feature seen for the first time carries the links somebody drew on it
-            // just as one already on file does, so reconciling only where a row existed would leave a new
-            // Feature's dependencies to appear a refresh late - which reads as eventual consistency and
-            // hides.
+            // just as one already on file does. Reconciling only where a row already existed would leave
+            // a new Feature waiting on nothing until the refresh after next, which looks like the tracker
+            // simply had no links yet rather than like a bug.
             dependencyReconciler.Reconcile(storedFeature, referencesFromTracker);
 
             return storedFeature;

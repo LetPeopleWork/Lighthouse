@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API
             workItems.Clear();
 
             // Mirrors FeatureRepository.GetAllByPredicate, which orders by FeatureComparer before returning -
-            // the controller no longer re-sorts what the repository already sorted (ADR-134 / SA-2).
+            // the controller no longer re-sorts what the repository already sorted.
             featureRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Union(parentFeatures).Where(predicate.Compile()).OrderBy(f => f, new FeatureComparer()).AsQueryable());
 

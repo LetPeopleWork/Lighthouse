@@ -41,11 +41,11 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 
 	// The column names whoever owns the order, and the same hook decides whether a row may be moved. The
 	// factories stay policy-ignorant - they take what they are given - so this is the one place the two
-	// headings and the one verdict are chosen (ADR-134 SA-12).
+	// headings and the one verdict are chosen.
 	const { positionColumnLabel, resolveMoveGate } = useFeatureOrdering();
 	const { featureService } = useContext(ApiServiceContext);
 
-	// "Up" has no predictable meaning in a list a column is sorting (D14), so the grid has to know.
+	// "Up" has no predictable meaning in a list a column is sorting, so the grid has to know.
 	const [isSortActive, setIsSortActive] = useState(false);
 
 	const { hideCompleted, handleToggleChange } = useHideCompletedFeatures(
@@ -62,14 +62,14 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			: features;
 	}, [features, hideCompleted]);
 
-	// A scan per rendered row would be quadratic, and AC-1.9 asks this list to stay usable at five hundred.
+	// A scan per rendered row would be quadratic, and this list has to stay usable at five hundred rows.
 	const rowIndexById = useMemo(
 		() => new Map(filteredFeatures.map((row, index) => [row.id, index])),
 		[filteredFeatures],
 	);
 
 	// The rows either side of a Feature AS SHOWN. Hidden Done Features and anything the grid filtered out
-	// are jumped, not landed on (AC-3.3), which is why this reads the rendered list and not the raw one.
+	// are jumped over rather than landed on, which is why this reads the rendered list and not the raw one.
 	const neighboursFor = (feature: IFeature) => {
 		const index = rowIndexById.get(feature.id) ?? -1;
 
@@ -98,8 +98,8 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		...(activeWorkColumn ? [activeWorkColumn] : []),
 		...surfaceColumns,
 		createDependsOnColumn(featuresTerm),
-		// The two surfaces that show a place are the two that let you change it (D10), so one flag names
-		// both and neither caller passes the menu in.
+		// The two surfaces that show a place are the two that let you change it, so one flag names both
+		// and neither caller passes the menu in.
 		...(showPosition
 			? [
 					createFeatureOrderingActionsColumn({

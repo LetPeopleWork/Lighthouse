@@ -846,10 +846,10 @@ namespace Lighthouse.Backend
                 SmartAuthSchemeSelector.ApiKeyScheme, _ => { })
             .AddJwtBearer(SmartAuthSchemeSelector.JwtBearerScheme, jwtOptions =>
             {
-                // Non-browser callers (MCP, CLI tooling) present an IdP access token; validate it
-                // against the same OIDC authority the browser cookie flow trusts (ADR-079). Claims
-                // map through the existing CurrentUserProfileService + RBAC, identical to the cookie
-                // principal. Off unless an authority is configured (handled by the enclosing branch).
+                // Non-browser callers (MCP, CLI tooling) present an IdP access token, validated against
+                // the same OIDC authority the browser cookie flow trusts. Claims map through the existing
+                // CurrentUserProfileService and RBAC, identical to the cookie principal, so a token and a
+                // cookie reach the same permissions. Off unless an authority is configured.
                 jwtOptions.Authority = authConfig.Authority;
                 jwtOptions.RequireHttpsMetadata = authConfig.RequireHttpsMetadata;
                 jwtOptions.MapInboundClaims = false;
@@ -903,15 +903,16 @@ namespace Lighthouse.Backend
             })
             .AddCookie(SmartAuthSchemeSelector.EmbedCookieScheme, embedOptions =>
             {
-                // ADR-130: the relaxation is confined to this cookie. The block above is untouched,
-                // and a test asserts .Lighthouse.Session still emits SameSite=Lax.
+                // SameSite=None is what lets Lighthouse render inside another product's iframe, and it
+                // is confined to this cookie. The ordinary session cookie above is untouched, and a test
+                // asserts .Lighthouse.Session still emits SameSite=Lax.
                 embedOptions.Cookie.HttpOnly = true;
                 embedOptions.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 embedOptions.Cookie.SameSite = SameSiteMode.None;
                 embedOptions.Cookie.Name = SmartAuthSchemeSelector.EmbedCookieName;
 
-                // No first-class Partitioned property exists at net10.0; CookieBuilder.Extensions
-                // appends the attribute verbatim (spike/findings.md, 2026-08-04).
+                // No first-class Partitioned property exists at net10.0, so the attribute is appended
+                // verbatim through CookieBuilder.Extensions.
                 embedOptions.Cookie.Extensions.Add("Partitioned");
 
                 embedOptions.ExpireTimeSpan = TimeSpan.FromMinutes(embedConfig.ResolveSessionLifetimeMinutes());
