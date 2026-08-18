@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private enum JiraDeployment { Unknown, Cloud, DataCenter }
 
-        private static readonly Dictionary<int, Dictionary<string, string>> FieldNames = new();
+        private static readonly ConcurrentDictionary<int, ConcurrentDictionary<string, string>> FieldNames = new();
 
         private const string DefaultFlaggedFieldReference = "customfield_10001";
 
@@ -1220,20 +1220,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static async Task SetStoredFieldKeys(HttpClient client, int workTrackingSystemConnectionId)
         {
-            if (!FieldNames.ContainsKey(workTrackingSystemConnectionId))
-            {
-                var fields = new Dictionary<string, string>
+            // Several teams and portfolios sharing one connection refresh at the same time, so this
+            // cache is read and written from more than one thread at once. Checking for the key and
+            // then adding it left a window where two refreshes both added it, and a plain dictionary
+            // can corrupt its own storage while two threads resize it - after which a lookup fails to
+            // find a key that was written moments earlier.
+            var connectionSpecificMapping = FieldNames.GetOrAdd(
+                workTrackingSystemConnectionId,
+                _ => new ConcurrentDictionary<string, string>
                 {
                     [JiraFieldNames.FlaggedName] = string.Empty,
                     [JiraFieldNames.RankName] = string.Empty,
                     [JiraFieldNames.EpicLinkFieldName] = string.Empty,
                     [JiraFieldNames.ParentLinkFieldName] = string.Empty,
-                };
-
-                FieldNames[workTrackingSystemConnectionId] = fields;
-            }
-
-            var connectionSpecificMapping = FieldNames[workTrackingSystemConnectionId];
+                });
 
             if (!string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.RankName]) &&
                 !string.IsNullOrEmpty(connectionSpecificMapping[JiraFieldNames.FlaggedName]))
