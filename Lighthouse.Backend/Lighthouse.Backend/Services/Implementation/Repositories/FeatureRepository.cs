@@ -1,12 +1,13 @@
 ﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
-    public class FeatureRepository : RepositoryBase<Feature>
+    public class FeatureRepository : RepositoryBase<Feature>, IFeatureRepository
     {
         private readonly IFeatureOrdering featureOrdering;
 
@@ -33,6 +34,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public override Feature? GetByPredicate(Func<Feature, bool> predicate)
         {
             return GetFeatures().AsEnumerable().SingleOrDefault(predicate);
+        }
+
+        public IReadOnlyCollection<string> GetAllReferenceIds()
+        {
+            return Context.Features.Select(feature => feature.ReferenceId).ToList();
         }
 
         private IQueryable<Feature> GetFeatures()

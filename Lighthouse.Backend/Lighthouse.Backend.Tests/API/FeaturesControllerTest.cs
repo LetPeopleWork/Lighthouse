@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private static int featureCounter = 0;
 
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
@@ -42,6 +42,11 @@ namespace Lighthouse.Backend.Tests.API
             // the controller no longer re-sorts what the repository already sorted (ADR-134 / SA-2).
             featureRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Union(parentFeatures).Where(predicate.Compile()).OrderBy(f => f, new FeatureComparer()).AsQueryable());
+
+            // The same stand-in store the two reads above answer from, so a Feature this fixture holds is
+            // one a dependency naming it resolves against.
+            featureRepositoryMock.Setup(x => x.GetAllReferenceIds())
+                .Returns(() => features.Union(parentFeatures).Select(f => f.ReferenceId).ToList());
 
             featureRepositoryMock.Setup(x => x.GetById(It.IsAny<int>()))
                 .Returns((int id) => features.Union(parentFeatures).SingleOrDefault(f => f.Id == id));

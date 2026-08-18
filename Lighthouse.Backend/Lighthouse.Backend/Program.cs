@@ -1168,7 +1168,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
             builder.Services.AddScoped<IRepository<Portfolio>, PortfolioRepository>();
-            builder.Services.AddScoped<IRepository<Feature>, FeatureRepository>();
+            builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
+            builder.Services.AddScoped<IRepository<Feature>>(services => services.GetRequiredService<IFeatureRepository>());
             builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
             builder.Services.AddScoped<IWorkItemStateTransitionRepository, WorkItemStateTransitionRepository>();
             builder.Services.AddScoped<IFeatureStateTransitionRepository, FeatureStateTransitionRepository>();

@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.API
     [Authorize]
     public class FeaturesController : ControllerBase
     {
-        private readonly IRepository<Feature> featureRepository;
+        private readonly IFeatureRepository featureRepository;
         private readonly IWorkItemRepository workItemRepository;
         private readonly IBlackoutPeriodService blackoutPeriodService;
         private readonly IRbacAdministrationService rbacAdministrationService;
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.API
 
 #pragma warning disable S107 // Every parameter is a distinct port this controller drives; bundling them into a parameter object would only hide the arity, not the coupling.
         public FeaturesController(
-            IRepository<Feature> featureRepository,
+            IFeatureRepository featureRepository,
             IWorkItemRepository workItemRepository,
             IBlackoutPeriodService blackoutPeriodService,
             IRbacAdministrationService rbacAdministrationService,
@@ -214,10 +214,13 @@ namespace Lighthouse.Backend.API
         /// <summary>
         /// Every Feature id this Lighthouse holds. A dependency is only ever an id string the tracker
         /// wrote, so nothing knows whether it names a Feature until it is matched against these — and a
-        /// request for a handful of Features still has to match against all of them.
+        /// request for a handful of Features still has to match against all of them. Read as bare id
+        /// strings on purpose: fetching whole Features to answer a question about ids would pull every
+        /// Portfolio, team assignment, forecast and simulation result along with them, on a route that
+        /// has already read all of that once.
         /// </summary>
         private HashSet<string> ReferenceIdsHeld()
-            => featureRepository.GetAll().Select(f => f.ReferenceId).ToHashSet(StringComparer.Ordinal);
+            => featureRepository.GetAllReferenceIds().ToHashSet(StringComparer.Ordinal);
 
         private FeatureDto BuildFeatureDto(
             Feature feature,
