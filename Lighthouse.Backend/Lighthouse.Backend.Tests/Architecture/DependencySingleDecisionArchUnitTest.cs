@@ -40,6 +40,20 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Everything this epic added on the backend lives under these three folders, so the terminology rule
         // can be scoped by folder rather than by file and still cover whatever the next slice adds.
+        // Every type this epic introduced sits in a namespace ending in this word, so a rule written against
+        // it keeps covering whatever the next slice adds without anyone remembering to widen a list.
+        private const string TheNamespaceThisEpicOwns =
+            @"^Lighthouse\.Backend\.(Models|Services\.(Implementation|Interfaces))\.Dependencies($|\..*)";
+
+        private const string TheFileThatHandsOutTheCount = "Lighthouse.Backend/API/FeaturesController.cs";
+
+        private const string TheAttributeThatCharges = "LicenseGuard";
+
+        private const string ThePayloadTheCountRidesOn = "FeatureDto";
+
+        private static readonly string[] TheWordsThatWouldMeanAPriceWasAsked =
+            ["CanUsePremiumFeatures", "LicenseGuard", "ILicenseService", "useLicenseRestrictions"];
+
         // Both forecast runs draw from a Random built on this one number, so they see the same sequence.
         private const int TheSeedBothRunsShare = 20260818;
 
@@ -88,12 +102,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void NothingThisEpicAdded_CallsAnythingBlocked()
         {
             var offenders = TheSourceThisEpicAdded()
-                .SelectMany(file => file.Source
-                    .Split('\n')
-                    .Select((line, index) => new { Line = line, Number = index + 1 })
-                    .Where(line => line.Line.Contains(TheWordThatIsAlreadyTaken, StringComparison.OrdinalIgnoreCase))
-                    .Select(line => $"{file.RelativePath}:{file.FirstLine + line.Number - 1}: {line.Line.Trim()}"))
-                .OrderBy(entry => entry, StringComparer.Ordinal)
+                .SelectMany(file => LinesMatching(file, line =>
+                    line.Contains(TheWordThatIsAlreadyTaken, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
 
             Assert.That(offenders, Is.Empty,
@@ -101,6 +111,80 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "can rename under Settings. A dependency is a different thing, and a Feature can be both at once " +
                 "on the same row. Say what this actually is - waiting on, depends on, not honoured. Found: " +
                 string.Join(", ", offenders));
+        }
+
+        /// <summary>
+        /// The seeded forecast next door shows the days did not move. It cannot show why, and a run that
+        /// happens to agree today would still agree the day after someone wires the two halves together.
+        /// This says the two halves do not know each other exists, which is the reason the days agree.
+        /// </summary>
+        [Test]
+        public void TheForecastAndThisEpic_KnowNothingOfEachOther()
+        {
+            var theForecastItself = Types().That()
+                .Are(typeof(ForecastService)).Or()
+                .Are(typeof(SimulationResult)).Or()
+                .Are(typeof(Lighthouse.Backend.Services.Implementation.RandomNumberService));
+
+            var whatThisEpicAdded = Types().That()
+                .ResideInNamespaceMatching(TheNamespaceThisEpicOwns).Or()
+                .Are(typeof(FeatureDependencyReference));
+
+            const string reason =
+                "Neither half of this may reach the other. What a Feature waits on is stored and counted here " +
+                "and read by nobody who schedules anything; the simulation still draws from throughput alone, " +
+                "exactly as it did before dependencies existed. Letting a dependency change a forecast is a " +
+                "separate piece of work with its own decisions to make, and this is the door it has to come " +
+                "through rather than arriving as an import nobody noticed.";
+
+            theForecastItself.Should().NotDependOnAny(whatThisEpicAdded).Because(reason).Check(Architecture);
+            whatThisEpicAdded.Should().NotDependOnAny(theForecastItself).Because(reason).Check(Architecture);
+        }
+
+        /// <summary>
+        /// Everything here is free. The premium flag has a place waiting for it in the design so the next
+        /// epic need not re-cut the type, and this keeps that place empty until that epic arrives - an
+        /// unread field is easy to start reading by accident.
+        /// </summary>
+        [Test]
+        public void NothingThisEpicAdded_AsksWhetherTheLicenceIsPremium()
+        {
+            var licenceWords = TheSourceThisEpicAdded()
+                .SelectMany(file => LinesMatching(file, line =>
+                    TheWordsThatWouldMeanAPriceWasAsked.Any(word => line.Contains(word, StringComparison.Ordinal))))
+                .ToList();
+
+            var chargedRoutes = LinesMatching(TheFileThatHandsOutTheCount, TheRouteHandsOutTheCount);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(licenceWords, Is.Empty,
+                    "Reading what a Feature waits on costs nothing, on the screen as well as on the wire. A " +
+                    "licence question here would hide the number from most instances and leave the column blank " +
+                    "with no way to tell why. Found: " + string.Join(", ", licenceWords));
+
+                Assert.That(chargedRoutes, Is.Empty,
+                    "The count of what a Feature waits on rides along on the Feature payload that every list " +
+                    "reads, and that payload is free. Putting a route that hands it out behind a paid gate would " +
+                    "take the whole Feature list away from an unlicensed instance to hide one number. Found: " +
+                    string.Join(", ", chargedRoutes));
+            }
+        }
+
+        /// <summary>
+        /// A route is charged for by an attribute sitting directly above it, so the paid ones are found by
+        /// reading down from each attribute to the signature it guards.
+        /// </summary>
+        private static bool TheRouteHandsOutTheCount(string line, IReadOnlyList<string> following)
+        {
+            if (!line.TrimStart().StartsWith($"[{TheAttributeThatCharges}", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var signature = following.FirstOrDefault(next => next.Contains(" public ", StringComparison.Ordinal));
+
+            return signature is not null && signature.Contains(ThePayloadTheCountRidesOn, StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -179,6 +263,33 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return features;
+        }
+
+        private static List<string> LinesMatching(string relativePath, Func<string, IReadOnlyList<string>, bool> matches)
+        {
+            var file = Path.Combine(SolutionRoot(), relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            Assert.That(File.Exists(file), Is.True,
+                $"{relativePath} was moved or deleted, so the rule it carries is no longer being enforced.");
+
+            var lines = File.ReadAllLines(file);
+
+            return lines
+                .Select((line, index) => new { Line = line, Number = index + 1, Following = lines.Skip(index + 1).ToList() })
+                .Where(entry => matches(entry.Line, entry.Following))
+                .Select(entry => $"{relativePath}:{entry.Number}: {entry.Line.Trim()}")
+                .ToList();
+        }
+
+        private static List<string> LinesMatching(SourceFile file, Func<string, bool> matches)
+        {
+            return file.Source
+                .Split('\n')
+                .Select((line, index) => new { Line = line, Number = index + 1 })
+                .Where(entry => matches(entry.Line))
+                .Select(entry => $"{file.RelativePath}:{file.FirstLine + entry.Number - 1}: {entry.Line.Trim()}")
+                .OrderBy(entry => entry, StringComparer.Ordinal)
+                .ToList();
         }
 
         private static List<SourceFile> TheSourceThisEpicAdded()
