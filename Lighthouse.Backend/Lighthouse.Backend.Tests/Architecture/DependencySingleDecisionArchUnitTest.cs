@@ -40,6 +40,15 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string DependsOnColumnFile =
             "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx";
 
+        // The two files that write the words a reader actually sees about a dependency. Both were added by
+        // this epic and say nothing about anything else, so they are read whole rather than scoped to a
+        // region: anything either of them grows is this epic's vocabulary by construction.
+        private static readonly string[] TheFrontendFilesThisEpicWrites =
+        [
+            "Lighthouse.Frontend/src/components/Common/DependencyDialog/DependencyDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx",
+        ];
+
         // Everything this epic added on the backend lives under these three folders, so the terminology rule
         // can be scoped by folder rather than by file and still cover whatever the next slice adds.
         // Every type this epic introduced sits in a namespace ending in this word, so a rule written against
@@ -356,6 +365,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var files = BackendSourceThisEpicAdded();
             files.Add(TheDependsOnColumn());
+            files.AddRange(TheFrontendFilesThisEpicWrites.Select(WholeFile));
 
             return files;
         }
@@ -439,6 +449,16 @@ namespace Lighthouse.Backend.Tests.Architecture
                 DependsOnColumnFile,
                 next < 0 ? source[start..] : source[start..next],
                 FirstLine: source[..start].Count(character => character == '\n') + 1);
+        }
+
+        private static SourceFile WholeFile(string relativePath)
+        {
+            var file = Path.Combine(RepositoryRoot(), relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            Assert.That(File.Exists(file), Is.True,
+                $"{relativePath} was moved or deleted, so the rule it carries is no longer being enforced.");
+
+            return new SourceFile(relativePath, File.ReadAllText(file), FirstLine: 1);
         }
 
         private static string RepositoryRoot()

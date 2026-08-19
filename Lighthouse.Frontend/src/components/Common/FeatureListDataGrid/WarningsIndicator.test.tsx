@@ -3,13 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import type { IFeatureDependencyWarning } from "../../../models/FeatureDependency";
 import WarningsIndicator from "./WarningsIndicator";
 
+const { terms } = vi.hoisted(() => ({
+	terms: {
+		workItems: "Work Items",
+		feature: "Feature",
+		portfolio: "Portfolio",
+		blocked: "Blocked",
+	} as Record<string, string>,
+}));
+
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => {
-			if (key === "workItems") return "Work Items";
-			if (key === "feature") return "Feature";
-			return key;
-		},
+		getTerm: (key: string) => terms[key] ?? key,
 	}),
 }));
 
@@ -252,6 +257,44 @@ describe("WarningsIndicator", () => {
 					"block",
 				);
 			}
+		});
+
+		// The other half of the same claim: not only is that word absent, renaming it moves nothing here.
+		// A warning that quietly followed the rename would put two meanings of one word on one row.
+		it("renders the same words whatever that term is renamed to", () => {
+			const everyKind = [
+				aWarning({ notHonouredReason: "OutsideThisPortfolio" }),
+				aWarning({ blockerPositionedBelow: true }),
+				aWarning({ notHonouredReason: "InALoop" }),
+				aWarning({ notHonouredReason: "BlockerCannotBeForecast" }),
+			];
+
+			const { unmount } = render(
+				<WarningsIndicator
+					isDoneWithRemainingWork={false}
+					isUsingDefaultFeatureSize={false}
+					dependencyWarnings={everyKind}
+				/>,
+			);
+			const beforeTheRename = screen
+				.getAllByRole("button")
+				.map((warning) => warning.getAttribute("aria-label"));
+			unmount();
+
+			terms.blocked = "Held Up";
+			render(
+				<WarningsIndicator
+					isDoneWithRemainingWork={false}
+					isUsingDefaultFeatureSize={false}
+					dependencyWarnings={everyKind}
+				/>,
+			);
+			const afterTheRename = screen
+				.getAllByRole("button")
+				.map((warning) => warning.getAttribute("aria-label"));
+			terms.blocked = "Blocked";
+
+			expect(afterTheRename).toEqual(beforeTheRename);
 		});
 	});
 });
