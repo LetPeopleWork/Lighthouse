@@ -81,7 +81,10 @@ describe("WarningsIndicator", () => {
 		);
 
 		const button = screen.getByTestId("warning-done-with-remaining-work");
-		expect(button).toHaveAttribute("aria-label");
+		expect(button).toHaveAttribute(
+			"aria-label",
+			"This feature is marked as done but still has remaining work items. Please verify if all work has been completed.",
+		);
 	});
 
 	it("should have accessible aria-label on default feature size warning", () => {
@@ -93,7 +96,10 @@ describe("WarningsIndicator", () => {
 		);
 
 		const button = screen.getByTestId("warning-default-feature-size");
-		expect(button).toHaveAttribute("aria-label");
+		expect(button).toHaveAttribute(
+			"aria-label",
+			"No child Work Items were found for this Feature. The remaining Work Items displayed are based on the default Feature size specified in the advanced project settings.",
+		);
 	});
 
 	describe("dependency warnings", () => {
@@ -118,6 +124,25 @@ describe("WarningsIndicator", () => {
 			);
 
 			expect(screen.getByTestId("no-warnings")).toBeInTheDocument();
+		});
+
+		// The tooltip and the label a screen reader announces are the same sentence, said once. A row that
+		// showed one thing and announced another would be two warnings to keep in step.
+		it("says the same thing on hover as it says to a screen reader", () => {
+			render(
+				<WarningsIndicator
+					isDoneWithRemainingWork={false}
+					isUsingDefaultFeatureSize={false}
+					dependencyWarnings={[aWarning({ notHonouredReason: "InALoop" })]}
+				/>,
+			);
+
+			expect(
+				screen.getByTestId("warning-dependency-in-a-loop"),
+			).toHaveAttribute(
+				"aria-label",
+				"This Feature and Warehouse sync are waiting on each other. That dependency is not included in the forecast.",
+			);
 		});
 
 		it("names the Feature waited on and says the forecast leaves it out", () => {

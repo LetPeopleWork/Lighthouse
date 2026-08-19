@@ -19,6 +19,13 @@ const LEFT_OUT = "That dependency is not included in the forecast.";
 export const withheldName = (terms: DependencyTerms): string =>
 	`a ${terms.featureTerm} you do not have access to`;
 
+/** The same words where they open a line rather than sit inside one. */
+export const withheldTitle = (terms: DependencyTerms): string => {
+	const name = withheldName(terms);
+
+	return `${name[0].toUpperCase()}${name.slice(1)}`;
+};
+
 export const reasonSentence = (
 	reason: NotHonouredReason | null,
 	waitedOn: string,

@@ -92,6 +92,44 @@ describe("DependencyDialog", () => {
 		expect(screen.queryByText("Warehouse sync")).not.toBeInTheDocument();
 	});
 
+	// A Feature can be one the reader may not see and one there is nothing wrong with. The row still has
+	// to be here for the count to add up, and there is nothing to say about it beyond that.
+	it("says nothing further about a withheld entry there is nothing wrong with", () => {
+		renderDialog([
+			aDependency({
+				referenceId: "",
+				name: "",
+				url: null,
+				portfolios: [],
+				isWithheld: true,
+				notHonouredReason: null,
+			}),
+		]);
+
+		const row = screen.getByTestId("dependency-withheld");
+		expect(row).toHaveTextContent("A Feature you do not have access to");
+		expect(
+			row.textContent?.replace("A Feature you do not have access to", ""),
+		).toBe("");
+	});
+
+	it("says in full why Lighthouse will not act on a withheld entry", () => {
+		renderDialog([
+			aDependency({
+				referenceId: "",
+				name: "",
+				url: null,
+				portfolios: [],
+				isWithheld: true,
+				notHonouredReason: "BlockerCannotBeForecast",
+			}),
+		]);
+
+		expect(screen.getByTestId("dependency-withheld")).toHaveTextContent(
+			"a Feature you do not have access to has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
+		);
+	});
+
 	it("never uses the word that already names something else", () => {
 		renderDialog([
 			aDependency({ notHonouredReason: "OutsideThisPortfolio" }),

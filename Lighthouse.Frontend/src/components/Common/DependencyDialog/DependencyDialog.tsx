@@ -18,6 +18,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	reasonSentence,
 	withheldName,
+	withheldTitle,
 } from "../../../utils/dependencies/dependencySentences";
 
 export interface DependencyDialogProps {
@@ -73,7 +74,7 @@ const DependencyDialog: React.FC<DependencyDialogProps> = ({
 					{entries.map(({ key, dependency }) =>
 						dependency.isWithheld ? (
 							<Box key={key} data-testid="dependency-withheld">
-								<Typography variant="body1">{withheldName(terms)}</Typography>
+								<Typography variant="body1">{withheldTitle(terms)}</Typography>
 								<Typography variant="body2" color="text.secondary">
 									{reasonSentence(
 										dependency.notHonouredReason,
