@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
+import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import { createDependsOnColumn, createStateColumn } from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
 
@@ -52,25 +53,95 @@ beforeEach(() => {
 	});
 });
 
-const feature = (overrides: Partial<IFeature> = {}): IFeature =>
+const aDependency = (
+	overrides: Partial<IFeatureDependency> = {},
+): IFeatureDependency => ({
+	referenceId: "FTR-9",
+	name: "Warehouse sync",
+	url: "https://tracker.example/FTR-9",
+	source: "TrackerLink",
+	notHonouredReason: null,
+	blockerPositionedBelow: false,
+	isWithheld: false,
+	...overrides,
+});
+
+const feature = (dependsOn: IFeatureDependency[] = []): IFeature =>
 	({
 		id: 1,
 		name: "Rebuild the search index",
+		referenceId: "FTR-1",
 		forecasts: [],
 		teamsWithoutForecast: [],
-		...overrides,
-	}) as IFeature;
+		dependsOn,
+	}) as unknown as IFeature;
 
 const renderCell = (row: IFeature) => {
-	const column = createDependsOnColumn("Features");
-	return render(column.renderCell?.({ row, value: row.dependsOnCount }));
+	const column = createDependsOnColumn();
+	return render(
+		column.renderCell?.({ row, value: (row.dependsOn ?? []).length }),
+	);
 };
 
 describe("createDependsOnColumn", () => {
-	it("shows how many Features this one is waiting on", () => {
-		renderCell(feature({ dependsOnCount: 2 }));
+	it("names each Feature this one waits on, id first", () => {
+		renderCell(feature([aDependency()]));
 
-		expect(screen.getByText("2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-9: Warehouse sync")).toBeInTheDocument();
+	});
+
+	// A reader scanning this column is looking for which Features are involved. Two of them running
+	// into one line is a line they have to read twice.
+	it("gives every Feature waited on a line of its own", () => {
+		renderCell(
+			feature([
+				aDependency(),
+				aDependency({ referenceId: "FTR-8", name: "Payment gateway upgrade" }),
+			]),
+		);
+
+		expect(screen.getByText("FTR-9: Warehouse sync")).toBeInTheDocument();
+		expect(
+			screen.getByText("FTR-8: Payment gateway upgrade"),
+		).toBeInTheDocument();
+		expect(screen.getAllByRole("link")).toHaveLength(2);
+	});
+
+	// Deciding what to do about a wait happens in the work tracking system, and the reader is in the
+	// middle of reading a list here - sending them away from it would cost them their place.
+	it("opens the record in the work tracking system in a new tab", () => {
+		renderCell(feature([aDependency()]));
+
+		const link = screen.getByRole("link", { name: "FTR-9: Warehouse sync" });
+		expect(link).toHaveAttribute("href", "https://tracker.example/FTR-9");
+		expect(link).toHaveAttribute("target", "_blank");
+		expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+	});
+
+	it("still names a Feature the work tracking system gave no link to", () => {
+		renderCell(feature([aDependency({ url: null })]));
+
+		expect(screen.getByText("FTR-9: Warehouse sync")).toBeInTheDocument();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+	});
+
+	// The row is here because something is being waited on. Naming it would be the disclosure the
+	// payload already refused.
+	it("says a Feature the reader may not see is there without naming it", () => {
+		renderCell(
+			feature([
+				aDependency({
+					referenceId: "",
+					name: "",
+					url: null,
+					isWithheld: true,
+					notHonouredReason: "OutsideThisPortfolio",
+				}),
+			]),
+		);
+
+		expect(screen.getByText("No access")).toBeInTheDocument();
+		expect(screen.queryByRole("link")).not.toBeInTheDocument();
 	});
 
 	it("leaves the cell empty when the Feature waits on nothing", () => {
@@ -79,34 +150,33 @@ describe("createDependsOnColumn", () => {
 		expect(container.textContent).toBe("");
 	});
 
-	it("reads a counted none as nothing too, never as a literal zero", () => {
-		const { container } = renderCell(feature({ dependsOnCount: 0 }));
-
-		expect(container.textContent).toBe("");
-	});
-
-	it("takes the vocabulary it is given rather than naming the concept itself", () => {
-		expect(createDependsOnColumn("Epics").headerName).toBe("Depends On Epics");
+	it("is named for the thing itself, in words no instance renames", () => {
+		expect(createDependsOnColumn().headerName).toBe("Dependencies");
 	});
 
 	it("never borrows the word an instance may already have renamed for board-blocked work", () => {
-		expect(createDependsOnColumn("Features").headerName).not.toMatch(/block/i);
+		expect(createDependsOnColumn().headerName).not.toMatch(/block/i);
 	});
 
 	it("stays sortable, so a list can be read waiting-most first", () => {
-		expect(createDependsOnColumn("Features").sortable).toBe(true);
+		expect(createDependsOnColumn().sortable).toBe(true);
 	});
 
-	it("sorts on the number itself, not on what the cell happens to print", () => {
-		const column = createDependsOnColumn("Features");
+	// The list has no order a reader would sort by, and the question the column answers first is which
+	// rows are entangled at all.
+	it("sorts on how many are waited on rather than on what the cell prints", () => {
+		const column = createDependsOnColumn();
 
 		expect(
-			column.valueGetter?.(undefined, feature({ dependsOnCount: 3 })),
-		).toBe(3);
+			column.valueGetter?.(
+				undefined,
+				feature([aDependency(), aDependency({ referenceId: "FTR-8" })]),
+			),
+		).toBe(2);
 	});
 });
 
-const featureRow = (dependsOnCount?: number): Feature => {
+const featureRow = (dependsOn: IFeatureDependency[]): Feature => {
 	const row = new Feature();
 	row.id = 1;
 	row.name = "Rebuild the search index";
@@ -120,15 +190,15 @@ const featureRow = (dependsOnCount?: number): Feature => {
 	row.totalWork = { 1: 10 };
 	row.forecasts = [];
 	row.url = "";
-	row.dependsOnCount = dependsOnCount;
+	row.dependsOn = dependsOn;
 	return row;
 };
 
-const renderGrid = (dependsOnCount = 2) =>
+const renderGrid = (dependsOn: IFeatureDependency[] = [aDependency()]) =>
 	render(
 		<MemoryRouter>
 			<FeatureListDataGrid
-				features={[featureRow(dependsOnCount)]}
+				features={[featureRow(dependsOn)]}
 				columns={[createStateColumn()]}
 				storageKey="depends-on-shared-grid"
 				hideCompletedStorageKey="depends-on-shared-grid-hide-completed"
@@ -136,28 +206,16 @@ const renderGrid = (dependsOnCount = 2) =>
 		</MemoryRouter>,
 	);
 
-describe("the same count is read on both Feature lists, because there is only one of them", () => {
+describe("the same column is read on both Feature lists, because there is only one of them", () => {
 	// Neither Feature list can supply this column: the shared grid composes it, so there is one
 	// definition to disagree with itself. A caller passing only its own columns still gets it.
 	it("comes from the shared grid, so no surface can hand in its own version", () => {
 		renderGrid();
 
 		expect(
-			screen.getByRole("columnheader", { name: "Depends On Features" }),
+			screen.getByRole("columnheader", { name: "Dependencies" }),
 		).toBeInTheDocument();
-		expect(screen.getByText("2")).toBeInTheDocument();
-	});
-});
-
-describe("the column speaks the instance's own vocabulary", () => {
-	it("names the thing being waited on with the word this instance chose", () => {
-		terminology.terms.features = "Epics";
-
-		renderGrid();
-
-		expect(
-			screen.getByRole("columnheader", { name: "Depends On Epics" }),
-		).toBeInTheDocument();
+		expect(screen.getByText("FTR-9: Warehouse sync")).toBeInTheDocument();
 	});
 
 	// An instance can rename what it calls held-up work, and one screen carrying that word in two
@@ -166,9 +224,7 @@ describe("the column speaks the instance's own vocabulary", () => {
 		terminology.terms.blocked = "Impeded";
 
 		const { container } = renderGrid();
-		const columnCells = container.querySelectorAll(
-			'[data-field="dependsOnCount"]',
-		);
+		const columnCells = container.querySelectorAll('[data-field="dependsOn"]');
 
 		expect(columnCells.length).toBeGreaterThan(0);
 		for (const cell of columnCells) {

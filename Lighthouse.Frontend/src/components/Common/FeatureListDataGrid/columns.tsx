@@ -3,6 +3,10 @@ import type { GridValidRowModel } from "@mui/x-data-grid";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
 import type { IFeature } from "../../../models/Feature";
+import {
+	hasNothingWrongWithIt,
+	type IFeatureDependency,
+} from "../../../models/FeatureDependency";
 import { getWorkItemName } from "../../../utils/featureName";
 import {
 	CANNOT_FORECAST_SHORT,
@@ -111,14 +115,16 @@ export const createWarningsColumn = (): DataGridColumn<
 	valueGetter: (_, row) =>
 		(row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0) ||
 		row.isUsingDefaultFeatureSize ||
-		(row.dependencyWarnings ?? []).length > 0,
+		(row.dependsOn ?? []).some(
+			(dependency) => !hasNothingWrongWithIt(dependency),
+		),
 	renderCell: ({ row }) => (
 		<WarningsIndicator
 			isDoneWithRemainingWork={
 				row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0
 			}
 			isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
-			dependencyWarnings={row.dependencyWarnings}
+			dependencies={row.dependsOn}
 		/>
 	),
 });
@@ -135,46 +141,57 @@ export const createActiveWorkColumn = (
 	renderCell: ({ row }) => <ActiveWorkIndicator teams={getTeams(row)} />,
 });
 
-// Most features wait on nothing, so the cell stays blank in that case, the same way a missing
-// position is left blank. A printed 0 would sit in the column looking like a number worth reading,
-// and there would be an empty dialog behind it to land in.
-const renderDependsOnCount = (
-	row: IFeature,
-	onOpen?: (feature: IFeature) => void,
-) => {
-	const count = row.dependsOnCount ?? 0;
+// Most Features wait on nothing, so the cell stays blank in that case, the same way a missing position
+// is left blank. Each one it does wait on gets its own line: a reader scanning the column is looking
+// for which Features are involved, and a run-on line makes them read it twice.
+const renderDependsOn = (row: IFeature) => (
+	<Box sx={{ py: 0.5 }}>
+		{(row.dependsOn ?? []).map((dependency, index) => (
+			<Typography
+				// A withheld entry carries no id of its own to be listed under - that is what withholding it
+				// means - so it is the one case keyed by where it sits.
+				key={
+					dependency.isWithheld ? `withheld-${index}` : dependency.referenceId
+				}
+				variant="body2"
+				component="div"
+				data-testid={`depends-on-${row.referenceId}`}
+			>
+				{renderDependency(dependency)}
+			</Typography>
+		))}
+	</Box>
+);
 
-	if (count === 0) {
-		return <span />;
+const renderDependency = (dependency: IFeatureDependency) => {
+	if (dependency.isWithheld) {
+		return <em>No access</em>;
 	}
 
-	if (!onOpen) {
-		return <span>{count}</span>;
+	const named = `${dependency.referenceId}: ${dependency.name}`;
+
+	if (!dependency.url) {
+		return <span>{named}</span>;
 	}
 
 	return (
-		<Link
-			component="button"
-			type="button"
-			underline="hover"
-			onClick={() => onOpen(row)}
-			data-testid={`depends-on-${row.referenceId}`}
-		>
-			{count}
+		<Link href={dependency.url} target="_blank" rel="noopener noreferrer">
+			{named}
 		</Link>
 	);
 };
 
-export const createDependsOnColumn = (
-	featuresTerm: string,
-	onOpen?: (feature: IFeature) => void,
-): DataGridColumn<IFeature & GridValidRowModel> => ({
-	field: "dependsOnCount",
-	headerName: `Depends On ${featuresTerm}`,
-	width: 150,
+export const createDependsOnColumn = (): DataGridColumn<
+	IFeature & GridValidRowModel
+> => ({
+	field: "dependsOn",
+	headerName: "Dependencies",
+	width: 260,
 	sortable: true,
-	valueGetter: (_, row) => row.dependsOnCount,
-	renderCell: ({ row }) => renderDependsOnCount(row, onOpen),
+	// Sorted by how many a Feature waits on: the list itself has no order a reader would sort by, and
+	// the question the column answers first is which rows are entangled at all.
+	valueGetter: (_, row) => (row.dependsOn ?? []).length,
+	renderCell: ({ row }) => renderDependsOn(row),
 });
 
 export const createParentColumn = (

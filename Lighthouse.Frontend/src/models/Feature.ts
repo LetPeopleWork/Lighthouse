@@ -4,8 +4,8 @@ import {
 	type IEntityReference,
 } from "./EntityReference";
 import {
-	FeatureDependencyWarningSchema,
-	type IFeatureDependencyWarning,
+	FeatureDependencySchema,
+	type IFeatureDependency,
 } from "./FeatureDependency";
 import { WhenForecastSchema } from "./Forecasts/forecastSchemas";
 import { type IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
@@ -30,12 +30,10 @@ export interface IFeature extends IWorkItem {
 	canMove?: boolean;
 	moveBlockReason?: string;
 	blockingPortfolios?: IEntityReference[];
-	// How many of the Features this Lighthouse holds this one is waiting on. The server has already
-	// left out any link naming something it does not hold, so this is not the number of links drawn.
-	dependsOnCount?: number;
-	// What is worth telling the reader about those dependencies, as codes and names the client turns
-	// into sentences. Absent on read paths that never work it out, which is not "nothing is wrong".
-	dependencyWarnings?: IFeatureDependencyWarning[];
+	// Which Features this one is waiting on, named on the row. The server has already left out any link
+	// pointing at something it does not hold, so this is not every link drawn in the tracker. Optional
+	// for the same reason the other additive fields are: a fixture built before it existed still is one.
+	dependsOn?: IFeatureDependency[];
 
 	getRemainingWorkForFeature(): number;
 	getRemainingWorkForTeam(id: number): number;
@@ -72,11 +70,7 @@ export const FeatureSchema = z.object({
 	canMove: z.boolean().nullable().optional(),
 	moveBlockReason: z.string().nullable().optional(),
 	blockingPortfolios: z.array(EntityReferenceSchema).optional().default([]),
-	dependsOnCount: z.number().nullable().optional(),
-	dependencyWarnings: z
-		.array(FeatureDependencyWarningSchema)
-		.nullable()
-		.optional(),
+	dependsOn: z.array(FeatureDependencySchema).optional().default([]),
 });
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
@@ -101,8 +95,7 @@ export class Feature implements IFeature {
 	canMove?: boolean;
 	moveBlockReason?: string;
 	blockingPortfolios: IEntityReference[] = [];
-	dependsOnCount?: number;
-	dependencyWarnings?: IFeatureDependencyWarning[];
+	dependsOn: IFeatureDependency[] = [];
 
 	owningTeam!: string;
 
@@ -202,8 +195,7 @@ export class Feature implements IFeature {
 		feature.canMove = data.canMove ?? undefined;
 		feature.moveBlockReason = data.moveBlockReason ?? undefined;
 		feature.blockingPortfolios = data.blockingPortfolios;
-		feature.dependsOnCount = data.dependsOnCount ?? undefined;
-		feature.dependencyWarnings = data.dependencyWarnings ?? undefined;
+		feature.dependsOn = data.dependsOn;
 		return feature;
 	}
 }

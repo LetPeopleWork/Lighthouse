@@ -21,6 +21,7 @@ const THE_DEPENDENT_AND_BOTH_OF_ITS_BLOCKERS =
 
 const THE_DEPENDENT = "Dependency-Aware Forecasting";
 const ONE_OF_ITS_BLOCKERS = "Show Feature Dependencies";
+const THE_OTHER_BLOCKER = "Deliveries as Durable Records";
 
 // The walking skeleton for the whole slice: a Predecessor link a person drew in Azure DevOps, the
 // refresh that already runs, what that refresh stored, and a product owner reading the answer off a
@@ -68,17 +69,17 @@ test("@walking_skeleton a product owner sees, without leaving Lighthouse, that a
 	const featuresPage = await lighthousePage.goToFeatures("Features");
 	await expect(featuresPage.featureRows.first()).toBeVisible();
 
-	await expect(featuresPage.getDependsOnCell(THE_DEPENDENT)).toHaveText("2");
-	await expect(featuresPage.getDependsOnCell(ONE_OF_ITS_BLOCKERS)).toHaveText(
-		"",
-	);
-
-	// The count answers "how many"; the reader's next question is "which ones", and answering it is
-	// what makes the number worth showing.
-	// Addressed as the link it is: the entry names the Feature twice, once to open it in the tracker
-	// and once in the sentence saying what stands against the dependency.
-	const dependencies = await featuresPage.openDependencies(THE_DEPENDENT);
+	// The row names them rather than counting them: "which ones" is the question a reader has next,
+	// and each answer leads into the work tracking system where something can be done about it.
+	const dependencies = featuresPage.getDependenciesCell(THE_DEPENDENT);
 	await expect(
-		dependencies.getByRole("link", { name: ONE_OF_ITS_BLOCKERS }),
+		dependencies.getByRole("link", { name: new RegExp(ONE_OF_ITS_BLOCKERS) }),
 	).toBeVisible();
+	await expect(
+		dependencies.getByRole("link", { name: new RegExp(THE_OTHER_BLOCKER) }),
+	).toBeVisible();
+
+	await expect(
+		featuresPage.getDependenciesCell(ONE_OF_ITS_BLOCKERS),
+	).toHaveText("");
 });

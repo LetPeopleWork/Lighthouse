@@ -2,9 +2,10 @@ import CheckIcon from "@mui/icons-material/Check";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { IconButton, Tooltip } from "@mui/material";
 import type React from "react";
-import type {
-	IFeatureDependencyWarning,
-	NotHonouredReason,
+import {
+	hasNothingWrongWithIt,
+	type IFeatureDependency,
+	type NotHonouredReason,
 } from "../../../models/FeatureDependency";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -18,7 +19,7 @@ import {
 type WarningsIndicatorProps = {
 	isDoneWithRemainingWork: boolean;
 	isUsingDefaultFeatureSize: boolean;
-	dependencyWarnings?: IFeatureDependencyWarning[];
+	dependencies?: IFeatureDependency[];
 };
 
 const DONE_WITH_REMAINING_WORK_TOOLTIP =
@@ -27,8 +28,12 @@ const DONE_WITH_REMAINING_WORK_TOOLTIP =
 const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	isDoneWithRemainingWork,
 	isUsingDefaultFeatureSize,
-	dependencyWarnings = [],
+	dependencies = [],
 }) => {
+	// Having a dependency is not a warning; only one with something wrong with it is.
+	const worthReporting = dependencies.filter(
+		(dependency) => !hasNothingWrongWithIt(dependency),
+	);
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -37,7 +42,7 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	if (
 		!isDoneWithRemainingWork &&
 		!isUsingDefaultFeatureSize &&
-		dependencyWarnings.length === 0
+		worthReporting.length === 0
 	) {
 		return (
 			<Tooltip title="No warnings">
@@ -81,15 +86,15 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 					</IconButton>
 				</Tooltip>
 			)}
-			{dependencyWarnings.map((warning) => {
-				const kind = kindOf(warning);
-				const sentence = sentenceFor(warning, { featureTerm, portfolioTerm });
+			{worthReporting.map((dependency) => {
+				const kind = kindOf(dependency);
+				const sentence = sentenceFor(dependency, {
+					featureTerm,
+					portfolioTerm,
+				});
 
 				return (
-					<Tooltip
-						key={`${kind}-${warning.blockerReferenceId}`}
-						title={sentence}
-					>
+					<Tooltip key={`${kind}-${dependency.referenceId}`} title={sentence}>
 						<IconButton
 							size="small"
 							sx={{ ml: 1 }}
@@ -119,9 +124,9 @@ const KIND_OF_REASON: Record<NotHonouredReason, DependencyWarningKind> = {
 
 // A dependency Lighthouse cannot act on is reported as such; where it sits in the order is only worth
 // mentioning about one it can act on, so the reason wins where a dependency has both.
-const kindOf = (warning: IFeatureDependencyWarning): DependencyWarningKind => {
-	if (warning.notHonouredReason) {
-		return KIND_OF_REASON[warning.notHonouredReason];
+const kindOf = (dependency: IFeatureDependency): DependencyWarningKind => {
+	if (dependency.notHonouredReason) {
+		return KIND_OF_REASON[dependency.notHonouredReason];
 	}
 
 	return "positioned-below";
@@ -130,15 +135,15 @@ const kindOf = (warning: IFeatureDependencyWarning): DependencyWarningKind => {
 // The words themselves live beside the dialog's, so a row and the list opened from it say the same
 // thing about the same dependency.
 const sentenceFor = (
-	warning: IFeatureDependencyWarning,
+	dependency: IFeatureDependency,
 	terms: DependencyTerms,
 ): string => {
-	const waitedOn = warning.isWithheld
+	const waitedOn = dependency.isWithheld
 		? withheldName(terms)
-		: warning.blockerName;
+		: dependency.name;
 
-	if (warning.notHonouredReason) {
-		return reasonSentence(warning.notHonouredReason, waitedOn, terms);
+	if (dependency.notHonouredReason) {
+		return reasonSentence(dependency.notHonouredReason, waitedOn, terms);
 	}
 
 	return positionedBelowSentence(waitedOn, terms);

@@ -4,9 +4,9 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 {
     /// <summary>
-    /// Acceptance scenarios - Slice 02: the count from slice 01 opened up. Which Features exactly is this
-    /// one waiting on, what state are they in, and where can the reader go to look at them. Driving port:
-    /// the route the dialog behind the Depends On cell calls.
+    /// Acceptance scenarios - Slice 02: the row says which Features this one is waiting on, names each of
+    /// them, and says what stands against any Lighthouse cannot act on. Driving port: the Features list
+    /// every screen reads.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
@@ -27,96 +27,48 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             NotHonouredReason.BlockerCannotBeForecast,
         ];
 
-        // @driving_adapter @us-02 - "Opening the list of Features one is waiting on"
+        // @driving_adapter @us-02 - "Opening the list of Features one is waiting on". The reader finds what
+        // a Feature waits on on the row itself, named and linked, rather than by going somewhere for it.
         [Test]
-        public async Task Opening_what_a_feature_waits_on_names_it_with_its_state_its_portfolios_and_a_way_to_open_it()
+        public async Task A_row_names_the_features_it_waits_on_and_leads_to_each_of_them()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenARefreshedPortfolio(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
 
-            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheListIs(list, "F-1");
-            ThenTheEntryFor(list, "F-1").Names("Rebuild the search index");
-            ThenTheEntryFor(list, "F-1").SaysItIsInState("New");
-            ThenTheEntryFor(list, "F-1").SaysItBelongsTo("Platform");
-            ThenTheEntryFor(list, "F-1").OffersAWayToOpenIt("https://tracker.example/F-1");
+            ThenTheRowFor(rows, "F-3").WaitsOn("F-1");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").Names("Rebuild the search index");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").LeadsTo("https://tracker.example/F-1");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").SaysItCameFromTheTrackersOwnLink();
         }
 
-        // The list and the count on the row are read by the same person seconds apart, so an entry the
-        // list leaves out is a number the reader cannot account for. The count leaves out a link naming
-        // nothing Lighthouse holds, and so must this.
+        // A link naming something this instance does not hold cannot be named to a reader, so it is not
+        // there. Storing it and showing nothing is the honest pair: the day that Feature is imported, the
+        // link starts naming it on its own.
         [Test]
-        public async Task A_link_naming_nothing_lighthouse_holds_is_no_entry_here_either()
+        public async Task A_link_naming_nothing_lighthouse_holds_is_not_on_the_row()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenARefreshedPortfolio(
                 platform,
                 AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndOneNobodyHolds));
 
-            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheListIs(list, "F-1");
-            await ThenTheListIsAsLongAsTheCountOnTheRow("F-3");
+            ThenTheRowFor(rows, "F-3").WaitsOn("F-1");
         }
 
-        // Clients pin themselves to a version and every other Features route answers on both. A route
-        // that only answered on one would be reachable from the screen and unreachable from the client
-        // that was told to ask for a version.
         [Test]
-        public async Task Both_versions_of_the_route_answer_the_same_thing()
-        {
-            var platform = GivenAPortfolio("Platform");
-            await GivenARefreshedPortfolio(
-                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
-
-            var (versionOne, latest) = await WhenTheReaderOpensItOnBothVersions("F-3");
-
-            ThenBothVersionsSaidTheSameThing(versionOne, latest);
-        }
-
-        // Absent and empty are different answers: absent means nobody worked it out, empty means it is
-        // waiting on nothing. A reader who cannot tell them apart has to guess which one they are looking
-        // at, and this feature exists to stop that guess.
-        [Test]
-        public async Task A_feature_waiting_on_nothing_is_handed_an_empty_list_rather_than_no_list()
+        public async Task A_feature_waiting_on_nothing_says_so_with_an_empty_list()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenARefreshedPortfolio(platform, AFeatureTheTrackerHolds("F-3", "Publish the partner catalogue"));
 
-            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheListIs(list);
-        }
-
-        // @error - the Feature being asked about, not the ones it waits on. Same answer the work items
-        // route gives, for the same reason: a different answer would confirm the Feature exists.
-        [Test]
-        public async Task A_feature_the_reader_may_not_read_is_not_found()
-        {
-            var platform = GivenAPortfolio("Platform");
-            var somewhereElse = GivenAPortfolio("Somewhere else");
-            await GivenARefreshedPortfolio(
-                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
-
-            var answer = await WhenAReaderOfAnotherPortfolioOpensWhatItWaitsOn("F-3", somewhereElse);
-
-            ThenTheAnswerIsNotFound(answer);
-        }
-
-        // @driving_adapter @us-02 - "Each entry says where Lighthouse read it from"
-        [Test]
-        public async Task Every_entry_says_it_was_read_from_the_work_tracking_systems_own_link()
-        {
-            var platform = GivenAPortfolio("Platform");
-            await GivenARefreshedPortfolio(
-                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
-
-            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
-
-            ThenTheEntryFor(list, "F-1").SaysItCameFromTheTrackersOwnLink();
-            ThenNoEntryClaimsASourceOutsideTheWorkTrackingSystem(list);
+            ThenTheRowFor(rows, "F-3").WaitsOn();
         }
 
         // @driving_adapter @us-02 - "An entry Lighthouse cannot act on says so, in words the reader
@@ -131,10 +83,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndTheWarehouse));
             await GivenAnotherPortfolioRefreshed(warehouse, AFeatureTheTrackerHolds("F-9", "Warehouse sync"));
 
-            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheEntryFor(list, "F-9").CannotBeActedOnBecause("OutsideThisPortfolio");
-            ThenTheEntryFor(list, "F-1").CarriesNoReasonAtAll();
+            ThenTheRowFor(rows, "F-3").Entry("F-9").CannotBeActedOnBecause("OutsideThisPortfolio");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").CarriesNoReasonAtAll();
         }
 
         // A caller meeting a reason it has never heard of has to guess, and the guess this feature exists
@@ -147,9 +99,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         // @error @us-02 - "A Feature the reader may not see is named as withheld, never quietly dropped".
-        // The number on the row counts every Feature waited on, readable or not, so an entry left out
-        // here would make the list disagree with the number above it and give the reader nothing on
-        // screen to explain the difference.
+        // A shorter list is one the reader has no way of telling is short.
         [Test]
         public async Task A_feature_the_reader_may_not_see_is_withheld_rather_than_left_out()
         {
@@ -159,11 +109,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndTheWarehouse));
             await GivenAnotherPortfolioRefreshed(warehouse, AFeatureTheTrackerHolds("F-9", "Warehouse sync"));
 
-            var list = await WhenAReaderOfOnlyOnePortfolioOpensWhatItWaitsOn("F-3", platform);
+            var rows = await WhenAReaderOfOnlyOnePortfolioOpensTheFeaturesView(platform);
 
-            ThenOneEntryIsWithheld(list);
-            ThenTheWithheldEntryDisclosesNothingButThatItExists(list);
-            ThenTheListIsAsLongAsWhatItWaitsOn(list, expectedEntries: 2);
+            ThenExactlyOneEntryIsWithheld(rows, "F-3");
+            ThenTheWithheldEntryDisclosesNothingButThatItExists(rows, "F-3");
+            ThenTheRowFor(rows, "F-3").WaitsOnThisMany(2);
         }
 
         // @rbac @us-02 - "A reader who may not change anything sees the same list and is offered no
@@ -176,10 +126,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             await GivenARefreshedPortfolio(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
 
-            var asSomeoneWhoMayChangeIt = await WhenTheReaderOpensWhatItWaitsOn("F-3");
-            var asSomeoneWhoMayOnlyRead = await WhenAReaderOfOnlyOnePortfolioOpensWhatItWaitsOn("F-3", platform);
+            var asSomeoneWhoMayChangeIt = await WhenTheDeliveryLeadOpensTheFeaturesView();
+            var asSomeoneWhoMayOnlyRead = await WhenAReaderOfOnlyOnePortfolioOpensTheFeaturesView(platform);
 
-            ThenBothReadersWereShownTheSame(asSomeoneWhoMayChangeIt, asSomeoneWhoMayOnlyRead);
+            ThenBothReadersWereShownTheSame(asSomeoneWhoMayChangeIt, asSomeoneWhoMayOnlyRead, "F-3");
         }
 
         // Lighthouse never records a dependency of its own, so "may this reader change one?" is not a
@@ -192,10 +142,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         // @error @us-03 - "Waiting on a Feature outside the Portfolio raises a warning that names it".
-        // The reader finds broken links by scanning the list they already have open, which is why the
-        // warning rides on the payload that list is built from rather than behind a second request.
         [Test]
-        public async Task Waiting_on_a_feature_outside_the_portfolio_warns_on_the_row_and_names_it()
+        public async Task Waiting_on_a_feature_outside_the_portfolio_says_so_on_the_row_and_names_it()
         {
             var platform = GivenAPortfolio("Platform");
             var warehouse = GivenAPortfolio("Warehouse");
@@ -205,14 +153,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheRowFor(rows, "F-3").WarnsAbout("F-9", "Warehouse sync", "OutsideThisPortfolio");
-            ThenNoWarningCarriesASentenceNobodyCanRename(rows);
+            ThenTheRowFor(rows, "F-3").Entry("F-9").CannotBeActedOnBecause("OutsideThisPortfolio");
+            ThenTheRowFor(rows, "F-3").Entry("F-9").Names("Warehouse sync");
+            ThenNoEntryCarriesASentenceNobodyCanRename(rows);
         }
 
-        // Having a dependency is not a problem, so a Feature whose dependencies are all fine has nothing
-        // to say here. An empty list rather than an absent one: the row was looked at and found sound.
+        // Having a dependency is not a problem. A Feature whose dependencies are all sound names them and
+        // reports nothing against them.
         [Test]
-        public async Task A_feature_whose_dependencies_are_all_sound_carries_no_warning_entries()
+        public async Task A_feature_whose_dependencies_are_all_sound_reports_nothing_against_them()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenARefreshedPortfolio(
@@ -220,15 +169,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheRowFor(rows, "F-3").CarriesNoDependencyWarningAtAll();
-            ThenTheRowFor(rows, "F-1").CarriesNoDependencyWarningAtAll();
+            ThenTheRowFor(rows, "F-3").Entry("F-1").HasNothingWrongWithIt();
         }
 
         // @error @us-03 - "Waiting on a Feature positioned below raises a different warning, and nothing
-        // is moved". The order stays the reader's: Lighthouse says the arrangement looks odd and leaves it
-        // exactly as it found it, so the whole rendered order is compared before and after.
+        // is moved". The order stays the reader's, so the whole rendered order is compared before and
+        // after the read.
         [Test]
-        public async Task Waiting_on_a_feature_positioned_below_warns_about_the_order_and_moves_nothing()
+        public async Task Waiting_on_a_feature_positioned_below_says_so_and_moves_nothing()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenAPortfolioWhereTheOneItWaitsOnComesLast(
@@ -239,15 +187,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheRowFor(rows, "F-3").WarnsThatWhatItWaitsOnSitsBelowIt("F-1");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").SitsBelowTheFeatureWaitingOnIt();
             ThenTheOrderEveryFeatureIsInIsUnchanged(theOrderBefore, rows);
         }
 
         // @error @us-03 - "A loop warns on every Feature in it and names the others". Every member is
-        // waiting on every other member, so there is no first one to start with and no answer to give a
-        // reader who only sees one side of it.
+        // waiting on every other member, so there is no first one to start with.
         [Test]
-        public async Task Two_features_waiting_on_each_other_both_warn_and_name_the_other()
+        public async Task Two_features_waiting_on_each_other_both_say_so()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenAPortfolioWhereTheOneItWaitsOnComesLast(
@@ -256,18 +203,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 AFeatureWaitingOn("F-1", "Rebuild the search index", TheCatalogue));
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
-            var whatTheCatalogueWaitsOn = await WhenTheReaderOpensWhatItWaitsOn("F-3");
 
-            ThenTheRowFor(rows, "F-3").WarnsAbout("F-1", "Rebuild the search index", "InALoop");
-            ThenTheRowFor(rows, "F-1").WarnsAbout("F-3", "Publish the partner catalogue", "InALoop");
-            ThenTheEntryFor(whatTheCatalogueWaitsOn, "F-1").CannotBeActedOnBecause("InALoop");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").CannotBeActedOnBecause("InALoop");
+            ThenTheRowFor(rows, "F-1").Entry("F-3").CannotBeActedOnBecause("InALoop");
         }
 
         // The smallest circle there is, and the one the deduplication key was chosen to keep: a Feature
         // that names itself would be indistinguishable from one that names nothing if the key had been
         // the Feature alone.
         [Test]
-        public async Task A_feature_waiting_on_itself_warns_and_names_itself()
+        public async Task A_feature_waiting_on_itself_says_so_about_itself()
         {
             var platform = GivenAPortfolio("Platform");
             await GivenARefreshedPortfolio(
@@ -275,7 +220,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheRowFor(rows, "F-3").WarnsAbout("F-3", "Publish the partner catalogue", "InALoop");
+            ThenTheRowFor(rows, "F-3").Entry("F-3").CannotBeActedOnBecause("InALoop");
         }
 
         // A hundred Features waiting on one another in a circle. The claim is not that a walk over them
@@ -289,10 +234,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenEveryFeatureInTheChainWarnsAboutTheLoop(rows, 100);
+            ThenEveryFeatureInTheChainSaysItIsInACircle(rows, 100);
         }
 
-        // Working out a verdict is reading, and reading writes nothing. A stored loop flag would also be a
+        // Working out a verdict is reading, and reading writes nothing. A stored verdict would also be a
         // second place the answer lives, which is the one thing this slice exists to avoid.
         [Test]
         public async Task Working_out_the_loop_stores_nothing()
@@ -310,8 +255,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         // @edge @us-03 - "A Feature waiting on one whose Team has no measured delivery is told why". The
-        // wait has no end anyone can name, which is a different problem from the dependency being unusable
-        // and reads as a different warning.
+        // wait has no end anyone can name, which is a different problem from the dependency being unusable.
         [Test]
         public async Task Waiting_on_a_feature_no_one_can_forecast_says_so()
         {
@@ -322,12 +266,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheRowFor(rows, "F-3").WarnsAbout("F-1", "Rebuild the search index", "BlockerCannotBeForecast");
+            ThenTheRowFor(rows, "F-3").Entry("F-1").CannotBeActedOnBecause("BlockerCannotBeForecast");
         }
 
         // The exemption the forecast already makes, read here rather than decided again: a Feature with
         // nothing left to do has no forecast because there is nothing to forecast, which is a fact and not
-        // a gap. Warning about it would send the reader to chase a Team that has already finished.
+        // a gap. Reporting it would send the reader to chase a Team that has already finished.
         [Test]
         public async Task Waiting_on_a_feature_with_no_work_left_is_not_reported_as_unforecastable()
         {
@@ -338,7 +282,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheRowFor(rows, "F-3").CarriesNoDependencyWarningAtAll();
+            ThenTheRowFor(rows, "F-3").Entry("F-1").HasNothingWrongWithIt();
         }
 
         // What an operator hears. Both of these are already on screen for the user; they are in the log so
@@ -403,8 +347,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheReadAskedTheStoreTheSameNumberOfTimes(overTwentyFeatures, overTwoHundredFeatures);
         }
 
-        // Everything in this epic is free. A licence check on the way in would make the list of what a
-        // Feature waits on a paid answer, which is the opposite of what was decided.
+        // Everything in this epic is free. A licence check would hide what a Feature waits on from most
+        // instances and leave the column blank with no way to tell why.
         [Test]
         public async Task The_list_is_answered_on_an_instance_with_no_premium_licence()
         {
@@ -413,9 +357,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             await GivenARefreshedPortfolio(
                 platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
 
-            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
 
-            ThenTheListIs(list, "F-1");
+            ThenTheRowFor(rows, "F-3").WaitsOn("F-1");
         }
     }
 }

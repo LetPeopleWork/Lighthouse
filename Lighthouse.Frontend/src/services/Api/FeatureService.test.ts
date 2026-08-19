@@ -212,7 +212,7 @@ describe("FeatureService", () => {
 
 	// The response is parsed against a schema that drops anything it does not name, so a field the
 	// server sends and the schema omits vanishes without an error anywhere.
-	it("should keep the dependency count the server sent, and leave it unset when it sends none", async () => {
+	it("should keep the dependencies the server named, and read none as waiting on nothing", async () => {
 		const waitingFeature = {
 			name: "Waiting Feature",
 			id: 8,
@@ -235,22 +235,43 @@ describe("FeatureService", () => {
 			cycleTime: 0,
 			workItemAge: 3,
 			isBlocked: false,
-			dependsOnCount: 2,
+			dependsOn: [
+				{
+					referenceId: "FTR-1",
+					name: "Rebuild the search index",
+					url: "https://tracker.example/FTR-1",
+					source: "TrackerLink",
+					notHonouredReason: null,
+					blockerPositionedBelow: false,
+					isWithheld: false,
+				},
+				{
+					referenceId: "FTR-2",
+					name: "Retire the legacy importer",
+					url: null,
+					source: "TrackerLink",
+					notHonouredReason: "InALoop",
+					blockerPositionedBelow: false,
+					isWithheld: false,
+				},
+			],
 		};
 		const unresolvedFeature = {
 			...waitingFeature,
 			id: 9,
 			referenceId: "FTR-9",
 		};
-		delete (unresolvedFeature as { dependsOnCount?: number }).dependsOnCount;
+		delete (unresolvedFeature as { dependsOn?: unknown[] }).dependsOn;
 		mockedAxios.get.mockResolvedValueOnce({
 			data: [waitingFeature, unresolvedFeature],
 		});
 
 		const features = await featureService.getFeaturesByIds([8, 9]);
 
-		expect(features[0].dependsOnCount).toBe(2);
-		expect(features[1].dependsOnCount).toBeUndefined();
+		expect(features[0].dependsOn).toHaveLength(2);
+		expect(features[0].dependsOn?.[1].notHonouredReason).toBe("InALoop");
+		expect(features[0].dependsOn?.[1].url).toBeNull();
+		expect(features[1].dependsOn).toEqual([]);
 	});
 
 	it("should reject a feature response missing required fields with a structured ApiError", async () => {

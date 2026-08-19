@@ -41,12 +41,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string DependsOnColumnFile =
             "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx";
 
-        // The two files that write the words a reader actually sees about a dependency. Both were added by
-        // this epic and say nothing about anything else, so they are read whole rather than scoped to a
-        // region: anything either of them grows is this epic's vocabulary by construction.
+        // The two files that write the words a reader actually sees about a dependency: the sentences
+        // themselves, and the indicator that shows them. Read whole rather than scoped to a region -
+        // anything either of them grows is this epic's vocabulary by construction.
         private static readonly string[] TheFrontendFilesThisEpicWrites =
         [
-            "Lighthouse.Frontend/src/components/Common/DependencyDialog/DependencyDialog.tsx",
+            "Lighthouse.Frontend/src/utils/dependencies/dependencySentences.ts",
             "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx",
         ];
 

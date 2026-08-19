@@ -33,31 +33,12 @@ export class FeaturesPage {
 	}
 
 	/**
-	 * How many other Features this row is waiting on, as the Depends On column renders it. Addressed
-	 * by the column the cell belongs to rather than by what it prints: a Feature that waits on nothing
-	 * gets a blank cell, so there is no text, dash or icon to look for.
+	 * Which Features this row is waiting on, as the Dependencies column renders them. Addressed by the
+	 * column the cell belongs to rather than by what it prints: a Feature that waits on nothing gets a
+	 * blank cell, so there is no text, dash or icon to look for.
 	 */
-	getDependsOnCell(featureName: string): Locator {
-		return this.getFeatureRow(featureName).locator(
-			'[data-field="dependsOnCount"]',
-		);
-	}
-
-	/**
-	 * Opens the list behind the count. Waits on the request itself rather than on the dialog appearing:
-	 * the dialog opens before the answer arrives, so a visible dialog says nothing about what is in it.
-	 */
-	async openDependencies(featureName: string): Promise<Locator> {
-		const theListItself = this.page.waitForResponse(
-			(response) =>
-				response.request().method() === "GET" &&
-				response.url().includes("/dependencies"),
-		);
-
-		await this.getDependsOnCell(featureName).getByRole("button").click();
-		await theListItself;
-
-		return this.page.getByRole("dialog");
+	getDependenciesCell(featureName: string): Locator {
+		return this.getFeatureRow(featureName).locator('[data-field="dependsOn"]');
 	}
 
 	/** Epic 5375 slice 02 — the sequence itself, which is what "nothing moved" is judged against. */

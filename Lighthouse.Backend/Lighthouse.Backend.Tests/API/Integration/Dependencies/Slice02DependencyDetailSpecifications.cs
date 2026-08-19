@@ -1,6 +1,5 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -11,25 +10,25 @@ using NUnit.Framework;
 using Serilog.Events;
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
 using System.Reflection;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 {
     /// <summary>
-    /// Step definitions for the second dependency slice. Backend-observable contract: one entry for every
-    /// Feature this Lighthouse holds that a Feature waits on, each naming that Feature, its state, the
-    /// Portfolios it belongs to and the record it came from - read over the real route, never off the store.
+    /// Step definitions for the second dependency slice. Backend-observable contract: every Feature row
+    /// names the Features it waits on that this instance holds, each with a link back to the work tracking
+    /// system, and says what stands against any of them - read over the real route the list is built from.
     /// </summary>
     public partial class Slice02DependencyDetailTest : DependenciesAcceptanceTest
     {
         /// <summary>
         /// What a withheld entry is still allowed to say: that it is withheld, why Lighthouse will not act
-        /// on it, and where the link was read from. None of the three names the Feature or says where it
-        /// lives, and every other value has to be absent for the entry to disclose nothing.
+        /// on it, whether it sits below, and where the link was read from. None of the four names the
+        /// Feature or says where it lives.
         /// </summary>
-        private static readonly string[] MaySurviveWithholding = ["isWithheld", "notHonouredReason", "source"];
+        private static readonly string[] MaySurviveWithholding =
+            ["isWithheld", "notHonouredReason", "blockerPositionedBelow", "source"];
 
         /// <summary>
         /// Every field an entry carries, withheld or not. Named here so that adding one to the payload
@@ -37,29 +36,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         /// </summary>
         private static readonly string[] EverythingAnEntryCarries =
         [
-            "id",
             "referenceId",
             "name",
-            "state",
-            "stateCategory",
             "url",
             "source",
             "notHonouredReason",
-            "isWithheld",
-            "portfolios",
-        ];
-
-        /// <summary>
-        /// Everything a warning on a Feature row is allowed to carry: which dependency it is about, and
-        /// what is wrong with it as codes. Anything else would be text the instance cannot rename.
-        /// </summary>
-        private static readonly string[] WhatAWarningMaySay =
-        [
-            "blockerReferenceId",
-            "blockerName",
-            "isWithheld",
-            "notHonouredReason",
             "blockerPositionedBelow",
+            "isWithheld",
         ];
 
         // --- Given ---
@@ -143,61 +126,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         // --- When ---
 
-        private async Task<List<JsonElement>> WhenTheReaderOpensWhatItWaitsOn(string featureReferenceId)
-        {
-            var (status, entries) = await AskFor(Client, "latest", featureReferenceId);
-
-            Assert.That(status, Is.EqualTo(HttpStatusCode.OK),
-                $"The reader must be handed what {featureReferenceId} waits on before anything can be said about it.");
-
-            return entries;
-        }
-
-        private async Task<(string VersionOne, string Latest)> WhenTheReaderOpensItOnBothVersions(string featureReferenceId)
-        {
-            var featureId = TheFeatureIdOf(featureReferenceId);
-
-            return (await ReadTheBodyOf(Client, "v1", featureId), await ReadTheBodyOf(Client, "latest", featureId));
-        }
-
-        private async Task<List<JsonElement>> WhenAReaderOfOnlyOnePortfolioOpensWhatItWaitsOn(
-            string featureReferenceId, int theOnlyPortfolioTheyCanRead)
-        {
-            using var reader = Factory.CreateClient().AsPortfolioViewer(theOnlyPortfolioTheyCanRead);
-
-            var (status, entries) = await AskFor(reader, "latest", featureReferenceId);
-
-            Assert.That(status, Is.EqualTo(HttpStatusCode.OK),
-                $"A reader of the Portfolio {featureReferenceId} is in must be handed what it waits on.");
-
-            return entries;
-        }
-
-        private async Task<HttpStatusCode> WhenAReaderOfAnotherPortfolioOpensWhatItWaitsOn(
-            string featureReferenceId, int theOnlyPortfolioTheyCanRead)
-        {
-            var featureId = TheFeatureIdOf(featureReferenceId);
-
-            using var reader = Factory.CreateClient().AsPortfolioViewer(theOnlyPortfolioTheyCanRead);
-            using var response = await reader.GetAsync($"/api/latest/features/{featureId}/dependencies");
-
-            return response.StatusCode;
-        }
-
         /// <summary>
-        /// The Features view, read the way it reads: one request for the whole list. A warning that needed
-        /// a second request would be a warning the reader has to go and ask for, which is the opposite of
-        /// finding broken links by scanning.
+        /// The Features view, read the way it reads: one request for the whole list.
         /// </summary>
-        private async Task<Dictionary<string, JsonElement>> WhenTheDeliveryLeadOpensTheFeaturesView()
+        private Task<Dictionary<string, JsonElement>> WhenTheDeliveryLeadOpensTheFeaturesView()
+            => ReadTheFeaturesView(Client);
+
+        private async Task<Dictionary<string, JsonElement>> WhenAReaderOfOnlyOnePortfolioOpensTheFeaturesView(
+            int theOnlyPortfolioTheyCanRead)
         {
-            using var response = await Client.GetAsync("/api/latest/features");
-            response.EnsureSuccessStatusCode();
+            using var reader = Factory.CreateClient().AsPortfolioViewer(theOnlyPortfolioTheyCanRead);
 
-            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-
-            return payload.RootElement.EnumerateArray()
-                .ToDictionary(row => row.GetProperty("referenceId").GetString()!, row => row.Clone());
+            return await ReadTheFeaturesView(reader);
         }
 
         /// <summary>
@@ -224,44 +164,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         // --- Then ---
 
-        private static void ThenTheListIs(List<JsonElement> entries, params string[] expectedReferenceIds)
+        private static FeatureRow ThenTheRowFor(Dictionary<string, JsonElement> rows, string featureReferenceId)
         {
-            var named = entries.Select(TheReferenceIdOn).Order().ToArray();
+            Assert.That(rows.ContainsKey(featureReferenceId), Is.True,
+                $"The Features view must carry {featureReferenceId} for anything to be said about its row.");
 
-            Assert.That(named, Is.EqualTo(expectedReferenceIds.Order().ToArray()),
-                $"The list must name exactly the Features waited on that Lighthouse holds. Listed: {string.Join(", ", named)}");
-        }
-
-        private static DependencyEntry ThenTheEntryFor(List<JsonElement> entries, string referenceId)
-        {
-            var entry = entries.SingleOrDefault(candidate => TheReferenceIdOn(candidate) == referenceId);
-
-            Assert.That(entry.ValueKind, Is.EqualTo(JsonValueKind.Object),
-                $"There must be exactly one entry for {referenceId} to be judged.");
-
-            return new DependencyEntry(entry, referenceId);
-        }
-
-        /// <summary>
-        /// The number on the row and the length of the list under it are read seconds apart by the same
-        /// person. They are worked out in two places, so nothing but this makes them agree.
-        /// </summary>
-        private async Task ThenTheListIsAsLongAsTheCountOnTheRow(string featureReferenceId)
-        {
-            var row = await ReadTheFeatureThePayloadCarries(featureReferenceId)
-                ?? throw new InvalidOperationException($"The payload carried no {featureReferenceId} for its count to be judged.");
-            var entries = await WhenTheReaderOpensWhatItWaitsOn(featureReferenceId);
-
-            Assert.That(entries, Has.Count.EqualTo(row.GetProperty("dependsOnCount").GetInt32()),
-                $"The list must account for the number on the row, entry for entry. Row: {row}");
-        }
-
-        private static void ThenNoEntryClaimsASourceOutsideTheWorkTrackingSystem(List<JsonElement> entries)
-        {
-            var claimed = entries.Select(entry => entry.GetProperty("source").GetString()).Distinct().ToList();
-
-            Assert.That(claimed, Has.All.EqualTo(nameof(DependencySource.TrackerLink)),
-                $"Lighthouse records no dependency of its own, so nothing here can have come from anywhere else. Claimed: {string.Join(", ", claimed)}");
+            return new FeatureRow(rows[featureReferenceId], featureReferenceId);
         }
 
         private static void ThenTheReasonsAreExactly(NotHonouredReason[] expectedReasons)
@@ -270,26 +178,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 "A reader meeting a reason nobody has heard of has to guess, so widening this set has to be somebody's decision rather than a side effect.");
         }
 
-        private static void ThenOneEntryIsWithheld(List<JsonElement> entries)
+        private static void ThenExactlyOneEntryIsWithheld(Dictionary<string, JsonElement> rows, string featureReferenceId)
         {
-            Assert.That(entries.Count(IsWithheld), Is.EqualTo(1),
-                $"A Feature the reader may not see is still a Feature being waited on, and has to be shown as one. Listed: {Describe(entries)}");
+            var withheld = DependsOnOf(rows[featureReferenceId]).Count(IsWithheld);
+
+            Assert.That(withheld, Is.EqualTo(1),
+                $"A Feature the reader may not see is still a Feature being waited on, and has to be shown as one. Row: {rows[featureReferenceId]}");
         }
 
         /// <summary>
-        /// The whole of a withheld entry, judged twice. First that it carries exactly the fields the entry
+        /// The whole of a withheld entry, judged twice. First that it carries exactly the fields an entry
         /// is known to have - a field added later fails here, which is the point: whether it may survive
         /// withholding is a decision somebody has to take rather than one an empty default takes for them.
-        /// Then that everything beyond the three it may say is empty.
+        /// Then that everything beyond the four it may say is empty.
         /// </summary>
-        private static void ThenTheWithheldEntryDisclosesNothingButThatItExists(List<JsonElement> entries)
+        private static void ThenTheWithheldEntryDisclosesNothingButThatItExists(
+            Dictionary<string, JsonElement> rows, string featureReferenceId)
         {
-            var withheld = entries.Single(IsWithheld);
+            var withheld = DependsOnOf(rows[featureReferenceId]).Single(IsWithheld);
             var carried = withheld.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
             var disclosed = withheld.EnumerateObject()
                 .Where(property => !MaySurviveWithholding.Contains(property.Name))
                 .Where(property => property.Value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))
-                .Where(property => property.Value.ToString() is not ("" or "0" or "[]" or nameof(StateCategories.Unknown)))
+                .Where(property => property.Value.ToString() is not ("" or "0" or "[]"))
                 .Select(property => property.Name)
                 .ToList();
 
@@ -302,17 +213,69 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
-        private static void ThenTheListIsAsLongAsWhatItWaitsOn(List<JsonElement> entries, int expectedEntries)
+        private static void ThenBothReadersWereShownTheSame(
+            Dictionary<string, JsonElement> onePerson,
+            Dictionary<string, JsonElement> another,
+            string featureReferenceId)
         {
-            Assert.That(entries, Has.Count.EqualTo(expectedEntries),
-                $"Every Feature waited on gets an entry, readable or not, or the list stops accounting for the number above it. Listed: {Describe(entries)}");
-        }
-
-        private static void ThenBothReadersWereShownTheSame(List<JsonElement> onePerson, List<JsonElement> another)
-        {
-            Assert.That(Describe(another), Is.EqualTo(Describe(onePerson)),
+            Assert.That(
+                DependsOnOf(another[featureReferenceId]).Select(entry => entry.ToString()).ToList(),
+                Is.EqualTo(DependsOnOf(onePerson[featureReferenceId]).Select(entry => entry.ToString()).ToList()),
                 "Being unable to change a Portfolio is no reason to be told less about what its Features are waiting on.");
         }
+
+        /// <summary>
+        /// Every word a reader sees is built in their own instance's vocabulary, so an entry may carry a
+        /// code and a name and nothing else. A sentence in the payload is a sentence nobody can rename.
+        /// </summary>
+        private static void ThenNoEntryCarriesASentenceNobodyCanRename(Dictionary<string, JsonElement> rows)
+        {
+            var unexpected = rows.Values
+                .SelectMany(DependsOnOf)
+                .SelectMany(entry => entry.EnumerateObject())
+                .Select(property => property.Name)
+                .Distinct()
+                .Where(name => !EverythingAnEntryCarries.Contains(name))
+                .ToList();
+
+            Assert.That(unexpected, Is.Empty,
+                $"An entry says which dependency and why, in codes the client renders. Carried as well: {string.Join(", ", unexpected)}");
+        }
+
+        private static void ThenEveryFeatureInTheChainSaysItIsInACircle(Dictionary<string, JsonElement> rows, int howMany)
+        {
+            var silent = Enumerable.Range(1, howMany)
+                .Select(ChainedFeature)
+                .Where(feature => !rows.TryGetValue(feature, out var row) || !SaysItIsInALoop(row))
+                .ToList();
+
+            Assert.That(silent, Is.Empty,
+                $"Every Feature going round the circle is waiting on every other one, so none of them can be left out of it. Silent: {string.Join(", ", silent)}");
+        }
+
+        private static bool SaysItIsInALoop(JsonElement row)
+            => DependsOnOf(row).Any(entry =>
+                entry.GetProperty("notHonouredReason").GetString() == nameof(NotHonouredReason.InALoop));
+
+        /// <summary>
+        /// The whole rendered order, compared as a whole. Reading only the two Features under suspicion
+        /// would miss a read that quietly renumbered everything else around them.
+        /// </summary>
+        private static void ThenTheOrderEveryFeatureIsInIsUnchanged(
+            Dictionary<string, int> before, Dictionary<string, JsonElement> rows)
+        {
+            var after = rows.ToDictionary(row => row.Key, row => row.Value.GetProperty("position").GetInt32());
+            var moved = before.Keys.Union(after.Keys)
+                .Where(feature => PlaceOf(before, feature) != PlaceOf(after, feature))
+                .Select(feature => $"{feature}: was {PlaceOf(before, feature)}, now {PlaceOf(after, feature)}")
+                .ToList();
+
+            Assert.That(moved, Is.Empty,
+                $"Saying the order looks odd is not permission to change it. Moved: {string.Join(" | ", moved)}");
+        }
+
+        private static string PlaceOf(Dictionary<string, int> order, string featureReferenceId)
+            => order.TryGetValue(featureReferenceId, out var place) ? place.ToString(CultureInfo.InvariantCulture) : "nowhere";
 
         /// <summary>
         /// Asked of the API surface rather than of one route: a route that added, removed or suppressed a
@@ -333,57 +296,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 $"Lighthouse records no dependency of its own, so there is nothing for a write route to be for. Found: {string.Join(", ", writingRoutes)}");
         }
 
-        /// <summary>
-        /// The whole rendered order, compared as a whole. Reading only the two Features under suspicion
-        /// would miss a read that quietly renumbered everything else around them.
-        /// </summary>
-        private static void ThenTheOrderEveryFeatureIsInIsUnchanged(
-            Dictionary<string, int> before, Dictionary<string, JsonElement> rows)
-        {
-            var after = rows.ToDictionary(row => row.Key, row => row.Value.GetProperty("position").GetInt32());
-            var moved = before.Keys.Union(after.Keys)
-                .Where(feature => PlaceOf(before, feature) != PlaceOf(after, feature))
-                .Select(feature => $"{feature}: was {PlaceOf(before, feature)}, now {PlaceOf(after, feature)}")
-                .ToList();
-
-            Assert.That(moved, Is.Empty,
-                $"Saying the order looks odd is not permission to change it. Moved: {string.Join(" | ", moved)}");
-        }
-
-        private static string PlaceOf(Dictionary<string, int> order, string featureReferenceId)
-            => order.TryGetValue(featureReferenceId, out var place) ? place.ToString() : "nowhere";
-
-        private static FeatureRow ThenTheRowFor(Dictionary<string, JsonElement> rows, string featureReferenceId)
-        {
-            Assert.That(rows.ContainsKey(featureReferenceId), Is.True,
-                $"The Features view must carry {featureReferenceId} for anything to be said about its row.");
-
-            return new FeatureRow(rows[featureReferenceId], featureReferenceId);
-        }
-
-        /// <summary>
-        /// Every word a reader sees is built in their own instance's vocabulary, so a warning may carry a
-        /// code and a name and nothing else. A sentence in the payload is a sentence nobody can rename.
-        /// </summary>
-        private static void ThenNoWarningCarriesASentenceNobodyCanRename(Dictionary<string, JsonElement> rows)
-        {
-            var unexpected = rows.Values
-                .SelectMany(WarningsOn)
-                .SelectMany(warning => warning.EnumerateObject())
-                .Select(property => property.Name)
-                .Distinct()
-                .Where(name => !WhatAWarningMaySay.Contains(name))
-                .ToList();
-
-            Assert.That(unexpected, Is.Empty,
-                $"A warning says which dependency and why, in codes the client renders. Carried as well: {string.Join(", ", unexpected)}");
-        }
-
-        private static List<JsonElement> WarningsOn(JsonElement row)
-            => row.TryGetProperty("dependencyWarnings", out var warnings) && warnings.ValueKind == JsonValueKind.Array
-                ? warnings.EnumerateArray().ToList()
-                : [];
-
         private static bool ChangesSomething(MethodInfo action)
             => action.GetCustomAttributes().Any(attribute =>
                 attribute is HttpPostAttribute or HttpPutAttribute or HttpDeleteAttribute or HttpPatchAttribute);
@@ -395,55 +307,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         private static bool Mentions(string name)
             => name.Contains("Dependenc", StringComparison.OrdinalIgnoreCase);
-
-        private static bool IsWithheld(JsonElement entry)
-            => entry.TryGetProperty("isWithheld", out var withheld) && withheld.ValueKind == JsonValueKind.True;
-
-        private static string Describe(List<JsonElement> entries)
-            => string.Join(" | ", entries.Select(entry => entry.ToString()));
-
-        private static void ThenTheReadAskedTheStoreTheSameNumberOfTimes(int overASmallList, int overALongOne)
-        {
-            Assert.That(overALongOne, Is.EqualTo(overASmallList),
-                $"Working out what is wrong with a dependency has to cost what the page already paid. A count " +
-                $"that grows with the list is a query per Feature, which is fine on any fixture small enough to " +
-                $"write by hand. Small list: {overASmallList}, long list: {overALongOne}.");
-        }
-
-        private static void ThenBothVersionsSaidTheSameThing(string versionOne, string latest)
-        {
-            Assert.That(versionOne, Is.EqualTo(latest),
-                "A client pinned to a version must be able to ask for this at all, and must be told the same thing.");
-        }
-
-        private static void ThenTheAnswerIsNotFound(HttpStatusCode answer)
-        {
-            Assert.That(answer, Is.EqualTo(HttpStatusCode.NotFound),
-                "A Feature the reader may not read must answer exactly as it does when there is no such Feature.");
-        }
-
-        private static void ThenEveryFeatureInTheChainWarnsAboutTheLoop(Dictionary<string, JsonElement> rows, int howMany)
-        {
-            var silent = Enumerable.Range(1, howMany)
-                .Select(ChainedFeature)
-                .Where(feature => !rows.TryGetValue(feature, out var row) || !SaysItIsInALoop(row))
-                .ToList();
-
-            Assert.That(silent, Is.Empty,
-                $"Every Feature going round the circle is waiting on every other one, so none of them can be left out of it. Silent: {string.Join(", ", silent)}");
-        }
-
-        private static bool SaysItIsInALoop(JsonElement row)
-            => WarningsOn(row).Any(warning =>
-                warning.GetProperty("notHonouredReason").GetString() == nameof(NotHonouredReason.InALoop));
-
-        private void ThenNothingAboutTheDependenciesWasRecorded(List<string> before)
-        {
-            var after = ReadEverythingRecordedAboutTheDependencies();
-
-            Assert.That(after, Is.EqualTo(before),
-                "Working out what is wrong with a dependency is reading, and a verdict written down would be a second place the answer lives.");
-        }
 
         private void ThenTheOperatorWasWarnedOnceAboutACircleNaming(params string[] members)
         {
@@ -497,6 +360,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                     || line.Contains("depends on", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
+        private void ThenNothingAboutTheDependenciesWasRecorded(List<string> before)
+        {
+            var after = ReadEverythingRecordedAboutTheDependencies();
+
+            Assert.That(after, Is.EqualTo(before),
+                "Working out what is wrong with a dependency is reading, and a verdict written down would be a second place the answer lives.");
+        }
+
+        private static void ThenTheReadAskedTheStoreTheSameNumberOfTimes(int overASmallList, int overALongOne)
+        {
+            Assert.That(overALongOne, Is.EqualTo(overASmallList),
+                $"Working out what is wrong with a dependency has to cost what the page already paid. A count " +
+                $"that grows with the list is a query per Feature, which is fine on any fixture small enough to " +
+                $"write by hand. Small list: {overASmallList}, long list: {overALongOne}.");
+        }
+
         // --- Reading the store ---
 
         /// <summary>
@@ -528,32 +407,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         // --- Reading the route ---
 
-        private async Task<(HttpStatusCode Status, List<JsonElement> Entries)> AskFor(
-            HttpClient client, string version, string featureReferenceId)
+        private static async Task<Dictionary<string, JsonElement>> ReadTheFeaturesView(HttpClient client)
         {
-            var featureId = TheFeatureIdOf(featureReferenceId);
-
-            using var response = await client.GetAsync($"/api/{version}/features/{featureId}/dependencies");
-            if (!response.IsSuccessStatusCode)
-            {
-                return (response.StatusCode, []);
-            }
+            using var response = await client.GetAsync("/api/latest/features");
+            response.EnsureSuccessStatusCode();
 
             using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 
-            return (response.StatusCode, payload.RootElement.EnumerateArray().Select(entry => entry.Clone()).ToList());
+            return payload.RootElement.EnumerateArray()
+                .ToDictionary(row => row.GetProperty("referenceId").GetString()!, row => row.Clone());
         }
 
-        private static async Task<string> ReadTheBodyOf(HttpClient client, string version, int featureId)
-        {
-            using var response = await client.GetAsync($"/api/{version}/features/{featureId}/dependencies");
-            response.EnsureSuccessStatusCode();
+        private static List<JsonElement> DependsOnOf(JsonElement row)
+            => row.TryGetProperty("dependsOn", out var dependsOn) && dependsOn.ValueKind == JsonValueKind.Array
+                ? dependsOn.EnumerateArray().ToList()
+                : [];
 
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        private static string? TheReferenceIdOn(JsonElement entry)
-            => entry.TryGetProperty("referenceId", out var referenceId) ? referenceId.GetString() : null;
+        private static bool IsWithheld(JsonElement entry)
+            => entry.TryGetProperty("isWithheld", out var withheld) && withheld.ValueKind == JsonValueKind.True;
 
         /// <summary>
         /// One Feature's row on the Features view, kept beside the id it was found by so every failure
@@ -561,51 +432,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         /// </summary>
         private readonly record struct FeatureRow(JsonElement Json, string ReferenceId)
         {
-            public void WarnsAbout(string blockerReferenceId, string blockerName, string expectedReason)
+            public void WaitsOn(params string[] expectedReferenceIds)
             {
-                var warning = WarningAbout(blockerReferenceId);
+                var named = DependsOnOf(Json)
+                    .Select(entry => entry.GetProperty("referenceId").GetString())
+                    .Order()
+                    .ToArray();
 
-                using (Assert.EnterMultipleScope())
-                {
-                    Assert.That(warning?.GetProperty("blockerName").GetString(), Is.EqualTo(blockerName),
-                        $"A warning that does not name what {ReferenceId} is waiting on leaves the reader to go and find it. Row: {Json}");
-                    Assert.That(warning?.GetProperty("notHonouredReason").GetString(), Is.EqualTo(expectedReason),
-                        $"A warning has to say which of the things that can be wrong this one is. Row: {Json}");
-                }
+                Assert.That(named, Is.EqualTo(expectedReferenceIds.Order().ToArray()),
+                    $"{ReferenceId} must name exactly the Features it waits on that Lighthouse holds. Row: {Json}");
             }
 
-            public void WarnsThatWhatItWaitsOnSitsBelowIt(string blockerReferenceId)
+            public void WaitsOnThisMany(int expectedEntries)
+                => Assert.That(DependsOnOf(Json), Has.Count.EqualTo(expectedEntries),
+                    $"Every Feature waited on gets an entry, readable or not, or the list quietly comes back short. Row: {Json}");
+
+            public DependencyEntry Entry(string blockerReferenceId)
             {
-                var warning = WarningAbout(blockerReferenceId);
-
-                using (Assert.EnterMultipleScope())
-                {
-                    Assert.That(warning?.GetProperty("blockerPositionedBelow").GetBoolean(), Is.True,
-                        $"An arrangement that reads oddly is worth saying out loud on {ReferenceId}'s row. Row: {Json}");
-                    Assert.That(warning?.GetProperty("notHonouredReason").ValueKind, Is.EqualTo(JsonValueKind.Null),
-                        $"The order stays the reader's, so this is a different thing to say than a dependency Lighthouse cannot act on. Row: {Json}");
-                }
-            }
-
-            public void CarriesNoDependencyWarningAtAll()
-                => Assert.That(WarningsOn(Json), Is.Empty,
-                    $"Having a dependency is not by itself a warning, so a sound one has nothing to report. Row: {Json}");
-
-            private JsonElement? WarningAbout(string blockerReferenceId)
-            {
-                var warnings = WarningsOn(Json)
-                    .Where(warning => warning.GetProperty("blockerReferenceId").GetString() == blockerReferenceId)
+                var entries = DependsOnOf(Json)
+                    .Where(entry => entry.GetProperty("referenceId").GetString() == blockerReferenceId)
                     .ToList();
 
-                Assert.That(warnings, Has.Count.EqualTo(1),
-                    $"{ReferenceId} must carry exactly one warning about {blockerReferenceId}. Row: {Json}");
+                Assert.That(entries, Has.Count.EqualTo(1),
+                    $"{ReferenceId} must carry exactly one entry for {blockerReferenceId}. Row: {Json}");
 
-                return warnings.SingleOrDefault();
+                return new DependencyEntry(entries[0], blockerReferenceId);
             }
         }
 
         /// <summary>
-        /// One entry, kept beside the id it was found by so every failure says which entry disappointed.
+        /// One entry on a row, kept beside the id it was found by so every failure says which entry
+        /// disappointed.
         /// </summary>
         private readonly record struct DependencyEntry(JsonElement Json, string ReferenceId)
         {
@@ -613,15 +470,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 => Assert.That(TextOf("name"), Is.EqualTo(expectedName),
                     $"An entry has to name the Feature being waited on, or the reader is looking at an id. Entry: {Json}");
 
-            public void SaysItIsInState(string expectedState)
-                => Assert.That(TextOf("state"), Is.EqualTo(expectedState),
-                    $"Whether the wait is nearly over is the state of the Feature waited on. Entry: {Json}");
-
-            public void SaysItBelongsTo(string expectedPortfolio)
-                => Assert.That(PortfolioNames(), Does.Contain(expectedPortfolio),
-                    $"Which Portfolios the Feature belongs to is who the reader has to go and talk to. Entry: {Json}");
-
-            public void OffersAWayToOpenIt(string expectedUrl)
+            public void LeadsTo(string expectedUrl)
                 => Assert.That(TextOf("url"), Is.EqualTo(expectedUrl),
                     $"Deciding what to do about a wait happens in the work tracking system, so the entry has to lead there. Entry: {Json}");
 
@@ -637,13 +486,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 => Assert.That(TextOf("notHonouredReason"), Is.Null,
                     $"A dependency with nothing wrong with it carries no reason, rather than a further code meaning fine. Entry: {Json}");
 
+            public void SitsBelowTheFeatureWaitingOnIt()
+            {
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(Json.GetProperty("blockerPositionedBelow").GetBoolean(), Is.True,
+                        $"An arrangement that reads oddly is worth saying out loud. Entry: {Json}");
+                    Assert.That(Json.GetProperty("notHonouredReason").ValueKind, Is.EqualTo(JsonValueKind.Null),
+                        $"The order stays the reader's, so this is a different thing to say than a dependency Lighthouse cannot act on. Entry: {Json}");
+                }
+            }
+
+            public void HasNothingWrongWithIt()
+            {
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(Json.GetProperty("notHonouredReason").ValueKind, Is.EqualTo(JsonValueKind.Null),
+                        $"Having a dependency is not by itself a problem. Entry: {Json}");
+                    Assert.That(Json.GetProperty("blockerPositionedBelow").GetBoolean(), Is.False,
+                        $"Nothing wrong with it means nothing at all to say, the order included. Entry: {Json}");
+                }
+            }
+
             private string? TextOf(string property)
                 => Json.TryGetProperty(property, out var value) ? value.GetString() : null;
-
-            private List<string?> PortfolioNames()
-                => Json.TryGetProperty("portfolios", out var portfolios) && portfolios.ValueKind == JsonValueKind.Array
-                    ? portfolios.EnumerateArray().Select(portfolio => portfolio.GetProperty("name").GetString()).ToList()
-                    : [];
         }
     }
 }

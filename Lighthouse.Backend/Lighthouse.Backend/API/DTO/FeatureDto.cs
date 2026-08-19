@@ -84,15 +84,9 @@ namespace Lighthouse.Backend.API.DTO
         // Only Portfolios the caller may read are ever named, so this never leaks a Portfolio's existence.
         public List<EntityReferenceDto> BlockingPortfolios { get; } = [];
 
-        // How many of the Features this Lighthouse holds the Feature is waiting on. A link naming
-        // something not held is stored but does not count, so this is never the stored total. Null on
-        // read paths that never match the links up, because absent means "not worked out here" rather
-        // than "waiting on nothing".
-        public int? DependsOnCount { get; set; }
-
-        // What is worth telling the reader about those dependencies, so the broken ones are found by
-        // scanning the list rather than by opening every Feature. Empty means the row was looked at and
-        // nothing was wrong; null on read paths that never work it out, which is not the same answer.
-        public List<FeatureDependencyWarningDto>? DependencyWarnings { get; set; }
+        // Which Features this one is waiting on, named on the row itself. A link naming something this
+        // Lighthouse does not hold is stored but cannot be named, so it is not here - this is never the
+        // count of links drawn in the work tracking system. Empty means it waits on nothing.
+        public List<FeatureDependsOnDto> DependsOn { get; } = [];
     }
 }

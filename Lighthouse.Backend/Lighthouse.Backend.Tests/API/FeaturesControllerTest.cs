@@ -318,8 +318,12 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(result!.Select(dto => dto.ReferenceId), Is.EqualTo(OnlyTheFeatureThatWaits),
                     "The blocker has to stay out of the payload, or a count that reaches past the wall would not be what this is measuring.");
 
-                Assert.That(result[0].DependsOnCount, Is.EqualTo(1),
-                    "The Feature waits on one thing the caller may not read, and the count has to say so.");
+                Assert.That(result[0].DependsOn, Has.Count.EqualTo(1),
+                    "The Feature waits on one thing the caller may not read, and the list has to say so rather than come back short.");
+                Assert.That(result[0].DependsOn[0].IsWithheld, Is.True,
+                    "A Feature behind a wall is listed as withheld, so the row says something is waited on without naming it.");
+                Assert.That(result[0].DependsOn[0].Name, Is.Empty,
+                    "A withheld entry names nothing.");
             }
         }
 

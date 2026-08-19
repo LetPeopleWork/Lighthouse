@@ -1,8 +1,4 @@
 import { z } from "zod";
-import {
-	EntityReferenceSchema,
-	type IEntityReference,
-} from "./EntityReference";
 
 // Why Lighthouse will not act on a dependency. The set is closed on the server; a reader meeting a
 // value nobody has heard of would have to guess, and the guess this exists to prevent is "it's fine".
@@ -16,63 +12,40 @@ export type NotHonouredReason = (typeof NOT_HONOURED_REASONS)[number];
 
 export type DependencySource = "TrackerLink" | "PortfolioField";
 
-// One thing worth telling the reader about a dependency, as codes and a name. Every sentence a user
-// reads is built here in their own instance's words, so nothing arrives pre-written.
-export interface IFeatureDependencyWarning {
-	blockerReferenceId: string;
-	blockerName: string;
-	isWithheld: boolean;
+// One Feature another is waiting on, as the row names it. A withheld entry is one the reader may not
+// see: it says that something is being waited on and nothing else, and is listed rather than dropped,
+// because a shorter list is one the reader has no way of telling is short.
+export interface IFeatureDependency {
+	referenceId: string;
+	name: string;
+	url: string | null;
+	source: DependencySource;
 	notHonouredReason: NotHonouredReason | null;
 	blockerPositionedBelow: boolean;
+	isWithheld: boolean;
 }
 
-export const FeatureDependencyWarningSchema = z.object({
-	blockerReferenceId: z.string(),
-	blockerName: z.string(),
-	isWithheld: z.boolean().optional().default(false),
+export const FeatureDependencySchema = z.object({
+	referenceId: z.string(),
+	name: z.string(),
+	url: z
+		.string()
+		.nullable()
+		.optional()
+		.transform((url) => url ?? null),
+	source: z.enum(["TrackerLink", "PortfolioField"]),
 	notHonouredReason: z
 		.enum(NOT_HONOURED_REASONS)
 		.nullable()
 		.optional()
 		.transform((reason) => reason ?? null),
 	blockerPositionedBelow: z.boolean().optional().default(false),
-});
-
-// One Feature another is waiting on. A withheld entry is one the reader may not see: it says that
-// something is being waited on and nothing else, and is listed rather than dropped so the list keeps
-// accounting for the count on the row.
-export interface IFeatureDependency {
-	id: number;
-	referenceId: string;
-	name: string;
-	state: string;
-	url: string | null;
-	source: DependencySource;
-	notHonouredReason: NotHonouredReason | null;
-	isWithheld: boolean;
-	portfolios: IEntityReference[];
-}
-
-export const FeatureDependencySchema = z.object({
-	id: z.number(),
-	referenceId: z.string(),
-	name: z.string(),
-	state: z.string(),
-	url: z.string().nullable().optional(),
-	source: z.enum(["TrackerLink", "PortfolioField"]),
-	notHonouredReason: z.enum(NOT_HONOURED_REASONS).nullable().optional(),
 	isWithheld: z.boolean().optional().default(false),
-	portfolios: z.array(EntityReferenceSchema).optional().default([]),
 });
 
-export const deserializeFeatureDependencies = (
-	data: unknown,
-): IFeatureDependency[] =>
-	z
-		.array(FeatureDependencySchema)
-		.parse(data)
-		.map((entry) => ({
-			...entry,
-			url: entry.url ?? null,
-			notHonouredReason: entry.notHonouredReason ?? null,
-		}));
+// Nothing is wrong with a dependency when Lighthouse can act on it and it does not sit below the
+// Feature waiting on it. Asked here so the row and the warnings column cannot disagree about it.
+export const hasNothingWrongWithIt = (
+	dependency: IFeatureDependency,
+): boolean =>
+	dependency.notHonouredReason === null && !dependency.blockerPositionedBelow;

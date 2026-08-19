@@ -1,8 +1,4 @@
 import type { IFeature } from "../../models/Feature";
-import {
-	deserializeFeatureDependencies,
-	type IFeatureDependency,
-} from "../../models/FeatureDependency";
 import type { FeatureMoveTarget } from "../../models/FeatureOrdering";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
@@ -12,8 +8,6 @@ export interface IFeatureService {
 	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]>;
 	getFeaturesByReferences(featureReferences: string[]): Promise<IFeature[]>;
 	getFeatureWorkItems(featureId: number): Promise<IWorkItem[]>;
-	/** Which Features this one is waiting on, opened from the count on its row. */
-	getFeatureDependencies(featureId: number): Promise<IFeatureDependency[]>;
 	/** Every gesture in D18 reduces to this one call (US-03, US-04). */
 	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void>;
 }
@@ -69,18 +63,6 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.patch(`/features/${featureId}/rank`, target);
-		});
-	}
-
-	async getFeatureDependencies(
-		featureId: number,
-	): Promise<IFeatureDependency[]> {
-		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<unknown>(
-				`/features/${featureId}/dependencies`,
-			);
-
-			return deserializeFeatureDependencies(response.data);
 		});
 	}
 

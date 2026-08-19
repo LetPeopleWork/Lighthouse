@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { IFeatureDependencyWarning } from "../../../models/FeatureDependency";
+import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import WarningsIndicator from "./WarningsIndicator";
 
 const { terms } = vi.hoisted(() => ({
@@ -104,22 +104,26 @@ describe("WarningsIndicator", () => {
 
 	describe("dependency warnings", () => {
 		const aWarning = (
-			overrides: Partial<IFeatureDependencyWarning>,
-		): IFeatureDependencyWarning => ({
-			blockerReferenceId: "F-9",
-			blockerName: "Warehouse sync",
+			overrides: Partial<IFeatureDependency>,
+		): IFeatureDependency => ({
+			referenceId: "F-9",
+			name: "Warehouse sync",
+			url: "https://tracker.example/F-9",
+			source: "TrackerLink",
 			isWithheld: false,
 			notHonouredReason: null,
 			blockerPositionedBelow: false,
 			...overrides,
 		});
 
+		// Having a dependency is not a warning. A row waiting on something perfectly ordinary still
+		// reads as clear, or the column stops being a way to find the rows that need attention.
 		it("still shows the all-clear when a dependency has nothing wrong with it", () => {
 			render(
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[]}
+					dependencies={[aWarning({})]}
 				/>,
 			);
 
@@ -133,7 +137,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[aWarning({ notHonouredReason: "InALoop" })]}
+					dependencies={[aWarning({ notHonouredReason: "InALoop" })]}
 				/>,
 			);
 
@@ -150,7 +154,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[
+					dependencies={[
 						aWarning({ notHonouredReason: "OutsideThisPortfolio" }),
 					]}
 				/>,
@@ -170,7 +174,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[aWarning({ blockerPositionedBelow: true })]}
+					dependencies={[aWarning({ blockerPositionedBelow: true })]}
 				/>,
 			);
 
@@ -186,7 +190,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[aWarning({ notHonouredReason: "InALoop" })]}
+					dependencies={[aWarning({ notHonouredReason: "InALoop" })]}
 				/>,
 			);
 
@@ -201,7 +205,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[
+					dependencies={[
 						aWarning({ notHonouredReason: "BlockerCannotBeForecast" }),
 					]}
 				/>,
@@ -222,11 +226,11 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[
+					dependencies={[
 						aWarning({
 							isWithheld: true,
-							blockerReferenceId: "",
-							blockerName: "",
+							referenceId: "",
+							name: "",
 							notHonouredReason: "OutsideThisPortfolio",
 						}),
 					]}
@@ -246,7 +250,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={true}
 					isUsingDefaultFeatureSize={true}
-					dependencyWarnings={[aWarning({ notHonouredReason: "InALoop" })]}
+					dependencies={[aWarning({ notHonouredReason: "InALoop" })]}
 				/>,
 			);
 
@@ -268,7 +272,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={[
+					dependencies={[
 						aWarning({ notHonouredReason: "OutsideThisPortfolio" }),
 						aWarning({ blockerPositionedBelow: true }),
 						aWarning({ notHonouredReason: "InALoop" }),
@@ -298,7 +302,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={everyKind}
+					dependencies={everyKind}
 				/>,
 			);
 			const beforeTheRename = screen
@@ -311,7 +315,7 @@ describe("WarningsIndicator", () => {
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
 					isUsingDefaultFeatureSize={false}
-					dependencyWarnings={everyKind}
+					dependencies={everyKind}
 				/>,
 			);
 			const afterTheRename = screen

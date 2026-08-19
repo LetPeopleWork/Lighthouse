@@ -118,20 +118,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         /// <summary>
-        /// The number a client is handed. It has to be the resolved count rather than the stored one, so
-        /// a link naming something this instance does not hold cannot inflate what a reader sees.
+        /// What a client is handed. Only the Features this instance actually holds can be named to a
+        /// reader, so a link pointing at something it does not hold is stored and shows up nowhere.
         /// </summary>
         private async Task ThenThePayloadSaysItWaitsOn(string featureReferenceId, int expectedCount)
         {
             var feature = await ReadTheFeatureThePayloadCarries(featureReferenceId)
-                ?? throw new InvalidOperationException($"The payload carried no {featureReferenceId} for its count to be judged.");
+                ?? throw new InvalidOperationException($"The payload carried no {featureReferenceId} for its list to be judged.");
 
-            var count = feature.TryGetProperty("dependsOnCount", out var property) && property.ValueKind == JsonValueKind.Number
-                ? property.GetInt32()
+            var named = feature.TryGetProperty("dependsOn", out var property) && property.ValueKind == JsonValueKind.Array
+                ? property.GetArrayLength()
                 : (int?)null;
 
-            Assert.That(count, Is.EqualTo(expectedCount),
-                $"{featureReferenceId} must reach a client already knowing how many of the Features Lighthouse holds it waits on. Payload: {feature}");
+            Assert.That(named, Is.EqualTo(expectedCount),
+                $"{featureReferenceId} must reach a client already naming the Features Lighthouse holds it waits on. Payload: {feature}");
         }
 
         private void ThenNobodyComplained()
