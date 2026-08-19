@@ -63,6 +63,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ThePayloadTheCountRidesOn = "FeatureDto";
 
+        // Declaring it is legitimate and reading it is not, so the rule keys on the dot that tells them apart.
+        private const string TheLicenceFlagThatMustStayUnread = "HasPremiumLicence";
+
         private static readonly string[] TheWordsThatWouldMeanAPriceWasAsked =
             ["CanUsePremiumFeatures", "LicenseGuard", "ILicenseService", "useLicenseRestrictions"];
 
@@ -209,6 +212,27 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             theForecastItself.Should().NotDependOnAny(whatThisEpicAdded).Because(reason).Check(Architecture);
             whatThisEpicAdded.Should().NotDependOnAny(theForecastItself).Because(reason).Check(Architecture);
+        }
+
+        /// <summary>
+        /// The licence flag has a place waiting for it on the decision's input so the next epic need not
+        /// re-cut the type. Declaring it is fine; reading it here is not, and the difference is exactly one
+        /// dot. Nothing else catches this - the four names the licence scan looks for are all about asking
+        /// a service, and this one is a property already sitting in the room.
+        /// </summary>
+        [Test]
+        public void NothingThisEpicAdded_ReadsTheLicenceFlagItWasHanded()
+        {
+            var reads = TheSourceThisEpicAdded()
+                .SelectMany(file => LinesMatching(file, line =>
+                    line.Contains($".{TheLicenceFlagThatMustStayUnread}", StringComparison.Ordinal)))
+                .ToList();
+
+            Assert.That(reads, Is.Empty,
+                $"'{TheLicenceFlagThatMustStayUnread}' is declared for the epic that turns paid behaviour on and is " +
+                "read by nothing until then. A read here would make what a dependency does depend on an instance's " +
+                "licence while every screen in this epic is free, and the two would disagree. Found: " +
+                string.Join(", ", reads));
         }
 
         /// <summary>

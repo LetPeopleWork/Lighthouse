@@ -32,6 +32,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private static readonly string[] MaySurviveWithholding = ["isWithheld", "notHonouredReason", "source"];
 
         /// <summary>
+        /// Every field an entry carries, withheld or not. Named here so that adding one to the payload
+        /// fails this test until somebody says whether a withheld entry may carry it too.
+        /// </summary>
+        private static readonly string[] EverythingAnEntryCarries =
+        [
+            "id",
+            "referenceId",
+            "name",
+            "state",
+            "stateCategory",
+            "url",
+            "source",
+            "notHonouredReason",
+            "isWithheld",
+            "portfolios",
+        ];
+
+        /// <summary>
         /// Everything a warning on a Feature row is allowed to carry: which dependency it is about, and
         /// what is wrong with it as codes. Anything else would be text the instance cannot rename.
         /// </summary>
@@ -259,12 +277,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         /// <summary>
-        /// The whole of a withheld entry. Asserted over every value it carries rather than over the three
-        /// somebody thought of, because a field added next year discloses just as much as these do.
+        /// The whole of a withheld entry, judged twice. First that it carries exactly the fields the entry
+        /// is known to have - a field added later fails here, which is the point: whether it may survive
+        /// withholding is a decision somebody has to take rather than one an empty default takes for them.
+        /// Then that everything beyond the three it may say is empty.
         /// </summary>
         private static void ThenTheWithheldEntryDisclosesNothingButThatItExists(List<JsonElement> entries)
         {
             var withheld = entries.Single(IsWithheld);
+            var carried = withheld.EnumerateObject().Select(property => property.Name).ToHashSet(StringComparer.Ordinal);
             var disclosed = withheld.EnumerateObject()
                 .Where(property => !MaySurviveWithholding.Contains(property.Name))
                 .Where(property => property.Value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))
@@ -272,8 +293,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 .Select(property => property.Name)
                 .ToList();
 
-            Assert.That(disclosed, Is.Empty,
-                $"A withheld entry says that something is being waited on and nothing else about it. Disclosed: {string.Join(", ", disclosed)} in {withheld}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(carried, Is.EquivalentTo(EverythingAnEntryCarries),
+                    $"An entry grew or lost a field. Whether the new one may survive withholding is a decision, not something an empty default settles quietly. Carried: {string.Join(", ", carried.Order(StringComparer.Ordinal))}");
+                Assert.That(disclosed, Is.Empty,
+                    $"A withheld entry says that something is being waited on and nothing else about it. Disclosed: {string.Join(", ", disclosed)} in {withheld}");
+            }
         }
 
         private static void ThenTheListIsAsLongAsWhatItWaitsOn(List<JsonElement> entries, int expectedEntries)

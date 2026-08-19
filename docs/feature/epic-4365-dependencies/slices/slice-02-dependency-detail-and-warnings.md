@@ -121,6 +121,32 @@ on; the wall-clock figure is corroboration, and its absence is recorded here rat
 **No branch to ingestion is taken.** The fallback — a precomputed verdict stored on the edge — stays
 unbuilt and unneeded.
 
+## Dogfood, 2026-08-19 — what ran on real data and what ran on fixtures
+
+**Ran on real Azure DevOps data.** The walking skeleton (`FeatureDependencies.spec.ts`) drives a real
+Portfolio over the real `letpeoplework` board — Epics `#4365`, `#5698`, `#5792`, linked by Predecessor
+links a person drew — and now opens the dialog as well as reading the count. It passed locally against a
+running Lighthouse: `#5792` shows **2**, `#4365` shows **empty** (the direction guard still holds), and
+the dialog lists both Features by name with a link into the tracker. Both entries carried
+*cannot be forecast*, correctly: that instance has no Team throughput behind those Epics.
+
+**Ran on fixtures, and this is settled rather than a shortcut.** The loop (AC-3.3) cannot be dogfooded on
+Azure DevOps at any hop count — `TF201035`, transitively — so it runs on fixtures here, and its real-data
+confirmation belongs to slice 03, where Jira's `blocks` links carry no such guard. Cross-Portfolio
+(AC-3.1) also ran on fixtures: the acceptance harness seeds two Portfolios and refreshes them separately,
+which is the shape the verdict actually turns on.
+
+**Owed, not done in this session** — both need the `:5169` instance, which was not running:
+
+- The `#5510 → #5511 → {#5512, #5733}` confirmation, including `#5733` (no child Work Items) producing
+  the cannot-be-forecast warning on `#5511`'s row, and `#5512`/`#5733` still reading empty.
+- The screenshots of the dialog and of each warning kind, and the ≤200 ms figure recorded above.
+
+**No `lighthouse-clients` version-gate entry is owed.** `FEATURE_REQUIRES_SERVER_NEWER_THAN` guards
+routes a client calls, before the call; the new `/features/{id}/dependencies` route earns an entry only
+once a client chooses to expose it, and none does. The additive payload fields owe nothing at all — a
+Feature payload decodes as an untyped array on the client.
+
 ## Prerequisite state, measured 2026-08-18 (before this slice ran)
 
 **Azure DevOps refuses to store a dependency cycle, and the guard is transitive.** Adding a Predecessor
