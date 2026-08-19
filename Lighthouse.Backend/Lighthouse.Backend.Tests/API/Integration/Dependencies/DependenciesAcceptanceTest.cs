@@ -188,6 +188,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
+        /// <summary>
+        /// Work on a Feature that nothing has been simulated for: a Team with items still to finish and no
+        /// forecast row of any kind, which is what a Team with no measured delivery looks like in the
+        /// store. Hand <paramref name="remainingWorkItems"/> a zero for the other shape - work that is all
+        /// finished, where there is nothing left to forecast and nothing wrong either.
+        /// </summary>
+        protected void GiveItWorkNobodyHasMeasured(string featureReferenceId, int remainingWorkItems)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var feature = context.Features
+                .Include(candidate => candidate.FeatureWork)
+                .Single(candidate => candidate.ReferenceId == featureReferenceId);
+
+            var team = new Team
+            {
+                Name = $"Team {Guid.NewGuid():N}",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    Name = $"Connection {Guid.NewGuid():N}",
+                    WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
+                },
+            };
+
+            context.Teams.Add(team);
+            context.SaveChanges();
+
+            feature.AddOrUpdateWorkForTeam(team, remainingWorkItems, totalItems: 5);
+            context.SaveChanges();
+        }
+
         // --- Driving-port interaction ---
 
         /// <summary>

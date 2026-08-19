@@ -95,6 +95,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         private List<string> GivenEverythingRecordedAboutTheDependencies() => ReadEverythingRecordedAboutTheDependencies();
 
+        private void GivenTheTeamBehindItHasNoMeasuredDelivery(string featureReferenceId)
+            => GiveItWorkNobodyHasMeasured(featureReferenceId, remainingWorkItems: 3);
+
+        private void GivenTheWorkOnItIsAllFinished(string featureReferenceId)
+            => GiveItWorkNobodyHasMeasured(featureReferenceId, remainingWorkItems: 0);
+
         private void GivenNoPremiumLicence()
             => LicenseServiceMock.Setup(licences => licences.CanUsePremiumFeatures()).Returns(false);
 

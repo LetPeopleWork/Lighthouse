@@ -309,6 +309,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNothingAboutTheDependenciesWasRecorded(everythingRecordedBefore);
         }
 
+        // @edge @us-03 - "A Feature waiting on one whose Team has no measured delivery is told why". The
+        // wait has no end anyone can name, which is a different problem from the dependency being unusable
+        // and reads as a different warning.
+        [Test]
+        public async Task Waiting_on_a_feature_no_one_can_forecast_says_so()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+            GivenTheTeamBehindItHasNoMeasuredDelivery("F-1");
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenTheRowFor(rows, "F-3").WarnsAbout("F-1", "Rebuild the search index", "BlockerCannotBeForecast");
+        }
+
+        // The exemption the forecast already makes, read here rather than decided again: a Feature with
+        // nothing left to do has no forecast because there is nothing to forecast, which is a fact and not
+        // a gap. Warning about it would send the reader to chase a Team that has already finished.
+        [Test]
+        public async Task Waiting_on_a_feature_with_no_work_left_is_not_reported_as_unforecastable()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+            GivenTheWorkOnItIsAllFinished("F-1");
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenTheRowFor(rows, "F-3").CarriesNoDependencyWarningAtAll();
+        }
+
         // Everything in this epic is free. A licence check on the way in would make the list of what a
         // Feature waits on a paid answer, which is the opposite of what was decided.
         [Test]
