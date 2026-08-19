@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private static readonly string[] TheSearchIndex = ["F-1"];
         private static readonly string[] TheSearchIndexAndOneNobodyHolds = ["F-1", "F-404"];
         private static readonly string[] TheSearchIndexAndTheWarehouse = ["F-1", "F-9"];
+        private static readonly string[] TheCatalogue = ["F-3"];
+        private static readonly string[] ItsOwnSelf = ["F-3"];
 
         private static readonly NotHonouredReason[] TheThreeReasonsThisEpicCanProduce =
         [
@@ -239,6 +241,72 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             ThenTheRowFor(rows, "F-3").WarnsThatWhatItWaitsOnSitsBelowIt("F-1");
             ThenTheOrderEveryFeatureIsInIsUnchanged(theOrderBefore, rows);
+        }
+
+        // @error @us-03 - "A loop warns on every Feature in it and names the others". Every member is
+        // waiting on every other member, so there is no first one to start with and no answer to give a
+        // reader who only sees one side of it.
+        [Test]
+        public async Task Two_features_waiting_on_each_other_both_warn_and_name_the_other()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenAPortfolioWhereTheOneItWaitsOnComesLast(
+                platform,
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex),
+                AFeatureWaitingOn("F-1", "Rebuild the search index", TheCatalogue));
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+            var whatTheCatalogueWaitsOn = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheRowFor(rows, "F-3").WarnsAbout("F-1", "Rebuild the search index", "InALoop");
+            ThenTheRowFor(rows, "F-1").WarnsAbout("F-3", "Publish the partner catalogue", "InALoop");
+            ThenTheEntryFor(whatTheCatalogueWaitsOn, "F-1").CannotBeActedOnBecause("InALoop");
+        }
+
+        // The smallest circle there is, and the one the deduplication key was chosen to keep: a Feature
+        // that names itself would be indistinguishable from one that names nothing if the key had been
+        // the Feature alone.
+        [Test]
+        public async Task A_feature_waiting_on_itself_warns_and_names_itself()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", ItsOwnSelf));
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenTheRowFor(rows, "F-3").WarnsAbout("F-3", "Publish the partner catalogue", "InALoop");
+        }
+
+        // A hundred Features waiting on one another in a circle. The claim is not that a walk over them
+        // terminates - the detector's own tests say that - but that a real read of a real payload survives
+        // it, which is the only place the whole path is under test at once.
+        [Test]
+        public async Task A_hundred_features_waiting_on_one_another_are_all_reported()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenAPortfolioWhereTheOneItWaitsOnComesLast(platform, AChainOfFeaturesClosingOnItself(100));
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenEveryFeatureInTheChainWarnsAboutTheLoop(rows, 100);
+        }
+
+        // Working out a verdict is reading, and reading writes nothing. A stored loop flag would also be a
+        // second place the answer lives, which is the one thing this slice exists to avoid.
+        [Test]
+        public async Task Working_out_the_loop_stores_nothing()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenAPortfolioWhereTheOneItWaitsOnComesLast(
+                platform,
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex),
+                AFeatureWaitingOn("F-1", "Rebuild the search index", TheCatalogue));
+            var everythingRecordedBefore = GivenEverythingRecordedAboutTheDependencies();
+
+            await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenNothingAboutTheDependenciesWasRecorded(everythingRecordedBefore);
         }
 
         // Everything in this epic is free. A licence check on the way in would make the list of what a

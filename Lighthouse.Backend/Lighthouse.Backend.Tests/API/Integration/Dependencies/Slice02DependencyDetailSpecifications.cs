@@ -79,6 +79,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         private Task<Dictionary<string, int>> GivenTheOrderEveryFeatureIsIn() => ReadTheOrderEveryFeatureIsIn();
 
+        /// <summary>
+        /// A chain of Features each waiting on the next, with the last waiting on the first. Long enough
+        /// that a walk taking one step per hop on the call stack would not come back.
+        /// </summary>
+        private static TrackedFeature[] AChainOfFeaturesClosingOnItself(int howMany)
+            => Enumerable.Range(1, howMany)
+                .Select(place => new TrackedFeature(
+                    ChainedFeature(place),
+                    $"Link {place} of the chain",
+                    [ChainedFeature(place == howMany ? 1 : place + 1)]))
+                .ToArray();
+
+        private static string ChainedFeature(int place) => $"CHAIN-{place}";
+
+        private List<string> GivenEverythingRecordedAboutTheDependencies() => ReadEverythingRecordedAboutTheDependencies();
+
         private void GivenNoPremiumLicence()
             => LicenseServiceMock.Setup(licences => licences.CanUsePremiumFeatures()).Returns(false);
 
@@ -325,7 +341,40 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 "A Feature the reader may not read must answer exactly as it does when there is no such Feature.");
         }
 
+        private static void ThenEveryFeatureInTheChainWarnsAboutTheLoop(Dictionary<string, JsonElement> rows, int howMany)
+        {
+            var silent = Enumerable.Range(1, howMany)
+                .Select(ChainedFeature)
+                .Where(feature => !rows.TryGetValue(feature, out var row) || !SaysItIsInALoop(row))
+                .ToList();
+
+            Assert.That(silent, Is.Empty,
+                $"Every Feature going round the circle is waiting on every other one, so none of them can be left out of it. Silent: {string.Join(", ", silent)}");
+        }
+
+        private static bool SaysItIsInALoop(JsonElement row)
+            => WarningsOn(row).Any(warning =>
+                warning.GetProperty("notHonouredReason").GetString() == nameof(NotHonouredReason.InALoop));
+
+        private void ThenNothingAboutTheDependenciesWasRecorded(List<string> before)
+        {
+            var after = ReadEverythingRecordedAboutTheDependencies();
+
+            Assert.That(after, Is.EqualTo(before),
+                "Working out what is wrong with a dependency is reading, and a verdict written down would be a second place the answer lives.");
+        }
+
         // --- Reading the store ---
+
+        /// <summary>
+        /// Every stored dependency as one comparable line, so a read that quietly recorded what it worked
+        /// out shows up as a difference rather than as nothing at all.
+        /// </summary>
+        private List<string> ReadEverythingRecordedAboutTheDependencies()
+            => ReadStoredDependencies()
+                .Select(stored => $"{stored.FeatureReferenceId}|{stored.WaitsOnReferenceId}|{stored.Source}|{stored.KeyedToFeatureId}")
+                .Order()
+                .ToList();
 
         /// <summary>
         /// Where every Feature sits, read from the store rather than from the payload under test, so the
