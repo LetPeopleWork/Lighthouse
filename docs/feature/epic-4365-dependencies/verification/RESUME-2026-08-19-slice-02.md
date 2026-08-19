@@ -17,13 +17,27 @@ Thirteen commits on top of `741a94a4f`, one per roadmap step plus a refactor:
 | 03-02 | a Feature waiting on one placed below it says so, and nothing is moved; an unnumbered read claims nothing about order |
 | 03-03 | the loop warning under test end to end, including a hundred-long chain and a Feature that names itself |
 | 03-04 | a Feature waiting on one nobody can forecast says so; one with no work left does not |
-| 04-01 | the count opens the dialog; the walking skeleton opens it on real Azure DevOps data |
+| 04-01 | the row names what it waits on; the walking skeleton reads it on real Azure DevOps data |
 | 04-02 | the warnings column composes the four kinds beside the two it had |
 | 04-03 | the terminology scan widened to the two files where the words a reader sees are written |
 | 05-01 | at most one decider, only it walks the circles, and neither reaches a repository, a database or a log |
 | 05-02 | two operator log events, sized against the noise already there |
 | 06-01 | eleven database commands over twenty Features and eleven over two hundred |
 | — | refactor: one place builds the sentences, one place answers whether a Feature is readable |
+
+## The dialog was built, reviewed on a running instance, and thrown away
+
+The maintainer looked at it and said no: a number told a reader how many things to worry about and
+nothing about which, and the dialog behind it took them out of the list they were reading to answer a
+question the row could answer itself. So the column is now called **Dependencies** and lists what a
+Feature waits on, one per line, each as `<reference>: <name>` linking into the work tracking system in
+a new tab. The dialog, its tests, the client call and the `/features/{id}/dependencies` route that
+existed only to feed it are all gone.
+
+One consequence is worth knowing: the entries ride on the Feature payload every list already reads, so
+the **Portfolio and Team feature lists name dependencies too** - which the dialog never did. Only the
+verdict (what is wrong with a dependency) still needs the whole graph, and the narrower reads say
+nothing rather than guessing.
 
 ## Owed, and why it was not done
 
