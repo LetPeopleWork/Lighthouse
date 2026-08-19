@@ -72,4 +72,13 @@ test("@walking_skeleton a product owner sees, without leaving Lighthouse, that a
 	await expect(featuresPage.getDependsOnCell(ONE_OF_ITS_BLOCKERS)).toHaveText(
 		"",
 	);
+
+	// The count answers "how many"; the reader's next question is "which ones", and answering it is
+	// what makes the number worth showing.
+	// Addressed as the link it is: the entry names the Feature twice, once to open it in the tracker
+	// and once in the sentence saying what stands against the dependency.
+	const dependencies = await featuresPage.openDependencies(THE_DEPENDENT);
+	await expect(
+		dependencies.getByRole("link", { name: ONE_OF_ITS_BLOCKERS }),
+	).toBeVisible();
 });

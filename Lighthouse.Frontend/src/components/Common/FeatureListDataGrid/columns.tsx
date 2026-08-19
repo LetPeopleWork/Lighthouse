@@ -1,4 +1,4 @@
-import { Box, Tooltip, Typography } from "@mui/material";
+import { Box, Link, Tooltip, Typography } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
@@ -136,24 +136,45 @@ export const createActiveWorkColumn = (
 });
 
 // Most features wait on nothing, so the cell stays blank in that case, the same way a missing
-// position is left blank. A printed 0 would sit in the column looking like a number worth reading.
-const renderDependsOnCount = (count: number | undefined) => {
-	if ((count ?? 0) > 0) {
+// position is left blank. A printed 0 would sit in the column looking like a number worth reading,
+// and there would be an empty dialog behind it to land in.
+const renderDependsOnCount = (
+	row: IFeature,
+	onOpen?: (feature: IFeature) => void,
+) => {
+	const count = row.dependsOnCount ?? 0;
+
+	if (count === 0) {
+		return <span />;
+	}
+
+	if (!onOpen) {
 		return <span>{count}</span>;
 	}
 
-	return <span />;
+	return (
+		<Link
+			component="button"
+			type="button"
+			underline="hover"
+			onClick={() => onOpen(row)}
+			data-testid={`depends-on-${row.referenceId}`}
+		>
+			{count}
+		</Link>
+	);
 };
 
 export const createDependsOnColumn = (
 	featuresTerm: string,
+	onOpen?: (feature: IFeature) => void,
 ): DataGridColumn<IFeature & GridValidRowModel> => ({
 	field: "dependsOnCount",
 	headerName: `Depends On ${featuresTerm}`,
 	width: 150,
 	sortable: true,
 	valueGetter: (_, row) => row.dependsOnCount,
-	renderCell: ({ row }) => renderDependsOnCount(row.dependsOnCount),
+	renderCell: ({ row }) => renderDependsOnCount(row, onOpen),
 });
 
 export const createParentColumn = (

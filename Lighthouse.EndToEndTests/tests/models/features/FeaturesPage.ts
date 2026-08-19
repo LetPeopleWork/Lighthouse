@@ -43,6 +43,23 @@ export class FeaturesPage {
 		);
 	}
 
+	/**
+	 * Opens the list behind the count. Waits on the request itself rather than on the dialog appearing:
+	 * the dialog opens before the answer arrives, so a visible dialog says nothing about what is in it.
+	 */
+	async openDependencies(featureName: string): Promise<Locator> {
+		const theListItself = this.page.waitForResponse(
+			(response) =>
+				response.request().method() === "GET" &&
+				response.url().includes("/dependencies"),
+		);
+
+		await this.getDependsOnCell(featureName).getByRole("button").click();
+		await theListItself;
+
+		return this.page.getByRole("dialog");
+	}
+
 	/** Epic 5375 slice 02 — the sequence itself, which is what "nothing moved" is judged against. */
 	async getListedFeatureNames(): Promise<string[]> {
 		const cells = await this.featureRows

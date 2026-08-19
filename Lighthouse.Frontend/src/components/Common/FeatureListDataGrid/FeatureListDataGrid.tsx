@@ -11,11 +11,13 @@ import { useContext, useMemo, useState } from "react";
 import { useFeatureOrdering } from "../../../hooks/useFeatureOrdering";
 import { useHideCompletedFeatures } from "../../../hooks/useHideCompletedFeatures";
 import type { IFeature } from "../../../models/Feature";
+import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import type { FeatureMoveTarget } from "../../../models/FeatureOrdering";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
+import DependencyDialog from "../DependencyDialog/DependencyDialog";
 import {
 	createActiveWorkColumn,
 	createDependsOnColumn,
@@ -47,6 +49,16 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 
 	// "Up" has no predictable meaning in a list a column is sorting, so the grid has to know.
 	const [isSortActive, setIsSortActive] = useState(false);
+
+	// What the reader asked to look at, and what came back. Fetched on the gesture rather than with the
+	// list: most rows are never opened, and the list is already the expensive read on this page.
+	const [openedFeature, setOpenedFeature] = useState<IFeature | null>(null);
+	const [dependencies, setDependencies] = useState<IFeatureDependency[]>([]);
+
+	const openDependencies = async (feature: IFeature) => {
+		setOpenedFeature(feature);
+		setDependencies(await featureService.getFeatureDependencies(feature.id));
+	};
 
 	const { hideCompleted, handleToggleChange } = useHideCompletedFeatures(
 		hideCompletedStorageKey,
@@ -97,7 +109,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		createWarningsColumn(),
 		...(activeWorkColumn ? [activeWorkColumn] : []),
 		...surfaceColumns,
-		createDependsOnColumn(featuresTerm),
+		createDependsOnColumn(featuresTerm, openDependencies),
 		// The two surfaces that show a place are the two that let you change it, so one flag names both
 		// and neither caller passes the menu in.
 		...(showPosition
@@ -135,6 +147,14 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 				emptyStateMessage={emptyStateMessage}
 				onSortModelChange={(model) => setIsSortActive(model.length > 0)}
 			/>
+			{openedFeature ? (
+				<DependencyDialog
+					featureName={openedFeature.name}
+					dependencies={dependencies}
+					open={true}
+					onClose={() => setOpenedFeature(null)}
+				/>
+			) : null}
 		</TableContainer>
 	);
 };
