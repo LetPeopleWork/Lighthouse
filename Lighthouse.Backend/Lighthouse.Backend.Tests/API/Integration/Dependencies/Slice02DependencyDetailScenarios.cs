@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Dependencies;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
@@ -15,6 +16,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     {
         private static readonly string[] TheSearchIndex = ["F-1"];
         private static readonly string[] TheSearchIndexAndOneNobodyHolds = ["F-1", "F-404"];
+        private static readonly string[] TheSearchIndexAndTheWarehouse = ["F-1", "F-9"];
+
+        private static readonly NotHonouredReason[] TheThreeReasonsThisEpicCanProduce =
+        [
+            NotHonouredReason.OutsideThisPortfolio,
+            NotHonouredReason.InALoop,
+            NotHonouredReason.BlockerCannotBeForecast,
+        ];
 
         // @driving_adapter @us-02 - "Opening the list of Features one is waiting on"
         [Test]
@@ -92,6 +101,47 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var answer = await WhenAReaderOfAnotherPortfolioOpensWhatItWaitsOn("F-3", somewhereElse);
 
             ThenTheAnswerIsNotFound(answer);
+        }
+
+        // @driving_adapter @us-02 - "Each entry says where Lighthouse read it from"
+        [Test]
+        public async Task Every_entry_says_it_was_read_from_the_work_tracking_systems_own_link()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheEntryFor(list, "F-1").SaysItCameFromTheTrackersOwnLink();
+            ThenNoEntryClaimsASourceOutsideTheWorkTrackingSystem(list);
+        }
+
+        // @driving_adapter @us-02 - "An entry Lighthouse cannot act on says so, in words the reader
+        // already uses". Both halves are one scenario on purpose: a reason on every entry would be as
+        // useless as a reason on none, so what carries one and what does not have to be read together.
+        [Test]
+        public async Task An_entry_lighthouse_cannot_act_on_carries_the_reason_and_one_it_can_act_on_carries_none()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var warehouse = GivenAPortfolio("Warehouse");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndTheWarehouse));
+            await GivenAnotherPortfolioRefreshed(warehouse, AFeatureTheTrackerHolds("F-9", "Warehouse sync"));
+
+            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheEntryFor(list, "F-9").CannotBeActedOnBecause("OutsideThisPortfolio");
+            ThenTheEntryFor(list, "F-1").CarriesNoReasonAtAll();
+        }
+
+        // A caller meeting a reason it has never heard of has to guess, and the guess this feature exists
+        // to prevent is "probably fine". Asserted against the set itself rather than against a list of
+        // strings a scenario carries, which would drift the moment somebody adds a value.
+        [Test]
+        public void The_reasons_this_epic_can_produce_are_a_closed_set()
+        {
+            ThenTheReasonsAreExactly(TheThreeReasonsThisEpicCanProduce);
         }
 
         // Everything in this epic is free. A licence check on the way in would make the list of what a

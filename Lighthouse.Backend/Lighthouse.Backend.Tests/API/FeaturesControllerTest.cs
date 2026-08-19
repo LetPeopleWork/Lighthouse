@@ -494,7 +494,7 @@ namespace Lighthouse.Backend.Tests.API
                 .ReturnsAsync((ClaimsPrincipal _, IReadOnlyCollection<Feature> requested, ISet<int> _, CancellationToken _) =>
                     requested.ToDictionary(feature => feature.Id, _ => FeatureMoveVerdict.Allowed));
 
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, Mock.Of<IFeatureRankingService>(), Mock.Of<IFeatureOrderingPolicyProvider>(), new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, Mock.Of<IFeatureRankingService>(), Mock.Of<IFeatureOrderingPolicyProvider>(), new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy());
         }
     }
 }

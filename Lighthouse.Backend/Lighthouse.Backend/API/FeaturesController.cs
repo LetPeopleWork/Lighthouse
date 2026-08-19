@@ -1,8 +1,10 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.AspNetCore.Authorization;
@@ -28,6 +30,7 @@ namespace Lighthouse.Backend.API
         private readonly IFeatureRankingService featureRankingService;
         private readonly IFeatureOrderingPolicyProvider featureOrderingPolicyProvider;
         private readonly ILighthouseClock clock;
+        private readonly IDependencyHonourPolicy dependencyHonourPolicy;
 
 #pragma warning disable S107 // Every parameter is a distinct port this controller drives; bundling them into a parameter object would only hide the arity, not the coupling.
         public FeaturesController(
@@ -40,7 +43,8 @@ namespace Lighthouse.Backend.API
             IFeatureMoveAuthorization featureMoveAuthorization,
             IFeatureRankingService featureRankingService,
             IFeatureOrderingPolicyProvider featureOrderingPolicyProvider,
-            ILighthouseClock clock)
+            ILighthouseClock clock,
+            IDependencyHonourPolicy dependencyHonourPolicy)
 #pragma warning restore S107
         {
             this.featureRepository = featureRepository;
@@ -53,6 +57,7 @@ namespace Lighthouse.Backend.API
             this.featureRankingService = featureRankingService;
             this.featureOrderingPolicyProvider = featureOrderingPolicyProvider;
             this.clock = clock;
+            this.dependencyHonourPolicy = dependencyHonourPolicy;
         }
 
         /// <summary>
@@ -124,7 +129,9 @@ namespace Lighthouse.Backend.API
         [HttpGet("{featureId:int}/dependencies")]
         public async Task<ActionResult<List<FeatureDependencyDto>>> GetFeatureDependencies(int featureId)
         {
-            var feature = featureRepository.GetById(featureId);
+            var featuresHeld = featureRepository.GetAll().ToList();
+
+            var feature = featuresHeld.Find(candidate => candidate.Id == featureId);
             if (feature is null)
             {
                 return NotFound();
@@ -136,32 +143,79 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            var blockers = FeaturesWaitedOnBy(feature);
+            var blockersHeld = FeaturesWaitedOnBy(feature, featuresHeld);
             var readableBlockerPortfolioIds = await GetReadablePortfolioIds(
-                blockers.SelectMany(blocker => blocker.Portfolios).Select(p => p.Id));
+                blockersHeld.Values.SelectMany(blocker => blocker.Portfolios).Select(p => p.Id));
+            var reasons = await ReasonsAgainstWhat(feature, featuresHeld);
 
-            var entries = blockers
-                .Select(blocker => new FeatureDependencyDto(blocker, readableBlockerPortfolioIds))
+            var entries = feature.DependsOnReferences
+                .Where(reference => blockersHeld.ContainsKey(reference.ReferenceId))
+                .Select(reference => new FeatureDependencyDto(
+                    blockersHeld[reference.ReferenceId],
+                    reference.Source,
+                    reasons.GetValueOrDefault(reference.ReferenceId),
+                    readableBlockerPortfolioIds))
                 .ToList();
 
             return Ok(entries);
         }
 
         /// <summary>
-        /// The Features a Feature waits on that this Lighthouse actually holds, in the order the reader
-        /// already sees them in. A reference is only ever an id string the tracker wrote, so one naming
-        /// something not held yields nothing here - exactly as it counts for nothing on the row, which is
-        /// what keeps the number and the list under it accountable to each other.
+        /// The Features a Feature waits on that this Lighthouse actually holds. A reference is only ever
+        /// an id string the tracker wrote, so one naming something not held yields nothing here - exactly
+        /// as it counts for nothing on the row, which is what keeps the number and the list under it
+        /// accountable to each other.
         /// </summary>
-        private List<Feature> FeaturesWaitedOnBy(Feature feature)
+        private static Dictionary<string, Feature> FeaturesWaitedOnBy(Feature feature, IReadOnlyCollection<Feature> featuresHeld)
         {
             var waitedOn = feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToHashSet(StringComparer.Ordinal);
-            if (waitedOn.Count == 0)
-            {
-                return [];
-            }
 
-            return featureRepository.GetAllByPredicate(candidate => waitedOn.Contains(candidate.ReferenceId)).ToList();
+            return featuresHeld
+                .Where(candidate => waitedOn.Contains(candidate.ReferenceId))
+                .GroupBy(candidate => candidate.ReferenceId, StringComparer.Ordinal)
+                .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.First(), StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// Why Lighthouse will not act on each of the dependencies this Feature has, asked of the one
+        /// component that decides it. Nothing here works a reason out for itself: a second opinion is how
+        /// a warning ends up disagreeing with what a forecast actually did.
+        /// </summary>
+        private async Task<Dictionary<string, NotHonouredReason?>> ReasonsAgainstWhat(
+            Feature feature, IReadOnlyCollection<Feature> featuresHeld)
+        {
+            var decided = dependencyHonourPolicy.Evaluate(await TheFactsAbout(featuresHeld));
+
+            return decided.Verdicts
+                .Where(verdict => verdict.DependentReferenceId == feature.ReferenceId)
+                .GroupBy(verdict => verdict.BlockerReferenceId, StringComparer.Ordinal)
+                .ToDictionary(byBlocker => byBlocker.Key, byBlocker => byBlocker.First().Reason, StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// Every Feature the decision is allowed to see, as the plain facts it reads. A Feature with no
+        /// place of its own is put last, which is the one position that cannot make another Feature look
+        /// as though it were waiting on something below it.
+        /// </summary>
+        /// <remarks>
+        /// The licence answer is left false because nothing may read it yet: no dependency changes a
+        /// forecast until that behaviour ships, and until it does an instance's licence has no bearing on
+        /// anything decided here. Whoever turns it on has to hand the real answer in from here.
+        /// </remarks>
+        private async Task<DependencyHonourInput> TheFactsAbout(IReadOnlyCollection<Feature> featuresHeld)
+        {
+            var positions = await featurePositionMap.GetAsync(RequestAborted);
+
+            var facts = featuresHeld
+                .Select(held => new FeatureDependencyFacts(
+                    held.ReferenceId,
+                    held.Portfolios.Select(portfolio => portfolio.Id).ToList(),
+                    positions.TryGetValue(held.Id, out var position) ? position : int.MaxValue,
+                    held.CanBeForecast,
+                    held.DependsOnReferences.Select(reference => reference.ReferenceId).ToList()))
+                .ToList();
+
+            return new DependencyHonourInput(facts, HasPremiumLicence: false);
         }
 
         /// <summary>

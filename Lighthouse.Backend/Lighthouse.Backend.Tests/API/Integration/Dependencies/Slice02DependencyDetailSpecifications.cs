@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Tests.TestHelpers;
 using NUnit.Framework;
 using System.Net;
@@ -32,6 +33,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 AFeatureTheTrackerHolds("F-1", "Rebuild the search index"),
                 AFeatureTheTrackerHolds("F-2", "Retire the legacy importer"),
                 theFeatureUnderTest);
+
+        /// <summary>
+        /// A second Portfolio refreshed on its own, which is how a Feature ends up somewhere the first
+        /// Portfolio cannot see: the reference resolves, the Feature is right there, and the two still
+        /// share no Portfolio.
+        /// </summary>
+        private Task GivenAnotherPortfolioRefreshed(int portfolioId, TrackedFeature theFeatureItWaitsOn)
+            => DriveAPortfolioRefresh(portfolioId, theFeatureItWaitsOn);
 
         private void GivenNoPremiumLicence()
             => LicenseServiceMock.Setup(licences => licences.CanUsePremiumFeatures()).Returns(false);
@@ -100,6 +109,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 $"The list must account for the number on the row, entry for entry. Row: {row}");
         }
 
+        private static void ThenNoEntryClaimsASourceOutsideTheWorkTrackingSystem(List<JsonElement> entries)
+        {
+            var claimed = entries.Select(entry => entry.GetProperty("source").GetString()).Distinct().ToList();
+
+            Assert.That(claimed, Has.All.EqualTo(nameof(DependencySource.TrackerLink)),
+                $"Lighthouse records no dependency of its own, so nothing here can have come from anywhere else. Claimed: {string.Join(", ", claimed)}");
+        }
+
+        private static void ThenTheReasonsAreExactly(NotHonouredReason[] expectedReasons)
+        {
+            Assert.That(Enum.GetValues<NotHonouredReason>(), Is.EquivalentTo(expectedReasons),
+                "A reader meeting a reason nobody has heard of has to guess, so widening this set has to be somebody's decision rather than a side effect.");
+        }
+
         private static void ThenBothVersionsSaidTheSameThing(string versionOne, string latest)
         {
             Assert.That(versionOne, Is.EqualTo(latest),
@@ -161,6 +184,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             public void OffersAWayToOpenIt(string expectedUrl)
                 => Assert.That(TextOf("url"), Is.EqualTo(expectedUrl),
                     $"Deciding what to do about a wait happens in the work tracking system, so the entry has to lead there. Entry: {Json}");
+
+            public void SaysItCameFromTheTrackersOwnLink()
+                => Assert.That(TextOf("source"), Is.EqualTo(nameof(DependencySource.TrackerLink)),
+                    $"Where a dependency was read from is what tells a reader where to go and change it. Entry: {Json}");
+
+            public void CannotBeActedOnBecause(string expectedReason)
+                => Assert.That(TextOf("notHonouredReason"), Is.EqualTo(expectedReason),
+                    $"An entry Lighthouse will not act on has to say so, and say which of the reasons it is. Entry: {Json}");
+
+            public void CarriesNoReasonAtAll()
+                => Assert.That(TextOf("notHonouredReason"), Is.Null,
+                    $"A dependency with nothing wrong with it carries no reason, rather than a further code meaning fine. Entry: {Json}");
 
             private string? TextOf(string property)
                 => Json.TryGetProperty(property, out var value) ? value.GetString() : null;
