@@ -1,7 +1,11 @@
+using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc;
 using NUnit.Framework;
 using System.Net;
+using System.Reflection;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
@@ -13,6 +17,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     /// </summary>
     public partial class Slice02DependencyDetailTest : DependenciesAcceptanceTest
     {
+        /// <summary>
+        /// What a withheld entry is still allowed to say: that it is withheld, why Lighthouse will not act
+        /// on it, and where the link was read from. None of the three names the Feature or says where it
+        /// lives, and every other value has to be absent for the entry to disclose nothing.
+        /// </summary>
+        private static readonly string[] MaySurviveWithholding = ["isWithheld", "notHonouredReason", "source"];
+
         // --- Given ---
 
         private int GivenAPortfolio(string name) => SeedPortfolio(name);
@@ -62,6 +73,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var featureId = TheFeatureIdOf(featureReferenceId);
 
             return (await ReadTheBodyOf(Client, "v1", featureId), await ReadTheBodyOf(Client, "latest", featureId));
+        }
+
+        private async Task<List<JsonElement>> WhenAReaderOfOnlyOnePortfolioOpensWhatItWaitsOn(
+            string featureReferenceId, int theOnlyPortfolioTheyCanRead)
+        {
+            using var reader = Factory.CreateClient().AsPortfolioViewer(theOnlyPortfolioTheyCanRead);
+
+            var (status, entries) = await AskFor(reader, "latest", featureReferenceId);
+
+            Assert.That(status, Is.EqualTo(HttpStatusCode.OK),
+                $"A reader of the Portfolio {featureReferenceId} is in must be handed what it waits on.");
+
+            return entries;
         }
 
         private async Task<HttpStatusCode> WhenAReaderOfAnotherPortfolioOpensWhatItWaitsOn(
@@ -122,6 +146,79 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             Assert.That(Enum.GetValues<NotHonouredReason>(), Is.EquivalentTo(expectedReasons),
                 "A reader meeting a reason nobody has heard of has to guess, so widening this set has to be somebody's decision rather than a side effect.");
         }
+
+        private static void ThenOneEntryIsWithheld(List<JsonElement> entries)
+        {
+            Assert.That(entries.Count(IsWithheld), Is.EqualTo(1),
+                $"A Feature the reader may not see is still a Feature being waited on, and has to be shown as one. Listed: {Describe(entries)}");
+        }
+
+        /// <summary>
+        /// The whole of a withheld entry. Asserted over every value it carries rather than over the three
+        /// somebody thought of, because a field added next year discloses just as much as these do.
+        /// </summary>
+        private static void ThenTheWithheldEntryDisclosesNothingButThatItExists(List<JsonElement> entries)
+        {
+            var withheld = entries.Single(IsWithheld);
+            var disclosed = withheld.EnumerateObject()
+                .Where(property => !MaySurviveWithholding.Contains(property.Name))
+                .Where(property => property.Value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))
+                .Where(property => property.Value.ToString() is not ("" or "0" or "[]" or nameof(StateCategories.Unknown)))
+                .Select(property => property.Name)
+                .ToList();
+
+            Assert.That(disclosed, Is.Empty,
+                $"A withheld entry says that something is being waited on and nothing else about it. Disclosed: {string.Join(", ", disclosed)} in {withheld}");
+        }
+
+        private static void ThenTheListIsAsLongAsWhatItWaitsOn(List<JsonElement> entries, int expectedEntries)
+        {
+            Assert.That(entries, Has.Count.EqualTo(expectedEntries),
+                $"Every Feature waited on gets an entry, readable or not, or the list stops accounting for the number above it. Listed: {Describe(entries)}");
+        }
+
+        private static void ThenBothReadersWereShownTheSame(List<JsonElement> onePerson, List<JsonElement> another)
+        {
+            Assert.That(Describe(another), Is.EqualTo(Describe(onePerson)),
+                "Being unable to change a Portfolio is no reason to be told less about what its Features are waiting on.");
+        }
+
+        /// <summary>
+        /// Asked of the API surface rather than of one route: a route that added, removed or suppressed a
+        /// dependency would answer "may this reader change one?" simply by existing, whatever it then went
+        /// on to check.
+        /// </summary>
+        private static void ThenNothingInTheApiWritesADependency()
+        {
+            var writingRoutes = typeof(FeaturesController).Assembly.GetTypes()
+                .Where(type => typeof(ControllerBase).IsAssignableFrom(type))
+                .SelectMany(controller => controller.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                .Where(ChangesSomething)
+                .Where(IsAboutADependency)
+                .Select(action => $"{action.DeclaringType?.Name}.{action.Name}")
+                .ToList();
+
+            Assert.That(writingRoutes, Is.Empty,
+                $"Lighthouse records no dependency of its own, so there is nothing for a write route to be for. Found: {string.Join(", ", writingRoutes)}");
+        }
+
+        private static bool ChangesSomething(MethodInfo action)
+            => action.GetCustomAttributes().Any(attribute =>
+                attribute is HttpPostAttribute or HttpPutAttribute or HttpDeleteAttribute or HttpPatchAttribute);
+
+        private static bool IsAboutADependency(MethodInfo action)
+            => Mentions(action.Name)
+                || Mentions(action.ReturnType.ToString())
+                || action.GetParameters().Any(parameter => Mentions(parameter.ParameterType.ToString()));
+
+        private static bool Mentions(string name)
+            => name.Contains("Dependenc", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsWithheld(JsonElement entry)
+            => entry.TryGetProperty("isWithheld", out var withheld) && withheld.ValueKind == JsonValueKind.True;
+
+        private static string Describe(List<JsonElement> entries)
+            => string.Join(" | ", entries.Select(entry => entry.ToString()));
 
         private static void ThenBothVersionsSaidTheSameThing(string versionOne, string latest)
         {

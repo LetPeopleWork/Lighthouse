@@ -144,6 +144,51 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheReasonsAreExactly(TheThreeReasonsThisEpicCanProduce);
         }
 
+        // @error @us-02 - "A Feature the reader may not see is named as withheld, never quietly dropped".
+        // The number on the row counts every Feature waited on, readable or not, so an entry left out
+        // here would make the list disagree with the number above it and give the reader nothing on
+        // screen to explain the difference.
+        [Test]
+        public async Task A_feature_the_reader_may_not_see_is_withheld_rather_than_left_out()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var warehouse = GivenAPortfolio("Warehouse");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndTheWarehouse));
+            await GivenAnotherPortfolioRefreshed(warehouse, AFeatureTheTrackerHolds("F-9", "Warehouse sync"));
+
+            var list = await WhenAReaderOfOnlyOnePortfolioOpensWhatItWaitsOn("F-3", platform);
+
+            ThenOneEntryIsWithheld(list);
+            ThenTheWithheldEntryDisclosesNothingButThatItExists(list);
+            ThenTheListIsAsLongAsWhatItWaitsOn(list, expectedEntries: 2);
+        }
+
+        // @rbac @us-02 - "A reader who may not change anything sees the same list and is offered no
+        // action". Nothing here is offered to anybody, so the readable half is the whole difference a
+        // permission could make, and it must make none.
+        [Test]
+        public async Task A_reader_who_may_not_change_anything_is_shown_the_same_list()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var asSomeoneWhoMayChangeIt = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+            var asSomeoneWhoMayOnlyRead = await WhenAReaderOfOnlyOnePortfolioOpensWhatItWaitsOn("F-3", platform);
+
+            ThenBothReadersWereShownTheSame(asSomeoneWhoMayChangeIt, asSomeoneWhoMayOnlyRead);
+        }
+
+        // Lighthouse never records a dependency of its own, so "may this reader change one?" is not a
+        // permission question here - there is nothing to permit. Asserted over what the API actually
+        // exposes, because a route that appeared later would answer the question by existing.
+        [Test]
+        public void No_route_anywhere_adds_removes_or_suppresses_a_dependency()
+        {
+            ThenNothingInTheApiWritesADependency();
+        }
+
         // Everything in this epic is free. A licence check on the way in would make the list of what a
         // Feature waits on a paid answer, which is the opposite of what was decided.
         [Test]

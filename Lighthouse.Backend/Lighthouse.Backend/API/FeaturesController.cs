@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.API
 
             var entries = feature.DependsOnReferences
                 .Where(reference => blockersHeld.ContainsKey(reference.ReferenceId))
-                .Select(reference => new FeatureDependencyDto(
+                .Select(reference => AnEntryFor(
                     blockersHeld[reference.ReferenceId],
                     reference.Source,
                     reasons.GetValueOrDefault(reference.ReferenceId),
@@ -158,6 +158,25 @@ namespace Lighthouse.Backend.API
                 .ToList();
 
             return Ok(entries);
+        }
+
+        /// <summary>
+        /// One entry, disclosed or withheld. A Feature the reader may not see is still a Feature being
+        /// waited on and still counts on the row, so it is shown as withheld rather than dropped: a
+        /// shorter list under an unchanged number leaves the reader with nothing to account for it.
+        /// </summary>
+        private static FeatureDependencyDto AnEntryFor(
+            Feature blocker,
+            DependencySource source,
+            NotHonouredReason? notHonouredReason,
+            HashSet<int> readablePortfolioIds)
+        {
+            if (!IsReadableBy(blocker, readablePortfolioIds))
+            {
+                return FeatureDependencyDto.Withheld(source, notHonouredReason);
+            }
+
+            return new FeatureDependencyDto(blocker, source, notHonouredReason, readablePortfolioIds);
         }
 
         /// <summary>
