@@ -1,3 +1,41 @@
+# Mutation testing — Epic 4365
+
+## Slice 02 (what exactly, and what Lighthouse cannot act on)
+
+Run 2026-08-19 against `main` @ `15a0a2942`. Gate is 80 % kill rate on each stack touched.
+
+### Frontend (StrykerJS) — **100.00 %**, 52 mutants, 0 survivors
+
+| file | mutants | killed |
+| --- | --- | --- |
+| `utils/dependencies/dependencySentences.ts` | 29 | 29 |
+| `FeatureListDataGrid/WarningsIndicator.tsx` (the all-clear decision, the warning kind, the sentence) | 22 | 22 |
+| `DependencyDialog.tsx` (whether an entry says why) | 1 | 1 |
+
+Config: `stryker.4365.slice02.frontend.mjs`, `vitest.4365.slice02.ts`, report
+`stryker-4365-slice02-frontend.json`.
+
+**The first run scored 68 %, and the gap was worth having.** Of 30 survivors, two kinds:
+
+- **Sentences nobody had pinned against a literal.** Blanking `DONE_WITH_REMAINING_WORK_TOOLTIP` to an
+  empty string survived, because the test asserted only that an `aria-label` attribute existed. Same for
+  the default-size sentence. This is the self-satisfying copy test the roadmap warned about, and it was
+  already there before this slice — now both are pinned to their exact wording.
+- **A branch that was reachable and untested.** `reasonSentence(null, …)` returning `""` survived: a
+  withheld entry with nothing wrong with it is a real case (the reader may not see the Feature, and the
+  dependency is fine) and no test covered it. It has one now.
+
+**Excluded from the run, and why.** `sx` objects, `size` props and the block that computes React keys.
+A key never reaches the DOM and a style prop can only be pinned by asserting how a component looks, so
+those survivors can only be killed by tests that pin the styling rather than the behaviour. Scoping the
+run to the decisions is what makes the number mean something; the words themselves are mutated whole.
+
+### Backend (Stryker.NET)
+
+_See the section appended below once the run completes._
+
+---
+
 # Mutation testing — Epic 4365 slice 01 (Show Feature Dependencies)
 
 Run 2026-08-18 against `main` @ `f9b0cc19b`. Gate is 80 % kill rate on each stack touched.
