@@ -19,8 +19,15 @@ export class FeaturesPage {
 		return this.page.getByText(/Lighthouse forecasts .* in this order/);
 	}
 
+	/**
+	 * Addressed by the name cell rather than by the row's text: a row now carries the names of the
+	 * Features it waits on as well as its own, so matching anywhere in the row finds both ends of a
+	 * dependency and Playwright refuses to choose between them.
+	 */
 	getFeatureRow(featureName: string): Locator {
-		return this.featureRows.filter({ hasText: featureName });
+		return this.featureRows.filter({
+			has: this.page.locator('[data-field="name"]', { hasText: featureName }),
+		});
 	}
 
 	/** The place the row holds across the whole instance, as rendered in the position column. */
