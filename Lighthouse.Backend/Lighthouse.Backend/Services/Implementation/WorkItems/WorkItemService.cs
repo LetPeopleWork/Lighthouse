@@ -28,7 +28,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IFeatureBlockedTransitionRepository featureBlockedTransitionRepository,
         IFeatureOrdering featureOrdering,
         IRepository<OptionalFeature> optionalFeatureRepository,
-        IDependencyReconciler dependencyReconciler)
+        IDependencyReconciler dependencyReconciler,
+        IDependencyRefreshReporter dependencyRefreshReporter)
         : IWorkItemService
 #pragma warning restore S107
     {
@@ -44,6 +45,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             await RefreshParentFeatures(portfolio, fetchShape.Changed);
 
             await UpdateRemainingWorkForPortfolio(portfolio);
+
+            dependencyRefreshReporter.ReportOn(portfolio);
 
             portfolio.RefreshUpdateTime();
 

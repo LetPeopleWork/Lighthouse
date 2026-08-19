@@ -113,7 +113,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 NoOpenBlockedSpells(),
                 FeatureOrderingTestHelper.FollowingTheTracker(),
                 Mock.Of<IRepository<OptionalFeature>>(),
-                new DependencyReconciler());
+                new DependencyReconciler(),
+                // The real one: it only reads what the refresh already holds and writes a log line, so a
+                // fixture that faked it would be hiding the one thing it does.
+                new DependencyRefreshReporter(
+                    new DependencyHonourPolicy(), Mock.Of<ILogger<DependencyRefreshReporter>>()));
 
         /// <summary>No portfolio has a blocked spell already running, which is the state every fixture assumed.</summary>
         private static IFeatureBlockedTransitionRepository NoOpenBlockedSpells()

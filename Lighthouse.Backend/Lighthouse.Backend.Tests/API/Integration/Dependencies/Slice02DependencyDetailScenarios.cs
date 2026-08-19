@@ -341,6 +341,52 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheRowFor(rows, "F-3").CarriesNoDependencyWarningAtAll();
         }
 
+        // What an operator hears. Both of these are already on screen for the user; they are in the log so
+        // a support conversation can be had from a log file rather than from a screenshot.
+        [Test]
+        public async Task A_refresh_that_finds_a_circle_says_so_once_and_names_who_is_in_it()
+        {
+            var platform = GivenAPortfolio("Platform");
+
+            await WhenARefreshRuns(
+                platform,
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex),
+                AFeatureWaitingOn("F-1", "Rebuild the search index", TheCatalogue));
+
+            ThenTheOperatorWasWarnedOnceAboutACircleNaming("F-3", "F-1");
+        }
+
+        // One line for the lot of them. A line per Feature per refresh would bury the update summary an
+        // operator actually reads, and this is a report rather than a fault.
+        [Test]
+        public async Task A_refresh_that_finds_features_no_one_can_forecast_says_how_many_in_one_line()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+            GivenTheTeamBehindItHasNoMeasuredDelivery("F-1");
+
+            await WhenARefreshRuns(
+                platform,
+                AFeatureTheTrackerHolds("F-1", "Rebuild the search index"),
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            ThenTheOperatorWasToldOnceHowManyCannotBeForecast(1);
+        }
+
+        [Test]
+        public async Task A_refresh_with_nothing_wrong_adds_no_line_about_dependencies_at_all()
+        {
+            var platform = GivenAPortfolio("Platform");
+
+            await WhenARefreshRuns(
+                platform,
+                AFeatureTheTrackerHolds("F-1", "Rebuild the search index"),
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            ThenNothingWasSaidAboutDependencies();
+        }
+
         // Everything in this epic is free. A licence check on the way in would make the list of what a
         // Feature waits on a paid answer, which is the opposite of what was decided.
         [Test]

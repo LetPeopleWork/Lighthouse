@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -208,37 +209,12 @@ namespace Lighthouse.Backend.API
             Feature feature, IReadOnlyCollection<Feature> featuresHeld)
         {
             var positions = await featurePositionMap.GetAsync(RequestAborted);
-            var decided = dependencyHonourPolicy.Evaluate(TheFactsAbout(featuresHeld, positions));
+            var decided = dependencyHonourPolicy.Evaluate(DependencyFacts.About(featuresHeld, positions));
 
             return decided.Verdicts
                 .Where(verdict => verdict.DependentReferenceId == feature.ReferenceId)
                 .GroupBy(verdict => verdict.BlockerReferenceId, StringComparer.Ordinal)
                 .ToDictionary(byBlocker => byBlocker.Key, byBlocker => byBlocker.First().Reason, StringComparer.Ordinal);
-        }
-
-        /// <summary>
-        /// Every Feature the decision is allowed to see, as the plain facts it reads. A Feature the read
-        /// did not number has no place at all rather than a made-up one, so nothing is claimed about where
-        /// it sits relative to anything else.
-        /// </summary>
-        /// <remarks>
-        /// The licence answer is left false because nothing may read it yet: no dependency changes a
-        /// forecast until that behaviour ships, and until it does an instance's licence has no bearing on
-        /// anything decided here. Whoever turns it on has to hand the real answer in from here.
-        /// </remarks>
-        private static DependencyHonourInput TheFactsAbout(
-            IReadOnlyCollection<Feature> featuresHeld, IReadOnlyDictionary<int, int> positions)
-        {
-            var facts = featuresHeld
-                .Select(held => new FeatureDependencyFacts(
-                    held.ReferenceId,
-                    held.Portfolios.Select(portfolio => portfolio.Id).ToList(),
-                    positions.TryGetValue(held.Id, out var position) ? position : null,
-                    held.CanBeForecast,
-                    held.DependsOnReferences.Select(reference => reference.ReferenceId).ToList()))
-                .ToList();
-
-            return new DependencyHonourInput(facts, HasPremiumLicence: false);
         }
 
         /// <summary>
@@ -356,7 +332,7 @@ namespace Lighthouse.Backend.API
             HashSet<int> readablePortfolioIds)
         {
             var featuresByReferenceId = ByReferenceId(features);
-            var decided = dependencyHonourPolicy.Evaluate(TheFactsAbout(features, positions));
+            var decided = dependencyHonourPolicy.Evaluate(DependencyFacts.About(features, positions));
 
             return decided.Verdicts
                 .Where(verdict => !verdict.HasNothingWrongWithIt)

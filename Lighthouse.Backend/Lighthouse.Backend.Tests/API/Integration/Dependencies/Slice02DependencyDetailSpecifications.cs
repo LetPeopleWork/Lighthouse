@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Serilog.Events;
+using System.Globalization;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -78,6 +80,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             => DriveAPortfolioRefresh(portfolioId, inThisOrder);
 
         private Task<Dictionary<string, int>> GivenTheOrderEveryFeatureIsIn() => ReadTheOrderEveryFeatureIsIn();
+
+        private Task WhenARefreshRuns(int portfolioId, params TrackedFeature[] rowsFromTheTracker)
+            => DriveAPortfolioRefresh(portfolioId, rowsFromTheTracker);
 
         /// <summary>
         /// A chain of Features each waiting on the next, with the last waiting on the first. Long enough
@@ -369,6 +374,58 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             Assert.That(after, Is.EqualTo(before),
                 "Working out what is wrong with a dependency is reading, and a verdict written down would be a second place the answer lives.");
         }
+
+        private void ThenTheOperatorWasWarnedOnceAboutACircleNaming(params string[] members)
+        {
+            var aboutCircles = LinesAboutDependencies(LogEventLevel.Warning);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(aboutCircles, Has.Count.EqualTo(1),
+                    $"A circle is rare and genuinely wrong, so it is worth one line and no more. Logged: {string.Join(" | ", aboutCircles)}");
+                Assert.That(members.Where(member => !aboutCircles[0].Contains(member, StringComparison.Ordinal)), Is.Empty,
+                    $"An operator reading this has to be able to go and look at the Features it is about. Logged: {aboutCircles[0]}");
+            }
+        }
+
+        private void ThenTheOperatorWasToldOnceHowManyCannotBeForecast(int expectedCount)
+        {
+            var aboutForecasting = LinesAboutDependencies(LogEventLevel.Information)
+                .Where(line => line.Contains("forecast", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(aboutForecasting, Has.Count.EqualTo(1),
+                    $"One line for the lot of them: a line each would bury the summary an operator actually reads. Logged: {string.Join(" | ", aboutForecasting)}");
+                Assert.That(aboutForecasting[0], Does.Contain(expectedCount.ToString(CultureInfo.InvariantCulture)),
+                    $"A report worth reading says how many. Logged: {aboutForecasting[0]}");
+            }
+        }
+
+        private void ThenNothingWasSaidAboutDependencies()
+        {
+            var aboutDependencies = LinesAboutDependencies(LogEventLevel.Verbose);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CapturedLogs.SawAnything, Is.True,
+                    "A capture that quietly stopped working would make the assertion below unable to fail.");
+                Assert.That(aboutDependencies, Is.Empty,
+                    $"Dependencies that are all fine are not news, and a line saying so every refresh is noise. Logged: {string.Join(" | ", aboutDependencies)}");
+            }
+        }
+
+        /// <summary>
+        /// Every line the refresh wrote about what Features wait on, at or above the level asked for. Read
+        /// by what the line is about rather than by which class wrote it, because an operator finds it the
+        /// same way.
+        /// </summary>
+        private List<string> LinesAboutDependencies(LogEventLevel level)
+            => CapturedLogs.AtOrAbove(level)
+                .Where(line => line.Contains("waiting on", StringComparison.OrdinalIgnoreCase)
+                    || line.Contains("depends on", StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
         // --- Reading the store ---
 
