@@ -17,9 +17,9 @@ export default {
 	// acts on.
 	mutate: [
 		"src/utils/dependencies/dependencySentences.ts",
-		"src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx:37-45",
-		"src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx:110-146",
-		"src/components/Common/DependencyDialog/DependencyDialog.tsx:110-120",
+		"src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx:31-50",
+		"src/components/Common/FeatureListDataGrid/WarningsIndicator.tsx:125-152",
+		"src/components/Common/FeatureListDataGrid/columns.tsx:147-195",
 	],
 	thresholds: { high: 90, low: 80, break: 0 },
 	jsonReporter: { fileName: "stryker-4365-slice02-frontend.json" },

@@ -118,11 +118,13 @@ describe("createDependsOnColumn", () => {
 		expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
 	});
 
+	// An anchor with nowhere to go still looks and behaves like one. Asserted on the element itself
+	// rather than on the link role, which an anchor without an href does not have anyway.
 	it("still names a Feature the work tracking system gave no link to", () => {
-		renderCell(feature([aDependency({ url: null })]));
+		const { container } = renderCell(feature([aDependency({ url: null })]));
 
 		expect(screen.getByText("FTR-9: Warehouse sync")).toBeInTheDocument();
-		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+		expect(container.querySelectorAll("a")).toHaveLength(0);
 	});
 
 	// The row is here because something is being waited on. Naming it would be the disclosure the

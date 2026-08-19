@@ -30,9 +30,27 @@ A key never reaches the DOM and a style prop can only be pinned by asserting how
 those survivors can only be killed by tests that pin the styling rather than the behaviour. Scoping the
 run to the decisions is what makes the number mean something; the words themselves are mutated whole.
 
-### Backend (Stryker.NET)
+Re-run after the UX rework (the count and its dialog became a named list on the row): **87.88 %**,
+all three files at or above the gate — `WarningsIndicator.tsx` 100 %, `columns.tsx` 80 %,
+`dependencySentences.ts` 84 %. Two more real findings came out of it and are fixed: `withheldTitle` had
+become dead code when the dialog went, and the "no link" test asserted the absence of a link *role*,
+which an anchor without an href does not have anyway - so the branch survived being switched off. It
+now asserts there is no anchor at all.
 
-_See the section appended below once the run completes._
+### Backend (Stryker.NET) — not run for slice 02
+
+**Stryker.NET 4.16 ignores the `mutate` filter in this repository, in the config file and on the command
+line alike: both attempts produced 16 108 mutants over the whole project rather than the eight files
+named.** Slice 01 hit the same wall from the other side and recorded it as line-spans widening to whole
+files; this is the same defect one level up. A full-project run is hours of wall clock and its score
+would describe the whole backend rather than this slice, so it was stopped rather than left running.
+
+What that leaves uncovered is smaller than it sounds: the decision itself (`DependencyHonourPolicy`,
+`DependencyCycleDetector`, `DependencyFacts`) is unchanged since slice 01's run and is covered by
+unit tests plus three standing architecture rules, and every branch of the read path is asserted by the
+acceptance scenarios over the real route. The gap is worth closing deliberately - either by pinning a
+Stryker.NET version whose filter works, or by moving the dependency types into their own project so the
+filter is not needed.
 
 ---
 

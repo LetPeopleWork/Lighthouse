@@ -136,11 +136,27 @@ confirmation belongs to slice 03, where Jira's `blocks` links carry no such guar
 (AC-3.1) also ran on fixtures: the acceptance harness seeds two Portfolios and refreshes them separately,
 which is the shape the verdict actually turns on.
 
-**Owed, not done in this session** — both need the `:5169` instance, which was not running:
+**Confirmed on `:5169` against the real board, 2026-08-19.** A refresh of the `Lighthouse` Portfolio
+picked the new Predecessor links up: `#5510 Sizing Poker` reads **1**, `#5511 Task Manager` reads **2**,
+and `#5512` and `#5733` read **empty** — the direction guard still holds as the edge set grows. Three
+Features carry a warning, all of them the ordering one: `#5792`, `#5511` and `#1812` each wait on
+something placed below them.
 
-- The `#5510 → #5511 → {#5512, #5733}` confirmation, including `#5733` (no child Work Items) producing
-  the cannot-be-forecast warning on `#5511`'s row, and `#5512`/`#5733` still reading empty.
+**The prerequisite table was wrong about `#5733`, and this is worth not re-deriving.** It was created as
+"a Feature whose delivery genuinely cannot be forecast" because it has no child Work Items at all. It
+does not produce the cannot-be-forecast warning, and should not: a Feature with no children is given the
+Portfolio's **default Feature size**, so `#5733` carries 9 remaining items against a Team that does have
+measured delivery, and it forecasts perfectly well (`isUsingDefaultFeatureSize: true`, four forecasts,
+`teamsWithoutForecast: []`). Nothing is broken here — `Feature.CanBeForecast` is being read exactly as
+it is written. What that warning actually needs is a Feature whose **Team** has no measured delivery, or
+one whose forecast ran with zero trials. So AC-2.3's verdict half runs on fixtures for now too, and a
+real-data example has to be arranged deliberately rather than found.
+
+**Owed, not done** — needs a person at the running instance:
+
 - The screenshots of the dialog and of each warning kind, and the ≤200 ms figure recorded above.
+- A real Feature behind a Team with no measured delivery, if the cannot-be-forecast warning is to be
+  confirmed on real data rather than on fixtures.
 
 **No `lighthouse-clients` version-gate entry is owed.** `FEATURE_REQUIRES_SERVER_NEWER_THAN` guards
 routes a client calls, before the call; the new `/features/{id}/dependencies` route earns an entry only

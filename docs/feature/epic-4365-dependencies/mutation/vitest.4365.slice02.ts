@@ -18,7 +18,7 @@ export default defineConfig({
 		// node heap, so the mutation run sees only the specs covering the mutated lines.
 		include: [
 			"src/components/Common/FeatureListDataGrid/WarningsIndicator.test.tsx",
-			"src/components/Common/DependencyDialog/DependencyDialog.test.tsx",
+			"src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx",
 		],
 		exclude: [
 			"**/node_modules/**",

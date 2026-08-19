@@ -19,15 +19,10 @@ const LEFT_OUT = "That dependency is not included in the forecast.";
 export const withheldName = (terms: DependencyTerms): string =>
 	`a ${terms.featureTerm} you do not have access to`;
 
-/** The same words where they open a line rather than sit inside one. */
-export const withheldTitle = (terms: DependencyTerms): string => {
-	const name = withheldName(terms);
-
-	return `${name[0].toUpperCase()}${name.slice(1)}`;
-};
-
+// Asked only about a dependency that has a reason against it, so there is no "nothing to say" case
+// here to fall through to - a caller with no reason is asking the wrong question.
 export const reasonSentence = (
-	reason: NotHonouredReason | null,
+	reason: NotHonouredReason,
 	waitedOn: string,
 	terms: DependencyTerms,
 ): string => {
@@ -39,11 +34,7 @@ export const reasonSentence = (
 		return `This ${terms.featureTerm} and ${waitedOn} are waiting on each other. ${LEFT_OUT}`;
 	}
 
-	if (reason === "BlockerCannotBeForecast") {
-		return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;
-	}
-
-	return "";
+	return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;
 };
 
 /** The one thing worth saying that is no reason to leave a dependency out: the order is the reader's. */
