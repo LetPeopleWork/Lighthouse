@@ -12,12 +12,13 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useMemo } from "react";
-import type {
-	IFeatureDependency,
-	NotHonouredReason,
-} from "../../../models/FeatureDependency";
+import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	reasonSentence,
+	withheldName,
+} from "../../../utils/dependencies/dependencySentences";
 
 export interface DependencyDialogProps {
 	featureName: string;
@@ -35,7 +36,10 @@ const DependencyDialog: React.FC<DependencyDialogProps> = ({
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
-	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
+	const terms = {
+		featureTerm,
+		portfolioTerm: getTerm(TERMINOLOGY_KEYS.PORTFOLIO),
+	};
 
 	// A withheld entry has no id of its own to be listed under - that is what withholding it means - so
 	// it is counted instead. The list is read as it arrived and never reordered.
@@ -69,15 +73,13 @@ const DependencyDialog: React.FC<DependencyDialogProps> = ({
 					{entries.map(({ key, dependency }) =>
 						dependency.isWithheld ? (
 							<Box key={key} data-testid="dependency-withheld">
-								<Typography variant="body1">
-									{`A ${featureTerm} you do not have access to`}
-								</Typography>
+								<Typography variant="body1">{withheldName(terms)}</Typography>
 								<Typography variant="body2" color="text.secondary">
-									{reasonSentence(dependency.notHonouredReason, {
-										featureTerm,
-										portfoliosTerm,
-										waitedOn: `a ${featureTerm} you do not have access to`,
-									})}
+									{reasonSentence(
+										dependency.notHonouredReason,
+										withheldName(terms),
+										terms,
+									)}
 								</Typography>
 							</Box>
 						) : (
@@ -114,11 +116,11 @@ const DependencyDialog: React.FC<DependencyDialogProps> = ({
 										color="warning.main"
 										data-testid={`dependency-reason-${dependency.referenceId}`}
 									>
-										{reasonSentence(dependency.notHonouredReason, {
-											featureTerm,
-											portfoliosTerm,
-											waitedOn: dependency.name,
-										})}
+										{reasonSentence(
+											dependency.notHonouredReason,
+											dependency.name,
+											terms,
+										)}
 									</Typography>
 								) : null}
 							</Box>
@@ -128,27 +130,6 @@ const DependencyDialog: React.FC<DependencyDialogProps> = ({
 			</DialogContent>
 		</Dialog>
 	);
-};
-
-// Built here from a code and a name, in this instance's own words - the same reason the warnings
-// column composes its own sentences rather than printing one the server wrote.
-const reasonSentence = (
-	reason: NotHonouredReason | null,
-	terms: { featureTerm: string; portfoliosTerm: string; waitedOn: string },
-): string => {
-	if (reason === "OutsideThisPortfolio") {
-		return `This ${terms.featureTerm} and ${terms.waitedOn} share no ${terms.portfoliosTerm}. That dependency is not included in the forecast.`;
-	}
-
-	if (reason === "InALoop") {
-		return `This ${terms.featureTerm} and ${terms.waitedOn} are waiting on each other. That dependency is not included in the forecast.`;
-	}
-
-	if (reason === "BlockerCannotBeForecast") {
-		return `${terms.waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.`;
-	}
-
-	return "";
 };
 
 export default DependencyDialog;

@@ -422,11 +422,8 @@ namespace Lighthouse.Backend.API
             return await featureMoveAuthorization.GetVerdictsAsync(User, features, readablePortfolioIdSet, RequestAborted);
         }
 
-        // A Feature in no Portfolio is visible to everyone; otherwise one readable Portfolio is enough.
         private static bool IsReadableBy(Feature feature, HashSet<int> readablePortfolioIds)
-        {
-            return feature.Portfolios.Count == 0 || feature.Portfolios.Any(p => readablePortfolioIds.Contains(p.Id));
-        }
+            => FeatureReadability.IsReadableBy(feature, readablePortfolioIds);
 
         private async Task<HashSet<int>> GetReadablePortfolioIds(IEnumerable<int> portfolioIds)
         {

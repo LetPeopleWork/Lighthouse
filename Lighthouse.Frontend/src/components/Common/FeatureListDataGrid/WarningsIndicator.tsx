@@ -8,6 +8,12 @@ import type {
 } from "../../../models/FeatureDependency";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	type DependencyTerms,
+	positionedBelowSentence,
+	reasonSentence,
+	withheldName,
+} from "../../../utils/dependencies/dependencySentences";
 
 type WarningsIndicatorProps = {
 	isDoneWithRemainingWork: boolean;
@@ -77,22 +83,17 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 			)}
 			{dependencyWarnings.map((warning) => {
 				const kind = kindOf(warning);
+				const sentence = sentenceFor(warning, { featureTerm, portfolioTerm });
 
 				return (
 					<Tooltip
 						key={`${kind}-${warning.blockerReferenceId}`}
-						title={sentenceFor(warning, kind, {
-							featureTerm,
-							portfolioTerm,
-						})}
+						title={sentence}
 					>
 						<IconButton
 							size="small"
 							sx={{ ml: 1 }}
-							aria-label={sentenceFor(warning, kind, {
-								featureTerm,
-								portfolioTerm,
-							})}
+							aria-label={sentence}
 							data-testid={`warning-dependency-${kind}`}
 						>
 							<WarningAmberIcon sx={{ color: "warning.main" }} />
@@ -126,31 +127,21 @@ const kindOf = (warning: IFeatureDependencyWarning): DependencyWarningKind => {
 	return "positioned-below";
 };
 
-// Built here, from a code and a name, in this instance's own words. A sentence sent from the server
-// would be one nobody could rename.
+// The words themselves live beside the dialog's, so a row and the list opened from it say the same
+// thing about the same dependency.
 const sentenceFor = (
 	warning: IFeatureDependencyWarning,
-	kind: DependencyWarningKind,
-	terms: { featureTerm: string; portfolioTerm: string },
+	terms: DependencyTerms,
 ): string => {
 	const waitedOn = warning.isWithheld
-		? `a ${terms.featureTerm} you do not have access to`
+		? withheldName(terms)
 		: warning.blockerName;
-	const leftOut = "That dependency is not included in the forecast.";
 
-	if (kind === "outside-portfolio") {
-		return `This ${terms.featureTerm} depends on ${waitedOn}, which is in no ${terms.portfolioTerm} they share. ${leftOut}`;
+	if (warning.notHonouredReason) {
+		return reasonSentence(warning.notHonouredReason, waitedOn, terms);
 	}
 
-	if (kind === "in-a-loop") {
-		return `This ${terms.featureTerm} and ${waitedOn} are waiting on each other. ${leftOut}`;
-	}
-
-	if (kind === "cannot-be-forecast") {
-		return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${leftOut}`;
-	}
-
-	return `This ${terms.featureTerm} depends on ${waitedOn}, which sits below it in the order. The order is yours, so nothing was moved.`;
+	return positionedBelowSentence(waitedOn, terms);
 };
 
 export default WarningsIndicator;
