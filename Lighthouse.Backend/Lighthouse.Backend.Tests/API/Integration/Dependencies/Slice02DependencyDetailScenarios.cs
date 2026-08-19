@@ -387,6 +387,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNothingWasSaidAboutDependencies();
         }
 
+        // @kpi - "The verdict is worked out from what the page already loaded". Asserted as a count rather
+        // than a stopwatch reading: a wall-clock figure on one machine says nothing about an instance ten
+        // times larger, and the failure worth catching is a read whose cost grows with the list.
+        [Test]
+        public async Task Reading_the_features_view_costs_the_same_however_many_features_there_are()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await WhenARefreshRuns(platform, AChainOfFeaturesWaitingOnEachOther(20));
+            var overTwentyFeatures = await WhenTheFeaturesViewIsReadCountingWhatItAsksTheStore();
+
+            await WhenARefreshRuns(platform, AChainOfFeaturesWaitingOnEachOther(200));
+            var overTwoHundredFeatures = await WhenTheFeaturesViewIsReadCountingWhatItAsksTheStore();
+
+            ThenTheReadAskedTheStoreTheSameNumberOfTimes(overTwentyFeatures, overTwoHundredFeatures);
+        }
+
         // Everything in this epic is free. A licence check on the way in would make the list of what a
         // Feature waits on a paid answer, which is the opposite of what was decided.
         [Test]

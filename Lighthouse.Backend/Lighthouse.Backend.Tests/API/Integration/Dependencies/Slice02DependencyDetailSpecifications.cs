@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Serilog.Events;
+using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Reflection;
@@ -98,6 +99,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         private static string ChainedFeature(int place) => $"CHAIN-{place}";
 
+        /// <summary>
+        /// A chain of Features each waiting on the next, ending at one that waits on nothing. Every Feature
+        /// but the last carries a dependency, so a read that costs something per dependency has nowhere to
+        /// hide.
+        /// </summary>
+        private static TrackedFeature[] AChainOfFeaturesWaitingOnEachOther(int howMany)
+            => Enumerable.Range(1, howMany)
+                .Select(place => new TrackedFeature(
+                    ChainedFeature(place),
+                    $"Link {place} of the chain",
+                    place == howMany ? [] : [ChainedFeature(place + 1)]))
+                .ToArray();
+
         private List<string> GivenEverythingRecordedAboutTheDependencies() => ReadEverythingRecordedAboutTheDependencies();
 
         private void GivenTheTeamBehindItHasNoMeasuredDelivery(string featureReferenceId)
@@ -166,6 +180,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             return payload.RootElement.EnumerateArray()
                 .ToDictionary(row => row.GetProperty("referenceId").GetString()!, row => row.Clone());
+        }
+
+        /// <summary>
+        /// One read of the Features view, with everything it asked the store counted. The elapsed time is
+        /// written out beside the count for whoever is recording the measurement; only the count is judged.
+        /// </summary>
+        private async Task<int> WhenTheFeaturesViewIsReadCountingWhatItAsksTheStore()
+        {
+            CapturedLogs.Clear();
+            var started = Stopwatch.GetTimestamp();
+
+            using var response = await Client.GetAsync("/api/latest/features");
+            response.EnsureSuccessStatusCode();
+            var body = await response.Content.ReadAsStringAsync();
+
+            var commands = CapturedLogs.AtOrAbove(LogEventLevel.Information)
+                .Count(line => line.Contains("Executed DbCommand", StringComparison.Ordinal));
+
+            TestContext.Out.WriteLine(
+                $"Features view: {commands} commands, {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F0} ms, {body.Length} bytes");
+
+            return commands;
         }
 
         // --- Then ---
@@ -339,6 +375,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         private static string Describe(List<JsonElement> entries)
             => string.Join(" | ", entries.Select(entry => entry.ToString()));
+
+        private static void ThenTheReadAskedTheStoreTheSameNumberOfTimes(int overASmallList, int overALongOne)
+        {
+            Assert.That(overALongOne, Is.EqualTo(overASmallList),
+                $"Working out what is wrong with a dependency has to cost what the page already paid. A count " +
+                $"that grows with the list is a query per Feature, which is fine on any fixture small enough to " +
+                $"write by hand. Small list: {overASmallList}, long list: {overALongOne}.");
+        }
 
         private static void ThenBothVersionsSaidTheSameThing(string versionOne, string latest)
         {

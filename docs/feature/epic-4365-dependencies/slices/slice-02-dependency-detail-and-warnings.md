@@ -97,7 +97,29 @@ Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 
 ## Learning hypothesis verdict
 
-_Not yet run._
+**HOLDS, on the half that settles the question. Measured 2026-08-19, step 06-01.**
+
+The verdict is a pure function of what the read already loaded, and the read pays for it once rather
+than per Feature. The Features view issues **11 database commands over 20 Features and 11 over 200** —
+identical, asserted rather than eyeballed
+(`Reading_the_features_view_costs_the_same_however_many_features_there_are`). A count that grows with
+the list is the failure OQ-6 exists to catch, and it is the half that generalises: a wall-clock reading
+on one machine says nothing about a Portfolio ten times larger, while a flat command count does.
+
+Wall clock alongside it, same run, in-process against SQLite: 257 ms for the 20-Feature read (first
+read of the run, so it carries host warm-up) and **67 ms for the 200-Feature read** returning 249 KB of
+payload. Nothing is stored as a result: the whole stored edge set is read before and after and compared
+(`Working_out_the_loop_stores_nothing`).
+
+**Owed, and deliberately not faked: the ≤200 ms delta on the `:5169` restored backup has NOT been
+measured.** That instance was not running during this session, and starting a dev run against it
+creates a second Data Protection key ring that poisons the backend suite and locks `Lighthouse.dll` —
+with mutation testing still to come, that trade was not worth taking. It belongs to the dogfood step
+(06-02), which needs that instance anyway. The structural half above is what the design actually leans
+on; the wall-clock figure is corroboration, and its absence is recorded here rather than implied.
+
+**No branch to ingestion is taken.** The fallback — a precomputed verdict stored on the edge — stays
+unbuilt and unneeded.
 
 ## Prerequisite state, measured 2026-08-18 (before this slice ran)
 
