@@ -106,15 +106,19 @@ export const createWarningsColumn = (): DataGridColumn<
 	type: "boolean",
 	width: 90,
 	sortable: true,
+	// The sort has to see everything the icon shows, or a row whose only warning is about a dependency
+	// sorts as though it were clean and the column quietly stops being a way to find them.
 	valueGetter: (_, row) =>
 		(row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0) ||
-		row.isUsingDefaultFeatureSize,
+		row.isUsingDefaultFeatureSize ||
+		(row.dependencyWarnings ?? []).length > 0,
 	renderCell: ({ row }) => (
 		<WarningsIndicator
 			isDoneWithRemainingWork={
 				row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0
 			}
 			isUsingDefaultFeatureSize={row.isUsingDefaultFeatureSize}
+			dependencyWarnings={row.dependencyWarnings}
 		/>
 	),
 });

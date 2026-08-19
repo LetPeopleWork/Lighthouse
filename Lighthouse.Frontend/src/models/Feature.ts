@@ -3,6 +3,10 @@ import {
 	EntityReferenceSchema,
 	type IEntityReference,
 } from "./EntityReference";
+import {
+	FeatureDependencyWarningSchema,
+	type IFeatureDependencyWarning,
+} from "./FeatureDependency";
 import { WhenForecastSchema } from "./Forecasts/forecastSchemas";
 import { type IWhenForecast, WhenForecast } from "./Forecasts/WhenForecast";
 import type { IWorkItem, StateCategory } from "./WorkItem";
@@ -29,6 +33,9 @@ export interface IFeature extends IWorkItem {
 	// How many of the Features this Lighthouse holds this one is waiting on. The server has already
 	// left out any link naming something it does not hold, so this is not the number of links drawn.
 	dependsOnCount?: number;
+	// What is worth telling the reader about those dependencies, as codes and names the client turns
+	// into sentences. Absent on read paths that never work it out, which is not "nothing is wrong".
+	dependencyWarnings?: IFeatureDependencyWarning[];
 
 	getRemainingWorkForFeature(): number;
 	getRemainingWorkForTeam(id: number): number;
@@ -66,6 +73,10 @@ export const FeatureSchema = z.object({
 	moveBlockReason: z.string().nullable().optional(),
 	blockingPortfolios: z.array(EntityReferenceSchema).optional().default([]),
 	dependsOnCount: z.number().nullable().optional(),
+	dependencyWarnings: z
+		.array(FeatureDependencyWarningSchema)
+		.nullable()
+		.optional(),
 });
 
 export type FeatureData = z.infer<typeof FeatureSchema>;
@@ -91,6 +102,7 @@ export class Feature implements IFeature {
 	moveBlockReason?: string;
 	blockingPortfolios: IEntityReference[] = [];
 	dependsOnCount?: number;
+	dependencyWarnings?: IFeatureDependencyWarning[];
 
 	owningTeam!: string;
 
@@ -191,6 +203,7 @@ export class Feature implements IFeature {
 		feature.moveBlockReason = data.moveBlockReason ?? undefined;
 		feature.blockingPortfolios = data.blockingPortfolios;
 		feature.dependsOnCount = data.dependsOnCount ?? undefined;
+		feature.dependencyWarnings = data.dependencyWarnings ?? undefined;
 		return feature;
 	}
 }
