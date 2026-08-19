@@ -189,6 +189,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNothingInTheApiWritesADependency();
         }
 
+        // @error @us-03 - "Waiting on a Feature outside the Portfolio raises a warning that names it".
+        // The reader finds broken links by scanning the list they already have open, which is why the
+        // warning rides on the payload that list is built from rather than behind a second request.
+        [Test]
+        public async Task Waiting_on_a_feature_outside_the_portfolio_warns_on_the_row_and_names_it()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var warehouse = GivenAPortfolio("Warehouse");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndTheWarehouse));
+            await GivenAnotherPortfolioRefreshed(warehouse, AFeatureTheTrackerHolds("F-9", "Warehouse sync"));
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenTheRowFor(rows, "F-3").WarnsAbout("F-9", "Warehouse sync", "OutsideThisPortfolio");
+            ThenNoWarningCarriesASentenceNobodyCanRename(rows);
+        }
+
+        // Having a dependency is not a problem, so a Feature whose dependencies are all fine has nothing
+        // to say here. An empty list rather than an absent one: the row was looked at and found sound.
+        [Test]
+        public async Task A_feature_whose_dependencies_are_all_sound_carries_no_warning_entries()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenTheRowFor(rows, "F-3").CarriesNoDependencyWarningAtAll();
+            ThenTheRowFor(rows, "F-1").CarriesNoDependencyWarningAtAll();
+        }
+
         // Everything in this epic is free. A licence check on the way in would make the list of what a
         // Feature waits on a paid answer, which is the opposite of what was decided.
         [Test]

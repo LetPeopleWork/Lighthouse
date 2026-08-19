@@ -24,6 +24,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         /// </summary>
         private static readonly string[] MaySurviveWithholding = ["isWithheld", "notHonouredReason", "source"];
 
+        /// <summary>
+        /// Everything a warning on a Feature row is allowed to carry: which dependency it is about, and
+        /// what is wrong with it as codes. Anything else would be text the instance cannot rename.
+        /// </summary>
+        private static readonly string[] WhatAWarningMaySay =
+        [
+            "blockerReferenceId",
+            "blockerName",
+            "isWithheld",
+            "notHonouredReason",
+            "blockerPositionedBelow",
+        ];
+
         // --- Given ---
 
         private int GivenAPortfolio(string name) => SeedPortfolio(name);
@@ -97,6 +110,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             using var response = await reader.GetAsync($"/api/latest/features/{featureId}/dependencies");
 
             return response.StatusCode;
+        }
+
+        /// <summary>
+        /// The Features view, read the way it reads: one request for the whole list. A warning that needed
+        /// a second request would be a warning the reader has to go and ask for, which is the opposite of
+        /// finding broken links by scanning.
+        /// </summary>
+        private async Task<Dictionary<string, JsonElement>> WhenTheDeliveryLeadOpensTheFeaturesView()
+        {
+            using var response = await Client.GetAsync("/api/latest/features");
+            response.EnsureSuccessStatusCode();
+
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            return payload.RootElement.EnumerateArray()
+                .ToDictionary(row => row.GetProperty("referenceId").GetString()!, row => row.Clone());
         }
 
         // --- Then ---
@@ -202,6 +231,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 $"Lighthouse records no dependency of its own, so there is nothing for a write route to be for. Found: {string.Join(", ", writingRoutes)}");
         }
 
+        private static FeatureRow ThenTheRowFor(Dictionary<string, JsonElement> rows, string featureReferenceId)
+        {
+            Assert.That(rows.ContainsKey(featureReferenceId), Is.True,
+                $"The Features view must carry {featureReferenceId} for anything to be said about its row.");
+
+            return new FeatureRow(rows[featureReferenceId], featureReferenceId);
+        }
+
+        /// <summary>
+        /// Every word a reader sees is built in their own instance's vocabulary, so a warning may carry a
+        /// code and a name and nothing else. A sentence in the payload is a sentence nobody can rename.
+        /// </summary>
+        private static void ThenNoWarningCarriesASentenceNobodyCanRename(Dictionary<string, JsonElement> rows)
+        {
+            var unexpected = rows.Values
+                .SelectMany(WarningsOn)
+                .SelectMany(warning => warning.EnumerateObject())
+                .Select(property => property.Name)
+                .Distinct()
+                .Where(name => !WhatAWarningMaySay.Contains(name))
+                .ToList();
+
+            Assert.That(unexpected, Is.Empty,
+                $"A warning says which dependency and why, in codes the client renders. Carried as well: {string.Join(", ", unexpected)}");
+        }
+
+        private static List<JsonElement> WarningsOn(JsonElement row)
+            => row.TryGetProperty("dependencyWarnings", out var warnings) && warnings.ValueKind == JsonValueKind.Array
+                ? warnings.EnumerateArray().ToList()
+                : [];
+
         private static bool ChangesSomething(MethodInfo action)
             => action.GetCustomAttributes().Any(attribute =>
                 attribute is HttpPostAttribute or HttpPutAttribute or HttpDeleteAttribute or HttpPatchAttribute);
@@ -260,6 +320,42 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         private static string? TheReferenceIdOn(JsonElement entry)
             => entry.TryGetProperty("referenceId", out var referenceId) ? referenceId.GetString() : null;
+
+        /// <summary>
+        /// One Feature's row on the Features view, kept beside the id it was found by so every failure
+        /// says whose row disappointed.
+        /// </summary>
+        private readonly record struct FeatureRow(JsonElement Json, string ReferenceId)
+        {
+            public void WarnsAbout(string blockerReferenceId, string blockerName, string expectedReason)
+            {
+                var warning = WarningAbout(blockerReferenceId);
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(warning?.GetProperty("blockerName").GetString(), Is.EqualTo(blockerName),
+                        $"A warning that does not name what {ReferenceId} is waiting on leaves the reader to go and find it. Row: {Json}");
+                    Assert.That(warning?.GetProperty("notHonouredReason").GetString(), Is.EqualTo(expectedReason),
+                        $"A warning has to say which of the things that can be wrong this one is. Row: {Json}");
+                }
+            }
+
+            public void CarriesNoDependencyWarningAtAll()
+                => Assert.That(WarningsOn(Json), Is.Empty,
+                    $"Having a dependency is not by itself a warning, so a sound one has nothing to report. Row: {Json}");
+
+            private JsonElement? WarningAbout(string blockerReferenceId)
+            {
+                var warnings = WarningsOn(Json)
+                    .Where(warning => warning.GetProperty("blockerReferenceId").GetString() == blockerReferenceId)
+                    .ToList();
+
+                Assert.That(warnings, Has.Count.EqualTo(1),
+                    $"{ReferenceId} must carry exactly one warning about {blockerReferenceId}. Row: {Json}");
+
+                return warnings.SingleOrDefault();
+            }
+        }
 
         /// <summary>
         /// One entry, kept beside the id it was found by so every failure says which entry disappointed.

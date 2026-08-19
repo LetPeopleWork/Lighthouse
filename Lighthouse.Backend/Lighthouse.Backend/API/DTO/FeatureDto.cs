@@ -89,5 +89,10 @@ namespace Lighthouse.Backend.API.DTO
         // read paths that never match the links up, because absent means "not worked out here" rather
         // than "waiting on nothing".
         public int? DependsOnCount { get; set; }
+
+        // What is worth telling the reader about those dependencies, so the broken ones are found by
+        // scanning the list rather than by opening every Feature. Empty means the row was looked at and
+        // nothing was wrong; null on read paths that never work it out, which is not the same answer.
+        public List<FeatureDependencyWarningDto>? DependencyWarnings { get; set; }
     }
 }

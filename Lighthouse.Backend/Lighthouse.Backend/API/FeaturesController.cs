@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.API
         [HttpGet]
         public async Task<ActionResult<List<FeatureDto>>> GetAllFeatures()
         {
-            var features = await GetFeaturesByPredicate(_ => true);
+            var features = await GetFeaturesByPredicate(_ => true, everyFeatureIsLoaded: true);
 
             return Ok(features);
         }
@@ -189,11 +189,15 @@ namespace Lighthouse.Backend.API
         {
             var waitedOn = feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToHashSet(StringComparer.Ordinal);
 
-            return featuresHeld
-                .Where(candidate => waitedOn.Contains(candidate.ReferenceId))
-                .GroupBy(candidate => candidate.ReferenceId, StringComparer.Ordinal)
-                .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.First(), StringComparer.Ordinal);
+            return ByReferenceId(featuresHeld.Where(candidate => waitedOn.Contains(candidate.ReferenceId)).ToList());
         }
+
+        // Two Features can carry the same tracker id across Portfolios; a dependency names an id, so the
+        // first of them stands for all of them - the same way the decision itself reads them.
+        private static Dictionary<string, Feature> ByReferenceId(IReadOnlyCollection<Feature> features)
+            => features
+                .GroupBy(feature => feature.ReferenceId, StringComparer.Ordinal)
+                .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.First(), StringComparer.Ordinal);
 
         /// <summary>
         /// Why Lighthouse will not act on each of the dependencies this Feature has, asked of the one
@@ -203,7 +207,8 @@ namespace Lighthouse.Backend.API
         private async Task<Dictionary<string, NotHonouredReason?>> ReasonsAgainstWhat(
             Feature feature, IReadOnlyCollection<Feature> featuresHeld)
         {
-            var decided = dependencyHonourPolicy.Evaluate(await TheFactsAbout(featuresHeld));
+            var positions = await featurePositionMap.GetAsync(RequestAborted);
+            var decided = dependencyHonourPolicy.Evaluate(TheFactsAbout(featuresHeld, positions));
 
             return decided.Verdicts
                 .Where(verdict => verdict.DependentReferenceId == feature.ReferenceId)
@@ -221,10 +226,9 @@ namespace Lighthouse.Backend.API
         /// forecast until that behaviour ships, and until it does an instance's licence has no bearing on
         /// anything decided here. Whoever turns it on has to hand the real answer in from here.
         /// </remarks>
-        private async Task<DependencyHonourInput> TheFactsAbout(IReadOnlyCollection<Feature> featuresHeld)
+        private static DependencyHonourInput TheFactsAbout(
+            IReadOnlyCollection<Feature> featuresHeld, IReadOnlyDictionary<int, int> positions)
         {
-            var positions = await featurePositionMap.GetAsync(RequestAborted);
-
             var facts = featuresHeld
                 .Select(held => new FeatureDependencyFacts(
                     held.ReferenceId,
@@ -314,7 +318,14 @@ namespace Lighthouse.Backend.API
             return true;
         }
 
-        private async Task<List<FeatureDto>> GetFeaturesByPredicate(Expression<Func<Feature, bool>> predicate)
+        /// <param name="everyFeatureIsLoaded">
+        /// True when the predicate leaves nothing out. Whether a dependency can be acted on is a question
+        /// about the whole graph — what is in a loop, what shares a Portfolio — so it can only be answered
+        /// honestly when every Feature is in front of us. Asked of a handful, it would report Features as
+        /// unreachable merely because the request did not ask for them.
+        /// </param>
+        private async Task<List<FeatureDto>> GetFeaturesByPredicate(
+            Expression<Func<Feature, bool>> predicate, bool everyFeatureIsLoaded = false)
         {
             var features = featureRepository.GetAllByPredicate(predicate).ToList();
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
@@ -325,11 +336,71 @@ namespace Lighthouse.Backend.API
 
             var readable = features.Where(f => IsReadableBy(f, readablePortfolioIdSet)).ToList();
             var verdicts = await featureMoveAuthorization.GetVerdictsAsync(User, readable, readablePortfolioIdSet, RequestAborted);
-            var referenceIdsHeld = ReferenceIdsHeld();
+            var dependencies = DependenciesAsRead.Of(
+                ReferenceIdsHeld(),
+                everyFeatureIsLoaded ? WarningsAbout(features, positions, readablePortfolioIdSet) : null);
 
             return readable
-                .Select(f => BuildFeatureDto(f, blackoutPeriods, readablePortfolioIdSet, positions, verdicts[f.Id], referenceIdsHeld))
+                .Select(f => BuildFeatureDto(f, blackoutPeriods, readablePortfolioIdSet, positions, verdicts[f.Id], dependencies))
                 .ToList();
+        }
+
+        /// <summary>
+        /// What is worth telling the reader about each Feature's dependencies, worked out once for the
+        /// whole page from what the page already loaded. Everything the decision needs is here already, so
+        /// no row costs a query of its own.
+        /// </summary>
+        private Dictionary<string, List<FeatureDependencyWarningDto>> WarningsAbout(
+            IReadOnlyCollection<Feature> features,
+            IReadOnlyDictionary<int, int> positions,
+            HashSet<int> readablePortfolioIds)
+        {
+            var featuresByReferenceId = ByReferenceId(features);
+            var decided = dependencyHonourPolicy.Evaluate(TheFactsAbout(features, positions));
+
+            return decided.Verdicts
+                .Where(verdict => !verdict.HasNothingWrongWithIt)
+                .Where(verdict => featuresByReferenceId.ContainsKey(verdict.BlockerReferenceId))
+                .GroupBy(verdict => verdict.DependentReferenceId, StringComparer.Ordinal)
+                .ToDictionary(
+                    byDependent => byDependent.Key,
+                    byDependent => byDependent
+                        .Select(verdict => AWarningAbout(verdict, featuresByReferenceId[verdict.BlockerReferenceId], readablePortfolioIds))
+                        .ToList(),
+                    StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// A warning about a Feature the reader may not see still warns - what is wrong is wrong whoever is
+        /// looking - but it names nothing.
+        /// </summary>
+        private static FeatureDependencyWarningDto AWarningAbout(
+            DependencyVerdict verdict, Feature blocker, HashSet<int> readablePortfolioIds)
+        {
+            if (!IsReadableBy(blocker, readablePortfolioIds))
+            {
+                return FeatureDependencyWarningDto.Withheld(verdict.Reason, verdict.BlockerPositionedBelow);
+            }
+
+            return new FeatureDependencyWarningDto(
+                blocker.ReferenceId, blocker.Name, verdict.Reason, verdict.BlockerPositionedBelow);
+        }
+
+        /// <summary>
+        /// What one read of the Features worked out about their dependencies. The two travel together
+        /// because both are answered once for the whole page and read once per row.
+        /// </summary>
+        private sealed record DependenciesAsRead(
+            HashSet<string> ReferenceIdsHeld,
+            Dictionary<string, List<FeatureDependencyWarningDto>>? WarningsByFeature)
+        {
+            public static DependenciesAsRead Of(
+                HashSet<string> referenceIdsHeld,
+                Dictionary<string, List<FeatureDependencyWarningDto>>? warningsByFeature)
+                => new(referenceIdsHeld, warningsByFeature);
+
+            public List<FeatureDependencyWarningDto>? WarningsFor(string featureReferenceId)
+                => WarningsByFeature is null ? null : WarningsByFeature.GetValueOrDefault(featureReferenceId, []);
         }
 
         /// <summary>
@@ -349,7 +420,7 @@ namespace Lighthouse.Backend.API
             HashSet<int> readablePortfolioIds,
             IReadOnlyDictionary<int, int> positions,
             FeatureMoveVerdict verdict,
-            HashSet<string> referenceIdsHeld)
+            DependenciesAsRead dependencies)
         {
             var isBlocked = feature.Portfolios.Any(p => blockedItemService.IsBlocked(feature, p));
 
@@ -359,7 +430,8 @@ namespace Lighthouse.Backend.API
                 Position = positions.TryGetValue(feature.Id, out var position) ? position : null,
                 CanMove = verdict.CanMove,
                 MoveBlockReason = verdict.BlockReason,
-                DependsOnCount = feature.DependsOnReferences.Count(r => referenceIdsHeld.Contains(r.ReferenceId)),
+                DependsOnCount = feature.DependsOnReferences.Count(r => dependencies.ReferenceIdsHeld.Contains(r.ReferenceId)),
+                DependencyWarnings = dependencies.WarningsFor(feature.ReferenceId),
             };
 
             dto.BlockingPortfolios.AddRange(verdict.BlockingPortfolios.Select(p => new EntityReferenceDto(p.Id, p.Name)));
