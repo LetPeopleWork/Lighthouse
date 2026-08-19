@@ -1,0 +1,112 @@
+using NUnit.Framework;
+
+namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
+{
+    /// <summary>
+    /// Acceptance scenarios - Slice 02: the count from slice 01 opened up. Which Features exactly is this
+    /// one waiting on, what state are they in, and where can the reader go to look at them. Driving port:
+    /// the route the dialog behind the Depends On cell calls.
+    /// </summary>
+    [TestFixture]
+    [Category("acceptance")]
+    [Category("epic-4365-dependencies")]
+    [Category("slice-02")]
+    public partial class Slice02DependencyDetailTest
+    {
+        private static readonly string[] TheSearchIndex = ["F-1"];
+        private static readonly string[] TheSearchIndexAndOneNobodyHolds = ["F-1", "F-404"];
+
+        // @driving_adapter @us-02 - "Opening the list of Features one is waiting on"
+        [Test]
+        public async Task Opening_what_a_feature_waits_on_names_it_with_its_state_its_portfolios_and_a_way_to_open_it()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheListIs(list, "F-1");
+            ThenTheEntryFor(list, "F-1").Names("Rebuild the search index");
+            ThenTheEntryFor(list, "F-1").SaysItIsInState("New");
+            ThenTheEntryFor(list, "F-1").SaysItBelongsTo("Platform");
+            ThenTheEntryFor(list, "F-1").OffersAWayToOpenIt("https://tracker.example/F-1");
+        }
+
+        // The list and the count on the row are read by the same person seconds apart, so an entry the
+        // list leaves out is a number the reader cannot account for. The count leaves out a link naming
+        // nothing Lighthouse holds, and so must this.
+        [Test]
+        public async Task A_link_naming_nothing_lighthouse_holds_is_no_entry_here_either()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform,
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndexAndOneNobodyHolds));
+
+            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheListIs(list, "F-1");
+            await ThenTheListIsAsLongAsTheCountOnTheRow("F-3");
+        }
+
+        // Clients pin themselves to a version and every other Features route answers on both. A route
+        // that only answered on one would be reachable from the screen and unreachable from the client
+        // that was told to ask for a version.
+        [Test]
+        public async Task Both_versions_of_the_route_answer_the_same_thing()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var (versionOne, latest) = await WhenTheReaderOpensItOnBothVersions("F-3");
+
+            ThenBothVersionsSaidTheSameThing(versionOne, latest);
+        }
+
+        // Absent and empty are different answers: absent means nobody worked it out, empty means it is
+        // waiting on nothing. A reader who cannot tell them apart has to guess which one they are looking
+        // at, and this feature exists to stop that guess.
+        [Test]
+        public async Task A_feature_waiting_on_nothing_is_handed_an_empty_list_rather_than_no_list()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(platform, AFeatureTheTrackerHolds("F-3", "Publish the partner catalogue"));
+
+            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheListIs(list);
+        }
+
+        // @error - the Feature being asked about, not the ones it waits on. Same answer the work items
+        // route gives, for the same reason: a different answer would confirm the Feature exists.
+        [Test]
+        public async Task A_feature_the_reader_may_not_read_is_not_found()
+        {
+            var platform = GivenAPortfolio("Platform");
+            var somewhereElse = GivenAPortfolio("Somewhere else");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var answer = await WhenAReaderOfAnotherPortfolioOpensWhatItWaitsOn("F-3", somewhereElse);
+
+            ThenTheAnswerIsNotFound(answer);
+        }
+
+        // Everything in this epic is free. A licence check on the way in would make the list of what a
+        // Feature waits on a paid answer, which is the opposite of what was decided.
+        [Test]
+        public async Task The_list_is_answered_on_an_instance_with_no_premium_licence()
+        {
+            GivenNoPremiumLicence();
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+
+            var list = await WhenTheReaderOpensWhatItWaitsOn("F-3");
+
+            ThenTheListIs(list, "F-1");
+        }
+    }
+}

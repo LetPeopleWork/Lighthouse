@@ -297,6 +297,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         /// <summary>
+        /// The id a route asks for, found by the reference id a scenario writes. A scenario names a Feature
+        /// the way the work tracking system does; whichever id it was given on import is nobody's fact.
+        /// </summary>
+        protected int TheFeatureIdOf(string featureReferenceId)
+        {
+            return ReadTheFeatureRow(featureReferenceId)?.Id
+                ?? throw new InvalidOperationException($"There is no {featureReferenceId} on file to be asked about.");
+        }
+
+        /// <summary>
         /// Every value the Feature row holds, taken column by column from the mapping itself rather than
         /// from a list somebody typed out. A field added to a Feature next year is compared here without
         /// anyone remembering to come back, which is the point: this is the probe for "and nothing else
@@ -338,6 +348,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             {
                 ReferenceId = row.ReferenceId,
                 Name = row.Name,
+                Url = $"https://tracker.example/{row.ReferenceId}",
                 Type = "Epic",
                 State = "New",
                 StateCategory = StateCategories.ToDo,

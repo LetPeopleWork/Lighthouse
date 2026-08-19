@@ -117,6 +117,54 @@ namespace Lighthouse.Backend.API
         }
 
         /// <summary>
+        /// Which Features this one is waiting on, opened from the number on its row. Free on every
+        /// instance, and read-only by construction: Lighthouse never records a dependency of its own, so
+        /// there is no route anywhere that adds, removes or suppresses one.
+        /// </summary>
+        [HttpGet("{featureId:int}/dependencies")]
+        public async Task<ActionResult<List<FeatureDependencyDto>>> GetFeatureDependencies(int featureId)
+        {
+            var feature = featureRepository.GetById(featureId);
+            if (feature is null)
+            {
+                return NotFound();
+            }
+
+            var readablePortfolioIdSet = await GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
+            if (!IsReadableBy(feature, readablePortfolioIdSet))
+            {
+                return NotFound();
+            }
+
+            var blockers = FeaturesWaitedOnBy(feature);
+            var readableBlockerPortfolioIds = await GetReadablePortfolioIds(
+                blockers.SelectMany(blocker => blocker.Portfolios).Select(p => p.Id));
+
+            var entries = blockers
+                .Select(blocker => new FeatureDependencyDto(blocker, readableBlockerPortfolioIds))
+                .ToList();
+
+            return Ok(entries);
+        }
+
+        /// <summary>
+        /// The Features a Feature waits on that this Lighthouse actually holds, in the order the reader
+        /// already sees them in. A reference is only ever an id string the tracker wrote, so one naming
+        /// something not held yields nothing here - exactly as it counts for nothing on the row, which is
+        /// what keeps the number and the list under it accountable to each other.
+        /// </summary>
+        private List<Feature> FeaturesWaitedOnBy(Feature feature)
+        {
+            var waitedOn = feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToHashSet(StringComparer.Ordinal);
+            if (waitedOn.Count == 0)
+            {
+                return [];
+            }
+
+            return featureRepository.GetAllByPredicate(candidate => waitedOn.Contains(candidate.ReferenceId)).ToList();
+        }
+
+        /// <summary>
         /// Moves one Feature to the place another one holds. Every gesture in the UI — Top, Up, Down,
         /// Bottom, and "above/below a named Feature" — arrives here, because they differ only in which row
         /// the client names as the target.
