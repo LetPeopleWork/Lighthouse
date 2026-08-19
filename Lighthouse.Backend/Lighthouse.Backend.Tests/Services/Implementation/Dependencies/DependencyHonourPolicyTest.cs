@@ -188,6 +188,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").BlockerPositionedBelow, Is.False);
         }
 
+        // Not knowing where something sits is not the same as knowing it sits below. A read path that
+        // never numbers the Features would otherwise turn every dependency on it into an ordering warning,
+        // and the reader would go looking for a mess that is not there.
+        [TestCase(null, 4, TestName = "AFeatureWithNoPlaceOfItsOwn_IsNotSaidToBeWaitingOnOneBelowIt")]
+        [TestCase(4, null, TestName = "AFeatureWaitingOnOneWithNoPlaceAtAll_IsToldNothingAboutTheOrder")]
+        public void WhereNeitherPlaceIsKnown_NothingIsSaidAboutTheOrder(int? dependentPosition, int? blockerPosition)
+        {
+            var verdicts = Decide(
+                AFeature("F-1", dependentPosition, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", blockerPosition, portfolioIds: TheSamePortfolio));
+
+            var verdict = TheVerdictFor(verdicts, "F-1", "F-2");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.BlockerPositionedBelow, Is.False);
+                Assert.That(verdict.HasNothingWrongWithIt, Is.True);
+            }
+        }
+
         [Test]
         public void AskingTheSameQuestionTwice_AnswersItTheSameWayAndLeavesNothingBehind()
         {
@@ -243,7 +263,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
 
         private static FeatureDependencyFacts AFeature(
             string referenceId,
-            int position,
+            int? position,
             int[] portfolioIds,
             bool canBeForecast = true,
             string[]? waitingOn = null)

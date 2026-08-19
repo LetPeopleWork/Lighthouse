@@ -222,6 +222,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheRowFor(rows, "F-1").CarriesNoDependencyWarningAtAll();
         }
 
+        // @error @us-03 - "Waiting on a Feature positioned below raises a different warning, and nothing
+        // is moved". The order stays the reader's: Lighthouse says the arrangement looks odd and leaves it
+        // exactly as it found it, so the whole rendered order is compared before and after.
+        [Test]
+        public async Task Waiting_on_a_feature_positioned_below_warns_about_the_order_and_moves_nothing()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenAPortfolioWhereTheOneItWaitsOnComesLast(
+                platform,
+                AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex),
+                AFeatureTheTrackerHolds("F-1", "Rebuild the search index"));
+            var theOrderBefore = await GivenTheOrderEveryFeatureIsIn();
+
+            var rows = await WhenTheDeliveryLeadOpensTheFeaturesView();
+
+            ThenTheRowFor(rows, "F-3").WarnsThatWhatItWaitsOnSitsBelowIt("F-1");
+            ThenTheOrderEveryFeatureIsInIsUnchanged(theOrderBefore, rows);
+        }
+
         // Everything in this epic is free. A licence check on the way in would make the list of what a
         // Feature waits on a paid answer, which is the opposite of what was decided.
         [Test]

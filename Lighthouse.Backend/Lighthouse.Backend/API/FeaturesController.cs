@@ -217,9 +217,9 @@ namespace Lighthouse.Backend.API
         }
 
         /// <summary>
-        /// Every Feature the decision is allowed to see, as the plain facts it reads. A Feature with no
-        /// place of its own is put last, which is the one position that cannot make another Feature look
-        /// as though it were waiting on something below it.
+        /// Every Feature the decision is allowed to see, as the plain facts it reads. A Feature the read
+        /// did not number has no place at all rather than a made-up one, so nothing is claimed about where
+        /// it sits relative to anything else.
         /// </summary>
         /// <remarks>
         /// The licence answer is left false because nothing may read it yet: no dependency changes a
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.API
                 .Select(held => new FeatureDependencyFacts(
                     held.ReferenceId,
                     held.Portfolios.Select(portfolio => portfolio.Id).ToList(),
-                    positions.TryGetValue(held.Id, out var position) ? position : int.MaxValue,
+                    positions.TryGetValue(held.Id, out var position) ? position : null,
                     held.CanBeForecast,
                     held.DependsOnReferences.Select(reference => reference.ReferenceId).ToList()))
                 .ToList();

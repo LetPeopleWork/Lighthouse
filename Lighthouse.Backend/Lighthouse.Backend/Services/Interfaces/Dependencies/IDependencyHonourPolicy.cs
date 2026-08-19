@@ -25,12 +25,14 @@ namespace Lighthouse.Backend.Services.Interfaces.Dependencies
     /// <summary>
     /// One Feature as the decision sees it: where the user has put it, which Portfolios it belongs to,
     /// whether there is any forecast for it to be waited on for, and what it waits on. All of it read off
-    /// what the caller already loaded, so asking costs no queries.
+    /// what the caller already loaded, so asking costs no queries. The place is absent on read paths that
+    /// never number the Features, and not knowing where something sits is not the same as knowing it sits
+    /// below - so nothing is said about the order rather than everything being reported as out of order.
     /// </summary>
     public sealed record FeatureDependencyFacts(
         string ReferenceId,
         IReadOnlyCollection<int> PortfolioIds,
-        int Position,
+        int? Position,
         bool CanBeForecast,
         IReadOnlyCollection<string> DependsOnReferenceIds);
 }

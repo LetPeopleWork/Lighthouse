@@ -1,8 +1,12 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Net;
 using System.Reflection;
@@ -65,6 +69,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         /// </summary>
         private Task GivenAnotherPortfolioRefreshed(int portfolioId, TrackedFeature theFeatureItWaitsOn)
             => DriveAPortfolioRefresh(portfolioId, theFeatureItWaitsOn);
+
+        /// <summary>
+        /// A refresh handing the Features back in a given sequence, which is what puts one below another:
+        /// nothing here has a place of its own, so they are numbered in the order they arrived.
+        /// </summary>
+        private Task GivenAPortfolioWhereTheOneItWaitsOnComesLast(int portfolioId, params TrackedFeature[] inThisOrder)
+            => DriveAPortfolioRefresh(portfolioId, inThisOrder);
+
+        private Task<Dictionary<string, int>> GivenTheOrderEveryFeatureIsIn() => ReadTheOrderEveryFeatureIsIn();
 
         private void GivenNoPremiumLicence()
             => LicenseServiceMock.Setup(licences => licences.CanUsePremiumFeatures()).Returns(false);
@@ -231,6 +244,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 $"Lighthouse records no dependency of its own, so there is nothing for a write route to be for. Found: {string.Join(", ", writingRoutes)}");
         }
 
+        /// <summary>
+        /// The whole rendered order, compared as a whole. Reading only the two Features under suspicion
+        /// would miss a read that quietly renumbered everything else around them.
+        /// </summary>
+        private static void ThenTheOrderEveryFeatureIsInIsUnchanged(
+            Dictionary<string, int> before, Dictionary<string, JsonElement> rows)
+        {
+            var after = rows.ToDictionary(row => row.Key, row => row.Value.GetProperty("position").GetInt32());
+            var moved = before.Keys.Union(after.Keys)
+                .Where(feature => PlaceOf(before, feature) != PlaceOf(after, feature))
+                .Select(feature => $"{feature}: was {PlaceOf(before, feature)}, now {PlaceOf(after, feature)}")
+                .ToList();
+
+            Assert.That(moved, Is.Empty,
+                $"Saying the order looks odd is not permission to change it. Moved: {string.Join(" | ", moved)}");
+        }
+
+        private static string PlaceOf(Dictionary<string, int> order, string featureReferenceId)
+            => order.TryGetValue(featureReferenceId, out var place) ? place.ToString() : "nowhere";
+
         private static FeatureRow ThenTheRowFor(Dictionary<string, JsonElement> rows, string featureReferenceId)
         {
             Assert.That(rows.ContainsKey(featureReferenceId), Is.True,
@@ -292,6 +325,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 "A Feature the reader may not read must answer exactly as it does when there is no such Feature.");
         }
 
+        // --- Reading the store ---
+
+        /// <summary>
+        /// Where every Feature sits, read from the store rather than from the payload under test, so the
+        /// comparison afterwards is against something the read being judged had no hand in.
+        /// </summary>
+        private async Task<Dictionary<string, int>> ReadTheOrderEveryFeatureIsIn()
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var places = await scope.ServiceProvider.GetRequiredService<IFeaturePositionMap>().GetAsync();
+
+            var namedById = context.Features.AsNoTracking().ToDictionary(feature => feature.Id, feature => feature.ReferenceId);
+
+            return places
+                .Where(place => namedById.ContainsKey(place.Key))
+                .ToDictionary(place => namedById[place.Key], place => place.Value);
+        }
+
         // --- Reading the route ---
 
         private async Task<(HttpStatusCode Status, List<JsonElement> Entries)> AskFor(
@@ -337,6 +389,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                         $"A warning that does not name what {ReferenceId} is waiting on leaves the reader to go and find it. Row: {Json}");
                     Assert.That(warning?.GetProperty("notHonouredReason").GetString(), Is.EqualTo(expectedReason),
                         $"A warning has to say which of the things that can be wrong this one is. Row: {Json}");
+                }
+            }
+
+            public void WarnsThatWhatItWaitsOnSitsBelowIt(string blockerReferenceId)
+            {
+                var warning = WarningAbout(blockerReferenceId);
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(warning?.GetProperty("blockerPositionedBelow").GetBoolean(), Is.True,
+                        $"An arrangement that reads oddly is worth saying out loud on {ReferenceId}'s row. Row: {Json}");
+                    Assert.That(warning?.GetProperty("notHonouredReason").ValueKind, Is.EqualTo(JsonValueKind.Null),
+                        $"The order stays the reader's, so this is a different thing to say than a dependency Lighthouse cannot act on. Row: {Json}");
                 }
             }
 
