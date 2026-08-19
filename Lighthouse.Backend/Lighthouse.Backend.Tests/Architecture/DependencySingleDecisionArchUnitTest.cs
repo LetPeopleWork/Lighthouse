@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Microsoft.Extensions.Logging;
@@ -208,6 +209,70 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             theForecastItself.Should().NotDependOnAny(whatThisEpicAdded).Because(reason).Check(Architecture);
             whatThisEpicAdded.Should().NotDependOnAny(theForecastItself).Because(reason).Check(Architecture);
+        }
+
+        /// <summary>
+        /// One place decides whether Lighthouse can act on a dependency. A second implementation would let
+        /// the warning a user reads and the forecast that acts on the same dependency disagree, and the two
+        /// would be discovered by a person noticing a screenshot did not match a date.
+        /// </summary>
+        /// <remarks>
+        /// At most one, rather than exactly one, only because the second reader has not shipped yet: the
+        /// forecast that consumes this decision arrives with its own epic and tightens the word then. The
+        /// weaker form is deliberate, not an oversight.
+        /// </remarks>
+        [Test]
+        public void AtMostOnePlace_DecidesWhetherADependencyCanBeActedOn()
+        {
+            var deciders = Architecture.Classes
+                .Where(candidate => candidate.ImplementedInterfaces
+                    .Any(implemented => implemented.FullName == typeof(IDependencyHonourPolicy).FullName))
+                .Select(candidate => candidate.FullName)
+                .ToList();
+
+            Assert.That(deciders, Has.Count.LessThanOrEqualTo(1),
+                "A second place deciding whether a dependency can be acted on is how a warning on screen ends " +
+                "up disagreeing with what a forecast actually did. Found: " + string.Join(", ", deciders));
+        }
+
+        /// <summary>
+        /// Finding the circles is half of that decision, so only the place making the decision may ask. A
+        /// caller working it out for itself has a second answer whether or not it means to have one.
+        /// </summary>
+        [Test]
+        public void NothingButTheOneDecider_AsksWhichFeaturesWaitOnEachOtherInACircle()
+        {
+            Types().That().AreNot(typeof(DependencyHonourPolicy)).And()
+                .ResideInNamespaceMatching(@"^Lighthouse\.Backend($|\..*)").And()
+                // The walk is written as one object with the bookkeeping that has to survive between
+                // starting points held inside it, so its own parts depend on it.
+                .DoNotHaveFullNameContaining(nameof(DependencyCycleDetector))
+                .Should().NotDependOnAny(Types().That().Are(typeof(DependencyCycleDetector)))
+                .Because(
+                    "Whether a dependency is caught in a circle is part of one decision, made in one place. " +
+                    "Anything walking the circles for itself is a second opinion, and the two of them differ " +
+                    "the first time either one changes.")
+                .Check(Architecture);
+        }
+
+        /// <summary>
+        /// The decision reads plain facts and nothing else. Something that loads, logs or stores could answer
+        /// differently on the second asking - and the whole point is that the screen and the forecast ask the
+        /// same question and are told the same thing.
+        /// </summary>
+        [Test]
+        public void TheOneDecider_ReachesNothingThatLoadsOrStoresAnything()
+        {
+            Types().That().Are(typeof(DependencyHonourPolicy)).Or().Are(typeof(DependencyCycleDetector))
+                .Should().NotDependOnAny(Types().That()
+                    .ResideInNamespaceMatching(@"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories)($|\..*)").Or()
+                    .ResideInNamespaceMatching(@"^Microsoft\.EntityFrameworkCore($|\..*)").Or()
+                    .ResideInNamespaceMatching(@"^Microsoft\.Extensions\.Logging($|\..*)"))
+                .Because(
+                    "Everything this decision may see arrives as the facts handed to it. A repository, a " +
+                    "database or a log would let it answer one way for the screen and another for a forecast " +
+                    "run seconds later, which is the disagreement having one decision exists to prevent.")
+                .Check(Architecture);
         }
 
         /// <summary>
