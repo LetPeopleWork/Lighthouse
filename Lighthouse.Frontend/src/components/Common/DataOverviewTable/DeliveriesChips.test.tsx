@@ -18,6 +18,8 @@ const mockDeliveryService = {
 	getRuleSchema: vi.fn(),
 	validateRules: vi.fn(),
 	getMetricsHistory: vi.fn(),
+	getNotes: vi.fn().mockResolvedValue([]),
+	addNote: vi.fn(),
 };
 
 const mockApiServiceContext = createMockApiServiceContext({

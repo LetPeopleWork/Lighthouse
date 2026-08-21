@@ -3,6 +3,10 @@ import {
 	type DeliveryMetricsHistory,
 	parseDeliveryMetricsHistory,
 } from "../../models/Delivery/DeliveryMetricsHistory";
+import {
+	DeliveryNote,
+	type IDeliveryNote,
+} from "../../models/Delivery/DeliveryNote";
 import type { Feature } from "../../models/Feature";
 import {
 	DeliverySelectionMode,
@@ -42,6 +46,8 @@ export interface IDeliveryService {
 		mode?: "and" | "or",
 	): Promise<Feature[]>;
 	getMetricsHistory(deliveryId: number): Promise<DeliveryMetricsHistory>;
+	getNotes(deliveryId: number): Promise<DeliveryNote[]>;
+	addNote(deliveryId: number, text: string): Promise<DeliveryNote>;
 }
 
 export class DeliveryService
@@ -143,6 +149,25 @@ export class DeliveryService
 				`/deliveries/${deliveryId}/metrics-history`,
 			);
 			return parseDeliveryMetricsHistory(response.data);
+		});
+	}
+
+	async getNotes(deliveryId: number): Promise<DeliveryNote[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IDeliveryNote[]>(
+				`/deliveries/${deliveryId}/notes`,
+			);
+			return response.data.map((note) => DeliveryNote.fromBackend(note));
+		});
+	}
+
+	async addNote(deliveryId: number, text: string): Promise<DeliveryNote> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<IDeliveryNote>(
+				`/deliveries/${deliveryId}/notes`,
+				{ text },
+			);
+			return DeliveryNote.fromBackend(response.data);
 		});
 	}
 }

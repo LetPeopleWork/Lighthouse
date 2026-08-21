@@ -59,6 +59,7 @@ import {
 import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
+import DeliveryNotesPanel from "./DeliveryNotesPanel";
 import { buildDeliveryExportHeaderRows } from "./deliveryExportHeader";
 
 export const MINIMUM_METRIC_SNAPSHOTS = 3;
@@ -95,7 +96,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 
-	const [activeTab, setActiveTab] = useState<"workItems" | "metrics">(
+	const [activeTab, setActiveTab] = useState<"workItems" | "metrics" | "notes">(
 		"workItems",
 	);
 	const [metricsHistory, setMetricsHistory] =
@@ -106,7 +107,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		delivery.metricSnapshotCount < MINIMUM_METRIC_SNAPSHOTS;
 
 	const handleTabChange = useCallback(
-		(_event: React.SyntheticEvent, nextTab: "workItems" | "metrics") => {
+		(
+			_event: React.SyntheticEvent,
+			nextTab: "workItems" | "metrics" | "notes",
+		) => {
 			if (nextTab === "metrics" && isMetricsTabDisabled) {
 				return;
 			}
@@ -507,6 +511,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									</Tooltip>
 								}
 							/>
+							{/* Always enabled: unlike Metrics, a note needs no accumulated history. */}
+							<Tab label="Notes" value="notes" />
 						</Tabs>
 						{activeTab === "workItems" && (
 							<WorkItemsTab
@@ -526,6 +532,9 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								history={metricsHistory}
 								featuresTerm={featuresTerm}
 							/>
+						)}
+						{activeTab === "notes" && (
+							<DeliveryNotesPanel deliveryId={delivery.id} canWrite={canEdit} />
 						)}
 					</AccordionDetails>
 				</Accordion>

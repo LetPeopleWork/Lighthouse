@@ -401,6 +401,17 @@ export const createMockDeliveryService = (): IDeliveryService => {
 			firstSnapshotDate: null,
 			points: [],
 		}),
+		getNotes: vi.fn().mockResolvedValue([]),
+		addNote: vi.fn().mockResolvedValue({
+			id: 1,
+			deliveryId: 1,
+			text: "",
+			createdAt: "2026-08-21T10:00:00Z",
+			createdOn: "2026-08-21",
+			lastEditedAt: null,
+			lastEditedOn: null,
+			authorDisplayName: null,
+		}),
 	};
 };
 
