@@ -38,13 +38,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string TheFileThatChoosesTheSource =
             "Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs";
 
-        // Azure DevOps, Jira and Linear return Features and can carry something for one to wait on.
-        // ServiceNow and CSV return no Features at all, so a dependency has nothing to run between there.
+        // The trackers that return Features and can carry something for one to wait on. ServiceNow returns
+        // no Features at all, so a dependency has nothing to run between there and it is not listed.
         private static readonly string[] TrackersThatCarryDependencies =
         [
             "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
             "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
             "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
         ];
 
         private const string TheWordThatIsAlreadyTaken = "blocked";

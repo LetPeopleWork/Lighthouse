@@ -16,8 +16,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
     {
         private static int orderCounter;
 
-        private const int TheFeatureHasNoRowYet = 0;
-
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
         {
             return !string.IsNullOrWhiteSpace(GetStateEnteredDateColumn(connection));
@@ -458,9 +456,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 return [];
             }
 
-            return DependencyFieldReferences.In(csv.GetField(column))
-                .Select(reference => new FeatureDependencyReference(TheFeatureHasNoRowYet, reference, DependencySource.TrackerLink))
-                .ToList();
+            // A file exposes no fields of its own for a Portfolio to point at, so a Portfolio here goes on
+            // reading this column whatever it has typed into that setting.
+            return DependencySourceSelector.TheTrackersOwnLinksOnly(DependencyFieldReferences.In(csv.GetField(column)));
         }
 
         private static string GetDependsOnColumn(WorkTrackingSystemConnection connection)
