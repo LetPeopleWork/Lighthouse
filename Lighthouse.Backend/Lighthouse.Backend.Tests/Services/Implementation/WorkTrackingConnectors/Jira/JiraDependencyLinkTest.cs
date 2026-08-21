@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -396,6 +397,76 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
             Assert.That(logger.Warnings, Is.Empty);
+        }
+
+        /// <summary>
+        /// The report that names the inward links Lighthouse did see exists for the instance that renamed
+        /// the one it reads. A Portfolio reading a field of its own has deliberately stopped reading links
+        /// at all, so telling it its links are named wrong describes a decision it made on purpose, in the
+        /// words of a misconfiguration - and points the administrator at renaming a link type to fix
+        /// something that is not broken.
+        ///
+        /// The field being empty is the whole point of the setup. A Portfolio whose field has entries in it
+        /// is waiting on something, and the report goes quiet on its own for that reason alone - so a test
+        /// written that way passes just as well without any of this and proves nothing. Empty is also where
+        /// an administrator setting the field up actually stands.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_APortfolioReadingItsOwnFieldIsNotToldItsLinksAreNamedWrong()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AConnectorReturning(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
+
+            var portfolio = APortfolioReadingAFieldOfItsOwn();
+
+            var features = await subject.GetFeaturesForProject(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features.Single().DependsOnReferences, Is.Empty,
+                    "The named field is empty, so this Feature waits on nothing - the links are not a fallback.");
+                Assert.That(logger.Warnings, Is.Empty,
+                    "Nothing should be said about how links are named to a Portfolio that is not reading links.");
+            }
+        }
+
+        /// <summary>
+        /// The report is narrowed, not removed. The instance that renamed its inward link name and still
+        /// reads its links is the one it was written for, and without it that instance has an empty column
+        /// and nothing to go on.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_TheSamePortfolioNamingNoFieldIsToldAboutItsLinksAgain()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AConnectorReturning(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
+
+            var portfolio = APortfolioReadingAFieldOfItsOwn();
+            portfolio.DependencyOverrideAdditionalFieldDefinitionId = null;
+
+            await subject.GetFeaturesForProject(portfolio);
+
+            Assert.That(logger.Warnings.Single(), Does.Contain("is halted by"));
+        }
+
+        /// <summary>
+        /// A Portfolio pointed at a field of its own. The field resolves to nothing here, which is what a
+        /// Portfolio whose Features have simply not had it filled in yet looks like.
+        /// </summary>
+        private static Portfolio APortfolioReadingAFieldOfItsOwn()
+        {
+            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Waits On",
+                Reference = "Waits On",
+            });
+
+            portfolio.DependencyOverrideAdditionalFieldDefinitionId = 1;
+
+            return portfolio;
         }
 
         private static int Occurrences(string text, string needle)
