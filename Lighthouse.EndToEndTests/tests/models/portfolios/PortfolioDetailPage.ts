@@ -16,28 +16,27 @@ export class PortfolioDetailPage {
 		return featureLink;
 	}
 
+	/**
+	 * Addressed by the name cell rather than by the row's text: a row now carries the names of the
+	 * Features it waits on as well as its own, so matching anywhere in the row finds both ends of a
+	 * dependency and Playwright refuses to choose between them.
+	 */
+	getFeatureRow(featureName: string): Locator {
+		return this.page.getByRole("row").filter({
+			has: this.page.locator('[data-field="name"]', { hasText: featureName }),
+		});
+	}
+
 	getFeatureInProgressIcon(feature: string): Locator {
-		return this.page
-			.getByRole("row")
-			.filter({
-				has: this.page.getByRole("gridcell").filter({ hasText: feature }),
-			})
-			.getByTestId("active-work-indicator");
+		return this.getFeatureRow(feature).getByTestId("active-work-indicator");
 	}
 
 	getFeatureForecastCell(featureName: string): Locator {
-		return this.page
-			.getByRole("row")
-			.filter({ hasText: featureName })
-			.getByTestId("feature-forecast-cell");
+		return this.getFeatureRow(featureName).getByTestId("feature-forecast-cell");
 	}
 
 	getFeatureHasWarning(featureName: string): Locator {
-		const warningIcon = this.page
-			.getByRole("row")
-			.filter({ hasText: featureName })
-			.getByTestId("warnings");
-		return warningIcon;
+		return this.getFeatureRow(featureName).getByTestId("warnings");
 	}
 
 	getTeamLinkForFeature(teamName: string, index: number): Locator {
