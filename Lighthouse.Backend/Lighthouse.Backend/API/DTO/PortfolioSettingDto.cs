@@ -65,7 +65,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public int? DependencyOverrideAdditionalFieldDefinitionId { get; set; }
 
-        [JsonRequired]
-        public bool IgnoreDependencies { get; set; }
+        // Nullable rather than required, because every payload written before this setting existed omits
+        // it - our own end-to-end helpers, the command line client, and whatever anyone has scripted.
+        // Absent has to mean "acts on its dependencies", which is what a Portfolio did before the setting
+        // was there; demanding the field instead turns every saved payload into a 400.
+        public bool? IgnoreDependencies { get; set; }
     }
 }
