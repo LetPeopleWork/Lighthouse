@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear
+namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 {
     public static class CsvWorkTrackingOptionNames
     {
