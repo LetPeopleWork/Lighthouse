@@ -143,4 +143,136 @@ describe("DeliveryNotesPanel", () => {
 
 		expect(await screen.findByText("No notes yet.")).toBeInTheDocument();
 	});
+
+	describe("correcting and withdrawing", () => {
+		it("offers Edit and Delete only on the notes this reader may change", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({ id: 1, text: "mine", canModify: true }),
+				note({ id: 2, text: "theirs", canModify: false }),
+			]);
+
+			renderPanel();
+
+			await waitFor(() =>
+				expect(screen.getAllByTestId("delivery-note")).toHaveLength(2),
+			);
+			const rendered = screen.getAllByTestId("delivery-note");
+			expect(
+				within(rendered[0]).getByTestId("edit-note-button"),
+			).toBeInTheDocument();
+			expect(
+				within(rendered[1]).queryByTestId("edit-note-button"),
+			).not.toBeInTheDocument();
+			expect(
+				within(rendered[1]).queryByTestId("delete-note-button"),
+			).not.toBeInTheDocument();
+		});
+
+		it("corrects a note in place", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({ id: 1, text: "wrong week", canModify: true }),
+			]);
+			vi.mocked(mockDeliveryService.updateNote).mockResolvedValue(
+				note({
+					id: 1,
+					text: "right week",
+					canModify: true,
+					lastEditedOn: "2026-08-22",
+				}),
+			);
+
+			renderPanel();
+
+			await userEvent.click(await screen.findByTestId("edit-note-button"));
+			const input = screen.getByTestId("edit-note-input");
+			await userEvent.clear(input);
+			await userEvent.type(input, "right week");
+			await userEvent.click(screen.getByTestId("save-edit-button"));
+
+			await waitFor(() =>
+				expect(mockDeliveryService.updateNote).toHaveBeenCalledWith(
+					42,
+					1,
+					"right week",
+				),
+			);
+			expect(await screen.findByText("right week")).toBeInTheDocument();
+		});
+
+		it("marks a corrected note as edited while still showing when it was written", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({
+					id: 1,
+					text: "corrected",
+					canModify: true,
+					createdOn: "2026-08-21",
+					lastEditedOn: "2026-08-24",
+				}),
+			]);
+
+			renderPanel();
+
+			const rendered = await screen.findByTestId("delivery-note");
+			expect(rendered.textContent).toContain("2026-08-21");
+			expect(rendered.textContent).toContain("edited 2026-08-24");
+		});
+
+		it("shows no edited marker on a note nobody has corrected", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({ id: 1, canModify: true, lastEditedOn: null }),
+			]);
+
+			renderPanel();
+
+			const rendered = await screen.findByTestId("delivery-note");
+			expect(rendered.textContent).not.toContain("edited");
+		});
+
+		it("refuses a correction that empties the note, and leaves it as it was", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({ id: 1, text: "as it was", canModify: true }),
+			]);
+
+			renderPanel();
+
+			await userEvent.click(await screen.findByTestId("edit-note-button"));
+			await userEvent.clear(screen.getByTestId("edit-note-input"));
+			await userEvent.click(screen.getByTestId("save-edit-button"));
+
+			expect(
+				await screen.findByText("A note needs some text."),
+			).toBeInTheDocument();
+			expect(mockDeliveryService.updateNote).not.toHaveBeenCalled();
+		});
+
+		it("withdraws a note and does not leave it behind", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({ id: 1, text: "withdraw me", canModify: true }),
+			]);
+
+			renderPanel();
+
+			await userEvent.click(await screen.findByTestId("delete-note-button"));
+
+			await waitFor(() =>
+				expect(mockDeliveryService.deleteNote).toHaveBeenCalledWith(42, 1),
+			);
+			expect(screen.queryByText("withdraw me")).not.toBeInTheDocument();
+		});
+
+		it("abandons a correction without changing the note", async () => {
+			vi.mocked(mockDeliveryService.getNotes).mockResolvedValue([
+				note({ id: 1, text: "as it was", canModify: true }),
+			]);
+
+			renderPanel();
+
+			await userEvent.click(await screen.findByTestId("edit-note-button"));
+			await userEvent.type(screen.getByTestId("edit-note-input"), " changed");
+			await userEvent.click(screen.getByTestId("cancel-edit-button"));
+
+			expect(screen.getByText("as it was")).toBeInTheDocument();
+			expect(mockDeliveryService.updateNote).not.toHaveBeenCalled();
+		});
+	});
 });

@@ -48,6 +48,12 @@ export interface IDeliveryService {
 	getMetricsHistory(deliveryId: number): Promise<DeliveryMetricsHistory>;
 	getNotes(deliveryId: number): Promise<DeliveryNote[]>;
 	addNote(deliveryId: number, text: string): Promise<DeliveryNote>;
+	updateNote(
+		deliveryId: number,
+		noteId: number,
+		text: string,
+	): Promise<DeliveryNote>;
+	deleteNote(deliveryId: number, noteId: number): Promise<void>;
 }
 
 export class DeliveryService
@@ -168,6 +174,26 @@ export class DeliveryService
 				{ text },
 			);
 			return DeliveryNote.fromBackend(response.data);
+		});
+	}
+
+	async updateNote(
+		deliveryId: number,
+		noteId: number,
+		text: string,
+	): Promise<DeliveryNote> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.put<IDeliveryNote>(
+				`/deliveries/${deliveryId}/notes/${noteId}`,
+				{ text },
+			);
+			return DeliveryNote.fromBackend(response.data);
+		});
+	}
+
+	async deleteNote(deliveryId: number, noteId: number): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.delete(`/deliveries/${deliveryId}/notes/${noteId}`);
 		});
 	}
 }

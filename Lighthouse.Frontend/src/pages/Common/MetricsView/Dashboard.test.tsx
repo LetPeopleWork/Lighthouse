@@ -43,7 +43,12 @@ describe("Dashboard component", () => {
 		cleanup();
 	});
 
-	it("renders provided items in fixed order and exposes data attributes", async () => {
+	// Renders the whole dashboard through a dynamic import, which costs a couple of seconds on its
+	// own and more when the suite is busy. The default five seconds left no headroom, so this test
+	// went red whenever tests were added elsewhere in the suite.
+	it("renders provided items in fixed order and exposes data attributes", {
+		timeout: 20000,
+	}, async () => {
 		setMatchMediaWidth(1600);
 
 		const { default: Dashboard } = await import("./Dashboard");

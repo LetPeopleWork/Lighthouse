@@ -13,6 +13,11 @@ export interface IDeliveryNote {
 	lastEditedOn?: string | null;
 	/** Null when nobody was signed in to name — the note is shown unattributed, never as a placeholder. */
 	authorDisplayName?: string | null;
+	/**
+	 * Whether this reader may correct or withdraw this note. Decided on the server, because the rule
+	 * has an awkward case (a note nobody signed) that is not worth having two copies of.
+	 */
+	canModify?: boolean;
 }
 
 export class DeliveryNote implements IDeliveryNote {
@@ -24,6 +29,7 @@ export class DeliveryNote implements IDeliveryNote {
 	lastEditedAt?: string | null;
 	lastEditedOn?: string | null;
 	authorDisplayName?: string | null;
+	canModify?: boolean;
 
 	static fromBackend(data: IDeliveryNote): DeliveryNote {
 		const note = new DeliveryNote();
@@ -35,6 +41,7 @@ export class DeliveryNote implements IDeliveryNote {
 		note.lastEditedAt = data.lastEditedAt ?? null;
 		note.lastEditedOn = data.lastEditedOn ?? null;
 		note.authorDisplayName = data.authorDisplayName ?? null;
+		note.canModify = data.canModify ?? false;
 		return note;
 	}
 }

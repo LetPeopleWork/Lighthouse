@@ -8,8 +8,9 @@ namespace Lighthouse.Backend.API.DTO
         {
         }
 
-        public DeliveryNoteDto(DeliveryNote note, DateOnly createdOn, DateOnly? lastEditedOn)
+        public DeliveryNoteDto(DeliveryNote note, DateOnly createdOn, DateOnly? lastEditedOn, bool canModify = false)
         {
+            CanModify = canModify;
             Id = note.Id;
             DeliveryId = note.DeliveryId;
             Text = note.Text;
@@ -43,5 +44,12 @@ namespace Lighthouse.Backend.API.DTO
         /// switched off. The UI shows it as unattributed rather than inventing a name.
         /// </summary>
         public string? AuthorDisplayName { get; set; }
+
+        /// <summary>
+        /// Whether this caller may correct or withdraw this note. Decided on the server so the rule
+        /// lives in one place - the UI renders the verdict rather than reaching one of its own, which
+        /// would be a second copy of it to keep in step.
+        /// </summary>
+        public bool CanModify { get; set; }
     }
 }

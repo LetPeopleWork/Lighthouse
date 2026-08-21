@@ -76,7 +76,12 @@ describe("DashboardHeader", () => {
 		setMatchMedia(false);
 	});
 
-	it("shows label and formatted date range and opens popover which calls handlers", async () => {
+	// Drives a popover through several user interactions, which costs a few seconds on its own and
+	// more when the suite is busy. The default five seconds left no headroom, so this test went red
+	// whenever tests were added elsewhere in the suite.
+	it("shows label and formatted date range and opens popover which calls handlers", {
+		timeout: 20000,
+	}, async () => {
 		setMatchMedia(false);
 
 		const onStart = vi.fn();

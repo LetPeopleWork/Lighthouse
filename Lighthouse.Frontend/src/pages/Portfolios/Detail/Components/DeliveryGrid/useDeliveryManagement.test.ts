@@ -31,6 +31,8 @@ const mockApiServiceContext = createMockApiServiceContext({
 		getMetricsHistory: vi.fn(),
 		getNotes: vi.fn().mockResolvedValue([]),
 		addNote: vi.fn(),
+		updateNote: vi.fn(),
+		deleteNote: vi.fn(),
 	},
 	featureService: mockFeatureService,
 });

@@ -402,6 +402,8 @@ export const createMockDeliveryService = (): IDeliveryService => {
 			points: [],
 		}),
 		getNotes: vi.fn().mockResolvedValue([]),
+		updateNote: vi.fn(),
+		deleteNote: vi.fn().mockResolvedValue(undefined),
 		addNote: vi.fn().mockResolvedValue({
 			id: 1,
 			deliveryId: 1,

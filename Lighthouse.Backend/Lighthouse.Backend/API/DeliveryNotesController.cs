@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
@@ -37,7 +38,9 @@ namespace Lighthouse.Backend.API
                 .ThenByDescending(note => note.Id)
                 .ToListAsync(HttpContext?.RequestAborted ?? default);
 
-            return Ok(notes.Select(ToDto).ToList());
+            var currentAuthor = await CurrentAuthorAsync();
+
+            return Ok(notes.Select(note => ToDto(note, currentAuthor)).ToList());
         }
 
         [HttpPost]
@@ -55,8 +58,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest("A note needs some text.");
             }
 
-            var author = await currentUserProfileService.GetOrCreateFromPrincipalAsync(
-                User, HttpContext?.RequestAborted ?? default);
+            var author = await CurrentAuthorAsync();
 
             var note = new DeliveryNote
             {
@@ -70,15 +72,109 @@ namespace Lighthouse.Backend.API
             context.DeliveryNotes.Add(note);
             await context.SaveChangesAsync(HttpContext?.RequestAborted ?? default);
 
-            return Ok(ToDto(note));
+            return Ok(ToDto(note, author));
         }
 
-        private DeliveryNoteDto ToDto(DeliveryNote note)
+        [HttpPut("{noteId:int}")]
+        public async Task<ActionResult<DeliveryNoteDto>> UpdateNote(int deliveryId, int noteId, [FromBody] DeliveryNoteRequest request)
+        {
+            var scopeCheck = await CheckScopeAsync(deliveryId, RbacGuardRequirement.PortfolioWrite);
+            if (scopeCheck is not null)
+            {
+                return scopeCheck;
+            }
+
+            var note = await FindNoteAsync(deliveryId, noteId);
+            if (note is null)
+            {
+                return NotFound();
+            }
+
+            var author = await CurrentAuthorAsync();
+            if (!MayModify(note, author))
+            {
+                return Forbid();
+            }
+
+            var text = request?.Text?.Trim();
+            if (string.IsNullOrEmpty(text))
+            {
+                return BadRequest("A note needs some text.");
+            }
+
+            note.Text = text;
+            note.LastEditedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync(HttpContext?.RequestAborted ?? default);
+
+            return Ok(ToDto(note, author));
+        }
+
+        [HttpDelete("{noteId:int}")]
+        public async Task<IActionResult> DeleteNote(int deliveryId, int noteId)
+        {
+            var scopeCheck = await CheckScopeAsync(deliveryId, RbacGuardRequirement.PortfolioWrite);
+            if (scopeCheck is not null)
+            {
+                return scopeCheck;
+            }
+
+            var note = await FindNoteAsync(deliveryId, noteId);
+            if (note is null)
+            {
+                return NotFound();
+            }
+
+            if (!MayModify(note, await CurrentAuthorAsync()))
+            {
+                return Forbid();
+            }
+
+            context.DeliveryNotes.Remove(note);
+            await context.SaveChangesAsync(HttpContext?.RequestAborted ?? default);
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Deliberately two branches rather than comparing the two ids directly. Comparing them
+        /// treats a note nobody signed as belonging to nobody, so on an instance that ran without
+        /// authentication and later switched it on, every note written in between becomes permanently
+        /// uneditable - visible to everyone and fixable by no one.
+        /// </summary>
+        private static bool MayModify(DeliveryNote note, UserProfile? currentAuthor)
+        {
+            if (note.AuthorUserProfileId is null)
+            {
+                // Nobody signed it, so nobody owns it. Write access to the Portfolio is the whole rule.
+                return true;
+            }
+
+            return currentAuthor is not null && note.AuthorUserProfileId == currentAuthor.Id;
+        }
+
+        private Task<UserProfile?> CurrentAuthorAsync()
+        {
+            return currentUserProfileService.GetOrCreateFromPrincipalAsync(
+                User, HttpContext?.RequestAborted ?? default);
+        }
+
+        private Task<DeliveryNote?> FindNoteAsync(int deliveryId, int noteId)
+        {
+            // Scoped by Delivery as well as id: a note reached through a Delivery it does not belong
+            // to is either a mistake or an attempt, and neither should find anything.
+            return context.DeliveryNotes
+                .SingleOrDefaultAsync(
+                    note => note.Id == noteId && note.DeliveryId == deliveryId,
+                    HttpContext?.RequestAborted ?? default);
+        }
+
+        private DeliveryNoteDto ToDto(DeliveryNote note, UserProfile? currentAuthor)
         {
             return new DeliveryNoteDto(
                 note,
                 clock.ToInstanceDay(note.CreatedAt),
-                note.LastEditedAt.HasValue ? clock.ToInstanceDay(note.LastEditedAt.Value) : null);
+                note.LastEditedAt.HasValue ? clock.ToInstanceDay(note.LastEditedAt.Value) : null,
+                MayModify(note, currentAuthor));
         }
 
         private async Task<ActionResult?> CheckScopeAsync(int deliveryId, RbacGuardRequirement requirement)
