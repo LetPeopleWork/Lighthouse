@@ -156,10 +156,18 @@ Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 
 ## Learning hypothesis verdict
 
-**US-04 — not run.** No real example of such a field was available, and this is the one population the
-dogfood instance does not contain, so the premise stands unchecked rather than confirmed. What shipped
-assumes references in the connector's own form; if what people actually type is URLs or titles, the
-normalisation step the hypothesis names is still owed and is still a slice of its own.
+**US-04 — held, on evidence better than the brief expected to get.** The premise was checked against a
+real Azure DevOps field on the maintainer's own board (`ReportedBy`), which is not a dependency field at
+all: most rows are empty and the rest hold **people's names**. Pointed at it, a Portfolio read
+`5698;5792;Chris` as two dependencies — the two ids resolved, `Chris` resolved to nothing and was passed
+over, and the entries beside it survived.
+
+That is the hypothesis' worst case arriving by accident and being handled: the thing the brief feared
+finding in such a column was exactly prose rather than references. Two limits on how far this goes.
+It confirms that a hand-typed column mixing references with nonsense yields the right edges; it does
+**not** confirm that people who genuinely maintain a dependency column write ids rather than URLs,
+because nobody reachable maintains one. If a URL turns up in such a column, the normalisation step the
+hypothesis names is still owed, and is still a slice of its own rather than a bigger version of this one.
 
 **US-10 — held.** Ignoring is a read-time verdict, and no consumer wanted the edge set itself to be
 empty. `IDependencyHonourPolicy` gained one field of input and nothing else moved: the connectors, the
