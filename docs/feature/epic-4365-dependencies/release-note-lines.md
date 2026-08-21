@@ -61,7 +61,8 @@ there is nothing to re-download, and flipping it back restores exactly the pictu
 | Azure DevOps | the *Predecessor* link, or a field of your own (see above) |
 | Jira Cloud & Data Center | the *is blocked by* end of a **Blocks** link — if your administrator renamed it, Lighthouse tells you what it looked for and what it found instead |
 | Linear | a relation between two Projects |
-| ServiceNow, CSV | not available — neither has Features for a dependency to run between |
+| CSV | a column naming what each row waits on, set on the connection |
+| ServiceNow | not available — it has no Features for a dependency to run between |
 
 ### Your forecasts have not moved
 

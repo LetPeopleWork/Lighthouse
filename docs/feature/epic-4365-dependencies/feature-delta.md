@@ -2288,6 +2288,27 @@ Available on request; not rendered under lean density.
 
 ---
 
+## Wave: DELIVER / [REF] Slice 05 — What changed under it while it was being built
+
+**A file can carry dependencies now, and two claims in the slice-05 sections above are stale because
+of it.** Work landing in parallel gave CSV a depends-on column named on the connection. Where the
+sections above say CSV has no Features for a dependency to run between, read that as ServiceNow only.
+
+It was not found by reading: the single-decider guard caught it on the first build after the rebase,
+naming `CsvWorkTrackingConnector.cs:462` — a fourth tracker recording for itself where a dependency
+came from, hours after the rule was written. That is the recurrence the guard exists for, and it is
+the clearest evidence available that the rule is worth more than the branch it replaced.
+
+A file exposes no fields of its own for a Portfolio to point at, so it takes Linear's route rather
+than Jira's: it asks for its own links by name instead of being handed a setting it cannot answer.
+Reading the column is unchanged and nothing a user sees moves.
+
+**SA-23's follow-up grows by one.** The inert selector now renders on CSV Portfolios as well as Linear
+ones — two connector families that cannot serve it, not one. The capability-gating story is worth
+slightly more than when it was deferred.
+
+---
+
 ## Wave: DISTILL / [REF] Slice 05 — Final Wave Review Gate (4 reviewers, 2026-08-21)
 
 Consolidated review over the slice-05 DESIGN + DISTILL sections. Slices 01–04 passed their own gate on
