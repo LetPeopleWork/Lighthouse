@@ -44,9 +44,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         protected CapturedLogMessages CapturedLogs = null!;
 
         /// <summary>
+        /// How a scenario's rows become the Features a connector hands over. Scenarios that say nothing
+        /// about which work tracking system they are on get a payload built here; the parity scenarios
+        /// swap in a real connector's mapper so the same scenario body runs on every tracker instead of
+        /// being copied once per tracker.
+        /// </summary>
+        protected ITrackerPayloadSource TheTracker { get; set; } = new PayloadBuiltHere();
+
+        /// <summary>
         /// One row the tracker hands back for a Feature, and the ids of the Features it is waiting on.
         /// </summary>
-        protected readonly record struct TrackedFeature(string ReferenceId, string Name, string[] WaitsOn);
+        public readonly record struct TrackedFeature(string ReferenceId, string Name, string[] WaitsOn);
 
         /// <summary>
         /// One stored reference, read back beside both ids it can be judged against: the Feature row it
@@ -230,9 +238,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         /// </summary>
         protected async Task DriveAPortfolioRefresh(int portfolioId, params TrackedFeature[] rowsFromTheTracker)
         {
+            var payload = await TheTracker.Map(rowsFromTheTracker);
+
             ConnectorMock
                 .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>()))
-                .ReturnsAsync(() => rowsFromTheTracker.Select(TheConnectorPayloadFor).ToList());
+                .ReturnsAsync(() => payload);
 
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -374,26 +384,50 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
         protected List<string> ReadProblemsLogged() => [.. CapturedLogs.AtOrAbove(LogEventLevel.Error)];
 
-        private static Feature TheConnectorPayloadFor(TrackedFeature row)
+        /// <summary>
+        /// Turns a scenario's rows into the Features a connector hands over. An implementation that runs a
+        /// real connector's mapper is what lets one scenario body stand for every work tracking system.
+        /// </summary>
+        public interface ITrackerPayloadSource
         {
-            var feature = new Feature
+            /// <summary>What this tracker calls the Feature a scenario knows by <paramref name="logicalName"/>.</summary>
+            string ReferenceIdFor(string logicalName);
+
+            Task<List<Feature>> Map(TrackedFeature[] rows);
+        }
+
+        /// <summary>
+        /// The payload for scenarios that are not about any particular work tracking system. Reference ids
+        /// pass through untouched, so a scenario names its Features whatever reads best.
+        /// </summary>
+        private sealed class PayloadBuiltHere : ITrackerPayloadSource
+        {
+            public string ReferenceIdFor(string logicalName) => logicalName;
+
+            public Task<List<Feature>> Map(TrackedFeature[] rows)
+                => Task.FromResult(rows.Select(TheConnectorPayloadFor).ToList());
+
+            private static Feature TheConnectorPayloadFor(TrackedFeature row)
             {
-                ReferenceId = row.ReferenceId,
-                Name = row.Name,
-                Url = $"https://tracker.example/{row.ReferenceId}",
-                Type = "Epic",
-                State = "New",
-                StateCategory = StateCategories.ToDo,
-                Order = string.Empty,
-                CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                Tags = [],
-                SyncedTransitions = [],
-            };
+                var feature = new Feature
+                {
+                    ReferenceId = row.ReferenceId,
+                    Name = row.Name,
+                    Url = $"https://tracker.example/{row.ReferenceId}",
+                    Type = "Epic",
+                    State = "New",
+                    StateCategory = StateCategories.ToDo,
+                    Order = string.Empty,
+                    CreatedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    Tags = [],
+                    SyncedTransitions = [],
+                };
 
-            feature.ReplaceDependsOnReferences(row.WaitsOn.Select(
-                waitsOn => new FeatureDependencyReference(feature.Id, waitsOn, DependencySource.TrackerLink)));
+                feature.ReplaceDependsOnReferences(row.WaitsOn.Select(
+                    waitsOn => new FeatureDependencyReference(feature.Id, waitsOn, DependencySource.TrackerLink)));
 
-            return feature;
+                return feature;
+            }
         }
     }
 }

@@ -92,9 +92,14 @@ Feature: The same thing on Jira and on Linear (Epic 4365, Slice 03 — US-09)
     And "Warehouse sync" belongs to no Portfolio that "Checkout redesign" belongs to
     When the product owner opens the Features view
     Then the row for "Checkout redesign" says it is waiting on 2 Features
-    And opening what it is waiting on names both of them with their states and Portfolios
-    And the row carries one warning, about "Warehouse sync" being outside this Portfolio
-    And the entry for "Payment gateway upgrade" carries no warning
+    And it names both of them, each leading into the tracker it was read from
+    And the entry for "Warehouse sync" says it is outside this Portfolio
+    And the entry for "Payment gateway upgrade" carries no reason at all
+
+    # This scenario said "opening what it is waiting on names both of them with their states and
+    # Portfolios" until Slice 03 ran it. Slice 02 replaced the count-plus-dialog with the names on the
+    # row itself, and the state and the Portfolios went with the dialog — so the sentence described a
+    # screen that no longer exists.
 
     Examples:
       | tracker       |
