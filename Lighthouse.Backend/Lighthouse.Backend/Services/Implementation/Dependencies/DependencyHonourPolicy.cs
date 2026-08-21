@@ -39,9 +39,10 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         {
             factsByReferenceId.TryGetValue(blockerReferenceId, out var blocker);
 
-            var onItsOwnFacts = TheVerdictOnItsFacts(dependent, blockerReferenceId, blocker, loops);
+            var whereItHasAConsequence = blocker is null ? [] : PortfoliosTheyShare(dependent, blocker);
+            var onItsOwnFacts = TheVerdictOnItsFacts(dependent, blockerReferenceId, blocker, whereItHasAConsequence, loops);
 
-            if (!SetAside(dependent, blocker, portfoliosSettingTheirDependenciesAside))
+            if (!SetAside(dependent, whereItHasAConsequence, portfoliosSettingTheirDependenciesAside))
             {
                 return onItsOwnFacts;
             }
@@ -62,9 +63,10 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
             FeatureDependencyFacts dependent,
             string blockerReferenceId,
             FeatureDependencyFacts? blocker,
+            List<int> whereItHasAConsequence,
             DependencyLoops loops)
         {
-            if (blocker is null || PortfoliosTheyShare(dependent, blocker).Count == 0)
+            if (blocker is null || whereItHasAConsequence.Count == 0)
             {
                 return new DependencyVerdict(
                     dependent.ReferenceId,
@@ -90,12 +92,12 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         /// </summary>
         private static bool SetAside(
             FeatureDependencyFacts dependent,
-            FeatureDependencyFacts? blocker,
+            List<int> whereItHasAConsequence,
             HashSet<int> portfoliosSettingTheirDependenciesAside)
         {
-            List<int> shared = blocker is null ? [] : PortfoliosTheyShare(dependent, blocker);
-
-            IReadOnlyCollection<int> whoseChoiceItIs = shared.Count > 0 ? shared : dependent.PortfolioIds;
+            IReadOnlyCollection<int> whoseChoiceItIs = whereItHasAConsequence.Count > 0
+                ? whereItHasAConsequence
+                : dependent.PortfolioIds;
 
             return whoseChoiceItIs.Count > 0
                 && whoseChoiceItIs.All(portfoliosSettingTheirDependenciesAside.Contains);
