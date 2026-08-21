@@ -54,7 +54,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         /// <summary>
         /// One row the tracker hands back for a Feature, and the ids of the Features it is waiting on.
         /// </summary>
-        public readonly record struct TrackedFeature(string ReferenceId, string Name, string[] WaitsOn);
+        public readonly record struct TrackedFeature(
+            string ReferenceId,
+            string Name,
+            string[] WaitsOn,
+            DependencySource ReadFrom = DependencySource.TrackerLink);
 
         /// <summary>
         /// One stored reference, read back beside both ids it can be judged against: the Feature row it
@@ -175,6 +179,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             portfolioRepository.Save().GetAwaiter().GetResult();
 
             return portfolio.Id;
+        }
+
+        /// <summary>
+        /// Sets or clears a Portfolio's ignore switch the way the settings route does: one column, written
+        /// on its own. Nothing else about the Portfolio is touched, which is the point of the scenarios
+        /// that read the stored dependencies either side of it.
+        /// </summary>
+        protected void SetWhetherItActsOnItsDependencies(int portfolioId, bool setThemAside)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+
+            var rowsChanged = context.Portfolios
+                .Where(portfolio => portfolio.Id == portfolioId)
+                .ExecuteUpdate(setters => setters.SetProperty(portfolio => portfolio.IgnoreDependencies, setThemAside));
+
+            if (rowsChanged != 1)
+            {
+                throw new InvalidOperationException($"There was no single Portfolio {portfolioId} to change.");
+            }
         }
 
         /// <summary>
@@ -424,7 +448,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                 };
 
                 feature.ReplaceDependsOnReferences(row.WaitsOn.Select(
-                    waitsOn => new FeatureDependencyReference(feature.Id, waitsOn, DependencySource.TrackerLink)));
+                    waitsOn => new FeatureDependencyReference(feature.Id, waitsOn, row.ReadFrom)));
 
                 return feature;
             }
