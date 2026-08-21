@@ -114,6 +114,123 @@ back-to-back over unchanged data and diff the 50/70/85/95% dates. If the spread 
 percentiles people actually read, the question is closed. If it is several days on an eight-week
 forecast, it is a credibility problem and earns its own epic. **Write the number down either way.**
 
+## Baseline capture (2026-08-21, dogfood `:5169`, commit `4c0dea826`)
+
+Taken before any production commit of this epic, on the released build. Portfolio 34 *Lighthouse*
+(Azure DevOps, 82 Features, real history), Team 34 *Lighthouse Dev Team*.
+
+### Run-to-run spread over unchanged data
+
+Three consecutive forecast-only triggers (`POST /forecast/update/34`), no refetch between them,
+diffed per Feature at each percentile.
+
+| percentile | Features moved (of 82) | max move | mean move |
+|---|---|---|---|
+| 50 % | 0, 0, 0 | **0 days** | 0 |
+| 70 % | 1, 4, 3 | **1 day** | 0.01 - 0.05 d |
+| 85 % | 5, 10, 5 | **1 day** | 0.06 - 0.12 d |
+| 95 % | 5, 2, 2 | **1 day** | 0.02 - 0.06 d |
+
+**The spread is one day, and the 50 % date never moves.** Against this slice's own test - *"if the
+spread is under a day at the percentiles people actually read, the question is closed"* - forecast
+determinism does not earn an epic. ADR-154's fresh production seed stands.
+
+**KPI-2's magnitude floor is therefore 1 day.** Restated: at least one Feature ranked below a waiting
+one reads **earlier by two days or more**, reproduced across three runs. AC-5.2's own >= 3 working-day
+target clears it.
+
+### Wall clock
+
+Trigger-to-idle for a whole Portfolio-34 forecast: **5-6 s**, measured by external polling at 1 s
+granularity, so this is a ceiling rather than a measurement. A precise figure needs the timing
+restoration.
+
+### Write-back volume per Portfolio refresh (the AC-10.3 number)
+
+One flush per refresh, 160 staged updates, of which the connector was actually called for 24 and 17 on
+two consecutive refreshes. Forecast-only triggers staged 29 updates and called for 1, 4 and 3. After
+this slice the flush count becomes two by design; **the assertion is on connector calls, not flushes.**
+
+### Forecast executions per refresh - and what the count actually revealed
+
+| path | forecast executions |
+|---|---|
+| Portfolio refresh alone | 1 |
+| Team refresh alone | **0** |
+| Both together (the Update All shape) | **1** |
+
+Not the two or three this slice was written to remove. The reason is a defect this wave found, and it
+is not the one the slice describes.
+
+## The Team-triggered forecast never fires on this Portfolio
+
+`Portfolio.Teams` (`Models/Portfolio.cs:9`) is a **derived** property - `Features.SelectMany(f =>
+f.FeatureWork)`, recomputed on read, always right. `Team.Portfolios` is a **persisted** many-to-many
+over the `PortfolioTeam` table (`LighthouseAppContext.cs:278-280`). They are two different relations,
+and the forecast trigger reads the persisted one: `TeamDataRefreshedForecastTriggerHandler:21`
+iterates `team.Portfolios`, as does `ForecastController.UpdateForecastsForTeamPortfolios:41`.
+
+On the dogfood instance `PortfolioTeam` holds two rows - `(35,35)` and `(36,36)`. **Portfolio 34 has
+none**, so for the one Portfolio with real history a Team refresh triggers nothing. Confirmed in both
+directions with debug logging on: Team 34 logs `Getting Team by Id. Id 34` and stops; Team 36 logs
+`Queuing Update for Forecasts with ID 36` and forecasts.
+
+**No production code writes a `PortfolioTeam` row at all.** `Team.Portfolios`
+(`Models/Team.cs:27`) is EF-populatable, but nothing assigns to it or adds to it anywhere outside
+tests - `DemoDataService`'s `Teams.Add(...)` calls are on a `DemoDataScenario` descriptor holding
+team *names*, not the entity relation. The two rows on the dogfood database are residue from an
+older schema. On any Portfolio created since, `TeamDataRefreshedForecastTriggerHandler` and
+`ForecastController.UpdateForecastsForTeamPortfolios` iterate an empty collection and do nothing.
+
+Three consequences for this slice:
+
+- **The redundancy is conditional on the persisted link.** A linked Portfolio gets 1 inline forecast
+  plus 1-2 on the `(Forecasts, id)` key - the 2-3 the slice describes. An unlinked one gets 1. The
+  debounce US-11 builds has nothing to debounce on an unlinked Portfolio.
+- **Scenario #12's silent success already ships.** `POST /forecast/update-portfolios-for-team/34`
+  returns `true` and HTTP 200 having run no forecast at all. The scenario was written for a failure
+  the debounce would introduce; the failure is already there, for a different reason.
+- **US-10 is unaffected and still worth doing.** Moving `PortfolioUpdater`'s inline forecast onto the
+  shared `(Forecasts, portfolioId)` key is correct regardless of the link, and it is what makes the
+  two paths visible to one another at all.
+
+### The same wrong read costs more than the forecast
+
+`team.Portfolios` has a **third** production reader: `WorkItemService.cs:70`, inside
+`UpdateWorkItemsForTeam`, iterating it to call `UpdateRemainingWorkForPortfolio`. On a Portfolio with
+no `PortfolioTeam` row that loop never runs, so **a Team refresh does not recalculate the Portfolio's
+remaining work** either. That is core data staleness rather than a forecasting-frequency problem, and
+it is the strongest evidence that the missing row is a product defect and not stale dogfood data.
+
+**Deliberately not fixed in this slice.** Repairing that read would change Feature remaining-work
+values on refresh, which changes forecast output - and this slice changes how often a forecast runs,
+never what it computes. Recorded here so it is neither lost nor "helpfully" fixed in passing.
+
+### The derivation, proved against the dogfood data
+
+`FeatureWork.TeamId` -> `FeaturePortfolio` -> `PortfoliosId`, run over the captured database:
+
+| team | derived | persisted (`PortfolioTeam`) |
+|---|---|---|
+| 34 | **[34]** | [] |
+| 35 | [35] | [35] |
+| 36 | [36] | [36] |
+
+`FeaturePortfolio` holds 88 rows and is maintained normally in production; `FeatureWork` holds 67, of
+which 56 belong to Team 34. The derivation recovers exactly what the join table lost, and agrees with
+it wherever it still has rows.
+
+### Why the suite never caught this
+
+Two acceptance fixtures populate `team.Portfolios` **by hand** -
+`ManualSortingAcceptanceTest.cs:176` and `QuietWriteBackAcceptanceTest.cs:305`. The tests are green
+because they establish a relation production never writes, so no test has ever exercised the case
+where it is missing.
+
+**Not decided here.** Whether the missing `PortfolioTeam` row is stale dogfood data or a product
+defect - and whether repairing it belongs in this slice, this epic, or its own bug - is the
+maintainer's call.
+
 ## Dependencies
 
 None. This slice touches the update queue and no part of the forecasting change, which is why it can

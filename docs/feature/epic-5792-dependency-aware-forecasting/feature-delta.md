@@ -1151,7 +1151,7 @@ nothing about what one computes. `epic-boundary.feature` asserts exactly that.
 ## Wave: DISTILL / [REF] Scenario List (tags)
 
 Scenario SSOT is `docs/feature/epic-5792-dependency-aware-forecasting/acceptance/*.feature`. Five
-files, **54 scenarios**, of which 31 are `@error`, `@edge` or `@regression`. Every scenario carries a
+files, **56 scenarios**, of which 33 are `@error`, `@edge` or `@regression`. Every scenario carries a
 `@contract-shape:` tag. Five scenarios were added and eight rewritten in response to the review gate
 below; the rewrites are recorded there rather than repeated here.
 
@@ -1211,6 +1211,18 @@ below; the rewrites are recorded there rather than repeated here.
 | 52 | Nothing in this epic can be reached by asking the product a new question | epic-boundary | `@architecture @slice-01` · unbounded-preservation | SA-14 |
 | 53 | The warnings that were already on a row are left exactly as they were | epic-boundary | `@regression @slice-01` · unbounded-preservation | Epic #4365's warnings |
 | 54 | How often a forecast runs is the only thing slice 00 changed about forecasting | epic-boundary | `@regression @slice-00` · unbounded-preservation | D10 — slice 00's boundary |
+| 55 | A Portfolio a Team reaches only through the Features it works is forecast too | milestone-0 | `@error @driving_port @us-11 @slice-00` · bounded-change | **NEW (DELIVER)** — the stored pairing nothing writes |
+| 56 | A change to the order of Features forecasts straight away even mid-refresh | milestone-0 | `@edge @driving_port @slice-00` · bounded-change | **NEW (DELIVER)** — #14 only proved the quiet case |
+
+
+**Two scenarios were added during DELIVER slice 00** (#55, #56), both in `milestone-0`. #55 covers the
+wave's largest discovery: `Team.Portfolios` is a persisted pairing that **no production code ever
+writes**, so a Team refresh silently forecast nothing for any Portfolio without a residual row, and
+`WorkItemService.cs:70` failed to recalculate its remaining work for the same reason. The repair
+derives the relation from `FeatureWork` instead of reading the pairing. #56 exists because #14's own
+`Given` ("nothing in this Portfolio is refreshing") makes it pass whether or not an ordering change is
+exempt from the new debounce; a Feature reorder is human-initiated and is exempt on the same grounds as
+the two forecast routes.
 
 **Every AC has at least one scenario**: AC-5.1 to AC-5.8, AC-6.1 to AC-6.4, AC-7.1 to AC-7.3, AC-8.1
 to AC-8.6, AC-10.1 to AC-10.3 and AC-11.1 to AC-11.3 — 27 in total, plus KPI-2, KPI-4, KPI-6, KPI-7

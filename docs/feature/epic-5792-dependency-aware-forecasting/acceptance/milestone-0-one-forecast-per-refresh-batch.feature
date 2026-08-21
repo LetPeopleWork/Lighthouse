@@ -65,6 +65,16 @@ Feature: One forecast per Portfolio per refresh batch (Epic 5792, Slice 00 — U
     When that Team finishes refreshing
     Then the Portfolio is forecast without waiting for anything
 
+  # A Team and a Portfolio are related two ways: a stored pairing, and the Features the Team actually
+  # works. Only the second is kept current, so a Portfolio related only that way was never forecast
+  # when its Team refreshed - silently, and for as long as the pairing stayed missing.
+  @error @driving_port @us-11 @slice-00 @contract-shape:bounded-change
+  Scenario: A Portfolio a Team reaches only through the Features it works is forecast too
+    Given a Portfolio with no stored pairing to the Team that works its Features
+    When that Team finishes refreshing
+    Then the Portfolio is forecast
+    And a Portfolio whose Features that Team does not work is left alone
+
   @error @driving_port @us-11 @slice-00 @contract-shape:bounded-change
   Scenario: The last Team failing to refresh still releases the forecast its siblings are owed
     Given two of the three Teams have refreshed successfully
@@ -121,6 +131,14 @@ Feature: One forecast per Portfolio per refresh batch (Epic 5792, Slice 00 — U
     Given nothing in this Portfolio is refreshing
     When someone changes the order of the Features in it
     Then the Portfolio is forecast without waiting for anything
+
+  # Someone reordering Features is asking for an answer now, exactly as pressing refresh is. The
+  # scenario above only proves the quiet case; this one proves the intent while a batch is running.
+  @edge @driving_port @slice-00 @contract-shape:bounded-change
+  Scenario: A change to the order of Features forecasts straight away even mid-refresh
+    Given the Teams working this Portfolio are still refreshing
+    When someone changes the order of the Features in it
+    Then the Portfolio is forecast without waiting for the batch to finish
 
   @driving_adapter @us-10 @slice-00 @contract-shape:bounded-change
   Scenario: The date a forecaster is reading stops changing seconds after it appears
