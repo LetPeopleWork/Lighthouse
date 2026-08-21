@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 handler);
         }
 
-        public static Team ATeamOnJiraCloud(string? issuesPerRequestOption = null, int doneItemsCutoffDays = 0)
+        private static WorkTrackingSystemConnection AConnectionToJiraCloud(string? issuesPerRequestOption)
         {
             var connectionId = Interlocked.Increment(ref connectionIdSeed);
             var url = $"https://jira-{connectionId}.example.invalid";
@@ -71,13 +71,46 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 });
             }
 
+            return connection;
+        }
+
+        public static Portfolio APortfolioOnJiraCloud()
+        {
+            var connection = AConnectionToJiraCloud(issuesPerRequestOption: null);
+
+            var portfolio = new Portfolio
+            {
+                Id = connection.Id,
+                Name = $"Portfolio {connection.Id}",
+                DataRetrievalValue = "project = PROJ",
+                WorkTrackingSystemConnectionId = connection.Id,
+                WorkTrackingSystemConnection = connection,
+            };
+
+            portfolio.WorkItemTypes.Clear();
+            portfolio.WorkItemTypes.Add("Epic");
+
+            portfolio.DoneStates.Clear();
+            portfolio.DoneStates.Add("Done");
+            portfolio.DoingStates.Clear();
+            portfolio.DoingStates.Add("In Progress");
+            portfolio.ToDoStates.Clear();
+            portfolio.ToDoStates.Add("To Do");
+
+            return portfolio;
+        }
+
+        public static Team ATeamOnJiraCloud(string? issuesPerRequestOption = null, int doneItemsCutoffDays = 0)
+        {
+            var connection = AConnectionToJiraCloud(issuesPerRequestOption);
+
             var team = new Team
             {
-                Id = connectionId,
-                Name = $"Team {connectionId}",
+                Id = connection.Id,
+                Name = $"Team {connection.Id}",
                 DataRetrievalValue = "project = PROJ",
                 DoneItemsCutoffDays = doneItemsCutoffDays,
-                WorkTrackingSystemConnectionId = connectionId,
+                WorkTrackingSystemConnectionId = connection.Id,
                 WorkTrackingSystemConnection = connection,
             };
 

@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -33,6 +34,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private const string BoardsEndpoint = "rest/agile/latest/board";
 
         private const string AllFields = "*all";
+
+        private const int TheFeatureHasNoRowYet = 0;
 
         private const string OrderByKeyword = "ORDER BY";
 
@@ -1049,7 +1052,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem)
+                var feature = new Feature(workItem, TheIssuesItWaitsOn(issue))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
@@ -1067,6 +1070,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return owningTeam;
         }
+
+        /// <summary>
+        /// The links read off one issue, as references. Nothing here has been saved yet, so every
+        /// reference names Feature nought until the reconciler keys it to the row the Feature lands on.
+        /// </summary>
+        private static List<FeatureDependencyReference> TheIssuesItWaitsOn(Issue issue)
+            => issue.Fields.ExtractDependencyReferences()
+                .ConvertAll(reference => new FeatureDependencyReference(TheFeatureHasNoRowYet, reference, DependencySource.TrackerLink));
 
         private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
         {
