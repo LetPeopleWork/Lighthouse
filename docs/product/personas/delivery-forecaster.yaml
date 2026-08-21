@@ -28,6 +28,8 @@ primary_jobs:
   - job-forecast-honours-what-cannot-start-yet  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): the forecast jumps over work that cannot start yet
   - job-forecast-covers-dependencies-that-cross-teams  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): needs the joint simulation
   - job-forecaster-know-the-forecast-is-ignoring-a-dependency  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): free-tier honesty
+  - job-forecaster-keep-a-finished-delivery-as-evidence  # epic-5698-deliveries-as-durable-records (2026-08-21, #5640): archive a Delivery instead of deleting it, backed by a pinned closure record
+  - job-forecaster-share-a-delivery-outside-lighthouse  # epic-5698-deliveries-as-durable-records (2026-08-21, #4309): header + Feature grid out in one paste
 
 goals:
   - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work

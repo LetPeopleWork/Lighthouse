@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-06
+updated: 2026-08-21
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -42,6 +42,7 @@ feature_context:
   - epic-5775-secret-encryption-key-custody
   - epic-4365-dependencies
   - epic-5792-dependency-aware-forecasting
+  - epic-5698-deliveries-as-durable-records
 
 jobs:
   - id: job-rbac-bootstrap
@@ -5583,3 +5584,195 @@ jobs:
         converts the first into the second. Current satisfaction: 0 — nothing on an unlicensed
         instance hints that anything is missing. Cheap to satisfy: it rides entirely on the free
         detection and display work.
+
+  - id: job-forecaster-keep-a-finished-delivery-as-evidence
+    title: Retire a finished Delivery without erasing what it said
+    persona: delivery-forecaster
+    feature_context: epic-5698-deliveries-as-durable-records
+    created: 2026-08-21
+    note: >
+      ADO #5640, child of Epic #5698. Today a Delivery is a throwaway forecast readout: you create it,
+      look at it, and Delete it when it is over — and Delete cascades its DeliveryMetricSnapshot rows
+      away with it. Portfolios are meant to run forever, so the choice on an ongoing Portfolio is a
+      cluttered list or an amnesiac one. Archiving cannot be a flag, because every number a Delivery
+      shows is recomputed live from its Features on each read (Delivery.CalculateMetrics) and a
+      rule-based Delivery re-matches its Feature set on every update (DeliveriesController.cs:252) —
+      so a "kept" Delivery would quietly rewrite itself, and could empty its own grid with no user
+      action. Archiving therefore pins ONE closure record reusing the DeliveryMetricSnapshot shape,
+      which already carries TotalWork/DoneWork/RemainingWork, LikelihoodPercentage,
+      WhenDistributionJson and FeatureBreakdownJson — the serialised Feature grid — and is already
+      written daily. Archiving also stops the daily recorder and stops rule re-matching for that
+      Delivery. Forecast calibration (the actual finish date beside the forecast live at closure) is
+      explicitly NOT this job; the pin gives its forecast half for free, the actual half costs one
+      additive column in a later Epic.
+    job_story: >
+      When a Delivery has finished or been called off on a Portfolio that keeps running,
+      I want to retire it without erasing it,
+      so the list in front of me is only what is still ahead, and a quarterly review two months later
+      can still be shown what we committed to and what it looked like on the day we closed it.
+    dimensions:
+      functional: >
+        An Archive action beside Edit and Delete that removes the Delivery from the active list, pins
+        its headline numbers, its forecast distribution and its Feature grid as they stand at that
+        moment, and files it under an Archived section. Reversible. The pinned numbers do not move when
+        the underlying Features are re-synced, re-matched or removed. Delete still exists and still
+        deletes.
+      emotional: >
+        Move from the reluctance of pressing Delete on the only evidence you have, to closing a
+        Delivery out as a routine act with nothing at stake.
+      social: >
+        Be the forecaster who can answer "what did you say in July?" with the July artifact, rather
+        than with a recollection or a screenshot someone happened to keep.
+    forces:
+      push: >
+        Delete is the only way to retire a Delivery and it is destructive, so the incentive is to leave
+        finished Deliveries on the board; the board then stops being a list of live commitments and
+        starts being an archive nobody trusts. The workaround — screenshotting before deleting — is
+        exactly the manual step Lighthouse exists to remove.
+      pull: >
+        One action retires the Delivery and keeps its record, and the record is the same shape the
+        product already writes once a day, so nothing new has to be learned or maintained.
+      anxiety: >
+        "Is Archive just Delete with a nicer word?" — met head-on by the confirmation copy stating it
+        is reversible and is not a delete, and by un-archive existing from the same release. Second
+        anxiety, for the maintainer rather than the user: a pinned record that silently drifts is worse
+        than no record at all, which is why the acceptance test archives, refreshes the Portfolio in a
+        way that changes the Features, and re-reads for an identical result.
+      habit: >
+        Forecasters currently either delete or hoard. Archive needs no new ritual, but the first
+        release must make clear that the archived section is a place things go rather than a place
+        things are lost — the pinned headline numbers visible on the collapsed row are what does that.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — it is not on the forecasting critical path, but it is the difference between a
+        Portfolio that stays legible for a year and one that does not, and it is the precondition for
+        any future forecast-calibration work. Current satisfaction: 0 — the only available action is
+        destructive, and it destroys the very history a calibration story would need. Cheap to satisfy:
+        the record's shape and its daily writer already exist.
+
+  - id: job-lead-annotate-what-happened-to-a-delivery
+    title: Attach the reason to the Delivery, at the moment it happens
+    persona: delivery-lead-rte
+    feature_context: epic-5698-deliveries-as-durable-records
+    created: 2026-08-21
+    note: >
+      ADO #5639, child of Epic #5698. A Delivery's likelihood trend is already visible over time
+      (Epic 3993 / #5698's sibling metrics work), but the WHY is not: it lives in a chat thread or in
+      somebody's memory. Plain-text notes on a Delivery, newest first, dated, attributed through the
+      existing UserProfile plumbing. Attribution degrades honestly: CurrentUserProfileService returns
+      null when there is no stable subject claim, i.e. on an auth-off instance, so such notes are
+      stored and displayed unattributed rather than with an invented name — and the author-only edit
+      rule cannot apply there, so any user with PortfolioWrite may edit or delete. Notes freeze when
+      the Delivery is archived. System-written notes on likelihood threshold crossings are an Epic
+      candidate, not this job — they need a separate decision on how a system note is attributed and
+      whether it can be deleted.
+    job_story: >
+      When a live Delivery moves in a way that will need explaining — likelihood dropping, scope
+      added, a team pulled away —
+      I want to write a short dated line against the Delivery itself,
+      so the reason is still attached to the number when someone reads the trend six weeks later, and
+      I am not reconstructing it from a chat log in front of a room.
+    dimensions:
+      functional: >
+        A Notes tab beside Work Items and Metrics, always enabled. Add a plain-text note; see notes
+        newest-first with creation date and author; edit or delete your own, marked as edited with the
+        edit date. Write access follows the Portfolio's existing write scope; read follows read scope.
+        Read-only once the Delivery is archived.
+      emotional: >
+        Move from the frustration of knowing exactly why the line moved and having nowhere to put it,
+        to a thirty-second act that closes the loop.
+      social: >
+        Be the lead whose review explains itself — the trend and its reasons on one screen — rather
+        than the one narrating from memory while the room decides whether to believe it.
+        For the Product Owner reading later: judge a scope call on what was recorded at the time, not
+        on what people now remember deciding.
+    forces:
+      push: >
+        The likelihood trend raises the question "why?" every time it moves, and Lighthouse has no
+        answer surface at all, so the answer migrates to chat and is lost. Worse, the absence is
+        invisible: the chart looks complete.
+      pull: >
+        One tab, one text box, and the story is attached to the artifact it explains — nothing to
+        configure, nothing to integrate.
+      anxiety: >
+        "Who can see this, and can someone rewrite what I wrote?" — met by the author-only edit and
+        delete rule enforced in the API, and by notes inheriting the Portfolio's existing read scope
+        rather than gaining a visibility model of their own. Second anxiety on an auth-off instance:
+        an unattributed note could be mistaken for a bug — met by showing no author line at all rather
+        than an empty one.
+      habit: >
+        The habit to change is writing the explanation somewhere else. Nothing prompts a note today,
+        which is why the tab is always enabled and sits beside the chart that raises the question —
+        the prompt is proximity.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — the trend chart's value is capped by the missing why; a number nobody can
+        explain gets discounted in the room. Current satisfaction: 0 — there is no annotation surface
+        anywhere on a Delivery. Cheap to satisfy: one small table, two endpoints, one tab, and the
+        identity plumbing already exists.
+
+  - id: job-forecaster-share-a-delivery-outside-lighthouse
+    title: Get a Delivery's headline and Feature grid out in one paste
+    persona: delivery-forecaster
+    feature_context: epic-5698-deliveries-as-durable-records
+    created: 2026-08-21
+    note: >
+      ADO #4309, child of Epic #5698. CSV export and rich clipboard copy already exist, generic and
+      premium-gated, in DataGridToolbar — and DataGridBase reads the licence status itself, so any grid
+      that opts in gets both for free. Exactly one grid opts in today (WorkItemsDialog), and
+      FeatureListDataGrid does not even forward the prop. The Delivery is the surface people actually
+      ask about and it is the one that cannot be exported. The ask is not just the grid: a Delivery
+      also has a header (name, date, 70/85/95 forecasts, likelihood, total/completed/remaining work
+      items) that belongs in the same artifact, so the export is one file and one paste — header
+      key-value block, blank line, then the grid with its currently visible columns. Same premium gate
+      as the existing export, no new licensing concept. Because the export reads the RENDERED grid, it
+      works unchanged on an archived Delivery, whose grid is the pinned closure record.
+    job_story: >
+      When I am building a status report for people who never open Lighthouse,
+      I want the Delivery's headline numbers and its Feature grid as one file or one paste,
+      so the slide carries the tool's numbers verbatim and nothing can be mistyped between the two.
+    dimensions:
+      functional: >
+        Copy to Clipboard and Export to CSV on the Delivery's Feature grid, producing one artifact:
+        the nine header fields as key-value rows, a blank line, then the grid's visible columns in
+        their current order and sort. Terminology-aware labels. Absent values render empty, never as a
+        fabricated zero. Premium-gated exactly as the existing grid export.
+      emotional: >
+        Move from the low-grade irritation of retyping a forecast you are about to be held to, into a
+        two-click step you stop thinking about.
+      social: >
+        Present numbers that provably match the tool — no "let me check that against Lighthouse"
+        moment in the meeting.
+    forces:
+      push: >
+        The export exists, one dialog away, on data people ask about less. Retyping a forecast is both
+        slow and the single most likely place for the number leadership sees to diverge from the number
+        the tool computed.
+      pull: >
+        Two clicks, an existing toolbar, an existing gate — the smallest possible addition that removes
+        a transcription step entirely.
+      anxiety: >
+        "Will it export what I am looking at, or some other version of it?" — met by exporting the
+        rendered grid: the visible columns, in their current order and sort, so what is copied is
+        literally what is on screen. Related worry, for a tenant that renamed things: the header labels
+        follow the configured Terminology rather than shipping Lighthouse's defaults into their deck.
+      habit: >
+        The habit is retyping, or screenshotting a table into a slide as an image nobody can read. The
+        toolbar icons are already familiar from the Work Items dialog, so there is nothing new to
+        learn — only somewhere new to find them.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — a workflow annoyance rather than a correctness problem, but it sits on the
+        highest-stakes number the product produces, and manual transcription is exactly how that number
+        gets corrupted on its way to a leadership deck. Current satisfaction: 1 — export exists in the
+        product, just not here, which is more irritating than if it existed nowhere. Cheapest job in
+        the Epic: the mechanism is entirely built.

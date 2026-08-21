@@ -1,0 +1,139 @@
+schema_version: 1
+feature_id: epic-5698-deliveries-as-durable-records
+updated: 2026-08-21
+note: >
+  ADO Epic #5698, children #5640 (archive), #5639 (notes), #4309 (export). Grounded in a pre-DISCUSS
+  code reality check: a Delivery has no state, no lifecycle and no author (Delivery.cs), every number
+  it shows is recomputed live from its Features on each read (CalculateMetrics), a rule-based Delivery
+  re-matches its Features on every update (DeliveriesController.cs:252), and delete is a hard remove
+  that cascades its DeliveryMetricSnapshot rows away. So a Delivery cannot be made durable by a flag —
+  archiving pins one closure record reusing the DeliveryMetricSnapshot shape, which already stores the
+  headline numbers, the forecast distribution and the serialised Feature grid once a day. Forecast
+  calibration (the actual finish date next to the forecast that was live at closure) is deliberately
+  NOT in this Epic; the forecast half comes free with the pin, the actual half costs one additive
+  column later. Delivery date sync with a work tracking system lives in Epic #5565. Five carpaccio
+  slices; see docs/feature/epic-5698-deliveries-as-durable-records/.
+
+journeys:
+
+  - name: retire-a-delivery-without-erasing-it
+    goal: >
+      Delivery Forecaster closes out a Delivery that has finished or been called off, and finds it
+      still there — with the numbers it had at closure — when a quarterly review asks about it two
+      months later.
+    persona: "delivery-forecaster (secondary: delivery-lead-rte, who wrote the notes that explain it)"
+
+    emotional_arc:
+      start: Reluctant — "this one is done and it is cluttering a Portfolio that runs forever, but
+        Delete is the only button and Delete takes the forecast history with it."
+      middle: Reassured — "Archive says it is reversible and not a delete, and the archived section
+        still shows what it said on the day I closed it."
+      end: Confident — "two months and three Portfolio refreshes later it reads exactly the same. I
+        can cite it."
+
+    steps:
+      - step: Close out a finished Delivery
+        action: Delivery header → Archive → confirm
+        output: The Delivery leaves the active list; an Archived section holds it with its pinned
+          headline numbers and the archive date.
+      - step: Come back to it later
+        action: Expand the archived Delivery
+        output: Its Feature grid, rendered from the pinned closure record — unchanged by anything that
+          happened to those Features since.
+      - step: Take it into a review
+        action: Export to CSV / Copy to Clipboard on its grid
+        output: Header block plus Feature grid, the frozen numbers, in one paste.
+      - step: Re-open one that was closed too early
+        action: Un-archive
+        output: Back in the active list, recomputing live again, recording daily again.
+
+    error_paths:
+      - situation: The Delivery is archived the same day it was created, so no daily snapshot exists
+        recovery: The pin is computed at archive time rather than read from the newest row, so the
+          record is complete either way.
+      - situation: A read-only user opens the Portfolio
+        recovery: The Archive action is absent and the API refuses; the archived section is still
+          readable.
+      - situation: Someone tries to edit an archived Delivery's date or Features
+        recovery: Refused — a record that can be edited is not a record.
+
+    shared_artifacts:
+      - artifact: the pinned closure record
+        source: written once, at archive time, by the archive endpoint; reuses the
+          DeliveryMetricSnapshot shape
+        consumers: the archived section header, the archived Feature grid, the export
+
+  - name: annotate-what-happened-to-a-delivery
+    goal: >
+      Delivery Lead / RTE writes down why a Delivery moved, at the moment it moved, so the reason is
+      attached to the Delivery instead of living in a chat thread nobody finds in October.
+    persona: "delivery-lead-rte (secondary: product-owner, reading it to judge a scope call)"
+
+    emotional_arc:
+      start: Frustrated — "likelihood went 85% to 61% in a week and the only record of why is a
+        message in a channel."
+      middle: Relieved — "Notes tab, one line, dated and signed. Thirty seconds."
+      end: Trusting — "the trend chart and the reason now sit on the same screen; the review explains
+        itself."
+
+    steps:
+      - step: Notice something worth recording
+        action: Delivery → Notes tab
+        output: Existing notes, newest first, each with its date and author.
+      - step: Write it down
+        action: Type the note → Save
+        output: The note at the top of the list, dated, attributed.
+      - step: Fix it when it is wrong
+        action: Edit / Delete on your own note
+        output: The corrected note, marked as edited with the edit date.
+
+    error_paths:
+      - situation: Authentication is disabled on the instance, so there is nobody to attribute to
+        recovery: The note is stored and shown unattributed — no invented name, no placeholder, and
+          the author restriction does not apply.
+      - situation: A read-only user opens the tab
+        recovery: List visible, no input, API refuses the write.
+      - situation: The Delivery has since been archived
+        recovery: Notes are read-only — a frozen record whose commentary can be rewritten is not a
+          record.
+
+    shared_artifacts:
+      - artifact: the note author
+        source: the existing current-user profile service, resolved once at write time
+        consumers: the note list, the author-only edit and delete rule
+
+  - name: share-a-delivery-outside-lighthouse
+    goal: >
+      Delivery Forecaster gets a Delivery's headline numbers and its Feature grid into a status report
+      as one paste, instead of retyping a forecast into a slide.
+    persona: delivery-forecaster
+
+    emotional_arc:
+      start: Grudging — "the Work Items dialog exports. This grid, the one people actually ask about,
+        does not."
+      middle: Pleased — "one click, and the header numbers came with it."
+      end: Unbothered — "the report is a paste now; nothing can get mistyped between the tool and the
+        slide."
+
+    steps:
+      - step: Open the Delivery
+        action: Expand it in the Portfolio
+        output: Header numbers and the Feature grid.
+      - step: Take it out
+        action: Copy to Clipboard or Export to CSV on the grid toolbar
+        output: Header block, blank line, Feature grid with the columns currently on screen.
+
+    error_paths:
+      - situation: No premium licence
+        recovery: Both actions disabled with the existing premium tooltip — the same gate the Work
+          Items dialog already uses, no new concept.
+      - situation: The Delivery cannot be forecast
+        recovery: Likelihood and the 70/85/95 rows export empty rather than as a fabricated number.
+      - situation: The Delivery's name contains a comma or a quote
+        recovery: Escaped, so it round-trips into a spreadsheet unchanged.
+
+    shared_artifacts:
+      - artifact: the header block
+        source: the Delivery's live numbers, or its pinned closure record when archived — one shape,
+          two sources
+        consumers: the CSV file, the clipboard payload

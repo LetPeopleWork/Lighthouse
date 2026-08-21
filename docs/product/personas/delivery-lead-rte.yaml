@@ -28,6 +28,7 @@ primary_jobs:
   - job-snow-delivery-lead-portfolio-over-servicenow  # epic-5513-servicenow-integration (2026-07-27, #5513): CONDITIONAL — only if ServiceNow has a usable hierarchy (SPIKE Q5)
   - job-lead-see-where-the-dependency-chain-breaks  # epic-4365-dependencies (2026-08-14, #4365): cross-portfolio, ranked-below and looping dependencies, found by scanning
   - job-lead-plan-without-the-dependencies  # epic-4365-dependencies (2026-08-18, #4365): set a Portfolio's dependencies aside to try a different order, without deleting or hiding them
+  - job-lead-annotate-what-happened-to-a-delivery  # epic-5698-deliveries-as-durable-records (2026-08-21, #5639): dated, attributed notes on a Delivery
 
 goals:
   - Identify which workflow state(s) consume the most of the team's collective time over a
