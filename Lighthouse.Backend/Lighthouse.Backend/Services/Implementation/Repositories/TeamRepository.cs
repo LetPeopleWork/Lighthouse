@@ -18,12 +18,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
 #pragma warning disable S8733
             return Context.Teams
-                .Include(x => x.WorkTrackingSystemConnection)
-                    .ThenInclude(wtsc => wtsc.Options)
-                .Include(x => x.WorkTrackingSystemConnection)
-                    .ThenInclude(wtsc => wtsc.AdditionalFieldDefinitions)
-                .Include(x => x.WorkTrackingSystemConnection)
-                    .ThenInclude(wtsc => wtsc.WriteBackMappingDefinitions)
+                .Include(x => x.WorkTrackingSystemConnection.Options)
+                .Include(x => x.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
+                .Include(x => x.WorkTrackingSystemConnection.WriteBackMappingDefinitions)
                 .Include(x => x.Portfolios)
                     .ThenInclude(p => p.Features)
                         .ThenInclude(f => f.FeatureWork)
