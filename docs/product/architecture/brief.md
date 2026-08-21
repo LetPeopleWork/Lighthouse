@@ -5917,3 +5917,210 @@ construction — `ResolvePortfolioWriteBack` partitions mappings on `ForecastSou
 one resolver taking the set and the other its complement, so ADR-144's last-stage-wins dedup never fired
 between them. The number that may not increase is the **connector call count**, which is what ADR-144 was
 written to protect; flush count is not that number.
+
+---
+
+## Application Architecture — epic-5698-deliveries-as-durable-records (ADO Epic #5698)
+
+Feature: epic-5698-deliveries-as-durable-records (a finished Delivery can be archived instead of
+deleted; an archived Delivery reads from a pinned closure record rather than from live Features;
+Deliveries carry dated, attributed notes; the Feature grid exports as one artifact with a header block)
+Wave: DESIGN
+Date: 2026-08-21
+Architect: Morgan (Solution Architect)
+Paradigm: OOP (C# backend), functional-leaning React (hooks, pure components) on the frontend
+
+### Architectural Pattern
+
+**Ports-and-Adapters (Hexagonal)** — unchanged. No new architectural style. The epic's whole design
+weight sits in one idea: **an archived Delivery must be unable to read live data, not merely
+instructed not to.** Every decision below is that idea applied at a different seam — a pin in its own
+table, a projection whose signature withholds the forecast inputs, a recorder whose port cannot yield
+an archived row, and an aggregate that refuses mutation.
+
+### Key invariants introduced
+
+These bind code outside this epic, which is why they are here rather than only in the feature delta.
+
+- **`Delivery.ArchivedOn` (`DateOnly?`) is the single archived-state fact.** `null` means active. It
+  is also the "Archived on {date}" marker, so "archived with no date" is unrepresentable. `DateOnly`,
+  never `DateTime` — a `DateTime` column is in reach of the global `Properties<DateTime>()` UTC
+  converter, which shifts a local-kind midnight onto the previous day on write. Sourced from
+  `ILighthouseClock`. (ADR-160)
+- **`Delivery.Features` is `IReadOnlyList<Feature>` and is written only by `Delivery.ReplaceFeatures`.**
+  Three call sites previously mutated the list directly — `DeliveriesController` twice and
+  `DeliveryRuleService.RecomputeRuleBasedDeliveries`, the last reached from `PortfolioUpdater` with no
+  HTTP surface at all. Anyone adding a fourth Feature write path inherits the archived refusal for
+  free. (ADR-163, ADR-164)
+- **An archived Delivery refuses every mutation except delete and un-archive, and the refusal lives in
+  the aggregate.** Surfaced as **409 Conflict** through one exception filter, so no controller action
+  carries the check. 409 rather than 403: the caller's rights are fine, the resource's state is not.
+  (ADR-164)
+- **Nothing on the archived read path can reach a Feature or a forecast.**
+  `ArchivedDeliveryProjection.ToDto` takes an identity record and a closure record — no `Delivery`, no
+  `DateOnly today`, no `IReadOnlyList<BlackoutPeriod>`. `Delivery.CalculateMetrics` cannot be called
+  from it because its arguments are not in scope. (ADR-161)
+- **`DeliveryMetricSnapshot` is not extended and not subclassed.** The closure record mirrors its value
+  columns but shares its *encoding* — one projection writes both, and
+  `DeliveryMetricsHistoryDto.ParseFeatureBreakdown` reads both. (ADR-160)
+- **The `{deliveryId}`-rooted RBAC idiom is the in-action check, not the attribute.** `RbacGuardAttribute`
+  resolves its scope from a **route value** (`ScopeIdRouteKey`), so it cannot serve a route that carries
+  no `portfolioId`. `UpdateDelivery`, `DeleteDelivery` and `GetMetricsHistory` already resolve the scope
+  via `IDeliveryRepository.GetPortfolioId(deliveryId)` and call
+  `IRbacAdministrationService.CanSatisfyRequirementAsync`. The six endpoints this epic adds follow that
+  idiom. **Adding a `{deliveryId}` route and reaching for `[RbacGuard]` yields an unguarded endpoint.**
+
+### System Context and Capabilities
+
+No new external system, no new integration, no work-tracking-system sync (D9). Five capabilities:
+
+1. Export a Delivery's headline plus its Feature grid as one CSV/clipboard artifact (premium-gated
+   exactly as the existing grid export).
+2. Write a dated, attributed note against a Delivery.
+3. Edit or withdraw a note you wrote.
+4. Archive a finished Delivery instead of deleting it; the daily recorder and rule re-matching stop.
+5. Read an archived Delivery as the record it was, from a pinned closure snapshot.
+
+```mermaid
+C4Context
+  title System Context — Deliveries as durable records
+  Person(planner, "Delivery Planner", "Archives a finished Delivery, annotates it, exports it")
+  Person(reader, "Portfolio Reader", "Reads a closed Delivery months later")
+  System(lighthouse, "Lighthouse", "Forecasting and flow metrics")
+  System_Ext(wts, "Work Tracking System", "Jira / ADO / Linear / ServiceNow")
+  Rel(planner, lighthouse, "Archives, annotates and exports a Delivery in")
+  Rel(reader, lighthouse, "Reads an archived Delivery from")
+  Rel(lighthouse, wts, "Syncs Features from (unchanged — no archive state is written back)")
+```
+
+```mermaid
+C4Container
+  title Container Diagram — Deliveries as durable records
+  Person(planner, "Delivery Planner")
+  Container(spa, "Lighthouse Frontend", "React 18 + TypeScript", "Renders the active and archived Delivery sections, the notes panel and the export action")
+  Container(api, "Lighthouse Backend", "C# .NET 10 ASP.NET Core", "Serves Delivery, note and archive endpoints; refuses writes to an archived Delivery")
+  Container(recorder, "Forward Recorder", "In-process domain-event handler", "Records a daily metric snapshot per recordable Delivery")
+  ContainerDb(db, "Lighthouse Database", "PostgreSQL or SQLite via EF Core", "Deliveries, closure records, notes, metric snapshots")
+  Rel(planner, spa, "Archives, annotates and exports through")
+  Rel(spa, api, "Calls over HTTPS/JSON")
+  Rel(api, db, "Reads and writes through EF Core")
+  Rel(api, recorder, "Publishes PortfolioForecastsUpdated to")
+  Rel(recorder, db, "Writes a snapshot per recordable Delivery into")
+```
+
+### Component Decomposition
+
+| Component | File | Change |
+|---|---|---|
+| `Delivery` | `Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs` | EXTEND — `ArchivedOn` (`DateOnly?`); `Features` becomes `IReadOnlyList<Feature>`; mutation via `ReplaceFeatures`/`Rename`/`Reschedule`/`ApplyRuleSet`/`Archive`/`Unarchive`, each refusing when archived |
+| `DeliveryClosureRecord` | `…/Models/DeliveryClosureRecord.cs` | NEW — one row per Delivery, PK = `DeliveryId`, mirrors the snapshot value columns |
+| `DeliveryNote` | `…/Models/DeliveryNote.cs` | NEW — text, `CreatedOn`, `LastEditedOn`, `AuthorUserProfileId`, `AuthorDisplayName` |
+| `DeliveryArchivedException` | `…/Models/DeliveryArchivedException.cs` | NEW — the aggregate's refusal |
+| `ArchivedDeliveryProjection` + `ArchivedDeliveryIdentity` | `…/API/DTO/Archived/` | NEW — the archived read path, in its own namespace so ArchUnitNET can pin it |
+| `DeliveryWithLikelihoodDto` | `…/API/DTO/DeliveryWithLikelihoodDto.cs` | EXTEND — `ArchivedOn` field only; `FromDelivery` untouched |
+| `DeliveriesController` | `…/API/DeliveriesController.cs` | EXTEND — `archive`, `unarchive`; splits active/archived; calls the aggregate's mutators |
+| `DeliveryNotesController` | `…/API/DeliveryNotesController.cs` | NEW — notes CRUD under `deliveries/{deliveryId}/notes` |
+| `IDeliveryRepository` / `DeliveryRepository` | `…/Services/{Interfaces,Implementation}/Repositories/` | EXTEND — `GetRecordableByPortfolio`, closure and note reads |
+| `DeliveryMetricValuesProjector` | `…/Services/Implementation/DeliveryMetricValuesProjector.cs` | NEW — the one projection writing both the daily snapshot and the closure record |
+| `DeliveryMetricSnapshotRecordingHandler` | `…/Services/Implementation/DomainEvents/` | EXTEND — reads `GetRecordableByPortfolio`; delegates the projection |
+| `LighthouseAppContext` | `…/Data/LighthouseAppContext.cs` | EXTEND — two `DbSet`s, cascade FKs, `ArchivedOn` |
+| Migrations | `Lighthouse.Migrations.{Sqlite,Postgres}` | NEW — one additive migration per provider via `CreateMigration` |
+| `DataGridToolbar` / `DataGridBase` | `Lighthouse.Frontend/src/components/Common/DataGrid/` | EXTEND — optional `exportHeaderRows` |
+| `FeatureListDataGrid` | `…/components/Common/FeatureListDataGrid/` | EXTEND — forwards `enableExport`, `exportFileName`, `exportHeaderRows` (forwards none today) |
+| `DeliverySection` | `…/DeliveryGrid/DeliverySection.tsx` | EXTEND — archived marker, notes tab, export header assembly |
+| `DeliveryNotesPanel` | `…/DeliveryGrid/DeliveryNotesPanel.tsx` | NEW |
+
+### Driving Ports (HTTP)
+
+All six are `{deliveryId}`-rooted and therefore use the **in-action** RBAC idiom described above, not
+`[RbacGuard]`.
+
+| Method | Route | Requirement | Slice |
+|---|---|---|---|
+| GET | `/api/latest/deliveries/{deliveryId}/notes` | `PortfolioRead` | 02 |
+| POST | `/api/latest/deliveries/{deliveryId}/notes` | `PortfolioWrite` | 02 |
+| PUT | `/api/latest/deliveries/{deliveryId}/notes/{noteId}` | `PortfolioWrite` + author | 03 |
+| DELETE | `/api/latest/deliveries/{deliveryId}/notes/{noteId}` | `PortfolioWrite` + author | 03 |
+| POST | `/api/latest/deliveries/{deliveryId}/archive` | `PortfolioWrite` | 04 |
+| POST | `/api/latest/deliveries/{deliveryId}/unarchive` | `PortfolioWrite` | 05 |
+
+### Driven Ports
+
+| Port | Adapter | Status |
+|---|---|---|
+| `IDeliveryRepository` (+ `GetRecordableByPortfolio`) | `DeliveryRepository` over `LighthouseAppContext` | EXTEND |
+| `ILighthouseClock` | existing | REUSED AS IS — the only source of `ArchivedOn` |
+| `ICurrentUserProfileService` | `CurrentUserProfileService` | REUSED AS IS — its `null` return is designed around, not fixed |
+
+### Technology Stack
+
+No new dependency, backend or frontend. .NET 10 / EF Core 10 over SQLite and PostgreSQL; React 18 +
+TypeScript with MUI-X DataGrid; NUnit 4.6 + Moq + ArchUnitNET; Vitest + React Testing Library;
+Playwright. Two additive EF migrations, one per provider, generated with the `CreateMigration`
+PowerShell script — never `dotnet ef migrations add`.
+
+### Reuse Analysis
+
+Full table in `docs/feature/epic-5698-deliveries-as-durable-records/feature-delta.md` →
+*Wave: DESIGN / [REF] Reuse Analysis*. Headline: **12 EXTEND / REUSE, 6 CREATE NEW.** Four of the six
+new components are new persisted concepts with no existing home (`DeliveryClosureRecord`,
+`DeliveryNote`, the notes controller, the notes panel). The two that need real justification are
+`ArchivedDeliveryProjection` — which exists as its own type *specifically* so the "cannot see live
+Features" rule is expressible as an architecture test, which it is not if the method sits on
+`DeliveryWithLikelihoodDto` — and `DeliveryMetricValuesProjector`, extracted from the recording
+handler so the daily snapshot and the closure record are written by one piece of code rather than two
+that must agree.
+
+### Integration Patterns
+
+In-process only. Archiving is a synchronous command; the closure record and `ArchivedOn` are written
+in **one** `SaveChanges`, so a Delivery is never archived without its pin. Recording stays on the
+existing domain-event bus (`PortfolioForecastsUpdated`, ADR-049) — the only change is the source the
+handler reads from. No new event is introduced: `DeliveryArchived` was considered and rejected because
+it would be a second source of truth for a fact the column already carries.
+
+### Quality Attribute Strategies
+
+- **Correctness over time (the epic's reason to exist)**: an archived Delivery's numbers are pinned,
+  and the read path is structurally incapable of recomputing them (ADR-161).
+- **Security**: six new endpoints, each scope-checked against the owning Portfolio. The in-action idiom
+  is used because the attribute cannot resolve scope from a `{deliveryId}` route. Author-level
+  authorisation on note edit/withdraw is one predicate with two explicit branches (ADR-165).
+- **Maintainability**: the archived rule is one invariant in one aggregate rather than a check
+  repeated across eleven write paths.
+- **Performance**: the archived read is a dictionary lookup plus one JSON parse per row and does
+  strictly less work than the live path, which runs a forecast.
+
+### Deployment Architecture
+
+Two additive migrations (one new table, one new nullable column, one new notes table). Expand-only, so
+an older API image tolerates the new schema. Frontend ships with the next bundle; an absent `archivedOn`
+field reads as active, so a stale client degrades to today's behaviour rather than breaking.
+
+### ADR References (this feature)
+
+- [ADR-160](./adr-160-delivery-closure-pin-as-one-row-per-delivery-table.md): closure pin as a
+  one-row-per-Delivery table keyed on `DeliveryId`
+- [ADR-161](./adr-161-archived-delivery-read-path-cannot-see-live-features.md): archived read path is a
+  sibling projection that cannot reach live Features
+- [ADR-162](./adr-162-export-header-block-as-generic-toolbar-input.md): export header block as a
+  generic key/value input on the existing toolbar
+- [ADR-163](./adr-163-archived-deliveries-excluded-by-narrowed-port.md): recorder exclusion via a
+  narrowed port, not a global query filter
+- [ADR-164](./adr-164-archived-delivery-write-refusal-in-the-aggregate.md): archived write refusal as
+  an aggregate invariant surfaced as 409
+- [ADR-165](./adr-165-delivery-note-authorship-and-the-absent-profile.md): note authorship storage and
+  the absent-profile predicate
+
+### Architectural Enforcement (this feature)
+
+| Invariant | Mechanism |
+|---|---|
+| The archived projection cannot reach a Feature, a Delivery, a blackout period or a forecast | ArchUnitNET rule on `ArchivedDeliveryProjection` (precedent: `DeliveryGrainSeamArchUnitTest`) |
+| An archived Delivery's payload is unchanged across a Portfolio refresh that moves its Features | Integration test — read, refresh, read, assert byte-identical |
+| The recorder cannot see an archived Delivery | ArchUnitNET rule: `DeliveryMetricSnapshotRecordingHandler` does not depend on `GetByPortfolioAsync`; plus an integration test asserting no snapshot row appears |
+| Every mutating Delivery-scoped route either refuses on an archived Delivery or is on an explicit exemption list | NUnit reflection test over `[HttpPost]`/`[HttpPut]`/`[HttpDelete]` actions (precedent: `AppSettingsControllerTest`, `API/Security/S4_DeliveriesDeleteGuardInversionTests`) — a new endpoint fails until classified |
+| A Delivery is never archived without a closure record | Integration test on the archive command |
+| Archiving never writes into `DeliveryMetricSnapshot` | Integration test asserting the row count is unchanged |
+| A caller with no profile cannot edit an attributed note | Unit test on the authorship predicate — the branch a null-tolerant equality gets wrong |
+| Both export formats carry the same header rows | Vitest test comparing the CSV and clipboard payloads |
