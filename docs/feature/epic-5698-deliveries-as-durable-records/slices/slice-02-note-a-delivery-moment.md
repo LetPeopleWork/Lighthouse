@@ -8,8 +8,10 @@ A dated, attributed line can be written against a live Delivery and read back la
 ## IN scope
 - A `DeliveryNote` entity (text, created-at, optional author reference) with a cascade from Delivery.
 - One EF migration per supported provider via the `CreateMigration` script, additive-only.
-- `GET` and `POST /api/latest/deliveries/{deliveryId}/notes`, gated `PortfolioRead` / `PortfolioWrite`
-  with `ScopeIdRouteKey`, matching the existing Delivery endpoints.
+- `GET` and `POST /api/latest/deliveries/{deliveryId}/notes`, requiring `PortfolioRead` /
+  `PortfolioWrite`. The scope is resolved **in-action** via `GetPortfolioId` +
+  `CanSatisfyRequirementAsync`, as the sibling `{deliveryId}` endpoints already do — the `[RbacGuard]`
+  attribute reads its scope from a route value, and these routes carry no `portfolioId`.
 - A third tab, Notes, in the Delivery section beside Work Items and Metrics — always enabled.
 - Attribution through the existing current-user profile service; unattributed when it resolves to
   nobody (auth-off instance).

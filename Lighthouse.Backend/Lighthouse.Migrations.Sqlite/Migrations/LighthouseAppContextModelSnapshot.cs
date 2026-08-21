@@ -468,6 +468,40 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("DeliveryMetricSnapshots");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("AuthorUserProfileId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DeliveryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastEditedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorUserProfileId");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.ToTable("DeliveryNotes");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Feature", b =>
                 {
                     b.Property<int>("Id")
@@ -1585,6 +1619,20 @@ namespace Lighthouse.Backend.Migrations
 
             modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryMetricSnapshot", b =>
                 {
+                    b.HasOne("Lighthouse.Backend.Models.Delivery", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryNote", b =>
+                {
+                    b.HasOne("Lighthouse.Backend.Models.Auth.UserProfile", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorUserProfileId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Lighthouse.Backend.Models.Delivery", null)
                         .WithMany()
                         .HasForeignKey("DeliveryId")

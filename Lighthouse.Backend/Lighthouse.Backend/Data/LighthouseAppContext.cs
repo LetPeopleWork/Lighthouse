@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<DeliveryMetricSnapshot> DeliveryMetricSnapshots { get; set; } = null!;
 
+        public DbSet<DeliveryNote> DeliveryNotes { get; set; } = null!;
+
         public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; } = null!;
 
         public DbSet<RecurringBlackoutRule> RecurringBlackoutRules { get; set; } = null!;
@@ -450,6 +452,25 @@ namespace Lighthouse.Backend.Data
 
                 entity.HasIndex(s => new { s.DeliveryId, s.RecordedDay })
                       .IsUnique();
+            });
+
+            modelBuilder.Entity<DeliveryNote>(entity =>
+            {
+                entity.HasKey(n => n.Id);
+
+                entity.HasOne<Delivery>()
+                      .WithMany()
+                      .HasForeignKey(n => n.DeliveryId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // The author reference is cleared rather than cascading: removing somebody must not
+                // remove what they wrote. The captured display name is what keeps the note readable.
+                entity.HasOne<UserProfile>()
+                      .WithMany()
+                      .HasForeignKey(n => n.AuthorUserProfileId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(n => n.DeliveryId);
             });
 
             modelBuilder.Entity<BlackoutPeriod>().HasKey(bp => bp.Id);
