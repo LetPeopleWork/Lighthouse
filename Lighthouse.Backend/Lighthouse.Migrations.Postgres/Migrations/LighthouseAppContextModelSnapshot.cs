@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -924,6 +924,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("DefaultWorkItemPercentile")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("DependencyOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("integer");
+
                     b.PrimitiveCollection<List<string>>("DoingStates")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -950,6 +953,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<string>("FetchFingerprint")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IgnoreDependencies")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()

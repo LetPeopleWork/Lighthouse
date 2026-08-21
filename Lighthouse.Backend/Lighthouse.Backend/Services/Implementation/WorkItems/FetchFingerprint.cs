@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId),
             nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId),
             nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId),
+            nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId),
             nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions),
             nameof(WorkTrackingSystemConnection.WorkTrackingSystem),
 
@@ -81,6 +82,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 Render(queryOwner.ParentOverrideAdditionalFieldDefinitionId),
                 Render(portfolio?.FeatureOwnerAdditionalFieldDefinitionId),
                 Render(portfolio?.SizeEstimateAdditionalFieldDefinitionId),
+                Render(portfolio?.DependencyOverrideAdditionalFieldDefinitionId),
                 Render(connection?.AdditionalFieldDefinitions),
                 connection?.WorkTrackingSystem.ToString() ?? Absent,
                 Render(queryOwner.WorkTrackingSystemConnectionId),

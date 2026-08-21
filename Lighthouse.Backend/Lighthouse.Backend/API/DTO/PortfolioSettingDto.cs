@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.API.DTO
 
             SizeEstimateAdditionalFieldDefinitionId = portfolio.SizeEstimateAdditionalFieldDefinitionId;
             FeatureOwnerAdditionalFieldDefinitionId = portfolio.FeatureOwnerAdditionalFieldDefinitionId;
+            DependencyOverrideAdditionalFieldDefinitionId = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
+            IgnoreDependencies = portfolio.IgnoreDependencies;
 
             if (portfolio.WorkTrackingSystemConnection != null)
             {
@@ -60,5 +62,10 @@ namespace Lighthouse.Backend.API.DTO
         public EntityReferenceDto? OwningTeam { get; set; }
 
         public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
+
+        public int? DependencyOverrideAdditionalFieldDefinitionId { get; set; }
+
+        [JsonRequired]
+        public bool IgnoreDependencies { get; set; }
     }
 }

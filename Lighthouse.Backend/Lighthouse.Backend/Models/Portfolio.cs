@@ -20,6 +20,10 @@ namespace Lighthouse.Backend.Models
 
         public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
 
+        public int? DependencyOverrideAdditionalFieldDefinitionId { get; set; }
+
+        public bool IgnoreDependencies { get; set; }
+
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
 
         public int? PercentileHistoryInDays { get; set; } = 90;

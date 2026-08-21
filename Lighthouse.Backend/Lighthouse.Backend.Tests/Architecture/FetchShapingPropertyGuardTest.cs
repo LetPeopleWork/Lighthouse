@@ -96,6 +96,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Read at sync time and stored as Feature.OwningTeam. Under delta an unchanged Feature is never re-derived, so the old owner survives the edit."),
             new(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), Cost.AFullDownload,
                 "Read at sync time and stored as Feature.EstimatedSize. Same mechanism as FeatureOwner."),
+            new(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), Cost.AFullDownload,
+                "Decides where the connector reads a Feature's dependencies from - a named field instead of the tracker's own link - so it decides the whole stored edge set. It also decides whether the relations request is made at all."),
             new(nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions), Cost.AFullDownload,
                 "CONNECTION-SCOPED, so the save-time consumer cannot see it: a settings DTO carries no field definitions. Decides what is requested from the tracker AND what is stored in AdditionalFieldValues, for every entity on the connection."),
             new(nameof(WorkTrackingSystemConnection.WorkTrackingSystem), Cost.AFullDownload,
@@ -121,6 +123,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             // --- Excluded: derived, or evaluated over the stored set every cycle ---
             new("AllStates", Cost.Nothing, "Derived from the three state columns and the mappings, all of which are registered."),
             new("OpenStates", Cost.Nothing, "Derived, as AllStates."),
+            new(nameof(Portfolio.IgnoreDependencies), Cost.Nothing,
+                "The reflex is to register it, because the dependency field beside it on the same form belongs here. It does not: setting dependencies aside changes nothing about what is asked for or what is stored, only whether the stored edges are acted on when read. Registering it would re-download the whole Portfolio every time somebody toggled a what-if."),
             new("StalenessThresholdDays", Cost.Nothing, "Evaluated over the WHOLE stored set every cycle, so a change takes effect on the next cycle without any download."),
             new("BlockedStalenessThresholdDays", Cost.Nothing, "As StalenessThresholdDays."),
             new("BlockedRuleSetJson", Cost.Nothing,

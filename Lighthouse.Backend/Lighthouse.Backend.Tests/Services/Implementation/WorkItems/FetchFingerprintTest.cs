@@ -105,6 +105,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(FetchFingerprint.For(portfolio), Is.EqualTo(before), $"{property} costs nothing remote, so hashing it makes every cycle full for free.");
         }
 
+        /// <summary>
+        /// Asserted on its own because the reflex is the opposite one: the dependency field sitting beside it
+        /// on the same settings form does belong in the fingerprint, so leaving this out looks like an
+        /// oversight. It is not. Setting a Portfolio's dependencies aside changes nothing about what is asked
+        /// for or what is stored - only whether the stored edges are acted on when somebody reads them - and
+        /// a fingerprint entry would re-download the whole Portfolio every time somebody tried a what-if.
+        /// </summary>
+        [Test]
+        public void For_APortfolioSettingItsDependenciesAside_ProducesTheSameFingerprint()
+        {
+            var portfolio = APortfolio();
+            var before = FetchFingerprint.For(portfolio);
+
+            portfolio.IgnoreDependencies = true;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(FetchFingerprint.For(portfolio), Is.EqualTo(before));
+                Assert.That(FetchFingerprint.RegisteredProperties, Does.Not.Contain(nameof(Portfolio.IgnoreDependencies)));
+            }
+        }
+
         [Test]
         public void For_ATeamOnlyExcludedPropertyChanges_ProducesTheSameFingerprint()
         {
@@ -178,6 +200,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId), p => p.ParentOverrideAdditionalFieldDefinitionId = 2);
             yield return Case(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), p => p.FeatureOwnerAdditionalFieldDefinitionId = null);
             yield return Case(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), p => p.SizeEstimateAdditionalFieldDefinitionId = 3);
+            yield return Case(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), p => p.DependencyOverrideAdditionalFieldDefinitionId = 2);
             yield return Case(nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions), p => p.WorkTrackingSystemConnection.AdditionalFieldDefinitions[0].Reference = "customfield_99999");
             yield return Case(nameof(WorkTrackingSystemConnection.WorkTrackingSystem), p => p.WorkTrackingSystemConnection.WorkTrackingSystem = WorkTrackingSystems.AzureDevOps);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId), p => p.WorkTrackingSystemConnectionId = 8);
@@ -197,6 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId), p => p.EstimationAdditionalFieldDefinitionId = 3);
             yield return Case(nameof(Portfolio.DefaultAmountOfWorkItemsPerFeature), p => p.DefaultAmountOfWorkItemsPerFeature = 99);
             yield return Case(nameof(Portfolio.OwningTeamId), p => p.OwningTeamId = 5);
+            yield return Case(nameof(Portfolio.IgnoreDependencies), p => p.IgnoreDependencies = true);
         }
 
         private static TestCaseData Case(string property, Action<Portfolio> anOperatorEdit)
