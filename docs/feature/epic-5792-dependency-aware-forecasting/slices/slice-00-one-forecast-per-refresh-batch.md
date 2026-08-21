@@ -91,12 +91,17 @@ Pathological configuration, and the local-copy guard absorbs it on the next refr
 - **AC-10.1** An Update All across N Teams sharing one Portfolio runs exactly one Forecasts execution
   for that Portfolio.
 - **AC-10.2** A Portfolio refresh and a Team refresh overlapping in time produce one forecast, not two.
+- **AC-10.3** Write-back volume per Portfolio refresh does not increase. Asserted against the
+  connector call count, which is the number ADR-144 was written to protect.
 - **AC-11.1** A trigger raised while sibling work is in flight is **parked**, never dropped: the
-  forecast that eventually runs reflects every Team's refreshed data.
+  forecast that eventually runs reflects every Team's refreshed data. Asserted on **both** terminal
+  paths — the sibling that succeeds and the last sibling that fails.
 - **AC-11.2** A Team update with no sibling work in flight still triggers its forecast immediately —
   the debounce must not add latency to the single-Team case.
-- **AC-11.3** Write-back volume per Portfolio refresh does not increase. Asserted against the
-  connector call count, which is the number ADR-144 was written to protect.
+- **AC-11.3** `IUpdateStatusStore` gains a per-Portfolio active-work query, implemented in **both**
+  `InProcessUpdateStatusStore` and `RedisUpdateStatusStore`. The existing `HasActiveWork()` scans the
+  whole store and cannot answer it, so a debounce built on it would park every forecast behind every
+  other update in the instance.
 
 ## Dogfood moment
 

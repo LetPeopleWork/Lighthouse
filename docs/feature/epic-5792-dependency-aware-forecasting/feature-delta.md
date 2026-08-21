@@ -715,8 +715,8 @@ the refresh queue that decides *how often* a forecast runs, which is why it appe
 epic renders — the L3 diagram starts after the trigger it changes.
 
 `ForecastUpdater` is the only updater registered as a plain singleton and **not** also as a hosted
-service (`Program.cs:1259`, against `AddHostedService<PortfolioUpdater>()` + `AddSingleton<IPortfolioUpdater,
-PortfolioUpdater>()` at `:1256-1257`, which construct two instances). It is therefore the only updater
+service (`Program.cs:1264`, against `AddHostedService<PortfolioUpdater>()` + `AddSingleton<IPortfolioUpdater,
+PortfolioUpdater>()` at `:1261-1262`, which construct two instances). It is therefore the only updater
 with a single instance for a scheduling rule to live in.
 
 **Shared-artifact binding**: *per-trial completion state* → `TrialState` (this epic's only new owner).
@@ -958,7 +958,7 @@ this epic's, and each needs the maintainer's confirmation before the affected sl
   this Portfolio's forecast, and the two candidate relations are not the same relation.
   `Portfolio.Teams` is **derived** — `Features → FeatureWork → Team` — while
   `TeamDataRefreshedForecastTriggerHandler` fans out over `Team.Portfolios`, which is a persisted
-  many-to-many (`LighthouseAppContext.cs:259`). A Team linked to a Portfolio that contributes no
+  many-to-many (`LighthouseAppContext.cs:279`). A Team linked to a Portfolio that contributes no
   `FeatureWork` triggers a forecast while being invisible to a sibling set built from `Portfolio.Teams`,
   and the reverse holds for a Team that contributes work without the link. **Recommendation**: build the
   sibling set from the same relation the trigger fans out over, so the set that parks a trigger and the
@@ -1050,3 +1050,554 @@ checked again and the verdict is unchanged: the debounce's two rejected alternat
 reason each was rejected (SA-17), the one decision that could go wrong silently is stated with its
 recommendation rather than decided quietly (OQ-10), and the enforcement gap that has no test is written
 down as a gap (the `InProgress` exclusion) instead of being presented as covered.
+
+---
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+**Artifact model**: the unified feature-delta — each wave appends `## Wave: <NAME> / [REF] <Section>`
+sections to this one file. There are no `discuss/`, `design/` or `distill/` subdirectories and none is
+owed; their absence is the model, not a missing artifact.
+
+- ✓ `docs/feature/epic-5792-dependency-aware-forecasting/feature-delta.md` — all 1052 lines, both waves.
+- ✓ `slices/slice-00-one-forecast-per-refresh-batch.md`,
+  `slices/slice-01-forecast-jumps-over-a-same-team-blocker.md`,
+  `slices/slice-02-joint-simulation-cross-team.md`.
+- ✓ `docs/feature/epic-4365-dependencies/feature-delta.md` — the DISTILL and DELIVER sections in
+  particular. This epic's delta is **not self-contained** by design, and DESIGN's handoff says so.
+- ✓ `docs/product/journeys/epic-5792-dependency-aware-forecasting.yaml` — one journey, three jobs,
+  D2 and D3 written out in full, the emotional arc, the error paths.
+- ✓ `docs/product/jobs.yaml` — the three `feature_context: epic-5792-dependency-aware-forecasting` jobs.
+- ✓ `docs/product/kpi-contracts.yaml` — read. **No `OUT-5792-*` rows exist**; the four KPIs live in the
+  delta's *Outcome KPIs* table only. Soft gate, recorded rather than silently skipped.
+- ✓ `docs/architecture/atdd-infrastructure-policy.md` — applied under the default `--policy=inherit`.
+  The two rows Epic #4365's DISTILL appended are read here as the precedent this epic extends.
+- ✓ `CLAUDE.md`, `docs/ci-learnings.md` — read before authoring anything that becomes code.
+- ✓ **Code read to ground the scenarios rather than re-derive them from the delta**:
+  `ForecastService.cs` (`RunMonteCarloSimulation` :109-130, `GetSimulationResultsOfFeatureToUpdate`
+  :199-209, `InitializeSimulationResults` :163-176, `SimulateIndividualDayForFeatureForecast`),
+  `IUpdateStatusStore.cs`, `ForecastUpdater.cs`, `UpdateServiceBase.TriggerUpdate` and its `finally`,
+  `PortfolioUpdater.cs:60-100` (the inline forecast, the two staging passes, the publish),
+  `TeamDataRefreshedForecastTriggerHandler.cs`, and Epic #4365's shipped
+  `IDependencyHonourPolicy`, `DependencyHonourInput`, `FeatureDependencyFacts`, `NotHonouredReason`,
+  `DependencyFacts.About` and `dependencySentences.ts`.
+  **Four things the code says that the delta does not** are recorded under *Upstream Issues* below.
+- ⊘ `docs/feature/epic-5792-dependency-aware-forecasting/devops/` — **not found. No DEVOPS wave ran.**
+  Per the graceful-degradation matrix this is a WARN, not a block. The project default environment
+  matrix is used and is named under *Pre-requisites*.
+- ⊘ `{discover,diverge,spike}/` — not found. No such wave ran. **Slice 02 carries a required 2-hour
+  probe** in its brief, which is a DELIVER-time measurement rather than a SPIKE wave, and no walking
+  skeleton was promoted from one.
+
+---
+
+## Wave: DISTILL / [REF] Wave-Decision Reconciliation
+
+**Reconciliation passed — 0 contradictions.**
+
+DISCUSS's *Locked Decisions* and *Wave Decisions Summary* were checked one by one against DESIGN's
+*Decisions*, *Reuse Analysis*, *Forks and upstream corrections* and *Open questions*. Three points
+where DESIGN diverges from DISCUSS were found; **all three are recorded forks with a stated verdict**,
+so none leaves a scenario ambiguous:
+
+| Fork | DISCUSS said | DESIGN says | Verdict | Effect on scenarios |
+|---|---|---|---|---|
+| F-6 | slice 02 is "serial then parallel", two commits | four commits: addressable stream → serial joint loop → per-trial parallelism → cross-team honouring | DESIGN stands; the aggregation change was **deferred**, which removed the only commit that would have moved a dependency-free date | milestone-2 asserts exact equality after **each** of the first three commits separately, not once at the end |
+| F-7 | an un-forecastable blocker is dropped and warned | the same, plus the dependent's dates are presented as an **earliest-possible** rather than as a forecast (ADR-159) | DESIGN stands, maintainer-confirmed | the two drop scenarios assert the floor wording, not merely the absence of a hang |
+| F-9 | — | production dates already move between refreshes, because the draw source is unseeded | recorded, not fixed (ADR-154) | every equality scenario pins a starting number; **none** asserts stability across two unseeded runs, which would be a flake by construction |
+
+**Slice 00 was added after DESIGN's own review** (2026-08-18, D10 and SA-17 to SA-19) and re-reviewed
+then. Checked here for the contradiction it could most easily introduce: it makes `ForecastUpdater` the
+one caller of `UpdateForecastsForPortfolio`, which is consistent with — not a second version of —
+DISCUSS's "one change to forecasting at a time", because it changes *how often* a forecast runs and
+nothing about what one computes. `epic-boundary.feature` asserts exactly that.
+
+**DEVOPS**: no wave ran, so no DEVOPS decision can contradict anything. Recorded as a warning above.
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **DESIGN driving ports** (from the DESIGN *Driving Ports* table): the forecast output itself — the
+  50/70/85/95 % dates, the port with no endpoint — and the dependency warnings in the existing warnings
+  column. Slice 00 adds one more that DESIGN names in its component table rather than in the ports
+  table: the Portfolio refresh and the Team refresh, as the two paths that ask for a forecast. All
+  three are covered below.
+- **Environment matrix**: project default (no DEVOPS wave) — real ASP.NET host with a real EF context,
+  SQLite and Postgres in CI lockstep; Vitest for the frontend; Playwright with seeded demo data for the
+  walking skeleton. **One exception, and it is slice 00's**: the shared-store scenario needs a real
+  Redis, which the policy already provides as `Testcontainers.Redis` under
+  `[Category("requires-docker")]`. It is the only scenario in this epic that needs a container, and the
+  reason is written into it — that adapter runs only where Redis is configured, so a wrong answer there
+  is invisible to every test that does not stand one up.
+- **Real data, and this epic cannot be verified without it**: real Predecessor links in the dogfood
+  Azure DevOps project covering a same-Team pair, a cross-Team pair, a cross-Portfolio pair, a
+  two-Feature loop, and a blocker whose Team has no measured delivery. Epic #4365's DELIVER created the
+  first shapes; **the loop and the throughput-less blocker are the two slice 01 cannot be verified
+  without**, and DISCUSS records them as a hard prerequisite because Lighthouse has no way to author a
+  dependency (D4).
+- **Two recorded baselines, captured before the first commit of the slice that needs them**: a
+  fixed-seed percentile snapshot (slices 01 and 02 both assert against it) and a **pre-epic** forecast
+  wall-clock number (AC-7.2 only, and never against the serial intermediate).
+- **A premium licence and a deliberately unlicensed profile** on the verification instance, for AC-6.1
+  to AC-6.4 and KPI-6. The premium licence fixture is gitignored and absent in a fresh worktree —
+  import it from the main checkout before the unlicensed/licensed pair is run.
+- **Epic #4365 shipped through at least its slices 01 and 02.** Met: all four of its slices are shipped
+  and pushed as of 2026-08-21.
+- **Reconciliation gate**: passed, 0 contradictions (above).
+
+---
+
+## Wave: DISTILL / [REF] Scenario List (tags)
+
+Scenario SSOT is `docs/feature/epic-5792-dependency-aware-forecasting/acceptance/*.feature`. Five
+files, **54 scenarios**, of which 31 are `@error`, `@edge` or `@regression`. Every scenario carries a
+`@contract-shape:` tag. Five scenarios were added and eight rewritten in response to the review gate
+below; the rewrites are recorded there rather than repeated here.
+
+| # | Scenario | File | Tags | ACs |
+|---|---|---|---|---|
+| 1 | A forecaster sees a date that has moved because of what the Feature is waiting on | walking-skeleton | `@walking_skeleton @real-io @driving_adapter @us-05 @slice-01` · bounded-change | US-05 end to end |
+| 2 | Refreshing everything produces one forecast for the Portfolio, not one per Team | milestone-0 | `@driving_port @us-10` · bounded-change | AC-10.1 |
+| 3 | A Portfolio refresh and a Team refresh overlapping in time produce one forecast | milestone-0 | `@driving_port @us-10` · bounded-change | AC-10.2 |
+| 4 | Moving the forecast out of the Portfolio refresh costs the work tracking system nothing | milestone-0 | `@regression @driving_port @kpi @us-10` · unbounded-preservation | **AC-10.3** |
+| 5 | A forecast write-back that fails leaves nothing half-written | milestone-0 | `@error @driving_port @us-10` · bounded-change | **NEW** — the failure the split flush creates |
+| 6 | A forecast asked for while a sibling Team is still waiting to refresh is not run yet | milestone-0 | `@driving_port @us-11` · bounded-change | AC-11.1 |
+| 7 | A Portfolio with one Team is forecast immediately, with nothing to wait for | milestone-0 | `@edge @driving_port @us-11` · bounded-change | AC-11.2 |
+| 8 | The last Team failing to refresh still releases the forecast its siblings are owed | milestone-0 | `@error @driving_port @us-11` · bounded-change | **AC-11.1 / OQ-10** |
+| 9 | A Team's own refresh is never mistaken for something it has to wait for | milestone-0 | `@error @driving_port @us-11` · pure-function | **SA-18** — the `InProgress` trap |
+| 10 | Work elsewhere in the instance never delays this Portfolio's forecast | milestone-0 | `@error @driving_port @us-11` · pure-function | AC-11.3 |
+| 11 | A Team belonging to two Portfolios forecasts both, and neither waits on the other's work | milestone-0 | `@error @driving_port @us-11` · bounded-change | **NEW** — the case OQ-9 is ambiguous about |
+| 12 | A forecaster who asks for a forecast is never told it happened when it did not | milestone-0 | `@error @driving_adapter @us-11` · bounded-change | **NEW** — the two controller routes |
+| 13 | The same answer is given where the record of work in flight is kept outside the application | milestone-0 | `@real-io @adapter-integration @us-11` · pure-function | AC-11.3 — both adapters |
+| 14 | A change to the order of Features still forecasts straight away | milestone-0 | `@edge @driving_port` · bounded-change | **OQ-9**, wider half |
+| 15 | The date a forecaster is reading stops changing seconds after it appears | milestone-0 | `@driving_adapter @us-10` · bounded-change | US-10's own outcome |
+| 16 | Everything else the Portfolio refresh does is left exactly where it was | milestone-0 | `@regression @driving_port` · unbounded-preservation | SA-19's consequence |
+| 17 | A Feature never finishes before the Feature it is waiting on | milestone-1 | `@driving_port @us-05` · bounded-change | AC-5.1 |
+| 18 | The capacity the waiting Feature could not use goes to the Feature below it | milestone-1 | `@driving_port @kpi @us-05` · bounded-change | **AC-5.2 / KPI-2** — the one that can disprove the epic |
+| 19 | A dependency on another Team's Feature is left out, and the row says so | milestone-1 | `@error @driving_adapter @us-05` · pure-function | AC-5.4 |
+| 20 | Two Features waiting on each other constrain nothing, and the forecast still finishes | milestone-1 | `@error @driving_port @us-05` · bounded-change | AC-5.5 (D7) |
+| 21 | Waiting on a Feature that can never be forecast drops the wait for this run, and says so | milestone-1 | `@error @driving_port @us-05` · bounded-change | AC-5.6 (D8, ADR-159) |
+| 22 | Waiting on something already finished holds nothing up and warns about nothing | milestone-1 | `@edge @driving_port @us-05` · pure-function | AC-5.7 |
+| 23 | Waiting on a Feature in another Portfolio changes no date anywhere | milestone-1 | `@edge @driving_port @us-05` · unbounded-preservation | AC-5.8 (D6) |
+| 24 | A day on which everything is waiting is simply an idle day | milestone-1 | `@edge @driving_port @us-05` · bounded-change | D2 — throughput discarded |
+| 25 | A Feature worked by several Teams is only finished when all of them are done | milestone-1 | `@edge @driving_port @us-05` · bounded-change | D2 — readiness aggregates |
+| 26 | A Feature recorded as waiting on itself waits for nothing | milestone-1 | `@edge @driving_port @us-05` · pure-function | D7 — the self-reference |
+| 27 | An unlicensed instance is told the dependency exists and is being ignored | milestone-1 | `@driving_adapter @us-06` · pure-function | AC-6.1 |
+| 28 | An unlicensed instance's dates are exactly a forecast that never saw the dependency | milestone-1 | `@driving_port @kpi @us-06` · unbounded-preservation | **AC-6.2 / KPI-6** |
+| 29 | Licensing the instance is the only thing that has to change for the dates to move | milestone-1 | `@driving_port @us-06` · bounded-change | AC-6.3 |
+| 30 | The hint says what is withheld and why, in the instance's own words | milestone-1 | `@edge @terminology @driving_adapter @us-06` · pure-function | AC-6.4 (D10) |
+| 31 | Exactly one place in the product decides whether a dependency counts | milestone-1 | `@architecture @kpi` · unbounded-preservation | **KPI-5 / SA-12**, tightened to *exactly one* |
+| 32 | A draw is decided by where it sits, never by how many draws came before it | milestone-2 | `@property @us-07` · pure-function | SA-1 / ADR-154, plus the ordinal domain |
+| 33 | Changing where the numbers come from leaves the distribution where it was | milestone-2 | `@us-07 @kpi` · bounded-change | AC-7.1, commit 1 — **statistical by necessity** |
+| 34 | Putting every Team on one clock moves no date at all | milestone-2 | `@regression @kpi @us-07` · unbounded-preservation | AC-7.1, commit 2 — exact |
+| 35 | Running the trials side by side moves no date either | milestone-2 | `@regression @kpi @us-07` · unbounded-preservation | AC-7.1, commit 3 — exact |
+| 36 | The Features a Team works on are still the ones nearest the top of its order | milestone-2 | `@regression @us-07` · unbounded-preservation | **NEW** — the re-index that fails silently |
+| 37 | The joint forecast is not slower than the product was before this epic | milestone-2 | `@kpi @us-07` · bounded-change | **AC-7.2 / SA-4**, with a correctness floor |
+| 38 | A Team with no measured delivery is left out exactly as it was before | milestone-2 | `@edge @us-07` · unbounded-preservation | AC-7.3 |
+| 39 | A Feature never finishes before the other Team's Feature it is waiting on | milestone-2 | `@driving_port @us-08` · bounded-change | AC-8.1 |
+| 40 | The warning that said a cross-Team wait was ignored is gone | milestone-2 | `@driving_adapter @us-08` · bounded-change | **AC-8.2** — the pair to AC-5.4 |
+| 41 | A shared clock shares time, never delivery | milestone-2 | `@us-08` · unbounded-preservation | AC-8.3 |
+| 42 | Two Features on different Teams waiting on each other constrain nothing | milestone-2 | `@error @driving_port @us-08` · bounded-change | AC-8.4 |
+| 43 | Waiting on another Team's Feature that can never be forecast drops the wait, and says so | milestone-2 | `@error @driving_port @us-08` · bounded-change | AC-8.5 |
+| 44 | With nothing waiting on anything, the dates are still the dates | milestone-2 | `@regression @us-08` · unbounded-preservation | AC-8.6 |
+| 45 | A run that will not end is stopped and says exactly which run it was | milestone-2 | `@error @us-07` · bounded-change | **SA-5 / KPI-4** |
+| 46 | What one simulated run knows cannot leak into another | milestone-2 | `@architecture` · unbounded-preservation | DESIGN *Architectural Enforcement*, row 3 |
+| 47 | Most of the dependencies an instance actually has are now accounted for | milestone-2 | `@manual @kpi` · bounded-change | **KPI-7** — a hand count, not a test |
+| 48 | With no dependency anywhere, the dates are what the gold set says | epic-boundary | `@regression @kpi @slice-01` · unbounded-preservation | **AC-5.3** |
+| 49 | A Feature with no dependency is unaffected by one that has several | epic-boundary | `@regression @slice-01` · unbounded-preservation | AC-5.3, per Feature |
+| 50 | How several Teams' dates are combined into one is not touched by this epic | epic-boundary | `@regression @slice-02` · unbounded-preservation | **SA-6** |
+| 51 | A Feature that is both worked by several Teams and waiting reads late, never early | epic-boundary | `@regression @slice-02` · bounded-change | **NEW** — ADR-156's accepted residual, split out |
+| 52 | Nothing in this epic can be reached by asking the product a new question | epic-boundary | `@architecture @slice-01` · unbounded-preservation | SA-14 |
+| 53 | The warnings that were already on a row are left exactly as they were | epic-boundary | `@regression @slice-01` · unbounded-preservation | Epic #4365's warnings |
+| 54 | How often a forecast runs is the only thing slice 00 changed about forecasting | epic-boundary | `@regression @slice-00` · unbounded-preservation | D10 — slice 00's boundary |
+
+**Every AC has at least one scenario**: AC-5.1 to AC-5.8, AC-6.1 to AC-6.4, AC-7.1 to AC-7.3, AC-8.1
+to AC-8.6, AC-10.1 to AC-10.3 and AC-11.1 to AC-11.3 — 27 in total, plus KPI-2, KPI-4, KPI-6, KPI-7
+and the shared KPI-5.
+
+**Three ACs are asserted more than once on purpose.** AC-7.1 is scenarios 33, 34 and 35 — one per
+commit, because "the restructure changed nothing" is a claim about each step and a single assertion at
+the end cannot say which step broke it. AC-5.3 is 48 and 49. AC-11.1 is 6 and 8 — the held-then-released
+path and the path where the last sibling fails, which is where OQ-10 lives.
+
+**Where a baseline is named, it is a checked-in gold artifact.** Scenarios 34, 35, 36, 37, 44, 48, 50
+and 54 compare against percentiles, a write-back count or a wall-clock number captured on the released
+product at a named commit and committed as their own reviewed change **before this epic's first
+production commit**. A baseline computed from the build under test asserts that the build equals
+itself, which is the failure mode the review gate below caught.
+
+**Scenario 33 is the one commit with no exact net, and says so.** Replacing the draw source cannot be
+proved by draw-for-draw equality against an unseeded predecessor. It is proved by distribution
+agreement plus the properties of the new source, and it is the commit that *establishes* the recorded
+baseline scenarios 34 to 37 are held to.
+
+---
+
+## Wave: DISTILL / [REF] WS Strategy + Two-Tier Composition
+
+- **Walking skeleton**: exactly one, `walking-skeleton.feature`, `@walking_skeleton @driving_adapter
+  @real-io`, slice 01. DISCUSS's **Strategy B** is honoured — nothing new is built to carry it.
+- **Its before-picture is built inside the run, and the licence is what builds it.** An unlicensed
+  instance forecasts exactly as though the dependency were not recorded (AC-6.2), so its dates are the
+  before-picture: same session, same data, same build. The first draft compared against "what the
+  previous release produced", a number no browser run can reach — which made the epic's litmus test
+  assert nothing. Recorded because it is the same trap the gold-file scenarios fell into.
+- **The skeleton belongs to slice 01, not slice 00.** Slice 00 ships first, but its outcome is the
+  absence of a second event rather than a new end-to-end path. Scenario 15 covers it at the driving
+  adapter.
+- **Architecture-of-Reference treatment** (project defaults, unchanged): driving ports = real adapter;
+  driven-internal (the Feature store, the update-status store, EF) = **real**; driven-external and
+  non-deterministic (the trackers, the licence service) = faked at the boundary. **The forecast is the
+  deliberate exception, and here it is the rule**: every scenario asserting a date runs the real
+  simulation against a pinned starting number.
+- **Tier A only** (Mandate 10). The host is C# / NUnit / Playwright, not the Python and Hypothesis
+  pilot: `RuleBasedStateMachine`, `InMemoryComposition` and `tests/common/state_delta` have no
+  implementation here and none is bootstrapped. Recorded, not silently skipped.
+- **One `@property` scenario** (#32, the draw stream) — the single place a generative shape pays for
+  itself, since the claim is *for all coordinates*. Expressed as a parameterised NUnit case plus
+  order- and modulus-independence assertions.
+- **Mandate 8 (`assert_state_delta` universes)**: not applicable in this host. Its *intent* is carried
+  by the `@contract-shape:` tag and by the `unbounded-preservation` scenarios — the "and nothing else
+  moved" assertions the universe guard exists to force.
+- **Every preservation scenario now carries a positive control in the same run.** Scenarios 22, 23, 26
+  and 38 previously asserted only that a date did not move, which a build with the mechanic missing
+  entirely satisfies. Each now also asserts that another Feature in the same fixture *did* move.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage (Mandate 6)
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `InProcessUpdateStatusStore` — the default record of work in flight | YES | #6 to #12, through the real queue |
+| `RedisUpdateStatusStore` — the same record kept outside the application | YES | **#13**, this epic's one `requires-docker` scenario |
+| EF `LighthouseAppContext` — the forecast histograms and the aggregate row shape (OQ-7) | YES | #34 to #37 read recorded percentiles back; #50 reads the aggregate |
+| The Feature store — the dependency references Epic #4365 writes | YES | #1, the walking skeleton, through the real refresh |
+| Write-back to the tracker — the split flush | YES | #4 (count unchanged) and **#5** (the half-written failure) |
+| The three trackers | N/A — out of scope by construction | This epic reads stored references, never a payload. Connector coverage is Epic #4365's |
+| Licence service | Faked per policy | #27 to #29 |
+
+Zero **NO — MISSING** rows.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+| Driving adapter | Exercised through its own protocol by |
+|---|---|
+| Portfolio refresh — scheduled, manual, and the batch **Update All** path | #2, #3, #4, #5, #16 |
+| Team refresh, as a thing that asks for a forecast | #6 to #11 |
+| **The two forecast routes a person can press** | **#12** — added by the review gate; a route that returns success while nothing runs is a silent failure |
+| The forecast output itself — the 50/70/85/95 % dates | #17 to #26, #32 to #47, #48 to #51, #54 |
+| Features view `/features` (UI) | **#1**, plus #15, #19, #27, #30, #40 |
+| Dependency warnings in the existing warnings column | #19, #21, #27, #30, #40, #43, #53 |
+| A change to the order of Features, as a thing that asks for a forecast | #14 |
+
+Zero uncovered entry points. **No new route exists in this epic**, and #52 asserts that.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+Precedent is `epic-4365-dependencies` (the same warnings column, the same policy) and
+`epic-5687-faster-updates` (the same update queue). Every path below has a real existing file beside it.
+
+| Artifact | Path | Precedent |
+|---|---|---|
+| Scenario specs (this wave) | `docs/feature/epic-5792-dependency-aware-forecasting/acceptance/*.feature` | `docs/feature/epic-4365-dependencies/acceptance/` |
+| Slice 00 — the debounce and the moved trigger | `Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/{ForecastUpdaterTest.cs, PortfolioUpdaterTest.cs, UpdateStatusStoreTest.cs}` — **EXTEND all three** | themselves |
+| Slice 00 — one forecast per batch, end to end | `Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/{Slice00OneForecastPerBatchScenarios.cs, …Specifications.cs}` | `API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs` |
+| Slice 00 — the shared store | `Lighthouse.Backend.Tests/Integration/Containers/UpdateStatusStoreContainerTests.cs` — **EXTEND** | itself, `[Category("requires-docker")]` |
+| Slices 01 and 02 — the simulation | `Lighthouse.Backend.Tests/Services/Implementation/Forecast/{ForecastServiceTest.cs, MultiTeamJointForecastTest.cs}` — **EXTEND** — plus a new `DependencyAwareForecastTest.cs` | themselves |
+| Slice 01 — the readiness predicate (pure) | `…/Services/Implementation/Forecast/TrialReadinessTest.cs` | `Services/Implementation/Dependencies/DependencyHonourPolicyTest.cs` |
+| Slice 02 — the draw stream (pure, `@property`) | `…/Services/Implementation/Forecast/AddressableDrawStreamTest.cs` | `DependencyCycleDetectorTest.cs` |
+| Slices 01 and 02 — dates end to end | `…/API/Integration/DependencyAwareForecasting/{Slice01…, Slice02…}Scenarios.cs` | `API/Integration/MultiTeamJointForecastDeliveryIntegrationTest.cs` |
+| Epic boundary — the gold percentiles | `…/API/Integration/DependencyAwareForecasting/EpicBoundaryGoldForecastTest.cs`, with the gold files committed beside it | Epic #4365's own boundary tests |
+| Architecture seams | `Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs`, **and the re-cut of the three shipped rules in `DependencySingleDecisionArchUnitTest.cs`** (see *Upstream Issues*) | `ForecastFilterSeamArchUnitTest.cs`, `BlackoutForecastShiftSeamArchUnitTest.cs` |
+| Frontend — the premium hint | `…/FeatureListDataGrid/WarningsIndicator.test.tsx` and `src/utils/dependencies/dependencySentences.test.ts` — **EXTEND both** | themselves |
+| End to end | `Lighthouse.EndToEndTests/tests/specs/features/FeatureDependencies.spec.ts` — **EXTEND**, driven by `tests/models/features/FeaturesPage.ts` | itself; never an inline locator |
+
+---
+
+## Wave: DISTILL / [REF] RED Mechanism (project reconciliation — deviates from Mandate 7)
+
+**Mandate 7's `src/` assertion-error scaffolds do NOT apply here**, for the reason recorded in Epic
+#4365's delta: in a statically-typed, trunk-green C# repository a test naming a type that does not
+exist yet fails to **compile**, and the run classifies as BROKEN rather than RED.
+
+- The project mechanism is **RED-by-skip**: `[Ignore("pending — DELIVER (epic-5792)")]` NUnit tests and
+  `test.fixme` Playwright specs, authored in **DELIVER, per slice, alongside the minimal type
+  skeletons**, so `main` always compiles and always stays green.
+- **DISTILL's committed deliverable is the `.feature` specs plus these `[REF]` sections.** This wave
+  writes no production code and no test code, which is what keeps it inside the epic's standing
+  no-commit-without-approval rule without needing an exception.
+- **One shape cannot use skeleton-plus-`[Ignore]`**: a stateless service trips `S2325` as a build
+  error, so RED for `TrialReadiness` and `AddressableDrawStream` is *observed mutation of the finished
+  code*.
+- **The gold files are a RED prerequisite, not a DELIVER detail.** They must be captured and committed
+  before the first production commit of slice 00; after that commit the released behaviour is no
+  longer available to measure.
+
+---
+
+## Wave: DISTILL / [REF] ATDD Infrastructure Policy
+
+Applied under the default `--policy=inherit`. **One row appended** to *Driven internal (real)*:
+`IUpdateStatusStore` — the real store, never mocked, with both implementations exercised (in-process
+through the real queue, Redis via `Testcontainers.Redis` under `[Category("requires-docker")]`).
+
+**One existing row is widened**: the seed-pinned real `IForecastService` exception, which #4365
+confined to its boundary scenarios, is the **default** here. `Mock<IForecastService>` stays correct
+only for the slice-00 scenarios that count executions and never read a date.
+
+---
+
+## Wave: DISTILL / [REF] Register Outcomes
+
+**Verified, not assumed.** `docs/product/outcomes/registry.yaml` exists but is an empty stub, and no
+feature in this repository has ever registered a row. **No `OUT-N` row is registered by this wave.**
+The KPIs live in the delta's *Outcome KPIs* table: #18 (KPI-2), #45 (KPI-4), #28 (KPI-6), #47 (KPI-7),
+#31 (the shared KPI-5).
+
+**KPI-5 count, re-run against the shipped code**: `IDependencyHonourPolicy` has exactly one
+implementation and `NotHonouredReason` is constructed in exactly one file. #4365's ArchUnitNET rule
+asserts *at most one* and its own remark says this epic is the one that tightens it; #31 is that
+tightening.
+
+---
+
+## Wave: DISTILL / [REF] Final Wave Review Gate (2026-08-21)
+
+Four reviewers ran against the full chain. **The gate was run twice**: the first pass returned verdicts
+built on content the reviewers never received — this project's context runtime silently strips file
+bodies from subagent reads, and the reviewer agent type has no shell to work around it, so `.feature`
+files came back as comments only. Three of those four verdicts asserted defects that do not exist (an
+"unresolved decision point" that is KPI-5's constraint, a slice 00 with "no user-visible value" that is
+US-10, a "Redis dependency" that is an optional adapter). They were discarded rather than answered. The
+gate was re-run with agents that can read, and this section records **that** pass.
+
+**Verdicts**: DISTILL scenarios — *needs_revision*, 3 blockers. DESIGN — *needs_revision*, 2 blockers.
+DISCUSS — *needs_revision*, 2 blockers. Infrastructure — *needs_revision*, 1 blocker. Every blocker is
+recorded below; the ones this wave owns are fixed, and the rest are carried as named obligations rather
+than closed.
+
+**Fixed in this wave** — all in the scenario specs:
+
+- **The walking skeleton had no constructible before-state.** It recorded the dates *after* licensing
+  and recording the dependency, then asserted they had moved — comparing a dependency-aware forecast
+  with itself. Rewritten to note the dates unlicensed, then license and re-forecast in the same
+  session. It also referred to a third Feature its Given never created.
+- **Eight exact-equality scenarios named a baseline with no provenance.** Once the production commit
+  lands, the released behaviour is gone, so a crafter could only satisfy them by computing the
+  "before" from the build under test — asserting that the build equals itself. Each now names a
+  checked-in gold artifact captured at a named commit **before this epic's first production commit**,
+  and that capture is now a stated prerequisite.
+- **The unlicensed-equality scenario was vacuous** while `HasPremiumLicence` is hard-coded false: every
+  instance behaves as unlicensed, so it goes green against a product that does nothing. It now also
+  asserts that the *licensed* run over the same fixture is **not** identical.
+- **Four preservation scenarios had no positive control**; each now moves another Feature in the same
+  run, separating "correctly left alone" from "the mechanic is missing".
+- **Eight scenarios ended in an editorial `Then`** — a sentence of argument a crafter cannot implement,
+  which becomes a no-op step and a green that means nothing. All moved into comments.
+- **Three Backgrounds were contradicted by their own scenarios** (licence state, Team count, what is in
+  flight). Reduced to what every scenario in the file genuinely shares.
+- **The runaway-run scenario began "a forecast run that somehow never reaches an end"** — the crafter
+  being told to invent the hazard, which in practice means asserting the guard against a fake. Replaced
+  with a shape reachable from real data: a Team whose measured delivery is zero on every drawn day,
+  working a Feature nothing else works on.
+- **The wall-clock scenario had no correctness floor** — a build returning garbage instantly passed it.
+  It now also asserts the percentiles match the gold set, and names where the baseline number was taken.
+- **The KPI-7 scenario is not runnable** — it counts a live instance's dependency population. Tagged
+  `@manual`, with its denominator and the exclusion of the planted shapes stated.
+- **Five scenarios added**: the half-written write-back (#5), a Team in two Portfolios (#11), a person
+  pressing refresh being told the truth (#12), the row-order invariant that fails silently (#36), and
+  ADR-156's accepted residual split out of the aggregation scenario (#51).
+- **One terminology slip fixed**: the milestone-1 narrative used the substantive form of the word this
+  product reserves, in a file that states the word appears nowhere.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues (back-propagation)
+
+Findings that belong to DISCUSS or DESIGN. **None is fixed here**; each is named with what it costs and
+what it needs, because deciding them is the maintainer's call and several change what the epic
+measures. Four were found by reading the shipped code in this wave; the rest came from the review gate.
+
+**Owed before slice 01 is dispatched**
+
+- **Three shipped architecture rules forbid exactly the edge slice 01 must create.**
+  `DependencySingleDecisionArchUnitTest.TheForecastAndThisEpic_KnowNothingOfEachOther` (`:194-215`)
+  asserts `ForecastService` may not depend on any type under `…Dependencies` — which slice 01 does the
+  moment it consults the honour policy. `NothingThisEpicAdded_ReadsTheLicenceFlagItWasHanded`
+  (`:223-234`) and `NothingThisEpicAdded_AsksWhetherTheLicenceIsPremium` (`:307-315`) forbid the
+  licence read slice 01 must add. The tests are not obstacles — they were written as the door this epic
+  comes through, and `AtMostOnePlace_DecidesWhetherADependencyCanBeActedOn` (`:248`) says so in its own
+  remark. But DESIGN lists nine new enforcement rows and never says three existing ones must be re-cut,
+  and its Maintainability row claims "no existing seam is re-cut". Name the replacement invariant
+  before dispatch, or the first commit lands red and the crafter settles the seam by deleting a test.
+- **`NotHonouredReason` has four members, and the one US-06 needs is not among them.** `NotLicensed`
+  left with this epic at the split — #4365 shipped without it deliberately, since a reason naming a
+  capability nobody could buy would be unreachable. Slice 01 adds it back, with its sentence in
+  `dependencySentences.ts`, precedence `NotLicensed` outermost.
+- **`FeatureDependencyFacts` carries no Team**, so AC-5.4's cross-Team reason needs the *facts*
+  extended — the one policy learning which Teams work a Feature, exactly as it already learns which
+  Portfolios hold it. Building that check anywhere else fails KPI-5 for both epics.
+- **`DependencyFacts.About(...)` hard-codes `HasPremiumLicence: false`**, and its own remark says
+  whoever turns it on hands the real answer in. Slice 01 is that moment. Until then AC-6.2 passes
+  vacuously — scenario #28's second assertion is what makes that visible.
+- **No component is named as the one that supplies the licence answer.** The proposed ArchUnit rule
+  forbids the forecast from touching `ILicenseService`, and `DependencyFacts.About` takes no licence
+  parameter, so as designed there is nowhere for it to live. Name the seam.
+- **The reason set churns across the two premium slices deliberately**: slice 01 adds `NotLicensed`
+  and a cross-Team reason; slice 02 deletes the second. Scenarios #19 and #40 are a pair so neither
+  direction ships alone.
+
+**Owed before slice 02 is dispatched**
+
+- **The three termination guarantees are not independent, and one is not a guarantee.** "The trial loop
+  contains no dependency logic" is a statement about where code lives, not an argument that the loop
+  exits. The real guarantee rests on `CanBeForecast`, which is computed from the *previous* run's
+  persisted forecasts — so on a first-ever run, or the first run after a blocker's Team loses
+  throughput, the policy can honour an edge whose blocker never completes and the loop does not
+  terminate. Compute that fact from the throughput set the run is building, and hand it to the policy
+  so the one decider still owns it.
+- **SA-15's `Feature.CanBeForecast` reuse is a second decision point.** The policy already decides this
+  case (`BlockerCannotBeForecast`). Reading the same property again inside the forecast is the
+  two-places-decide defect KPI-5 forbids, and the proposed ArchUnit rule cannot catch it because
+  `Feature` is a Model, not one of the three named types.
+- **The commit that replaces the draw source cannot have an exact net**, and SA-7 does not say so.
+  Scenario #33 now states it; the decision text should match.
+- **The ordinal's domain is undefined.** If the day's delivery draw and the first Feature pick share a
+  coordinate, both reduce the same mixed word and delivery correlates with which Feature got the work —
+  with nothing in the output looking wrong. #32 asserts the independence; the design should state the
+  allocation.
+- **Which Features the policy is asked about is unstated.** `UpdateForecastsForPortfolio` forecasts a
+  superset of the Portfolio's own Features — anything sharing a Team — and the policy returns
+  `OutsideThisPortfolio` for whatever is not in the set it is handed. Passing the run's superset would
+  silently convert cross-Portfolio edges from dropped to honoured, which is a product decision, not a
+  detail.
+- **`ForecastRunPlan`'s row order is load-bearing and undeclared.** The eligible window is a *prefix* of
+  a rank-ordered enumeration, so re-indexing rows in any other order changes which Features a
+  WIP-limited Team works on, with no exception thrown. #36 pins it, and the fixture must have a Team
+  working on fewer Features than it has left, or the assertion is vacuous.
+- **OQ-7 is not free.** A persisted aggregate row needs no migration, but existing consumers enumerate
+  `Feature.Forecasts` without filtering on Team, and a rollback leaves rows a previous binary never
+  wrote. Decide it before slice 02 rather than at its fourth commit.
+
+**Owed on the measurements, and these change what the epic claims**
+
+- **KPI-2 cannot currently return a negative.** Its first leg — a waiting Feature's date moves out — is
+  satisfied equally by the post-hoc date shift D2 rejects, so it discriminates nothing. Its second leg
+  has no magnitude floor and is measured as a single diff on an instance whose two runs over identical
+  data already differ, because the draw source is unseeded by choice. With several Features below a
+  waiting one, at least one reads earlier by chance most runs. **This is the epic's falsification
+  instrument and it passes whether D2 is right or wrong.** Slice 00's dogfood moment already measures
+  the run-to-run spread and runs first: restate KPI-2 against it — at least one Feature below moves
+  earlier by more than that spread, reproduced across three runs.
+- **KPI-4 contradicts AC-7.2.** AC-7.2 grants the joint run up to 1.5× the pre-epic wall clock; KPI-4
+  fails any run exceeding the pre-epic p99. A restructure landing legitimately at 1.2× satisfies one
+  and fails the other on all five runs. KPI-4 is described as a termination guarantee — express it as
+  one: no run fails to complete, and no run is abandoned at the ceiling. Its p99 also cannot be
+  computed from five samples.
+- **KPI-6's second half is unsatisfiable as written** — "0 forecast values differ", measured E2E, over
+  production randomness that differs between any two runs. Split it: the hint coverage is a per-instance
+  UI measurement E2E can make; the equality belongs in the suite against a pinned starting number, which
+  is where scenario #28 puts it.
+- **The baseline is defined three times and not identically** — "pre-epic", "before the first precursor
+  commit of slice 02", "before the precursor commit". Slices 00 and 01 land in between, and slice 01
+  adds a predicate to the innermost loop. Capture it before slice 00's first commit and say so once.
+- **AC-7.2's measurement environment is named twice, differently** — "the dogfood instance's full
+  Feature set" and "scheduled runs on `:5169`". They are the same machine in practice; say so, or pick
+  one.
+- **AC-5.3 contradicts itself**: "unchanged within Monte Carlo noise, asserted against a fixed random
+  seed". Under a pinned seed the answer is exact, and DESIGN's own handoff says this should become exact
+  equality. The scenarios assert exactness; the AC text still reads loose.
+- **AC-6.1's hint over-promises.** It puts "not included without a premium licence" on every Feature
+  with a dependency — including edges a licence would not honour either: cross-Portfolio, in a loop,
+  blocker unforecastable, Portfolio ignoring dependencies. An unlicensed reader is told a purchase would
+  move a date that would not move. Condition the hint on the honour verdict, which already computes
+  exactly this and therefore costs no new decision point.
+- **US-10 cites a job that does not exist.** `job-trust-the-date-i-am-looking-at` appears nowhere but
+  that line — not in `docs/product/jobs.yaml`. The slice-composition gate leans on US-10 to argue slice
+  00 carries user-visible value; the claim is right and the traceability behind it is not. The journey
+  also has no arc for the refresh-batch experience.
+- **The DoR table predates slice 00** and was not re-validated when it was added: it counts three value
+  stories where there are now four, 21 ACs where there are 27, and two briefs where there are three.
+  Slice 00 is never sized in it, and its prerequisites — a multi-Team Portfolio, a Redis-backed instance
+  — are absent from item 4.
+- **Slice 00 has no outcome KPI**, though its outcome is the most countable in the epic: executions per
+  Portfolio per batch, from two or three to one.
+
+**Owed on operability**
+
+- **Slice 00 removes the product's only forecast timing signal.** The forecast currently runs inside
+  `PortfolioUpdater`'s measured span — its `Stopwatch`, its `RefreshLog` row and its `LogUpdateSummary`
+  line. `ForecastUpdater` has none of them, and `ForecastService` logs a start line with no completion.
+  After slice 00 a forecast that hangs or takes far longer has **no symptom anywhere in the product**,
+  and slice 02 then rewrites the simulation under a wall-clock budget with nothing to read. The minimum
+  is one line, and it is a restoration rather than an addition: `LogUpdateSummary` from
+  `ForecastUpdater.Update`, whose own comment calls it "the one line an operator reads per completed
+  update", read in Settings → Logs. Recommended as slice 00's first commit, since the AC-7.2 baseline
+  cannot be captured without it. **This is production code on the forecasting path and needs explicit
+  approval before it is written.**
+- **`forecast.trial.aborted` has no level and no sink.** At Debug it is invisible on every real
+  instance; emitted per trial at Error it floods the very buffer an operator needs. Pin it: logged at
+  error level, once per run with a count and the first trial's coordinates, and a run that aborted any
+  trial reports as unsuccessful so the two signals cannot disagree.
+- **The public Kubernetes guide offers horizontal scaling without qualification**, while SA-18 adds a
+  second in-process-only coalescing rule. After slice 00 the doc's claim is wrong in a new way, and the
+  symptom is this epic's symptom: a stale forecast nobody is told about. A note in
+  `docs/Installation/kubernetes.md` and one line in the release notes carrying slice 00.
+- **The debounce can swallow a user-initiated refresh.** Both `ForecastController` routes return success
+  without observing whether the trigger was admitted, and the SignalR frame the UI shows progress from
+  is never sent — so a person presses refresh, gets a success, and sees nothing happen. Scenario #12
+  asserts the outcome; the design should say which of exempting the routes or reporting the wait it
+  takes.
+- **"Parking, not dropping" describes a mechanism that stores nothing.** As designed the trigger is
+  simply not enqueued, and survives only by the argument that a sibling will raise its own — which is
+  what leaves OQ-10 with nothing to drain. The `pendingReruns` shape in the same class is the proven
+  way to store a deferred intent.
+- **DoD item 6 expects an EF migration that this epic probably does not need.** Both candidate surfaces
+  appear to need none. Phrase it as N/A-with-reason, so the item is not satisfied with an empty
+  migration.
+
+**Three line citations in the DESIGN sections pointed at unrelated code and were corrected in this
+wave** — the updater registrations are at `Program.cs:1261-1264`, not `:1256-1259`, and the persisted
+Team-to-Portfolio relation is at `LighthouseAppContext.cs:279`, not `:259` (which configures a
+concurrency token). The substance of all three claims was correct; only the pointers were wrong.
+
+---
+
+## Wave: DISTILL / [REF] Open questions answered, and the one that stays open
+
+- **OQ-9 — SETTLED as behaviour, not mechanism.** Scenario #10 asserts a Portfolio waits only for work
+  that could change its own answer, and **#11 covers the case the first draft stepped around**: a Team
+  belonging to two Portfolios, which is exactly where a sibling set derived from the wrong relation
+  goes wrong. #14 fixes this as a *refresh-batch* rule rather than a general one.
+- **OQ-10 — SETTLED as an assertion, mechanism left open.** Scenario #8 asserts the outcome on the path
+  that breaks SA-18's premise: the last sibling fails, and the Portfolio is still forecast exactly once
+  from the data that did refresh. The review gate's finding that there is no stored trigger to drain is
+  recorded above; the scenario holds whichever mechanism is chosen.
+- **OQ-7 — STAYS OPEN, but is no longer free.** See *Upstream Issues*: the rollback consequence needs
+  deciding before slice 02, not at its fourth commit.
+- **Slice 02's 2-hour probe stays a prerequisite, not a scenario.** If it re-cuts the brief, scenarios
+  #32 to #38 are the ones to re-read.
+
+---
+
+## Wave: DISTILL / [REF] Deferred / Open
+
+- **No DEVOPS wave ran.** The project default environment matrix is used and is stated under
+  *Pre-requisites*. The review gate's judgement is that the substitution is defensible for the *test*
+  matrix and not for the *production-runtime* concerns, which is why the three operability items above
+  are named rather than left to DELIVER.
+- **The `@property` scenario is expressed in the host's idiom**, not a generative framework. This
+  repository has no property-testing library on the backend, and introducing one for a single mixer is
+  a larger decision than this epic should take.
+- **ADR-156 stays deferred**, and #51 asserts the residual points the safe way.
+- **Scenarios #20, #21, #42 and #43 need real awkward data** — a two-Feature loop and a blocker whose
+  Team has no measured delivery, created directly in Azure DevOps. If they fall back to fixtures, the
+  slice verdict must say which happened.
+- **The gold files are the first thing slice 00 does.** They cannot be captured after the first
+  production commit, and eight scenarios depend on them.
