@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
 using System.Net;
@@ -310,6 +311,99 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(FieldsAskedForIn(recorded.LastSearchUrl), Is.EqualTo("key,updated"));
         }
+
+        /// <summary>
+        /// A Jira administrator can rename "is blocked by", and a renamed instance looks from the outside
+        /// exactly like one that has no dependencies at all. Saying which names were seen turns a silent
+        /// nothing into something an administrator can act on, and keeps the answer in the mapper rather
+        /// than growing a second setting beside the Portfolio's own.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_LinksThatNoneOfThemMatchAreReportedWithTheNamesThatWereSeen()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+            var subject = AConnectorReturning(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
+
+            await subject.GetFeaturesForProject(portfolio);
+
+            var warning = logger.Warnings.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(warning, Does.Contain(portfolio.Name));
+                Assert.That(warning, Does.Contain("is halted by"));
+                Assert.That(warning, Does.Contain("is blocked by"));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_TheNamesAreListedOnceEachHoweverManyIssuesCarryThem()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AConnectorReturning(
+                logger,
+                AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-9")),
+                AnEpic("PROJ-2", InwardLink("is halted by", "PROJ-9")),
+                AnEpic("PROJ-3", InwardLink("waits for", "PROJ-9")));
+
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+
+            var warning = logger.Warnings.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(warning, Does.Contain("is halted by"));
+                Assert.That(warning, Does.Contain("waits for"));
+                Assert.That(Occurrences(warning, "is halted by"), Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_AnInstanceWhereSomeLinkDidMatchIsNotWarnedAt()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AConnectorReturning(
+                logger,
+                AnEpic("PROJ-1", BlockedByLink("PROJ-9")),
+                AnEpic("PROJ-2", InwardLink("is halted by", "PROJ-9")));
+
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+
+            Assert.That(logger.Warnings, Is.Empty);
+        }
+
+        /// <summary>
+        /// Having no dependencies is the ordinary case, not a misconfiguration. Warning about it would
+        /// train every reader of the log to skip the line that matters.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_AnInstanceThatSimplyHasNoLinksIsNotWarnedAt()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AConnectorReturning(logger, AnEpic("PROJ-1"));
+
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+
+            Assert.That(logger.Warnings, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_AnIssueThatOnlyBlocksOthersIsNoEvidenceOfARename()
+        {
+            var logger = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AConnectorReturning(logger, AnEpic("PROJ-1", BlocksLink("PROJ-9")));
+
+            await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
+
+            Assert.That(logger.Warnings, Is.Empty);
+        }
+
+        private static int Occurrences(string text, string needle)
+            => (text.Length - text.Replace(needle, string.Empty, StringComparison.Ordinal).Length) / needle.Length;
+
+        private static JiraWorkTrackingConnector AConnectorReturning(ILogger<JiraWorkTrackingConnector> logger, params string[] issues)
+            => JiraConnectorTestSetup.AConnectorOver(HandlerReturning(new RecordedJiraRequests(), issues), logger);
 
         private static string FieldsAskedForIn(string url)
             => System.Web.HttpUtility.ParseQueryString(new Uri(url).Query)["fields"] ?? string.Empty;

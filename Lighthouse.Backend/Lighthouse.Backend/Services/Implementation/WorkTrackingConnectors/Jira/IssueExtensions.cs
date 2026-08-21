@@ -4,7 +4,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     public static class IssueExtensions
     {
-        private const string BlockedByLinkName = "is blocked by";
+        /// <summary>
+        /// Jira's default name for the waiting end of a Blocks link. An administrator can rename it,
+        /// which is why the name is public: a Portfolio where nothing matched reports what it looked for
+        /// beside what it found.
+        /// </summary>
+        public const string BlockedByLinkName = "is blocked by";
 
         private const string IssueLinkType = "type";
 

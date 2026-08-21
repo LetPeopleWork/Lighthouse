@@ -280,7 +280,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var query = PrepareQuery(project);
             var issues = await GetIssuesByQuery(project, query);
-            return await CreateFeaturesFromIssues(project, issues);
+            var features = await CreateFeaturesFromIssues(project, issues);
+
+            ReportLinksThatMeantNothingHere(project, issues, features);
+
+            return features;
         }
 
         /// <summary>
@@ -1078,6 +1082,41 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static List<FeatureDependencyReference> TheIssuesItWaitsOn(Issue issue)
             => issue.Fields.ExtractDependencyReferences()
                 .ConvertAll(reference => new FeatureDependencyReference(TheFeatureHasNoRowYet, reference, DependencySource.TrackerLink));
+
+        /// <summary>
+        /// A Jira administrator can rename the inward link name Lighthouse reads, and a renamed instance
+        /// looks from the outside exactly like one that has no dependencies at all. Naming the inward
+        /// links that were seen turns a silent nothing into something an administrator can act on.
+        ///
+        /// Nothing is said when some link did match, or when the Portfolio carries no inward links at
+        /// all: having no dependencies is the ordinary case, and warning about it would train the reader
+        /// to skip the line that matters. One line for the whole refresh, never one per issue.
+        /// </summary>
+        private void ReportLinksThatMeantNothingHere(Portfolio portfolio, IEnumerable<Issue> issues, List<Feature> features)
+        {
+            if (features.Exists(feature => feature.DependsOnReferences.Count > 0))
+            {
+                return;
+            }
+
+            var namesSeen = issues
+                .SelectMany(issue => issue.Fields.InwardLinkNames())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Order(StringComparer.Ordinal)
+                .ToList();
+
+            if (namesSeen.Count == 0)
+            {
+                return;
+            }
+
+            logger.LogWarning(
+                "Portfolio {PortfolioName} has Features linked to others, but none of those links is called '{ExpectedLinkName}', "
+                + "which is the one Lighthouse reads as waiting. The link names it did see are: {NamesSeen}",
+                portfolio.Name,
+                IssueExtensions.BlockedByLinkName,
+                string.Join(", ", namesSeen));
+        }
 
         private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
         {

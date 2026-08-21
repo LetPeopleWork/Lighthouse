@@ -23,6 +23,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private static int connectionIdSeed = 9000;
 
         public static JiraWorkTrackingConnector AConnectorOver(HttpMessageHandler handler)
+            => AConnectorOver(handler, Mock.Of<ILogger<JiraWorkTrackingConnector>>());
+
+        public static JiraWorkTrackingConnector AConnectorOver(HttpMessageHandler handler, ILogger<JiraWorkTrackingConnector> logger)
         {
             var strategyMock = new Mock<IWorkTrackingAuthStrategy>();
             strategyMock
@@ -36,7 +39,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             return new JiraWorkTrackingConnector(
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
-                Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
+                logger,
                 factoryMock.Object,
                 handler);
         }
