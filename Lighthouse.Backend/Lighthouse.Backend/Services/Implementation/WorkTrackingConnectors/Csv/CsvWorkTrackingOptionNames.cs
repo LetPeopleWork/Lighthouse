@@ -38,5 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         public const string OwningTeamHeader = "Owning Team Column";
 
         public const string EstimatedSizeHeader = "Estimated Size Column";
+
+        public const string DependsOnHeader = "Depends On Column";
     }
 }

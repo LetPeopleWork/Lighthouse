@@ -16,6 +16,18 @@ namespace Lighthouse.Backend.Tests.Factories
 
         private static readonly DateTimeOffset LateEveningInUtc = new(2026, 3, 10, 23, 30, 0, TimeSpan.Zero);
 
+        private static readonly string[] TheCommunicationsEpic = ["AP-002"];
+
+        private static readonly string[] NavigationAndMining = ["AP-004", "AP-006"];
+
+        private static readonly string[] TheWhaleStudy = ["OE-010"];
+
+        private static readonly string[] TheEcosystemDatabase = ["OE-009"];
+
+        private static readonly string[] TheMineralSurvey = ["OE-008"];
+
+        private static readonly string[] TheMappingInitiative = ["OE-001"];
+
         [Test]
         public void CreateDemoWorkTrackingSystemConnection_CreatesWorkTrackingSystemConnectionWithCorrectDetails()
         {
@@ -41,6 +53,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.ClosedDateHeader, options), Is.EqualTo("ClosedDate"));
                 Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.TagsHeader, options), Is.EqualTo("Tags"));
                 Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.StateEnteredDateHeader, options), Is.EqualTo("StateEnteredDate"));
+                Assert.That(GetWorkTrackingSystemOptionValue(CsvWorkTrackingOptionNames.DependsOnHeader, options), Is.EqualTo("DependsOn"));
             }
         }
 
@@ -128,6 +141,53 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(demoProject.DataRetrievalValue, Does.Not.Contain("{"));
                 Assert.That(demoProject.DataRetrievalValue, Does.Not.Contain("}"));
             }
+        }
+
+        [Test]
+        public async Task CreateDemoProject_EpicForecast_WaitsOnWhatTheScenarioIsMeantToShow()
+        {
+            var dependencies = await DependenciesOfDemoPortfolio(DemoProjectNames.EpicForecast);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dependencies["AP-004"], Is.EqualTo(TheCommunicationsEpic));
+                Assert.That(dependencies["AP-005"], Is.EqualTo(NavigationAndMining));
+                Assert.That(dependencies["AP-006"], Is.Empty);
+            }
+        }
+
+        /// <summary>
+        /// The scenario named after dependencies is the one that has to carry the awkward ones, so this
+        /// pins the three a reader is meant to meet there: a circle, a blocker ranked below the Feature
+        /// waiting on it, and one shared with a team that has closed nothing.
+        /// </summary>
+        [Test]
+        public async Task CreateDemoProject_ProjectWithDependencies_CarriesOneOfEachAwkwardKind()
+        {
+            var dependencies = await DependenciesOfDemoPortfolio(DemoProjectNames.ProjectWithDependencies);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dependencies["OE-009"], Is.EqualTo(TheWhaleStudy));
+                Assert.That(dependencies["OE-010"], Is.EqualTo(TheEcosystemDatabase));
+                Assert.That(dependencies["OE-005"], Is.EqualTo(TheMineralSurvey));
+                Assert.That(dependencies["OE-004"], Is.EqualTo(TheMappingInitiative));
+            }
+        }
+
+        private static async Task<Dictionary<string, string[]>> DependenciesOfDemoPortfolio(string portfolioName)
+        {
+            var subject = CreateSubject();
+
+            var portfolio = subject.CreateDemoProject(portfolioName);
+            portfolio.WorkTrackingSystemConnection = subject.CreateDemoWorkTrackingSystemConnection();
+
+            var connector = new CsvWorkTrackingConnector(Mock.Of<ILogger<CsvWorkTrackingConnector>>());
+            var features = await connector.GetFeaturesForProject(portfolio);
+
+            return features.ToDictionary(
+                feature => feature.ReferenceId,
+                feature => feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToArray());
         }
 
         [Test]

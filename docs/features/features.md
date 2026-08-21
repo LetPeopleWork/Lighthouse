@@ -85,7 +85,7 @@ Most Features wait on nothing, and their cell stays blank. Every Feature that is
 
 An entry you are not allowed to read shows *No access* instead of a name. It is listed rather than dropped, because a list that quietly got shorter is one you have no way of telling is short.
 
-Which link Lighthouse reads depends on the system: [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#dependencies), [Jira](../concepts/worktrackingsystems/jira.html#dependencies) and [Linear](../concepts/worktrackingsystems/linear.html#dependencies). If your teams record dependencies in a custom field instead, a portfolio can name that field — see [Dependency Field](../portfolios/edit.html#dependency-field). CSV and ServiceNow have no dependency link of their own, so Features from those systems show none.
+Which link Lighthouse reads depends on the system: [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#dependencies), [Jira](../concepts/worktrackingsystems/jira.html#dependencies) and [Linear](../concepts/worktrackingsystems/linear.html#dependencies). If your teams record dependencies in a custom field instead, a portfolio can name that field — see [Dependency Field](../portfolios/edit.html#dependency-field). A CSV upload reads them from a column you name — see [Depends On Column](../concepts/worktrackingsystems/csv.html#dependencies). ServiceNow has no dependency link Lighthouse reads.
 
 The column appears on this page and on the Feature lists of the [Portfolio](../portfolios/detail.html#features) and [Team](../teams/detail.html#features) pages — it is the same list everywhere.
 

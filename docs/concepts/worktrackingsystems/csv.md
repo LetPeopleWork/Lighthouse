@@ -53,6 +53,7 @@ Below is a table of available options for configuring CSV work tracking connecto
 | Url Column                 | Name of the column containing URLs.                              | Url                  | Optional                                |
 | Owning Team Column         | Name of the column containing owning team information.           | Owning Team          | Optional (only needed for portfolios)     |
 | Estimated Size Column      | Name of the column containing estimated size values.             | Estimated Size       | Optional (only needed for portfolios)     |
+| Depends On Column          | Name of the column listing the other Features a Feature waits on, separated by commas or semicolons. | Depends On           | Optional (only needed for portfolios)     |
 
 All required columns must be specified and be available in the CSV for Lighthouse to work. Optional columns can be skipped. Your csv can contain more information, Lighthouse will just use the columns that are specified above and ignore others.
 
@@ -109,4 +110,10 @@ The default CSV connector for Azure DevOps assumes your dates are in the followi
 However, this may change depending on your local settings. Please double-check the [date format](#work-tracking-system-options) and if needed, change it in the settings to match your format.
 
 # Dependencies
-CSV has no dependency link of its own, so Features imported from a CSV file show no dependencies. See [Dependencies](../../features/features.html#dependencies) for what other work tracking systems provide here.
+A CSV has no link type of its own, so Lighthouse reads dependencies from a column. Point the [Depends On Column](#csv-work-tracking-options) option at a column whose cells list the other Features a Feature waits on, separated by commas or semicolons, using the same IDs as the ID column.
+
+Because the default delimiter is also a comma, a comma-separated list has to be quoted (`"EPIC-1, EPIC-2"`) - semicolons need no quoting and are the easier choice.
+
+A file exported before you added the column keeps working: Lighthouse finds no such column and reads no dependencies rather than failing the import.
+
+What you then see is described on the [Features page](../../features/features.html#dependencies).

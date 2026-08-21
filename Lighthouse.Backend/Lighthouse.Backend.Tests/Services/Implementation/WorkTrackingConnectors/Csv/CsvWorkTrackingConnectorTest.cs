@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
@@ -11,6 +12,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 {
     public class CsvWorkTrackingConnectorTest() : IntegrationTestBase
     {
+        private static readonly string[] TheFirstEpic = ["EPIC-001"];
+
+        private static readonly string[] BothEpics = ["EPIC-001", "EPIC-002"];
+
         [Test]
         [TestCase("empty-file.txt", false)]
         [TestCase("invalid-missing-required.csv", false)]
@@ -286,6 +291,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 VerifyOptionalFeatureFields(features[3], new DateTime(2025, 01, 28, 0, 0, 0, DateTimeKind.Utc), ["backend", "security"], "https://system.com/item/4", 5, "Backend Team");
                 VerifyOptionalFeatureFields(features[4], new DateTime(2025, 01, 20, 0, 0, 0, DateTimeKind.Utc), [], string.Empty, 2, string.Empty);
             }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_DependsOnColumn_ReadsEveryReferenceTheRowNames()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-depends-on.csv");
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(features[0].DependsOnReferences.Select(reference => reference.ReferenceId), Is.Empty);
+                Assert.That(features[1].DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheFirstEpic));
+                Assert.That(features[2].DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(BothEpics));
+                Assert.That(features[3].DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(BothEpics));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_DependsOnColumnRead_ReferenceComesFromTheTrackersOwnLink()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-depends-on.csv");
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            Assert.That(features[1].DependsOnReferences.Single().Source, Is.EqualTo(DependencySource.TrackerLink));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_NoDependsOnColumnConfigured_ReadsNothingEvenWhenTheFileHasOne()
+        {
+            var subject = CreateSubject();
+            var project = CreateProject("project-valid-depends-on.csv");
+            AdjustWorkTrackingSystemOption(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.DependsOnHeader, string.Empty);
+
+            var features = (await subject.GetFeaturesForProject(project)).ToList();
+
+            Assert.That(features.SelectMany(feature => feature.DependsOnReferences), Is.Empty);
         }
 
         [Test]

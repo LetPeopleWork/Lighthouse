@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(connection.Options, Has.Count.EqualTo(17));
+                Assert.That(connection.Options, Has.Count.EqualTo(18));
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.Delimiter), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.DateTimeFormat), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.TagSeparator), Is.True);
@@ -124,6 +124,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.UrlHeader, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.OwningTeamHeader, false, true), Is.True);
                 Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader, false, true), Is.True);
+                Assert.That(ContainsOption(connection.Options, CsvWorkTrackingOptionNames.DependsOnHeader, false, true), Is.True);
 
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.Delimiter), Is.EqualTo(","));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.DateTimeFormat), Is.EqualTo("yyyy-MM-dd HH:mm:ss"));
@@ -142,6 +143,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.UrlHeader), Is.EqualTo("Url"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.OwningTeamHeader), Is.EqualTo("Owning Team"));
                 Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.EstimatedSizeHeader), Is.EqualTo("Estimated Size"));
+                Assert.That(GetOptionValue(connection.Options, CsvWorkTrackingOptionNames.DependsOnHeader), Is.EqualTo("Depends On"));
             }
         }
 

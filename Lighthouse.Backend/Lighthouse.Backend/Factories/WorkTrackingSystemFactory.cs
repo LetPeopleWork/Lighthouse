@@ -158,6 +158,13 @@ namespace Lighthouse.Backend.Factories
                     Key = CsvWorkTrackingOptionNames.EstimatedSizeHeader,
                     Value = "Estimated Size",
                     IsOptional = true,
+                },
+
+                new WorkTrackingSystemConnectionOption
+                {
+                    Key = CsvWorkTrackingOptionNames.DependsOnHeader,
+                    Value = "Depends On",
+                    IsOptional = true,
                 }
             ];
         }

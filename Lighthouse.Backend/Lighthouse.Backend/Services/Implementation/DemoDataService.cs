@@ -359,7 +359,7 @@ namespace Lighthouse.Backend.Services.Implementation
             itsNotAlwaysWhatItSeems.Teams.Add(DemoTeamNames.PartTimeWork);
             premiumScenarios.Add(itsNotAlwaysWhatItSeems);
 
-            var projectDependencies = CreatesScenario(12, "Dependencies", "Explore a project where we have Epics with multiple Teams involved.");
+            var projectDependencies = CreatesScenario(12, "Dependencies", "Epics that wait on other Epics, and Epics several Teams work on. Which dependencies can Lighthouse act on, and which not?");
             projectDependencies.IsPremium = true;
 
             projectDependencies.Teams.Add(DemoTeamNames.GoodThroughput);

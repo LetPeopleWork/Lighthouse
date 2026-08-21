@@ -1,0 +1,5 @@
+ID,Name,State,Type,Started Date,Closed Date,Depends On
+EPIC-001,Nothing waited on,In Progress,Epic,2025-01-20,,
+EPIC-002,One reference,In Progress,Epic,2025-01-20,,EPIC-001
+EPIC-003,A comma separated list,In Progress,Epic,2025-01-20,,"EPIC-001, EPIC-002"
+EPIC-004,A semicolon separated list with a trailing separator,In Progress,Epic,2025-01-20,,EPIC-001;EPIC-002;

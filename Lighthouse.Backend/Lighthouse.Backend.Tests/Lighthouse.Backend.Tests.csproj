@@ -71,6 +71,9 @@
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\project-valid-all-optional.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\project-valid-depends-on.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Update="Services\Implementation\WorkTrackingConnectors\Csv\team-valid-all-optional.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

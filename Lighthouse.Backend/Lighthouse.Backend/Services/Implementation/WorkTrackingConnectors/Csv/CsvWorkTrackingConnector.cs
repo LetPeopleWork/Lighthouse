@@ -2,7 +2,9 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
@@ -13,6 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
     public class CsvWorkTrackingConnector(ILogger<CsvWorkTrackingConnector> logger) : IWorkTrackingConnector
     {
         private static int orderCounter;
+
+        private const int TheFeatureHasNoRowYet = 0;
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection)
         {
@@ -68,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
                 if (workItemBase != null)
                 {
-                    var feature = new Feature(workItemBase);
+                    var feature = new Feature(workItemBase, TheDependenciesOf(csv, project));
 
                     var owningTeam = csv.GetField(GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
                     var estimatedSizeString = csv.GetField(GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
@@ -436,6 +440,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private static string GetStateEnteredDateColumn(WorkTrackingSystemConnection connection)
         {
             return connection.Options.SingleOrDefault(o => o.Key == CsvWorkTrackingOptionNames.StateEnteredDateHeader)?.Value ?? string.Empty;
+        }
+
+        /// <summary>
+        /// The other Features a row says it waits on, read from one column holding a list. A file uploaded
+        /// before this column existed has no header of that name, and CsvHelper is configured to hand back
+        /// nothing rather than throw for a header that is not there - so an older upload keeps working and
+        /// simply waits on nothing. Nothing here has been saved yet, so every reference names Feature nought
+        /// until the reconciler keys it to the row the Feature lands on.
+        /// </summary>
+        private static List<FeatureDependencyReference> TheDependenciesOf(CsvReader csv, Portfolio project)
+        {
+            var column = GetDependsOnColumn(project.WorkTrackingSystemConnection);
+
+            if (string.IsNullOrWhiteSpace(column))
+            {
+                return [];
+            }
+
+            return DependencyFieldReferences.In(csv.GetField(column))
+                .Select(reference => new FeatureDependencyReference(TheFeatureHasNoRowYet, reference, DependencySource.TrackerLink))
+                .ToList();
+        }
+
+        private static string GetDependsOnColumn(WorkTrackingSystemConnection connection)
+        {
+            return connection.Options.SingleOrDefault(o => o.Key == CsvWorkTrackingOptionNames.DependsOnHeader)?.Value ?? string.Empty;
         }
 
         public Task<WriteBackResult> WriteFieldsToWorkItems(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
