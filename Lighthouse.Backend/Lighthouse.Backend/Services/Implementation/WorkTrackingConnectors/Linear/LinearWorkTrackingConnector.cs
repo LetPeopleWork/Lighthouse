@@ -4,6 +4,7 @@ using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces;
@@ -30,8 +31,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private const int HistoryPageSize = 25;
 
         private const int ProjectRelationPageSize = 50;
-
-        private const int TheFeatureHasNoRowYet = 0;
 
         private bool historyUnavailable;
 
@@ -454,11 +453,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         {
             var nodes = projectNode.InverseRelations?.Nodes ?? [];
 
-            return nodes
+            var relations = nodes
                 .Select(relation => relation?.Project?.Id ?? string.Empty)
                 .Where(id => id.Length > 0)
-                .Select(id => new FeatureDependencyReference(TheFeatureHasNoRowYet, id, DependencySource.TrackerLink))
                 .ToList();
+
+            // Linear exposes no fields of its own for a Portfolio to point at, so a Portfolio here goes on
+            // reading these links whatever it has typed into that setting.
+            return DependencySourceSelector.TheTrackersOwnLinksOnly(relations);
         }
 
         private static IReadOnlyList<WorkItemStateTransition> MapProjectSyncedTransitions(ProjectNode projectNode, Portfolio portfolio)

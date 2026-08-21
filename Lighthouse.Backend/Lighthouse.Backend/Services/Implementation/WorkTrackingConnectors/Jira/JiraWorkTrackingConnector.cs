@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
@@ -34,8 +35,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private const string BoardsEndpoint = "rest/agile/latest/board";
 
         private const string AllFields = "*all";
-
-        private const int TheFeatureHasNoRowYet = 0;
 
         private const string OrderByKeyword = "ORDER BY";
 
@@ -1056,7 +1055,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem, TheIssuesItWaitsOn(issue))
+                var feature = new Feature(workItem, TheIssuesItWaitsOn(portfolio, workItem, issue))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
@@ -1076,12 +1075,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// The links read off one issue, as references. Nothing here has been saved yet, so every
-        /// reference names Feature nought until the reconciler keys it to the row the Feature lands on.
+        /// What one issue waits on. Jira supplies what it read off the issue's own links; which of that is
+        /// used, and what a Portfolio reading a field of its own gets instead, is not this tracker's
+        /// decision to make.
         /// </summary>
-        private static List<FeatureDependencyReference> TheIssuesItWaitsOn(Issue issue)
-            => issue.Fields.ExtractDependencyReferences()
-                .ConvertAll(reference => new FeatureDependencyReference(TheFeatureHasNoRowYet, reference, DependencySource.TrackerLink));
+        private static List<FeatureDependencyReference> TheIssuesItWaitsOn(Portfolio portfolio, WorkItemBase workItem, Issue issue)
+            => DependencySourceSelector.TheDependenciesOf(portfolio, workItem, issue.Fields.ExtractDependencyReferences());
 
         /// <summary>
         /// A Jira administrator can rename the inward link name Lighthouse reads, and a renamed instance
@@ -1100,6 +1099,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private void ReportLinksThatMeantNothingHere(Portfolio portfolio, IEnumerable<Issue> issues, List<Feature> features)
         {
+            // A Portfolio reading a field of its own has deliberately stopped reading links, so telling it
+            // its links are named wrong describes a decision it made on purpose, in the words of a mistake.
+            // The check below cannot stand in for this one: it goes quiet as soon as anything is waiting on
+            // anything, and the moment that bites is the one where the named field is still empty - which is
+            // where an administrator setting the field up actually is.
+            if (!DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio))
+            {
+                return;
+            }
+
             if (features.Exists(feature => feature.DependsOnReferences.Count > 0))
             {
                 return;
