@@ -92,15 +92,18 @@
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshLogService.cs"
           ],
           "criteria": [
             "A Stopwatch wraps the Update body in a try/finally mirroring TeamUpdater.Update's shape.",
-            "A RefreshLog row of type Forecast is written on success and on failure.",
-            "The inherited LogUpdateSummary is called with the measured elapsed time.",
-            "Ignore attributes from the previous step are removed and those tests pass."
+            "A RefreshLog row of type Forecast is written on success and on failure, and LogUpdateSummary is called with the measured elapsed time.",
+            "Ignore attributes from the previous step are removed and those tests pass.",
+            "The frontend RefreshLog model is widened so a Forecast row is not an unhandled value.",
+            "RemoveOrphanedRefreshLogs reclaims Forecast rows when a Portfolio is deleted."
           ],
-          "implementation_notes": "Must land first. Once the forecast moves out of PortfolioUpdater's measured span in phase 05, a slow or hung forecast has no symptom anywhere in the product, and the wall-clock baseline the later slices read is unreadable without this."
+          "implementation_notes": "Must land first. Once the forecast moves out of PortfolioUpdater's measured span in phase 05, a slow or hung forecast has no symptom anywhere in the product, and the wall-clock baseline the later slices read is unreadable without this. Two follow-ups found while doing 01-01, both required here. Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts types the field as a union of \"Team\" and \"Portfolio\", so it must be widened once Forecast rows are actually written; Settings > System Info > Refresh History builds its dropdown from whatever values arrive and needs no allow-list change. RefreshLogService.RemoveOrphanedRefreshLogs (:70-76) sends any Forecast row through a default arm returning false, so those rows would never be reclaimed when a Portfolio is deleted. Touching a frontend file means this slice's Definition of Done item for the frontend gates is no longer N/A: pnpm test, pnpm build with zero warnings, and a clean Biome check are all required."
         }
       ]
     },
