@@ -63,3 +63,10 @@ States you don't need (e.g. *Canceled*) can be left out. Items in unmapped state
 
 # Feature Order
 The order of features is based on the ordering you set in Linear. To change this, you can [manually reorder](https://linear.app/docs/display-options#manual-ordering).
+
+# Dependencies
+Lighthouse reads what a Feature is waiting on from **Project relations**. Linear accepts exactly one relation type between two Projects, so every relation is a dependency and the direction is carried by which end you are looking at: only the end that is waiting is read, so each dependency is recorded once. Lighthouse never creates, changes or removes a relation.
+
+Note that this is about relations between **Projects**, not between Issues. Lighthouse maps a Linear Project to a Feature — see [Hierarchy](#hierarchy).
+
+What you then see is described on the [Features page](../../features/features.html#dependencies).

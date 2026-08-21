@@ -198,3 +198,12 @@ You may adjust all those values to your liking after that. For example, if the s
 
 {: .note}
 Please be aware that this is a one-time operation. Lighthouse does not keep your settings in sync with the selected board. If you make changes in your Azure DevOps board, you must either update them manually, or rerun the Wizard.
+
+# Dependencies
+Lighthouse reads what a Feature is waiting on from the **Predecessor/Successor** link type (`System.LinkTypes.Dependency-Reverse`). A Feature with a *Predecessor* link to another work item is shown as depending on it.
+
+Azure DevOps writes every such link twice, once at each end — the waiting item gets a *Predecessor*, the item being waited on gets a *Successor*. Only the waiting end is read, so each dependency is recorded once. Lighthouse never creates, changes or removes a link: remove one in Azure DevOps and it disappears here on the next refresh.
+
+If your teams record dependencies in a custom field rather than through this link, a portfolio can name that field instead — see [Dependency Field](../../portfolios/edit.html#dependency-field).
+
+What you then see is described on the [Features page](../../features/features.html#dependencies).

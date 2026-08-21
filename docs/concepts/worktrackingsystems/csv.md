@@ -107,3 +107,6 @@ Once you've set this up, you can export the CSV file and import it into Lighthou
 {: .important}
 The default CSV connector for Azure DevOps assumes your dates are in the following format: *d.M.yyyy HH:mm:ss*.
 However, this may change depending on your local settings. Please double-check the [date format](#work-tracking-system-options) and if needed, change it in the settings to match your format.
+
+# Dependencies
+CSV has no dependency link of its own, so Features imported from a CSV file show no dependencies. See [Dependencies](../../features/features.html#dependencies) for what other work tracking systems provide here.

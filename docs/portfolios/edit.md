@@ -239,3 +239,24 @@ If you need to override this behavior (for example, to group work items under a 
 
 {: .note}
 Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.
+
+## Dependency Settings
+These two settings decide what Lighthouse reads as a dependency for this portfolio, and whether it acts on what it read. Both are available on every instance, including the community edition. What a dependency looks like once it has been read is described on the [Features page](../features/features.html#dependencies).
+
+### Dependency Field
+By default, Lighthouse reads what a Feature waits on from the native link in your work tracking system — see [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#dependencies), [Jira](../concepts/worktrackingsystems/jira.html#dependencies) and [Linear](../concepts/worktrackingsystems/linear.html#dependencies).
+
+If your teams record dependencies in a custom field instead — a list of work item ids or keys, separated by commas or semicolons — select that field as the **Dependency Field**. The field must be defined as an Additional Field on your Work Tracking System connection first.
+
+While a Dependency Field is set, the native links are **not read at all** for this portfolio: the field replaces them, it does not add to them. Entries that don't resolve to a Feature Lighthouse knows are skipped, and the remaining ones are still read.
+
+{: .note}
+Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
+
+{: .important}
+The Dependency Field is currently only read for **Azure DevOps** portfolios. On a portfolio connected to another work tracking system the setting can be selected but has no effect, and dependencies keep coming from that system's own links.
+
+### Ignore Dependencies
+Turn this on to have Lighthouse keep reading dependencies but stop acting on them — useful when you want to look at a plan as if those links weren't there, without deleting a single one in your work tracking system.
+
+Nothing is hidden: the dependencies stay in the Dependencies column, greyed out, with the reason on hover, and they stop raising warnings. Turning the toggle back off restores them immediately.

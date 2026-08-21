@@ -77,6 +77,43 @@ If you move a Feature up and a lower one is still forecast to finish first, that
 - **Portfolio membership** is shown per row. A Feature that belongs to several Portfolios appears once and lists all of them.
 - **Sorting** the grid by any other column leaves the positions untouched, so you can sort by name or state and still read where each Feature really sits.
 
+## Dependencies
+
+The **Dependencies** column lists the other Features a Feature is waiting on. Lighthouse reads those links from your work tracking system on every refresh and never writes one back — you record a dependency where you already record it, not a second time here.
+
+Most Features wait on nothing, and their cell stays blank. Every Feature that is waited on gets its own line, reading `reference: name`, and links straight to the record in your work tracking system. Sorting the column sorts by *how many* Features a row waits on, so the most entangled rows come first.
+
+An entry you are not allowed to read shows *No access* instead of a name. It is listed rather than dropped, because a list that quietly got shorter is one you have no way of telling is short.
+
+Which link Lighthouse reads depends on the system: [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#dependencies), [Jira](../concepts/worktrackingsystems/jira.html#dependencies) and [Linear](../concepts/worktrackingsystems/linear.html#dependencies). If your teams record dependencies in a custom field instead, a portfolio can name that field — see [Dependency Field](../portfolios/edit.html#dependency-field). CSV and ServiceNow have no dependency link of their own, so Features from those systems show none.
+
+The column appears on this page and on the Feature lists of the [Portfolio](../portfolios/detail.html#features) and [Team](../teams/detail.html#features) pages — it is the same list everywhere.
+
+{: .note}
+Dependencies are read and shown on every Lighthouse instance, including the community edition.
+
+{: .important}
+Seeing a dependency is not the same as forecasting around it. The dates Lighthouse shows today do **not** wait for a Feature's dependencies to finish first — they assume your Teams can start whenever their throughput allows. The column and its warnings are there to make the links visible, and to tell you which of them nothing could ever be done about. See [Dependencies](../concepts/howlighthouseforecasts.html#dependencies) for the reasoning.
+
+### Dependencies a portfolio has set aside
+
+A portfolio can be told to [ignore dependencies](../portfolios/edit.html#ignore-dependencies) — useful when you want to look at a plan as if those links weren't there. Its entries stay in the column, greyed out, with the reason on hover. Nothing is deleted and nothing is hidden.
+
+## Warnings
+
+The **Warnings** column carries one icon per row: a green check when there is nothing to say, an amber triangle when there is. One icon, however many reasons a row has collected — hover it to read them all. Sorting the column brings every row that needs attention to the top.
+
+A row warns when:
+
+- **It is marked done but still has remaining Work Items.** Worth checking whether the work really finished.
+- **It has no children, so its size comes from the [Default Feature Size](../portfolios/edit.html#default-feature-size).** The remaining Work Items you see are an assumption, not a count.
+- **It depends on a Feature in no Portfolio they share.** Lighthouse reasons within a Portfolio, so a dependency reaching outside every Portfolio the two share can't be taken into account.
+- **It and another Feature are waiting on each other.** A loop has no order to resolve, so neither end of it can be taken into account.
+- **It depends on a Feature with no measured delivery to forecast from.** Nothing has been completed there, so the wait can't be given a date — see [when a Team cannot be forecast](../concepts/howlighthouseforecasts.html#when-a-team-cannot-be-forecast).
+- **It depends on a Feature that sits below it in the order.** This is the one warning that isn't about Lighthouse's limits but about yours: something ranked to be built later is being waited on by something ranked to be built sooner. Lighthouse never reorders on its own — see [Moving a Feature](#moving-a-feature).
+
+Having a dependency is not itself a warning. A dependency with nothing wrong with it appears in the Dependencies column and stays silent here, and so does one the portfolio has set aside.
+
 ## Who sees what
 
 The page is available on every Lighthouse instance, including the community edition.

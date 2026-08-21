@@ -65,9 +65,10 @@ If you have toggled on the [Group Features by Parent](#group-features-by-parent)
 ### Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
-Furthermore, there can be two indicators for each feature:
-- A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Portfolio Modification Page](./edit.html#default-feature-size) for details on what that means.
-- A ⚙️ emoji symbolizes that there are child items of this specific feature that are currently being **actively** worked on (meaning they are in a [Doing State](./edit.html#states)) by any involved team.
+Three further columns say something about every row:
+- **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet, or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).
+- **Active Work** shows whether any involved team currently has child items of this Feature in a [Doing State](./edit.html#states), and names the teams.
+- **Dependencies** lists the other Features this one is waiting on, read from your work tracking system. See [Dependencies](../features/features.html#dependencies).
 
 {: .recommendation}
 > In general you should be working on the top-most features, while the ones *further down* the order may not be broken down yet. If features on top are not yet broken down, this may be a signal that you should invest some time in breaking them down.  

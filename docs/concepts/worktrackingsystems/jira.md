@@ -261,3 +261,15 @@ You may adjust all those values to your liking after that. For example, if the s
 
 {: .note}
 Please be aware that this is a one-time operation. Lighthouse does not keep your settings in sync with the selected board. If you make changes in your Jira board, you must either update them manually, or rerun the Wizard.
+
+# Dependencies
+Lighthouse reads what a Feature is waiting on from its **issue links**, taking every link whose inward description is *is blocked by*. That is Jira's default wording for the waiting end of a *Blocks* link.
+
+Jira writes each link once and offers it from both ends: the waiting issue is handed an inward link, the issue being waited on an outward one. Only the waiting end is read, so each dependency is recorded once. The other link types — *relates to*, *duplicates* and the rest — arrive in exactly the same shape and are ignored, which is why the description matters. Lighthouse never creates, changes or removes a link.
+
+{: .important}
+A Jira administrator can rename link descriptions. If your Features are linked to each other but none of the links is called *is blocked by*, Lighthouse reads no dependencies at all — and writes a warning to the [Logs](../../settings/systeminfo.html#logs) naming the link descriptions it did see instead. Check there first if a portfolio shows no dependencies where you expect them.
+
+This works the same on Jira Cloud and Jira Data Center; no extra configuration or field selection is needed.
+
+What you then see is described on the [Features page](../../features/features.html#dependencies).

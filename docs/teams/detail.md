@@ -58,9 +58,10 @@ On an instance where [Lighthouse owns the order](../settings/configuration.html#
 ## Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
-Furthermore, there can be two indicators for each feature:
-- A ⚠️ emoji symbolizes that this specific feature is using the *Default Feature Size* and is not broken down yet. Check the [Portfolio Modification Page](../portfolios/edit.html#default-feature-size) for details on what that means.
-- A ⚙️ emoji symbolizes that there are child items of this specific feature that are currently being **actively** worked on (meaning they are in a [Doing State](./edit.html#states)) by this team.
+Three further columns say something about every row:
+- **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet, or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).
+- **Active Work** shows whether this team currently has child items of the Feature in a [Doing State](./edit.html#states).
+- **Dependencies** lists the other Features this one is waiting on, read from your work tracking system. See [Dependencies](../features/features.html#dependencies).
 
 ## Feature Progress
 In the progress column, you can see how many items are done and how many are pending for this feature. This is split by the total amount (containing all  items that including the ones from other teams working on the same feature) and items that are specifically relevant for the current team.

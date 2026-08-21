@@ -317,16 +317,14 @@ Across teams this multiplication assumes the teams are independent of each other
 A Feature with no remaining work drops out of the calculation - it is done, and multiplying by a certainty changes nothing. A Delivery whose work is all finished simply reads 100%.
 
 ## Dependencies
-Lighthouse does **not** offer any possibility to define dependencies in the sense of:
-- This work item can only be started once that work was done
-- This Feature has to wait for the completion of those two other Features before we can start
+You cannot *define* a dependency in Lighthouse. There is no screen that says "this Feature has to wait for those two other Features", and there never will be: Lighthouse reads your work tracking system, it does not become a second place to plan in.
+
+What it does do is **read** the dependencies you already recorded there — Predecessor links in Azure DevOps, *is blocked by* issue links in Jira, Project relations in Linear — and show them on every Feature list, together with a warning on the ones nothing could be done about. See [Dependencies](../features/features.html#dependencies) for what that looks like.
 
 {: .important}
-Lighthouse will also not offer this going forward.
+Reading them is not the same as forecasting around them. The dates on this page come from throughput and the [Feature WIP](#the-impact-of-feature-wip) of each Team, and nothing in that simulation waits for another Feature to finish first. A Feature whose dependency is not done yet can still be forecast to finish next week. Treat the Dependencies column as something to act on yourself, not as something the forecast has already accounted for.
 
-This is for two reasons.
-First, it's a lot of work to do. It may sound easy, but it will complicate the whole tool. And while we are not opposing investing in the tool, we only want to do it when we think it makes sense.
-Which brings us to the reason #2: We don't like dependencies. While there may be some, you should try to aggressively remove them as good as possible. As long as we have lots of dependencies, a tool like Lighthouse will not help you very much.
+That is deliberate, and it is worth saying why. We don't like dependencies. Wherever there are some, you should try to remove them as aggressively as you can — as long as there are many of them, a tool like Lighthouse will not help you very much, and neither will a forecast that pretends to model them precisely. Making them visible is the part that changes behaviour; modelling them is the part that makes the tool complicated and the number no more honest.
 
 Please have a look at the work of [Prateek Singh](https://www.linkedin.com/in/singhpr13/), who wrote among others, this very interesting blog post: [Understanding the Impact of Dependencies](https://singhpr.medium.com/understanding-the-impact-of-dependencies-4cca0d720019)
 

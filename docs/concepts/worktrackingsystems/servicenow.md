@@ -300,6 +300,7 @@ Every work item Lighthouse shows carries a link to its record in ServiceNow, bui
 | Board-driven configuration | Supported, where Visual Task Boards are in use |
 | Time in state / cycle time by state | Supported, but requires `itil` **and** a per-class metric definition |
 | Portfolios | Not supported, not planned |
+| Dependencies | Not available — ServiceNow has no dependency link Lighthouse reads |
 | Additional fields | Not available |
 | Write back | Not supported |
 | OAuth | Not available — basic authentication only |
