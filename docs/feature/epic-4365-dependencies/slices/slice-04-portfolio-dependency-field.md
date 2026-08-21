@@ -156,7 +156,33 @@ Normal — the approval gate is Epic #5792's only (maintainer, 2026-08-16).
 
 ## Learning hypothesis verdict
 
-_Not yet run._
+**US-04 — not run.** No real example of such a field was available, and this is the one population the
+dogfood instance does not contain, so the premise stands unchecked rather than confirmed. What shipped
+assumes references in the connector's own form; if what people actually type is URLs or titles, the
+normalisation step the hypothesis names is still owed and is still a slice of its own.
+
+**US-10 — held.** Ignoring is a read-time verdict, and no consumer wanted the edge set itself to be
+empty. `IDependencyHonourPolicy` gained one field of input and nothing else moved: the connectors, the
+reconciler and the stored references are untouched by the switch, which is what the acceptance
+scenarios assert by comparing the stored set byte for byte either side of it.
+
+## Two corrections to this brief, settled during implementation
+
+Both are recorded in `feature-delta.md` as F-3 and F-4 and are followed there rather than here.
+
+- **The two settings sit on `Portfolio`, not on `IWorkItemQueryOwner`** (F-3). This brief's IN-scope
+  list still says the interface. A Team would carry both as dead surface it has no consumer for, which
+  is the argument `FetchFingerprint` already makes for the two portfolio-only references beside them.
+
+- **The relations request is skipped only when BOTH overrides are set** (F-4), not when the dependency
+  override alone is. Azure DevOps carries the parent link and the dependency links in one payload, so
+  the "skip the relation fetch entirely" line above, taken literally, would lose the whole parent
+  hierarchy for any Portfolio that reads its dependencies from a field but its parent from the tracker.
+  AC-4.2 is met in the configuration it describes: both overrides set, no relations request.
+
+Two lines in `acceptance/milestone-4` were corrected to match, both of which contradicted the delta
+rather than the code: an unresolvable entry is **skipped** (AC-4.4) rather than listed as unresolved,
+and the no-relations assertion now names the configuration it holds in.
 
 ## The tracker's cycle guard does not come with the override
 

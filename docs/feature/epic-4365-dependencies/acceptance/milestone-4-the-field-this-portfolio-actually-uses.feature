@@ -38,7 +38,20 @@ Feature: The two dependency settings a Portfolio owns (Epic 4365, Slice 04 — U
     When the Portfolio is refreshed
     Then "Checkout redesign" is waiting on 1 Feature
     And that Feature is the one named in "Waits On"
-    And Lighthouse did not ask the tracker for its link information at all
+    And the Predecessor link is not read for this Portfolio at all
+
+  @us-04 @slice-04 @contract-shape:bounded-change
+  Scenario: The link information stops being asked for once nothing in it is wanted
+    # Azure DevOps carries the parent link and the dependency links in the same place, and asking for it
+    # is the most expensive request a refresh makes. Skipping it while the parent still lives there would
+    # lose the whole parent hierarchy - and an empty hierarchy is a believable answer with nothing about
+    # it that looks wrong.
+    Given the Portfolio names "Waits On" as its dependency field
+    When the Portfolio is refreshed
+    Then Lighthouse still asks the tracker for its link information, for the parent
+    But once the Portfolio also names a field to read the parent from
+    And the Portfolio is refreshed again
+    Then Lighthouse does not ask the tracker for its link information at all
 
   @edge @us-04 @slice-04 @contract-shape:bounded-change
   Scenario Outline: The field is read forgivingly, and an empty one is not a problem
@@ -64,9 +77,7 @@ Feature: The two dependency settings a Portfolio owns (Epic 4365, Slice 04 — U
     And "Checkout redesign" has "1234;not-a-real-one;5678" in that field
     When the Portfolio is refreshed
     Then "Checkout redesign" is waiting on 2 Features
-    And the entry that matched nothing is passed over
-    And opening what it is waiting on shows the entry that matched nothing as unresolved,
-      rather than omitting it
+    And the entry that matched nothing is passed over, exactly as an unresolvable link is
 
   @regression @us-04 @slice-04 @contract-shape:unbounded-preservation
   Scenario: A Portfolio that names no field behaves exactly as it did before this slice
