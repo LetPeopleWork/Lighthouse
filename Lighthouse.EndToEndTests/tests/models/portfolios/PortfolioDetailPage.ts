@@ -36,7 +36,7 @@ export class PortfolioDetailPage {
 		const warningIcon = this.page
 			.getByRole("row")
 			.filter({ hasText: featureName })
-			.getByTestId("warning-default-feature-size");
+			.getByTestId("warnings");
 		return warningIcon;
 	}
 

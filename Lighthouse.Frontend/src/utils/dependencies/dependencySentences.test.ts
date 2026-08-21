@@ -52,11 +52,12 @@ describe("reasonSentence", () => {
 		);
 	});
 
-	// The one reason that is nobody's problem to fix. It says what was chosen and that nothing was lost
-	// by choosing it, and it deliberately does not tell the reader the dependency is broken.
-	it("says a dependency set aside is not acted on and has not been deleted", () => {
+	// The one reason that is nobody's problem to fix, and the only one that does not name the Feature
+	// waited on: the reader is looking at that name already, and the reason is the same for every entry
+	// in the Portfolio.
+	it("says a dependency set aside was set aside, and stops there", () => {
 		expect(reasonSentence("IgnoredByPortfolio", "Warehouse sync", terms)).toBe(
-			"This Portfolio is set to ignore its dependencies, so the wait on Warehouse sync is not acted on. Nothing has been deleted.",
+			"Portfolio is set to ignore dependencies.",
 		);
 	});
 

@@ -299,10 +299,10 @@ describe("FeatureListDataGrid", () => {
 			</MemoryRouter>,
 		);
 
-		const warningIcon = await screen.findByTestId(
-			"warning-done-with-remaining-work",
+		const warningIcon = await screen.findByTestId("warnings");
+		expect(warningIcon.getAttribute("aria-label")).toContain(
+			"marked as done but still has remaining work items",
 		);
-		expect(warningIcon).toBeInTheDocument();
 	});
 
 	it("should show warning icon for feature using default feature size", async () => {
@@ -325,10 +325,10 @@ describe("FeatureListDataGrid", () => {
 			</MemoryRouter>,
 		);
 
-		const warningIcon = await screen.findByTestId(
-			"warning-default-feature-size",
+		const warningIcon = await screen.findByTestId("warnings");
+		expect(warningIcon.getAttribute("aria-label")).toContain(
+			"based on the default",
 		);
-		expect(warningIcon).toBeInTheDocument();
 	});
 
 	it("should not show warning icon for Done feature with no remaining work", async () => {
@@ -355,9 +355,7 @@ describe("FeatureListDataGrid", () => {
 		);
 
 		await screen.findByText("Closed");
-		expect(
-			screen.queryByTestId("warning-done-with-remaining-work"),
-		).not.toBeInTheDocument();
+		expect(screen.queryByTestId("warnings")).not.toBeInTheDocument();
 	});
 
 	it("should not show warning icon for non-Done feature with remaining work", async () => {
@@ -377,9 +375,7 @@ describe("FeatureListDataGrid", () => {
 		);
 
 		await screen.findAllByText("Active");
-		expect(
-			screen.queryByTestId("warning-done-with-remaining-work"),
-		).not.toBeInTheDocument();
+		expect(screen.queryByTestId("warnings")).not.toBeInTheDocument();
 	});
 
 	it("should show active work indicator when getActiveWorkTeams returns teams", async () => {

@@ -26,8 +26,6 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
-	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	return (
 		<InputGroup title="Dependency Settings" initiallyExpanded={false}>
@@ -66,7 +64,7 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 							slotProps={{ input: { "aria-label": "Ignore Dependencies" } }}
 						/>
 					}
-					label={`Ignore Dependencies (${featuresTerm} still show what they wait on, but this ${portfolioTerm} does not act on any of it)`}
+					label="Ignore Dependencies"
 				/>
 			</Grid>
 		</InputGroup>

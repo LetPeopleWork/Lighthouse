@@ -166,18 +166,6 @@ describe("DependenciesComponent", () => {
 		).toBeInTheDocument();
 	});
 
-	// Ignoring is not hiding, and a reader who thinks it deletes their dependencies will not use it.
-	it("says the dependencies stay visible when they are set aside", () => {
-		renderIt();
-		openTheGroup();
-
-		expect(
-			screen.getByText(
-				"Ignore Dependencies (Features still show what they wait on, but this Portfolio does not act on any of it)",
-			),
-		).toBeInTheDocument();
-	});
-
 	it("shows the switch as on for a Portfolio that has set its dependencies aside", () => {
 		renderIt({ ignoreDependencies: true });
 		openTheGroup();

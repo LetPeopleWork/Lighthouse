@@ -1,11 +1,10 @@
 import CheckIcon from "@mui/icons-material/Check";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip } from "@mui/material";
 import type React from "react";
 import {
 	type IFeatureDependency,
 	isWorthWarningAbout,
-	type NotHonouredReason,
 } from "../../../models/FeatureDependency";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
@@ -25,23 +24,36 @@ type WarningsIndicatorProps = {
 const DONE_WITH_REMAINING_WORK_TOOLTIP =
 	"This feature is marked as done but still has remaining work items. Please verify if all work has been completed.";
 
+/**
+ * Whether a row needs attention, and everything there is to say about why. A row either needs it or it
+ * does not, so there is one icon: a second one beside the first says nothing the first did not, while
+ * turning "does this row need me" into a counting exercise. A row can collect four or five reasons,
+ * none of them more urgent than the others, and they are all read in the one place.
+ */
 const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	isDoneWithRemainingWork,
 	isUsingDefaultFeatureSize,
 	dependencies = [],
 }) => {
-	// Having a dependency is not a warning; only one with something wrong with it is.
-	const worthReporting = dependencies.filter(isWorthWarningAbout);
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	if (
-		!isDoneWithRemainingWork &&
-		!isUsingDefaultFeatureSize &&
-		worthReporting.length === 0
-	) {
+	const defaultSizeTooltip = `No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`;
+
+	const warnings = [
+		...(isDoneWithRemainingWork ? [DONE_WITH_REMAINING_WORK_TOOLTIP] : []),
+		...(isUsingDefaultFeatureSize ? [defaultSizeTooltip] : []),
+		// Having a dependency is not a warning; only one with something wrong with it is.
+		...dependencies
+			.filter(isWorthWarningAbout)
+			.map((dependency) =>
+				sentenceFor(dependency, { featureTerm, portfolioTerm }),
+			),
+	];
+
+	if (warnings.length === 0) {
 		return (
 			<Tooltip title="No warnings">
 				<IconButton
@@ -56,82 +68,36 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 		);
 	}
 
-	const defaultSizeTooltip = `No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`;
-
 	return (
-		<>
-			{isDoneWithRemainingWork && (
-				<Tooltip title={DONE_WITH_REMAINING_WORK_TOOLTIP}>
-					<IconButton
-						size="small"
-						sx={{ ml: 1 }}
-						aria-label={DONE_WITH_REMAINING_WORK_TOOLTIP}
-						data-testid="warning-done-with-remaining-work"
-					>
-						<WarningAmberIcon sx={{ color: "warning.main" }} />
-					</IconButton>
-				</Tooltip>
-			)}
-			{isUsingDefaultFeatureSize && (
-				<Tooltip title={defaultSizeTooltip}>
-					<IconButton
-						size="small"
-						sx={{ ml: 1 }}
-						aria-label={defaultSizeTooltip}
-						data-testid="warning-default-feature-size"
-					>
-						<WarningAmberIcon sx={{ color: "warning.main" }} />
-					</IconButton>
-				</Tooltip>
-			)}
-			{worthReporting.map((dependency) => {
-				const kind = kindOf(dependency);
-				const sentence = sentenceFor(dependency, {
-					featureTerm,
-					portfolioTerm,
-				});
-
-				return (
-					<Tooltip key={`${kind}-${dependency.referenceId}`} title={sentence}>
-						<IconButton
-							size="small"
-							sx={{ ml: 1 }}
-							aria-label={sentence}
-							data-testid={`warning-dependency-${kind}`}
-						>
-							<WarningAmberIcon sx={{ color: "warning.main" }} />
-						</IconButton>
-					</Tooltip>
-				);
-			})}
-		</>
+		<Tooltip title={<WarningList warnings={warnings} />}>
+			<IconButton
+				size="small"
+				sx={{ ml: 1 }}
+				// One label carrying every reason: a screen reader announces the control once, and there is
+				// no hovering to reveal the rest of them.
+				aria-label={warnings.join(" ")}
+				data-testid="warnings"
+			>
+				<WarningAmberIcon sx={{ color: "warning.main" }} />
+			</IconButton>
+		</Tooltip>
 	);
 };
 
-type DependencyWarningKind =
-	| "outside-portfolio"
-	| "in-a-loop"
-	| "cannot-be-forecast"
-	| "set-aside"
-	| "positioned-below";
-
-// "set-aside" is here for completeness of the mapping only: a dependency carrying that reason never
-// reaches this component, because it is not worth warning anybody about.
-const KIND_OF_REASON: Record<NotHonouredReason, DependencyWarningKind> = {
-	OutsideThisPortfolio: "outside-portfolio",
-	InALoop: "in-a-loop",
-	BlockerCannotBeForecast: "cannot-be-forecast",
-	IgnoredByPortfolio: "set-aside",
-};
-
-// A dependency Lighthouse cannot act on is reported as such; where it sits in the order is only worth
-// mentioning about one it can act on, so the reason wins where a dependency has both.
-const kindOf = (dependency: IFeatureDependency): DependencyWarningKind => {
-	if (dependency.notHonouredReason) {
-		return KIND_OF_REASON[dependency.notHonouredReason];
+// One reason reads as a sentence; several read as a list, because a run-on paragraph leaves the reader
+// working out where one reason ends and the next begins.
+const WarningList: React.FC<{ warnings: string[] }> = ({ warnings }) => {
+	if (warnings.length === 1) {
+		return <span>{warnings[0]}</span>;
 	}
 
-	return "positioned-below";
+	return (
+		<Box component="ul" sx={{ m: 0, pl: 2 }}>
+			{warnings.map((warning) => (
+				<li key={warning}>{warning}</li>
+			))}
+		</Box>
+	);
 };
 
 // The words themselves live beside the dialog's, so a row and the list opened from it say the same

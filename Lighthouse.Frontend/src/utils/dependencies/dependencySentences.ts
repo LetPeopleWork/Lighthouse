@@ -35,7 +35,7 @@ export const reasonSentence = (
 	}
 
 	if (reason === "IgnoredByPortfolio") {
-		return `This ${terms.portfolioTerm} is set to ignore its dependencies, so the wait on ${waitedOn} is not acted on. Nothing has been deleted.`;
+		return `${terms.portfolioTerm} is set to ignore dependencies.`;
 	}
 
 	return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;
