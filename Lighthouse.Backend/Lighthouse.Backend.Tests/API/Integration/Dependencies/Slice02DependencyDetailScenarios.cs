@@ -20,11 +20,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private static readonly string[] TheCatalogue = ["F-3"];
         private static readonly string[] ItsOwnSelf = ["F-3"];
 
-        private static readonly NotHonouredReason[] TheThreeReasonsThisEpicCanProduce =
+        private static readonly NotHonouredReason[] TheReasonsThisEpicCanProduce =
         [
             NotHonouredReason.OutsideThisPortfolio,
             NotHonouredReason.InALoop,
             NotHonouredReason.BlockerCannotBeForecast,
+            NotHonouredReason.IgnoredByPortfolio,
         ];
 
         // @driving_adapter @us-02 - "Opening the list of Features one is waiting on". The reader finds what
@@ -95,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         [Test]
         public void The_reasons_this_epic_can_produce_are_a_closed_set()
         {
-            ThenTheReasonsAreExactly(TheThreeReasonsThisEpicCanProduce);
+            ThenTheReasonsAreExactly(TheReasonsThisEpicCanProduce);
         }
 
         // @error @us-02 - "A Feature the reader may not see is named as withheld, never quietly dropped".

@@ -32,5 +32,13 @@ namespace Lighthouse.Backend.Models.Dependencies
         public bool IsHonoured => Reason is null;
 
         public bool HasNothingWrongWithIt => IsHonoured && !BlockerPositionedBelow;
+
+        /// <summary>
+        /// Whether a reader should be told about this. Setting a Portfolio's dependencies aside is a choice
+        /// somebody made, not a broken link, and a warning on every Feature in that Portfolio would teach
+        /// them to stop reading the column - so it is the one reason that says nothing on the row. The list
+        /// still names it, per entry, where the reader went looking for it.
+        /// </summary>
+        public bool IsWorthWarningAbout => Reason != NotHonouredReason.IgnoredByPortfolio && !HasNothingWrongWithIt;
     }
 }

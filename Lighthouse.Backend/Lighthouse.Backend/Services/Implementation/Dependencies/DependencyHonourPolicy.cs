@@ -14,13 +14,43 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         {
             var factsByReferenceId = FactsByReferenceId(input.FeaturesInScope);
             var loops = new DependencyCycleDetector(input.FeaturesInScope).Detect();
+            var setAside = input.PortfoliosSettingTheirDependenciesAside.ToHashSet();
 
             var verdicts = input.FeaturesInScope
                 .SelectMany(dependent => dependent.DependsOnReferenceIds
-                    .Select(blocker => Decide(dependent, blocker, factsByReferenceId, loops)))
+                    .Select(blocker => Decide(dependent, blocker, factsByReferenceId, loops, setAside)))
                 .ToList();
 
             return new HonouredDependencies(verdicts);
+        }
+
+        /// <summary>
+        /// What is wrong with the dependency is worked out first and in full even where the answer is about
+        /// to be overruled, so that the moment a Portfolio stops setting its dependencies aside every Feature
+        /// carries the verdict it would have had all along rather than one computed for the first time on a
+        /// plan already being read.
+        /// </summary>
+        private static DependencyVerdict Decide(
+            FeatureDependencyFacts dependent,
+            string blockerReferenceId,
+            Dictionary<string, FeatureDependencyFacts> factsByReferenceId,
+            DependencyLoops loops,
+            HashSet<int> portfoliosSettingTheirDependenciesAside)
+        {
+            factsByReferenceId.TryGetValue(blockerReferenceId, out var blocker);
+
+            var onItsOwnFacts = TheVerdictOnItsFacts(dependent, blockerReferenceId, blocker, loops);
+
+            if (!SetAside(dependent, blocker, portfoliosSettingTheirDependenciesAside))
+            {
+                return onItsOwnFacts;
+            }
+
+            return new DependencyVerdict(
+                dependent.ReferenceId,
+                blockerReferenceId,
+                NotHonouredReason.IgnoredByPortfolio,
+                onItsOwnFacts.BlockerPositionedBelow);
         }
 
         /// <summary>
@@ -28,14 +58,13 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         /// because that is what it is: the caller loaded a Portfolio's Features, and something waited on that
         /// is not in there is somewhere this Portfolio cannot see.
         /// </summary>
-        private static DependencyVerdict Decide(
+        private static DependencyVerdict TheVerdictOnItsFacts(
             FeatureDependencyFacts dependent,
             string blockerReferenceId,
-            Dictionary<string, FeatureDependencyFacts> factsByReferenceId,
+            FeatureDependencyFacts? blocker,
             DependencyLoops loops)
         {
-            if (!factsByReferenceId.TryGetValue(blockerReferenceId, out var blocker)
-                || !TheyShareAPortfolio(dependent, blocker))
+            if (blocker is null || PortfoliosTheyShare(dependent, blocker).Count == 0)
             {
                 return new DependencyVerdict(
                     dependent.ReferenceId,
@@ -49,6 +78,27 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
                 blockerReferenceId,
                 ReasonWithinThisPortfolio(dependent, blocker, loops),
                 blockerPositionedBelow: blocker.Position > dependent.Position);
+        }
+
+        /// <summary>
+        /// Whether everyone whose choice this dependency answers to has set their dependencies aside. A
+        /// dependency only has a consequence inside a Portfolio holding both its Features, so those are the
+        /// Portfolios that decide it - and every one of them has to agree, or one Portfolio trying out a
+        /// different order would rewrite another Portfolio's plan. Where no Portfolio holds both, nobody can
+        /// act on the dependency anyway, and the Portfolios merely reading it decide whether it is still
+        /// worth mentioning to them.
+        /// </summary>
+        private static bool SetAside(
+            FeatureDependencyFacts dependent,
+            FeatureDependencyFacts? blocker,
+            HashSet<int> portfoliosSettingTheirDependenciesAside)
+        {
+            List<int> shared = blocker is null ? [] : PortfoliosTheyShare(dependent, blocker);
+
+            IReadOnlyCollection<int> whoseChoiceItIs = shared.Count > 0 ? shared : dependent.PortfolioIds;
+
+            return whoseChoiceItIs.Count > 0
+                && whoseChoiceItIs.All(portfoliosSettingTheirDependenciesAside.Contains);
         }
 
         /// <summary>
@@ -74,9 +124,10 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
             return null;
         }
 
-        private static bool TheyShareAPortfolio(FeatureDependencyFacts dependent, FeatureDependencyFacts blocker)
+        private static List<int> PortfoliosTheyShare(
+            FeatureDependencyFacts dependent, FeatureDependencyFacts blocker)
         {
-            return dependent.PortfolioIds.Any(portfolioId => blocker.PortfolioIds.Contains(portfolioId));
+            return dependent.PortfolioIds.Where(portfolioId => blocker.PortfolioIds.Contains(portfolioId)).ToList();
         }
 
         /// <summary>

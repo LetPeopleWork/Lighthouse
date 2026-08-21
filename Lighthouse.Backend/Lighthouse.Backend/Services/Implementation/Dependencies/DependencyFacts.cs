@@ -32,8 +32,20 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
                     feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToList()))
                 .ToList();
 
-            return new DependencyHonourInput(facts, HasPremiumLicence: false);
+            return new DependencyHonourInput(facts, HasPremiumLicence: false, PortfoliosSettingTheirDependenciesAside(features));
         }
+
+        /// <summary>
+        /// Read off the Portfolios the caller already loaded rather than fetched, so this stays a projection
+        /// of what is in hand and the decision keeps costing no queries.
+        /// </summary>
+        private static List<int> PortfoliosSettingTheirDependenciesAside(IReadOnlyCollection<Feature> features)
+            => features
+                .SelectMany(feature => feature.Portfolios)
+                .Where(portfolio => portfolio.IgnoreDependencies)
+                .Select(portfolio => portfolio.Id)
+                .Distinct()
+                .ToList();
 
         private static int? PlaceOf(Feature feature, IReadOnlyDictionary<int, int>? placeOfEachFeature)
         {

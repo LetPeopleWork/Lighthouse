@@ -18,9 +18,15 @@ namespace Lighthouse.Backend.Services.Interfaces.Dependencies
     /// dependency change a forecast is paid behaviour that arrives separately - and it is here already so
     /// that arrival adds a rule inside one type rather than a parameter through every caller of it.
     /// </summary>
+    /// <param name="PortfoliosSettingTheirDependenciesAside">
+    /// Which Portfolios have asked for their dependencies not to be acted on. It is a fact the decision
+    /// reads, in the same place as the licence, rather than a branch around ingestion: the edges are still
+    /// read, stored and shown, and anything working from the answer never learns the setting exists.
+    /// </param>
     public sealed record DependencyHonourInput(
         IReadOnlyCollection<FeatureDependencyFacts> FeaturesInScope,
-        bool HasPremiumLicence);
+        bool HasPremiumLicence,
+        IReadOnlyCollection<int> PortfoliosSettingTheirDependenciesAside);
 
     /// <summary>
     /// One Feature as the decision sees it: where the user has put it, which Portfolios it belongs to,

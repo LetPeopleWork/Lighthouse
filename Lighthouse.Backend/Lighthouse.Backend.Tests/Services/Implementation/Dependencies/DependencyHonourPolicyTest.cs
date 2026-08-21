@@ -14,11 +14,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             NotHonouredReason.OutsideThisPortfolio,
             NotHonouredReason.InALoop,
             NotHonouredReason.BlockerCannotBeForecast,
+            NotHonouredReason.IgnoredByPortfolio,
         ];
 
         private static readonly int[] TheSamePortfolio = [1];
 
         private static readonly int[] AnotherPortfolio = [2];
+
+        private static readonly int[] BothPortfolios = [1, 2];
+
+        private static readonly int[] NobodyIgnoresTheirs = [];
 
         private static readonly string[] NothingWaitedOn = [];
 
@@ -218,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
                 AFeature("F-3", position: 3, portfolioIds: AnotherPortfolio),
                 AFeature("F-4", position: 4, portfolioIds: TheSamePortfolio, canBeForecast: false),
             };
-            var input = new DependencyHonourInput(featuresInScope, HasPremiumLicence: false);
+            var input = new DependencyHonourInput(featuresInScope, HasPremiumLicence: false, NobodyIgnoresTheirs);
             var policy = new DependencyHonourPolicy();
 
             var asDecided = AsRead(policy.Evaluate(input));
@@ -251,6 +256,124 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
                 "Found: " + string.Join(", ", deciders));
         }
 
+        [Test]
+        public void APortfolioThatSetsItsDependenciesAside_ActsOnNoneOfThemAndStillHasEveryOne()
+        {
+            var honoured = DecideWhile(
+                TheSamePortfolio,
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(honoured.Verdicts, Has.Count.EqualTo(1));
+                Assert.That(honoured.Verdicts.Single().Reason, Is.EqualTo(NotHonouredReason.IgnoredByPortfolio));
+            }
+        }
+
+        /// <summary>
+        /// The reason for the whole switch: a choice somebody made is not a broken link, and a warning on
+        /// every Feature in the Portfolio would teach the reader to stop looking at the column.
+        /// </summary>
+        [Test]
+        public void ADependencySetAside_IsTheOneReasonNobodyIsWarnedAbout()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(AVerdict(NotHonouredReason.IgnoredByPortfolio, blockerPositionedBelow: false).IsWorthWarningAbout, Is.False);
+                Assert.That(AVerdict(NotHonouredReason.IgnoredByPortfolio, blockerPositionedBelow: true).IsWorthWarningAbout, Is.False);
+                Assert.That(AVerdict(NotHonouredReason.InALoop, blockerPositionedBelow: false).IsWorthWarningAbout, Is.True);
+                Assert.That(AVerdict(NotHonouredReason.OutsideThisPortfolio, blockerPositionedBelow: false).IsWorthWarningAbout, Is.True);
+                Assert.That(AVerdict(NotHonouredReason.BlockerCannotBeForecast, blockerPositionedBelow: false).IsWorthWarningAbout, Is.True);
+                Assert.That(AVerdict(reason: null, blockerPositionedBelow: true).IsWorthWarningAbout, Is.True);
+                Assert.That(AVerdict(reason: null, blockerPositionedBelow: false).IsWorthWarningAbout, Is.False);
+            }
+        }
+
+        [Test]
+        public void SettingDependenciesAside_QuietensTheWarningAboutOneWaitedOnFromOutsideThePortfolio()
+        {
+            var honoured = DecideWhile(
+                TheSamePortfolio,
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: SomethingNotHeldHere));
+
+            Assert.That(TheVerdictFor(honoured, "F-1", "F-99").Reason, Is.EqualTo(NotHonouredReason.IgnoredByPortfolio));
+        }
+
+        /// <summary>
+        /// A Feature can belong to several Portfolios. One Portfolio trying out a different order must not
+        /// decide what another Portfolio is allowed to see.
+        /// </summary>
+        [Test]
+        public void ADependencyAnotherPortfolioStillHonours_KeepsTheVerdictItHad()
+        {
+            var honoured = DecideWhile(
+                TheSamePortfolio,
+                AFeature("F-1", position: 1, portfolioIds: BothPortfolios, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: BothPortfolios));
+
+            Assert.That(TheVerdictFor(honoured, "F-1", "F-2").IsHonoured, Is.True);
+        }
+
+        [Test]
+        public void ADependencyEveryPortfolioHoldingBothEndsHasSetAside_ReadsAsSetAside()
+        {
+            var honoured = DecideWhile(
+                BothPortfolios,
+                AFeature("F-1", position: 1, portfolioIds: BothPortfolios, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: BothPortfolios));
+
+            Assert.That(TheVerdictFor(honoured, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.IgnoredByPortfolio));
+        }
+
+        /// <summary>
+        /// The loop check is what stops a forecast running forever, so setting dependencies aside switches
+        /// off what is acted on and never what is looked for. The verdict a Feature carries the moment the
+        /// switch goes back off has to be the one it would have had all along.
+        /// </summary>
+        [Test]
+        public void ALoopIsStillFoundWhileTheDependenciesAreSetAside_AndReadsAsALoopAgainAsSoonAsTheyAreNot()
+        {
+            FeatureDependencyFacts[] twoWaitingOnEachOther =
+            [
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheFirst),
+            ];
+
+            var whileSetAside = DecideWhile(TheSamePortfolio, twoWaitingOnEachOther);
+            var onceHonouredAgain = DecideWhile(NobodyIgnoresTheirs, twoWaitingOnEachOther);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whileSetAside.Verdicts.Select(verdict => verdict.Reason),
+                    Has.All.EqualTo(NotHonouredReason.IgnoredByPortfolio));
+                Assert.That(onceHonouredAgain.Verdicts.Select(verdict => verdict.Reason),
+                    Has.All.EqualTo(NotHonouredReason.InALoop));
+            }
+        }
+
+        [Test]
+        public void PuttingTheSwitchBack_RestoresEveryVerdictItWouldHaveHad()
+        {
+            FeatureDependencyFacts[] aPortfolioWithOneOfEverything =
+            [
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheOtherThree),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheFirst),
+                AFeature("F-3", position: 3, portfolioIds: AnotherPortfolio),
+                AFeature("F-4", position: 4, portfolioIds: TheSamePortfolio, canBeForecast: false),
+            ];
+
+            var beforeTheSwitch = AsRead(DecideWhile(NobodyIgnoresTheirs, aPortfolioWithOneOfEverything));
+            var whileSetAside = AsRead(DecideWhile(TheSamePortfolio, aPortfolioWithOneOfEverything));
+            var afterTheSwitchGoesBack = AsRead(DecideWhile(NobodyIgnoresTheirs, aPortfolioWithOneOfEverything));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(afterTheSwitchGoesBack, Is.EqualTo(beforeTheSwitch));
+                Assert.That(whileSetAside, Is.Not.EqualTo(beforeTheSwitch));
+            }
+        }
+
         private static DependencyVerdict AVerdict(NotHonouredReason? reason, bool blockerPositionedBelow)
         {
             return new DependencyVerdict("F-1", "F-2", reason, blockerPositionedBelow);
@@ -258,7 +381,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
 
         private static HonouredDependencies Decide(params FeatureDependencyFacts[] featuresInScope)
         {
-            return new DependencyHonourPolicy().Evaluate(new DependencyHonourInput(featuresInScope, HasPremiumLicence: false));
+            return DecideWhile(NobodyIgnoresTheirs, featuresInScope);
+        }
+
+        private static HonouredDependencies DecideWhile(
+            int[] portfoliosSettingTheirDependenciesAside, params FeatureDependencyFacts[] featuresInScope)
+        {
+            return new DependencyHonourPolicy().Evaluate(
+                new DependencyHonourInput(featuresInScope, HasPremiumLicence: false, portfoliosSettingTheirDependenciesAside));
         }
 
         private static FeatureDependencyFacts AFeature(
