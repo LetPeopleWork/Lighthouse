@@ -184,6 +184,19 @@ Two lines in `acceptance/milestone-4` were corrected to match, both of which con
 rather than the code: an unresolvable entry is **skipped** (AC-4.4) rather than listed as unresolved,
 and the no-relations assertion now names the configuration it holds in.
 
+### `NotLicensed` is still absent, and that is not an oversight
+
+A review of this slice raised its absence as a blocker, reading the delta's component row, which names
+five reason values. It is the third time the same row has been read that way, so it is written down
+here as well as in slice 02's brief.
+
+The reason set is closed at **four** values. The licence half of this feature left with Epic #5792 at
+the split, and nothing in this epic may ask a licence question at all — so a fifth value would be one
+no code path can produce, with no wording and no warning behaviour decided for it, in an enum whose
+whole point is that widening it is somebody's deliberate decision. AC-10.8 says `NotLicensed` stays
+outermost; that is the ordering Epic #5792 inherits when it adds the value and turns the flag on, not
+a value this slice owes.
+
 ## The tracker's cycle guard does not come with the override
 
 Azure DevOps refuses to store a dependency cycle — `TF201035`, transitively, measured 2026-08-18 (see
