@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             private static string AProject(TrackedFeature row, List<string> blockedBy)
             {
                 var nodes = blockedBy.ConvertAll(
-                    blockerId => "{\"type\": \"blocks\", \"project\": {\"id\": \"" + blockerId + "\"}}");
+                    blockerId => "{\"type\": \"dependency\", \"project\": {\"id\": \"" + blockerId + "\"}}");
 
                 return "{\"id\": \"" + row.ReferenceId + "\""
                     + ", \"name\": \"" + row.Name + "\""

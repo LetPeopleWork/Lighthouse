@@ -1861,6 +1861,47 @@ the field and `Issue.Fields` already holds it. Data Center asks for no `fields=`
 Jira's navigable default, which includes `issuelinks`. No request changes on either flavour, which is
 what AC-9.3 and AC-9.6 ask for.
 
+### What the live trackers said, once slice 03 actually asked them — 2026-08-21
+
+Everything above was settled against a published schema and a fixture. Running the real connectors
+against the real demo instances changed three things and confirmed the rest.
+
+**The Jira demo project already had the links, and a first look said it had none.** A search for the
+project's Epics returns the fifty most recent, which are all auto-generated and carry nothing;
+`LGHTHSDMO-7` … `-10` are the four hand-made ones and they were far down the list. The lesson is about
+looking, not about the data: **filter by `issueLinkType is not EMPTY` rather than paging through
+Epics**, or the demo instance reports itself empty. The four are arranged
+`-7 ← -8`, `-7 ← -9`, `-9 ← -10`, which leaves `-8` and `-10` carrying only outward links — the pair
+that has to read empty, and the reason the direction guard is testable on real data at all.
+
+**`is blocked by` is the live inward name on that instance**, alongside `is cloned by`,
+`is duplicated by`, `is implemented by` and `relates to`. So the discriminator is right, and the four
+link types the mapper ignores are all present to be ignored.
+
+**Linear's relation type is `dependency`, and nothing else.** The published schema documents
+`ProjectRelation.type` as "the type of dependency relationship … (e.g., blocks)", and the API rejects
+`blocks` outright: `type must be one of the following values: dependency`. Two consequences:
+
+- The fixtures said `"type": "blocks"`, which no Linear instance can produce. Corrected.
+- **Not reading the type is correct on Linear and would be wrong on Jira.** Linear accepts one type
+  between two Projects, so every relation is a dependency and direction lives entirely in which end is
+  the source. Jira gives four other link types the identical shape, which is why that mapper must read
+  the name.
+
+**Linear's demo workspace had no relations at all**, so three were created by hand
+(`Epsilon-960 → Zeta-797`, `Zeta-361 → Zeta-797`, `Gamma-767 → Zeta-361`) to mirror the Jira shape,
+including the two Projects that only block.
+
+**The projects query still fits Linear's complexity budget with `inverseRelations` on it.** Worth
+recording because the budget is real and undocumented in the schema: an exploratory query at
+`projects(first: 250)` with two 20-wide relation connections was refused at complexity 23575 against a
+10000 ceiling. The production shape — `projects(first: 50)` with `inverseRelations(first: 50)`,
+`initiatives(first: 10)` and `history(first: 25)` — is accepted, and was measured against the live
+workspace both with and without the new connection.
+
+Both trackers now have a dogfood test that reads the real instance and asserts the whole shape,
+including the Features that must wait on nothing.
+
 ## Next Wave
 
 **Handoff → DELIVER** (`nw-software-crafter`, object-oriented). Slice order is 01 → 02 → 03 → 04, each

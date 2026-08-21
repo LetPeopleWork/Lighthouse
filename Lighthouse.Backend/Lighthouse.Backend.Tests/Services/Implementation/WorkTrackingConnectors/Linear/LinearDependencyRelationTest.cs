@@ -187,7 +187,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var nodes = Array.ConvertAll(
                 blockerIds,
-                id => "{\"type\": \"blocks\", \"project\": {\"id\": \"" + id + "\"}}");
+                id => "{\"type\": \"dependency\", \"project\": {\"id\": \"" + id + "\"}}");
 
             return "{\"nodes\": [" + string.Join(",", nodes) + "]}";
         }

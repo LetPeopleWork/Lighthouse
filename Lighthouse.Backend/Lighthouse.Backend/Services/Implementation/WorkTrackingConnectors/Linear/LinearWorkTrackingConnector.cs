@@ -445,6 +445,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         /// own relations are what it blocks and are neither requested nor read. Nothing here has been
         /// saved yet, so every reference names Feature nought until the reconciler keys it to the row the
         /// Feature lands on.
+        ///
+        /// The relation's own type is not looked at, and that is safe here in a way it would not be on
+        /// Jira: Linear accepts exactly one type between two Projects, so every relation is a dependency
+        /// and the direction is carried entirely by which end is the source.
         /// </summary>
         private static List<FeatureDependencyReference> TheProjectsItWaitsOn(ProjectNode projectNode)
         {
