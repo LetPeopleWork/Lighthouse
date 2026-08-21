@@ -26,6 +26,8 @@
 
         public static string LabelsFieldName => "labels";
 
+        public static string IssueLinksFieldName => "issuelinks";
+
         public static string ChangelogFieldName => "changelog";
 
         public static string HistoriesFieldName => "histories";
