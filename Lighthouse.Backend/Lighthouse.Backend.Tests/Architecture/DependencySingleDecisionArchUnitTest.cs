@@ -32,6 +32,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string TheOnlyFileThatMayChangeIt =
             "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyReconciler.cs";
 
+        private const string TheOnlyPlaceThatMayRecordTheSource =
+            "Lighthouse.Backend/Services/Implementation/Dependencies/";
+
+        private const string TheFileThatChoosesTheSource =
+            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencySourceSelector.cs";
+
+        // Azure DevOps, Jira and Linear return Features and can carry something for one to wait on.
+        // ServiceNow and CSV return no Features at all, so a dependency has nothing to run between there.
+        private static readonly string[] TrackersThatCarryDependencies =
+        [
+            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Linear/LinearWorkTrackingConnector.cs",
+        ];
+
         private const string TheWordThatIsAlreadyTaken = "blocked";
 
         private const string BackendProjectDirectory = "Lighthouse.Backend";
@@ -257,6 +272,118 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(deciders, Has.Count.LessThanOrEqualTo(1),
                 "A second place deciding whether a dependency can be acted on is how a warning on screen ends " +
                 "up disagreeing with what a forecast actually did. Found: " + string.Join(", ", deciders));
+        }
+
+        /// <summary>
+        /// Where a dependency was read from is a fact about the Portfolio's settings, not about the tracker,
+        /// so no tracker works it out for itself. A tracker that did would be right until the day the rule
+        /// changed and nobody remembered it had a copy - which is how the setting came to be honoured on one
+        /// tracker while two others accepted it and ignored it, looking from the outside exactly like a field
+        /// everyone had left empty.
+        ///
+        /// The scan reads for the reference being built at all, rather than only for the field-backed source.
+        /// A tracker that never builds one cannot record the wrong source, and one that builds them by hand
+        /// has taken the decision back whichever source it happens to write today.
+        /// </summary>
+        [Test]
+        public void NothingButTheOneSelector_RecordsWhereADependencyWasReadFrom()
+        {
+            var secondDeciders = TheBackendSourceOutsideTheSelector()
+                .SelectMany(file => LinesMatching(file, AReferenceBuiltByHand))
+                .ToList();
+
+            Assert.That(secondDeciders, Is.Empty,
+                "DependencySourceSelector decides whether a Feature's dependencies came from the tracker's own " +
+                "link or from a field the Portfolio named, and stamps each reference accordingly. A tracker that " +
+                "builds references itself has taken that decision back, and the next tracker after it inherits " +
+                "the rule only if somebody remembers to tell it. Ask the selector instead - and a tracker that " +
+                "cannot serve a named field at all says so by name, through TheTrackersOwnLinksOnly. Found: " +
+                string.Join(", ", secondDeciders));
+        }
+
+        /// <summary>
+        /// Every tracker that can carry dependencies has to ask. The rule above stops a tracker recording the
+        /// wrong answer; on its own it would not stop one that never asks at all, reads only its own links and
+        /// passes clean - which is the bug this epic already shipped once, in exactly that shape.
+        ///
+        /// This one reads coarsely, for the selector being named anywhere in the tracker at all. A tracker
+        /// that asks about one thing and decides another for itself is not caught here - it is caught by the
+        /// rule above, which is the load-bearing one. Both were watched to fail before being trusted: with
+        /// Jira stamping its own references again, the rule above names the file and line, and this one stays
+        /// green because Jira still names the selector where it decides what to report about links.
+        /// </summary>
+        [Test]
+        public void EveryTrackerThatReadsDependencies_AsksTheSelectorWhereToReadThemFrom()
+        {
+            var trackersThatDoNotAsk = TheTrackersThatCarryDependencies()
+                .Where(file => !file.Source.Contains(nameof(DependencySourceSelector), StringComparison.Ordinal))
+                .Select(file => file.RelativePath)
+                .ToList();
+
+            Assert.That(trackersThatDoNotAsk, Is.Empty,
+                "A tracker that hands a Feature its dependencies without asking where they should be read from " +
+                "reads its own links and nothing else, however the Portfolio is configured. That failure is " +
+                "silent: the setting is accepted, saved, and ignored, and the column reads the same as it would " +
+                "for a Portfolio that had never named a field. Found: " + string.Join(", ", trackersThatDoNotAsk));
+        }
+
+        /// <summary>
+        /// A reference built anywhere but the selector. The selector's own line is not one, and neither is the
+        /// declaration of the type itself.
+        /// </summary>
+        private static bool AReferenceBuiltByHand(string line)
+        {
+            var code = line.TrimStart();
+
+            return code.Contains($"new {nameof(FeatureDependencyReference)}(", StringComparison.Ordinal)
+                && !code.StartsWith("//", StringComparison.Ordinal)
+                && !code.StartsWith('*');
+        }
+
+        /// <summary>
+        /// Everything outside the one folder that may build a reference. The folder rather than the single
+        /// file, because the reconciler rebuilds each reference against the row its Feature landed on - it
+        /// carries the source it was handed rather than choosing one, so it decides nothing.
+        ///
+        /// Reading the selector's own use first is what keeps the scan honest: rename or move the reference
+        /// type and the scan would be hunting a name no longer in the code, finding nothing everywhere and
+        /// passing for the wrong reason.
+        /// </summary>
+        private static List<SourceFile> TheBackendSourceOutsideTheSelector()
+        {
+            var backendSource = TheWholeBackendSource();
+
+            var theSelectorsOwnUse = backendSource
+                .Where(file => file.RelativePath == TheFileThatChoosesTheSource)
+                .SelectMany(file => LinesMatching(file, AReferenceBuiltByHand))
+                .ToList();
+
+            Assert.That(theSelectorsOwnUse, Is.Not.Empty,
+                $"{TheFileThatChoosesTheSource} no longer builds a dependency reference - it was renamed, " +
+                "moved or deleted - so this scan is looking for something nothing in the code does and would stay " +
+                "green whatever the trackers did. Point it at whatever the single selector is called now.");
+
+            return backendSource
+                .Where(file => !file.RelativePath.StartsWith(TheOnlyPlaceThatMayRecordTheSource, StringComparison.Ordinal))
+                .ToList();
+        }
+
+        /// <summary>
+        /// The trackers that can hand a Feature something to wait on. A tracker with no Features at all has
+        /// nothing for a dependency to run between and is not one of them, so it is not listed and does not
+        /// have to ask.
+        /// </summary>
+        private static List<SourceFile> TheTrackersThatCarryDependencies()
+        {
+            var trackers = TheWholeBackendSource()
+                .Where(file => TrackersThatCarryDependencies.Contains(file.RelativePath))
+                .ToList();
+
+            Assert.That(trackers, Has.Count.EqualTo(TrackersThatCarryDependencies.Length),
+                "A tracker named here was moved or renamed, so the rule it carries is no longer being enforced. " +
+                "Expected: " + string.Join(", ", TrackersThatCarryDependencies));
+
+            return trackers;
         }
 
         /// <summary>
