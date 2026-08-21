@@ -5,9 +5,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Moq.Protected;
-using System.Net;
-using System.Text;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Linear
 {
@@ -25,6 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         private const string BlockedProjectId = "11111111-1111-1111-1111-111111111111";
         private const string BlockingProjectId = "22222222-2222-2222-2222-222222222222";
+        private const string AThirdProjectId = "33333333-3333-3333-3333-333333333333";
 
         [Test]
         public async Task GetFeaturesForProject_AProjectWaitsOnTheOneThatBlocksIt()
@@ -91,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .DependsOnReferences
                 .Select(reference => reference.ReferenceId);
 
-            var expected = new[] { BlockingProjectId, "33333333-3333-3333-3333-333333333333" };
+            var expected = new[] { BlockingProjectId, AThirdProjectId };
             Assert.That(waitedOn, Is.EquivalentTo(expected));
         }
 
@@ -175,57 +173,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         private static string ProjectsWithOneDependency()
-            => ProjectsResponse(
-                AProject(BlockedProjectId, "Blocked", BlockedBy(BlockingProjectId)),
-                AProject(BlockingProjectId, "Blocking", "{\"nodes\": []}"));
+            => LinearWireFormat.ProjectsResponse(
+                AProject(BlockedProjectId, "Blocked", LinearWireFormat.BlockedBy(BlockingProjectId)),
+                AProject(BlockingProjectId, "Blocking", LinearWireFormat.BlockedByNothing()));
 
         private static string AProjectBlockedByTwo()
-            => ProjectsResponse(
-                AProject(BlockedProjectId, "Blocked", BlockedBy(BlockingProjectId, "33333333-3333-3333-3333-333333333333")));
+            => LinearWireFormat.ProjectsResponse(
+                AProject(BlockedProjectId, "Blocked", LinearWireFormat.BlockedBy(BlockingProjectId, AThirdProjectId)));
 
-        private static string BlockedBy(params string[] blockerIds)
-        {
-            var nodes = Array.ConvertAll(
-                blockerIds,
-                id => "{\"type\": \"dependency\", \"project\": {\"id\": \"" + id + "\"}}");
-
-            return "{\"nodes\": [" + string.Join(",", nodes) + "]}";
-        }
+        private static string ProjectsResponse(params string[] projects) => LinearWireFormat.ProjectsResponse(projects);
 
         private static string AProject(string id, string name, string inverseRelations)
-            => "{\"id\": \"" + id + "\""
-                + ", \"name\": \"" + name + "\""
-                + ", \"status\": {\"id\": \"s1\", \"name\": \"Active\"}"
-                + ", \"url\": \"https://linear.app/x\""
-                + ", \"sortOrder\": 1.0"
-                + ", \"createdAt\": \"2026-01-01T00:00:00.000Z\""
-                + ", \"inverseRelations\": " + inverseRelations + "}";
-
-        private static string ProjectsResponse(params string[] projects)
-            => "{\"data\": {\"projects\": {\"nodes\": [" + string.Join(",", projects) + "]"
-                + ", \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}";
+            => LinearWireFormat.AProject(id, name, inverseRelations);
 
         private static HttpMessageHandler HandlerReturning(string projectsResponse, Action<string>? recordQuery)
-        {
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>(async (request, cancellationToken) =>
-                {
-                    var body = request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken);
-                    recordQuery?.Invoke(body);
+            => StubTransport.RespondingWith((_, body) =>
+            {
+                recordQuery?.Invoke(body);
 
-                    return new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(projectsResponse, Encoding.UTF8, "application/json"),
-                    };
-                });
-
-            return mock.Object;
-        }
+                return projectsResponse;
+            });
 
         private static LinearWorkTrackingConnector CreateSubject(HttpMessageHandler handler)
             => new(Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService(), handler);

@@ -8,9 +8,6 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Moq;
-using Moq.Protected;
-using System.Net;
-using System.Text;
 using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.WorkItem;
 using TrackedFeature = Lighthouse.Backend.Tests.API.Integration.Dependencies.DependenciesAcceptanceTest.TrackedFeature;
 using ITrackerPayloadSource = Lighthouse.Backend.Tests.API.Integration.Dependencies.DependenciesAcceptanceTest.ITrackerPayloadSource;
@@ -173,27 +170,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             public override async Task<List<Feature>> Map(TrackedFeature[] rows)
             {
-                var handler = HandlerReturning(request =>
-                {
-                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-
-                    if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
-                    {
-                        return "{\"deploymentType\":\"Cloud\"}";
-                    }
-
-                    if (path.EndsWith("rest/api/latest/field", StringComparison.Ordinal))
-                    {
-                        return "[]";
-                    }
-
-                    if (path.Contains("/search", StringComparison.Ordinal))
-                    {
-                        return "{\"issues\":[" + string.Join(",", Array.ConvertAll(rows, AnEpic)) + "],\"isLast\":true}";
-                    }
-
-                    return "{}";
-                });
+                var issues = Array.ConvertAll(rows, AnEpic);
+                var handler = StubTransport.RespondingWith(request => JiraWireFormat.ACloudResponseTo(request, issues));
 
                 var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
                 ItsTypeAndStates(portfolio, "Epic", "In Progress");
@@ -202,21 +180,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
 
             private static string AnEpic(TrackedFeature row)
-            {
-                var links = Array.ConvertAll(
-                    row.WaitsOn,
-                    waitsOn => "{\"type\": {\"inward\": \"is blocked by\", \"outward\": \"blocks\"}"
-                        + ", \"inwardIssue\": {\"key\": \"" + waitsOn + "\"}}");
-
-                var fields = "{\"summary\": \"" + row.Name + "\""
-                    + ", \"issuetype\": {\"name\": \"Epic\"}"
-                    + ", \"status\": {\"name\": \"In Progress\"}"
-                    + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
-                    + ", \"labels\": []"
-                    + ", \"issuelinks\": [" + string.Join(",", links) + "]}";
-
-                return "{\"key\": \"" + row.ReferenceId + "\", \"fields\": " + fields + "}";
-            }
+                => JiraWireFormat.AnEpicNamed(
+                    row.ReferenceId,
+                    row.Name,
+                    Array.ConvertAll(row.WaitsOn, JiraWireFormat.BlockedByLink));
         }
 
         private sealed class LinearPayload : NamesItsFeaturesItsOwnWay
@@ -224,53 +191,23 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             protected override string TheNextReferenceId(int howManyAlreadyNamed)
                 => $"00000000-0000-0000-0000-{1 + howManyAlreadyNamed:D12}";
 
+            /// <summary>
+            /// Linear hands the relation to the Project that is waiting, through its inverse relations,
+            /// and names the other end as the relation's source. Building it that way round is the point:
+            /// a payload written the near way would pass a mapper that reads the near side.
+            /// </summary>
             public override async Task<List<Feature>> Map(TrackedFeature[] rows)
             {
-                var blockedByEachOther = TheInverseRelationsOf(rows);
-                var projects = Array.ConvertAll(rows, row => AProject(row, blockedByEachOther[row.ReferenceId]));
-                var body = "{\"data\": {\"projects\": {\"nodes\": [" + string.Join(",", projects) + "]"
-                    + ", \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}";
+                var projects = Array.ConvertAll(
+                    rows,
+                    row => LinearWireFormat.AProject(row.ReferenceId, row.Name, LinearWireFormat.BlockedBy(row.WaitsOn)));
 
-                var handler = HandlerReturning(_ => body);
-                var portfolio = APortfolio();
+                var body = LinearWireFormat.ProjectsResponse(projects);
+                var handler = StubTransport.RespondingWith(_ => body);
 
                 return await new LinearWorkTrackingConnector(
                     Mock.Of<ILogger<LinearWorkTrackingConnector>>(), new FakeCryptoService(), handler)
-                    .GetFeaturesForProject(portfolio);
-            }
-
-            /// <summary>
-            /// Linear hands the relation to the Project that is waiting through its inverse relations, and
-            /// names the other end as the relation's source. Building it that way round here is the point:
-            /// a payload written the near way would pass a mapper that reads the near side.
-            /// </summary>
-            private static Dictionary<string, List<string>> TheInverseRelationsOf(TrackedFeature[] rows)
-            {
-                var blockersOf = rows.ToDictionary(row => row.ReferenceId, row => new List<string>());
-
-                foreach (var row in rows)
-                {
-                    foreach (var waitsOn in row.WaitsOn)
-                    {
-                        blockersOf[row.ReferenceId].Add(waitsOn);
-                    }
-                }
-
-                return blockersOf;
-            }
-
-            private static string AProject(TrackedFeature row, List<string> blockedBy)
-            {
-                var nodes = blockedBy.ConvertAll(
-                    blockerId => "{\"type\": \"dependency\", \"project\": {\"id\": \"" + blockerId + "\"}}");
-
-                return "{\"id\": \"" + row.ReferenceId + "\""
-                    + ", \"name\": \"" + row.Name + "\""
-                    + ", \"status\": {\"id\": \"s1\", \"name\": \"Active\"}"
-                    + ", \"url\": \"https://linear.app/" + row.ReferenceId + "\""
-                    + ", \"sortOrder\": 1.0"
-                    + ", \"createdAt\": \"2026-01-01T00:00:00.000Z\""
-                    + ", \"inverseRelations\": {\"nodes\": [" + string.Join(",", nodes) + "]}}";
+                    .GetFeaturesForProject(APortfolio());
             }
 
             private static Portfolio APortfolio()
@@ -311,21 +248,5 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             portfolio.DoneStates.Clear();
         }
 
-        private static HttpMessageHandler HandlerReturning(Func<HttpRequestMessage, string> bodyFor)
-        {
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((request, _) => Task.FromResult(
-                    new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(bodyFor(request), Encoding.UTF8, "application/json"),
-                    }));
-
-            return mock.Object;
-        }
     }
 }

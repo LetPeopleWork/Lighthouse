@@ -3,9 +3,6 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Moq.Protected;
-using System.Net;
-using System.Text;
 using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
@@ -193,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetFeaturesForProject_AFeatureCarriesTheIssuesItsInwardLinksPointAt()
         {
-            var recorded = new RecordedJiraRequests();
+            var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
 
             var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
@@ -207,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetFeaturesForProject_AFeatureThatOnlyBlocksOthersWaitsOnNothing()
         {
-            var recorded = new RecordedJiraRequests();
+            var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlocksLink("PROJ-2")));
 
             var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
@@ -218,7 +215,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetFeaturesForProject_EveryReferenceIsMarkedAsHavingComeFromTheTracker()
         {
-            var recorded = new RecordedJiraRequests();
+            var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
 
             var features = await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
@@ -234,11 +231,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetFeaturesForProject_ReadingTheLinksLeavesEveryOtherMappedValueAlone()
         {
-            var recorded = new RecordedJiraRequests();
+            var recorded = new RecordedRequests();
             var withoutLinks = await AConnectorReturning(recorded, AnEpic("PROJ-1"))
                 .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
-            var withLinks = await AConnectorReturning(new RecordedJiraRequests(), AnEpic("PROJ-1", BlockedByLink("PROJ-2")))
+            var withLinks = await AConnectorReturning(new RecordedRequests(), AnEpic("PROJ-1", BlockedByLink("PROJ-2")))
                 .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
             var before = withoutLinks.Single();
@@ -268,11 +265,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetFeaturesForProject_ReadingTheLinksCostsTheRefreshNoRequestOfItsOwn()
         {
-            var withoutLinks = new RecordedJiraRequests();
+            var withoutLinks = new RecordedRequests();
             await AConnectorReturning(withoutLinks, AnEpic("PROJ-1"))
                 .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
-            var withLinks = new RecordedJiraRequests();
+            var withLinks = new RecordedRequests();
             await AConnectorReturning(withLinks, AnEpic("PROJ-1", BlockedByLink("PROJ-2")))
                 .GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
@@ -282,12 +279,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetFeaturesForProject_TheSearchStillAsksForEveryFieldAndNothingIsAddedToIt()
         {
-            var recorded = new RecordedJiraRequests();
+            var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
 
             await subject.GetFeaturesForProject(JiraConnectorTestSetup.APortfolioOnJiraCloud());
 
-            Assert.That(FieldsAskedForIn(recorded.LastSearchUrl), Is.EqualTo("*all"));
+            Assert.That(recorded.FieldsAskedForInTheLastSearch(), Is.EqualTo("*all"));
         }
 
         /// <summary>
@@ -299,7 +296,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task SweepFeaturesForPortfolio_TheIdentitySweepStillAsksForNothingButIdentityAndTheStamp()
         {
-            var recorded = new RecordedJiraRequests();
+            var recorded = new RecordedRequests();
             var subject = AConnectorReturning(recorded, AnEpic("PROJ-1", BlockedByLink("PROJ-2")));
             var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
 
@@ -309,7 +306,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await subject.SweepFeaturesForPortfolio(portfolio);
 
-            Assert.That(FieldsAskedForIn(recorded.LastSearchUrl), Is.EqualTo("key,updated"));
+            Assert.That(recorded.FieldsAskedForInTheLastSearch(), Is.EqualTo("key,updated"));
         }
 
         /// <summary>
@@ -403,116 +400,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             => (text.Length - text.Replace(needle, string.Empty, StringComparison.Ordinal).Length) / needle.Length;
 
         private static JiraWorkTrackingConnector AConnectorReturning(ILogger<JiraWorkTrackingConnector> logger, params string[] issues)
-            => JiraConnectorTestSetup.AConnectorOver(HandlerReturning(new RecordedJiraRequests(), issues), logger);
+            => JiraConnectorTestSetup.AConnectorOver(
+                StubTransport.RespondingWith(request => JiraWireFormat.ACloudResponseTo(request, issues)),
+                logger);
 
-        private static string FieldsAskedForIn(string url)
-            => System.Web.HttpUtility.ParseQueryString(new Uri(url).Query)["fields"] ?? string.Empty;
-
-        private static JiraWorkTrackingConnector AConnectorReturning(RecordedJiraRequests recorded, params string[] issues)
-            => JiraConnectorTestSetup.AConnectorOver(HandlerReturning(recorded, issues));
-
-        private static HttpMessageHandler HandlerReturning(RecordedJiraRequests recorded, string[] issues)
-        {
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
-                {
-                    recorded.Record(request);
-
-                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(BodyFor(request, issues), Encoding.UTF8, "application/json"),
-                    });
-                });
-
-            return mock.Object;
-        }
-
-        private static string BodyFor(HttpRequestMessage request, string[] issues)
-        {
-            var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-
-            if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
+        private static JiraWorkTrackingConnector AConnectorReturning(RecordedRequests recorded, params string[] issues)
+            => JiraConnectorTestSetup.AConnectorOver(StubTransport.RespondingWith((request, body) =>
             {
-                return "{\"deploymentType\":\"Cloud\"}";
-            }
+                recorded.Record(request, body);
 
-            if (path.EndsWith("rest/api/latest/field", StringComparison.Ordinal))
-            {
-                return "[]";
-            }
+                return JiraWireFormat.ACloudResponseTo(request, issues);
+            }));
 
-            if (path.Contains("/search", StringComparison.Ordinal))
-            {
-                return "{\"issues\":[" + string.Join(",", issues) + "],\"isLast\":true}";
-            }
+        private static string AnEpic(string key, params string[] links) => JiraWireFormat.AnEpic(key, links);
 
-            return "{}";
-        }
+        private static string BlockedByLink(string key) => JiraWireFormat.BlockedByLink(key);
 
-        private static string AnEpic(string key, params string[] links)
-        {
-            var fields = "{\"summary\": \"" + key + " summary\""
-                + ", \"issuetype\": {\"name\": \"Epic\"}"
-                + ", \"status\": {\"name\": \"In Progress\"}"
-                + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
-                + ", \"updated\": \"2026-01-02T00:00:00.000+0000\""
-                + ", \"labels\": []"
-                + ", \"issuelinks\": [" + string.Join(",", links) + "]}";
+        private static string InwardLink(string inwardName, string key) => JiraWireFormat.InwardLink(inwardName, key);
 
-            return "{\"key\": \"" + key + "\", \"fields\": " + fields + "}";
-        }
-
-        /// <summary>
-        /// Every request the connector made, in order. Two runs of the same fetch have to agree on this
-        /// exactly, which is what makes "no extra request" a testable claim rather than a reading of the code.
-        /// </summary>
-        private sealed class RecordedJiraRequests
-        {
-            private readonly List<string> urls = [];
-
-            public IReadOnlyList<string> Urls => urls;
-
-            public string LastSearchUrl
-            {
-                get
-                {
-                    var searches = urls.FindAll(url => url.Contains("/search", StringComparison.Ordinal));
-
-                    return searches[searches.Count - 1];
-                }
-            }
-
-            public IReadOnlyList<string> Paths => urls.ConvertAll(url => new Uri(url).AbsolutePath);
-
-            public void Record(HttpRequestMessage request)
-            {
-                if (request.RequestUri is not null)
-                {
-                    urls.Add(request.RequestUri.AbsoluteUri);
-                }
-            }
-        }
-
-        private static string BlockedByLink(string key) => InwardLink("is blocked by", key);
-
-        private static string InwardLink(string inwardName, string key)
-            => Link("inwardIssue", inwardName, key);
-
-        private static string BlocksLink(string key)
-            => Link("outwardIssue", "is blocked by", key);
-
-        private static string Link(string end, string inwardName, string key)
-        {
-            var type = "{\"name\": \"Blocks\", \"inward\": \"" + inwardName + "\", \"outward\": \"blocks\"}";
-            var issue = "{\"key\": \"" + key + "\", \"fields\": {\"summary\": \"Something\"}}";
-
-            return "{\"type\": " + type + ", \"" + end + "\": " + issue + "}";
-        }
+        private static string BlocksLink(string key) => JiraWireFormat.BlocksLink(key);
 
         private static JsonElement FieldsWith(params string[] links)
             => Fields($$"""{"issuelinks": [{{string.Join(",", links)}}]}""");
