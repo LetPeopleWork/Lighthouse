@@ -20,6 +20,10 @@ namespace Lighthouse.Backend.Tests.API.DTO
     [TestFixture]
     public class PortfolioSettingDtoCompatibilityTest
     {
+        // Case-insensitive because the controller's own binding is, and a payload that saves through the
+        // route has to read the same way here or the guard is testing a stricter reader than the real one.
+        private static readonly JsonSerializerOptions AsTheRouteReadsIt = new() { PropertyNameCaseInsensitive = true };
+
         /// <summary>
         /// The shape a client that predates every dependency setting sends: no dependency field, no ignore
         /// switch, and nothing else added since either.
@@ -94,8 +98,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         private static PortfolioSettingDto Deserialize()
-            => JsonSerializer.Deserialize<PortfolioSettingDto>(
-                WhatAnOlderClientSends,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            => JsonSerializer.Deserialize<PortfolioSettingDto>(WhatAnOlderClientSends, AsTheRouteReadsIt)!;
     }
 }
