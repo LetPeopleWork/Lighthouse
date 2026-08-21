@@ -37,9 +37,9 @@ export const reasonSentence = (
 	return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;
 };
 
-/** The one thing worth saying that is no reason to leave a dependency out: the order is the reader's. */
+/** The one thing worth saying about a dependency that is no reason to leave it out of the forecast. */
 export const positionedBelowSentence = (
 	waitedOn: string,
 	terms: DependencyTerms,
 ): string =>
-	`This ${terms.featureTerm} depends on ${waitedOn}, which sits below it in the order. The order is yours, so nothing was moved.`;
+	`This ${terms.featureTerm} depends on ${waitedOn}, which sits below it in the order.`;

@@ -169,7 +169,7 @@ describe("WarningsIndicator", () => {
 			);
 		});
 
-		it("says a Feature waited on sits lower down and that nothing was moved", () => {
+		it("says a Feature waited on sits lower down in the order", () => {
 			render(
 				<WarningsIndicator
 					isDoneWithRemainingWork={false}
@@ -182,7 +182,6 @@ describe("WarningsIndicator", () => {
 			expect(warning.getAttribute("aria-label")).toContain(
 				"sits below it in the order",
 			);
-			expect(warning.getAttribute("aria-label")).toContain("nothing was moved");
 		});
 
 		it("says two Features are waiting on each other", () => {
