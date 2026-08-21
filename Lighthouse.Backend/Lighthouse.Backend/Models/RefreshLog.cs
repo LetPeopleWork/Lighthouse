@@ -2,10 +2,13 @@ using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {
+    // Append new members only. A member inserted above an existing one shifts the numbers already
+    // written to the Type column of the refresh log, which would relabel every refresh recorded so far.
     public enum RefreshType
     {
         Team,
-        Portfolio
+        Portfolio,
+        Forecast
     }
 
     public class RefreshLog : IEntity

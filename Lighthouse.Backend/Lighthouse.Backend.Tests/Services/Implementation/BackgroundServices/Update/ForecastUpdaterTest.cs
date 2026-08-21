@@ -18,10 +18,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+        private Mock<IRefreshLogService> refreshLogServiceMock;
 
         private int idCounter = 0;
 
         private static readonly string[] WriteBackThenEventDispatchOrder = ["forecastWriteBack", "forecastsUpdatedEvent"];
+
+        private const int SlowForecastMilliseconds = 60;
+
+        private const int ShortestCredibleDurationMilliseconds = 25;
 
         [SetUp]
         public void Setup()
@@ -35,10 +40,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            refreshLogServiceMock = new Mock<IRefreshLogService>();
+            refreshLogServiceMock
+                .Setup(x => x.LogRefreshAsync(It.IsAny<RefreshLog>()))
+                .Returns(Task.CompletedTask);
+
             SetupServiceProviderMock(appSettingServiceMock.Object);
             SetupServiceProviderMock(portfolioRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
+            SetupServiceProviderMock(refreshLogServiceMock.Object);
         }
 
         [Test]
@@ -150,6 +161,91 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(1);
 
             domainEventDispatcherMock.Verify(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Test]
+        [Ignore("pending - DELIVER (epic-5792)")]
+        public void Update_ShouldRecordRefreshLogForForecast_WhenPortfolioIsFound()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Type, Is.EqualTo(RefreshType.Forecast));
+                Assert.That(recorded.Entry.EntityId, Is.EqualTo(portfolio.Id));
+                Assert.That(recorded.Entry.EntityName, Is.EqualTo(portfolio.Name));
+                Assert.That(recorded.Entry.Success, Is.True);
+            }
+        }
+
+        [Test]
+        [Ignore("pending - DELIVER (epic-5792)")]
+        public void Update_ShouldRecordHowLongTheForecastRan()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(portfolio))
+                .Returns(Task.Delay(SlowForecastMilliseconds));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(recorded.Entry.DurationMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
+        }
+
+        [Test]
+        [Ignore("pending - DELIVER (epic-5792)")]
+        public void Update_ShouldRecordUnsuccessfulRefreshLog_WhenForecastThrows()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>()))
+                .ThrowsAsync(new Exception("Test exception"));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Type, Is.EqualTo(RefreshType.Forecast));
+                Assert.That(recorded.Entry.EntityId, Is.EqualTo(portfolio.Id));
+                Assert.That(recorded.Entry.Success, Is.False);
+            }
+        }
+
+        private RecordedRefreshLog CaptureRefreshLog()
+        {
+            var recorded = new RecordedRefreshLog();
+            refreshLogServiceMock
+                .Setup(x => x.LogRefreshAsync(It.IsAny<RefreshLog>()))
+                .Callback<RefreshLog>(recorded.Record)
+                .Returns(Task.CompletedTask);
+
+            return recorded;
+        }
+
+        private sealed class RecordedRefreshLog
+        {
+            private RefreshLog? entry;
+
+            public RefreshLog Entry => entry ?? throw new AssertionException("No refresh was recorded for the forecast.");
+
+            public void Record(RefreshLog refreshLog)
+            {
+                entry = refreshLog;
+            }
         }
 
         private ForecastUpdater CreateSubject()
