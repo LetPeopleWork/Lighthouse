@@ -350,8 +350,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(warning, Does.Contain("is halted by"));
-                Assert.That(warning, Does.Contain("waits for"));
+                // The whole list as the operator reads it, rather than each name somewhere in the line:
+                // asserting the names separately passes just as happily on "is halted bywaits for", and
+                // an unreadable run of words is the one way this sentence can fail to do its job.
+                Assert.That(warning, Does.Contain("is halted by, waits for"));
                 Assert.That(Occurrences(warning, "is halted by"), Is.EqualTo(1));
             }
         }

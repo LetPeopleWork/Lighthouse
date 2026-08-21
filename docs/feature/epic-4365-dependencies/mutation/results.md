@@ -1,5 +1,51 @@
 # Mutation testing — Epic 4365
 
+## Slice 03 (Jira and Linear read their own dependency links)
+
+Run 2026-08-21 against `main` @ `761661d6d`. Gate is 80 % kill rate on each stack touched. The frontend
+is untouched by this slice, so StrykerJS was not run — N/A, not skipped.
+
+### Backend (Stryker.NET) — **83.87 %** on the lines this slice wrote (52 killed / 62 run)
+
+| file | killed | survived | score |
+| --- | --- | --- | --- |
+| `Jira/IssueExtensions.cs` | 34 | 8 | 81.0 % |
+| `Jira/JiraWorkTrackingConnector.cs` | 9 | 2 | 81.8 % |
+| `Linear/LinearWorkTrackingConnector.cs` | 7 | 0 | 100 % |
+| `Models/Feature.cs`, `Jira/JiraFieldNames.cs` | 2 | 0 | 100 % |
+
+**Stryker's own headline number for the same run is 41.92 %, and it does not describe this slice.**
+The `mutate` filter is ignored in this repository — slice 02 recorded that, and it was re-confirmed here
+twice, with and without the `solution` key, both times producing 16 175 mutants over the whole project.
+What does work is `--since`, which narrows execution to files changed against a target: 15 204 mutants
+skipped, **971 tested**, 35 minutes. But `--since` scopes to whole *files*, and two of the files this
+slice touched are ~2 600 lines of connector it never opened, so 41.92 % is mostly a verdict on
+pre-existing code.
+
+The slice number above comes from `score_the_slice.py`, which intersects the report's per-mutant line
+numbers with the diff. That is the only line-level scoping available here: Stryker's line-span syntax
+(`File.cs{120..180}`) rides on the same ignored `mutate` key. `--since` also needs a branch or tag
+rather than a bare SHA, hence the throwaway `slice03-baseline` ref.
+
+### Every survivor, and why eight of them cannot be killed
+
+Ten mutants survived on this slice's lines. Eight are equivalent mutants:
+
+- **`||` → `&&` in the four JSON guards** (`InwardNameOf`, `KeyOf`). When `TryGetProperty` returns
+  false the out-parameter is `default(JsonElement)`, whose `ValueKind` is `Undefined` and therefore
+  already fails the second half of the test. Both forms return empty for the same inputs.
+- **`string.Empty` → a junk string in `InwardNameOf`.** A name that is not `is blocked by` is skipped
+  whatever it says, so no caller can tell the difference.
+- **`?? string.Empty` on both tails.** Unreachable: the `ValueKind != String` guard above already
+  excludes JSON null, so `GetString()` cannot return null there. Dead defensive code, and Stryker's
+  `NoCoverage` label for it is the honest one.
+
+**Two were real, and both were about the sentence an operator reads** — the same class slice 02's
+frontend run turned up. `.Order()` → `.OrderDescending()` and the `", "` separator → `""` both survived
+because the test asserted each link name appeared *somewhere* in the warning; "is halted bywaits for"
+passes that just as happily. It now asserts the rendered list, `is halted by, waits for`, which pins
+order and separator together. Not re-scored — the run is 35 minutes and the gate was already met.
+
 ## Slice 02 (what exactly, and what Lighthouse cannot act on)
 
 Run 2026-08-19 against `main` @ `15a0a2942`. Gate is 80 % kill rate on each stack touched.
