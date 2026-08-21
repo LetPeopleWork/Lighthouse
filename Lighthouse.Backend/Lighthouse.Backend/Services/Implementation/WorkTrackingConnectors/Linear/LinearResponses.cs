@@ -95,6 +95,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 public Issues Issues { get; set; }
                 public InitiativeToProjectConnection Initiatives { get; set; }
                 public ProjectHistoryConnection History { get; set; }
+
+                /// <summary>
+                /// The relations where this Project is the target - the ones it is waiting on. Its own
+                /// <c>relations</c> are the ones where it is the source, which is what it blocks, and are
+                /// deliberately not requested.
+                /// </summary>
+                public ProjectRelationConnection InverseRelations { get; set; }
+            }
+
+            public class ProjectRelationConnection
+            {
+                public List<ProjectRelationNode> Nodes { get; set; }
+            }
+
+            public class ProjectRelationNode
+            {
+                /// <summary>The Project at the source end of the relation: the one doing the blocking.</summary>
+                public ProjectReference Project { get; set; }
+            }
+
+            public class ProjectReference
+            {
+                public string Id { get; set; }
             }
 
             public class ProjectHistoryConnection

@@ -3,6 +3,7 @@ using GraphQL.Client.Abstractions;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Interfaces;
@@ -27,6 +28,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
         private const string InitiativeTypeIdentifier = "Initiative";
         private const string ProjectStatusEntryType = "status";
         private const int HistoryPageSize = 25;
+
+        private const int ProjectRelationPageSize = 50;
+
+        private const int TheFeatureHasNoRowYet = 0;
 
         private bool historyUnavailable;
 
@@ -414,8 +419,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
             var stateCategory = portfolio.MapStateToStateCategory(state);
 
             var initiativeId = projectNode.Initiatives?.Nodes?.FirstOrDefault()?.Id ?? string.Empty;
-            
-            return new Feature
+
+            return new Feature(TheProjectsItWaitsOn(projectNode))
             {
                 ReferenceId = projectNode.Id,
                 Name = projectNode.Name,
@@ -430,6 +435,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                 ClosedDate = projectNode.CompletedAt,
                 SyncedTransitions = MapProjectSyncedTransitions(projectNode, portfolio),
             };
+        }
+
+        /// <summary>
+        /// The Projects this one is waiting on, as references.
+        ///
+        /// Linear records a dependency once and offers it from both ends. The inverse relations are the
+        /// ones where this Project is the target, so their source is what it is waiting on; a Project's
+        /// own relations are what it blocks and are neither requested nor read. Nothing here has been
+        /// saved yet, so every reference names Feature nought until the reconciler keys it to the row the
+        /// Feature lands on.
+        /// </summary>
+        private static List<FeatureDependencyReference> TheProjectsItWaitsOn(ProjectNode projectNode)
+        {
+            var nodes = projectNode.InverseRelations?.Nodes ?? [];
+
+            return nodes
+                .Select(relation => relation?.Project?.Id ?? string.Empty)
+                .Where(id => id.Length > 0)
+                .Select(id => new FeatureDependencyReference(TheFeatureHasNoRowYet, id, DependencySource.TrackerLink))
+                .ToList();
         }
 
         private static IReadOnlyList<WorkItemStateTransition> MapProjectSyncedTransitions(ProjectNode projectNode, Portfolio portfolio)
@@ -743,6 +768,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Line
                             nodes {{
                                 id
                                 name
+                            }}
+                        }}
+                        inverseRelations(first: {ProjectRelationPageSize}) {{
+                            nodes {{
+                                project {{
+                                    id
+                                }}
                             }}
                         }}{ProjectHistoryConnectionFragment(!historyUnavailable)}
                     }}

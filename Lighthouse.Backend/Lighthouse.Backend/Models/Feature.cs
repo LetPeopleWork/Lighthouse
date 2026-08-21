@@ -8,12 +8,23 @@ namespace Lighthouse.Backend.Models
     {
         private readonly List<FeatureDependencyReference> dependsOnReferences = [];
 
-        public Feature() : this([])
+        public Feature() : this(new List<(Team team, int remainingItems, int totalItems)>())
         {
         }
 
         public Feature(WorkItemBase workItemBase) : this(workItemBase, [])
         {
+        }
+
+        /// <summary>
+        /// A Feature a connector builds field by field rather than from a work item it already has, links
+        /// and all. Same reason as the constructor below: the links are known before the Feature has a
+        /// row, so taking them here keeps the rewrite of what an existing Feature waits on to the
+        /// reconciler alone.
+        /// </summary>
+        public Feature(IEnumerable<FeatureDependencyReference> dependsOn)
+        {
+            dependsOnReferences.AddRange(dependsOn);
         }
 
         /// <summary>
