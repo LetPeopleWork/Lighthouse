@@ -207,10 +207,9 @@ namespace Lighthouse.Backend.API
         }
 
         /// <param name="everyFeatureIsLoaded">
-        /// True when the predicate leaves nothing out. Whether a dependency can be acted on is a question
-        /// about the whole graph — what is in a loop, what shares a Portfolio — so it can only be answered
-        /// honestly when every Feature is in front of us. Asked of a handful, it would report Features as
-        /// unreachable merely because the request did not ask for them.
+        /// True when the predicate leaves nothing out, so the caller's own list can answer the dependency
+        /// question without loading the Features a second time. It is an optimisation and nothing else:
+        /// a request for a handful gets the same verdicts, worked out over the same whole graph.
         /// </param>
         private async Task<List<FeatureDto>> GetFeaturesByPredicate(
             Expression<Func<Feature, bool>> predicate, bool everyFeatureIsLoaded = false)
@@ -237,29 +236,31 @@ namespace Lighthouse.Backend.API
         /// does not hold cannot be named to a reader and is not here.
         /// </summary>
         /// <param name="everyFeatureIsLoaded">
-        /// Whether what is wrong with a dependency can be said at all. That question is about the whole
-        /// graph - what is in a circle, what shares a Portfolio - so a request for a handful of Features
-        /// can name what they wait on but cannot honestly judge it, and says nothing rather than guessing.
+        /// Whether the caller's list is already the whole graph, in which case it is used as it stands.
         /// </param>
+        /// <remarks>
+        /// The whole graph is read either way, because what is wrong with a dependency is a question about
+        /// all of it - what is in a circle, what shares a Portfolio. Answering a request for a handful from
+        /// that handful would report Features as unreachable merely because the request did not ask for
+        /// them, and answering it with nothing would leave the same dependency warned about on one screen
+        /// and silent on another. Two screens disagreeing about one dependency is the failure this feature
+        /// exists to prevent, so the cost is paid rather than the answer withheld.
+        /// </remarks>
         private async Task<DependenciesAsRead> WhatTheseFeaturesWaitOn(
             IReadOnlyCollection<Feature> features,
             IReadOnlyDictionary<int, int> positions,
             bool everyFeatureIsLoaded)
         {
-            var waitedOn = features
-                .SelectMany(feature => feature.DependsOnReferences.Select(reference => reference.ReferenceId))
-                .ToHashSet(StringComparer.Ordinal);
-
-            var blockers = ByReferenceId(everyFeatureIsLoaded
+            var wholeGraph = everyFeatureIsLoaded
                 ? features
-                : featureRepository.GetAllByPredicate(candidate => waitedOn.Contains(candidate.ReferenceId)).ToList());
+                : featureRepository.GetAllByPredicate(_ => true).ToList();
+
+            var blockers = ByReferenceId(wholeGraph);
 
             var readablePortfolioIds = await GetReadablePortfolioIds(
                 blockers.Values.SelectMany(blocker => blocker.Portfolios).Select(portfolio => portfolio.Id));
 
-            var verdicts = everyFeatureIsLoaded
-                ? VerdictsBy(dependencyHonourPolicy.Evaluate(DependencyFacts.About(features, positions)))
-                : [];
+            var verdicts = VerdictsBy(dependencyHonourPolicy.Evaluate(DependencyFacts.About(wholeGraph, positions)));
 
             return new DependenciesAsRead(blockers, readablePortfolioIds, verdicts);
         }

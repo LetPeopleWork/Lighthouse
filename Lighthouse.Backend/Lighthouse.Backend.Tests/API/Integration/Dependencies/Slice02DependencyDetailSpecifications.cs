@@ -132,6 +132,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private Task<Dictionary<string, JsonElement>> WhenTheDeliveryLeadOpensTheFeaturesView()
             => ReadTheFeaturesView(Client);
 
+        /// <summary>
+        /// The route a Portfolio's page and a Team's page read: the Features they hold, asked for by id.
+        /// </summary>
+        private async Task<Dictionary<string, JsonElement>> WhenOnlySomeOfTheFeaturesAreAskedFor(
+            params string[] featureReferenceIds)
+        {
+            var ids = featureReferenceIds.Select(TheFeatureIdOf);
+            var query = string.Join("&", ids.Select(id => $"featureIds={id}"));
+
+            using var response = await Client.GetAsync($"/api/latest/features/ids?{query}");
+            response.EnsureSuccessStatusCode();
+
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            return payload.RootElement.EnumerateArray().ToDictionary(
+                feature => feature.GetProperty("referenceId").GetString() ?? string.Empty,
+                feature => feature.Clone());
+        }
+
         private async Task<Dictionary<string, JsonElement>> WhenAReaderOfOnlyOnePortfolioOpensTheFeaturesView(
             int theOnlyPortfolioTheyCanRead)
         {
@@ -417,6 +436,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             return payload.RootElement.EnumerateArray()
                 .ToDictionary(row => row.GetProperty("referenceId").GetString()!, row => row.Clone());
         }
+
+        /// <summary>
+        /// Every entry on one row, flattened to text so two reads can be compared whole rather than field
+        /// by field: a comparison that looked only at the fields somebody thought of would pass while the
+        /// two screens disagreed about one nobody did.
+        /// </summary>
+        private static List<string> TheEntriesAsRead(Dictionary<string, JsonElement> rows, string featureReferenceId)
+            => [.. DependsOnOf(rows[featureReferenceId]).Select(entry => entry.ToString()).Order(StringComparer.Ordinal)];
 
         private static List<JsonElement> DependsOnOf(JsonElement row)
             => row.TryGetProperty("dependsOn", out var dependsOn) && dependsOn.ValueKind == JsonValueKind.Array

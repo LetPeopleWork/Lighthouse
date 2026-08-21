@@ -159,6 +159,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNoEntryCarriesASentenceNobodyCanRename(rows);
         }
 
+        // @us-03 - a Portfolio's page and a Team's page ask for the Features they hold rather than for the
+        // whole list, and they carry the same warnings column. One dependency reading as a problem on one
+        // screen and as fine on another is the disagreement this whole feature exists to prevent, so what
+        // is said about it cannot depend on which screen asked.
+        [Test]
+        public async Task Asking_for_only_some_features_says_the_same_about_them_as_asking_for_all()
+        {
+            var platform = GivenAPortfolio("Platform");
+            await GivenARefreshedPortfolio(
+                platform, AFeatureWaitingOn("F-3", "Publish the partner catalogue", TheSearchIndex));
+            GivenTheTeamBehindItHasNoMeasuredDelivery("F-1");
+
+            var everything = await WhenTheDeliveryLeadOpensTheFeaturesView();
+            var onlySomeOfThem = await WhenOnlySomeOfTheFeaturesAreAskedFor("F-3");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheEntriesAsRead(onlySomeOfThem, "F-3"),
+                    Is.EqualTo(TheEntriesAsRead(everything, "F-3")),
+                    "Asking for one Feature has to say what asking for all of them says about it - including "
+                    + "what is wrong with a dependency, which the narrower request could not work out and "
+                    + "therefore said nothing about.");
+                Assert.That(TheEntriesAsRead(everything, "F-3"), Has.Some.Contains("BlockerCannotBeForecast"),
+                    "A row with nothing wrong with it would satisfy the comparison above for free.");
+            }
+        }
+
         // Having a dependency is not a problem. A Feature whose dependencies are all sound names them and
         // reports nothing against them.
         [Test]
