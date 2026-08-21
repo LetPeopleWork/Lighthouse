@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
 
         private static readonly int[] NobodyIgnoresTheirs = [];
 
+        private static readonly int[] NoPortfolioAtAll = [];
+
         private static readonly string[] NothingWaitedOn = [];
 
         private static readonly string[] TheFirst = ["F-1"];
@@ -372,6 +374,60 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
                 Assert.That(afterTheSwitchGoesBack, Is.EqualTo(beforeTheSwitch));
                 Assert.That(whileSetAside, Is.Not.EqualTo(beforeTheSwitch));
             }
+        }
+
+        /// <summary>
+        /// Where something sits is only worth saying about a dependency Lighthouse could otherwise act on.
+        /// Reporting the order of a Feature this Portfolio cannot see would be telling the reader to
+        /// re-order around something they have no way of finding.
+        /// </summary>
+        [Test]
+        public void AFeatureWaitingOnOneOutsideThePortfolio_IsToldNothingAboutWhereThatOneSits()
+        {
+            var honoured = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: AnotherPortfolio));
+
+            var verdict = TheVerdictFor(honoured, "F-1", "F-2");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(verdict.Reason, Is.EqualTo(NotHonouredReason.OutsideThisPortfolio));
+                Assert.That(verdict.BlockerPositionedBelow, Is.False,
+                    "F-2 does sit lower down, and saying so would point the reader at a Feature they cannot reach.");
+            }
+        }
+
+        /// <summary>
+        /// A Portfolio holding only the waiting end has no say: the dependency has no consequence there,
+        /// because Lighthouse never acts on one whose other end it cannot see. Letting it vote would leave
+        /// a Portfolio unable to set aside its own dependencies while any other Portfolio holds one end.
+        /// </summary>
+        [Test]
+        public void OnlyThePortfoliosHoldingBothEnds_DecideWhetherADependencyIsSetAside()
+        {
+            var honoured = DecideWhile(
+                TheSamePortfolio,
+                AFeature("F-1", position: 1, portfolioIds: BothPortfolios, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio));
+
+            Assert.That(TheVerdictFor(honoured, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.IgnoredByPortfolio),
+                "Only the Portfolio holding both of them can act on this, and it has set its dependencies aside.");
+        }
+
+        /// <summary>
+        /// A Feature in no Portfolio at all is nobody's to set aside. Reading an empty set of deciders as
+        /// unanimous agreement would report it as a deliberate choice somebody made, when nobody made one.
+        /// </summary>
+        [Test]
+        public void AFeatureInNoPortfolio_IsNotSetAsideByAnybody()
+        {
+            var honoured = DecideWhile(
+                TheSamePortfolio,
+                AFeature("F-1", position: 1, portfolioIds: NoPortfolioAtAll, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio));
+
+            Assert.That(TheVerdictFor(honoured, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.OutsideThisPortfolio));
         }
 
         private static DependencyVerdict AVerdict(NotHonouredReason? reason, bool blockerPositionedBelow)

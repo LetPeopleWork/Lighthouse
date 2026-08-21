@@ -138,15 +138,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         [Test]
         public async Task A_refresh_says_nothing_about_dependencies_a_Portfolio_has_set_aside()
         {
-            var portfolioId = GivenAPortfolio("Platform");
-            SetWhetherItActsOnItsDependencies(portfolioId, setThemAside: true);
+            var thePortfolioThatActsOnThem = GivenAPortfolio("Platform");
+            var thePortfolioThatDoesNot = GivenAPortfolio("Payments");
+            SetWhetherItActsOnItsDependencies(thePortfolioThatDoesNot, setThemAside: true);
 
             await GivenARefreshedPortfolio(
-                portfolioId,
+                thePortfolioThatActsOnThem,
                 AFeatureWaitingOn("F-1", "Rebuild the search index", ["F-2"]),
                 AFeatureWaitingOn("F-2", "Retire the legacy importer", ["F-1"]));
+            var whatItSaidAboutTheCircle = TheWarningsTheRefreshRaised();
 
-            Assert.That(TheWarningsTheRefreshRaised(), Has.None.Contains("circle"));
+            await GivenARefreshedPortfolio(
+                thePortfolioThatDoesNot,
+                AFeatureWaitingOn("F-3", "Move the catalogue", ["F-4"]),
+                AFeatureWaitingOn("F-4", "Retire the old catalogue", ["F-3"]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whatItSaidAboutTheCircle, Has.Some.Contains("circle"),
+                    "A refresh that never mentioned a circle would satisfy the assertion below for free.");
+                Assert.That(TheWarningsTheRefreshRaised(), Has.None.Contains("circle"));
+            }
         }
 
         // @edge @us-10 - a Feature waited on that this Portfolio cannot see is a broken link when the
