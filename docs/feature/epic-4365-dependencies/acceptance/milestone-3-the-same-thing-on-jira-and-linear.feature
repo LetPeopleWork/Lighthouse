@@ -7,11 +7,15 @@ Feature: The same thing on Jira and on Linear (Epic 4365, Slice 03 — US-09)
   # Chained narrative: the Given of every scenario here is a Portfolio in exactly the state Slice 02
   # left it in — counts, detail list and warnings all working — with only the tracker changed.
   #
-  # The Linear scenario below is the one trap in this feature. Lighthouse holds Linear identifiers
-  # folded to lower case; Linear returns them upper case; entries that resolve to nothing are passed
-  # over by design. Without the fold, every Linear dependency is passed over silently and the screen
-  # reads "no dependencies" — which is indistinguishable from the truth. It gets its own scenario
-  # rather than being left to the reader of the mapper.
+  # The Linear scenario below is the one trap in this feature, and it is a trap about direction rather
+  # than about spelling. Linear records a dependency once and offers it from both ends: a Project's own
+  # relations are what it blocks, and its inverse relations are what it is waiting on. Reading the near
+  # side gives a count that looks right on every screen while pointing every edge the wrong way, which
+  # is why it gets its own scenario rather than being left to the reader of the mapper.
+  #
+  # (An earlier draft of this file said the trap was a lower-case fold on a Linear identifier. That is
+  # true of the Work Item path and false here: a Feature is a Linear Project, keyed by the id Linear
+  # itself returns, so nothing is folded.)
   #
   # Jira's own name for its link — "is blocked by" — is quoted below because it is the fact under
   # test: it is the string Lighthouse looks for, and an administrator can rename it. It is read,
@@ -31,18 +35,16 @@ Feature: The same thing on Jira and on Linear (Epic 4365, Slice 03 — US-09)
   @error @regression @real-io @driving_port @us-09 @slice-03 @contract-shape:bounded-change
   Scenario: A Linear Feature's dependencies resolve even though the tracker names them differently
     Given a Portfolio whose Features are read from Linear
-    And Linear reports "Checkout redesign" as depending on a Feature whose identifier it returns
-      in upper case
-    And Lighthouse holds that same Feature under the lower-case form of that identifier
+    And Linear reports "Payment gateway upgrade" as blocking "Checkout redesign"
     When the Portfolio is refreshed
     Then "Checkout redesign" is waiting on 1 Feature
-    And that Feature is the one Lighthouse already holds
+    And the Feature it is waiting on is "Payment gateway upgrade"
     And the count is not zero, which is what a Portfolio with no dependencies would show
 
   @edge @real-io @driving_port @us-09 @slice-03 @contract-shape:bounded-change
   Scenario: Linear's other direction contributes nothing
     Given a Portfolio whose Features are read from Linear
-    And Linear reports "Payment gateway upgrade" as being depended upon by "Checkout redesign"
+    And Linear reports "Payment gateway upgrade" as blocking "Checkout redesign"
     When the Portfolio is refreshed
     Then "Payment gateway upgrade" is waiting on nothing
     And only the "waiting on" direction is read from the tracker

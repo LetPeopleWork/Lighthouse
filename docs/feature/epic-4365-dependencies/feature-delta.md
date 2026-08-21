@@ -624,11 +624,13 @@ Decision enabled: the same decisions as US-01 through US-03, on the tracker the 
 
 - **AC-9.1** A Jira issue with `issuelinks` containing `type.inward = "is blocked by"` **and** an
   `inwardIssue` yields one edge per such link; entries with only an `outwardIssue` yield none.
-- **AC-9.2** A Linear issue's `dependencies` connection yields one reference per node, **lower-cased**
-  to match `ReferenceId` (`LinearWorkTrackingConnector.cs:343`), and each one resolves to a Feature.
-  Asserted on a fixture whose `identifier` is upper case — without the fold this passes ingestion and
-  yields zero resolved dependencies, which is indistinguishable from an instance that has none. Its
-  `blocking` connection yields nothing (D14).
+- **AC-9.2** *(restated 2026-08-21 against the published Linear schema — see the slice-03 premise note
+  near the end of this document; the original text named `dependencies` on Issue and a lower-case fold,
+  neither of which exists on the Feature path.)* A Linear Project's `inverseRelations` connection yields
+  one reference per node, taken from `project.id` and stored verbatim, and each one resolves to a
+  Feature. Its `relations` connection — what this Project blocks — yields nothing and is not requested
+  (D14). Asserted on a fixture carrying both directions, because reading the wrong one reverses every
+  edge in the instance while still producing a plausible-looking count.
 - **AC-9.3** Reading `issuelinks` changes no existing mapped value, and the identity sweep still asks
   for `key,updated` and nothing more —
   asserted by an unchanged fixture comparison.
@@ -1826,6 +1828,38 @@ link data was deferred to slice 03 by the maintainer on 2026-08-18, which is als
 re-checked against the live API.
 
 ---
+
+### Slice 03's premise, settled against the published Linear schema — 2026-08-21
+
+**Linear can express a dependency between two Features, and the DESIGN named the wrong field for it.**
+Checked against `linear/linear`'s published `schema.graphql` rather than against a running workspace,
+because the shape of the API is what the question was about.
+
+- `dependencies` is a connection on **Issue**. A Lighthouse Feature is a Linear **Project**, so that
+  field is unreachable from the Feature path and was never the right one.
+- A Project carries `relations` and `inverseRelations`, both `ProjectRelationConnection!`. A
+  `ProjectRelation` has `project` (the source), `relatedProject` (the target) and `type`, the last
+  being the kind of dependency "from the project to the related project (e.g. blocks)".
+- So the Features a Project **waits on** are its `inverseRelations`, read through `project.id` —
+  someone else is the source and this Project is the target. Its own `relations` are what it blocks,
+  which D14 excludes on every connector.
+- Linear ships this as "Blocked by" / "Blocking" in the product, end-to-start only.
+
+**AC-9.2 as written describes a defect that does not exist.** `ReferenceId` for a Feature is
+`projectNode.Id`, a UUID Linear returns in the form it stores; the relation returns the other end's id
+in that same form. There is no case fold on this path and none is wanted, so the criterion is restated:
+a Linear reference resolves because it is the Project id verbatim, and the assertion that earns its
+place is the **direction** one — `inverseRelations` and not `relations`, which is the mistake that
+would silently reverse every edge.
+
+The lower-case fold D14 warned about is real, but it belongs to `CreateWorkItemFromIssue` on the Work
+Item path, where it already happens and where nothing in this epic reads.
+
+**Jira needed no verification beyond the fixture already in the repository.** `IssueFactoryTest`'s
+Cloud payload carries `"issuelinks":[]` inside `fields`, so the existing `*all` request already returns
+the field and `Issue.Fields` already holds it. Data Center asks for no `fields=` at all and so receives
+Jira's navigable default, which includes `issuelinks`. No request changes on either flavour, which is
+what AC-9.3 and AC-9.6 ask for.
 
 ## Next Wave
 
