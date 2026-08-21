@@ -149,6 +149,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// Reading the relations must not turn one round trip into two. Counted rather than timed: a wall
+        /// clock in a unit test measures the machine it ran on.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_ReadingTheRelationsCostsTheRefreshNoRequestOfItsOwn()
+        {
+            var withoutRelations = new List<string>();
+            await FeaturesFrom(
+                ProjectsResponse(AProject(BlockedProjectId, "Blocked", "{\"nodes\": []}")),
+                withoutRelations.Add);
+
+            var withRelations = new List<string>();
+            await FeaturesFrom(ProjectsWithOneDependency(), withRelations.Add);
+
+            Assert.That(withRelations, Has.Count.EqualTo(withoutRelations.Count));
+        }
+
         private static async Task<List<Feature>> FeaturesFrom(string projectsResponse, Action<string>? recordQuery = null)
         {
             var subject = CreateSubject(HandlerReturning(projectsResponse, recordQuery));
