@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -624,7 +625,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations: true);
+            var dependenciesComeFromRelations = !portfolio.DependencyOverrideAdditionalFieldDefinitionId.HasValue;
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences);
 
@@ -637,7 +639,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem, TheDependenciesOf(workItem.ReferenceId, relations))
+                var feature = new Feature(workItem, TheDependenciesOf(portfolio, workItem, relations))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
@@ -1079,12 +1081,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         /// <summary>
-        /// The links read off one work item, as references. Nothing here has been saved yet, so every
-        /// reference names Feature nought until the reconciler keys it to the row the Feature lands on.
+        /// What one work item waits on, as references. A Portfolio that names a field of its own is
+        /// declaring that field authoritative, so the tracker's own link is not consulted for it at all -
+        /// the same posture the parent setting beside it already takes. Nothing here has been saved yet, so
+        /// every reference names Feature nought until the reconciler keys it to the row the Feature lands on.
         /// </summary>
-        private static List<FeatureDependencyReference> TheDependenciesOf(string workItemReferenceId, RelationsOfWorkItems relations)
+        private static List<FeatureDependencyReference> TheDependenciesOf(
+            Portfolio portfolio, WorkItemBase workItem, RelationsOfWorkItems relations)
         {
-            if (!relations.DependencyReferences.TryGetValue(workItemReferenceId, out var references))
+            if (portfolio.DependencyOverrideAdditionalFieldDefinitionId.HasValue)
+            {
+                var typedIntoTheField = workItem.GetAdditionalFieldValue(portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+
+                return DependencyFieldReferences.In(typedIntoTheField)
+                    .Select(reference => new FeatureDependencyReference(TheFeatureHasNoRowYet, reference, DependencySource.PortfolioField))
+                    .ToList();
+            }
+
+            if (!relations.DependencyReferences.TryGetValue(workItem.ReferenceId, out var references))
             {
                 return [];
             }

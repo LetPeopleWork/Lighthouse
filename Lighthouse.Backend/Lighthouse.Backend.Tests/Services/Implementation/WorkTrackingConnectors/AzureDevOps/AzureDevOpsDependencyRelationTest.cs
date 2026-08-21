@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -35,11 +36,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string[] TheTwoItemsItWaitsOn = ["1801", "1799"];
 
+        private static readonly string[] TheOtherItemItWaitsOn = ["1799"];
+
         private const int TheFeature = 42;
 
         private const int TheItemTheFeatureWaitsOn = 1801;
 
         private const string TheParentFieldTheProjectNames = "Custom.RemoteFeatureID";
+
+        private const string TheDependencyFieldTheProjectNames = "Custom.WaitsOn";
+
+        private const int TheDependencyFieldId = 2;
 
         private const string TheParentThatFieldPointsAt = "4711";
 
@@ -182,6 +189,86 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheDependenciesComeFromANamedField_YieldsOneEdgePerReferenceInIt()
+        {
+            var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1801;1799");
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField())).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheTwoItemsItWaitsOn));
+                Assert.That(feature.DependsOnReferences.Select(reference => reference.Source), Has.All.EqualTo(DependencySource.PortfolioField),
+                    "Where an edge was read from is what lets a reader tell a link somebody drew in the tracker from a "
+                    + "reference somebody typed into a column, and the two are maintained by different people.");
+            }
+        }
+
+        /// <summary>
+        /// Naming a field is a declaration that the field is authoritative, which is the posture the parent
+        /// setting beside it already takes. Adding to the tracker's own link instead would leave nobody able to
+        /// say where an edge on the screen came from, or how to remove one.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheDependenciesComeFromANamedField_IgnoresTheTrackersOwnLink()
+        {
+            var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField())).Single();
+
+            Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(TheOtherItemItWaitsOn),
+                $"The relations name {TheItemTheFeatureWaitsOn} as a predecessor, and the named field does not.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenBothTheParentAndTheDependenciesComeFromNamedFields_ReadsNoRelationsAtAll()
+        {
+            var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
+            var portfolio = APortfolioReadingItsDependenciesFromAField();
+            portfolio.ParentOverrideAdditionalFieldDefinitionId = 1;
+
+            await subject.GetFeaturesForProject(portfolio);
+
+            Assert.That(payloadReads.Select(read => read.Expand), Has.None.EqualTo(WorkItemExpand.Relations),
+                "The relations carry the parent link and the dependency links and nothing else a refresh wants. "
+                + "Once both come from a field, the most expensive request a refresh makes buys nothing.");
+        }
+
+        /// <summary>
+        /// The failure this guards against is silent: a Portfolio reading its dependencies from a field but its
+        /// parent from the tracker would lose the whole parent hierarchy, and an empty hierarchy is a believable
+        /// answer with nothing about it that looks wrong.
+        /// </summary>
+        [Test]
+        public async Task GetFeaturesForProject_WhenOnlyTheDependenciesComeFromANamedField_StillReadsTheRelationsForTheParent()
+        {
+            var (subject, payloadReads) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "1799");
+
+            await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField());
+
+            Assert.That(payloadReads.Count(read => read.Expand == WorkItemExpand.Relations), Is.EqualTo(1),
+                "The relations are still the only place the parent link can be read from.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheNamedFieldIsEmpty_YieldsNoDependenciesAndNoError()
+        {
+            var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", whatTheDependencyFieldSays: "");
+
+            var feature = (await subject.GetFeaturesForProject(APortfolioReadingItsDependenciesFromAField())).Single();
+
+            Assert.That(feature.DependsOnReferences, Is.Empty);
+        }
+
+        private static Portfolio APortfolioReadingItsDependenciesFromAField()
+        {
+            var portfolio = APortfolio();
+            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheDependencyFieldId;
+
+            return portfolio;
+        }
+
         private static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio) APortfolioWhoseParentComesFromACustomField()
         {
             var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature");
@@ -200,7 +287,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// One work item, whose relations name a predecessor, in an organisation that records every read it is
         /// asked for - so a test can say which reads happened and not only what came back.
         /// </summary>
-        private static (AzureDevOpsWorkTrackingConnector Subject, List<PayloadRead> PayloadReads) AnAzureDevOpsHoldingOneItemOfType(string workItemType)
+        private static (AzureDevOpsWorkTrackingConnector Subject, List<PayloadRead> PayloadReads) AnAzureDevOpsHoldingOneItemOfType(
+            string workItemType, string whatTheDependencyFieldSays = "")
         {
             var payloadReads = new List<PayloadRead>();
             var clientMock = new Mock<WorkItemTrackingHttpClient>(new Uri("https://dev.azure.com/lighthouse-test"), new VssCredentials());
@@ -211,7 +299,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             clientMock
                 .Setup(client => client.GetWorkItemFieldsAsync(It.IsAny<GetFieldsExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync([new WorkItemField2 { Name = TheParentFieldTheProjectNames, ReferenceName = TheParentFieldTheProjectNames }]);
+                .ReturnsAsync([
+                    new WorkItemField2 { Name = TheParentFieldTheProjectNames, ReferenceName = TheParentFieldTheProjectNames },
+                    new WorkItemField2 { Name = TheDependencyFieldTheProjectNames, ReferenceName = TheDependencyFieldTheProjectNames },
+                ]);
 
             clientMock
                 .Setup(client => client.GetWorkItemsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DateTime?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<WorkItemErrorPolicy?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
@@ -221,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     payloadReads.Add(new PayloadRead(askedFor, fields?.ToList() ?? [], expand));
 
                     return Task.FromResult<List<AdoWorkItem>>(
-                        [.. askedFor.Select(id => expand == WorkItemExpand.Relations ? TheRelationsOf(id) : ThePayloadOf(id, workItemType))]);
+                        [.. askedFor.Select(id => expand == WorkItemExpand.Relations ? TheRelationsOf(id) : ThePayloadOf(id, workItemType, whatTheDependencyFieldSays))]);
                 });
 
             clientMock
@@ -231,7 +322,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return (new RecordedAzureDevOpsConnector(clientMock.Object), payloadReads);
         }
 
-        private static AdoWorkItem ThePayloadOf(int id, string workItemType)
+        private static AdoWorkItem ThePayloadOf(int id, string workItemType, string whatTheDependencyFieldSays)
         {
             var item = new AdoWorkItem
             {
@@ -246,6 +337,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     [AzureDevOpsFieldNames.CreatedDate] = new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc),
                     [AzureDevOpsFieldNames.StackRank] = $"{id}",
                     [TheParentFieldTheProjectNames] = TheParentThatFieldPointsAt,
+                    [TheDependencyFieldTheProjectNames] = whatTheDependencyFieldSays,
                 },
             };
 
@@ -325,6 +417,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Id = 1,
                 DisplayName = "Parent Field",
                 Reference = TheParentFieldTheProjectNames,
+            });
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = TheDependencyFieldId,
+                DisplayName = "Waits On",
+                Reference = TheDependencyFieldTheProjectNames,
             });
 
             return connection;
