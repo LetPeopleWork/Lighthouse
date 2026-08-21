@@ -125,8 +125,8 @@ or on the next Delivery.
 
 **Decision** (user, 2026-08-21). One CSV file and one clipboard paste, both carrying the header
 key-value block, a blank line, then the Feature grid with its currently visible columns. Premium-gated
-exactly as the existing grid export is (S7) — same gate, same tooltip, same disabled affordance, no
-new licensing concept.
+exactly as the existing grid export is (S7) — same gate, same tooltip, same disabled affordance, and no
+new licensing concept *for the export itself*. Archiving is separately gated (D46), which does add one.
 
 Header block content, per ADO #4309 verbatim: Delivery Name, Delivery Date, Forecast 70%, Forecast
 85%, Forecast 95%, Likelihood, Total Work Items, Completed Work Items, Remaining Work Items.
@@ -140,6 +140,30 @@ pinned record (D1), so the same action exports the frozen numbers with no separa
 ### D9 — Nothing here syncs with a work tracking system
 
 Explicitly out, per the Epic. Delivery dates in and forecasts out live in Epic #5565.
+
+### D46 — Archiving is a premium capability; notes are not; un-archiving is the way out
+
+**Decision** (user, 2026-08-21). Retiring a Delivery without erasing it is the sellable capability in
+this Epic, and it is gated on a premium licence, using the existing gate, tooltip and disabled
+affordance — the same treatment export gets (D7). **Notes stay free.** They are cheap to run, they
+build the habit of coming back to a Delivery, and a free user who can explain what happened to a
+Delivery has a reason to keep using the product.
+
+**Un-archiving is deliberately NOT gated.** Gating the way in but not the way out is the difference
+between a capability somebody has to pay for and a state somebody is trapped in. A licence that lapses
+while Deliveries are archived leaves those Deliveries readable and reversible; what the lapsed user
+loses is the ability to archive anything *new*.
+
+**Accepted residual, stated plainly** (user, 2026-08-21). After a lapse, a Portfolio whose only
+Delivery is archived still counts that Delivery against the free-tier limit (D42), so creating the
+next one is refused while the active list looks empty. The refusal message is **not** being improved
+to explain this — the case is rare, it only arises from a lapse, and un-archive or delete both resolve
+it. Recorded as a known rough edge rather than left to be rediscovered as a bug.
+
+**This amends D7's "no new licensing concept".** That was true when export was the only gated thing in
+the Epic, because export reused an existing gate on an existing surface. Archiving is a genuinely new
+premium capability, so it needs an answer on the pricing and marketing surface — see *Marketing
+Surface* below.
 
 ---
 
@@ -186,6 +210,17 @@ day's work also validates the header + grid shape that Slice 05 later renders fr
 
 No CLI or MCP surface. The Lighthouse-Clients CLI and MCP server expose Portfolio and Team metrics,
 not Delivery lifecycle — nothing in this Epic changes a contract they consume.
+
+**Marketing surface — yes, and this one is not optional.** Archiving is a new premium capability
+(D46), so the pricing page and the feature comparison need a line for it, in the tenant's configurable
+Terminology. Export does not: it reuses an existing gate on an existing surface and was already
+covered by whatever the pricing page says about exports today. Notes need nothing — they are free.
+The website lives in its own repository and hot-links assets from this one, so the copy change ships
+there, not here, and is owed at feature finalization rather than at release.
+
+**RBAC surface — no change.** Everything reuses `PortfolioRead` / `PortfolioWrite` (S10, D5).
+The premium gate is orthogonal to it: a licence decides whether archiving is *available*, RBAC decides
+whether this user may do it, and both must pass.
 
 ---
 
@@ -341,6 +376,10 @@ commitments — without paying for that clarity in lost history.
 #### Acceptance Criteria
 - AC-04.1 A Delivery's header offers an Archive action alongside Edit and Delete, available to a user
   with write access to the Portfolio and absent for a read-only user.
+- AC-04.1a Archiving requires a premium licence. Without one the action is visible but disabled,
+  carrying the same "Premium feature — Upgrade to use" tooltip the export actions use, and the
+  product refuses the request when asked directly. Notes are not gated: an unlicensed user can still
+  write, correct and read them.
 - AC-04.2 Archiving asks for confirmation, and the confirmation says what archiving does and does not
   do — it is reversible, it is not a delete.
 - AC-04.3 On archive, exactly one closure record is pinned for that Delivery, carrying the headline
@@ -356,6 +395,10 @@ commitments — without paying for that clarity in lost history.
 - AC-04.8 Archiving a Delivery whose Features are subsequently removed from the Portfolio leaves the
   archived Delivery's numbers unchanged.
 - AC-04.9 Delete still exists and still deletes permanently, for archived and active Deliveries alike.
+- AC-04.10 An archived Delivery still counts against the free-tier one-Delivery-per-Portfolio limit.
+  This only arises after a licence lapses, since archiving needs a licence in the first place
+  (AC-04.1a); un-archiving or deleting the archived Delivery both free the slot. The refusal wording
+  is deliberately left as it is — see D46's accepted residual.
 
 ---
 
@@ -386,10 +429,15 @@ not evidence.
 - AC-05.5 An archived Delivery's Notes tab is read-only: existing notes are listed, no add, no edit,
   no delete; the API refuses all three with a clear reason.
 - AC-05.6 An archived Delivery can be un-archived, returns to the active list, resumes live
-  recomputation and resumes daily snapshot recording.
+  recomputation and resumes daily snapshot recording. Un-archiving does **not** require a premium
+  licence, so a lapsed instance is never trapped with Deliveries it cannot bring back.
 - AC-05.7 Un-archiving does not destroy the pinned record — archiving again after an un-archive
   re-pins for the new closure moment, and a Delivery is never left with two competing pins.
 - AC-05.8 Editing an archived Delivery's name, date, Features or rules is refused.
+- AC-05.9 An archived Delivery's Metrics tab stays reachable and read-only, showing the daily history
+  up to and including the day it was archived, and subject to the same minimum-history condition a
+  live Delivery has — a Delivery archived before it accumulated enough days has the tab dark for
+  exactly the reason a live one would.
 
 ---
 
@@ -482,7 +530,7 @@ build.
 | 1 | Business value articulated | Epic body + K1-K5; the value is that a Portfolio meant to run forever stops losing its own history. |
 | 2 | User stories in LeanUX form with elevator pitches | US-01…US-05, each with Before / After / Decision-enabled. |
 | 3 | Job traceability | 3 job IDs, all real, all added to `docs/product/jobs.yaml`. No `infrastructure-only` story. |
-| 4 | Acceptance criteria testable | 39 ACs, each an observable assertion; none says "works correctly". |
+| 4 | Acceptance criteria testable | 40 ACs, each an observable assertion; none says "works correctly". |
 | 5 | Dependencies identified | None external. Internal ordering in Prioritization. #5565 explicitly excluded. |
 | 6 | Sized and sliced | 5 slices, each ≤1 day, each with a brief and a named hypothesis. |
 | 7 | Technical feasibility confirmed | Surface Inventory S1-S12 — every seam read in the code before the decision that rests on it. |
@@ -521,7 +569,7 @@ deferred, cost quantified as one additive column.
 ### Constraints Established
 - Migrations additive-only, one per supported provider, via the `CreateMigration` script.
 - No new RBAC requirement — everything reuses `PortfolioRead` / `PortfolioWrite`.
-- No new licensing concept — export reuses the existing premium gate.
+- Export reuses the existing premium gate. Archiving adds one new gated capability (D46), using the same gate, tooltip and disabled affordance — no new licensing *mechanism*, one new licensing *decision*. Notes are ungated, and so is un-archiving.
 - Every user-visible string honours the configurable Terminology (S12).
 - Snapshot storage per Delivery must not grow after closure (K3).
 
@@ -577,15 +625,15 @@ locked DISCUSS decision.
 | D12 | `ArchivedOn` is `DateOnly`, sourced from `ILighthouseClock` | A `DateTime` column is in reach of the global `Properties<DateTime>()` UTC converter, which shifts a local-kind midnight onto the previous day on write |
 | D13 | One projection, `DeliveryMetricValuesProjector`, writes both the daily snapshot and the closure record | D1's "one encoding" is only true if one piece of code produces both; the pin is computed at archive time so AC-04.4 holds for a Delivery the recorder never ran for |
 | D14 | The archived read is `ArchivedDeliveryProjection.ToDto(ArchivedDeliveryIdentity, DeliveryClosureRecord)` on a **new type** | Withholding `Delivery`, `today` and `blackoutPeriods` makes `CalculateMetrics` uncallable; a new type is what makes the rule expressible as an ArchUnitNET assertion (ADR-161) |
-| D15 | The wire contract stays `DeliveryWithLikelihoodDto`, gaining only `archivedOn` | Archived and active rows render in the same grid; a second wire type would fork the client model and Zod schema for no user-visible gain |
+| D15 | ~~The wire contract stays `DeliveryWithLikelihoodDto`, gaining only `archivedOn`~~ **REVERSED by D36** | The rationale — "archived and active rows render in the same grid" — was factually wrong. The Feature grid is fed by a separate live fetch keyed on `features: number[]`, so the archived row never passed through this DTO at all. See the Architecture Review Revisions section |
 | D16 | `DataGridToolbar` gains `exportHeaderRows?: ReadonlyArray<{label, value}>`, threaded through `DataGridBase` and `FeatureListDataGrid` | D7's one artifact, with the toolbar staying Delivery-ignorant and inheriting the existing escaping, premium gate and visible-columns/sort reading (ADR-162) |
 | D17 | The header block is emitted as leading rows of the **same** table/CSV, followed by a blank row | Pasting lands one contiguous block in cells, so the clipboard artifact matches the CSV's structure rather than being two things |
 | D18 | `FeatureListDataGrid` forwards `enableExport`, `exportFileName` and `exportHeaderRows` | It forwards none of them today, so the Delivery grid has no export button at all — precursor edit inside Slice 01 |
-| D19 | **No global EF query filter.** The recorder gets `IDeliveryRepository.GetRecordableByPortfolio` | A global filter would silently empty the archived section and would be the first query filter in the codebase; a narrowed port cannot yield the wrong rows (ADR-163) |
-| D20 | `Delivery.Features` becomes `IReadOnlyList<Feature>`, written only via `Delivery.ReplaceFeatures` | Three call sites mutate the list today, one of them a background service with no HTTP surface; only an aggregate-level guard covers all three and any fourth |
+| D19 | **No global EF query filter.** *Both* background consumers — the daily recorder and rule re-matching — read through `IDeliveryRepository.GetRecordableByPortfolio`, which returns a `RecordableDeliveries` collection (see D34) | A global filter would silently empty the archived section and would be the first query filter in the codebase; a narrowed port cannot yield the wrong rows (ADR-163) |
+| D20 | `Delivery.Features` becomes `IReadOnlyList<Feature>`, written only via `Delivery.ReplaceFeatures`, which refuses when archived as a **backstop** | Three call sites mutate the list today. The two known background paths are narrowed by D19/D34 so they never present an archived Delivery at all; the aggregate guard exists for the fourth write path nobody has thought of yet — it is the safety net, not the primary mechanism for a path already known (ADR-164) |
 | D21 | "Archived refuses writes" is an aggregate invariant throwing `DeliveryArchivedException`, mapped to **409 Conflict** by one exception filter | AC-05.5/AC-05.8 must not be bypassable "by a different endpoint"; 409 because the caller's rights are fine and the resource's state is not (ADR-164) |
 | D22 | `DELETE` and `unarchive` are exempt by not being guarded mutators | AC-04.9 keeps hard delete on an archived Delivery; the exemption is an absence, not a special case inside a shared check |
-| D23 | New entity `DeliveryNote { Id, DeliveryId, Text, CreatedOn, LastEditedOn, AuthorUserProfileId, AuthorDisplayName }`, cascade-deleted with the Delivery | AC-02.8, matching the `DeliveryMetricSnapshot` cascade convention |
+| D23 | New entity `DeliveryNote { int Id, int DeliveryId, string Text, DateTime CreatedOn, DateTime? LastEditedOn, int? AuthorUserProfileId, string? AuthorDisplayName }`, cascade-deleted with the Delivery | AC-02.8, matching the `DeliveryMetricSnapshot` cascade convention. The two timestamps are `DateTime` UTC **instants**, not `DateOnly` — see D35 for why this is the opposite call from `ArchivedOn` and how the rendered day is derived |
 | D24 | Authorship is stored as **both** a nullable FK (`ON DELETE SET NULL`) and the display name captured at write time | The FK is what authorisation compares; the captured name is what renders, because a durable record must not silently re-label itself when someone is renamed or removed (ADR-165) |
 | D25 | The "may I modify this note" predicate is **two explicit branches**, never `note.AuthorUserProfileId == current?.Id` | The naive equality grants a profile-less caller edit rights over an attributed note via `null == null`, and reads as correct — this is a live bug trap, not a style preference |
 | D26 | The six new `{deliveryId}`-rooted endpoints use the **in-action** RBAC idiom, not `[RbacGuard]` | `RbacGuardAttribute` resolves scope from a route value only, and these routes carry no `portfolioId`; this is what `UpdateDelivery`/`DeleteDelivery` already do via `GetPortfolioId` + `CanSatisfyRequirementAsync` |
@@ -612,7 +660,14 @@ locked DISCUSS decision.
 | `DeliveryRepository` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/DeliveryRepository.cs` | MODIFIED |
 | `DeliveryMetricValuesProjector` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryMetricValuesProjector.cs` | NEW |
 | `DeliveryMetricSnapshotRecordingHandler` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandler.cs` | MODIFIED |
-| `DeliveryRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryRuleService.cs` | MODIFIED (call `ReplaceFeatures`; no filter added) |
+| `DeliveryRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryRuleService.cs` | MODIFIED (`RecomputeRuleBasedDeliveries` takes `RecordableDeliveries`; updates the ADR-012 signature guard) |
+| `RecordableDeliveries` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/RecordableDeliveries.cs` | NEW (sealed collection, one construction site, constructor-asserted) |
+| `IDeliveryRuleService` | `Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IDeliveryRuleService.cs` | MODIFIED (signature narrows with the implementation) |
+| `DeliveryRuleServiceApiPreservationTest` | `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DeliveryRuleServiceApiPreservationTest.cs` | MODIFIED (ADR-012 signature guard, updated in the same commit) |
+| `ArchivedDeliveryDto` | `Lighthouse.Backend/Lighthouse.Backend/API/DTO/Archived/ArchivedDeliveryDto.cs` | NEW (carries Feature rows inline; no `features: number[]`) |
+| `ArchivedFeatureGrid` | `Lighthouse.Frontend/src/.../DeliveryGrid/ArchivedFeatureGrid.tsx` | NEW |
+| `useDeliveryManagement` | `Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.ts` | MODIFIED (must not live-fetch Features for an archived Delivery) |
+| `PortfolioUpdater` | `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs` | MODIFIED (reads `GetRecordableByPortfolio`) |
 | `LighthouseAppContext` | `Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs` | MODIFIED |
 | Sqlite migration | `Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/` | NEW (via `CreateMigration`) |
 | Postgres migration | `Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/` | NEW (via `CreateMigration`) |
@@ -636,8 +691,8 @@ enforcement mechanism is corrected (see *Changed Assumptions*).
 | POST | `/api/latest/deliveries/{deliveryId}/notes` | `PortfolioWrite` | in-action; refused when archived (409) | 02 |
 | PUT | `/api/latest/deliveries/{deliveryId}/notes/{noteId}` | `PortfolioWrite` + author predicate | in-action; refused when archived (409) | 03 |
 | DELETE | `/api/latest/deliveries/{deliveryId}/notes/{noteId}` | `PortfolioWrite` + author predicate | in-action; refused when archived (409) | 03 |
-| POST | `/api/latest/deliveries/{deliveryId}/archive` | `PortfolioWrite` | in-action | 04 |
-| POST | `/api/latest/deliveries/{deliveryId}/unarchive` | `PortfolioWrite` | in-action; exempt from the archived refusal | 05 |
+| POST | `/api/latest/deliveries/{deliveryId}/archive` | `PortfolioWrite` **+ premium licence** | in-action, plus `licenseService.CanUsePremiumFeatures()` as `VerifyDeliveryRequest` already does (D46) | 04 |
+| POST | `/api/latest/deliveries/{deliveryId}/unarchive` | `PortfolioWrite` | in-action; exempt from the archived refusal; **deliberately not gated on a licence** (D46) | 05 |
 
 Existing routes whose behaviour changes: `GET /deliveries/portfolio/{portfolioId}` returns
 `archivedOn` and both sets; `PUT /deliveries/{deliveryId}` now returns 409 on an archived Delivery;
@@ -685,8 +740,8 @@ the project.
 | DDD-D16 | `exportHeaderRows` on `DataGridToolbar` |
 | DDD-D17 | Header rows lead the same table/CSV, blank row, then grid |
 | DDD-D18 | `FeatureListDataGrid` forwards the export props |
-| DDD-D19 | No global query filter; `GetRecordableByPortfolio` |
-| DDD-D20 | `Features` is `IReadOnlyList<Feature>`, written via `ReplaceFeatures` |
+| DDD-D19 | No global query filter; both background consumers read `GetRecordableByPortfolio` |
+| DDD-D20 | `Features` is `IReadOnlyList<Feature>`, written via `ReplaceFeatures` — the archived refusal there is a backstop |
 | DDD-D21 | Archived write refusal is an aggregate invariant → 409 |
 | DDD-D22 | Delete and un-archive exempt |
 | DDD-D23 | `DeliveryNote` entity, cascade with Delivery |
@@ -696,6 +751,22 @@ the project.
 | DDD-D27 | Separate `DeliveryNotesController` |
 | DDD-D28 | No `DeliveryArchived` domain event |
 | DDD-D29 | No `widgetFetchRequirements` for the notes panel |
+| DDD-D30 | Archive bumps the concurrency token; the reload-retry re-evaluates `ArchivedOn` and drops rather than replays |
+| DDD-D31 | Deleting an archived Delivery destroys its pin, deliberately |
+| DDD-D32 | No backfill; existing Deliveries take `ArchivedOn = null` |
+| DDD-D33 | Auth-off writes both author fields `null` — no placeholder name |
+| DDD-D34 | `RecomputeRuleBasedDeliveries` takes `RecordableDeliveries`, so an archived Delivery never enters the re-match loop |
+| DDD-D35 | Note timestamps are `DateTime` (UTC instants); the DTO also carries a server-reduced `DateOnly` day, and the client never reduces an instant itself |
+| DDD-D36 | **Reverses D15.** Archived rows use `ArchivedDeliveryDto`, carrying Feature rows inline and **no** `features: number[]` |
+| DDD-D37 | New `ArchivedFeatureGrid` consuming `DeliveryFeatureMetricDto`, keyed on `ReferenceId`, no `FeatureId` |
+| DDD-D38 | `DeliveryClosureRecord` widened: `HasSufficientData`, `TeamsWithoutForecastJson`, `SelectionMode`, `RuleDefinitionJson`, `RuleSchemaVersion` |
+| DDD-D39 | Every `Delivery` mutator bumps `ConcurrencyToken`, making a Features-only change a row UPDATE |
+| DDD-D40 | Archive/un-archive accept a client concurrency token via `ApplyConcurrencyTokenForEdit` |
+| DDD-D41 | Rule recompute is per-Delivery; a concurrency conflict skips that Delivery, not the batch |
+| DDD-D42 | An archived Delivery does not count against the free-tier limit — **PROVISIONAL** |
+| DDD-D43 | `ForecastWindowEnd` computes over non-archived Deliveries |
+| DDD-D44 | `RecordableDeliveries` asserts in its constructor; it is a nominal marker, not a refinement type |
+| DDD-D45 | D25's rationale and test rewritten around unattributed note + profiled caller |
 
 ## Wave: DESIGN / [REF] Reuse Analysis
 
@@ -716,7 +787,7 @@ coupling.
 | `CurrentUserProfileService` | `Services/Implementation/Auth/CurrentUserProfileService.cs` | Resolves the acting profile, `null` when no stable subject claim | **REUSE AS IS** | Its `null` return is the input D5 is written around. Changing it to synthesise an identity would manufacture authorship |
 | Metrics-history endpoint | `DeliveriesController.GetMetricsHistory` | Reads the same snapshot shape | **REUSE AS IS — no change** | It reads the daily series; the archived read reads the pin. Overlapping shape, different question. Archiving does not alter the series, so this endpoint keeps working unchanged for an archived Delivery |
 | `IDeliveryRepository` | `Services/Interfaces/Repositories/IDeliveryRepository.cs` | Delivery reads incl. `GetPortfolioId` | **EXTEND** | `GetPortfolioId` already exists and is the seam the six new endpoints scope-check through |
-| `DeliveryRuleService` | `Services/Implementation/DeliveryRuleService.cs` | Re-matches rule-based Deliveries | **EXTEND** (minimal) | Keeps its public surface (pinned by an existing reflection test); it calls `ReplaceFeatures`, which refuses on its own |
+| `DeliveryRuleService` | `Services/Implementation/DeliveryRuleService.cs` | Re-matches rule-based Deliveries | **EXTEND** | `RecomputeRuleBasedDeliveries` takes `RecordableDeliveries` instead of `IEnumerable<Delivery>`, so an archived Delivery cannot enter the re-match loop (D34). **This changes a signature pinned by the ADR-012 reflection test** — see the DISTILL revisions section |
 | `Delivery` | `Models/Delivery.cs` | The aggregate | **EXTEND** | Encapsulating mutation is what makes the archived rule cover the background write path |
 | `RbacGuardAttribute` | `Services/Implementation/Authorization/RbacGuardAttribute.cs` | Declarative scope check | **REUSE AS IS — not extended** | Considered adding a delivery-id scope resolver. Rejected for this epic: it changes an auth-critical filter for six endpoints when the in-action idiom already exists and is already used by three sibling endpoints. Recorded as an open question below |
 | `DeliveryNote` | — | — | **CREATE NEW** | No existing entity carries free text against a Delivery |
@@ -797,8 +868,8 @@ aggregate, to the forecast service, or to any Feature. That absence is the desig
 | **01 — Export a Delivery record** | `DataGridToolbar`, `DataGridBase`, DataGrid `types.ts`, `FeatureListDataGrid` (precursor: forwards `enableExport`/`exportFileName`), `DeliverySection` (assembles header rows through Terminology). Frontend only; no backend, no migration |
 | **02 — Note a Delivery moment** | NEW `DeliveryNote`, `DeliveryNoteDto`, `DeliveryNotesController`, `DeliveryNotesPanel`; MODIFIED `LighthouseAppContext` (DbSet + cascade), `IDeliveryRepository`/`DeliveryRepository`, `DeliverySection` (notes tab), client model + Zod schema + API service. First migration pair |
 | **03 — Correct your own note** | MODIFIED `DeliveryNote` (the authorship predicate, `LastEditedOn`), `DeliveryNotesController` (PUT/DELETE), `DeliveryNotesPanel`. No schema change beyond `LastEditedOn` if not already added in 02 |
-| **04 — Archive a finished Delivery** | NEW `DeliveryClosureRecord`, `DeliveryMetricValuesProjector`, `DeliveryArchivedException`, `DeliveryArchivedExceptionFilter`; MODIFIED `Delivery` (`ArchivedOn`, encapsulated `Features`, `Archive`/`Unarchive`/`ReplaceFeatures`), `DeliveriesController` (archive route, active/archived split), `IDeliveryRepository` (`GetRecordableByPortfolio`), `DeliveryMetricSnapshotRecordingHandler`, `DeliveryRuleService`, `LighthouseAppContext`. Second migration pair. **The planned 1-hour SPIKE is no longer about the unique-key collision — that collision does not exist under D10 — so re-scope it to verifying the additive migration on a real provider** |
-| **05 — Read an archived Delivery** | NEW `ArchivedDeliveryIdentity`, `ArchivedDeliveryProjection`; MODIFIED `DeliveryWithLikelihoodDto` (`archivedOn`), `DeliveriesController` (un-archive route, projection choice), `DeliverySection` (archived marker, read-only notes, export unchanged), client model. No migration |
+| **04 — Archive a finished Delivery** | NEW `DeliveryClosureRecord`, `DeliveryMetricValuesProjector`, `DeliveryArchivedException`, `DeliveryArchivedExceptionFilter`; MODIFIED `Delivery` (`ArchivedOn`, encapsulated `Features`, `Archive`/`Unarchive`/`ReplaceFeatures`), `DeliveriesController` (archive route, active/archived split), `IDeliveryRepository` (`GetRecordableByPortfolio`), NEW `RecordableDeliveries`, `DeliveryMetricSnapshotRecordingHandler`, `DeliveryRuleService` (parameter narrows; ADR-012 signature guard updated in the same commit), `PortfolioUpdater` (reads the narrowed port), `LighthouseAppContext`. Second migration pair. **The planned 1-hour SPIKE is no longer about the unique-key collision — that collision does not exist under D10 — so re-scope it to verifying the additive migration on a real provider** |
+| **05 — Read an archived Delivery** | NEW `ArchivedDeliveryIdentity`, `ArchivedDeliveryProjection`, **`ArchivedDeliveryDto`** (Feature rows inline, no `features: number[]`), **`ArchivedFeatureGrid`**; MODIFIED `DeliveriesController` (un-archive route, projection choice, client token), **`useDeliveryManagement`** (must not live-fetch Features for an archived Delivery — this is the B1 seam), `DeliverySection` (archived marker, read-only notes, archived grid, export over the archived column set), client model + Zod schema for the archived payload. No migration |
 
 ## Wave: DESIGN / [REF] Open Questions
 
@@ -906,7 +977,7 @@ blindness and is not run.
 
 | # | Decision | Rationale |
 |---|---|---|
-| D30 | **The archive/un-archive writes bump `Delivery`'s concurrency token, and the reload-retry path must re-evaluate `ArchivedOn` after reloading and drop the mutation rather than replay it** | The guard reads `ArchivedOn` from the **in-memory** aggregate, so a caller holding a Delivery loaded before the archive carries a stale `null`. Real interleaving: `PortfolioUpdater` loads the Deliveries → a user archives one → `DeliveryRuleService.RecomputeRuleBasedDeliveries` mutates the copy it already holds. The token makes the stale save fail; a blanket reload-retry that replays the mutation would defeat it. A background recompute that loses this race is a **no-op, not a retry** (ADR-164, new *Concurrency* section) |
+| D30 | **SUPERSEDED by D39/D41.** The token-bump half was right in intent but nothing implemented it (`RegenerateConcurrencyTokens` fires only on `EntityState.Added`), and the reload-retry half described a path that does not exist for `Delivery` (`LighthouseAppContext.cs:559` already excludes `IConcurrencyTokenEntity`). Original text: *the archive/un-archive writes bump the token, and the reload-retry re-evaluates `ArchivedOn` and drops rather than replays* | The guard reads `ArchivedOn` from the **in-memory** aggregate, so a caller holding a Delivery loaded before the archive carries a stale `null`. Real interleaving: `PortfolioUpdater` loads the Deliveries → a user archives one → `DeliveryRuleService.RecomputeRuleBasedDeliveries` mutates the copy it already holds. The token makes the stale save fail; a blanket reload-retry that replays the mutation would defeat it. A background recompute that loses this race is a **no-op, not a retry** (ADR-164, new *Concurrency* section) |
 | D31 | Deleting an archived Delivery destroys its closure record and snapshots, by cascade, deliberately | AC-04.9 keeps delete available. Archive is the alternative to deletion, not protection against it. Called out because "archived" and "safe from deletion" are easy to conflate — **the UI wording must not imply the second** |
 | D32 | No backfill. Existing Deliveries take `ArchivedOn = null`; no closure record is created for them | The archived read only runs when `ArchivedOn is not null`, so an absent closure record is never dereferenced. Release-time assumption stated explicitly: no production Delivery is archived at release, because the capability does not exist until this ships |
 | D33 | On an auth-off instance **both** author fields are written `null` — no placeholder, no synthetic "Unknown" author | A fabricated name is the dishonesty D5 rules out. The note renders unattributed and any writer may edit it, which is AC-02.5 and AC-03.5 together |
@@ -934,3 +1005,659 @@ in-action idiom costs relative to `[RbacGuard]`.
 The reviewer's observability point is fair and not designed here: archive/un-archive are not
 instrumented, and a 409 refusal emits no metric. Added to *Open Questions* as a DEVOPS-wave concern
 rather than invented now.
+
+## Wave: DESIGN / [REF] DISTILL Feedback Revisions
+
+DISTILL found two defects in the DESIGN sections. Both are accepted. **Neither changes an acceptance
+criterion** — UI-1 changes the mechanism by which AC-04.7 is met, not the observable behaviour it
+asserts, and UI-2 pins a type that was previously unstated. D34 and D35 are added.
+
+### UI-1 — rule re-matching was left relying on exception-as-control-flow
+
+D19 narrowed the recorder's port so it structurally cannot see an archived Delivery, and the Reuse
+Analysis argued that a shared method plus a caller-remembered filter "is the option that lets the
+caller be wrong". `DeliveryRuleService` was then given neither treatment: it received
+`IEnumerable<Delivery>` from `PortfolioUpdater` and relied on `ReplaceFeatures` throwing. That made
+`DeliveryArchivedException` the **normal** case on the hot path — every Portfolio refresh containing
+an archived rule-based Delivery would raise and swallow one — and it collided with D30, which needs a
+lost concurrency race to be a quiet no-op. If the exception is expected, the race and the normal case
+are indistinguishable at the catch site, destroying the very signal D30 preserves.
+
+| # | Decision | Rationale |
+|---|---|---|
+| D34 | `IDeliveryRepository.GetRecordableByPortfolio` returns a sealed `RecordableDeliveries : IReadOnlyList<Delivery>` that only the repository can construct, and `DeliveryRuleService.RecomputeRuleBasedDeliveries(Portfolio, RecordableDeliveries)` takes that type instead of `IEnumerable<Delivery>` | An archived Delivery cannot enter the re-match loop, because the parameter type cannot hold one. One narrowing now serves both background consumers — the recorder and rule re-matching — rather than protecting one and leaving the other to remember |
+
+Consequences of D34:
+
+- **`DeliveryArchivedException` becomes genuinely exceptional on the background path.** With both
+  known consumers narrowed, the only way the aggregate guard fires there is the D30 stale-aggregate
+  race — a Delivery archived *after* the collection was fetched. That is exactly the signal D30 wants
+  isolated, and a catch site may now treat it as "this Delivery was archived under me, drop the
+  mutation" without ambiguity.
+- **ADR-164 is reframed.** The aggregate refusal is the **backstop for the write path nobody has
+  thought of yet**, not the primary mechanism for a path already known. That is what an invariant is
+  for; using it as the routine control flow for a foreseen case was the defect.
+- **This changes a signature pinned by the ADR-012 reflection test**, which asserts
+  `RecomputeRuleBasedDeliveries` still exists with its original signature. That guard was written to
+  stop the rule-engine generalisation refactor *silently* altering the public surface. This change is
+  deliberate and documented, so the guard is updated rather than worked around — but it must be
+  updated in the same commit, or the suite goes red for the right reason at the wrong time.
+- `PortfolioUpdater` switches its delivery read to `GetRecordableByPortfolio`. Anything it does with
+  that collection other than rule re-matching — including any forecast-window computation — then also
+  excludes archived Deliveries, which is correct: a finished Delivery should not extend a forecast
+  window. **The crafter must confirm this at the call site rather than assume it**; if any consumer
+  there genuinely needs all Deliveries, it takes a second, explicit read.
+
+### UI-2 — `DeliveryNote` timestamps had no declared type
+
+D12 reasoned that `ArchivedOn` must be `DateOnly` because a `DateTime` is in reach of the global
+`Properties<DateTime>()` converter, which applies `ToUniversalTime()` on write and so shifts a
+local-kind midnight onto the previous day. D23 then declared `CreatedOn` / `LastEditedOn` without a
+type, one implicit `DateTime` away from the same trap, while AC-02.2 and AC-03.3 both render them as a
+day to a human.
+
+| # | Decision | Rationale |
+|---|---|---|
+| D35 | `CreatedOn` is `DateTime` and `LastEditedOn` is `DateTime?`, both **UTC instants** from the clock's instant member. The DTO carries the instant *and* a `DateOnly` day reduced **server-side** by `ILighthouseClock.ToInstanceDay`. The frontend renders the supplied day and never reduces an instant itself | A note records *when a person wrote something* — a moment, not a calendar day. This is the opposite call from `ArchivedOn` and deliberately so |
+
+Why this escapes the converter, stated explicitly because D12 makes the opposite call:
+
+- The converter is **correct** for a genuine UTC instant. It damages a `DateTime` only when the value
+  is a local-kind midnight standing in for a calendar day — it round-trips a true instant faithfully
+  and restores `Kind = Utc` on read. `ArchivedOn` is a day, so it must not be a `DateTime`;
+  `CreatedOn` is an instant, so it may be.
+- **The reduction to a day happens once, on the server, in a named zone.** The ledger rule is that
+  anything reducing an instant to a day must name the zone it reduces in. The instance zone is the one
+  every other day in the product is expressed in (snapshots included), so the DTO carries
+  `createdOnDay` / `lastEditedOnDay` alongside the instants, reduced by the clock.
+- **The frontend is therefore never handed the reduction.** It renders the supplied day directly, which
+  structurally removes the `toISOString().split("T")[0]` foot-gun the ledger tracks — the client has no
+  instant-to-day conversion to get wrong.
+- The instants remain the sort key (newest-first ordering, and two notes on the same day), and the
+  "edited" indicator is `LastEditedOn is not null`. A `Kind == Utc` assertion does not prove the day is
+  right, so the test reads a note back through a **fresh** EF context and asserts the rendered **day**.
+
+## Wave: DESIGN / [REF] Architecture Review Revisions (B1, B2, H1–H6, L1–L3)
+
+An independent review with shell access read the real code and returned two blockers and six highs.
+**All of them are correct.** I re-verified the load-bearing facts before rewriting: the frontend
+live-fetch seam, `RegenerateConcurrencyTokens` filtering `EntityState.Added`, the many-to-many
+Features mapping, the retry's `IConcurrencyTokenEntity` exclusion, and the free-tier check. Decisions
+D36–D45 are added; **D15 is reversed**.
+
+**Two of my earlier claims were wrong and are withdrawn.** D15 ("archived and active rows render in
+the same grid, so a second wire type is pointless") was false — the archived grid is not the same
+grid. And D30's concurrency mechanism did not exist; the test it prescribed would have passed
+vacuously. Both are corrected below.
+
+### B1 — the archived Feature grid never passed through the DTO
+
+`useDeliveryManagement.ts` reads `delivery.features` (a `number[]` of live Feature ids) and issues a
+**separate live GET** of Feature entities, which it hands to `FeatureListDataGrid`. Line 50 returns
+early when that array is empty. So `ArchivedDeliveryProjection` protected a payload the Feature grid
+never consumed, and the archived grid had two possible outcomes, both wrong: render empty (AC-05.1
+fails, and the export ships a header over an empty grid), or carry the live ids and re-fetch live
+Features (AC-05.3 fails — archive, refresh, re-open, and the numbers have moved). ADR-161's
+"withheld inputs" argument never reached this seam.
+
+| # | Decision | Rationale |
+|---|---|---|
+| D36 | **D15 is reversed.** An archived Delivery is returned as a distinct `ArchivedDeliveryDto` that carries its Feature rows **inline** and has **no `features: number[]`** | D15's premise was that both rows render in the same grid. They do not. Omitting the id list is the structural part: with no ids on the wire, the client has nothing to re-fetch *by*, so the live-refetch failure mode is unrepresentable rather than merely discouraged |
+| D37 | New `ArchivedFeatureGrid` frontend component consuming `DeliveryFeatureMetricDto` rows directly, keyed on `ReferenceId` | The pinned row is a genuinely narrower shape than `IFeature`; reusing `FeatureListDataGrid` would require inventing the fields the pin does not have. No `FeatureId` is carried — **deliberately**, so an archived row cannot offer navigation to a live entity that may have moved or been deleted |
+
+**Columns an archived Feature grid does not have**, because the pin does not hold them: work-item
+**state** and **type**, the **owning team(s)**, per-team **remaining/total** work, per-Feature
+**forecast completion dates**, and **blocked** status. It has Reference, Name, Completion %,
+Likelihood, Total Items, and the default-size flag.
+
+**D8 inherits this**: "export reads what is on screen" now means an archived export carries the
+archived column set, which is narrower than a live Delivery's export. That is the honest outcome —
+the alternative is an export that claims columns the record never captured.
+
+### B2 — the concurrency story did not work
+
+Three verified facts killed it. `RegenerateConcurrencyTokens` (`LighthouseAppContext.cs:593-596`)
+bumps tokens **only for `EntityState.Added`**, so a modified Delivery keeps its token and nothing in
+the archive route bumped it. `HasMany(d => d.Features).WithMany()` (`:435`) is a pure skip
+navigation, so a Features-only mutation writes join rows and issues **no UPDATE against
+`Deliveries`** — EF never puts the token in a WHERE clause. And the retry (`:559`) is already
+`!InvolvesConcurrencyTokenEntity(ex)`, so `Delivery` is **already excluded** from the reload-retry
+that D30 instructed me to change. Net: the recompute committed silently, and the prescribed test
+("no exception escapes") passed vacuously because nothing threw. **The D30 reload-retry instruction
+is withdrawn — that path does not exist.**
+
+| # | Decision | Rationale |
+|---|---|---|
+| D39 | **Every `Delivery` mutator bumps `ConcurrencyToken`** — `Archive`, `Unarchive`, `ReplaceFeatures`, `Rename`, `Reschedule`, `ApplyRuleSet` | This is the mechanism that actually fires on a join-table-only write: bumping the token makes the Delivery row itself modified, so EF emits `UPDATE Deliveries … WHERE Id = @id AND ConcurrencyToken = @old`. A Feature-set change *is* a change to the Delivery's state; that it currently changes nothing on the Delivery row is precisely why optimistic concurrency does not protect it today |
+| D40 | Archive and un-archive accept a **client concurrency token** and go through `ApplyConcurrencyTokenForEdit`, like every sibling Delivery mutation | Fixing D39 makes the token meaningful, so the archive route must participate in it. Two users racing archive-vs-edit now get a 409 instead of last-writer-wins (L3) |
+| D41 | The rule-recompute's unit of work is **per-Delivery**, and a `DbUpdateConcurrencyException` for one Delivery **skips that Delivery** and continues | `:559` already lets a `Delivery` conflict propagate rather than retrying it, which is what we want — but one conflicting Delivery must not fail the whole portfolio's save. Skipping is correct: a Delivery archived under us no longer wants recomputing |
+
+**Replacement test, which fails if D39 is removed:** fetch deliveries for recompute, archive one
+through the API, then run the recompute save; assert the archived Delivery's Feature set is
+**unchanged in the database** (read back through a fresh context) and that the other deliveries in
+the batch still committed. The previous "no exception escapes" assertion is deleted — it pinned
+nothing.
+
+### H1–H6 and L1–L3
+
+| # | Decision | Rationale |
+|---|---|---|
+| D38 | **Widen `DeliveryClosureRecord` now**: `HasSufficientData` (bool), `TeamsWithoutForecastJson`, `SelectionMode`, `RuleDefinitionJson`, `RuleSchemaVersion` | H5 — `DeliveryWithLikelihoodDto` carries `TeamsWithoutForecast`, `HasSufficientData` (defaulting **true**), and `Rules`/`Mode`, none of which the pin could produce. A Delivery archived while un-forecastable would have rendered CANNOT_FORECAST naming no teams, where on its closure day it read INSUFFICIENT_FORECAST_DATA naming them — the record rewriting itself, which is the one thing this epic exists to prevent. This is the last cheap moment: same additive migration, new table |
+| D42 | **An archived Delivery keeps counting against the free-tier one-per-portfolio limit** (user, 2026-08-21). `VerifyDeliveryRequest` (`DeliveriesController.cs:305`) is unchanged. What must change is its refusal message, which has to say that retired Deliveries still count — otherwise a free-tier user reads "you can only have 1" while looking at an empty list | H2 — retiring a Delivery is a premium-flavoured capability, so it does not buy a free-tier user a second slot; their route to next quarter's Delivery is still Delete, or a licence. Rejected alternative: freeing the slot, which would make archive strictly better than delete for free users and give away the limit. The counting behaviour is today's behaviour, so this decision is a **pin against a well-meant future "fix"**, not a change |
+| D43 | `ForecastWindowEnd` (`DeliveriesController.cs:38`) computes over **non-archived** Deliveries | H3 — otherwise the on-screen header and that day's history point are computed against two different blackout sets for a Delivery nobody touched, once the recorder's source is narrowed. My earlier D34 note applied this principle to `PortfolioUpdater`, which has no window computation at all |
+| D44 | `RecordableDeliveries` carries a **constructor-level assertion** that no element has `ArchivedOn` set, and the prose drops the "cannot compile" claim | H4 — `internal` is assembly-wide, so `Lighthouse.Backend` can reach the constructor, and the element type is still `Delivery`, making the collection a **nominal marker, not a refinement type**. The narrowing is still worth keeping because it centralises the filter at one construction site; it just is not the compile-time guarantee I claimed |
+| D45 | D25's rationale and pinning test are rewritten around **unattributed note + profiled caller** | H6 — for `int?`, `null == 5` is already false, so the case I named (profile-less caller vs attributed note) is refused by the naive one-liner too, and my prescribed test guarded nothing. Enumerated: attributed+noprofile → false (correct); unattributed+noprofile → true (correct); attributed+profile → true (correct); **unattributed + profiled caller → false, and that is the only wrong case**. It is exactly the auth-off-then-auth-on instance ADR-165's Consequences already half-identified. The two-branch decision stands; only the reasoning and the test change |
+
+**L1** — the component table gains `Services/Interfaces/IDeliveryRuleService.cs` and
+`Lighthouse.Backend.Tests/Architecture/DeliveryRuleServiceApiPreservationTest.cs`, both of which D34
+necessarily changes.
+
+**L2** — `Delivery.cs:41` is already `public List<Feature> Features { get; }`, get-only, so
+"assigning a property does not compile" described a bypass that never existed. The `IReadOnlyList`
+change is still right, for the real reason: it removes `Features.Clear()` / `Features.AddRange()`,
+which is how all three current call sites actually mutate the set.
+
+### Acceptance-criteria impact — **yes, this time**
+
+My previous revision reported no AC impact. **That is not true of this one**, and DISTILL's 83
+scenarios need a targeted re-run:
+
+- **AC-05.1 / any scenario asserting the archived Feature grid's columns** — the archived grid now
+  has a narrower, explicitly named column set (D36/D37). Behaviour is newly *implementable* rather
+  than changed in intent, but any scenario that asserts live-grid columns on an archived Delivery
+  will now be wrong.
+- **AC-01.x export scenarios run against an archived Delivery** — the exported grid carries the
+  archived column set (D8 inherits D36).
+- **Any scenario asserting how an archived, un-forecastable Delivery renders** — it now reads
+  INSUFFICIENT_FORECAST_DATA naming its teams rather than CANNOT_FORECAST naming none (D38).
+- **US-04 needs a new AC for the free-tier slot** (D42), and it is **provisional** pending the
+  maintainer's monetization call — do not write scenarios against it until that is settled.
+- **AC-05.3 is unchanged in wording** and is the one this work makes actually satisfiable.
+- **AC-04.7 unchanged in wording**; its concurrency edge now has a test that can fail (D39/D41).
+
+---
+
+## Wave: DISTILL / [REF] Scenario List
+
+90 scenarios across 7 files in
+`docs/feature/epic-5698-deliveries-as-durable-records/acceptance/`. 37 of them (41%) carry `@error` or
+`@edge`. Every scenario carries `@contract-shape:` (`bounded-change` / `unbounded-preservation` /
+`pure-function`), the `@us-NN` and `@slice-NN` it belongs to, and the `@ac-NN.M` it covers.
+
+As in every other feature in this repository, these `.feature` files are **specification documents,
+not executable Gherkin**. There is no Gherkin runner in the build. The executable tests are the NUnit,
+Vitest and Playwright files named under *Test Placement* below.
+
+| # | File | Scenarios | `@error`/`@edge` |
+|---|---|---|---|
+| — | `walking-skeleton.feature` | 1 | 0 |
+| 01 | `milestone-01-take-a-delivery-into-a-status-report.feature` | 10 | 5 |
+| 02 | `milestone-02-write-down-what-happened-to-a-delivery.feature` | 16 | 8 |
+| 03 | `milestone-03-correct-a-note-you-wrote.feature` | 10 | 5 |
+| 04 | `milestone-04-close-a-delivery-without-erasing-it.feature` | 20 | 9 |
+| 05 | `milestone-05-read-a-closed-delivery-as-the-record-it-was.feature` | 19 | 10 |
+| — | `epic-boundary.feature` | 14 | 0 (all `@regression`) |
+
+### Walking skeleton
+
+| Scenario | Tags |
+|---|---|
+| A closed Delivery reads the same after the Portfolio it belonged to has moved on | `@walking_skeleton @real-io @driving_adapter @us-01 @us-04 @us-05 @slice-01 @slice-04 @slice-05 @ac-01.3 @ac-04.3 @ac-04.5 @ac-05.1 @ac-05.2 @ac-05.3 @ac-05.4 @contract-shape:unbounded-preservation` |
+
+### Slice 01 — Take a Delivery into a status report (all `@us-01 @slice-01`)
+
+| Scenario | Extra tags |
+|---|---|
+| The Delivery's Feature grid offers the same two ways out as the Work Items list already does | `@driving_adapter @ac-01.1` |
+| Without a premium licence both ways out are offered but refused, in the words already used | `@error @driving_adapter @ac-01.2` |
+| Exporting to a file produces the headline block, a blank line, then the Feature grid | `@driving_adapter @ac-01.3` |
+| Copying to the clipboard lands in cells in a spreadsheet and as a table in a document | `@driving_adapter @ac-01.4` |
+| What the forecaster chose to look at is what the forecaster takes away | `@ac-01.5` |
+| A Delivery with more Features than fit on screen exports all of them | `@edge @ac-01.3 @ac-01.5` |
+| A Delivery that cannot be forecast exports blanks, not a number nobody computed | `@error @ac-01.6` |
+| A Delivery whose name contains a comma, a quote or a line break survives the round trip | `@error @ac-01.7` |
+| The headline labels are the words this tenant uses, not the words the product ships with | `@ac-01.8` |
+| A Delivery with no Features yet still exports its headline | `@edge @ac-01.3` |
+
+### Slice 02 — Write down what happened to a Delivery (all `@us-02 @slice-02`)
+
+| Scenario | Extra tags |
+|---|---|
+| The Notes tab is there from the first day, unlike the one that waits for history | `@driving_adapter @ac-02.1` |
+| A note written on a Delivery is listed against it, dated and signed | `@driving_adapter @ac-02.2 @ac-02.4` |
+| Notes read newest first, and read the same way every time | `@ac-02.2` |
+| Every note on a Delivery comes back, without the reader asking for a second page | `@edge @ac-02.2` |
+| A reader who may not change the Portfolio can read the notes but not add one | `@error @driving_adapter @ac-02.3` |
+| A signed-in user with no rights over this Portfolio cannot reach its Delivery's notes | `@error @architecture @ac-02.3` |
+| Every way into a Delivery checks who is asking and what they may see | `@architecture @ac-02.3` |
+| On an instance with nobody signed in, a note is stored with no author rather than a made-up one | `@error @edge @ac-02.5` |
+| A note keeps the name it was written under when its author is renamed | `@ac-02.4` |
+| A note outlives the person who wrote it leaving the instance | `@edge @ac-02.4` |
+| An empty note is refused in the field and refused again when asked for directly | `@error @ac-02.6` |
+| Leading and trailing blank space is not part of what somebody wrote | `@ac-02.6` |
+| A note that goes to the wrong Delivery does not appear on the right one | `@error @ac-02.7` |
+| Deleting a Delivery takes its notes with it | `@ac-02.8` |
+| A note that looks like markup is shown as the characters somebody typed | `@error @ac-02.9` |
+| An instance upgraded to the release that brings notes keeps everything it already had | `@real-io @adapter-integration @migration` |
+
+### Slice 03 — Correct a note you wrote (all `@us-03 @slice-03`)
+
+| Scenario | Extra tags |
+|---|---|
+| The person who wrote a note is offered a way to fix it | `@driving_adapter @ac-03.1` |
+| Somebody else's note offers no way to change it, and refuses if asked anyway | `@error @driving_adapter @ac-03.1 @ac-03.2` |
+| A caller with no identity cannot rewrite a note that somebody signed | `@error @ac-03.2` |
+| A note nobody signed may be corrected by anybody who may change the Portfolio | `@ac-03.5` |
+| A corrected note says it was corrected, and still says when it was first written | `@ac-03.3` |
+| Correcting an old note does not move it to the top of the list | `@ac-03.3` |
+| A withdrawn note is gone at once and does not come back | `@driving_adapter @ac-03.4` |
+| With nobody signed in, anybody who may change the Portfolio may correct any note | `@edge @ac-03.5` |
+| A correction that empties a note is refused, and the note is left as it was | `@error @ac-03.6` |
+| A note cannot be reached through a Delivery it does not belong to | `@error @ac-03.2` |
+
+### Slice 04 — Close a Delivery without erasing it (all `@us-04 @slice-04`)
+
+| Scenario | Extra tags |
+|---|---|
+| A finished Delivery offers a way to retire it beside the ways to change and destroy it | `@driving_adapter @ac-04.1` |
+| A reader who may not change the Portfolio is not offered the way to retire a Delivery | `@error @driving_adapter @ac-04.1` |
+| Retiring a Delivery asks first, and says what it will and will not do | `@driving_adapter @ac-04.2` |
+| The confirmation does not promise a protection that archiving does not give | `@error @ac-04.2` |
+| Retiring a Delivery writes down what it said at that moment, once | `@driving_adapter @ac-04.3` |
+| A Delivery created and retired the same afternoon still has a complete written record | `@edge @ac-04.4` |
+| Retiring a Delivery on a day its numbers were already recorded still leaves one record | `@edge @ac-04.3 @ac-04.4` |
+| A retired Delivery leaves the live list and is found under the ones that are done | `@driving_adapter @ac-04.5` |
+| A retired Delivery stops accumulating daily rows | `@kpi @ac-04.6` |
+| Retiring a Delivery keeps its history, where destroying one loses it | `@kpi @ac-04.6` |
+| A retired Delivery that picks its Features by rule stops picking them | `@ac-04.7` |
+| Features disappearing from the Portfolio do not change what a retired Delivery said | `@ac-04.8` |
+| A refresh already under way when a Delivery is retired does not undo the retirement | `@error @ac-04.7` |
+| A Delivery retired late in the evening is recorded as retired that evening, not the day before | `@error @edge @ac-04.5` |
+| Deliveries that existed before this was possible are simply not retired | `@edge @ac-04.3` |
+| Deleting a Delivery still deletes it, retired or not | `@ac-04.9` |
+| An instance upgraded to the release that brings retiring keeps everything it already had | `@real-io @adapter-integration @migration` |
+| Retiring a Delivery needs a licence, and says so in the words already used elsewhere | `@error @ac-04.1a` |
+| Writing about a Delivery needs no licence | `@ac-04.1a` |
+| A Delivery archived under a licence still holds its slot once the licence has lapsed | `@edge @ac-04.10` |
+
+### Slice 05 — Read a closed Delivery as the record it was (all `@us-05 @slice-05`)
+
+| Scenario | Extra tags |
+|---|---|
+| A closed Delivery shows the Feature grid that was written down, not one worked out today | `@driving_adapter @ac-05.1` |
+| A closed Delivery says so, and says when | `@driving_adapter @ac-05.2` |
+| A closed Delivery reads identically either side of a refresh that changes its Features | `@kpi @ac-05.3` |
+| Taking a closed Delivery into a report gives the numbers that were written down | `@driving_adapter @ac-05.4` |
+| The notes on a closed Delivery are still there to read | `@ac-05.5` |
+| A note cannot be added to a closed Delivery, however it is asked for | `@error @driving_adapter @ac-05.5` |
+| The notes already on a closed Delivery cannot be corrected or withdrawn either | `@error @ac-05.5` |
+| Being refused for a closed Delivery reads differently from being refused for lack of rights | `@error @ac-05.5 @ac-05.8` |
+| A closed Delivery's name, date, Features and rule cannot be changed | `@error @driving_adapter @ac-05.8` |
+| A Delivery closed too early can be brought back, and starts moving again | `@driving_adapter @ac-05.6` |
+| Closing, re-opening and closing again on the same day leaves one written record, the newest | `@edge @ac-05.7` |
+| Bringing back a Delivery whose Features have all vanished gives an empty live Delivery, not an error | `@edge @ac-05.6` |
+| Closing a Delivery blocks changes to it without blocking the two things it was never meant to block | `@edge @ac-05.6 @ac-05.7` |
+| The history behind a closed Delivery is still there to look at, and stops on the closing day | `@ac-05.9` |
+| A Delivery closed before it had enough history has the same empty Metrics tab a live one would | `@edge @ac-05.9` |
+| The code that builds a closed Delivery's view has no way to reach a live Feature | `@architecture @ac-05.1` |
+| A Delivery closed while it could not be forecast still says why, and still names the Teams | `@edge @ac-05.1` |
+| A closed rule-based Delivery still shows the rule it was built from | `@edge @ac-05.1` |
+| Bringing a closed Delivery back does not need a licence | `@ac-05.6` |
+
+### Boundary — what this work promised not to do (all `@regression`)
+
+| Scenario | Extra tags | Pins |
+|---|---|---|
+| Nothing here says whether a forecast turned out to be right | `@slice-05` | D2 |
+| Retiring or annotating a Delivery is invisible to the work tracking system | `@slice-04` | D9 |
+| A Portfolio cannot be retired — only a Delivery can | `@slice-04` | Out of Scope |
+| A note is text somebody typed and nothing else | `@slice-02` | Out of Scope |
+| Nothing writes a note by itself | `@slice-02` | Out of Scope |
+| The history charts stay on the screen | `@slice-01` | Out of Scope |
+| A closed Delivery's numbers are never borrowed by another Delivery | `@slice-05` | Out of Scope |
+| A Portfolio with nothing archived forecasts exactly as it did before | `@kpi @slice-05` | gold-set regression |
+| Nobody needs a new permission or a new licence for any of this | `@slice-04` | D7, S10 |
+| Retiring a Delivery does not make it harder to destroy | `@slice-04` | D31 |
+| Retiring a Delivery announces nothing to the rest of the product | `@architecture @slice-04` | D28 |
+| The daily history of a Delivery is read the same way whether it is closed or not | `@slice-05` | Reuse Analysis |
+| Deliveries are retired and taken away one at a time | `@slice-04` | Slice 05 OUT |
+| A Delivery still belongs to nobody in particular | `@slice-04` | Out of Scope (owner / stakeholder) |
+
+---
+
+## Wave: DISTILL / [REF] WS Strategy
+
+**DISCUSS's Strategy B is upheld, and one walking skeleton is authored anyway.**
+
+DISCUSS's reasoning — every surface already exists end to end, so there is no unproven path to prove —
+is correct about every surface and false about the loop. Archive → Portfolio refresh that changes the
+underlying Features → read the frozen record → export it has never run in either direction, and it is
+the only path that can falsify D1. DISCUSS itself calls AC-05.3 "the whole Epic in one assertion";
+an assertion of that weight with no end-to-end scenario behind it is an assertion nobody will run
+until a quarterly review runs it.
+
+So: one `@walking_skeleton @real-io @driving_adapter` scenario, spanning Slices 01, 04 and 05, exercised
+through the browser against a real instance. Not one skeleton per slice — Slices 01, 02 and 03 each
+land entirely inside surfaces that already work, and a skeleton for each would be E2E breadth for its
+own sake, which this project pushes down into backend integration and ArchUnit instead.
+
+The refresh in the middle must change the data, not merely run. A refresh that leaves the Features
+alone asserts that a read is repeatable; only a refresh that removes a Feature and moves another's
+remaining Work Items can tell a frozen record apart from a live recomputation that agrees today.
+
+Tagging: `@real-io` on the skeleton and on the two upgrade scenarios; everything else runs against the
+in-memory provider or in RTL. No Tier-B state-machine PBT — the journeys here are 2–4 chained steps
+over a small, enumerable state space (live / archived / re-opened), which the example scenarios cover
+exhaustively.
+
+---
+
+## Wave: DISTILL / [REF] Adapter Coverage
+
+Per Mandate 6, every driven adapter reachable in this feature has at least one scenario exercising it
+with real I/O.
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `DeliveryRepository` over `LighthouseAppContext` (SQLite + Postgres) | YES | *An instance upgraded to the release that brings notes…* and *…that brings retiring…* (both providers), plus every integration test running on the real provider |
+| `ILighthouseClock` | Faked, manual advance | *A Delivery retired late in the evening is recorded as retired that evening* |
+| `ICurrentUserProfileService` | YES, real, both branches | *…a note is stored with no author* (absent subject) and *…listed against it, dated and signed* (present subject) |
+| `IRbacAdministrationService` | YES, real | *A signed-in user with no rights over this Portfolio cannot reach its Delivery's notes* |
+| In-process domain-event dispatcher (`PortfolioForecastsUpdated`) | YES, real | *A retired Delivery stops accumulating daily rows* |
+| MUI-X grid export (browser download + clipboard) | YES | walking skeleton (real download), *Copying to the clipboard lands in cells…* (real clipboard payload in RTL) |
+| Work tracking system connector | NOT TOUCHED — asserted so | *Retiring or annotating a Delivery is invisible to the work tracking system* |
+
+No new outbound integration, so no consumer-driven contract tests are owed. Stated rather than skipped.
+
+---
+
+## Wave: DISTILL / [REF] Driving Adapter Coverage
+
+Every route in the DESIGN Driving Ports table is exercised **over HTTP**, not by calling a service.
+The `{deliveryId}`-rooted routes carry no `portfolioId`, so an endpoint that reached for the
+declarative guard would silently degrade to authenticated-only and pass any test that signs one user
+in — which is why each row below names a scenario that asserts a refusal, not only a success.
+
+| Method | Route | Scenario exercising it over HTTP | Refusal asserted |
+|---|---|---|---|
+| GET | `/deliveries/{deliveryId}/notes` | *A reader who may not change the Portfolio can read the notes but not add one* | *A signed-in user with no rights over this Portfolio cannot reach its Delivery's notes* |
+| POST | `/deliveries/{deliveryId}/notes` | *A note written on a Delivery is listed against it, dated and signed* | read-only 403; *A note cannot be added to a closed Delivery* (409) |
+| PUT | `/deliveries/{deliveryId}/notes/{noteId}` | *A corrected note says it was corrected* | *A caller with no identity cannot rewrite a note that somebody signed*; *A note cannot be reached through a Delivery it does not belong to*; *…cannot be corrected or withdrawn either* (409) |
+| DELETE | `/deliveries/{deliveryId}/notes/{noteId}` | *A withdrawn note is gone at once and does not come back* | *Somebody else's note … refuses if asked anyway*; closed-Delivery 409 |
+| POST | `/deliveries/{deliveryId}/archive` | walking skeleton; *Retiring a Delivery writes down what it said at that moment, once* | *A reader who may not change the Portfolio is not offered the way to retire a Delivery* |
+| POST | `/deliveries/{deliveryId}/unarchive` | *A Delivery closed too early can be brought back, and starts moving again* | exemption asserted by *Closing a Delivery blocks changes … without blocking the two things it was never meant to block* |
+| GET | `/deliveries/portfolio/{portfolioId}` (CHANGED — returns `archivedOn` and both sets) | *A retired Delivery leaves the live list and is found under the ones that are done* | — |
+| PUT | `/deliveries/{deliveryId}` (CHANGED — 409 when archived) | *A closed Delivery's name, date, Features and rule cannot be changed* | that scenario is the refusal |
+| DELETE | `/deliveries/{deliveryId}` (UNCHANGED — still succeeds) | *Deleting a Delivery still deletes it, retired or not* | *Retiring a Delivery does not make it harder to destroy* |
+
+Plus one structural scenario covering all of them at once: *Every way into a Delivery checks who is
+asking and what they may see* — reflection over every `{deliveryId}`-rooted action, so a tenth route
+added next year fails until it is classified.
+
+---
+
+## Wave: DISTILL / [REF] Test Placement
+
+Precedent-following, per the directory conventions already in the repository. Nothing new is invented.
+
+### Backend — NUnit 4.6 + Moq + EF InMemory + `WebApplicationFactory`
+
+| File | New/Extend | Covers | Precedent |
+|---|---|---|---|
+| `Lighthouse.Backend.Tests/API/DeliveryNotesControllerTest.cs` | NEW | notes create/read/correct/withdraw, the two-branch authorship predicate, empty refusal, trimming | `API/DeliveriesControllerTest.cs` |
+| `Lighthouse.Backend.Tests/API/DeliveriesControllerArchiveTest.cs` | NEW | archive / un-archive actions, active-vs-archived split on the Portfolio read | `API/DeliveriesControllerUtcTest.cs` (focused companion to the main controller test) |
+| `Lighthouse.Backend.Tests/API/DTO/ArchivedDeliveryProjectionTest.cs` | NEW | `ToDto` as a pure function of identity + pin, including the absent-forecast case | existing `API/DTO/` tests |
+| `Lighthouse.Backend.Tests/API/Filters/DeliveryArchivedExceptionFilterTest.cs` | NEW | the refusal maps to 409 with a machine-readable reason, distinguishable from 403 | existing `API/Filters/` tests |
+| `Lighthouse.Backend.Tests/API/Security/S16_DeliveryScopedRouteGuardTests.cs` | NEW | reflection over every `{deliveryId}`-rooted action asserting an in-action scope check | `API/Security/S4_DeliveriesDeleteGuardInversionTests.cs` |
+| `Lighthouse.Backend.Tests/API/Integration/DeliveryNotesAuthorizationIntegrationTest.cs` | NEW | read-only 403, unscoped signed-in caller, cross-Delivery note id, auth-off branch | `API/Integration/BlackoutPeriodsControllerAuthorizationTests.cs` |
+| `Lighthouse.Backend.Tests/API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs` | NEW | exactly one pin; recorder-never-ran; recorder-already-ran-today; archive → un-archive → re-archive same day | `API/Integration/DeliveryMetricSnapshotCascadeDeleteIntegrationTest.cs` |
+| `Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryReadStabilityIntegrationTest.cs` | NEW | AC-05.3 / K1 — read, refresh with changed Features, read again, byte-identical | `API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs` |
+| `Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryWriteRefusalIntegrationTest.cs` | NEW | 409 on every guarded mutator over HTTP; delete and un-archive exempt | `API/Integration/RbacExceptionEndpointsAuthorizationTests.cs` |
+| `Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryStaleAggregateRaceIntegrationTest.cs` | NEW | D30 — load for recompute, archive, attempt save; Feature set unchanged, nothing escapes | `API/Integration/PortfolioConcurrencyTokenIntegrationTest.cs` + `ConcurrencyTokenTestHelpers.cs` |
+| `Lighthouse.Backend.Tests/API/Integration/DeliveryDurableRecordMigrationIntegrationTest.cs` | NEW | both migration pairs applied to a seeded real provider; existing data unchanged | `Services/Implementation/DatabaseManagementCompatibilityTest.cs` |
+| `Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs` | EXTEND | recorder skips archived; row count flat across five updates; live siblings still recorded | in place |
+| `Lighthouse.Backend.Tests/Services/Implementation/DeliveryRuleServiceTest.cs` | EXTEND | archived rule-based Delivery is not re-matched; live one still is | in place |
+| `Lighthouse.Backend.Tests/Services/Implementation/DeliveryMetricValuesProjectorTest.cs` | NEW | the values written at archive time equal the values the daily recorder would write | new component |
+| `Lighthouse.Backend.Tests/Models/DeliveryArchivedInvariantTest.cs` | NEW | the aggregate refuses rename, reschedule, Feature replacement, rule change and note-add when archived; permits archive/un-archive | existing `Models/` tests |
+| `Lighthouse.Backend.Tests/Architecture/ArchivedDeliveryReadPathArchUnitTest.cs` | NEW | ADR-161 — `ArchivedDeliveryProjection` depends on no `Feature`, `Delivery`, `BlackoutPeriod` or forecast service | `Architecture/DeliveryGrainSeamArchUnitTest.cs` |
+| `Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs` | EXTEND | both new migration pairs are additive-only | in place |
+| `Lighthouse.Backend.Tests/Architecture/DeliveryRuleServiceApiPreservationTest.cs` | EXTEND | the rule service's public surface survives the `ReplaceFeatures` change | in place |
+
+### Frontend — Vitest + React Testing Library, co-located `*.test.tsx`
+
+| File | New/Extend | Covers |
+|---|---|---|
+| `src/components/Common/DataGrid/DataGridToolbar.test.tsx` | EXTEND | header rows lead the artifact, blank row, escaping of comma/quote/newline, premium gate wording, visible-columns + sort, all rows rather than the rendered window, both clipboard flavours |
+| `src/components/Common/DataGrid/DataGridBase.test.tsx` | EXTEND | the three export props pass through untouched |
+| `src/components/Common/FeatureListDataGrid/FeatureListDataGrid.test.tsx` | NEW | the precursor — the grid forwards `enableExport`, `exportFileName`, `exportHeaderRows` |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.export.test.tsx` | NEW | header rows assembled through Terminology; absent forecast renders empty, never a fabricated value |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.notes.test.tsx` | NEW | third tab present and always enabled, beside a Metrics tab still gated on history |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryNotesPanel.test.tsx` | NEW | newest-first order stable across renders, author vs unattributed, empty refusal with a field message, literal rendering of markup, own-note affordances, read-only when archived |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.archived.test.tsx` | NEW | archived marker and date, grid rendered from the pinned record, Metrics tab reachable and read-only, archived section collapsed by default |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryHeader.test.tsx` | EXTEND | Archive action present for a writer, absent for a reader; confirmation wording, including the words it must not contain |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.test.ts` | EXTEND | archive and un-archive state transitions |
+| `src/models/` + `src/services/Api/` co-located tests | EXTEND | `archivedOn` on the client model and Zod schema; the notes/archive/un-archive calls |
+
+### E2E — Playwright, Page Object Model, driven from seeded demo data
+
+| File | New/Extend | Covers |
+|---|---|---|
+| `Lighthouse.EndToEndTests/tests/specs/portfolios/DeliveryArchive.spec.ts` | NEW | the one walking skeleton, and nothing else |
+| `tests/models/portfolios/Deliveries/DeliveryItem.ts` | EXTEND | Archive action, archived marker, Notes tab |
+| `tests/models/portfolios/Deliveries/DeliveryArchiveDialog.ts` | NEW | mirrors `DeliveryDeletionDialog.ts` |
+| `tests/models/portfolios/Deliveries/DeliveryNotesTab.ts` | NEW | mirrors `DeliveryMetricsTab.ts` |
+| `tests/models/portfolios/Deliveries/DeliveriesPage.ts` | EXTEND | the Archived section |
+| `tests/helpers/csv/csvTestData.ts` | REUSE | CSV assertions, per `tests/specs/csv/csv.spec.ts` |
+
+No spec touches `page.locator()` directly. One walking skeleton per flow; every other invariant is
+pushed down to backend integration or ArchUnit rather than adding E2E breadth.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+**Mandate 7 (commit RED scaffold stubs under `src/`) is deliberately adapted, not followed literally.**
+
+The mandate exists so a test fails as RED rather than BROKEN. This repository reaches the same
+guarantee by a different route, and the route it uses is a standing rule here: never push red, skip
+the acceptance test that is not yet passing, un-skip it to resume. A committed scaffold under
+`Lighthouse.Backend/` would break `dotnet build` with `TreatWarningsAsErrors`, would be flagged by
+SonarQube Cloud as new dead code, and would leave the project in a state that fails the very quality
+gates the Definition of Done requires — so a scaffold could not be pushed at all, which defeats its
+purpose.
+
+**So no scaffold files are created.** Instead, per slice, DELIVER creates the test files named above
+and marks the not-yet-passing ones, un-skipping one at a time:
+
+| Slice | Marker until GREEN |
+|---|---|
+| 01 | Vitest: `it.skip(...)` on the new toolbar, grid-forwarding and Delivery-section export cases. Playwright: `test.skip(...)` on the walking skeleton until Slice 05 lands |
+| 02 | NUnit: `[Test(Description = "…"), Ignore("pending — slice 02")]` on the notes controller, authorization and migration tests. Vitest: `it.skip(...)` on the notes panel and tab |
+| 03 | NUnit: `Ignore("pending — slice 03")` on the authorship-predicate and correction tests. Vitest: `it.skip(...)` on the own-note affordances |
+| 04 | NUnit: `Ignore("pending — slice 04")` on the pin, recorder-skip, rule-skip, race and migration tests. Vitest: `it.skip(...)` on the header action and confirmation |
+| 05 | NUnit: `Ignore("pending — slice 05")` on the archived read, refusal and un-archive tests, and on the ArchUnit rule. Playwright: the walking skeleton un-skips here |
+
+The marker string names the slice, so `grep -rn "pending — slice"` is the equivalent of the scaffold
+sweep: zero matches at the end of DELIVER.
+
+---
+
+## Wave: DISTILL / [REF] DISTILL-Owned Decisions
+
+Three questions DESIGN handed DISTILL, answered as acceptance criteria. Continuing the D-numbering.
+
+### D34 — A note has no length limit, and is refused empty in both places
+
+**Decision** (user, 2026-08-21). No maximum length. `HasMaxLength` appears nowhere in this backend —
+not one string column is constrained — so a cap on notes would make them the first, and that is a
+convention change this Epic was not asked to make. If a ceiling is ever wanted it belongs in the
+field as a counter, not in the schema.
+
+Empty and whitespace-only are refused in **both** places, not just the field. The API already cannot
+trust the browser for permissions (AC-02.3's 403 says so); it must not start trusting it for content.
+Text is trimmed of leading and trailing blank space before the empty check and before storing.
+
+Plain text, per DISCUSS Out of Scope and AC-02.9: markup characters render as themselves. Line breaks
+the person typed are preserved as line breaks — that is not markup, it is what they wrote.
+
+### D35 — Notes come back newest-first, all of them, in a stable order
+
+Ordered by when a note was written, newest first, with a deterministic tiebreak so that two notes
+written in the same second never swap places between reads. No paging: every note on the Delivery is
+returned. A corrected note keeps its place — the order records the sequence of events, and a
+correction that jumped a six-week-old note to the top would rewrite that sequence.
+
+DESIGN's open question 3 asks what happens if a Delivery accumulates hundreds. Nobody has one. The
+ceiling is asserted at fifty rather than left implicit, so the day somebody does, the failure is a slow
+tab and not a silently truncated list.
+
+**Confirmed** (user, 2026-08-21).
+
+### D36 — The Metrics tab stays reachable on an archived Delivery, read-only, ending on the closing day
+
+Reachable. The daily history is untouched by closing (the metrics-history endpoint is REUSE AS IS —
+no change), `ArchivedDeliveryIdentity` already carries how many days exist, and the trend that led to
+the frozen number is the most useful thing in a review about that number. The tab keeps its existing
+minimum-history condition, so a Delivery closed on day two has it dark exactly as a live one would.
+No new days are recorded after closing, so the chart simply ends on the closing day.
+
+Rejected alternative: hide the tab. It would throw away the only part of a closed Delivery that shows
+movement, and would make `MetricSnapshotCount` on `ArchivedDeliveryIdentity` dead weight.
+
+**Confirmed** (user, 2026-08-21).
+
+---
+
+## Wave: DISTILL / [REF] AC Traceability
+
+All acceptance criteria are covered. Each is carried by an `@ac-NN.M` tag on at least one scenario;
+`grep -ho '@ac-[0-9]*\.[0-9]*' *.feature | sort -u` returns the full set.
+
+| Story | Criteria | Covered |
+|---|---|---|
+| US-01 | AC-01.1 … AC-01.8 | 8 / 8 |
+| US-02 | AC-02.1 … AC-02.9 | 9 / 9 |
+| US-03 | AC-03.1 … AC-03.6 | 6 / 6 |
+| US-04 | AC-04.1, AC-04.1a, AC-04.2 … AC-04.10 | 11 / 11 |
+| US-05 | AC-05.1 … AC-05.9 | 9 / 9 |
+| | **Total** | **43 / 43** |
+
+Note: DISCUSS's DoR row 4 originally said "39 ACs". The five stories carried 40, and DISTILL added
+AC-05.9 for the Metrics tab, so the total is now 41. The original was a miscount, not a missing criterion.
+
+Beyond the criteria, these design claims are pinned by scenarios of their own, because they are where
+this work actually fails if it fails:
+
+| Claim | Scenario |
+|---|---|
+| D30 — the stale-aggregate race | *A refresh already under way when a Delivery is retired does not undo the retirement* |
+| D31 — archiving is not protection from deletion | *The confirmation does not promise a protection that archiving does not give*; *Retiring a Delivery does not make it harder to destroy* |
+| D32 — no backfill | *Deliveries that existed before this was possible are simply not retired* |
+| D25 / ADR-165 — the `null == null` trap | *A caller with no identity cannot rewrite a note that somebody signed* |
+| D24 — the byline is captured at write time | *A note keeps the name it was written under when its author is renamed*; *A note outlives the person who wrote it leaving the instance* |
+| D26 — in-action scope resolution on `{deliveryId}` routes | *A signed-in user with no rights over this Portfolio cannot reach its Delivery's notes*; *Every way into a Delivery checks who is asking and what they may see* |
+| D28 — no new domain event | *Retiring a Delivery announces nothing to the rest of the product* |
+| D12 — the closing day is a day, not an instant | *A Delivery retired late in the evening is recorded as retired that evening, not the day before* |
+| ADR-161 — the closed read cannot reach live data | *The code that builds a closed Delivery's view has no way to reach a live Feature* |
+| K1 | *A closed Delivery reads identically either side of a refresh that changes its Features* |
+| K2 | *Retiring a Delivery keeps its history, where destroying one loses it* |
+| K3 | *A retired Delivery stops accumulating daily rows* |
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **A premium licence fixture.** Every export scenario needs one, and the fixture is gitignored and
+  absent from a fresh checkout. Import it from a licensed checkout before running Slice 01's tests, the
+  walking skeleton, or any `@screenshot` run covering the export affordance.
+- **Both database providers.** The two upgrade scenarios and the migration guard run on SQLite and
+  PostgreSQL; the in-memory provider skips migrations and cannot carry them.
+- **Seeded demo data** for the Playwright walking skeleton, and a way to refresh a Portfolio against a
+  changed set of Features between the two reads — a refresh that changes nothing does not test what
+  the scenario claims.
+- **An instance with authentication switched off**, for the unattributed-note scenarios. This is the
+  default configuration, so it is the cheaper half; the signed-in half needs a configured provider.
+- **A gold set** of percentiles and headline numbers for the two `epic-boundary.feature` regression
+  scenarios, captured on the released product at a tagged commit and committed as its own reviewed
+  change **before** the first production commit of this work. A baseline taken from the build under
+  test asserts only that the build equals itself.
+- **DEVOPS never ran** for this feature. Project defaults apply: the environments are a clean instance,
+  an instance upgraded from the previous release, and an instance with an existing licence. No
+  blocker — recorded so nobody goes looking for a DEVOPS artifact that does not exist.
+
+---
+
+## Wave: DISTILL / [REF] Upstream Issues
+
+Two things DESIGN leaves unresolved that DELIVER will otherwise have to decide by accident.
+
+### UI-1 — Rule re-matching an archived Delivery: filtered out, or an exception every refresh?
+
+D3 requires rule re-matching to skip archived Deliveries. D20 and ADR-164 achieve it by making
+`ReplaceFeatures` throw `DeliveryArchivedException`. D19 solves the *recorder's* equivalent problem by
+narrowing its port so it cannot see an archived Delivery at all, and argues explicitly that a shared
+method plus a filter the caller must remember is the option that lets the caller be wrong.
+
+The rule service gets neither treatment. As designed, every Portfolio refresh that contains an archived
+rule-based Delivery will raise and swallow a `DeliveryArchivedException` **per refresh, per archived
+Delivery**, in the hot path — exceptions as expected control flow. That also sits awkwardly against
+D30's requirement that a lost race be "a no-op, not a retry" with "no exception escaping to the
+background service", since it makes the exception the normal case rather than the race case, and the
+two become indistinguishable at the catch site.
+
+Two answers are available and DESIGN picks neither: give `DeliveryRuleService` a narrowed read the way
+the recorder got one (consistent with D19, and the archived-Delivery case stops being exceptional), or
+keep the throw and accept it as expected flow (in which case D30's "no exception escapes" needs
+rewording, because it will be catching this one constantly). **Recommendation: the narrowed read.** The
+aggregate invariant stays as the backstop for the fourth write path nobody has thought of — which is
+what ADR-164 is actually for — while the known caller simply does not ask.
+
+*Does not block DISTILL.* The scenarios assert the observable outcome (the archived Delivery's Features
+are unchanged, the refresh completes, nothing escapes to the job), which holds under either answer.
+
+### UI-2 — `DeliveryNote.CreatedOn` and `LastEditedOn` are not typed as a day or an instant
+
+D12 reasons carefully that `ArchivedOn` must be a `DateOnly` from the clock, because a `DateTime`
+column is in reach of the global UTC converter, which shifts a local-kind midnight onto the previous
+day on write. D23 then declares `CreatedOn` and `LastEditedOn` on `DeliveryNote` without saying which
+they are — and AC-02.2 and AC-03.3 both render them **as a day** to a human being.
+
+The identical trap therefore applies, and the same defect (a note written at eleven at night showing
+yesterday's date) is one implicit `DateTime` away. Two acceptance scenarios in
+`milestone-02` and `milestone-03` pin the rendered day, so the defect would be caught — but the type
+choice should be made deliberately in DESIGN rather than inherited from whichever `DateTime` the first
+implementation reaches for.
+
+*Does not block DISTILL.*
+
+---
+
+## Wave: DISTILL / [REF] Wave Decisions Summary
+
+### Key Decisions
+- Strategy B upheld; **one** walking skeleton authored for the archive → refresh → read loop, because
+  that loop is new even though every surface it crosses is not.
+- 90 scenarios, 41% of them error or edge paths.
+- Three DESIGN questions settled as D34 (note length, empty refusal in both places, plain text),
+  D35 (newest-first, all of them, stable order) and D36 (Metrics tab reachable and read-only on a
+  closed Delivery). All three await the user's confirmation.
+- Mandate 7's RED scaffolds are adapted to this project's skip/un-skip practice; no stub files are
+  committed under `Lighthouse.Backend/`.
+- No Tier-B state-machine PBT: the state space here is live / archived / re-opened, small enough for
+  the example scenarios to cover exhaustively.
+
+### Constraints Established
+- Every user-visible string in a scenario is the tenant's configurable Terminology. No scenario uses
+  a work-tracking system's word for anything.
+- Playwright stays one walking skeleton; every other invariant lands in backend integration or
+  ArchUnit.
+- The boundary regression scenarios need a gold set captured and committed **before** the first
+  production commit of this work, or they assert nothing.
+
+### Upstream Changes
+Two, both recorded above as UI-1 and UI-2, neither blocking. No user story and no acceptance criterion
+changes.
+
+### SSOT Updates
+None. `docs/product/kpi-contracts.yaml` does not exist in this repository; K1–K3 are carried by the
+`@kpi`-tagged scenarios named in *AC Traceability*.

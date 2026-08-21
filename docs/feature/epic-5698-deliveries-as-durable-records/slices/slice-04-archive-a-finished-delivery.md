@@ -27,13 +27,16 @@ at the moment it leaves.
 - Actual finish date and any calibration read-out (D2).
 
 ## Learning hypothesis
-**Disproves if it fails**: that the pin can reuse the snapshot shape. The unique key is
-`(DeliveryId, RecordedDay)`, so an archive on a day the recorder already ran collides with an existing
-row, and an un-archive-then-re-archive on the same day collides with the previous pin. If reuse cannot
-survive that key, D1's "reuse, do not denormalise" is wrong and a dedicated closure table is the
-answer — which is exactly the choice DESIGN was asked to make, now decided by evidence.
-**Confirms if it succeeds**: the archive record costs one flag, one timestamp and one pinned row, and
-the whole Epic needs no new encoding of a Feature grid.
+**Disproves if it fails**: that archiving can actually stop the machinery. The pin's shape is settled
+— it is its own table keyed by DeliveryId, so the collisions this slice was originally written to
+probe cannot occur. What is still unproven is whether a Delivery can be frozen while a background
+refresh is in flight. `DeliveryRuleService` re-matches Features from a Delivery it loaded before the
+archive, so it holds a copy that still looks active. If the concurrency token does not actually stop
+that write, or if losing the race surfaces as an exception in the background service rather than a
+quiet no-op, then freezing a record needs more than an aggregate guard and the design's central claim
+— that an archived Delivery is *unable* to change rather than told not to — is wrong.
+**Confirms if it succeeds**: the archive record costs one column, one timestamp and one pinned row,
+and the freeze holds against the one writer no controller can see.
 
 ## Acceptance criteria
 AC-04.1 … AC-04.9 in `../feature-delta.md`.
@@ -45,10 +48,15 @@ Slice 01 (its export is how a pinned record is inspected end to end).
 `DeliveryMetricSnapshotRecordingHandler` — the existing writer of exactly this record, once a day.
 
 ## Pre-slice SPIKE
-Timeboxed to 1 hour, before writing production code: confirm on the dev instance that a pin can be
-written for a Delivery that already has a snapshot for today without violating the unique key, and
-that the same holds for archive → un-archive → archive within one day. If it cannot, stop and take
-the question back to DESIGN rather than working around the key.
+Timeboxed to 1 hour, before writing production code: generate the additive migration through the
+`CreateMigration` script and apply it to a real SQLite and a real Postgres database that already
+carry Delivery rows, confirming the new table and the two new columns land without touching existing
+data. The test suite cannot answer this — EF InMemory skips migrations entirely.
+
+The original question — whether a pin can be written for a Delivery that already has a snapshot for
+today, and whether archive → un-archive → archive within one day collides — no longer needs asking.
+The closure record is its own table keyed by DeliveryId alone, so it never meets the day key that
+caused those collisions. Both cases are ordinary upserts.
 
 ## Dogfood moment
 Archive a Delivery that finished on the team's own Portfolio, same day.

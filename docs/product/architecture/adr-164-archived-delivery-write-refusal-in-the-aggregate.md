@@ -26,6 +26,15 @@ stay) and un-archive itself.
 
 **The aggregate refuses. Controllers translate the refusal.**
 
+**What this invariant is for, stated first because an earlier draft got it wrong.** It is the
+**backstop** — the rule that catches the write path nobody has thought of yet. It is *not* the routine
+mechanism for a path already known. Both known background writers are narrowed by
+[ADR-163](./adr-163-archived-deliveries-excluded-by-narrowed-port.md) so they never present an
+archived Delivery at all, and the mutating endpoints refuse at the endpoint. If this guard fires in
+normal operation, something is wrong with the design rather than with the caller: a guard that throws
+on the hot path as the expected case is control flow wearing a guard's clothes, and it would destroy
+the one signal the *Concurrency* section below depends on.
+
 Four points:
 
 1. **Mutation goes through methods, not setters.** `Delivery` exposes `Rename`, `Reschedule`,
@@ -73,31 +82,58 @@ by an otherwise-correct guard. This is not hypothetical: the realistic interleav
 refresh already in flight — `PortfolioUpdater` loads the Deliveries, a user archives one, and
 `DeliveryRuleService.RecomputeRuleBasedDeliveries` then mutates the copy it already holds.
 
-`Delivery` carries an optimistic-concurrency token (it is one of the config aggregate roots that
-does), so the archive write changes the token and the stale `SaveChanges` fails. **That is only a
-guarantee if the failure is allowed to surface.** The blanket reload-retry in the save path must not
-quietly reload the Delivery and replay the Feature mutation onto the now-archived row — replaying is
-precisely the corruption this invariant exists to prevent.
+**An earlier draft of this section claimed the existing optimistic-concurrency token closed this
+race. It does not, and the test it prescribed passed vacuously.** Three facts, verified against the
+code:
 
-Two rules follow, and both are part of this decision:
+- `LighthouseAppContext.cs:593-596` — `RegenerateConcurrencyTokens()` filters
+  `e.State == EntityState.Added`. **A modified Delivery keeps its token.** The only bump-on-edit is
+  `ApplyConcurrencyTokenForEdit(entity, clientToken)`, which a controller must call explicitly.
+- `LighthouseAppContext.cs:435` — `HasMany(d => d.Features).WithMany()` is a pure skip navigation. A
+  Features-only mutation writes join-table rows and issues **no UPDATE against `Deliveries`**, so EF
+  never places the token in a WHERE clause and no `DbUpdateConcurrencyException` can be raised —
+  even if the token had been bumped.
+- `LighthouseAppContext.cs:559` — the retry is guarded by `!InvolvesConcurrencyTokenEntity(ex)`, and
+  `Delivery` is an `IConcurrencyTokenEntity`, so **`Delivery` is already excluded from the
+  reload-retry** the earlier draft instructed callers to change. That instruction is withdrawn.
 
-- **The archive and un-archive writes bump the concurrency token**, so any in-flight holder of the
-  aggregate loses its save.
-- **The reload-retry path must re-evaluate `ArchivedOn` after reloading and drop the mutation rather
-  than replay it.** A background recompute that loses this race is a no-op, not a retry — the
-  Delivery it was recomputing no longer wants recomputing.
+The mechanism that actually fires on a join-table-only write:
 
-Verified by an integration test that interleaves the two explicitly: load a Delivery for recompute,
-archive it, then attempt the recompute save, and assert the Feature set is unchanged and no exception
-escapes to the background service's caller.
+- **Every `Delivery` mutator bumps `ConcurrencyToken`** — `Archive`, `Unarchive`, `ReplaceFeatures`,
+  `Rename`, `Reschedule`, `ApplyRuleSet`. Bumping makes the Delivery *row* modified, so EF emits
+  `UPDATE Deliveries … WHERE Id = @id AND ConcurrencyToken = @old` alongside the join-table writes,
+  and the stale holder's save affects zero rows. A Feature-set change **is** a change to the
+  Delivery's state; that it currently changes nothing on the Delivery row is exactly why optimistic
+  concurrency does not protect it today.
+- **Archive and un-archive accept a client token** and route through `ApplyConcurrencyTokenForEdit`,
+  like every sibling Delivery mutation, so archive-versus-edit races surface as 409.
+- **The rule recompute's unit of work is per-Delivery.** `:559` already lets a `Delivery` conflict
+  propagate rather than retrying it; the caller catches it, **skips that Delivery**, and continues
+  with the batch. Skipping is the correct response — a Delivery archived under us no longer wants
+  recomputing.
+
+**Replacement test, which fails if the token bump is removed:** fetch deliveries for recompute,
+archive one through the API, run the recompute save, then read back through a **fresh** context and
+assert the archived Delivery's Feature set is unchanged *and* that the other deliveries in the batch
+still committed. The earlier "no exception escapes to the background service's caller" assertion is
+deleted — nothing threw, so it pinned nothing.
+
+This is only diagnosable because ADR-163 narrows both background readers. With them narrowed, a
+`DeliveryArchivedException` on a background path means **exactly one thing** — the Delivery was
+archived after the collection was read — so the catch site can drop the mutation with confidence.
+Had rule re-matching kept relying on this exception as its routine mechanism, the race and the normal
+case would arrive at the same catch site indistinguishable, and "drop it" would silently discard
+legitimate recomputes.
 
 ## Consequences
 
 - **Positive**: one invariant, one place, covering HTTP and background callers alike. A seventh write
   endpoint added next year inherits it without anyone reading this ADR.
-- **Positive**: the guard is a compile-time-shaped restriction as much as a runtime one — with
-  `Features` read-only and setters replaced by methods, the common bypass (assigning a property) does
-  not compile.
+- **Positive**: with `Features` exposed as `IReadOnlyList<Feature>`, the bypass that actually exists
+  today is removed — `Features.Clear()` and `Features.AddRange(...)`, which is how all three current
+  call sites mutate the set. *(An earlier draft claimed the bypass was "assigning a property".
+  `Delivery.cs:41` is already `public List<Feature> Features { get; }`, get-only, so that bypass never
+  existed; the argument was wrong even though the change is right.)*
 - **Negative**: encapsulating `Delivery` is a wider diff than a controller `if`. It touches three
   Feature write sites, the property setters used by `UpdateDelivery`, and their tests. The compiler
   finds all of them, and the epic already had to modify `UpdateDelivery` for AC-05.8.
@@ -114,7 +150,9 @@ escapes to the background service's caller.
   3. *Behavioural*: integration tests hitting every mutating endpoint against an archived Delivery and
      asserting 409, plus one asserting a Portfolio refresh leaves its Features untouched.
 - **Reuse verdict**: `Delivery` → **EXTEND** (encapsulate mutation). `DeliveriesController` →
-  **EXTEND** (call the new methods; no per-action check added). `DeliveryRuleService` → **UNCHANGED**.
+  **EXTEND** (call the new methods; no per-action check added; archive/un-archive take a client token).
+`DeliveryRuleService` → **EXTEND** — its parameter narrows to `RecordableDeliveries` (ADR-163), so it
+no longer relies on this exception at all; its unit of work becomes per-Delivery.
   Exception-to-status filter → **EXTEND** the existing mapping. No new component.
 - Cross-refs [ADR-163](./adr-163-archived-deliveries-excluded-by-narrowed-port.md) (the same aggregate
   guard covering the recorder and rule re-matching),

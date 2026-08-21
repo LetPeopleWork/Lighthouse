@@ -36,10 +36,27 @@ fact. That thesis applies to the author line as much as to the numbers.
    note.AuthorUserProfileId == currentProfile?.Id
    ```
 
-   With an attributed note and a caller who has no profile, both sides are `null`-vs-value or
-   `null`-vs-`null` depending on the row, and the `null == null` case grants a profile-less caller
-   edit rights over somebody else's unattributed note *and* — worse — reads as correct. The rule is
-   therefore written as two branches, in one place, used by both the edit and the withdraw paths:
+   *(Rationale corrected 2026-08-21. The earlier version named the wrong failing case: it claimed a
+   profile-less caller would gain rights over an **attributed** note. For `int?`, `null == 5` is
+   false, so that caller is already refused by the naive one-liner. The prescribed test therefore
+   guarded nothing — it passed against the very implementation it was meant to reject.)*
+
+   Enumerated properly, the naive form has exactly one wrong outcome:
+
+   | Note author | Caller | Naive result | Correct |
+   |---|---|---|---|
+   | attributed (5) | no profile (`null`) | false | false — ok |
+   | unattributed (`null`) | no profile (`null`) | true | true — ok |
+   | attributed (5) | profile 5 | true | true — ok |
+   | **unattributed (`null`)** | **profile 7** | **false — refused** | **true — should be allowed** |
+
+   The failing case is a note written while the instance had auth off, on an instance that has since
+   turned auth on: nobody can ever edit or withdraw it, because every caller now has a profile and no
+   caller's id equals `null`. That is the auth-off-then-auth-on instance this ADR's Consequences
+   section already half-identifies, and it strands every note written before the switch.
+
+   The rule is therefore written as two branches, in one place, used by both the edit and the
+   withdraw paths:
 
    - the note has **no** author → anyone with `PortfolioWrite` may edit or withdraw it;
    - the note **has** an author → only a caller with a profile whose id equals it may.
@@ -49,6 +66,27 @@ fact. That thesis applies to the author line as much as to the numbers.
 
 4. **Notes cascade with the Delivery.** `DeliveryNote.DeliveryId` → `Delivery` is `ON DELETE CASCADE`
    (AC-02.8), matching `DeliveryMetricSnapshot` under ADR-048.
+
+5. **`CreatedOn` is `DateTime` and `LastEditedOn` is `DateTime?` — UTC instants, not `DateOnly`.**
+   This is deliberately the opposite call from `Delivery.ArchivedOn`
+   ([ADR-160](./adr-160-delivery-closure-pin-as-one-row-per-delivery-table.md) point 4), and the
+   reason is that a note records *when a person wrote something* — a moment — whereas `ArchivedOn` is
+   a calendar day.
+
+   The global `Properties<DateTime>()` converter is **correct** for a genuine UTC instant: it
+   round-trips the value and restores `Kind = Utc` on read. It damages a `DateTime` only when the
+   value is a local-kind midnight standing in for a day, which is why `ArchivedOn` must not be one and
+   why these may be.
+
+   AC-02.2 and AC-03.3 still render a day, so **the reduction happens once, on the server, in a named
+   zone**: the DTO carries the instant *and* a `DateOnly` day produced by
+   `ILighthouseClock.ToInstanceDay`. The instance zone is the zone every other day in the product is
+   expressed in. The client renders the supplied day and is never handed an instant to reduce, which
+   structurally removes the `toISOString().split("T")[0]` foot-gun. The instants remain the sort key —
+   newest-first, and two notes written on the same day — and "edited" is `LastEditedOn is not null`.
+
+   A `Kind == Utc` assertion does not prove the day is right, so the test reads a note back through a
+   **fresh** EF context and asserts the rendered **day**.
 
 ## Alternatives considered
 
@@ -87,9 +125,11 @@ fact. That thesis applies to the author line as much as to the numbers.
   strand every note written before auth was turned on.
 - **Negative**: two author fields can disagree if one is written and the other is not. Both are set in
   the same constructor call and neither has a setter.
-- **Enforcement**: the predicate is one method on the entity, used by both mutating endpoints; a test
-  asserts the profile-less-caller-vs-attributed-note case returns false, which is the branch the naive
-  implementation gets wrong.
+- **Enforcement**: the predicate is one method on the entity, used by both mutating endpoints. The
+  pinning test is **unattributed note + profiled caller → allowed** — the one case the naive
+  one-liner gets wrong, and therefore the only test that can tell the two implementations apart. The
+  other three rows of the table above are covered too, but they do not discriminate and must not be
+  mistaken for the guard.
 - **Reuse verdict**: `UserProfile` → **REUSED AS IS** (no new columns).
   `CurrentUserProfileService` → **REUSED AS IS** — its `null` return is the input this design is built
   around, not a defect to fix. `DeliveryNote` → **CREATE NEW** (no existing entity carries free text

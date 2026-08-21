@@ -5950,12 +5950,30 @@ These bind code outside this epic, which is why they are here rather than only i
 - **`Delivery.Features` is `IReadOnlyList<Feature>` and is written only by `Delivery.ReplaceFeatures`.**
   Three call sites previously mutated the list directly — `DeliveriesController` twice and
   `DeliveryRuleService.RecomputeRuleBasedDeliveries`, the last reached from `PortfolioUpdater` with no
-  HTTP surface at all. Anyone adding a fourth Feature write path inherits the archived refusal for
-  free. (ADR-163, ADR-164)
+  HTTP surface at all. Both background readers are narrowed by a `RecordableDeliveries` collection
+  that only the repository can construct, so an archived Delivery never reaches them; the aggregate's
+  refusal is the **backstop** for the fourth write path nobody has thought of yet, not the routine
+  mechanism for the three that are known. A guard that fires in normal operation is control flow
+  wearing a guard's clothes. (ADR-163, ADR-164)
+- **`DeliveryNote.CreatedOn` / `LastEditedOn` are `DateTime` UTC instants, and the DTO also carries a
+  server-reduced `DateOnly` day.** The opposite call from `ArchivedOn`, deliberately: a note records a
+  moment, not a calendar day. The instant-to-day reduction happens once, server-side, in the instance
+  zone via `ILighthouseClock.ToInstanceDay`; the client is never handed an instant to reduce. (ADR-165)
 - **An archived Delivery refuses every mutation except delete and un-archive, and the refusal lives in
   the aggregate.** Surfaced as **409 Conflict** through one exception filter, so no controller action
   carries the check. 409 rather than 403: the caller's rights are fine, the resource's state is not.
   (ADR-164)
+- **The archived payload carries its Feature rows inline and has no `features: number[]`.** The
+  Delivery Feature grid is fed by a *separate live GET* keyed on that id list
+  (`useDeliveryManagement.ts`), so an archived row that carried ids would silently re-fetch live
+  Features. Omitting them is what makes the drift unrepresentable. An archived grid therefore has no
+  work-item state, type, owning team, per-team work, per-Feature forecast dates or blocked status.
+  (ADR-161)
+- **A `Delivery` mutation must bump `ConcurrencyToken` to be protected at all.**
+  `RegenerateConcurrencyTokens` bumps only on `EntityState.Added`, and `Features` is a skip
+  navigation — so a Features-only write touches no `Deliveries` row and no token is ever compared.
+  Every mutator bumps the token explicitly; without that, optimistic concurrency on this aggregate is
+  decorative. (ADR-164)
 - **Nothing on the archived read path can reach a Feature or a forecast.**
   `ArchivedDeliveryProjection.ToDto` takes an identity record and a closure record — no `Delivery`, no
   `DateOnly today`, no `IReadOnlyList<BlackoutPeriod>`. `Delivery.CalculateMetrics` cannot be called
@@ -6118,7 +6136,8 @@ field reads as active, so a stale client degrades to today's behaviour rather th
 |---|---|
 | The archived projection cannot reach a Feature, a Delivery, a blackout period or a forecast | ArchUnitNET rule on `ArchivedDeliveryProjection` (precedent: `DeliveryGrainSeamArchUnitTest`) |
 | An archived Delivery's payload is unchanged across a Portfolio refresh that moves its Features | Integration test — read, refresh, read, assert byte-identical |
-| The recorder cannot see an archived Delivery | ArchUnitNET rule: `DeliveryMetricSnapshotRecordingHandler` does not depend on `GetByPortfolioAsync`; plus an integration test asserting no snapshot row appears |
+| Neither background consumer can see an archived Delivery | The `RecordableDeliveries` parameter type makes it a compile error for rule re-matching; an ArchUnitNET rule asserts `DeliveryMetricSnapshotRecordingHandler` does not depend on `GetByPortfolioAsync`; an integration test archives a Delivery, runs a refresh, and asserts no snapshot row appeared and its Feature set is unchanged |
+| A lost archive/recompute race is a quiet no-op, distinguishable from routine operation | Integration test interleaving load-for-recompute → archive → attempt save; asserts the Feature set is unchanged and no exception escapes the background service |
 | Every mutating Delivery-scoped route either refuses on an archived Delivery or is on an explicit exemption list | NUnit reflection test over `[HttpPost]`/`[HttpPut]`/`[HttpDelete]` actions (precedent: `AppSettingsControllerTest`, `API/Security/S4_DeliveriesDeleteGuardInversionTests`) — a new endpoint fails until classified |
 | A Delivery is never archived without a closure record | Integration test on the archive command |
 | Archiving never writes into `DeliveryMetricSnapshot` | Integration test asserting the row count is unchanged |

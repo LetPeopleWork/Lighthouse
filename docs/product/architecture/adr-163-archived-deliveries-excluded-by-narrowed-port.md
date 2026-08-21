@@ -28,17 +28,49 @@ feature's problem.
 ## Decision
 
 **No global query filter. The recorder is handed a port that cannot return an archived Delivery, and
-Feature mutation is refused by the aggregate.**
+Feature mutation is refused by the aggregate as a backstop.**
 
-Three points:
+Four points:
 
 1. **A narrow read port for the recorder.** `IDeliveryRepository` gains
-   `IEnumerable<Delivery> GetRecordableByPortfolio(int portfolioId)` — deliveries with
+   `RecordableDeliveries GetRecordableByPortfolio(int portfolioId)` — deliveries with
    `ArchivedOn is null`. The recording handler depends on that method and never on
    `GetByPortfolioAsync`. This is capability restriction rather than discipline: the handler is not
    trusted to remember a `where` clause, it is given a source that cannot produce the wrong rows.
 
-2. **Rule re-matching is refused by the aggregate, not filtered by the caller.** `Delivery.Features`
+2. **Rule re-matching is narrowed by the same port, through a type.**
+   `GetRecordableByPortfolio` returns a sealed `RecordableDeliveries : IReadOnlyList<Delivery>` that
+   only the repository can construct, and
+   `DeliveryRuleService.RecomputeRuleBasedDeliveries(Portfolio, RecordableDeliveries)` takes that type
+   rather than `IEnumerable<Delivery>`. One narrowing serves both background consumers instead of
+   protecting the recorder and leaving rule re-matching to remember a filter.
+
+   **What this does and does not buy, stated precisely.** `RecordableDeliveries` and
+   `DeliveryRepository` live in the same assembly, so `internal` is reachable from anywhere in
+   `Lighthouse.Backend` — and the element type is still `Delivery`, so this is a **nominal marker,
+   not a refinement type**. Nothing in the type system prevents it holding an archived row. An
+   earlier draft of this ADR claimed passing an archived Delivery "does not compile"; that was an
+   overclaim and is withdrawn. What the type actually buys is worth keeping: **one construction site**
+   for the filter instead of one per caller, a name at every call site that says which set this is,
+   and a **constructor-level assertion** that no element has `ArchivedOn` set — so a violation fails
+   loudly at the single place that can create one, rather than silently at the mutation.
+
+   This replaces an earlier draft of this ADR in which rule re-matching relied on the aggregate
+   throwing. That draft made `DeliveryArchivedException` the **normal** case on the Portfolio-refresh
+   hot path — raised and swallowed once per archived rule-based Delivery per refresh — and it
+   destroyed the signal [ADR-164](./adr-164-archived-delivery-write-refusal-in-the-aggregate.md)'s
+   concurrency rule depends on: if the exception is expected, a lost stale-aggregate race is
+   indistinguishable from routine operation at the catch site. With both consumers narrowed, the
+   guard firing on a background path means precisely one thing — the Delivery was archived after the
+   collection was read.
+
+   **This changes a signature pinned by [ADR-012](./adr-012-rule-engine-generalisation.md)'s
+   reflection test**, which asserts `RecomputeRuleBasedDeliveries` still exists with its original
+   signature. That guard exists to stop the rule-engine generalisation *silently* altering the public
+   surface; this change is deliberate and recorded, so the guard is updated in the same commit rather
+   than circumvented.
+
+3. **The aggregate keeps refusing, as a backstop.** `Delivery.Features`
    is written from **three** places — `DeliveriesController.CreateManualFeatureSelectionDelivery`,
    `DeliveriesController.CreateRuleBasedDelivery`, and
    `DeliveryRuleService.RecomputeRuleBasedDeliveries`, the last of which is reached from
@@ -48,7 +80,7 @@ Three points:
    `ArchivedOn is not null`. All three paths are covered by one rule, and a fourth path added later
    inherits it.
 
-3. **`GetByPortfolioAsync` keeps returning everything.** The controller splits active from archived
+4. **`GetByPortfolioAsync` keeps returning everything.** The controller splits active from archived
    for the two sections. Slice 04 wants archived Deliveries out of the *active list*, which is a
    presentation split, not a data-access one.
 
@@ -60,10 +92,16 @@ Three points:
   error. It would also be the first query filter in the codebase, so nobody reading a `Delivery`
   query would expect one.
 
-- **A `where !d.IsArchived` clause added to each of the recorder and the rule service.** **Rejected**
-  for the recorder because it is a convention a future edit can drop with no signal, and rejected for
-  rule re-matching because it does not cover the two controller write paths that reach `Features`
-  directly — AC-05.8 would then be satisfiable through `UpdateDelivery` even while AC-04.7 held.
+- **A `where d.ArchivedOn == null` clause added to each of the recorder and the rule service.**
+  **Rejected** — a clause is a convention a future edit can drop with no signal, which is the failure
+  this ADR exists to remove. A clause has to be re-remembered at every call site; the collection type
+  has **one** construction site, and that site asserts. The clause also leaves the two controller write
+  paths untouched, so it would satisfy AC-04.7 while leaving AC-05.8 to a separate mechanism.
+
+- **Letting the aggregate's exception carry rule re-matching**, with no narrowing on that path. This
+  was an earlier draft of this ADR. **Rejected** — it makes `DeliveryArchivedException` the expected
+  case on the Portfolio-refresh hot path, and it collapses the stale-aggregate race into the same
+  catch site as routine operation, so neither can be told from the other.
 
 - **A `DeliveryArchived` domain event that unsubscribes the recorder.** **Rejected** — the recorder is
   stateless and per-portfolio; there is no subscription to withdraw, and an event would add a second

@@ -50,6 +50,15 @@ Five points that are part of the decision:
    (`DeliveryMetricsHistoryDto.ParseFeatureBreakdown`). D1's objection was to a second *encoding*,
    not to a second table; this keeps the encoding singular.
 
+   **The closure record additionally carries what the daily series does not need but the archived row
+   does** (added 2026-08-21): `HasSufficientData`, `TeamsWithoutForecastJson`, `SelectionMode`,
+   `RuleDefinitionJson` and `RuleSchemaVersion`. Without these, a Delivery archived while
+   un-forecastable would render as CANNOT_FORECAST naming no teams, where on its closure day it read
+   INSUFFICIENT_FORECAST_DATA naming them — the record rewriting itself, which is the single failure
+   this epic exists to remove. `HasSufficientData` defaults to `true` on the DTO, so an absent value
+   does not fail safe; it fails *confident*, which is worse. This is the last cheap moment to add
+   them: same new table, same additive migration.
+
 4. **Archiving state is `Delivery.ArchivedOn` (`DateOnly?`), separate from the pin.** `null` means
    active. Un-archive clears `ArchivedOn` and **leaves the closure row in place**, which is exactly
    AC-05.7. One nullable column carries both the state and the "Archived on {date}" marker, so

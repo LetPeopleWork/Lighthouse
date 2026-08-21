@@ -46,8 +46,30 @@ Four points that are part of the decision:
    `ArchivedDeliveryProjection` can be pinned by a rule asserting it depends on **neither** `Feature`,
    `BlackoutPeriod`, `Delivery`, nor `IForecastService`.
 
-4. **Same DTO out.** The wire contract is unchanged; only the provenance differs. The frontend renders
-   archived and active rows through the same grid and the same client model.
+4. **A distinct DTO out, carrying the Feature rows inline.** *(Corrected 2026-08-21. This point
+   originally read "same DTO out", on the belief that archived and active rows render through the
+   same grid. That was factually wrong and is the most serious defect this ADR shipped.)*
+
+   The Delivery Feature grid is **not** rendered from `DeliveryWithLikelihoodDto`.
+   `useDeliveryManagement.ts` reads `delivery.features` — a `number[]` of live Feature ids — and
+   issues a **separate live GET** of Feature entities, which it hands to `FeatureListDataGrid`. So
+   everything above protected a payload the grid never consumed, and the archived grid had two
+   possible outcomes, both wrong: render empty (the early return when `features` is empty), or carry
+   the live ids and re-fetch live Features — reintroducing precisely the drift this ADR exists to
+   prevent, through a seam it never examined.
+
+   The archived read therefore returns **`ArchivedDeliveryDto`**, which carries its Feature rows
+   inline (from `FeatureBreakdownJson`) and **has no `features: number[]`**. The omission is the
+   structural part: with no ids on the wire, the client has nothing to re-fetch *by*. A new
+   `ArchivedFeatureGrid` consumes `DeliveryFeatureMetricDto` rows directly, keyed on `ReferenceId`.
+
+   **No `FeatureId` is carried, deliberately** — an archived row must not offer navigation to a live
+   entity that may since have moved or been deleted.
+
+   **Columns an archived grid does not have**, because the pin does not hold them: work-item state,
+   type, owning team(s), per-team remaining/total work, per-Feature forecast completion dates, and
+   blocked status. It has Reference, Name, Completion %, Likelihood, Total Items and the default-size
+   flag. D8's "export reads what is on screen" inherits exactly this set.
 
 `ToDto` is a pure function of its two arguments — no clock, no repository, no forecast service. The
 per-Feature rows come from `DeliveryMetricsHistoryDto.ParseFeatureBreakdown(pin.FeatureBreakdownJson)`,
@@ -62,10 +84,12 @@ reused as-is, which is what makes the "one encoding" claim in ADR-160 true rathe
   reintroduce it. It also cannot be pinned by an architecture test, because the enclosing type must
   keep its live-path dependencies.
 
-- **A separate archived DTO type on the wire** (`ArchivedDeliveryDto`). **Rejected** — the two rows
-  render in the same grid with the same columns, so a second wire type forks the client model, the
-  Zod schema and the grid's column definitions to express a distinction the reader does not care
-  about. Provenance is a server-side concern; the rendered row is the same shape either way.
+- **A separate archived DTO type on the wire** (`ArchivedDeliveryDto`). Originally **rejected** on the
+  grounds that "the two rows render in the same grid with the same columns". **That premise was
+  false, and this alternative is now the decision** — see point 4. The two rows do not render in the
+  same grid: the live grid is fed by a separate fetch of `IFeature` entities, and the pinned row is a
+  strictly narrower shape. Forking the client model is the correct cost, because the distinction is
+  one the reader *does* care about — it is the difference between the record and the present.
 
 - **Recompute from the pin at read time** rather than storing the projected values. **Rejected** —
   the pin already holds the computed figures (ADR-160 point 3); recomputing would reintroduce a
