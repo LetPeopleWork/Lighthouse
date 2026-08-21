@@ -164,7 +164,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        [Ignore("pending - DELIVER (epic-5792)")]
         public void Update_ShouldRecordRefreshLogForForecast_WhenPortfolioIsFound()
         {
             var portfolio = CreatePortfolio();
@@ -185,7 +184,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        [Ignore("pending - DELIVER (epic-5792)")]
         public void Update_ShouldRecordHowLongTheForecastRan()
         {
             var portfolio = CreatePortfolio();
@@ -203,7 +201,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        [Ignore("pending - DELIVER (epic-5792)")]
         public void Update_ShouldRecordUnsuccessfulRefreshLog_WhenForecastThrows()
         {
             var portfolio = CreatePortfolio();

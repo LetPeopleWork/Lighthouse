@@ -18,7 +18,7 @@ interface EntityOption {
 	key: string;
 	entityId: number;
 	entityName: string;
-	type: "Team" | "Portfolio";
+	type: RefreshLog["type"];
 }
 
 const ALL_KEY = "__all__";

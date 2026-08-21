@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation
             var orphans = allLogs.Where(log => log.Type switch
             {
                 RefreshType.Team => !existingTeamIds.Contains(log.EntityId),
-                RefreshType.Portfolio => !existingPortfolioIds.Contains(log.EntityId),
+                RefreshType.Portfolio or RefreshType.Forecast => !existingPortfolioIds.Contains(log.EntityId),
                 _ => false
             }).ToList();
 

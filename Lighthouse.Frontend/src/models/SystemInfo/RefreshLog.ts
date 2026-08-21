@@ -1,6 +1,6 @@
 export interface RefreshLog {
 	id: number;
-	type: "Team" | "Portfolio";
+	type: "Team" | "Portfolio" | "Forecast";
 	entityId: number;
 	entityName: string;
 	itemCount: number;
