@@ -1929,6 +1929,415 @@ cycle that first read past it. Warning from the incremental path was rejected: i
 of Features whose stamp moved, and "none of these three carries a link Lighthouse recognises" is an
 ordinary morning rather than evidence of anything. The trade is now stated where the method is defined.
 
+## Wave: DESIGN / [REF] Slice 05 — Prior-Wave Reading Confirmation
+
+Read before designing, with what each settled:
+
+- ✓ `feature-delta.md` — `## Wave: DISCUSS / [REF] Locked Decisions` (D4, D15), `## Wave: DESIGN / [REF] Decisions` (SA-9, SA-11), `## Wave: DESIGN / [REF] Component Decomposition`, `## Wave: DESIGN / [REF] Reuse Analysis`. Source of the contradiction recorded below.
+- ✓ `slices/slice-04-portfolio-dependency-field.md` — its "Why this slice exists", its OUT-of-scope line, its learning-hypothesis verdict, and F-4 (the both-overrides correction).
+- ✓ `docs/product/architecture/adr-157`, `adr-158` — the dependency ingestion and honour-ability decisions.
+- ✓ `JiraWorkTrackingConnector.cs` — `:36` `AllFields = "*all"`, `:43` `SweepFields = "key,updated"`, `:375-380` `ValidateConnection`, `:966` `GetMissingAdditionalFields`, `:1047` `portfolioLinkFieldName`, `:1073`/`:1129` Portfolio-scoped additional-field reads on the Feature path, `:1082-1104` `TheIssuesItWaitsOn` and the renamed-link diagnostic, `:1277` `SetStoredFieldKeys`, `:1309` `GetCustomFieldMappings`, `:1420`/`:1422`/`:1447` `PopulateAdditionalFieldValues`, `:1518` Data Center full-detail URL, `:1542-1553`/`:1616` Cloud full-detail, `:1593-1601`/`:1655-1659` the identity sweep.
+- ✓ `AzureDevOpsWorkTrackingConnector.cs:628` (fetch decision) and `:1089-1108` (`TheDependenciesOf`, the extraction branch) — the reference class.
+- ✓ `DependencyFieldReferences.cs`, `FetchFingerprint.cs:41,:85`, `LinearWorkTrackingConnector.cs:46`.
+- ✓ `acceptance/milestone-4-the-field-this-portfolio-actually-uses.feature` — Background is Azure DevOps only.
+- ⊘ No SPIKE ran for this slice. The one unknown worth a spike — whether the Jira request carries the named field — was answered by reading, not by probing (see SA-18).
+
+## Wave: DESIGN / [REF] Slice 05 — Changed Assumptions
+
+Slice 04 shipped `DependencyOverrideAdditionalFieldDefinitionId` and declared it settled for every
+connector. It is implemented on exactly one. Jira and Linear read native links and ignore the setting
+in silence, while the settings form offers the selector on every Portfolio. The prior wave said so in
+four places, and none of them was wrong on its own terms — which is the interesting part.
+
+**Slice 04's OUT-of-scope line, verbatim** (`slices/slice-04-portfolio-dependency-field.md`):
+
+> Jira and Linear override support beyond what falls out of the shared port — their standard links land in slice 03, and the override is connector-agnostic by construction.
+
+Nothing fell out of the shared port, because **there is no shared port for extraction**. Each connector
+builds `FeatureDependencyReference` itself. "Connector-agnostic by construction" named a construction
+that does not exist in the code; it was an unbacked claim, and no wave artifact ever backed it.
+
+**SA-9, verbatim** (`## Wave: DESIGN / [REF] Decisions`):
+
+> | **SA-9** | Ingestion rides the fetch that already happens — **zero additional requests on ADO, Jira and Linear**. The ADO relations early return now requires **both** overrides set | KPI-3; F-4 | 157 |
+
+SA-9 is *true* and remains true. It is also the whole of what DESIGN ever said about Jira and the
+override — a cost property, not an assignment. It never said Jira reads the field.
+
+**Reuse Analysis Jira/Linear row, verbatim**:
+
+> | `JiraWorkTrackingConnector` / `LinearWorkTrackingConnector` | **EXTEND** | One field-list entry and one GraphQL selection respectively; both are additive to an existing request |
+
+**Component Decomposition Jira row, verbatim**:
+
+> | `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** | Reads `issuelinks` off the response the data fetch already returns — no `fields=` change on either deployment; inward links only; emits `dependency.jira.unknown_link_type` when it recognises none | 03 |
+
+Both rows scope Jira to native links only. **No DESIGN row in any wave assigns
+`DependencyOverrideAdditionalFieldDefinitionId` to any connector but Azure DevOps.** The ADO row is the
+only one that mentions it:
+
+> | `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** | Reads dependency relations from the response it already fetches; the early return now needs **both** overrides set | 01 |
+
+**The mechanism of the defect, and its class.** D4 specified the override once, in one connector's
+vocabulary:
+
+> The connector's behaviour copies `GetParentReferenceForWorkItems` (`AzureDevOpsWorkTrackingConnector.cs:1012-1018`) in shape: when the override is set, **skip the relations fetch entirely** — "no need to load stuff if we have an override anyway" — and read the value from `AdditionalFieldValues` instead.
+
+One named Azure DevOps file, one named line range, and a cost argument ("skip the relations fetch")
+that is true of Azure DevOps and of no other connector. Slice 04 implemented exactly what D4
+described, correctly, and the result served one connector. The class of defect is not "someone forgot
+Jira" — it is **a cross-cutting rule stated in one adapter's idiom becomes one adapter's
+implementation**, and nothing downstream can catch it, because every artifact is individually
+consistent. That is what SA-19 and SA-20 exist to make structurally impossible rather than a thing to
+remember.
+
+`Portfolio` itself was never the problem — its row is correct and unchanged:
+
+> | `Portfolio` | `Models/Portfolio.cs` | **EXTEND** | `DependencyOverrideAdditionalFieldDefinitionId`, third of its kind on this type, plus the `IgnoreDependencies` flag (D16), non-null, default false. **Not** on `IWorkItemQueryOwner` — see F-3 | 04 |
+
+SA-11 stands untouched. The setting is declared in the right place; it is *read* in only one.
+
+## Wave: DESIGN / [REF] Slice 05 — Options Considered
+
+The fork is: **where does the override-vs-native branch live?** Judged on four criteria — does a fourth
+connector inherit the behaviour by default or by remembering; does the Azure DevOps both-overrides
+fetch skip survive intact; is `DependencySource.PortfolioField` still stamped correctly; is the
+no-override path byte-identical on both connectors.
+
+### (a) Per-connector duplication
+
+Copy the shape of `TheDependenciesOf` (`AzureDevOpsWorkTrackingConnector.cs:1089-1108`) into Jira.
+`TheIssuesItWaitsOn` gains a `Portfolio` and the populated work item, and branches locally.
+
+- Smallest diff, lowest risk to Azure DevOps (it is not touched at all).
+- Fourth connector inherits **by remembering**. This is the option that produced the present slice; choosing it again is choosing to run this slice a third time for connector #4.
+- The branch logic — read the field, parse, stamp `PortfolioField`, else use native and stamp `TrackerLink` — would exist twice, in two files, with two sets of tests, free to drift.
+
+### (b) Shared extraction collaborator above the connectors — **RECOMMENDED**
+
+A new pure type in `Services/{Interfaces,Implementation}/Dependencies/` owns the decision. Connectors
+supply what only they can produce — the native references, in their own reference form — and the
+already-populated work item. The collaborator decides override-vs-native and stamps the source.
+
+- Fourth connector still has to *call* it, but the call is a single named type in a namespace whose entire purpose is dependencies, and the choice is **enforceable**: `DependencySource.PortfolioField` may be constructed nowhere else (SA-20). A connector that hand-rolls the branch cannot stamp the right source, and a connector that forgets the collaborator entirely is caught by the cross-connector acceptance generalisation. "By remembering" becomes "by remembering, with two independent alarms".
+- The Azure DevOps fetch skip stays exactly where it is, at `:628`, untouched. Fetch cost is the one genuinely per-connector concern — it depends on whether relations arrive in the same payload — and it stays with the connector that knows its own payload shape.
+- The no-override path becomes byte-identical on both connectors *because there is one branch*, not because two branches were written to match.
+- Symmetric with a shape this epic already accepted: `IDependencyHonourPolicy` / `DependencyHonourPolicy`, "the single honour-ability decision, pure". This is its sibling — the single dependency-**sourcing** decision, pure.
+- Cost: one new interface, one implementation, one registration, and a delegation edit inside Azure DevOps that must leave its behaviour bit-for-bit identical. That last part is the real risk and the reason the regression assertion is an acceptance criterion, not a unit test.
+
+### (c) Reconciler-level application
+
+Connectors always return native references; `DependencyReconciler` (or `WorkItemService.AddOrUpdateFeature`)
+applies the override off the Feature's own `AdditionalFieldValues`.
+
+Attractive on paper — connector #4 would inherit **by default**, the strongest property on offer. It
+fails on three counts:
+
+1. **The connector still needs the Portfolio anyway.** Jira's renamed-link diagnostic (`:1087-1104`) must fall silent when the source is overridden (SA-21). That decision is made at the fetch, in the connector, before any reconciler runs. So (c) does not actually remove connector awareness of the override — it splits it, leaving the diagnostic in the connector and the extraction in the reconciler.
+2. **Split-brain on "is the override set".** The Azure DevOps fetch skip at `:628` must keep reading the setting for cost reasons. Under (c) the extraction reads it somewhere else entirely. Two sites must agree forever about a condition neither owns.
+3. ~~**Unverified precondition.**~~ **Withdrawn — the precondition holds, verified 2026-08-21.** This reason originally read that `AdditionalFieldValues` might be transient and dropped between fetch and reconcile, citing the copy-constructor trap this project has hit before. It was raised as a doubt and never checked, and checking it takes one read: the dictionary is EF-mapped for both `WorkItem` and `Feature` (`LighthouseAppContext.cs:419`, `:424`), `WorkItemBase.Update` clears and re-copies it entry by entry (`:157-160`), and `AddOrUpdateFeature` resolves the stored Feature **before** calling the reconciler (`WorkItemService.cs:1008-1015`), so the values are present at reconcile time. **(c) fails on (1) and (2) alone**, which are architectural and sufficient. Recorded rather than deleted: rejecting an option on a doubt nobody spent a minute confirming is how the adapter-specific reading of D4 survived four slices.
+
+It is also **not a smaller diff**: every connector's construction site changes anyway, because either the
+reconciler restamps a source the connector already set, or connectors stop stamping altogether.
+
+### Recommendation
+
+**(b).** It is the only option that converts "remember to do this in the next connector" into something
+with a failing test attached, and it does so without moving the fetch-cost decision away from the
+connector that owns the payload. (a) is cheaper today and buys a third occurrence of this slice.
+(c) promises connector-agnosticism it cannot deliver, because the diagnostic drags the Portfolio back
+into the connector regardless — which is reason (1), and stands on its own now that (3) is withdrawn.
+
+**ADR: amend ADR-157, do not mint ADR-160.** Slice 05 does not reverse a decision — D4's intent was
+always connector-neutral ("A Portfolio may override which field carries them"). What was wrong is the
+*mechanism*, which D4 stated in one adapter's idiom and ADR-157 inherited. A new ADR would tell a
+future reader, correctly diffing 157 against 160, that the team changed its mind about dependency
+sourcing. It did not. An amendment section on ADR-157 — recording that the override was specified
+once in Azure DevOps vocabulary, implemented on Azure DevOps only, and subsequently relocated to a
+shared collaborator with an enforcement rule — is the honest shape. The amendment lands **with the
+implementation commit**, so the ADR describes shipped code rather than intended code.
+
+## Wave: DESIGN / [REF] Slice 05 — Component Decomposition (delta rows only)
+
+| Component | Path | Action | Notes | Slice |
+|---|---|---|---|---|
+| `IDependencySourceSelector` / `DependencySourceSelector` | `Services/{Interfaces,Implementation}/Dependencies/` | **CREATE NEW** | The single dependency-**sourcing** decision, pure. Given the Portfolio, the populated work item and the connector's native references, returns the effective references and the `DependencySource` that produced them. Sibling to `DependencyHonourPolicy`; no I/O, no connector types in its signature | 05 |
+| `JiraWorkTrackingConnector` | `…/Jira/JiraWorkTrackingConnector.cs` | **EXTEND** | **Supersedes the slice-03 row above**, which scoped Jira to `issuelinks` only. `TheIssuesItWaitsOn` (`:1082-1084`) gains the Portfolio and the populated work item and delegates the branch to the selector. The renamed-link diagnostic (`:1087-1104`) is gated on the effective source being the tracker link. Request shape unchanged on both deployments (SA-18) | 05 |
+| `AzureDevOpsWorkTrackingConnector` | `…/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | **EXTEND** | `TheDependenciesOf` (`:1089-1108`) delegates its branch to the selector. The fetch decision at `:628` and the both-overrides early return (F-4) are **not touched** — fetch cost stays with the connector that owns its payload shape | 05 |
+| `DependencySourceStampingTest` | `Lighthouse.Backend.Tests/Architecture/` | **CREATE NEW** | Asserts `DependencySource.PortfolioField` is constructed nowhere outside `Services/Implementation/Dependencies/`. Purity-test precedent: `Architecture/RuleEvaluatorPurityTest.cs` | 05 |
+
+Interface contract only — internal structure is the crafter's:
+
+```csharp
+public interface IDependencySourceSelector
+{
+    ResolvedDependencyReferences Resolve(
+        Portfolio portfolio,
+        WorkItemBase workItem,
+        IReadOnlyList<string> nativeReferences);
+}
+
+public sealed record ResolvedDependencyReferences(
+    IReadOnlyList<string> References,
+    DependencySource Source);
+```
+
+C4 L1 and L2 are unchanged by this slice — no new container, no new external system, no new
+boundary crossing. The only view that would say anything new is an L3 of the dependencies package,
+catalogued below as a Tier-2 expansion rather than rendered.
+
+## Wave: DESIGN / [REF] Slice 05 — Reuse Analysis — MANDATORY HARD GATE
+
+Default is EXTEND. Every overlap is listed, including the ones that turn out to need no edit, so the
+gate is complete rather than convenient. Contract shape per the effect-isolation classification.
+
+| Existing component | Action | Evidence | Contract shape | Universe | Assertion mechanism |
+|---|---|---|---|---|---|
+| `DependencyFieldReferences.In` | **EXTEND** (no code change) | Already the connector-agnostic comma/semicolon split-and-trim parser, already tested. Slice 05 adds one more call site and no behaviour | pure-function (return-only) | none | Existing NUnit table tests; no new ones owed |
+| `IDependencySourceSelector` / `DependencySourceSelector` | **CREATE NEW** | No existing type decides override-vs-native. Azure DevOps's copy is inline and private inside `TheDependenciesOf`. `DependencyHonourPolicy` is a **different** decision — whether an edge is honoured, given licence and the ignore flag — and folding sourcing into it would couple field parsing to licence semantics on a type Epic #5792 also consults | pure-function (return-only) | none | NUnit table test, no Moq. Purity is the point: it takes data and returns data |
+| `AzureDevOpsWorkTrackingConnector` | **EXTEND** | Delegation only. `:628` and the both-overrides early return unchanged | bounded-change: mutates the Feature's `DependsOnReferences` only | one Feature per call | **The regression gate**: existing Azure DevOps override and native tests must pass unmodified. A test that had to be edited to stay green is a failed delegation |
+| `JiraWorkTrackingConnector` | **EXTEND** | `:1073` and `:1129` already read Portfolio-scoped additional fields on the Feature path; `:1422` already reads `ParentOverrideAdditionalFieldDefinitionId` off the populated values. The precedent is in the same file | bounded-change: the Feature's `DependsOnReferences`, plus one conditional log emission | one Feature per call; one log sink | NUnit over a fixture issue payload for extraction and for diagnostic silence; `JiraDependencyDogfoodTest` (category `JiraIntegration`) for the live probe |
+| `PopulateAdditionalFieldValues` (`:1420`, `:1447`) | **EXTEND** (no code change) | Already populates `AdditionalFieldValues` for every issue, Features included, on both deployments. The dependency override field arrives with the owner and size fields that already work | bounded-change (existing) | the work item's field dictionary | Covered by the Jira extraction tests reading through it |
+| `GetCustomFieldMappings` (`:1309`) / `SetStoredFieldKeys` (`:1277`) | **EXTEND** (no code change) | `GetCustomFieldMappings` resolves additional-field references to custom-field ids against `rest/api/latest/field` and already covers this field, because it is an additional field like any other. `SetStoredFieldKeys` is an unrelated cache of four built-in Jira system fields (`Flagged`, `Rank`, `Epic Link`, `Parent Link`) and is not a site | pure-function / cache | Jira field catalogue | Existing tests |
+| `GetMissingAdditionalFields` (`:966`) / `ValidateConnection` (`:375-380`) | **EXTEND** (no code change) | A mistyped dependency field already surfaces as *"Some additional fields could not be found: …"*, because the override names an additional-field definition on the connection. The validation surface exists; slice 05 inherits it | pure-function over resolved mappings | connection field set | Existing validation tests; confirm coverage rather than add a parallel surface |
+| `DependencySource` enum | **EXTEND** (no code change) | Values are correct. What changes is a **constraint**: `PortfolioField` may be constructed only inside `Services/Implementation/Dependencies/` (SA-20) | value type | n/a | `DependencySourceStampingTest` |
+| `FetchFingerprint` (`:41`, `:85`) | **EXTEND** (no code change) | `:41` already lists `nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId)` and `:85` renders it. Connector-independent, so a Jira Portfolio changing the setting **already** forces a full re-download today. Recorded so nobody adds a second entry and double-counts the field | pure-function | Portfolio settings | Existing fingerprint tests |
+| `LinearWorkTrackingConnector` | **NO CHANGE** | `:46` `GetPredefinedAdditionalFields(…) => []` and the file contains no `AdditionalFieldValues` or `GetAdditionalFieldValue` reference anywhere. Linear has no additional-field support to override *from*. Listed so the gate records a decision rather than an omission | n/a | n/a | n/a |
+| `DependenciesComponent.tsx` | **NO CHANGE this slice** | The selector is inert on Linear Portfolios, but so are the other three additional-field-backed settings on the same connector. Gating one of four is worse than gating none — see SA-23 | n/a | n/a | n/a |
+| `acceptance/milestone-4-the-field-this-portfolio-actually-uses.feature` | **EXTEND** | Its `Background` opens *"Given a Portfolio whose Features are read from Azure DevOps"* and every example uses Azure DevOps ids (`"1234;5678"`). A green suite proved nothing about Jira. DISTILL decides generalise-vs-add | n/a | n/a | See the DISTILL question below |
+
+## Wave: DESIGN / [REF] Slice 05 — Decisions
+
+| ID | Decision | Traces | ADR |
+|---|---|---|---|
+| **SA-18** | **The Jira request shape is untouched by this slice.** Cloud full-detail sends `&fields=*all` (`:36`, `:1542-1553`, `:1616`); Data Center full-detail (`:1518`) names no `fields=` parameter at all and therefore receives every field. The named additional field is already in both responses — which is why `FeatureOwnerAdditionalFieldDefinitionId` (`:1073`) and `SizeEstimateAdditionalFieldDefinitionId` (`:1129`) already work. SA-9's zero-additional-requests property is preserved **by construction, not by care**. The identity sweep (`SweepFields = "key,updated"`, `:43`, `:1593-1601`) is the one narrow request; it reads identity only and never builds a Feature, so it is not a site. **Guard**: narrowing the full fetch to a named field list would silently break both the override and native `issuelinks` on both deployments — see the comment at `:1655-1659` | SA-9; KPI-3 | 157 (amend) |
+| **SA-19** | The override-vs-native decision moves out of the connectors into `IDependencySourceSelector` / `DependencySourceSelector` in `Services/{Interfaces,Implementation}/Dependencies/`. Connectors supply native references in their own reference form plus the populated work item, and keep **only** their own fetch-cost decision. Azure DevOps's `:628` decision and its both-overrides early return (F-4) stay in Azure DevOps | D4; F-4; SA-11 | 157 (amend) |
+| **SA-20** | `DependencySource.PortfolioField` may be constructed nowhere outside `Services/Implementation/Dependencies/`, enforced by `DependencySourceStampingTest`. A connector that hand-rolls the branch cannot stamp the correct source and fails the build. This is the rule that makes SA-19 survive connector #4 | SA-19 | 157 (amend) |
+| **SA-21** | Jira's renamed-link diagnostic (`dependency.jira.unknown_link_type`, `:1087-1104`) is gated on the effective source being the tracker link. Under an override, native links are irrelevant by decision, so the warning is noise **and actively misleading** — it tells an administrator to rename a link type when Lighthouse is not reading link types at all. This is a live defect the slice must fix, not a nicety, and the failing case is the inverse of the obvious one. The diagnostic opens with an **early return** - `if (features.Exists(feature => feature.DependsOnReferences.Count > 0)) { return; }` - so a populated override field fills that same collection and silences it for free. What is not covered is the state an administrator passes through while setting the field up: an override whose field is empty, or whose every entry resolves to nothing, leaves `DependsOnReferences` empty on every Feature, the early return does not fire, and Lighthouse warns that no link is called `is blocked by` - on a Portfolio that is deliberately not reading links | D4; Q3 | 157 (amend) |
+| **SA-22** | On Jira an entry in the override field is an issue key (`LGHTHSDMO-7`), which is exactly `ReferenceId` space. `DependencyFieldReferences.In` is the whole transformation — split on comma or semicolon, trim. **No case fold and no normalisation** are applied; Linear's lower-casing (D14) is Linear's alone. A URL pasted into the field remains unresolved and is skipped alongside typos, per D15's skip-the-unresolvable rule | D15; D14 | 157 |
+| **SA-23** | Linear stays unsupported and the settings-form selector is **not** gated in this slice. Linear cannot serve *any* additional-field-backed setting — the parent override, the Feature owner and the size estimate are inert there for the same reason (`:46` returns `[]`). The honest fix is capability gating for all additional-field-backed settings on connectors without additional-field support, which is a separate story and not a dependency concern. Slice 05 shrinks the blast radius from two connector families to one by making Jira work | Q5 | — |
+| **SA-24** | `FetchFingerprint` is complete for this setting. `:41` registers it and `:85` renders it, connector-independently, so a Jira Portfolio changing the field **already** triggers a full re-download today. No second entry is owed; adding one would double-count the field in the fingerprint | SA-19 | 157 |
+
+## Wave: DESIGN / [REF] Slice 05 — Open questions carried into DISTILL
+
+1. **Generalise `milestone-4-the-field-this-portfolio-actually-uses.feature` across connectors, or add a Jira milestone?** Its `Background` and every example are Azure DevOps. Recommendation: generalise the `Background` to a connector parameter and keep the existing examples, then add **one** Jira-specific scenario for the diagnostic gating (SA-21), which has no Azure DevOps counterpart because Azure DevOps has no renamed-link warning.
+2. **Does the Jira dogfood Portfolio get a real override field on the demo instance, or is the override path covered by fixtures only?** The live instance carries `LGHTHSDMO-7`..`-10` with real `Blocks` links, exercised by `JiraDependencyDogfoodTest`. Adding an override field there costs API calls against a key **shared with CI** — hand-exploring can rate-limit the next CI run. Recommendation: fixtures carry the override path; the live test stays on native links.
+3. **Where does `DependencySourceStampingTest` live** — the existing architecture-test suite or its own? Bears on whether the check runs on every build or only in the architecture pass.
+4. **Scope of the SA-23 follow-up story**: the dependency selector alone, or capability gating for all four additional-field-backed settings at once? The second is the honest fix and is barely larger.
+
+## Wave: DESIGN / [REF] Slice 05 — Tier-2 Expansion Catalog (unrendered)
+
+Available on request; not rendered under lean density.
+
+- `T2-05-A` — Sequence: Jira Feature fetch → `PopulateAdditionalFieldValues` → `DependencySourceSelector.Resolve` → `DependsOnReferences`, both deployments.
+- `T2-05-B` — C4 L3 component view of `Services/{Interfaces,Implementation}/Dependencies/` after SA-19.
+- `T2-05-C` — Full interface contract and record shape for `IDependencySourceSelector`, with the Azure DevOps and Jira call sites side by side.
+- `T2-05-D` — `DependencySourceStampingTest` design: construction-site detection strategy, and why an import-graph rule cannot express it.
+- `T2-05-E` — Jira fixture payload catalogue for the extraction and diagnostic-silence tests.
+- `T2-05-F` — Cross-connector acceptance-scenario generalisation matrix (feeds DISTILL question 1).
+- `T2-05-G` — Additional-field capability-gating analysis across all four settings (feeds SA-23's follow-up story).
+- `T2-05-H` — Reference normalisation sketch for the deferred URL-in-field slice.
+
+## Wave: DISTILL / [REF] Slice 05 — Prior-Wave Reading Confirmation
+
+- ✓ `docs/feature/epic-4365-dependencies/feature-delta.md` — DISCUSS (US-04, AC-4.1…4.7, D4, D15), DESIGN slice-05 sections (SA-18…SA-24, Changed Assumptions, Reuse Analysis, Open questions), DISTILL slice-01…04 sections (scenario list, RED Mechanism, Test Placement, Infrastructure Policy).
+- ✓ `acceptance/milestone-4-the-field-this-portfolio-actually-uses.feature` — the nine US-04 scenarios and six US-10 scenarios this slice must reconcile with.
+- ✓ `acceptance/milestone-3-the-same-thing-on-jira-and-linear.feature` — the epic's own precedent for re-asserting a capability on a second tracker.
+- ✓ `acceptance/milestone-2-…`, `acceptance/epic-boundary.feature` — the `@architecture` scenario idiom and the boundary claim's slice coverage.
+- ✓ `CLAUDE.md`, `docs/ci-learnings.md` conventions — NUnit + Moq + EF InMemory, configurable terminology, comment rules.
+- ⊘ `docs/product/outcomes/registry.yaml` — read, empty stub (`outcomes: []`). See *Register Outcomes* below.
+- ⊘ `docs/feature/epic-4365-dependencies/devops/` — absent for this epic, as at slices 01–04. Default environment matrix inherited from the slice-04 Infrastructure Policy section; no slice-05 environment need.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Wave-Decision Reconciliation
+
+**Zero open contradictions.** Reconciliation ran in the main thread before this wave.
+
+Exactly one contradiction existed and is **RESOLVED**: DESIGN never assigned the dependency override to any tracker but Azure DevOps, while slice 04's brief described the setting as tracker-agnostic. The resolution is recorded in `## Wave: DESIGN / [REF] Slice 05 — Changed Assumptions` — the setting is offered per Portfolio on every connection that has additional fields, and slice 05 makes Jira the second tracker to honour it. No scenario in this wave is written against the pre-resolution reading.
+
+DISCUSS ↔ DESIGN ↔ DEVOPS were re-checked pairwise for slice 05's scope. DEVOPS has no artifacts for this epic, which is a warning and not a blocker: slice 05 introduces no environment, no migration and no deployment surface.
+
+**DESIGN's open questions carried into DISTILL are answered here**, not deferred:
+
+1. *Generalise milestone-4 over the tracker, or a new file?* → **new file**. Reasoning in *Scenario List* below.
+2. *Dogfood or fixtures for the Jira override path?* → **fixtures**. The live `JiraDependencyDogfoodTest` stays on native links. The Jira API key is shared with CI, so hand-exploring the override path against the live instance rate-limits the next backend run, and the 429 surfaces as several unrelated-looking failures of which only one names it.
+3. *Where does `DependencySourceStampingTest` live?* → **its own file in `Lighthouse.Backend.Tests/Architecture/`**, so it runs on every `dotnet test` rather than only an architecture pass. A separate file rather than an extension of `DependencySingleDecisionArchUnitTest.cs`, following that folder's own one-invariant-per-file precedent (`FeatureOrderingSingleSourceArchUnitTest`, `LicenseGateSingleSourceArchUnitTest`, `BlockedItemSinglePathArchUnitTest` are three files for three invariants).
+4. *Scope of the SA-23 follow-up story?* → **left open.** Not DISTILL's call; carried below.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Scenario List (tags)
+
+**Decision on generalisation: a new file, `acceptance/milestone-5-the-same-field-on-jira.feature`. `milestone-4-…` is not edited at all.** The recommendation was to parameterise milestone-4's `Background` over the tracker; this wave declines it, for four reasons:
+
+1. **Gherkin cannot parameterise a `Background`.** Making milestone-4's nine US-04 scenarios run on two trackers means deleting the `Background` and converting every one of them into a `Scenario Outline` carrying a `<tracker>` column. That rewrites nine reviewed scenarios to add a second tracker.
+2. **The reference form must vary in lockstep with the tracker**, so the column is never `<tracker>` alone — it is `<tracker>` plus the entry text. Scenario #37's five-row `<content>/<count>` table becomes a ten-row two-tracker Cartesian, and #41 (the settings form) and #42 (the licence) gain a tracker column that means nothing to them.
+3. **The epic already has this idiom, and it is a separate file.** `milestone-3-the-same-thing-on-jira-and-linear.feature` is precisely "the capability landed on one tracker; here it is on the others". A reader of this epic already knows to look at the next milestone file for the second tracker. Inventing a parameterisation the epic has never used is worse than following the shape it has.
+4. **Slice-04 scenarios would carry slice-05 concerns.** `@slice-04` on a scenario that only became true in slice 05 makes the slice tags stop describing what shipped when.
+
+Where the step text genuinely is tracker-independent, this file uses `Scenario Outline` exactly as milestone-3 does — see #60 over the two Jira deployments.
+
+**Delta rows** (existing 1–50 unchanged; all fifteen live in `milestone-5`):
+
+| # | Scenario | File | Tags | ACs |
+|---|---|---|---|---|
+| 51 | A Jira Portfolio names the field that carries its dependencies, and the Feature list fills in | milestone-5 | `@driving_adapter @us-04 @slice-05` · bounded-change | AC-4.1 on Jira |
+| 52 | Naming a field replaces Jira's own link rather than adding to it | milestone-5 | `@us-04 @slice-05` · unbounded-preservation | **AC-4.2 / D4 — replace, not union** |
+| 53 | Where an entry was read from reads the same on Jira as on Azure DevOps | milestone-5 | `@driving_adapter @us-04 @slice-05` · pure-function | **SA-19 / SA-20 — the stamped source** |
+| 54 | The field is read forgivingly on Jira too, and an empty one is not a problem (× 5 field contents) | milestone-5 | `@edge @us-04 @slice-05` · bounded-change | AC-4.3 on Jira (D15) |
+| 55 | One mistyped key does not throw away the good ones beside it | milestone-5 | `@error @us-04 @slice-05` · bounded-change | AC-4.4 on Jira (D15) |
+| 56 | What was typed in is read as written, and what is not a key names nothing | milestone-5 | `@error @edge @us-04 @slice-05` · bounded-change | **SA-22 — no case fold, no tidying** |
+| 57 | A field name that exists nowhere is caught while the administrator is still looking at it | milestone-5 | `@error @us-04 @slice-05` · pure-function | Reuse row: the existing connection-check surface, confirmed rather than duplicated |
+| 58 | A Portfolio reading a field of its own is not told that its links are named wrong | milestone-5 | `@error @regression @us-04 @slice-05` · unbounded-preservation | **SA-21 — the carrying scenario** |
+| 59 | The same Portfolio, once it names no field, is told about its links again | milestone-5 | `@error @regression @us-04 @slice-05` · bounded-change | SA-21's control; preserves #29 |
+| 60 | Reading the named field costs the refresh no extra question (× Jira Cloud, Jira Data Center) | milestone-5 | `@kpi @real-io @us-04 @slice-05` · unbounded-preservation | **SA-18** / AC-9.6 shape |
+| 61 | Changing the field reads every Feature again, and changing nothing reads only what changed | milestone-5 | `@regression @us-04 @slice-05` · bounded-change | **SA-24 — no second fingerprint entry** |
+| 62 | A Jira Portfolio that names no field behaves exactly as it did before this slice | milestone-5 | `@regression @us-04 @slice-05` · unbounded-preservation | AC-4.5 on Jira |
+| 63 | Azure DevOps is unchanged by the choice moving out of it | milestone-5 | `@regression @us-04 @slice-05` · unbounded-preservation | **SA-19 + F-4 — the delegation regression** |
+| 64 | Exactly one place decides where a dependency was read from | milestone-5 | `@architecture @us-04 @slice-05` · unbounded-preservation | **SA-20 — the enforcement probe** |
+| 65 | A Linear Portfolio goes on reading its own links, undisturbed | milestone-5 | `@edge @regression @us-04 @slice-05` · unbounded-preservation | **SA-23 — Linear stays as it was** |
+
+**Updated totals: seven files, 65 scenarios** (50 through slice 04, plus fifteen for slice 05).
+
+**Error / edge / regression coverage = 43 / 65 = 66.2%** — at or above the 66% the epic ran at before this slice, and well above the ≥40% floor. Ten of the fifteen new scenarios carry `@error`, `@edge` or `@regression` (#54, #55, #56, #57, #58, #59, #61, #62, #63, #65).
+
+**How #58 is set up so that it actually exercises the fix.** The report that names the inward link types Lighthouse did see opens with an early return the moment *any* Feature is waiting on something. A Portfolio whose named field has entries in it therefore silences that report for free, with or without the source gating — a scenario written that way passes identically against the code as it stands today and proves nothing. #58 is deliberately written in the only state the gating is load-bearing for: the named field is **empty on every Feature**, so nothing is waiting on anything and the early return does not fire, while the Features **do** carry inward links under a name Lighthouse does not look for, so the report has every reason to fire and, without the gating, does. #59 is its control in the same chained narrative — clearing the field on the same Portfolio brings the report back, which is what stops the gating being implemented as a deletion.
+
+**`epic-boundary.feature` is not extended, and this is a decision rather than an omission.** Its two scenarios re-assert "nothing in this epic moves a date" per slice, and the row for `slice 04, the Portfolio's own field` is already written tracker-independently. Slice 05 introduces no new source of dependency information — it makes a second tracker honour a source whose boundary claim is already asserted. Adding a `slice 05` row would re-run an identical assertion under a new label.
+
+**AC traceability**: slice 05 adds no acceptance criteria. It re-asserts AC-4.1…4.5 in Jira's reference form and adds coverage for SA-18…SA-24, which are design decisions rather than user-visible criteria — the same relationship #24 and #44 already have to SA-12 and the boundary. AC-4.6 (the settings form) and AC-4.7 (the licence) are tracker-independent and are not re-asserted; #41 and #42 already cover them for every connection.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Adapter Coverage (Mandate 6)
+
+Fixtures carry the override path; the live dogfood test stays on native links (reconciliation answer 2 above). "Real payload shape" below means a recorded Jira issue payload of the shape the refresh already receives — full-detail Cloud (`fields=*all`) and full-detail Data Center (no field list, every field returned) — not a hand-built object graph.
+
+| Driven adapter | Real-payload scenario | Payload shape exercised |
+|---|---|---|
+| Jira Cloud, full detail | #51, #54, #55, #56 | Named additional field present alongside the issue's own links; separators, whitespace, a key that resolves to nothing, a lower-cased key, a pasted address |
+| Jira Data Center, full detail | #60 | The same named field arriving without a field list being asked for — the deployment where a `fields=` change would have been needed and is not |
+| Jira, either deployment | #58 | The uncovered state: named field **empty**, `issuelinks` populated under an inward name that is not `is blocked by` |
+| Jira, either deployment | #62 | No override named — native `issuelinks` read exactly as slice 03 left it |
+| Azure DevOps | #63 | Three Portfolios (field only, no field, both fields) through the moved decision; the relations request is skipped only for the third |
+| Linear | #65 | Unchanged; no additional-field surface exists to exercise |
+| Both deployments, cost | #60 | Request count and shape identical to the pre-setting refresh — SA-18's zero-additional-request claim asserted rather than assumed |
+
+Mandate 6 is satisfied for the adapters this slice touches. No new driven adapter is introduced — `IDependencySourceSelector` is a pure in-process decision with no I/O, so it has no `@real-io` obligation of its own; #64 covers it structurally instead.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Test Placement (delta rows only)
+
+The slice-01…04 placement table stands. Slice 05 changes two of its rows and adds two.
+
+| Artifact | Path | EXTEND / new | Note |
+|---|---|---|---|
+| Jira connector | `…/WorkTrackingConnectors/Jira/JiraDependencyLinkTest.cs` | **EXTEND** | Already the home of Jira dependency extraction. Gains the override cases (#51, #54, #55, #56) and the diagnostic-silence case (#58) with its control (#59). No parallel `JiraDependencyFieldTest.cs` — the same connector reading the same Feature belongs in one file |
+| Source selector (pure) | `…/Services/Implementation/Dependencies/DependencySourceSelectorTest.cs` | **new** | Sits beside `DependencyHonourPolicyTest.cs` and `DependencyCycleDetectorTest.cs`, which are the existing pure-decision tests in that namespace. Covers the override-vs-link choice and the stamped source (#53) independently of any tracker |
+| Architecture seam — source stamping | `Lighthouse.Backend.Tests/Architecture/DependencySourceStampingTest.cs` | **new** | #64. Its own file rather than an extension of `DependencySingleDecisionArchUnitTest.cs`, per that folder's one-invariant-per-file precedent. Runs on every `dotnet test` |
+| Azure DevOps connector | `…/WorkTrackingConnectors/AzureDevOps/AzureDevOpsDependencyRelationTest.cs` | **EXTEND — by nothing** | #63's assertion is that this file's slice-04 cases pass **with nothing altered in them**. If DELIVER finds itself editing an existing case here to keep it green, the delegation changed behaviour and the edit is the report of it. Only genuinely new cases (the three-Portfolio F-4 matrix) may be added |
+| Fetch fingerprint guard | `Lighthouse.Backend.Tests/Architecture/FetchShapingPropertyGuardTest.cs` | **EXTEND — by nothing** | #61. The dependency field is already a registered property and is connector-independent. Slice 05 asserts the existing registration covers Jira; adding a second entry would double-count and force a full download for a change that never happened |
+| Per-slice acceptance | `…/API/Integration/Dependencies/{Slice05JiraFieldScenarios.cs, Slice05JiraFieldSpecifications.cs}` | **new** | Follows the `Slice0N…Scenarios.cs` / `…Specifications.cs` split already established for slices 01–04 |
+| End to end | `Lighthouse.EndToEndTests/tests/specs/features/FeatureDependencies.spec.ts` | **no change** | Slice 05 adds no user-visible surface — the field selector, the count and the detail list all shipped in slice 04. E2E stays the thin sanity check it is |
+| Frontend | — | **no change** | No frontend change in this slice. Stated rather than skipped in silence |
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — RED Mechanism
+
+**Unchanged from the slice-01…04 reconciliation above: RED-by-skip, and no scaffolds are written this slice.**
+
+DISTILL's committed deliverable for slice 05 is `acceptance/milestone-5-the-same-field-on-jira.feature` plus these `[REF]` sections. Nothing was written under `Lighthouse.Backend/`, `Lighthouse.Frontend/` or `Lighthouse.EndToEndTests/`, and no `tests/` directory was created. The executable `[Ignore("pending — DELIVER (epic-4365)")]` NUnit tests are authored in DELIVER alongside the minimal `IDependencySourceSelector` skeleton, so `main` compiles and stays green throughout.
+
+The polyglot Python-pilot artifacts continue not to apply: no `tests/common/state_delta` port, no `assert_state_delta`, no Hypothesis, no `RuleBasedStateMachine`.
+
+**One ordering constraint for DELIVER, from #64's own comment**: the stamping guard must be made to fail on purpose once — by stamping the source from inside a connector — and watched to fail, before it is trusted. A guard nobody has seen fail is an assumption wearing a guard's name, and this one is the whole reason SA-19's delegation survives a fourth tracker.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Register Outcomes
+
+**No outcome registered.** `docs/product/outcomes/registry.yaml` is an empty stub (`outcomes: []`) and no feature in this repository has ever registered a row; the registry has never been adopted here. Slice 05 does not adopt it unilaterally in the middle of an epic whose first four slices registered nothing — that would leave the epic half-registered, which reads as an omission rather than a decision.
+
+Stated explicitly rather than skipped in silence. Adopting the registry is a project-level decision, not a slice-level one.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Open questions carried into DELIVER
+
+1. **The SA-23 follow-up story's scope** — the dependency selector alone, or capability gating for all four additional-field-backed settings on connections without additional-field support. Deliberately left open; not DISTILL's call. Until it is answered, a Linear Portfolio is still offered a dependency field selector that does nothing, and #65 asserts only that Linear's own link reading is undisturbed — it does not bless the ungated selector.
+2. **Where #57's report is raised from.** The reuse analysis says a mistyped field name already surfaces through the existing connection check, and #57 is written as a confirmation of that surface rather than a new one. If DELIVER finds the existing check does not in fact cover a dependency field named on the Portfolio, that is a genuine gap in slice 04, not a slice-05 scenario to satisfy — report it back rather than adding a parallel validation path.
+3. **Whether #63's three-Portfolio matrix belongs in the Azure DevOps connector file or the new selector test.** The scenario spans both — the F-4 skip decision stays in Azure DevOps while the source choice moves out — so it may need a case in each. DELIVER decides at the seam; the constraint that matters is that no existing slice-04 case is edited.
+4. **No untestable upstream criterion was found.** AC-4.1…4.5 all restate cleanly in Jira's reference form. Recorded here rather than in a separate `upstream-issues.md`, per the epic's single-delta convention.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Tier-2 Expansion Catalog (unrendered)
+
+Available on request; not rendered under lean density.
+
+- `T2-D05-A` — Full Gherkin-to-NUnit step mapping for the fifteen slice-05 scenarios, with the fixture payload each one binds to.
+- `T2-D05-B` — Jira fixture payload catalogue: Cloud `fields=*all` and Data Center full-detail bodies for the override, empty-override and renamed-link-name cases.
+- `T2-D05-C` — Edge-case enumeration behind #56: the full set of near-miss entry forms considered (case variants, pasted addresses, project-key-only, trailing punctuation) and why only three are asserted.
+- `T2-D05-D` — Why #58 rather than a populated-field scenario: the early-return trace through the report, and the vacuous-pass proof for the populated variant.
+- `T2-D05-E` — The generalisation matrix that was weighed and rejected: milestone-4 converted to tracker outlines, scenario by scenario, with the resulting Examples tables.
+- `T2-D05-F` — `DependencySourceStampingTest` authoring recipe: how the guard is broken on purpose, what the failure output must name, and why an import-graph rule cannot express it.
+- `T2-D05-G` — Request-shape evidence for SA-18: the before-and-after request inventory per deployment that #60 asserts.
+
+---
+
+## Wave: DISTILL / [REF] Slice 05 — Final Wave Review Gate (4 reviewers, 2026-08-21)
+
+Consolidated review over the slice-05 DESIGN + DISTILL sections. Slices 01–04 passed their own gate on
+2026-08-17 and were context, not subject.
+
+| Reviewer | Wave | Verdict | Findings |
+|---|---|---|---|
+| Eclipse (`nw-product-owner-reviewer`) | DISCUSS fidelity | **needs_revision** | 2 blocker, 3 high, 2 medium |
+| Architect (`nw-solution-architect-reviewer`) | DESIGN | **conditionally_approved** | 1 critical, 2 high, 2 medium, 1 low |
+| Forge (`nw-platform-architect-reviewer`) | platform | **needs_revision** | 1 blocker, 2 critical, 1 high, 1 low |
+| Sentinel (`nw-acceptance-designer-reviewer`) | DISTILL | **conditionally_approved** | 0 blocker, 1 high, 2 low |
+
+**All four reviewers read through a degraded tool path.** lean-ctx triage stripped `.feature` and
+`feature-delta.md` content for every one of them, so each worked partly from pasted extracts. Two of
+Sentinel's four findings trace directly to an extract that elided three scenarios and omitted the Test
+Placement table. Recorded because it changes how much weight a verdict carries: a finding that depends
+on something the reviewer could not see is a question, not a defect.
+
+### Accepted — new decisions
+
+| # | Decision | Raised by | ADR |
+|---|---|---|---|
+| **SA-25** | **Every tracker that can carry dependencies must obtain them through `IDependencySourceSelector`, and that is enforced separately from the stamping rule.** SA-20 constrains where `PortfolioField` may be constructed, which catches a tracker that hand-rolls the branch — but not one that never calls the selector at all, only ever produces tracker-link references, and passes. A `DependencySourceSelectorUsageTest` asserts the call, so the rule is enforced rather than its symptom | Architect (critical) | 157 (amend) |
+| **AC-4.8** | **A Portfolio reading its dependencies from a field it named is not told that its tracker's links are named wrong** — whatever those links are called, and whether or not the named field yields anything. Scenarios #58 and #59 carry it | Eclipse (high) | — |
+
+### Accepted — corrections to this delta
+
+- **Option (c)'s third rejection reason is withdrawn.** `AdditionalFieldValues` is EF-mapped and copied by `Update`, and the stored Feature is resolved before the reconciler runs, so the precondition holds. (c) still fails on reasons (1) and (2). Corrected in place above.
+- **D15's Linear premise is void, and no gate has reviewed the narrowing.** D15 names "identifiers on Linear" as a valid entry form and slice 04's brief says the setting "serves ADO, Jira and Linear instances". Neither is true: `LinearWorkTrackingConnector` returns an empty predefined-field list (`:46`) and never populates `AdditionalFieldValues` anywhere, so a Linear Portfolio cannot read any additional field, this one included. **Audited at Eclipse's request: the 2026-08-17 review gate contains no mention of Linear and predates the discovery**, so this narrowing has never been reviewed by anyone. Recorded here as an amendment to D15 rather than left inside SA-23, because it removes a tracker the epic told a reader it served.
+- **"Slice 05 adds no acceptance criteria" was too strong.** Narrowing a diagnostic is user-visible behaviour and now carries AC-4.8. The rest of the sentence stands: AC-4.1…4.5 are re-asserted in Jira's reference form and AC-4.6/4.7 are tracker-independent.
+- **ADR-157's amendment must separate intent from specification.** It reads: D4 was correctly specific to Azure DevOps when written, because that was the only tracker supported then; the principle — a Portfolio may override which field carries its dependencies — was always tracker-neutral. Without that sentence the amendment reads as a retcon of what D4 meant.
+
+### Accepted — carried into DELIVER
+
+1. **Shipping slice 05 changes live data with no user gesture** (Forge, blocker). Portfolios that named a Jira dependency field under slice 04 have had that setting saved and ignored. Their next refresh after slice 05 starts reading it, and their dependencies change without anyone touching a setting — appearing, in the case Forge names, on a Portfolio whose users had concluded it had none. This needs a release-note line naming the affected population and what they will see. Drafted in `release-note-lines.md`.
+2. **Rolling slice 05 back leaves the same surprise in reverse** (Forge, high). The setting persists; reverting the code returns those Portfolios to ignoring a field they can see is set. Clean to execute, confusing to receive — the runbook needs the stakeholder-notification step.
+3. **The narrowed diagnostic needs a replacement signal** (Forge, critical). Once the report is gated, a Jira Portfolio on named-field mode returning nothing cannot be told apart from one whose field is empty. One INFO line per refresh naming the Portfolio, the field and the count read — not a warning, because an empty field is an ordinary state.
+4. **The inert selector on Linear Portfolios** (Eclipse, Architect, and the standing SA-23). Three reviewers raised it independently. It stays ungated this slice for the reason SA-23 gives, and it is recorded as a known limitation in the release notes rather than left for a user to discover. No ADO story is opened — the maintainer's call.
+5. **Nothing prevents this defect class recurring** (Architect, medium). A rule that spans trackers, written in one tracker's idiom, becomes one tracker's implementation, and each document reads as consistent on its own. The candidate gate: a decision naming a behaviour every connector must have names each connector explicitly, with its fetch cost and its decision point. Not adopted here — it changes how DESIGN is reviewed for every feature, which is not a slice-level call.
+
+### Rejected, with reasons
+
+- **Sentinel, high — "#64 asserts code structure; move it to an ArchUnit rule."** #24 in `milestone-2` is the same shape, down to `When the codebase is examined`, and Sentinel approved it at the 2026-08-17 gate. The Test Placement table already routes #64 to `Architecture/DependencySourceStampingTest.cs`, so the recommendation is what the plan says; the reviewer did not have that table. Acting on it would leave #64 inconsistent with #24 in the same suite.
+- **Sentinel, low — "#60's `@kpi` tag suggests DEVOPS scope."** `milestone-1`, `-2` and `-3` all carry `@kpi @real-io`. #60 asserts a functional guarantee — no additional request, identical request shape — not an infrastructure measurement.
+- **Eclipse, medium ×2 — "add ACs for replace-not-union and skip-unresolvable on Jira."** Both already have acceptance criteria: #52 traces to AC-4.2 and #55 to AC-4.4, each re-asserted in Jira's reference form. New numbers for existing rules would duplicate them.
+- **Eclipse, part of blocker 2 — "an empty override still warns, a residual gap."** This misreads SA-21. The uncovered state is what the fix *covers*; "not covered" describes today's code. #58 asserts exactly that state.
+- **Forge, critical — shared-key rate-limit exposure.** Already answered: the override path is fixture-only and the live dogfood test stays on native links.
+
+---
+
 ## Next Wave
 
 **Handoff → DELIVER** (`nw-software-crafter`, object-oriented). Slice order is 01 → 02 → 03 → 04, each
