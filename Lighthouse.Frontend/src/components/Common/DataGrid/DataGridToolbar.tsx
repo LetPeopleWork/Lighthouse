@@ -6,7 +6,7 @@ import { Box, IconButton, Tooltip } from "@mui/material";
 import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useState } from "react";
-import type { DataGridToolbarProps } from "./types";
+import type { DataGridExportHeaderRow, DataGridToolbarProps } from "./types";
 
 const generateFileName = (exportFileName?: string): string => {
 	const timestamp = new Date().toISOString().split("T")[0];
@@ -39,6 +39,7 @@ const formatCellValue = (value: unknown): string => {
 const useDataGridExport = (
 	apiRef: ReturnType<typeof useGridApiContext>,
 	canUsePremiumFeatures: boolean,
+	exportHeaderRows?: readonly DataGridExportHeaderRow[],
 ) => {
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
 
@@ -66,12 +67,34 @@ const useDataGridExport = (
 
 		try {
 			const { headers, dataRows } = getGridData();
-			const allRows = [headers, ...dataRows];
+			const headerBlock = (exportHeaderRows ?? []).map((row) => [
+				row.label,
+				row.value,
+			]);
+			const allRows = [
+				...headerBlock,
+				...(headerBlock.length > 0 ? [[]] : []),
+				headers,
+				...dataRows,
+			];
 
 			const textContent = allRows.map((row) => row.join("\t")).join("\n");
 
+			const headerBlockHtml = headerBlock
+				.map(
+					([label, value]) =>
+						`<tr><td style="font-weight: bold;">${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`,
+				)
+				.join("");
+			const spacerHtml =
+				headerBlock.length > 0
+					? `<tr><td colspan="${headers.length}"></td></tr>`
+					: "";
+
 			const htmlContent = `
 				<table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse;">
+					${headerBlockHtml}
+					${spacerHtml}
 					<thead>
 						<tr>
 							${headers.map((h) => `<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;">${escapeHtml(h)}</th>`).join("")}
@@ -106,7 +129,7 @@ const useDataGridExport = (
 		} catch (error) {
 			console.error("Failed to copy to clipboard:", error);
 		}
-	}, [getGridData, canUsePremiumFeatures]);
+	}, [getGridData, canUsePremiumFeatures, exportHeaderRows]);
 
 	const handleExportToCSV = useCallback(
 		async (fileName: string) => {
@@ -121,7 +144,16 @@ const useDataGridExport = (
 				const csvRows = dataRows.map((row) =>
 					row.map((element) => escapeCSV(element)),
 				);
-				const allRows = [headers, ...csvRows];
+				const headerBlock = (exportHeaderRows ?? []).map((row) => [
+					escapeCSV(row.label),
+					escapeCSV(row.value),
+				]);
+				const allRows = [
+					...headerBlock,
+					...(headerBlock.length > 0 ? [[]] : []),
+					headers.map((header) => escapeCSV(header)),
+					...csvRows,
+				];
 				const csvContent = allRows.map((row) => row.join(",")).join("\n");
 
 				const bom = "\uFEFF";
@@ -141,7 +173,7 @@ const useDataGridExport = (
 				console.error("Failed to export CSV:", error);
 			}
 		},
-		[getGridData, canUsePremiumFeatures],
+		[getGridData, canUsePremiumFeatures, exportHeaderRows],
 	);
 
 	return {
@@ -155,6 +187,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	canUsePremiumFeatures = false,
 	enableExport = false,
 	exportFileName,
+	exportHeaderRows,
 	onResetLayout,
 	onOpenColumnOrder,
 	allowColumnReorder = false,
@@ -163,7 +196,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	const apiRef = useGridApiContext();
 
 	const { copyStatus, handleCopyToClipboard, handleExportToCSV } =
-		useDataGridExport(apiRef, canUsePremiumFeatures);
+		useDataGridExport(apiRef, canUsePremiumFeatures, exportHeaderRows);
 
 	const getCopyTooltipText = () => {
 		if (!canUsePremiumFeatures) {

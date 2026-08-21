@@ -55,6 +55,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
+	/** Key-value lines placed above the grid's own header row, separated from it by a blank row. */
+	exportHeaderRows?: readonly DataGridExportHeaderRow[];
 	/** Whether the user can reorder columns using the Column Order dialog (default: true) */
 	allowColumnReorder?: boolean;
 	/** Custom actions to display in the toolbar */
@@ -83,6 +85,12 @@ export interface PersistedGridState {
 /**
  * Props for DataGridToolbar component
  */
+/** One key-value line emitted above a grid's own header row when a grid exports more than its rows. */
+export interface DataGridExportHeaderRow {
+	label: string;
+	value: string;
+}
+
 export interface DataGridToolbarProps {
 	/** Whether user has premium features available */
 	canUsePremiumFeatures?: boolean;
@@ -90,6 +98,8 @@ export interface DataGridToolbarProps {
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
+	/** Key-value lines placed above the grid's own header row, separated from it by a blank row. */
+	exportHeaderRows?: readonly DataGridExportHeaderRow[];
 	/** Reset layout handler */
 	onResetLayout?: () => void;
 	/** Open column order dialog */

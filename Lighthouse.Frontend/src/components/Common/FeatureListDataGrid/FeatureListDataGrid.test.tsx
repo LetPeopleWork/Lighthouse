@@ -66,6 +66,45 @@ const createFeature = (
 
 const defaultColumns = [createForecastsColumn(), createStateColumn()];
 
+describe("FeatureListDataGrid export plumbing", () => {
+	// This grid forwarded none of the export props, so the Delivery grid had no export button at
+	// all. The forwarding is the whole precursor — assert it rather than the toolbar's behaviour.
+	it("offers the two ways out when a grid asks for them", () => {
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={[createFeature({ id: 1, name: "Checkout redesign" })]}
+					columns={[createStateColumn()]}
+					storageKey="export-on-grid"
+					hideCompletedStorageKey="export-on-hide-completed"
+					enableExport={true}
+					exportFileName="Q3 Platform"
+					exportHeaderRows={[{ label: "Delivery", value: "Q3 Platform" }]}
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(screen.getByTestId("copy-button")).toBeInTheDocument();
+		expect(screen.getByTestId("export-button")).toBeInTheDocument();
+	});
+
+	it("offers neither when a grid does not ask", () => {
+		render(
+			<MemoryRouter>
+				<FeatureListDataGrid
+					features={[createFeature({ id: 1, name: "Checkout redesign" })]}
+					columns={[createStateColumn()]}
+					storageKey="export-off-grid"
+					hideCompletedStorageKey="export-off-hide-completed"
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(screen.queryByTestId("copy-button")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("export-button")).not.toBeInTheDocument();
+	});
+});
+
 describe("FeatureListDataGrid", () => {
 	beforeEach(() => {
 		localStorage.clear();

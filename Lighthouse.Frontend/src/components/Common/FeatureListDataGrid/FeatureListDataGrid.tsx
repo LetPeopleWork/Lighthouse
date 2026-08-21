@@ -35,6 +35,9 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	getActiveWorkTeams,
 	showPosition = false,
 	onOrderChanged,
+	enableExport = false,
+	exportFileName,
+	exportHeaderRows,
 }) => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -136,6 +139,9 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 				storageKey={storageKey}
 				loading={loading}
 				emptyStateMessage={emptyStateMessage}
+				enableExport={enableExport}
+				exportFileName={exportFileName}
+				exportHeaderRows={exportHeaderRows}
 				onSortModelChange={(model) => setIsSortActive(model.length > 0)}
 			/>
 		</TableContainer>

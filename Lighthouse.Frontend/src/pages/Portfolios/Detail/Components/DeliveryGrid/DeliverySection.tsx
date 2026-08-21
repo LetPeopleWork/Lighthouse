@@ -24,7 +24,10 @@ import DeliveryEpicSizeChart from "../../../../../components/Common/Charts/Deliv
 import DeliveryFeverChart from "../../../../../components/Common/Charts/DeliveryFeverChart";
 import DeliveryPredictabilityChart from "../../../../../components/Common/Charts/DeliveryPredictabilityChart";
 import EnlargeableChart from "../../../../../components/Common/Charts/EnlargeableChart";
-import type { DataGridColumn } from "../../../../../components/Common/DataGrid/types";
+import type {
+	DataGridColumn,
+	DataGridExportHeaderRow,
+} from "../../../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
 	createStateColumn,
@@ -56,6 +59,7 @@ import {
 import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
+import { buildDeliveryExportHeaderRows } from "./deliveryExportHeader";
 
 export const MINIMUM_METRIC_SNAPSHOTS = 3;
 
@@ -151,6 +155,15 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+
+	const exportHeaderRows = useMemo(
+		() =>
+			buildDeliveryExportHeaderRows(delivery, {
+				deliveryTerm,
+				workItemsTerm,
+			}),
+		[delivery, deliveryTerm, workItemsTerm],
+	);
 
 	const isRuleBased =
 		delivery.selectionMode === DeliverySelectionMode.RuleBased ||
@@ -503,6 +516,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								deliveryId={delivery.id}
 								featuresTerm={featuresTerm}
 								deliveryTerm={deliveryTerm}
+								exportFileName={delivery.name}
+								exportHeaderRows={exportHeaderRows}
 							/>
 						)}
 						{activeTab === "metrics" && (
@@ -534,6 +549,8 @@ interface WorkItemsTabProps {
 	deliveryId: number;
 	featuresTerm: string;
 	deliveryTerm: string;
+	exportFileName: string;
+	exportHeaderRows: readonly DataGridExportHeaderRow[];
 }
 
 const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
@@ -543,6 +560,8 @@ const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
 	deliveryId,
 	featuresTerm,
 	deliveryTerm,
+	exportFileName,
+	exportHeaderRows,
 }) => {
 	if (isLoadingFeatures) {
 		return (
@@ -569,6 +588,9 @@ const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_delivery_${deliveryId}`}
 				loading={false}
 				emptyStateMessage={`No ${featuresTerm} found`}
+				enableExport={true}
+				exportFileName={exportFileName}
+				exportHeaderRows={exportHeaderRows}
 			/>
 		</Box>
 	);
