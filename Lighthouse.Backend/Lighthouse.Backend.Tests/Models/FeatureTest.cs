@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Dependencies;
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -15,6 +16,45 @@ namespace Lighthouse.Backend.Tests.Models
         /// </summary>
         private static readonly FakeLighthouseClock Clock =
             new(new DateTimeOffset(2026, 7, 27, 10, 0, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
+
+        /// <summary>
+        /// A connector builds a Feature out of what a tracker just handed over, which never includes who
+        /// is working on it - the work is matched to Teams later, by the service that has both in hand.
+        /// So a freshly mapped Feature carries its links and no work at all, and that is the ordinary
+        /// state rather than a half-built object. Pinned because it reads like a defect on sight, and the
+        /// constructor that takes only the links is the one that invites the second look.
+        /// </summary>
+        [Test]
+        public void AFeatureBuiltFromNothingButItsLinks_CarriesThemAndNoWorkYet()
+        {
+            var links = new[] { new FeatureDependencyReference(0, "PROJ-1", DependencySource.TrackerLink) };
+
+            var feature = new Feature(links);
+
+            var expected = new[] { "PROJ-1" };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.DependsOnReferences.Select(reference => reference.ReferenceId), Is.EqualTo(expected));
+                Assert.That(feature.FeatureWork, Is.Empty);
+            }
+        }
+
+        /// <summary>
+        /// The same emptiness the constructor above leaves, from the constructor that takes nothing. The
+        /// two have to agree, or which one a connector happens to call would decide what a Feature knows.
+        /// </summary>
+        [Test]
+        public void AFeatureBuiltFromNothingAtAll_CarriesNoWorkAndNoLinks()
+        {
+            var feature = new Feature();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.FeatureWork, Is.Empty);
+                Assert.That(feature.DependsOnReferences, Is.Empty);
+            }
+        }
 
         [Test]
         public void GetLikelihoodForFeature_FeatureHasNoRemainingWork_Returns100()

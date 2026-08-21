@@ -1902,6 +1902,33 @@ workspace both with and without the new connection.
 Both trackers now have a dogfood test that reads the real instance and asserts the whole shape,
 including the Features that must wait on nothing.
 
+### Slice 03 review gate — 2026-08-21
+
+The crafter reviewer rejected the slice on three blockers. All three were checked against the source
+rather than accepted, and none of them holds. Recorded here because each is a plausible reading that
+will be made again.
+
+- **"`InwardNameOf` can return null, so the comparison throws."** It cannot. Every failure path returns
+  `string.Empty` and the last line is `?? string.Empty`. The nine parameterised malformed-payload cases
+  include `{"type": {"inward": null}, …}` and pass.
+- **"The new one-argument `Feature` constructor leaves `FeatureWork` empty, so no Linear Feature can be
+  forecast."** `FeatureWork` was empty on that path before this slice too: the old code used the
+  parameterless constructor, which chains to the remaining-work one with an empty collection. A
+  connector never knows who is working on a Feature — the work is matched to Teams later, by the service
+  that holds both. The claim describes the design of the Feature mapping, not a regression, and the live
+  Linear dogfood test returns Features that resolve. Two tests now pin the emptiness so the reading does
+  not have to be re-made.
+- **"Azure DevOps may be affected."** Only `CreateFeatureFromProject` on Linear calls the new
+  constructor. Azure DevOps and Jira both call `Feature(WorkItemBase, IEnumerable<…>)`, CSV calls
+  `Feature(WorkItemBase)`, and no file under the Azure DevOps connector was opened by this slice.
+
+**One finding was real and is now written down rather than changed.** The renamed-link-type warning is
+asked only by the whole-query fetch. On an instance running incremental sync, the refresh usually takes
+the by-reference-id path, so a rename is reported the next time the whole query runs rather than on the
+cycle that first read past it. Warning from the incremental path was rejected: it downloads the handful
+of Features whose stamp moved, and "none of these three carries a link Lighthouse recognises" is an
+ordinary morning rather than evidence of anything. The trade is now stated where the method is defined.
+
 ## Next Wave
 
 **Handoff → DELIVER** (`nw-software-crafter`, object-oriented). Slice order is 01 → 02 → 03 → 04, each

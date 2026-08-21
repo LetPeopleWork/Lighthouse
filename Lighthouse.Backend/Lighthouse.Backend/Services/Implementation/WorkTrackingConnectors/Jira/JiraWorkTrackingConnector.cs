@@ -1091,6 +1091,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// Nothing is said when some link did match, or when the Portfolio carries no inward links at
         /// all: having no dependencies is the ordinary case, and warning about it would train the reader
         /// to skip the line that matters. One line for the whole refresh, never one per issue.
+        ///
+        /// Only the whole-query fetch asks this, and deliberately so. The incremental fetch downloads the
+        /// handful of Features whose stamp moved, and "none of these three carries a link Lighthouse
+        /// recognises" is an ordinary morning rather than evidence of anything. The trade is real and
+        /// worth knowing: on an instance running incremental sync, a rename is reported the next time the
+        /// whole query runs, not on the cycle that first read past it.
         /// </summary>
         private void ReportLinksThatMeantNothingHere(Portfolio portfolio, IEnumerable<Issue> issues, List<Feature> features)
         {

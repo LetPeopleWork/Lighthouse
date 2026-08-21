@@ -1,0 +1,27 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "since": {
+      "enabled": true,
+      "target": "slice03-baseline"
+    },
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "FullyQualifiedName~Dependenc|FullyQualifiedName~Jira|FullyQualifiedName~Linear",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
