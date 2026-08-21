@@ -124,4 +124,8 @@ describe("createWarningsColumn sorts on everything the icons show", () => {
 	it("sorts a row that has no dependency list at all as clear", () => {
 		expect(sortsAsWarning(aRow({ dependsOn: undefined }))).toBe(false);
 	});
+
+	it("stays sortable, which is the whole reason the predicate above exists", () => {
+		expect(createWarningsColumn().sortable).toBe(true);
+	});
 });

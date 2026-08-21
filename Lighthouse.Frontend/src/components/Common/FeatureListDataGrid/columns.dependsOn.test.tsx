@@ -178,6 +178,22 @@ describe("createDependsOnColumn", () => {
 		expect(screen.getByTestId("dependency-set-aside")).toBeInTheDocument();
 	});
 
+	// Most Features wait on nothing at all, and a row that has never been refreshed carries no list
+	// rather than an empty one.
+	it("prints nothing for a row that has no dependency list at all", () => {
+		const { container } = renderCell(feature(undefined));
+
+		expect(container.textContent).toBe("");
+	});
+
+	// The cell is found by this in the end-to-end tests, so the name of it is behaviour rather than
+	// decoration.
+	it("labels each entry with the Feature the row is about", () => {
+		renderCell(feature([aDependency()]));
+
+		expect(screen.getAllByTestId("depends-on-FTR-1")).toHaveLength(1);
+	});
+
 	it("marks nothing as set aside when the dependencies are being acted on", () => {
 		renderCell(feature([aDependency(), aDependency({ referenceId: "FTR-8" })]));
 

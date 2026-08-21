@@ -108,6 +108,29 @@ describe("DependenciesComponent", () => {
 
 	// Both settings are things most instances never touch, so the group is closed until somebody goes
 	// looking for it.
+	// A connection whose fields have not loaded yet, or that defines none, still has to render the form.
+	it("offers no fields when the connection defines none", () => {
+		render(
+			<DependenciesComponent
+				projectSettings={createMockProjectSettings()}
+				onProjectSettingsChange={vi.fn()}
+			/>,
+		);
+		openTheGroup();
+
+		expect(openTheFieldList().getByText("None")).toBeInTheDocument();
+		expect(screen.queryByText("Waits On")).not.toBeInTheDocument();
+	});
+
+	// Which field a Portfolio reads its dependencies from decides what the whole column contains, so it
+	// has to be readable without opening the list to find out.
+	it("shows the field a Portfolio has already named", () => {
+		renderIt({ dependencyOverrideAdditionalFieldDefinitionId: 1 });
+		openTheGroup();
+
+		expect(screen.getByRole("combobox")).toHaveTextContent("Waits On");
+	});
+
 	it("keeps the group closed until it is asked for", () => {
 		renderIt();
 
