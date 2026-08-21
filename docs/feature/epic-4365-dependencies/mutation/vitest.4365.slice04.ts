@@ -20,6 +20,9 @@ export default defineConfig({
 			"src/components/Common/FeatureListDataGrid/WarningsIndicator.test.tsx",
 			"src/components/Common/FeatureListDataGrid/columns.dependsOn.test.tsx",
 			"src/components/Common/ProjectSettings/Advanced/DependenciesComponent.test.tsx",
+			"src/components/Common/FeatureListDataGrid/columns.warnings.test.tsx",
+			"src/models/FeatureDependency.test.ts",
+			"src/utils/dependencies/dependencySentences.test.ts",
 		],
 		exclude: [
 			"**/node_modules/**",

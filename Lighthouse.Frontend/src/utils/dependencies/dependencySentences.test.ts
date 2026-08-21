@@ -1,0 +1,101 @@
+import { describe, expect, it } from "vitest";
+import { NOT_HONOURED_REASONS } from "../../models/FeatureDependency";
+import {
+	type DependencyTerms,
+	positionedBelowSentence,
+	reasonSentence,
+	withheldName,
+} from "./dependencySentences";
+
+const terms: DependencyTerms = {
+	featureTerm: "Feature",
+	portfolioTerm: "Portfolio",
+};
+
+// Every renamed word is a word an instance may already use for something else, so the sentences are
+// built from the instance's own vocabulary rather than written out.
+const renamedTerms: DependencyTerms = {
+	featureTerm: "Initiative",
+	portfolioTerm: "Programme",
+};
+
+describe("reasonSentence", () => {
+	// Four reasons, four sentences. A reader meeting the same words for two different reasons has been
+	// told nothing: the whole point of the reason is that it says which of them applies.
+	it("says something different for every reason there is", () => {
+		const sentences = NOT_HONOURED_REASONS.map((reason) =>
+			reasonSentence(reason, "Warehouse sync", terms),
+		);
+
+		expect(new Set(sentences).size).toBe(NOT_HONOURED_REASONS.length);
+	});
+
+	it("says a Feature outside every shared Portfolio is left out of the forecast", () => {
+		expect(
+			reasonSentence("OutsideThisPortfolio", "Warehouse sync", terms),
+		).toBe(
+			"This Feature depends on Warehouse sync, which is in no Portfolio they share. That dependency is not included in the forecast.",
+		);
+	});
+
+	it("says two Features waiting on each other are left out of the forecast", () => {
+		expect(reasonSentence("InALoop", "Warehouse sync", terms)).toBe(
+			"This Feature and Warehouse sync are waiting on each other. That dependency is not included in the forecast.",
+		);
+	});
+
+	it("says a Feature with nothing measured behind it cannot be given a date", () => {
+		expect(
+			reasonSentence("BlockerCannotBeForecast", "Warehouse sync", terms),
+		).toBe(
+			"Warehouse sync has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
+		);
+	});
+
+	// The one reason that is nobody's problem to fix. It says what was chosen and that nothing was lost
+	// by choosing it, and it deliberately does not tell the reader the dependency is broken.
+	it("says a dependency set aside is not acted on and has not been deleted", () => {
+		expect(reasonSentence("IgnoredByPortfolio", "Warehouse sync", terms)).toBe(
+			"This Portfolio is set to ignore its dependencies, so the wait on Warehouse sync is not acted on. Nothing has been deleted.",
+		);
+	});
+
+	it("uses the words this instance calls things by", () => {
+		const sentence = reasonSentence(
+			"IgnoredByPortfolio",
+			"Warehouse sync",
+			renamedTerms,
+		);
+
+		expect(sentence).toContain("Programme");
+		expect(sentence).not.toContain("Portfolio");
+	});
+
+	// The word this product reserves for an item held up right now is renameable, and both meanings
+	// would follow one rename onto the same screen.
+	it("never borrows the word an instance may already have renamed for board-blocked work", () => {
+		for (const reason of NOT_HONOURED_REASONS) {
+			expect(reasonSentence(reason, "Warehouse sync", terms)).not.toMatch(
+				/block/i,
+			);
+		}
+	});
+});
+
+describe("positionedBelowSentence", () => {
+	it("says where the Feature waited on sits, and nothing about leaving it out", () => {
+		const sentence = positionedBelowSentence("Warehouse sync", terms);
+
+		expect(sentence).toBe(
+			"This Feature depends on Warehouse sync, which sits below it in the order.",
+		);
+		expect(sentence).not.toContain("not included in the forecast");
+	});
+});
+
+describe("withheldName", () => {
+	it("names a Feature the reader may not see by what they can be told about it", () => {
+		expect(withheldName(terms)).toBe("a Feature you do not have access to");
+		expect(withheldName(renamedTerms)).toContain("Initiative");
+	});
+});

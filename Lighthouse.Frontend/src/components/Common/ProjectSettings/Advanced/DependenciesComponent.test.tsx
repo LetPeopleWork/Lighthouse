@@ -106,6 +106,55 @@ describe("DependenciesComponent", () => {
 		);
 	});
 
+	// Both settings are things most instances never touch, so the group is closed until somebody goes
+	// looking for it.
+	it("keeps the group closed until it is asked for", () => {
+		renderIt();
+
+		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+	});
+
+	// The page renders before the settings have arrived. Reaching into them would blank the form with a
+	// crash rather than show it empty.
+	it("renders before there are any settings to show", () => {
+		render(
+			<DependenciesComponent
+				projectSettings={null}
+				onProjectSettingsChange={vi.fn()}
+				additionalFieldDefinitions={theConnectionsFields}
+			/>,
+		);
+		openTheGroup();
+
+		expect(screen.getByLabelText("Ignore Dependencies")).not.toBeChecked();
+	});
+
+	// Comma or semicolon is the whole contract of the field, and it is a field somebody fills in by
+	// hand. Saying it anywhere other than beside the control means saying it in documentation nobody
+	// opens while they are typing.
+	it("says what the field is expected to contain, beside the field", () => {
+		renderIt();
+		openTheGroup();
+
+		expect(
+			screen.getByText(
+				"Read what each Feature waits on from this field, separated by commas or semicolons, instead of from the links in your work tracking system.",
+			),
+		).toBeInTheDocument();
+	});
+
+	// Ignoring is not hiding, and a reader who thinks it deletes their dependencies will not use it.
+	it("says the dependencies stay visible when they are set aside", () => {
+		renderIt();
+		openTheGroup();
+
+		expect(
+			screen.getByText(
+				"Ignore Dependencies (Features still show what they wait on, but this Portfolio does not act on any of it)",
+			),
+		).toBeInTheDocument();
+	});
+
 	it("shows the switch as on for a Portfolio that has set its dependencies aside", () => {
 		renderIt({ ignoreDependencies: true });
 		openTheGroup();
