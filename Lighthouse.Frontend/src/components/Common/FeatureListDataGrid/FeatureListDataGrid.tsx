@@ -97,7 +97,10 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		createWarningsColumn(),
 		...(activeWorkColumn ? [activeWorkColumn] : []),
 		...surfaceColumns,
-		createDependsOnColumn(),
+		createDependsOnColumn({
+			featureTerm: getTerm(TERMINOLOGY_KEYS.FEATURE),
+			portfolioTerm: getTerm(TERMINOLOGY_KEYS.PORTFOLIO),
+		}),
 		// The two surfaces that show a place are the two that let you change it, so one flag names both
 		// and neither caller passes the menu in.
 		...(showPosition

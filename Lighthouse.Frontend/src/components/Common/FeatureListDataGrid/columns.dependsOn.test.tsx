@@ -3,7 +3,14 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
 import type { IFeatureDependency } from "../../../models/FeatureDependency";
+import type { DependencyTerms } from "../../../utils/dependencies/dependencySentences";
 import { createDependsOnColumn, createStateColumn } from "./columns";
+
+const THE_DEFAULT_TERMS: DependencyTerms = {
+	featureTerm: "Feature",
+	portfolioTerm: "Portfolio",
+};
+
 import FeatureListDataGrid from "./FeatureListDataGrid";
 
 vi.mock("../../../hooks/useFeatureOrdering", () => ({
@@ -77,7 +84,7 @@ const feature = (dependsOn: IFeatureDependency[] = []): IFeature =>
 	}) as unknown as IFeature;
 
 const renderCell = (row: IFeature) => {
-	const column = createDependsOnColumn();
+	const column = createDependsOnColumn(THE_DEFAULT_TERMS);
 	return render(
 		column.renderCell?.({ row, value: (row.dependsOn ?? []).length }),
 	);
@@ -152,22 +159,53 @@ describe("createDependsOnColumn", () => {
 		expect(container.textContent).toBe("");
 	});
 
+	// Setting dependencies aside is not hiding them. The whole point of the switch over editing links in
+	// the tracker is that the reader can still see what they set aside.
+	it("still names every Feature a Portfolio that set its dependencies aside waits on", () => {
+		renderCell(
+			feature([aDependency({ notHonouredReason: "IgnoredByPortfolio" })]),
+		);
+
+		expect(screen.getByText("FTR-9: Warehouse sync")).toBeInTheDocument();
+	});
+
+	// Nothing warns about a set-aside dependency, so this entry is the only place the reader is told.
+	it("says on the entry itself that a dependency has been set aside", () => {
+		renderCell(
+			feature([aDependency({ notHonouredReason: "IgnoredByPortfolio" })]),
+		);
+
+		expect(screen.getByTestId("dependency-set-aside")).toBeInTheDocument();
+	});
+
+	it("marks nothing as set aside when the dependencies are being acted on", () => {
+		renderCell(feature([aDependency(), aDependency({ referenceId: "FTR-8" })]));
+
+		expect(
+			screen.queryByTestId("dependency-set-aside"),
+		).not.toBeInTheDocument();
+	});
+
 	it("is named for the thing itself, in words no instance renames", () => {
-		expect(createDependsOnColumn().headerName).toBe("Dependencies");
+		expect(createDependsOnColumn(THE_DEFAULT_TERMS).headerName).toBe(
+			"Dependencies",
+		);
 	});
 
 	it("never borrows the word an instance may already have renamed for board-blocked work", () => {
-		expect(createDependsOnColumn().headerName).not.toMatch(/block/i);
+		expect(createDependsOnColumn(THE_DEFAULT_TERMS).headerName).not.toMatch(
+			/block/i,
+		);
 	});
 
 	it("stays sortable, so a list can be read waiting-most first", () => {
-		expect(createDependsOnColumn().sortable).toBe(true);
+		expect(createDependsOnColumn(THE_DEFAULT_TERMS).sortable).toBe(true);
 	});
 
 	// The list has no order a reader would sort by, and the question the column answers first is which
 	// rows are entangled at all.
 	it("sorts on how many are waited on rather than on what the cell prints", () => {
-		const column = createDependsOnColumn();
+		const column = createDependsOnColumn(THE_DEFAULT_TERMS);
 
 		expect(
 			column.valueGetter?.(

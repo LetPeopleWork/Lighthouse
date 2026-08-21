@@ -184,6 +184,43 @@ describe("WarningsIndicator", () => {
 			);
 		});
 
+		// A choice somebody made is not a broken link. Warning about every Feature in a Portfolio that
+		// set its dependencies aside would teach the reader to stop looking at the column.
+		it("says nothing at all about a dependency the Portfolio set aside", () => {
+			render(
+				<WarningsIndicator
+					isDoneWithRemainingWork={false}
+					isUsingDefaultFeatureSize={false}
+					dependencies={[
+						aWarning({ notHonouredReason: "IgnoredByPortfolio" }),
+						aWarning({
+							referenceId: "F-8",
+							notHonouredReason: "IgnoredByPortfolio",
+							blockerPositionedBelow: true,
+						}),
+					]}
+				/>,
+			);
+
+			expect(screen.getByTestId("no-warnings")).toBeInTheDocument();
+		});
+
+		// The switch quietens the dependency warnings and nothing else. A Feature marked done with work
+		// left on it is still wrong, and has nothing to do with what it waits on.
+		it("leaves the warnings that existed before dependencies did exactly as they were", () => {
+			render(
+				<WarningsIndicator
+					isDoneWithRemainingWork={true}
+					isUsingDefaultFeatureSize={false}
+					dependencies={[aWarning({ notHonouredReason: "IgnoredByPortfolio" })]}
+				/>,
+			);
+
+			expect(
+				screen.getByTestId("warning-done-with-remaining-work"),
+			).toBeInTheDocument();
+		});
+
 		it("says two Features are waiting on each other", () => {
 			render(
 				<WarningsIndicator

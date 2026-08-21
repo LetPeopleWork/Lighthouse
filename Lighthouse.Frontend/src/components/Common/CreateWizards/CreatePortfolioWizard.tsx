@@ -38,6 +38,8 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 			defaultWorkItemPercentile: 0,
 			percentileHistoryInDays: 0,
 			sizeEstimateAdditionalFieldDefinitionId: null,
+			dependencyOverrideAdditionalFieldDefinitionId: null,
+			ignoreDependencies: false,
 			featureOwnerAdditionalFieldDefinitionId: null,
 			serviceLevelExpectationProbability: 0,
 			serviceLevelExpectationRange: 0,

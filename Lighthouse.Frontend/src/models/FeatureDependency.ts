@@ -6,6 +6,7 @@ export const NOT_HONOURED_REASONS = [
 	"OutsideThisPortfolio",
 	"InALoop",
 	"BlockerCannotBeForecast",
+	"IgnoredByPortfolio",
 ] as const;
 
 export type NotHonouredReason = (typeof NOT_HONOURED_REASONS)[number];
@@ -49,3 +50,12 @@ export const hasNothingWrongWithIt = (
 	dependency: IFeatureDependency,
 ): boolean =>
 	dependency.notHonouredReason === null && !dependency.blockerPositionedBelow;
+
+// A Portfolio that has set its dependencies aside made a choice; it did not break a link. Warning about
+// every Feature in it would teach the reader to stop looking at a column built to be worth looking at,
+// so this is the one reason that says nothing on the row and says it on the entry instead.
+export const isSetAside = (dependency: IFeatureDependency): boolean =>
+	dependency.notHonouredReason === "IgnoredByPortfolio";
+
+export const isWorthWarningAbout = (dependency: IFeatureDependency): boolean =>
+	!isSetAside(dependency) && !hasNothingWrongWithIt(dependency);

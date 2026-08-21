@@ -31,6 +31,7 @@ import WaitStatesEditor from "../StateMappings/WaitStatesEditor";
 import StatesList from "../StatesList/StatesList";
 import SaveStateIndicator from "../ValidationActions/SaveStateIndicator";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
+import DependenciesComponent from "./Advanced/DependenciesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
 
@@ -332,6 +333,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onReorderCategoryValues={(v) =>
 								updateSettings("estimationCategoryValues", v)
 							}
+							additionalFieldDefinitions={
+								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
+							}
+						/>
+
+						<DependenciesComponent
+							projectSettings={projectSettings}
+							onProjectSettingsChange={updateSettings}
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}

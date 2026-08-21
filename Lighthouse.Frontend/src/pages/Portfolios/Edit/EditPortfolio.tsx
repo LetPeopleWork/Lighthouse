@@ -60,6 +60,8 @@ const EditPortfolio: React.FC = () => {
 			defaultWorkItemPercentile: 0,
 			percentileHistoryInDays: 0,
 			sizeEstimateAdditionalFieldDefinitionId: null,
+			dependencyOverrideAdditionalFieldDefinitionId: null,
+			ignoreDependencies: false,
 			featureOwnerAdditionalFieldDefinitionId: null,
 			id: 0,
 			name: "New Portfolio",

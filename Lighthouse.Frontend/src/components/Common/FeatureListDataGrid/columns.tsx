@@ -4,9 +4,15 @@ import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IEntityReference } from "../../../models/EntityReference";
 import type { IFeature } from "../../../models/Feature";
 import {
-	hasNothingWrongWithIt,
 	type IFeatureDependency,
+	isSetAside,
+	isWorthWarningAbout,
 } from "../../../models/FeatureDependency";
+import {
+	type DependencyTerms,
+	reasonSentence,
+	withheldName,
+} from "../../../utils/dependencies/dependencySentences";
 import { getWorkItemName } from "../../../utils/featureName";
 import {
 	CANNOT_FORECAST_SHORT,
@@ -115,9 +121,7 @@ export const createWarningsColumn = (): DataGridColumn<
 	valueGetter: (_, row) =>
 		(row.stateCategory === "Done" && row.getRemainingWorkForFeature() > 0) ||
 		row.isUsingDefaultFeatureSize ||
-		(row.dependsOn ?? []).some(
-			(dependency) => !hasNothingWrongWithIt(dependency),
-		),
+		(row.dependsOn ?? []).some(isWorthWarningAbout),
 	renderCell: ({ row }) => (
 		<WarningsIndicator
 			isDoneWithRemainingWork={
@@ -144,7 +148,7 @@ export const createActiveWorkColumn = (
 // Most Features wait on nothing, so the cell stays blank in that case, the same way a missing position
 // is left blank. Each one it does wait on gets its own line: a reader scanning the column is looking
 // for which Features are involved, and a run-on line makes them read it twice.
-const renderDependsOn = (row: IFeature) => (
+const renderDependsOn = (row: IFeature, terms: DependencyTerms) => (
 	<Box sx={{ py: 0.5 }}>
 		{(row.dependsOn ?? []).map((dependency, index) => (
 			<Typography
@@ -156,12 +160,37 @@ const renderDependsOn = (row: IFeature) => (
 				variant="body2"
 				component="div"
 				data-testid={`depends-on-${row.referenceId}`}
+				sx={isSetAside(dependency) ? { color: "text.disabled" } : undefined}
 			>
-				{renderDependency(dependency)}
+				{renderSetAsideOrNot(dependency, terms)}
 			</Typography>
 		))}
 	</Box>
 );
+
+// Nothing warns about a dependency somebody chose to set aside, so this entry is the only place a reader
+// is told it has been - which is why the name is dimmed as well as explained: a tooltip nobody knows to
+// hover over says nothing at all.
+const renderSetAsideOrNot = (
+	dependency: IFeatureDependency,
+	terms: DependencyTerms,
+) => {
+	if (!isSetAside(dependency)) {
+		return renderDependency(dependency);
+	}
+
+	const waitedOn = dependency.isWithheld
+		? withheldName(terms)
+		: dependency.name;
+
+	return (
+		<Tooltip title={reasonSentence("IgnoredByPortfolio", waitedOn, terms)}>
+			<span data-testid="dependency-set-aside">
+				{renderDependency(dependency)}
+			</span>
+		</Tooltip>
+	);
+};
 
 const renderDependency = (dependency: IFeatureDependency) => {
 	if (dependency.isWithheld) {
@@ -181,9 +210,9 @@ const renderDependency = (dependency: IFeatureDependency) => {
 	);
 };
 
-export const createDependsOnColumn = (): DataGridColumn<
-	IFeature & GridValidRowModel
-> => ({
+export const createDependsOnColumn = (
+	terms: DependencyTerms,
+): DataGridColumn<IFeature & GridValidRowModel> => ({
 	field: "dependsOn",
 	headerName: "Dependencies",
 	width: 260,
@@ -191,7 +220,7 @@ export const createDependsOnColumn = (): DataGridColumn<
 	// Sorted by how many a Feature waits on: the list itself has no order a reader would sort by, and
 	// the question the column answers first is which rows are entangled at all.
 	valueGetter: (_, row) => (row.dependsOn ?? []).length,
-	renderCell: ({ row }) => renderDependsOn(row),
+	renderCell: ({ row }) => renderDependsOn(row, terms),
 });
 
 export const createParentColumn = (

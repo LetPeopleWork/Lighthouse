@@ -61,6 +61,7 @@ const NULLABLE_FIELDS = new Set([
 	"sizeEstimateAdditionalFieldDefinitionId",
 	"featureOwnerAdditionalFieldDefinitionId",
 	"parentOverrideAdditionalFieldDefinitionId",
+	"dependencyOverrideAdditionalFieldDefinitionId",
 	"estimationAdditionalFieldDefinitionId",
 	"estimationUnit",
 	"owningTeam",

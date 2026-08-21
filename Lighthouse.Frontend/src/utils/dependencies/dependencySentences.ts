@@ -34,6 +34,10 @@ export const reasonSentence = (
 		return `This ${terms.featureTerm} and ${waitedOn} are waiting on each other. ${LEFT_OUT}`;
 	}
 
+	if (reason === "IgnoredByPortfolio") {
+		return `This ${terms.portfolioTerm} is set to ignore its dependencies, so the wait on ${waitedOn} is not acted on. Nothing has been deleted.`;
+	}
+
 	return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;
 };
 

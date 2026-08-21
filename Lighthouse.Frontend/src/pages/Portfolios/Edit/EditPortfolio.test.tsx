@@ -174,6 +174,8 @@ describe("EditPortfolio", () => {
 			serviceLevelExpectationRange: 7,
 			systemWIPLimit: 6,
 			parentOverrideAdditionalFieldDefinitionId: null,
+			dependencyOverrideAdditionalFieldDefinitionId: null,
+			ignoreDependencies: false,
 			sizeEstimateAdditionalFieldDefinitionId: null,
 			featureOwnerAdditionalFieldDefinitionId: null,
 			stateMappings: [],

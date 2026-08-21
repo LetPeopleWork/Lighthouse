@@ -78,6 +78,8 @@ export function createMockProjectSettings(): IPortfolioSettings {
 		serviceLevelExpectationRange: 0,
 		systemWIPLimit: 0,
 		parentOverrideAdditionalFieldDefinitionId: null,
+		dependencyOverrideAdditionalFieldDefinitionId: null,
+		ignoreDependencies: false,
 		stateMappings: [],
 		doneItemsCutoffDays: 365,
 		processBehaviourChartBaselineStartDate: null,

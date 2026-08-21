@@ -92,6 +92,26 @@ describe("AdvancedInputsComponent", () => {
 		);
 	});
 
+	// This form is the one a team and a portfolio share, so it is where a dependency setting would leak
+	// onto a team's settings page. A dependency runs between two Features and Features are fetched per
+	// portfolio, so a team-level copy of either setting would have nothing to act on.
+	it("offers no dependency settings, because this form is the one a team also sees", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={createMockTeamSettings()}
+				onSettingsChange={vi.fn()}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(screen.queryByText("Dependency Field")).not.toBeInTheDocument();
+		expect(
+			screen.queryByLabelText("Ignore Dependencies"),
+		).not.toBeInTheDocument();
+	});
+
 	it("calls onTeamSettingsChange with numeric value when cutoff days changes", () => {
 		const onTeamSettingsChange = vi.fn();
 		const teamSettings = createMockTeamSettings();

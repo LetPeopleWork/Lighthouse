@@ -3,8 +3,8 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { IconButton, Tooltip } from "@mui/material";
 import type React from "react";
 import {
-	hasNothingWrongWithIt,
 	type IFeatureDependency,
+	isWorthWarningAbout,
 	type NotHonouredReason,
 } from "../../../models/FeatureDependency";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -31,9 +31,7 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	dependencies = [],
 }) => {
 	// Having a dependency is not a warning; only one with something wrong with it is.
-	const worthReporting = dependencies.filter(
-		(dependency) => !hasNothingWrongWithIt(dependency),
-	);
+	const worthReporting = dependencies.filter(isWorthWarningAbout);
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -114,12 +112,16 @@ type DependencyWarningKind =
 	| "outside-portfolio"
 	| "in-a-loop"
 	| "cannot-be-forecast"
+	| "set-aside"
 	| "positioned-below";
 
+// "set-aside" is here for completeness of the mapping only: a dependency carrying that reason never
+// reaches this component, because it is not worth warning anybody about.
 const KIND_OF_REASON: Record<NotHonouredReason, DependencyWarningKind> = {
 	OutsideThisPortfolio: "outside-portfolio",
 	InALoop: "in-a-loop",
 	BlockerCannotBeForecast: "cannot-be-forecast",
+	IgnoredByPortfolio: "set-aside",
 };
 
 // A dependency Lighthouse cannot act on is reported as such; where it sits in the order is only worth
