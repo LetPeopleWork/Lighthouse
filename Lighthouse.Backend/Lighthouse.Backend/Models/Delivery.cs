@@ -181,7 +181,8 @@ namespace Lighthouse.Backend.Models
             //
             // Stryker disable once all: since the row-set guard below also rejects a missing or
             // zero-trial row, the two detect the same condition and mutating this one is unobservable.
-            // It stays because it carries the ADR-112 semantic at feature grain and runs first.
+            // It stays because it asks the question one Feature at a time, which is how the rule is
+            // stated, and because it runs first.
             if (Features.Any(feature => !feature.CanBeForecast))
             {
                 return new DeliveryMetricsProjection(null, [], featureBreakdown, hasSufficientData);

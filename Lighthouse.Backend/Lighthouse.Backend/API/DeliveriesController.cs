@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.API
             var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryDtos.Select(d => d.Id));
             foreach (var deliveryDto in deliveryDtos)
             {
-                deliveryDto.MetricSnapshotCount = snapshotCounts.TryGetValue(deliveryDto.Id, out var count) ? count : 0;
+                deliveryDto.MetricSnapshotCount = DaysOfHistoryBehind(snapshotCounts, deliveryDto.Id);
             }
 
             return [.. deliveryDtos.OrderBy(d => d.Date)];
@@ -78,15 +78,21 @@ namespace Lighthouse.Backend.API
         /// </summary>
         private List<ArchivedDeliveryDto> ArchivedRows(List<Delivery> deliveries)
         {
-            var closureRecords = deliveryRepository.GetClosureRecordsByDelivery(deliveries.Select(delivery => delivery.Id));
-            var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveries.Select(delivery => delivery.Id));
+            var deliveryIds = deliveries.Select(delivery => delivery.Id).ToList();
+            var closureRecords = deliveryRepository.GetClosureRecordsByDelivery(deliveryIds);
+            var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveryIds);
 
             return [.. deliveries
                 .Where(delivery => closureRecords.ContainsKey(delivery.Id))
                 .Select(delivery => ArchivedDeliveryProjection.ToDto(
-                    IdentityOf(delivery, snapshotCounts.TryGetValue(delivery.Id, out var count) ? count : 0),
+                    IdentityOf(delivery, DaysOfHistoryBehind(snapshotCounts, delivery.Id)),
                     closureRecords[delivery.Id]))
                 .OrderByDescending(archivedDelivery => archivedDelivery.ArchivedOn)];
+        }
+
+        private static int DaysOfHistoryBehind(IReadOnlyDictionary<int, int> snapshotCounts, int deliveryId)
+        {
+            return snapshotCounts.TryGetValue(deliveryId, out var count) ? count : 0;
         }
 
         private static ArchivedDeliveryIdentity IdentityOf(Delivery delivery, int metricSnapshotCount)
