@@ -154,8 +154,10 @@ test("@premium @real-io @US-01 a delivery is unforecastable while one team has n
 		);
 		expect(response.ok()).toBe(true);
 
-		const payloads = (await response.json()) as DeliveryPayload[];
-		const payload = payloads.find(
+		const { active } = (await response.json()) as {
+			active: DeliveryPayload[];
+		};
+		const payload = active.find(
 			(candidate) => candidate.name === MULTI_TEAM_DELIVERY_NAME,
 		) as DeliveryPayload;
 

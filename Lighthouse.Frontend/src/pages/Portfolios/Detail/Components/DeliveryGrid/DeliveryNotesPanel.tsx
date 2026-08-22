@@ -69,8 +69,8 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 			setNotes((existing) => [saved, ...existing]);
 			setText("");
 			setError(null);
-		} catch (failure) {
-			setError(reasonFor(failure, "The note could not be saved."));
+		} catch (error_) {
+			setError(reasonFor(error_, "The note could not be saved."));
 		} finally {
 			setIsSaving(false);
 		}
@@ -104,8 +104,8 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 				existing.map((note) => (note.id === noteId ? updated : note)),
 			);
 			cancelEdit();
-		} catch (failure) {
-			setEditError(reasonFor(failure, "The note could not be saved."));
+		} catch (error_) {
+			setEditError(reasonFor(error_, "The note could not be saved."));
 		}
 	};
 
@@ -113,8 +113,8 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 		try {
 			await deliveryService.deleteNote(deliveryId, noteId);
 			setNotes((existing) => existing.filter((note) => note.id !== noteId));
-		} catch (failure) {
-			setError(reasonFor(failure, "The note could not be withdrawn."));
+		} catch (error_) {
+			setError(reasonFor(error_, "The note could not be withdrawn."));
 		}
 	};
 

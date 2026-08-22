@@ -93,7 +93,7 @@ const ArchivedFeatureGrid: React.FC<ArchivedFeatureGridProps> = ({
 				flex: 0.3,
 				renderCell: ({ row }) => (
 					<Typography variant="body2">
-						{row.totalItems === null ? NOT_RECORDED : row.totalItems}
+						{row.totalItems ?? NOT_RECORDED}
 					</Typography>
 				),
 			},
