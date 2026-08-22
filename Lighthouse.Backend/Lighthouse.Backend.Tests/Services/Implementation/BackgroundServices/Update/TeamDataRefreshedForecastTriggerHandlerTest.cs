@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -9,7 +8,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 {
     public class TeamDataRefreshedForecastTriggerHandlerTest
     {
-        private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<IPortfolioRepository> portfolioRepositoryMock;
         private Mock<IForecastUpdater> forecastUpdaterMock;
 
         private int idCounter;
@@ -17,21 +16,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void Setup()
         {
-            teamRepositoryMock = new Mock<IRepository<Team>>();
+            portfolioRepositoryMock = new Mock<IPortfolioRepository>();
             forecastUpdaterMock = new Mock<IForecastUpdater>();
         }
 
         [Test]
-        public async Task HandleAsync_TeamPartOfMultiplePortfolios_TriggersForecastForEachPortfolio()
+        public async Task HandleAsync_TeamWorksOnFeaturesOfMultiplePortfolios_TriggersForecastForEachPortfolio()
         {
-            var team = CreateTeam();
-            team.Portfolios.Add(new Portfolio { Id = 1, Name = "Project" });
-            team.Portfolios.Add(new Portfolio { Id = 2, Name = "Project" });
-            SetupTeam(team);
+            var teamId = NextTeamId();
+            SetupPortfoliosForTeam(teamId, 1, 2);
 
             var subject = CreateSubject();
 
-            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -41,42 +38,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        /// <summary>
+        /// A team that has been deleted and a team that works on nothing are the same case here: the
+        /// handler asks which portfolios the team works for and forwards the answer, so an empty answer
+        /// is all either one can produce.
+        /// </summary>
         [Test]
-        public async Task HandleAsync_TeamNotPartOfAnyPortfolio_DoesNotTriggerForecastUpdate()
+        public async Task HandleAsync_TeamWorksOnNoPortfoliosFeatures_DoesNotTriggerForecastUpdate()
         {
-            var team = CreateTeam();
-            SetupTeam(team);
+            var teamId = NextTeamId();
+            SetupPortfoliosForTeam(teamId);
 
             var subject = CreateSubject();
 
-            await subject.HandleAsync(new TeamDataRefreshed(team.Id), CancellationToken.None);
+            await subject.HandleAsync(new TeamDataRefreshed(teamId), CancellationToken.None);
 
             forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
         }
 
-        [Test]
-        public async Task HandleAsync_TeamNoLongerExists_DoesNotTriggerForecastUpdate()
+        private void SetupPortfoliosForTeam(int teamId, params int[] portfolioIds)
         {
-            var subject = CreateSubject();
-
-            await subject.HandleAsync(new TeamDataRefreshed(404), CancellationToken.None);
-
-            forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(teamId)).Returns(portfolioIds);
         }
 
-        private void SetupTeam(Team team)
+        private int NextTeamId()
         {
-            teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
-        }
-
-        private Team CreateTeam()
-        {
-            return new Team { Id = idCounter++, Name = "Team" };
+            return idCounter++;
         }
 
         private TeamDataRefreshedForecastTriggerHandler CreateSubject()
         {
-            return new TeamDataRefreshedForecastTriggerHandler(teamRepositoryMock.Object, forecastUpdaterMock.Object);
+            return new TeamDataRefreshedForecastTriggerHandler(portfolioRepositoryMock.Object, forecastUpdaterMock.Object);
         }
     }
 }

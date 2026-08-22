@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -7,20 +6,14 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     public class TeamDataRefreshedForecastTriggerHandler(
-        IRepository<Team> teamRepository,
+        IPortfolioRepository portfolioRepository,
         IForecastUpdater forecastUpdater) : IDomainEventHandler<TeamDataRefreshed>
     {
         public Task HandleAsync(TeamDataRefreshed domainEvent, CancellationToken cancellationToken)
         {
-            var team = teamRepository.GetById(domainEvent.TeamId);
-            if (team == null)
+            foreach (var portfolioId in portfolioRepository.GetPortfolioIdsForTeam(domainEvent.TeamId))
             {
-                return Task.CompletedTask;
-            }
-
-            foreach (var portfolio in team.Portfolios)
-            {
-                forecastUpdater.TriggerUpdate(portfolio.Id);
+                forecastUpdater.TriggerUpdate(portfolioId);
             }
 
             return Task.CompletedTask;
