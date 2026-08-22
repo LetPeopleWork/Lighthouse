@@ -76,7 +76,23 @@ A change is **not done** until every gate below passes locally. CI enforces them
 ### Backend (`Lighthouse.Backend/`)
 
 - `dotnet build` — must succeed with zero warnings (`TreatWarningsAsErrors` makes any warning a failure, but verify locally before pushing).
-- `dotnet test` — all NUnit suites green.
+- `dotnet test` — all NUnit suites green. **Exclude the live-connector categories unless you are
+  actually changing a connector:**
+
+  ```
+  dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"
+  ```
+
+  Those tests talk to **real** Jira, Linear, Azure DevOps and ServiceNow instances over the network.
+  They do **not** skip when a credential is missing — they `throw NotSupportedException`, so a bare
+  `dotnet test` either makes real API calls or reports failures that look like regressions and are
+  not. The Linear API key is shared with CI, so repeated local runs can rate-limit (429) the next CI
+  build, and only one of the resulting failures ever names the 429. Run the connector categories
+  deliberately, when the connector is what you changed.
+
+  Two failure signatures that are **environmental, never regressions**: in a git worktree, exactly 2
+  Licensing tests fail on the gitignored `valid_not_expired_license.json`; and exactly 10 failures
+  inside the `ReleaseService` class mean load contention — re-run that class alone to confirm.
 
 ### SonarQube Cloud (both stacks)
 
