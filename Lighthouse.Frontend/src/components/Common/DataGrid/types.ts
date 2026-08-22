@@ -1,6 +1,7 @@
 import type {
 	GridColDef,
 	GridFilterModel,
+	GridRowId,
 	GridSortModel,
 	GridValidRowModel,
 } from "@mui/x-data-grid";
@@ -45,7 +46,7 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	loading?: boolean;
 	/** Initial sort model */
 	initialSortModel?: GridSortModel;
-	/** Lets a grid know a column sort is deciding its order, which some row actions have no meaning under (AC-3.9). */
+	/** Lets a grid know a column sort is deciding its order, so it can withdraw the row actions that mean nothing under one. */
 	onSortModelChange?: (sortModel: GridSortModel) => void;
 	/** Custom empty state message */
 	emptyStateMessage?: string;
@@ -55,8 +56,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
-	/** Key-value lines placed above the grid's own header row, separated from it by a blank row. */
-	exportHeaderRows?: readonly DataGridExportHeaderRow[];
+	/** The whole exported table, built by the caller. Given one, the toolbar exports it verbatim. */
+	exportTable?: (orderedRowIds: GridRowId[]) => DataGridExportTable;
 	/** Whether the user can reorder columns using the Column Order dialog (default: true) */
 	allowColumnReorder?: boolean;
 	/** Custom actions to display in the toolbar */
@@ -83,15 +84,6 @@ export interface PersistedGridState {
 }
 
 /**
- * Props for DataGridToolbar component
- */
-/** One key-value line emitted above a grid's own header row when a grid exports more than its rows. */
-export interface DataGridExportHeaderRow {
-	label: string;
-	value: string;
-}
-
-/**
  * Everything a grid puts in an exported file, built by whoever owns the rows. Half of what a reader
  * sees in a cell is drawn by a renderer with no field behind it, so a grid that has any such column
  * has to say what its file contains rather than let the toolbar read it back off the screen.
@@ -101,6 +93,9 @@ export interface DataGridExportTable {
 	rows: string[][];
 }
 
+/**
+ * Props for DataGridToolbar component
+ */
 export interface DataGridToolbarProps {
 	/** Whether user has premium features available */
 	canUsePremiumFeatures?: boolean;
@@ -108,8 +103,8 @@ export interface DataGridToolbarProps {
 	enableExport?: boolean;
 	/** Custom filename for CSV export (without extension) */
 	exportFileName?: string;
-	/** Key-value lines placed above the grid's own header row, separated from it by a blank row. */
-	exportHeaderRows?: readonly DataGridExportHeaderRow[];
+	/** The whole exported table, built by the caller. Given one, the toolbar exports it verbatim. */
+	exportTable?: (orderedRowIds: GridRowId[]) => DataGridExportTable;
 	/** Reset layout handler */
 	onResetLayout?: () => void;
 	/** Open column order dialog */

@@ -79,7 +79,7 @@ describe("FeatureListDataGrid export plumbing", () => {
 					hideCompletedStorageKey="export-on-hide-completed"
 					enableExport={true}
 					exportFileName="Q3 Platform"
-					exportHeaderRows={[{ label: "Delivery", value: "Q3 Platform" }]}
+					exportTable={() => ({ headers: ["Name"], rows: [["Q3 Platform"]] })}
 				/>
 			</MemoryRouter>,
 		);

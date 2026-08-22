@@ -37,7 +37,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	onOrderChanged,
 	enableExport = false,
 	exportFileName,
-	exportHeaderRows,
+	exportTable,
 }) => {
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -141,7 +141,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 				emptyStateMessage={emptyStateMessage}
 				enableExport={enableExport}
 				exportFileName={exportFileName}
-				exportHeaderRows={exportHeaderRows}
+				exportTable={exportTable}
 				onSortModelChange={(model) => setIsSortActive(model.length > 0)}
 			/>
 		</TableContainer>

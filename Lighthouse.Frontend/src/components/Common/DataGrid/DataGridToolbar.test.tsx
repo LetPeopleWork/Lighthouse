@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import DataGridToolbar from "./DataGridToolbar";
+import type { DataGridToolbarProps } from "./types";
 
 // Mock the useGridApiContext hook
 vi.mock("@mui/x-data-grid", async () => {
@@ -552,20 +553,23 @@ describe("DataGridToolbar", () => {
 		});
 	});
 
-	describe("Export header rows", () => {
-		const HEADER_ROWS = [
-			{ label: "Delivery", value: "Q3 Platform" },
-			{ label: "Likelihood", value: "82%" },
-		];
+	describe("A grid that hands over its own table", () => {
+		const EXPORT_TABLE = {
+			headers: ["Name", "Progress"],
+			rows: [
+				["Q3 Platform (Delivery)", "72/120"],
+				["FTR-11: Checkout redesign", "6/10"],
+			],
+		};
 
-		// The existing suite stops at "an export happened". The header block only exists inside the
-		// artifact, so these read the Blob the export actually produced.
+		// The rest of the suite stops at "an export happened". What ends up in the file is the whole
+		// point here, so these read the Blob the export actually produced.
 		const capturedCsv = async (): Promise<string> => {
 			const createObjectURL = globalThis.URL
 				.createObjectURL as unknown as ReturnType<typeof vi.fn>;
 			const calls = createObjectURL.mock.calls;
 			const blob = calls[calls.length - 1]?.[0] as Blob;
-			return await blob.text();
+			return (await blob.text()).replace("﻿", "");
 		};
 
 		const capturedClipboard = async (
@@ -579,14 +583,14 @@ describe("DataGridToolbar", () => {
 		};
 
 		const exportCsvWith = async (
-			rows?: readonly { label: string; value: string }[],
+			exportTable?: DataGridToolbarProps["exportTable"],
 		) => {
 			render(
 				<DataGridToolbar
 					canUsePremiumFeatures={true}
 					enableExport={true}
 					exportFileName="test"
-					exportHeaderRows={rows}
+					exportTable={exportTable}
 				/>,
 			);
 			await userEvent.click(screen.getByTestId("export-button"));
@@ -595,75 +599,97 @@ describe("DataGridToolbar", () => {
 			);
 		};
 
-		it("leads the CSV with the header block, then a blank line, then the grid", async () => {
-			await exportCsvWith(HEADER_ROWS);
+		const copyWith = async (
+			exportTable?: DataGridToolbarProps["exportTable"],
+		) => {
+			render(
+				<DataGridToolbar
+					canUsePremiumFeatures={true}
+					enableExport={true}
+					exportTable={exportTable}
+				/>,
+			);
+			await userEvent.click(screen.getByTestId("copy-button"));
+			await waitFor(() => expect(mockClipboardWrite).toHaveBeenCalled());
+		};
 
-			const lines = (await capturedCsv()).replace("﻿", "").split("\n");
+		it("writes the table it was handed, and reads nothing off the grid", async () => {
+			await exportCsvWith(() => EXPORT_TABLE);
 
-			expect(lines[0]).toBe("Delivery,Q3 Platform");
-			expect(lines[1]).toBe("Likelihood,82%");
-			expect(lines[2]).toBe("");
-			expect(lines[3]).toBe("Name,Age,Email");
-			expect(lines[4]).toBe("John Doe,30,john@example.com");
+			expect((await capturedCsv()).split("\n")).toEqual([
+				"Name,Progress",
+				"Q3 Platform (Delivery),72/120",
+				"FTR-11: Checkout redesign,6/10",
+			]);
+			expect(mockApiRef.current.getCellValue).not.toHaveBeenCalled();
 		});
 
-		it("emits no header block and no blank line when a grid supplies none", async () => {
+		it("asks for it in the order the reader is looking at the rows", async () => {
+			const exportTable = vi.fn(() => EXPORT_TABLE);
+
+			await exportCsvWith(exportTable);
+
+			expect(exportTable).toHaveBeenCalledWith([1, 2, 3]);
+		});
+
+		it("goes on reading the grid for a grid that hands over nothing", async () => {
 			await exportCsvWith(undefined);
 
-			const lines = (await capturedCsv()).replace("﻿", "").split("\n");
+			const lines = (await capturedCsv()).split("\n");
 
 			expect(lines[0]).toBe("Name,Age,Email");
+			expect(lines[1]).toBe("John Doe,30,john@example.com");
 			expect(lines).not.toContain("");
 		});
 
-		it("escapes a header value containing a comma, a quote or a line break", async () => {
-			await exportCsvWith([
-				{ label: "Delivery", value: 'Q3 "Platform", phase\none' },
+		it("escapes a cell carrying a comma, a quote or a line break", async () => {
+			await exportCsvWith(() => ({
+				headers: ["Name"],
+				rows: [['Q3 "Platform", phase\none (Delivery)']],
+			}));
+
+			expect(await capturedCsv()).toBe(
+				'Name\n"Q3 ""Platform"", phase\none (Delivery)"',
+			);
+		});
+
+		it("pastes the same table, tab separated", async () => {
+			await copyWith(() => EXPORT_TABLE);
+
+			expect((await capturedClipboard("text/plain")).split("\n")).toEqual([
+				"Name\tProgress",
+				"Q3 Platform (Delivery)\t72/120",
+				"FTR-11: Checkout redesign\t6/10",
 			]);
-
-			const csv = (await capturedCsv()).replace("﻿", "");
-
-			expect(csv.startsWith('Delivery,"Q3 ""Platform"", phase\none"')).toBe(
-				true,
-			);
 		});
 
-		it("leads the pasted text with the same block, tab separated", async () => {
-			render(
-				<DataGridToolbar
-					canUsePremiumFeatures={true}
-					enableExport={true}
-					exportHeaderRows={HEADER_ROWS}
-				/>,
-			);
-			await userEvent.click(screen.getByTestId("copy-button"));
-			await waitFor(() => expect(mockClipboardWrite).toHaveBeenCalled());
-
-			const lines = (await capturedClipboard("text/plain")).split("\n");
-
-			expect(lines[0]).toBe("Delivery\tQ3 Platform");
-			expect(lines[1]).toBe("Likelihood\t82%");
-			expect(lines[2]).toBe("");
-			expect(lines[3]).toBe("Name\tAge\tEmail");
-		});
-
-		it("puts the block in the same pasted table, so it lands as one thing", async () => {
-			render(
-				<DataGridToolbar
-					canUsePremiumFeatures={true}
-					enableExport={true}
-					exportHeaderRows={HEADER_ROWS}
-				/>,
-			);
-			await userEvent.click(screen.getByTestId("copy-button"));
-			await waitFor(() => expect(mockClipboardWrite).toHaveBeenCalled());
+		it("pastes it as one table, with the Delivery among its rows", async () => {
+			await copyWith(() => EXPORT_TABLE);
 
 			const html = await capturedClipboard("text/html");
 
-			expect(html).toContain('<td style="font-weight: bold;">Delivery</td>');
-			expect(html).toContain("<td>Q3 Platform</td>");
-			expect(html.indexOf("Q3 Platform")).toBeLessThan(html.indexOf("<thead>"));
+			expect(html).toContain("<td>Q3 Platform (Delivery)</td>");
+			expect(html.indexOf("Q3 Platform (Delivery)")).toBeGreaterThan(
+				html.indexOf("<thead>"),
+			);
 			expect(html.match(/<table/g) ?? []).toHaveLength(1);
+		});
+
+		it("hands nothing over without a premium licence", async () => {
+			const exportTable = vi.fn(() => EXPORT_TABLE);
+
+			render(
+				<DataGridToolbar
+					canUsePremiumFeatures={false}
+					enableExport={true}
+					exportFileName="test"
+					exportTable={exportTable}
+				/>,
+			);
+
+			expect(screen.getByTestId("export-button")).toBeDisabled();
+			expect(screen.getByTestId("copy-button")).toBeDisabled();
+			expect(exportTable).not.toHaveBeenCalled();
 		});
 	});
 });

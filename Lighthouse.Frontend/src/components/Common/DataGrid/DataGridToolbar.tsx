@@ -3,10 +3,11 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import { Box, IconButton, Tooltip } from "@mui/material";
+import type { GridRowId } from "@mui/x-data-grid";
 import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useState } from "react";
-import type { DataGridExportHeaderRow, DataGridToolbarProps } from "./types";
+import type { DataGridExportTable, DataGridToolbarProps } from "./types";
 
 const generateFileName = (exportFileName?: string): string => {
 	const timestamp = new Date().toISOString().split("T")[0];
@@ -39,12 +40,20 @@ const formatCellValue = (value: unknown): string => {
 const useDataGridExport = (
 	apiRef: ReturnType<typeof useGridApiContext>,
 	canUsePremiumFeatures: boolean,
-	exportHeaderRows?: readonly DataGridExportHeaderRow[],
+	exportTable?: (orderedRowIds: GridRowId[]) => DataGridExportTable,
 ) => {
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied">("idle");
 
 	const getGridData = useCallback(() => {
 		const visibleRows = apiRef.current.getSortedRowIds();
+
+		// A grid that builds its own table decides what its file contains; the sort and any filter
+		// still decide the order, because that is the list the reader is looking at.
+		if (exportTable) {
+			const { headers, rows } = exportTable(visibleRows);
+			return { headers, dataRows: rows };
+		}
+
 		const visibleColumns = apiRef.current.getVisibleColumns();
 
 		const headers = visibleColumns.map((col) => col.headerName || col.field);
@@ -57,7 +66,7 @@ const useDataGridExport = (
 		});
 
 		return { headers, dataRows };
-	}, [apiRef]);
+	}, [apiRef, exportTable]);
 
 	const handleCopyToClipboard = useCallback(async () => {
 		if (!canUsePremiumFeatures) {
@@ -67,34 +76,12 @@ const useDataGridExport = (
 
 		try {
 			const { headers, dataRows } = getGridData();
-			const headerBlock = (exportHeaderRows ?? []).map((row) => [
-				row.label,
-				row.value,
-			]);
-			const allRows = [
-				...headerBlock,
-				...(headerBlock.length > 0 ? [[]] : []),
-				headers,
-				...dataRows,
-			];
+			const allRows = [headers, ...dataRows];
 
 			const textContent = allRows.map((row) => row.join("\t")).join("\n");
 
-			const headerBlockHtml = headerBlock
-				.map(
-					([label, value]) =>
-						`<tr><td style="font-weight: bold;">${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`,
-				)
-				.join("");
-			const spacerHtml =
-				headerBlock.length > 0
-					? `<tr><td colspan="${headers.length}"></td></tr>`
-					: "";
-
 			const htmlContent = `
 				<table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse;">
-					${headerBlockHtml}
-					${spacerHtml}
 					<thead>
 						<tr>
 							${headers.map((h) => `<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;">${escapeHtml(h)}</th>`).join("")}
@@ -129,7 +116,7 @@ const useDataGridExport = (
 		} catch (error) {
 			console.error("Failed to copy to clipboard:", error);
 		}
-	}, [getGridData, canUsePremiumFeatures, exportHeaderRows]);
+	}, [getGridData, canUsePremiumFeatures]);
 
 	const handleExportToCSV = useCallback(
 		async (fileName: string) => {
@@ -144,13 +131,7 @@ const useDataGridExport = (
 				const csvRows = dataRows.map((row) =>
 					row.map((element) => escapeCSV(element)),
 				);
-				const headerBlock = (exportHeaderRows ?? []).map((row) => [
-					escapeCSV(row.label),
-					escapeCSV(row.value),
-				]);
 				const allRows = [
-					...headerBlock,
-					...(headerBlock.length > 0 ? [[]] : []),
 					headers.map((header) => escapeCSV(header)),
 					...csvRows,
 				];
@@ -173,7 +154,7 @@ const useDataGridExport = (
 				console.error("Failed to export CSV:", error);
 			}
 		},
-		[getGridData, canUsePremiumFeatures, exportHeaderRows],
+		[getGridData, canUsePremiumFeatures],
 	);
 
 	return {
@@ -187,7 +168,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	canUsePremiumFeatures = false,
 	enableExport = false,
 	exportFileName,
-	exportHeaderRows,
+	exportTable,
 	onResetLayout,
 	onOpenColumnOrder,
 	allowColumnReorder = false,
@@ -196,7 +177,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 	const apiRef = useGridApiContext();
 
 	const { copyStatus, handleCopyToClipboard, handleExportToCSV } =
-		useDataGridExport(apiRef, canUsePremiumFeatures, exportHeaderRows);
+		useDataGridExport(apiRef, canUsePremiumFeatures, exportTable);
 
 	const getCopyTooltipText = () => {
 		if (!canUsePremiumFeatures) {

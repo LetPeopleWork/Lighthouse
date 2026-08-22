@@ -43,7 +43,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	hidePagination = true,
 	enableExport = false,
 	exportFileName,
-	exportHeaderRows,
+	exportTable,
 	allowColumnReorder = true,
 	toolbarActions,
 }: Readonly<DataGridBaseProps<T>>): React.ReactElement {
@@ -177,7 +177,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					canUsePremiumFeatures={canUsePremiumFeatures}
 					enableExport={enableExport}
 					exportFileName={exportFileName}
-					exportHeaderRows={exportHeaderRows}
+					exportTable={exportTable}
 					onResetLayout={() => {
 						// Clear persisted state and reset local state
 						clearState();

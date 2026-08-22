@@ -16,7 +16,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import type { GridValidRowModel } from "@mui/x-data-grid";
+import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
 import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
@@ -26,7 +26,7 @@ import DeliveryPredictabilityChart from "../../../../../components/Common/Charts
 import EnlargeableChart from "../../../../../components/Common/Charts/EnlargeableChart";
 import type {
 	DataGridColumn,
-	DataGridExportHeaderRow,
+	DataGridExportTable,
 } from "../../../../../components/Common/DataGrid/types";
 import {
 	createForecastsColumn,
@@ -60,11 +60,12 @@ import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../utils/forecast/
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
-import { buildDeliveryExportHeaderRows } from "./deliveryExportHeader";
+import { buildDeliveryExportTable } from "./deliveryExportTable";
 
 export const MINIMUM_METRIC_SNAPSHOTS = 3;
 
-// ADR-113 D1. Nothing here may promise the header is lower than every row (D5).
+// A Feature's own chance of landing, not the Delivery's — the Delivery's asks whether they ALL land,
+// so it sits below any single row's, and the heading must not invite the two to be read as one number.
 const MARGINAL_LIKELIHOOD_HEADER = "Likelihood";
 
 interface DeliverySectionProps {
@@ -159,14 +160,35 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const exportHeaderRows = useMemo(
-		() =>
-			buildDeliveryExportHeaderRows(delivery, {
+	// The grid hands back the ids in the order the reader is looking at them, so the file is sorted
+	// and filtered the way the screen is.
+	const exportTable = useCallback(
+		(orderedRowIds: GridRowId[]): DataGridExportTable => {
+			const featureById = new Map(
+				features.map((feature) => [feature.id, feature]),
+			);
+			const orderedFeatures = orderedRowIds
+				.map((rowId) => featureById.get(Number(rowId)))
+				.filter((feature): feature is IFeature => feature !== undefined);
+
+			return buildDeliveryExportTable(delivery, orderedFeatures, teams, {
 				deliveryTerm,
 				workItemsTerm,
-			}),
-		[delivery, deliveryTerm, workItemsTerm],
+				featureTerm,
+				portfolioTerm,
+			});
+		},
+		[
+			delivery,
+			features,
+			teams,
+			deliveryTerm,
+			workItemsTerm,
+			featureTerm,
+			portfolioTerm,
+		],
 	);
 
 	const isRuleBased =
@@ -523,7 +545,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								featuresTerm={featuresTerm}
 								deliveryTerm={deliveryTerm}
 								exportFileName={delivery.name}
-								exportHeaderRows={exportHeaderRows}
+								exportTable={exportTable}
 							/>
 						)}
 						{activeTab === "metrics" && (
@@ -559,7 +581,7 @@ interface WorkItemsTabProps {
 	featuresTerm: string;
 	deliveryTerm: string;
 	exportFileName: string;
-	exportHeaderRows: readonly DataGridExportHeaderRow[];
+	exportTable: (orderedRowIds: GridRowId[]) => DataGridExportTable;
 }
 
 const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
@@ -570,7 +592,7 @@ const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
 	featuresTerm,
 	deliveryTerm,
 	exportFileName,
-	exportHeaderRows,
+	exportTable,
 }) => {
 	if (isLoadingFeatures) {
 		return (
@@ -599,7 +621,7 @@ const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
 				emptyStateMessage={`No ${featuresTerm} found`}
 				enableExport={true}
 				exportFileName={exportFileName}
-				exportHeaderRows={exportHeaderRows}
+				exportTable={exportTable}
 			/>
 		</Box>
 	);
