@@ -37,7 +37,6 @@ import FeatureProgressIndicator from "../../../../../components/Common/FeatureLi
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
 import { FeatureLikelihoodChip } from "../../../../../components/Common/Forecasts/FeatureLikelihoodChip";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
-import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../components/Common/Forecasts/InsufficientForecastDataIndicator";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
@@ -57,6 +56,7 @@ import {
 	cannotForecastReason,
 } from "../../../../../utils/forecast/cannotForecast";
 import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
+import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../utils/forecast/insufficientForecastData";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";

@@ -1,10 +1,6 @@
 import { Typography } from "@mui/material";
 import type React from "react";
-
-export const INSUFFICIENT_FORECAST_DATA_MESSAGE =
-	"Not enough data yet — need at least 5 days with completed items to forecast.";
-
-export const INSUFFICIENT_FORECAST_DATA_SHORT = "Not enough data";
+import { INSUFFICIENT_FORECAST_DATA_MESSAGE } from "../../../utils/forecast/insufficientForecastData";
 
 const InsufficientForecastDataIndicator: React.FC = () => {
 	return (

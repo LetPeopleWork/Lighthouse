@@ -2,27 +2,16 @@ import CheckIcon from "@mui/icons-material/Check";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import type React from "react";
-import {
-	type IFeatureDependency,
-	isWorthWarningAbout,
-} from "../../../models/FeatureDependency";
+import type { IFeatureDependency } from "../../../models/FeatureDependency";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
-import {
-	type DependencyTerms,
-	positionedBelowSentence,
-	reasonSentence,
-	withheldName,
-} from "../../../utils/dependencies/dependencySentences";
+import { featureWarningSentences } from "../../../utils/features/featureWarningSentences";
 
 type WarningsIndicatorProps = {
 	isDoneWithRemainingWork: boolean;
 	isUsingDefaultFeatureSize: boolean;
 	dependencies?: IFeatureDependency[];
 };
-
-const DONE_WITH_REMAINING_WORK_TOOLTIP =
-	"This feature is marked as done but still has remaining work items. Please verify if all work has been completed.";
 
 /**
  * Whether a row needs attention, and everything there is to say about why. A row either needs it or it
@@ -40,18 +29,10 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
-	const defaultSizeTooltip = `No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`;
-
-	const warnings = [
-		...(isDoneWithRemainingWork ? [DONE_WITH_REMAINING_WORK_TOOLTIP] : []),
-		...(isUsingDefaultFeatureSize ? [defaultSizeTooltip] : []),
-		// Having a dependency is not a warning; only one with something wrong with it is.
-		...dependencies
-			.filter(isWorthWarningAbout)
-			.map((dependency) =>
-				sentenceFor(dependency, { featureTerm, portfolioTerm }),
-			),
-	];
+	const warnings = featureWarningSentences(
+		{ isDoneWithRemainingWork, isUsingDefaultFeatureSize, dependencies },
+		{ workItemsTerm, featureTerm, portfolioTerm },
+	);
 
 	if (warnings.length === 0) {
 		return (
@@ -98,23 +79,6 @@ const WarningList: React.FC<{ warnings: string[] }> = ({ warnings }) => {
 			))}
 		</Box>
 	);
-};
-
-// The words themselves live beside the dialog's, so a row and the list opened from it say the same
-// thing about the same dependency.
-const sentenceFor = (
-	dependency: IFeatureDependency,
-	terms: DependencyTerms,
-): string => {
-	const waitedOn = dependency.isWithheld
-		? withheldName(terms)
-		: dependency.name;
-
-	if (dependency.notHonouredReason) {
-		return reasonSentence(dependency.notHonouredReason, waitedOn, terms);
-	}
-
-	return positionedBelowSentence(waitedOn, terms);
 };
 
 export default WarningsIndicator;
