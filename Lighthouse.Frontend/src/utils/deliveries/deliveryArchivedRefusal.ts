@@ -17,3 +17,21 @@ export function isArchivedRefusal(error: unknown): boolean {
 export function archivedRefusalMessage(deliveryTerm: string): string {
 	return `This ${deliveryTerm} is archived, so it can no longer be changed. Bring it back first.`;
 }
+
+/** The reason the server sends when asked to bring back something that is not away. */
+export const DELIVERY_NOT_ARCHIVED_CODE = "delivery-not-archived";
+
+/**
+ * The exact opposite instruction to the one above, and it arrives as the same conflict — so a screen
+ * reading only the status would tell somebody to bring back a Delivery that is already back.
+ */
+export function isNotArchivedRefusal(error: unknown): boolean {
+	return (
+		error instanceof ApiError &&
+		error.problemCode === DELIVERY_NOT_ARCHIVED_CODE
+	);
+}
+
+export function notArchivedRefusalMessage(deliveryTerm: string): string {
+	return `This ${deliveryTerm} is already back in the active list.`;
+}

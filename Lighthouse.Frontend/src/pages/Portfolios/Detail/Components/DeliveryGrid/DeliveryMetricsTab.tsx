@@ -25,6 +25,7 @@ export function useLazyMetricsHistory(deliveryId: number) {
 	const { deliveryService } = useContext(ApiServiceContext);
 	const [history, setHistory] = useState<DeliveryMetricsHistory | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [hasFailed, setHasFailed] = useState(false);
 
 	const load = useCallback(() => {
 		if (history !== null || isLoading) {
@@ -32,26 +33,45 @@ export function useLazyMetricsHistory(deliveryId: number) {
 		}
 
 		setIsLoading(true);
+		setHasFailed(false);
 		deliveryService
 			.getMetricsHistory(deliveryId)
 			.then(setHistory)
+			// Without this the tab keeps saying it is loading, for as long as anyone leaves it open.
+			// A reader cannot tell that apart from a slow answer, so they wait for one that is never
+			// coming.
+			.catch((error: unknown) => {
+				console.error("Failed to load delivery metrics history:", error);
+				setHasFailed(true);
+			})
 			.finally(() => setIsLoading(false));
 	}, [deliveryService, deliveryId, history, isLoading]);
 
-	return { history, isLoading, load };
+	return { history, isLoading, hasFailed, load };
 }
 
 interface DeliveryMetricsTabProps {
 	isLoading: boolean;
 	history: DeliveryMetricsHistory | null;
+	hasFailed?: boolean;
 	featuresTerm: string;
 }
 
 const DeliveryMetricsTab: React.FC<DeliveryMetricsTabProps> = ({
 	isLoading,
 	history,
+	hasFailed = false,
 	featuresTerm,
 }) => {
+	if (hasFailed) {
+		return (
+			<Typography variant="body2" color="error" sx={{ p: 2 }}>
+				Could not load the metrics history. Close this tab and open it again to
+				retry.
+			</Typography>
+		);
+	}
+
 	if (isLoading || history === null) {
 		return (
 			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>

@@ -12,8 +12,6 @@ namespace Lighthouse.Backend.API.Filters
     /// </summary>
     public sealed class DeliveryArchivedExceptionFilter : IExceptionFilter
     {
-        internal const string ArchivedCode = "delivery-archived";
-
         private readonly ILogger<DeliveryArchivedExceptionFilter> logger;
 
         public DeliveryArchivedExceptionFilter(ILogger<DeliveryArchivedExceptionFilter> logger)
@@ -37,9 +35,9 @@ namespace Lighthouse.Backend.API.Filters
                 Status = StatusCodes.Status409Conflict,
                 Title = "Delivery archived",
                 Detail = archived.Message,
-                Type = ArchivedCode,
+                Type = archived.Code,
             };
-            problemDetails.Extensions["code"] = ArchivedCode;
+            problemDetails.Extensions["code"] = archived.Code;
             problemDetails.Extensions["deliveryId"] = archived.DeliveryId;
 
             context.Result = new ConflictObjectResult(problemDetails);

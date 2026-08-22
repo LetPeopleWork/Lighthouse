@@ -12,6 +12,12 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { useDeliveryManagement } from "./useDeliveryManagement";
 
+vi.mock("../../../../../services/TerminologyContext", () => ({
+	useTerminology: () => ({
+		getTerm: (key: string) => (key === "delivery" ? "Delivery" : key),
+	}),
+}));
+
 // Mock the context
 const mockDeliveryService = {
 	getByPortfolio: vi.fn(),
@@ -570,8 +576,50 @@ describe("useDeliveryManagement", () => {
 				await result.current.handleUpdateDelivery(deliveryData);
 			});
 
-			expect(mockShowError).toHaveBeenCalledWith("Failed to update delivery");
+			expect(mockShowError).toHaveBeenCalledWith("Failed to update Delivery");
 			expect(result.current.selectedDelivery).not.toBeNull(); // Should remain open on error
+		});
+
+		it("says the Delivery is archived rather than telling the reader to refresh", async () => {
+			const portfolio = getMockPortfolio();
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			// Both refusals arrive as a conflict; only the reason tells them apart.
+			mockApiServiceContext.deliveryService.update = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(
+						409,
+						"Conflict",
+						undefined,
+						undefined,
+						"delivery-archived",
+					),
+				);
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleEditDelivery(getMockDelivery({ id: 1 }));
+			});
+
+			await act(async () => {
+				await result.current.handleUpdateDelivery({
+					id: 1,
+					name: "Updated Delivery",
+					date: "2025-12-25",
+					featureIds: [1],
+				});
+			});
+
+			expect(mockShowError).toHaveBeenCalledWith(
+				"This Delivery is archived, so it can no longer be changed. Bring it back first.",
+			);
 		});
 
 		it("should clear cached features when updating delivery and reload if expanded", async () => {

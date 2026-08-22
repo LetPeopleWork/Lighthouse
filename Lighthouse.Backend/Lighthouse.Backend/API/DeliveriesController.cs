@@ -366,7 +366,9 @@ namespace Lighthouse.Backend.API
             {
                 DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
                 DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
-                _ => throw new NotSupportedException($"Delivery Mode {request.SelectionMode} is not supported"),
+                // The enum converter accepts any number, so a caller can name a mode that does not
+                // exist. That is a malformed request rather than something broken on our side.
+                _ => BadRequest($"Delivery Mode {request.SelectionMode} is not supported"),
             };
         }
 

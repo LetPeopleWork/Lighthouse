@@ -219,8 +219,18 @@ const archivedFeatureRow = (row: FeatureMetric): string[] => [
 	pinnedLikelihood(row),
 	NOTHING_TO_SAY,
 	NOTHING_TO_SAY,
-	row.isUsingDefaultSize === true ? "Yes" : NOTHING_TO_SAY,
+	pinnedWarning(row),
 ];
+
+// A record that says the size was measured is answering the question, and answering it with a blank
+// would read as nobody having asked. Only a row from before sizes were kept has nothing to say.
+const pinnedWarning = (row: FeatureMetric): string => {
+	if (row.isUsingDefaultSize === null || row.isUsingDefaultSize === undefined) {
+		return NOTHING_TO_SAY;
+	}
+
+	return row.isUsingDefaultSize ? "Yes" : "No";
+};
 
 /**
  * The same table, for a Delivery that has been retired. Same columns and the same Delivery-first

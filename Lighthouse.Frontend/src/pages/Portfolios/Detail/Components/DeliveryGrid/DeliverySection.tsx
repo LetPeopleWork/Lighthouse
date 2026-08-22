@@ -106,6 +106,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const {
 		history: metricsHistory,
 		isLoading: isLoadingMetrics,
+		hasFailed: metricsFailed,
 		load: loadMetricsHistory,
 	} = useLazyMetricsHistory(delivery.id);
 
@@ -572,6 +573,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							<DeliveryMetricsTab
 								isLoading={isLoadingMetrics}
 								history={metricsHistory}
+								hasFailed={metricsFailed}
 								featuresTerm={featuresTerm}
 							/>
 						)}

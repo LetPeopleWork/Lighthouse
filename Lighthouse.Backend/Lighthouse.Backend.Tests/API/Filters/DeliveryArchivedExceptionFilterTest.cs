@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Filters
                 Assert.That(problemDetails, Is.Not.Null);
                 Assert.That(problemDetails?.Status, Is.EqualTo(StatusCodes.Status409Conflict));
                 Assert.That(problemDetails?.Detail, Is.EqualTo("Delivery 42 is already archived."));
-                Assert.That(problemDetails?.Extensions["code"], Is.EqualTo(DeliveryArchivedExceptionFilter.ArchivedCode));
+                Assert.That(problemDetails?.Extensions["code"], Is.EqualTo("delivery-archived"));
             }
         }
 

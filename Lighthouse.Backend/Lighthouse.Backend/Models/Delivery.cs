@@ -50,9 +50,12 @@ namespace Lighthouse.Backend.Models
         public DateTime Date { get => date; init => date = value; }
 #pragma warning restore S2292
         
-        public int PortfolioId { get; set; }
-        
-        public Portfolio? Portfolio { get; set; }
+        // Which Portfolio a Delivery belongs to is settled when it is created. Left assignable, it
+        // would be the one way to move an archived Delivery somewhere else, and moving it would not
+        // touch the version either, so nobody editing it at the time would be told.
+        public int PortfolioId { get; init; }
+
+        public Portfolio? Portfolio { get; init; }
         
         // Handed out read-only so that archiving a Delivery is the end of its Feature set, not merely
         // an instruction not to touch it. Every write goes through ReplaceFeatures, which is the one
@@ -140,9 +143,38 @@ namespace Lighthouse.Backend.Models
         {
             RefuseWhenArchived();
 
+            var replacement = newFeatures.ToList();
+
+            // A rule re-match runs on every portfolio sync and usually finds exactly what it found
+            // last time. Moving the token for that would expire the version an open browser is
+            // holding on a timer, so archiving or saving would fail with "somebody else changed
+            // this" when nobody had.
+            if (AlreadyHolds(replacement))
+            {
+                return;
+            }
+
             features.Clear();
-            features.AddRange(newFeatures);
+            features.AddRange(replacement);
             MarkAsChanged();
+        }
+
+        private bool AlreadyHolds(List<Feature> replacement)
+        {
+            if (features.Count != replacement.Count)
+            {
+                return false;
+            }
+
+            // A Feature that has never been saved has no id yet, and several of them would collapse
+            // into one another when compared by id. Nothing is claimed to be unchanged in that case.
+            if (features.Exists(feature => feature.Id == 0) || replacement.Exists(feature => feature.Id == 0))
+            {
+                return false;
+            }
+
+            return features.Select(feature => feature.Id).ToHashSet()
+                .SetEquals(replacement.Select(feature => feature.Id));
         }
 
         private void RefuseWhenArchived()

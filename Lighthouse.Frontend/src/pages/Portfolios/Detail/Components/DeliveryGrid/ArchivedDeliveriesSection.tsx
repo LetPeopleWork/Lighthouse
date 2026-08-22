@@ -158,6 +158,7 @@ const ArchivedDeliveryRow: React.FC<ArchivedDeliveryRowProps> = ({
 	const {
 		history: metricsHistory,
 		isLoading: isLoadingMetrics,
+		hasFailed: metricsFailed,
 		load: loadMetricsHistory,
 	} = useLazyMetricsHistory(archived.id);
 
@@ -391,6 +392,7 @@ const ArchivedDeliveryRow: React.FC<ArchivedDeliveryRowProps> = ({
 					<DeliveryMetricsTab
 						isLoading={isLoadingMetrics}
 						history={metricsHistory}
+						hasFailed={metricsFailed}
 						featuresTerm={featuresTerm}
 					/>
 				)}

@@ -166,7 +166,20 @@ describe("buildArchivedDeliveryExportTable", () => {
 		expect(featureRow.slice(3, 7)).toEqual(["", "", "", ""]);
 		expect(featureRow[8]).toBe("");
 		expect(featureRow[9]).toBe("");
-		expect(featureRow[10]).toBe("");
+	});
+
+	it("answers the warning question when the record answered it", () => {
+		const archived = makeArchived();
+
+		const table = buildArchivedDeliveryExportTable(
+			archived,
+			archived.featureBreakdown,
+			terms,
+		);
+
+		// The record says this Feature's size was counted, which is an answer. Blanking it would
+		// read as nobody having asked, and the reader could not line it up against a live export.
+		expect(table.rows[1][10]).toBe("No");
 	});
 
 	it("flags the Feature whose size was a default rather than a count", () => {

@@ -175,7 +175,9 @@ namespace Lighthouse.Backend.Tests.Models
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.Reschedule(delivery.Date.AddDays(1)))).SetName("Reschedule");
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.SelectFeaturesByHand())).SetName("SelectFeaturesByHand");
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.SelectFeaturesByRule("{}", 1))).SetName("SelectFeaturesByRule");
-            yield return new TestCaseData((Action<Delivery>)(delivery => delivery.ReplaceFeatures([]))).SetName("ReplaceFeatures");
+            // A set that differs from what the Delivery already holds. Replacing an empty set with an
+            // empty set moves nothing, and is covered on its own below.
+            yield return new TestCaseData((Action<Delivery>)(delivery => delivery.ReplaceFeatures([new Feature { Id = 11, Name = "Checkout" }]))).SetName("ReplaceFeatures");
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.Archive(ClosingInstant))).SetName("Archive");
         }
 
@@ -199,6 +201,48 @@ namespace Lighthouse.Backend.Tests.Models
                 .Any(modifier => modifier == typeof(IsExternalInit));
 
             Assert.That(settableOnlyWhenCreated, Is.True, $"{propertyName} can be assigned after the Delivery exists");
+        }
+
+        [Test]
+        public void ReplaceFeatures_SameSetAgain_LeavesTheVersionAlone()
+        {
+            var delivery = LiveDelivery();
+            var checkout = new Feature { Id = 11, Name = "Checkout" };
+            var search = new Feature { Id = 12, Name = "Search" };
+            delivery.ReplaceFeatures([checkout, search]);
+
+            var versionAnOpenEditorHolds = delivery.ConcurrencyToken;
+
+            // The order a rule matches in is not stable, and neither is the instance.
+            delivery.ReplaceFeatures([new Feature { Id = 12, Name = "Search" }, new Feature { Id = 11, Name = "Checkout" }]);
+
+            Assert.That(delivery.ConcurrencyToken, Is.EqualTo(versionAnOpenEditorHolds));
+        }
+
+        [Test]
+        public void ReplaceFeatures_ADifferentSet_MovesTheVersion()
+        {
+            var delivery = LiveDelivery();
+            delivery.ReplaceFeatures([new Feature { Id = 11, Name = "Checkout" }]);
+
+            var before = delivery.ConcurrencyToken;
+
+            delivery.ReplaceFeatures([new Feature { Id = 11, Name = "Checkout" }, new Feature { Id = 12, Name = "Search" }]);
+
+            Assert.That(delivery.ConcurrencyToken, Is.Not.EqualTo(before));
+        }
+
+        [Test]
+        public void ReplaceFeatures_FeaturesNeverSaved_MovesTheVersion()
+        {
+            var delivery = LiveDelivery();
+            delivery.ReplaceFeatures([new Feature { Name = "First" }]);
+
+            var before = delivery.ConcurrencyToken;
+
+            delivery.ReplaceFeatures([new Feature { Name = "Second" }]);
+
+            Assert.That(delivery.ConcurrencyToken, Is.Not.EqualTo(before));
         }
 
         private static Delivery LiveDelivery()

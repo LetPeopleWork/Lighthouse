@@ -642,7 +642,12 @@ describe("CreateConnectionWizard", () => {
 		});
 	});
 
-	describe("Step 2: OAuth premium-gated authentication method", () => {
+	// These drive a popup handshake through several awaited renders and land close enough to the 5s
+	// default that adding tests anywhere else in the suite pushes them over it. The time is the suite
+	// being loaded, not the wizard being slow.
+	describe("Step 2: OAuth premium-gated authentication method", {
+		timeout: 20000,
+	}, () => {
 		const goToOAuthStep2 = async (options: RenderOptions = {}) => {
 			const user = userEvent.setup();
 			renderWizard({

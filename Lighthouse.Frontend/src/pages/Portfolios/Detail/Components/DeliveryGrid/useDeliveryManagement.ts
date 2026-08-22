@@ -4,12 +4,20 @@ import type { Delivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type {
 	DeliverySelectionMode,
 	IWorkItemRuleCondition,
 } from "../../../../../models/WorkItemRules";
 import { ApiError } from "../../../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../../../services/TerminologyContext";
+import {
+	archivedRefusalMessage,
+	isArchivedRefusal,
+	isNotArchivedRefusal,
+	notArchivedRefusalMessage,
+} from "../../../../../utils/deliveries/deliveryArchivedRefusal";
 
 interface UseDeliveryManagementProps {
 	portfolio: Portfolio;
@@ -33,9 +41,33 @@ function isConcurrencyConflict(error: unknown): boolean {
 	);
 }
 
+/**
+ * Both refusals arrive as a conflict, and they call for opposite things: one says reload and try
+ * again, the other says the Delivery is retired and no reload will change that. Telling somebody to
+ * refresh a page that will say exactly the same thing is the failure this separates out.
+ */
+function refusalMessage(
+	error: unknown,
+	deliveryTerm: string,
+	fallback: string,
+): string {
+	if (isArchivedRefusal(error)) {
+		return archivedRefusalMessage(deliveryTerm);
+	}
+
+	if (isNotArchivedRefusal(error)) {
+		return notArchivedRefusalMessage(deliveryTerm);
+	}
+
+	return isConcurrencyConflict(error) ? STALE_VERSION_MESSAGE : fallback;
+}
+
 export const useDeliveryManagement = ({
 	portfolio,
 }: UseDeliveryManagementProps) => {
+	const { getTerm } = useTerminology();
+	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+
 	const [deliveries, setDeliveries] = useState<Delivery[]>([]);
 	const [archivedDeliveries, setArchivedDeliveries] = useState<
 		ArchivedDelivery[]
@@ -246,7 +278,9 @@ export const useDeliveryManagement = ({
 			}
 		} catch (error) {
 			console.error("Failed to update delivery:", error);
-			showError("Failed to update delivery");
+			showError(
+				refusalMessage(error, deliveryTerm, `Failed to update ${deliveryTerm}`),
+			);
 		}
 	};
 
@@ -278,9 +312,11 @@ export const useDeliveryManagement = ({
 			} catch (error) {
 				console.error("Failed to archive delivery:", error);
 				showError(
-					isConcurrencyConflict(error)
-						? STALE_VERSION_MESSAGE
-						: "Failed to archive delivery",
+					refusalMessage(
+						error,
+						deliveryTerm,
+						`Failed to archive ${deliveryTerm}`,
+					),
 				);
 			}
 		}
@@ -296,9 +332,11 @@ export const useDeliveryManagement = ({
 		} catch (error) {
 			console.error("Failed to unarchive delivery:", error);
 			showError(
-				isConcurrencyConflict(error)
-					? STALE_VERSION_MESSAGE
-					: "Failed to unarchive delivery",
+				refusalMessage(
+					error,
+					deliveryTerm,
+					`Failed to bring back ${deliveryTerm}`,
+				),
 			);
 		}
 	};
