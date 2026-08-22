@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             rootFactory.Dispose();
         }
 
-        // @driving_port @us-10 - one round of "refresh everything", one delivery date.
+        // @driving_port - one round of "refresh everything", one delivery date.
         [Test]
         public async Task Refreshing_everything_produces_one_forecast_for_the_portfolio_not_one_per_team()
         {
@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             ThenThePortfolioWasForecastExactlyOnce(portfolioId);
         }
 
-        // @driving_port @us-10 - moving the forecast out of the Portfolio refresh costs the work tracking
+        // @driving_port - moving the forecast out of the Portfolio refresh costs the work tracking
         // system nothing: one round, one conversation, carrying what both passes resolved.
         [Test]
         public async Task Moving_the_forecast_into_its_own_execution_still_reaches_the_tracker_once()
@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 (FeatureReference, ForecastFieldReference, TheForecastDateAfter(10)));
         }
 
-        // @driving_port @us-10 - the baseline shape captured on the dogfood instance: one call per
+        // @driving_port - the baseline shape captured on the dogfood instance: one call per
         // refresh, the second carrying only what actually moved since the first.
         [Test]
         public async Task Two_consecutive_refreshes_reach_the_tracker_once_each_and_the_second_carries_only_what_moved()
@@ -198,7 +198,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 (FeatureReference, ForecastFieldReference, TheForecastDateAfter(11)));
         }
 
-        // @error @driving_port @us-10 - the round drains its staging area before the first write, so a
+        // @error @driving_port - the round drains its staging area before the first write, so a
         // write that failed leaves neither a half-updated local copy nor a residue to be sent twice.
         [Test]
         public async Task A_forecast_write_back_that_failed_leaves_nothing_half_written()
@@ -222,7 +222,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         }
 
 
-        // @driving_port @us-10 - the two background loops keep their own schedules, so a team refresh is
+        // @driving_port - the two background loops keep their own schedules, so a team refresh is
         // regularly still in flight when the portfolio refresh arrives and asks for a delivery date.
         [Test]
         public async Task A_portfolio_refresh_overlapping_a_team_refresh_settles_on_one_delivery_date()
@@ -237,7 +237,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             ThenTheDeliveryDateTheTrackerReceivedWas(TheForecastDateAfter(10));
         }
 
-        // @driving_port @us-10 - one announcement per portfolio, not one for the batch and not one per
+        // @driving_port - one announcement per portfolio, not one for the batch and not one per
         // portfolio pass: everything listening records a round once per announcement.
         [Test]
         public async Task Refreshing_everything_announces_a_new_delivery_date_once_for_each_portfolio()
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             ThenANewDeliveryDateWasAnnouncedExactlyOnceFor(secondPortfolioId);
         }
 
-        // @driving_port @us-10 - the forecast left the portfolio refresh; nothing else did.
+        // @driving_port - the forecast left the portfolio refresh; nothing else did.
         [Test]
         public async Task The_portfolio_refresh_still_does_everything_that_was_never_about_forecasting()
         {

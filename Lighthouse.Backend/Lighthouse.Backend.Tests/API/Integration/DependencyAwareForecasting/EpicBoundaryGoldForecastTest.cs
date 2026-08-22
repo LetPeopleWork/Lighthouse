@@ -9,6 +9,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     // Portfolio once instead of once per Team - is checked by Slice00OneForecastPerBatchScenarios,
     // which drives a running application with a database and a work tracking connector behind it. A
     // second copy of that harness here would cost far more than keeping the two halves side by side.
+    [TestFixture]
+    [Category("acceptance")]
+    [Category("epic-5792-dependency-aware-forecasting")]
+    [Category("slice-00")]
     public class EpicBoundaryGoldForecastTest
     {
         [Test]

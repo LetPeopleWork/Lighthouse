@@ -1,5 +1,8 @@
 namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 {
+    [TestFixture]
+    [Category("epic-5792-dependency-aware-forecasting")]
+    [Category("slice-00")]
     public class GoldForecastCapture
     {
         [Test]
