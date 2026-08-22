@@ -1,12 +1,23 @@
 ﻿﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Repositories
 {
     public class PortfolioRepository(LighthouseAppContext context, ILogger<PortfolioRepository> logger)
-        : RepositoryBase<Portfolio>(context, (context) => context.Portfolios, logger)
+        : RepositoryBase<Portfolio>(context, (context) => context.Portfolios, logger), IPortfolioRepository
     {
+        public IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId)
+        {
+            return Context.Features
+                .Where(feature => feature.FeatureWork.Any(work => work.TeamId == teamId))
+                .SelectMany(feature => feature.Portfolios)
+                .Select(portfolio => portfolio.Id)
+                .Distinct()
+                .ToList();
+        }
+
         public override IEnumerable<Portfolio> GetAll()
         {
             return GetAllProjectsWithIncludes()
@@ -62,8 +73,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .Include(f => f.Features).ThenInclude(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
                 .Include(p => p.WorkTrackingSystemConnection.Options)
                 .Include(p => p.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
-                .Include(p => p.WorkTrackingSystemConnection.WriteBackMappingDefinitions)
-                .Include(p => p.Teams);
+                .Include(p => p.WorkTrackingSystemConnection.WriteBackMappingDefinitions);
 #pragma warning restore S8733
         }
     }

@@ -1169,7 +1169,8 @@ namespace Lighthouse.Backend
             // Repos
             builder.Services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
             builder.Services.AddScoped<IRepository<Team>, TeamRepository>();
-            builder.Services.AddScoped<IRepository<Portfolio>, PortfolioRepository>();
+            builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+            builder.Services.AddScoped<IRepository<Portfolio>>(services => services.GetRequiredService<IPortfolioRepository>());
             builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
             builder.Services.AddScoped<IRepository<Feature>>(services => services.GetRequiredService<IFeatureRepository>());
             builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
