@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API
         IForecastUpdater forecastUpdater,
         IForecastService forecastService,
         IRepository<Team> teamRepository,
+        IPortfolioRepository portfolioRepository,
         ITeamMetricsService teamMetricsService,
         IBlackoutPeriodService blackoutPeriodService,
         ILighthouseClock clock)
@@ -40,11 +41,11 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public ActionResult<bool> UpdateForecastsForTeamPortfolios(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team =>
+            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, _ =>
             {
-                foreach (var portfolio in team.Portfolios)
+                foreach (var portfolioId in portfolioRepository.GetPortfolioIdsForTeam(teamId))
                 {
-                    forecastUpdater.TriggerUpdate(portfolio.Id);
+                    forecastUpdater.TriggerUpdate(portfolioId);
                 }
 
                 return true;

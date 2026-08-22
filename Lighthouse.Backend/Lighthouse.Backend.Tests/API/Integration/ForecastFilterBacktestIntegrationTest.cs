@@ -57,6 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 forecastUpdaterMock.Object,
                 forecastServiceMock.Object,
                 teamRepositoryMock.Object,
+                Mock.Of<IPortfolioRepository>(),
                 teamMetricsServiceMock.Object,
                 blackoutPeriodServiceMock.Object,
                 TestToday.Clock);

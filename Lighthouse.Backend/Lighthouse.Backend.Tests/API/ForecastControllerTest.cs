@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IForecastUpdater> forecastUpdaterMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
+        private Mock<IPortfolioRepository> portfolioRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
@@ -30,6 +31,7 @@ namespace Lighthouse.Backend.Tests.API
             forecastServiceMock = new Mock<IForecastService>();
 
             teamRepositoryMock = new Mock<IRepository<Team>>();
+            portfolioRepositoryMock = new Mock<IPortfolioRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -106,18 +108,12 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamExists_TriggersUpdateForAllPortfolios()
+        public void UpdateForecastsForTeamPortfolios_TeamWorksFeaturesOfPortfolios_TriggersUpdateForEachOfThem()
         {
-            var portfolio1 = new Portfolio { Id = 1, Name = "Portfolio 1" };
-            var portfolio2 = new Portfolio { Id = 2, Name = "Portfolio 2" };
-            var portfolio3 = new Portfolio { Id = 3, Name = "Portfolio 3" };
-
             var team = new Team { Id = 12, Name = "Test Team" };
-            team.Portfolios.Add(portfolio1);
-            team.Portfolios.Add(portfolio2);
-            team.Portfolios.Add(portfolio3);
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([1, 2, 3]);
 
             var subject = CreateSubject();
 
@@ -133,15 +129,17 @@ namespace Lighthouse.Backend.Tests.API
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(1), Times.Once);
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(2), Times.Once);
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(3), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Exactly(3));
             }
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamHasNoPortfolios_DoesNotTriggerUpdates()
+        public void UpdateForecastsForTeamPortfolios_TeamWorksNoFeatureOfAnyPortfolio_DoesNotTriggerUpdates()
         {
             var team = new Team { Id = 12, Name = "Test Team" };
 
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([]);
 
             var subject = CreateSubject();
 
@@ -689,7 +687,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private ForecastController CreateSubject()
         {
-            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, TestToday.Clock);
+            return new ForecastController(forecastUpdaterMock.Object, forecastServiceMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, teamMetricsServiceMock.Object, blackoutPeriodServiceMock.Object, TestToday.Clock);
         }
     }
 }
