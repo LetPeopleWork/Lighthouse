@@ -301,6 +301,7 @@ namespace Lighthouse.Backend
                 .AddControllers(options =>
                 {
                     options.Filters.Add<ConcurrencyConflictExceptionFilter>();
+                    options.Filters.Add<DeliveryArchivedExceptionFilter>();
 
                     if (authConfig.Enabled)
                     {
