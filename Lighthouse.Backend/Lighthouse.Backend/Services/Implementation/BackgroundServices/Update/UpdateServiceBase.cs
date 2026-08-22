@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         protected ILogger<UpdateServiceBase<TEntity>> Logger { get; } = logger;
 
-        public void TriggerUpdate(int id)
+        public virtual void TriggerUpdate(int id)
         {
             updateQueueService.EnqueueUpdate(updateType, id, async serviceProvider =>
             {

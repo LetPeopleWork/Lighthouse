@@ -1,13 +1,17 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
@@ -19,6 +23,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
+        private Mock<IUpdateStatusStore> updateStatusStoreMock;
+        private InProcessUpdateStatusStore inProcessUpdateStatusStore;
 
         private int idCounter = 0;
 
@@ -27,6 +33,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private const int SlowForecastMilliseconds = 60;
 
         private const int ShortestCredibleDurationMilliseconds = 25;
+
+        private const int TeamOutsideThePortfolioId = 98;
+
+        private const int PortfolioRefreshedElsewhereId = 99;
 
         [SetUp]
         public void Setup()
@@ -39,6 +49,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             domainEventDispatcherMock
                 .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
+            updateStatusStoreMock = new Mock<IUpdateStatusStore>();
+            inProcessUpdateStatusStore = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
 
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             refreshLogServiceMock
@@ -64,7 +77,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(1);
 
             // Assert
-            portfolioRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.Once);
+            portfolioRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.AtLeastOnce);
             portfolioRepositoryMock.VerifyNoOtherCalls();
             forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>()), Times.Never);
         }
@@ -222,6 +235,161 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        public void Update_ShouldNotForecastYet_WhenSiblingTeamIsStillWaitingToRefresh()
+        {
+            var team = new Team { Name = "Sibling Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
+                .Returns(true);
+
+            var subject = CreateSubject();
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>()), Times.Never);
+        }
+
+        [Test]
+        public void Update_ShouldForecast_WhenNoTeamOfThePortfolioIsWaitingToRefresh()
+        {
+            var team = new Team { Name = "Sibling Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.IsAny<IReadOnlyCollection<UpdateKey>>()))
+                .Returns(false);
+
+            var subject = CreateSubject();
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldForecast_WhenTheOnlyTeamOfThePortfolioHasNothingPending()
+        {
+            var team = new Team { Name = "Only Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            var subject = CreateSubject(inProcessUpdateStatusStore);
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        // A team announces that it finished refreshing from inside its own update run, so at the moment the
+        // forecast is asked for, that team's key still reads as running. It only ever goes back to queued
+        // after the run has ended, and then only when another refresh for it was folded into the first.
+        [Test]
+        public void Update_ShouldForecast_WhenTheTeamThatAskedForItIsStillRunningItsOwnRefresh()
+        {
+            var team = new Team { Name = "Refreshing Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+
+            var subject = CreateSubject(inProcessUpdateStatusStore);
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldForecast_WhenTheQueuedWorkBelongsToTeamsThatDoNotWorkOnThePortfolio()
+        {
+            var team = new Team { Name = "Refreshing Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+            RecordUpdate(UpdateType.Team, TeamOutsideThePortfolioId, UpdateProgress.Queued);
+            RecordUpdate(UpdateType.Features, PortfolioRefreshedElsewhereId, UpdateProgress.Queued);
+
+            var subject = CreateSubject(inProcessUpdateStatusStore);
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldForecastBothPortfolios_WhenTheSameTeamWorksOnTwoOfThem()
+        {
+            var team = new Team { Name = "Shared Team", Id = 42 };
+            var firstPortfolio = CreatePortfolioWorkedOnBy(team);
+            var secondPortfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(firstPortfolio.Id)).Returns(firstPortfolio);
+            portfolioRepositoryMock.Setup(x => x.GetById(secondPortfolio.Id)).Returns(secondPortfolio);
+
+            RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+
+            var subject = CreateSubject(inProcessUpdateStatusStore);
+
+            subject.TriggerUpdate(firstPortfolio.Id);
+            subject.TriggerUpdate(secondPortfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(firstPortfolio), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(secondPortfolio), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldForecast_WhenTheOrderOfTheFeaturesChanged()
+        {
+            var firstFeature = CreateFeatureWorkedOnBy(new Team { Name = "Team On The First Feature", Id = 42 });
+            var secondFeature = CreateFeatureWorkedOnBy(new Team { Name = "Team On The Second Feature", Id = 43 });
+            var portfolio = CreatePortfolio(firstFeature, secondFeature);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            portfolio.UpdateFeatures([secondFeature, firstFeature]);
+
+            var subject = CreateSubject(inProcessUpdateStatusStore);
+
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        [Test]
+        public async Task Update_ShouldStillForecast_WhenTheLastTeamOfThePortfolioFailsToRefresh()
+        {
+            var firstTeam = new Team { Name = "First Team", Id = 42 };
+            var lastTeam = new Team { Name = "Last Team", Id = 43 };
+            var portfolio = CreatePortfolio(CreateFeatureWorkedOnBy(firstTeam), CreateFeatureWorkedOnBy(lastTeam));
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            using var updateQueue = CreateRealUpdateQueue();
+
+            var firstTeamHasFinished = new TaskCompletionSource();
+            updateQueue.EnqueueUpdate(UpdateType.Team, firstTeam.Id, _ => firstTeamHasFinished.Task);
+            updateQueue.EnqueueUpdate(UpdateType.Team, lastTeam.Id, _ => throw new InvalidOperationException("The last team could not be refreshed"));
+
+            var subject = CreateSubject(inProcessUpdateStatusStore, updateQueue);
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Never);
+
+            firstTeamHasFinished.SetResult();
+
+            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once));
+        }
+
+        private void RecordUpdate(UpdateType updateType, int id, UpdateProgress progress)
+        {
+            inProcessUpdateStatusStore.TryAdmit(
+                new UpdateKey(updateType, id),
+                new UpdateStatus { UpdateType = updateType, Id = id, Status = progress });
+        }
+
         private RecordedRefreshLog CaptureRefreshLog()
         {
             var recorded = new RecordedRefreshLog();
@@ -247,7 +415,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private ForecastUpdater CreateSubject()
         {
-            return new ForecastUpdater(Mock.Of<ILogger<ForecastUpdater>>(), ServiceScopeFactory, UpdateQueueService, domainEventDispatcherMock.Object);
+            return CreateSubject(updateStatusStoreMock.Object);
+        }
+
+        private ForecastUpdater CreateSubject(IUpdateStatusStore statusStore)
+        {
+            return CreateSubject(statusStore, UpdateQueueService);
+        }
+
+        private ForecastUpdater CreateSubject(IUpdateStatusStore statusStore, IUpdateQueueService updateQueueService)
+        {
+            return new ForecastUpdater(Mock.Of<ILogger<ForecastUpdater>>(), ServiceScopeFactory, updateQueueService, domainEventDispatcherMock.Object, statusStore);
+        }
+
+        private UpdateQueueService CreateRealUpdateQueue()
+        {
+            var hubContextMock = new Mock<IHubContext<UpdateNotificationHub>>();
+            hubContextMock.Setup(hub => hub.Clients.Group(It.IsAny<string>())).Returns(Mock.Of<IClientProxy>());
+
+            return new UpdateQueueService(
+                Mock.Of<ILogger<UpdateQueueService>>(),
+                hubContextMock.Object,
+                inProcessUpdateStatusStore,
+                new InProcessUpdateExecutionLock(),
+                new InProcessUpdateCompletionNotifier(),
+                ServiceScopeFactory,
+                new DatabaseMaintenanceGate(inProcessUpdateStatusStore));
+        }
+
+        private Portfolio CreatePortfolioWorkedOnBy(Team team)
+        {
+            return CreatePortfolio(CreateFeatureWorkedOnBy(team));
+        }
+
+        private Feature CreateFeatureWorkedOnBy(Team team)
+        {
+            var feature = new Feature { Name = "Feature", Id = idCounter++ };
+            feature.FeatureWork.Add(new FeatureWork(team, 3, 5, feature));
+
+            return feature;
         }
 
         private Portfolio CreatePortfolio(params Feature[] features)

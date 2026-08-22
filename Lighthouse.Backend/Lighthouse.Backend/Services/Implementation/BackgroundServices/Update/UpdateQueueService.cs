@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly IDisposable completionSubscription;
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly ConcurrentDictionary<UpdateKey, Func<IServiceProvider, Task>> pendingReruns = new();
+        private readonly ConcurrentDictionary<UpdateKey, HeldUpdate> heldUpdates = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
         private readonly DatabaseMaintenanceGate maintenanceGate;
         private readonly Task processingTask;
@@ -135,6 +136,35 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return RegisterCancellation(tcs.Task, cancellationToken);
         }
 
+        public void HoldUntilQueuedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
+        {
+            heldUpdates[heldFor] = new HeldUpdate(waitingOn, onQueuedWorkCleared);
+
+            // The work being waited on can finish between the caller looking at it and this line. Releases
+            // only ever fire when something leaves the queue, so nothing would come along afterwards to let
+            // this one out - check once more now that it is actually held.
+            ReleaseClearedHolds();
+        }
+
+        private void ReleaseClearedHolds()
+        {
+            foreach (var heldFor in heldUpdates.Keys)
+            {
+                if (!heldUpdates.TryGetValue(heldFor, out var held) || statusStore.HasQueuedWork(held.WaitingOn))
+                {
+                    continue;
+                }
+
+                if (heldUpdates.TryRemove(heldFor, out var released))
+                {
+                    logger.LogInformation("Releasing the held update for {UpdateType} with ID {Id}; the work it waited for has left the queue.", heldFor.UpdateType, heldFor.Id);
+                    released.Release();
+                }
+            }
+        }
+
+        private sealed record HeldUpdate(IReadOnlyCollection<UpdateKey> WaitingOn, Action Release);
+
         private static Task RegisterCancellation(Task task, CancellationToken cancellationToken)
         {
             if (!cancellationToken.CanBeCanceled)
@@ -205,6 +235,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     EnqueueUpdate(updateType, id, lateRerun);
                 }
 
+                // Reached on the failure path too: the catch above only records the outcome. Work held
+                // behind a key that failed must still be let go, or a single failing refresh would strand
+                // it until something unrelated happens to poke the same key again.
+                ReleaseClearedHolds();
+
                 await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
             };
@@ -259,6 +294,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 {
                     awaiters.TryRemove(updateKey, out _);
                     statusStore.Remove(updateKey);
+                    ReleaseClearedHolds();
                     await completionNotifier.PublishCompletionAsync(updateKey);
                     await NotifyListeners(updateKey, terminalStatus);
                 }
