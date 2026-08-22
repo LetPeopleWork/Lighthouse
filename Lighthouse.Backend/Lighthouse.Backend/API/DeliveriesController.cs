@@ -230,10 +230,6 @@ namespace Lighthouse.Backend.API
 
         private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(UpdateDeliveryRequest request, Delivery delivery)
         {
-            delivery.RuleDefinitionJson = null;
-            delivery.RuleSchemaVersion = null;
-            delivery.Features.Clear();
-
             var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds);
 
             var missingIds = request.FeatureIds
@@ -245,7 +241,9 @@ namespace Lighthouse.Backend.API
                 return NotFound($"Feature with ID {missingIds[0]} does not exist");
             }
 
-            delivery.Features.AddRange(featureList);
+            delivery.RuleDefinitionJson = null;
+            delivery.RuleSchemaVersion = null;
+            delivery.ReplaceFeatures(featureList);
             return null;
         }
 
@@ -268,11 +266,9 @@ namespace Lighthouse.Backend.API
             delivery.RuleDefinitionJson = WorkItemRuleSetJson.Serialize(ruleSet);
             delivery.RuleSchemaVersion = WorkItemRuleSet.SchemaVersion;
 
-
-            delivery.Features.Clear();
             var portfolioFeatures = GetFeaturesForPortfolio(delivery.PortfolioId);
             var matchingFeatures = deliveryRuleService.GetMatchingFeaturesForRuleset(ruleSet, portfolioFeatures);
-            delivery.Features.AddRange(matchingFeatures);
+            delivery.ReplaceFeatures(matchingFeatures);
         }
 
         private List<Feature> GetFeaturesForPortfolio(int portfolioId)

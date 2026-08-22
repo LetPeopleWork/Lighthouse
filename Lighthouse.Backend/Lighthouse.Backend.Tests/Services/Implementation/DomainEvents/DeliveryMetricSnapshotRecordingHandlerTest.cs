@@ -526,8 +526,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
-            delivery.Features.Add(brokenDownFeature);
-            delivery.Features.Add(extrapolatedFeature);
+            delivery.ReplaceFeatures([brokenDownFeature, extrapolatedFeature]);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);
@@ -561,7 +560,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id, TestToday.Ambient);
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);
@@ -613,9 +612,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id, TestToday.Ambient);
-            delivery.Features.Add(inProgressFeature);
-            delivery.Features.Add(completedFeature);
-            delivery.Features.Add(emptyFeature);
+            delivery.ReplaceFeatures([inProgressFeature, completedFeature, emptyFeature]);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);
@@ -650,7 +647,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(KnownForecastDays), portfolio.Id, TestToday.Ambient);
-            delivery.Features.Add(emptyFeature);
+            delivery.ReplaceFeatures([emptyFeature]);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);
@@ -817,7 +814,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);
@@ -844,7 +841,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             await featureRepository.Save();
 
             var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
-            delivery.Features.AddRange(features);
+            delivery.ReplaceFeatures(features);
 
             var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
             deliveryRepository.Add(delivery);

@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Repository
             repository.Add(delivery);
             await repository.Save();
 
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
             await repository.Save();
 
             // Act
@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.Repository
 
             // Add Delivery
             var delivery = GetTestDelivery(portfolio.Id);
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
             repository.Add(delivery);
             
             await repository.Save();

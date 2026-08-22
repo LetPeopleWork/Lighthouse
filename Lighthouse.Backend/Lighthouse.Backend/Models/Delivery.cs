@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Models
 {
     public class Delivery : IConcurrencyTokenEntity
     {
+        private readonly List<Feature> features = [];
+
         public Delivery(string name, DateTime date, int portfolioId, DateOnly today)
         {
             if (string.IsNullOrEmpty(name))
@@ -40,7 +42,10 @@ namespace Lighthouse.Backend.Models
         
         public Portfolio? Portfolio { get; set; }
         
-        public List<Feature> Features { get; } = [];
+        // Handed out read-only so that archiving a Delivery is the end of its Feature set, not merely
+        // an instruction not to touch it. Every write goes through ReplaceFeatures, which is the one
+        // place that can refuse.
+        public IReadOnlyList<Feature> Features => features;
 
         public DeliverySelectionMode SelectionMode { get; set; } = DeliverySelectionMode.Manual;
 
@@ -48,7 +53,38 @@ namespace Lighthouse.Backend.Models
 
         public int? RuleSchemaVersion { get; set; }
 
-        public DateTime? ArchivedOn { get; set; }
+        public DateTime? ArchivedOn { get; private set; }
+
+        public void Archive(DateTime archivedOn)
+        {
+            if (ArchivedOn is not null)
+            {
+                throw DeliveryArchivedException.AlreadyArchived(Id);
+            }
+
+            ArchivedOn = archivedOn;
+        }
+
+        public void Unarchive()
+        {
+            if (ArchivedOn is null)
+            {
+                throw DeliveryArchivedException.NotArchived(Id);
+            }
+
+            ArchivedOn = null;
+        }
+
+        public void ReplaceFeatures(IEnumerable<Feature> newFeatures)
+        {
+            if (ArchivedOn is not null)
+            {
+                throw DeliveryArchivedException.CannotBeChanged(Id);
+            }
+
+            features.Clear();
+            features.AddRange(newFeatures);
+        }
 
         public DeliveryMetricsProjection CalculateMetrics(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
         {
@@ -79,7 +115,7 @@ namespace Lighthouse.Backend.Models
             // Backstop at pair grain: guard 2 already covers this once Feature.TeamsWithoutForecast can
             // name the team, but this is the one place that re-derives the predicate from the row set
             // the maths actually consumes, so the two cannot drift apart silently (ADR-113 DDD-7).
-            var deliveryForecast = DeliveryCompletionForecast.Build(Features);
+            var deliveryForecast = DeliveryCompletionForecast.Build(features);
 
             if (deliveryForecast == null)
             {
@@ -99,7 +135,7 @@ namespace Lighthouse.Backend.Models
 
         private bool HasRemainingWork()
         {
-            return Features.Exists(StillHasWork);
+            return features.Exists(StillHasWork);
         }
 
         // The exemption is not cosmetic: a finished feature carries ForecastService's day-0 sentinel,

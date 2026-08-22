@@ -321,10 +321,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var delivery = new Delivery { Id = 1, Name = "Q3 Launch", Date = date };
 
-            foreach (var feature in features)
-            {
-                delivery.Features.Add(feature);
-            }
+            delivery.ReplaceFeatures(features);
 
             return delivery;
         }

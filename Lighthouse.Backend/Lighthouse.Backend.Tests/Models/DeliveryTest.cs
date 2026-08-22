@@ -108,14 +108,14 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void AddFeature_ValidFeature_AddsToCollection()
+        public void ReplaceFeatures_ValidFeature_AddsToCollection()
         {
             // Arrange
             var delivery = new Delivery("Test Delivery", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
             var feature = new Feature();
 
             // Act
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             // Assert
             Assert.That(delivery.Features, Has.Count.EqualTo(1));

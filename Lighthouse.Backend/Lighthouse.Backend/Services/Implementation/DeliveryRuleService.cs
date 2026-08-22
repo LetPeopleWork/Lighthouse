@@ -76,8 +76,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var features = GetMatchingFeaturesForRuleset(ruleSet, portfolio.Features);
                 if (features.Any())
                 {
-                    delivery.Features.Clear();
-                    delivery.Features.AddRange(features);
+                    delivery.ReplaceFeatures(features);
                 }
             }
         }

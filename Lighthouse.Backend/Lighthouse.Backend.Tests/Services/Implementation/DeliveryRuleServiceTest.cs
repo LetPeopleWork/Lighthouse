@@ -572,7 +572,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             {
                 SelectionMode = DeliverySelectionMode.Manual
             };
-            delivery.Features.Add(CreateFeature("OriginalFeature"));
+            delivery.ReplaceFeatures([CreateFeature("OriginalFeature")]);
 
             subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
 
@@ -661,7 +661,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 RuleDefinitionJson = System.Text.Json.JsonSerializer.Serialize(ruleSet),
                 RuleSchemaVersion = 1
             };
-            delivery.Features.Add(CreateFeature("OldFeature"));
+            delivery.ReplaceFeatures([CreateFeature("OldFeature")]);
 
             subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
 

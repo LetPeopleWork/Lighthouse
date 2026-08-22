@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Models
             var team = ContributingTeam();
             var feature = new Feature(team, 10);
             feature.Forecasts.Add(ForecastFrom(team, new Dictionary<int, int> { { 10, 100 } }));
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             var metrics = delivery.CalculateMetrics(clock.Today, [], 85);
 

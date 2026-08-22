@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Name = "Q1 Release",
                 Date = deliveryDate
             };
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Name = "Q1 Release",
                 Date = deliveryDate
             };
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
@@ -138,8 +138,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Name = "Q1 Release",
                 Date = deliveryDate
             };
-            delivery.Features.Add(feature1);
-            delivery.Features.Add(feature2);
+            delivery.ReplaceFeatures([feature1, feature2]);
 
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
@@ -202,9 +201,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Name = "Q1 Release",
                 Date = deliveryDate
             };
-            delivery.Features.Add(feature1);
-            delivery.Features.Add(feature2);
-            delivery.Features.Add(feature3);
+            delivery.ReplaceFeatures([feature1, feature2, feature3]);
 
             // Act
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
@@ -243,8 +240,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             governingFeature.FeatureWork.Add(new FeatureWork { RemainingWorkItems = 12 });
 
             var delivery = new Delivery { Id = 1, Name = "Q1 Release", Date = deliveryDate };
-            delivery.Features.Add(sufficientFeature);
-            delivery.Features.Add(governingFeature);
+            delivery.ReplaceFeatures([sufficientFeature, governingFeature]);
 
             var deliveryDto = DeliveryWithLikelihoodDto.FromDelivery(delivery, TestToday.Ambient, NoBlackoutPeriods);
 

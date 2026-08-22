@@ -72,10 +72,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var delivery = new Delivery { Id = 1, Name = "Q3 Launch", Date = Clock.TodayAsUtcMidnight.AddDays(30) };
 
-            foreach (var feature in features)
-            {
-                delivery.Features.Add(feature);
-            }
+            delivery.ReplaceFeatures(features);
 
             return delivery;
         }

@@ -212,10 +212,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Date = Clock.TodayAsUtcMidnight.AddDays(TargetDay),
             };
 
-            foreach (var feature in features)
-            {
-                delivery.Features.Add(feature);
-            }
+            delivery.ReplaceFeatures(features);
 
             return delivery;
         }

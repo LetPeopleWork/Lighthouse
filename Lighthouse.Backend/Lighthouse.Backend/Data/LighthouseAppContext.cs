@@ -439,6 +439,11 @@ namespace Lighthouse.Backend.Data
                 .HasMany(d => d.Features)
                 .WithMany();
 
+            // The navigation hands out a read-only view, so EF has to reach the list behind it to fill it.
+            modelBuilder.Entity<Delivery>()
+                .Navigation(d => d.Features)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
             modelBuilder.Entity<DeliveryMetricSnapshot>(entity =>
             {
                 entity.HasKey(s => s.Id);

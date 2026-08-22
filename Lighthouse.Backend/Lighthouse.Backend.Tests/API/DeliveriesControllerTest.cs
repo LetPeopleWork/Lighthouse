@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API
                 Name = "Q1 Release",
                 Date = deliveryDate
             };
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
                 .Returns([delivery]);
@@ -488,7 +488,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Id = 1
             };
-            delivery.Features.Add(feature);
+            delivery.ReplaceFeatures([feature]);
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
                 .Returns([delivery]);
