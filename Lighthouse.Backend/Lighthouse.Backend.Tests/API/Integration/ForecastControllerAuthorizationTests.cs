@@ -17,14 +17,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task UpdateForecastForPortfolio_PortfolioRouteKey_ReturnsOk()
+        public async Task UpdateForecastForPortfolio_PortfolioRouteKey_ReachesTheActionInsteadOfBeingRejected()
         {
             await SeedDatabase();
 
             var response = await Client.PostAsync("/api/latest/forecast/update/123", null);
 
             var body = await response.Content.ReadAsStringAsync();
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"Response body: {body}");
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), $"Response body: {body}");
         }
     }
 }

@@ -107,6 +107,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 }
             }
 
+            // Refreshing a team is exactly the situation the waiting exists for, so anything reacting to a
+            // team refresh reaching for the immediate path is a mistake this test should fail on.
+            public void TriggerImmediateUpdate(int id)
+            {
+                throw new NotSupportedException("A team refresh must not forecast without waiting for the other teams of the portfolio.");
+            }
+
             public void Reset()
             {
                 lock (triggeredPortfolioIds)

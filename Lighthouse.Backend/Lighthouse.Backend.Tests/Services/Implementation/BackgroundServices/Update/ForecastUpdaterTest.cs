@@ -384,6 +384,72 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once));
         }
 
+        [Test]
+        public void TriggerImmediateUpdate_ShouldForecast_WhenSiblingTeamIsStillWaitingToRefresh()
+        {
+            var team = new Team { Name = "Sibling Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
+                .Returns(true);
+
+            var subject = CreateSubject();
+
+            subject.TriggerImmediateUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        [Test]
+        public void TriggerImmediateUpdate_ShouldForecast_WhenAForecastForThePortfolioIsAlreadyOwed()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            Mock.Get(UpdateQueueService)
+                .Setup(x => x.IsHeld(new UpdateKey(UpdateType.Forecasts, portfolio.Id)))
+                .Returns(true);
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Forecasts, portfolio.Id)))))
+                .Returns(true);
+
+            var subject = CreateSubject();
+
+            subject.TriggerImmediateUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Once);
+        }
+
+        [Test]
+        public async Task TriggerImmediateUpdate_ShouldLeaveAWaitingForecastToStillRunExactlyOnce()
+        {
+            var runningTeam = new Team { Name = "Running Team", Id = 42 };
+            var waitingTeam = new Team { Name = "Waiting Team", Id = 43 };
+            var portfolio = CreatePortfolio(CreateFeatureWorkedOnBy(runningTeam), CreateFeatureWorkedOnBy(waitingTeam));
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            using var updateQueue = CreateRealUpdateQueue();
+
+            var runningTeamHasFinished = new TaskCompletionSource();
+            updateQueue.EnqueueUpdate(UpdateType.Team, runningTeam.Id, _ => runningTeamHasFinished.Task);
+            updateQueue.EnqueueUpdate(UpdateType.Team, waitingTeam.Id, _ => Task.CompletedTask);
+
+            var subject = CreateSubject(inProcessUpdateStatusStore, updateQueue);
+
+            subject.TriggerUpdate(portfolio.Id);
+            subject.TriggerImmediateUpdate(portfolio.Id);
+
+            runningTeamHasFinished.SetResult();
+
+            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Exactly(2)));
+
+            await updateQueue.DrainAsync();
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio), Times.Exactly(2));
+        }
+
         private void RecordUpdate(UpdateType updateType, int id, UpdateProgress progress)
         {
             inProcessUpdateStatusStore.TryAdmit(

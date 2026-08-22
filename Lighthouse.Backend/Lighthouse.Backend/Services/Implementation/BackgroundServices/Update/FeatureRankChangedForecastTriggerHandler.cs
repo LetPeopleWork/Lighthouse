@@ -7,9 +7,11 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     /// <summary>
-    /// The forecast draws from the order, so a Feature that changed places changed every date its
-    /// Portfolios show (ADR-133). No debounce is added: the update queue already parks a single coalesced
-    /// follow-up, so a run of Move Ups collapses to at most two runs per Portfolio.
+    /// The simulation draws each day's throughput from the first few Features in order, so a Feature that
+    /// changed places changed every date its Portfolios show. The only way a Feature changes places is a
+    /// person dragging it, and that person is watching for the dates to move, which is why each Portfolio
+    /// forecasts immediately instead of taking the ordinary route that waits for a refresh they never
+    /// asked for.
     /// </summary>
     public class FeatureRankChangedForecastTriggerHandler(
         IRepository<Feature> featureRepository,
@@ -21,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             foreach (var portfolio in feature?.Portfolios ?? [])
             {
-                forecastUpdater.TriggerUpdate(portfolio.Id);
+                forecastUpdater.TriggerImmediateUpdate(portfolio.Id);
             }
 
             return Task.CompletedTask;

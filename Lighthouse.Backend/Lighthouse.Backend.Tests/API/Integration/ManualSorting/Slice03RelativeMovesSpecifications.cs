@@ -302,19 +302,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 foreach (var portfolioId in portfolioIds)
                 {
                     ForecastUpdaterMock.Verify(
-                        updater => updater.TriggerUpdate(portfolioId),
+                        updater => updater.TriggerImmediateUpdate(portfolioId),
                         Times.AtLeastOnce,
-                        "A move that leaves the dates stale is the one failure indistinguishable from success (ADR-133).");
+                        "A move that leaves the dates stale is the one failure indistinguishable from success.");
                 }
             }
         }
 
         private void ThenNoFreshForecastWasAskedFor()
         {
-            ForecastUpdaterMock.Verify(
-                updater => updater.TriggerUpdate(It.IsAny<int>()),
-                Times.Never,
-                "A refused move changed nothing, so it must not spend a forecast run saying so.");
+            using (Assert.EnterMultipleScope())
+            {
+                ForecastUpdaterMock.Verify(
+                    updater => updater.TriggerImmediateUpdate(It.IsAny<int>()),
+                    Times.Never,
+                    "A refused move changed nothing, so it must not spend a forecast run saying so.");
+
+                ForecastUpdaterMock.Verify(
+                    updater => updater.TriggerUpdate(It.IsAny<int>()),
+                    Times.Never,
+                    "A refused move must not reach a forecast through the ordinary door either.");
+            }
         }
 
         /// <summary>

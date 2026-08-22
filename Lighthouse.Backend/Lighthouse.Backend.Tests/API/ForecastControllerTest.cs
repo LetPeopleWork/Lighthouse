@@ -90,29 +90,48 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateForecast_ProjectExists_TriggersForecastUpdate()
+        public void UpdateForecast_PortfolioExists_ForecastsNowAndPromisesOnlyThatItWasAccepted()
         {
+            portfolioRepositoryMock.Setup(x => x.Exists(12)).Returns(true);
+
             var subject = CreateSubject();
 
             var response = subject.UpdateForecastForProject(12);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response, Is.InstanceOf<OkResult>());
+                Assert.That(response, Is.InstanceOf<AcceptedResult>());
 
-                var okResult = response as OkResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                var acceptedResult = response as AcceptedResult;
+                Assert.That(acceptedResult.StatusCode, Is.EqualTo(202));
 
-                forecastUpdaterMock.Verify(x => x.TriggerUpdate(12), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(12), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamWorksFeaturesOfPortfolios_TriggersUpdateForEachOfThem()
+        public void UpdateForecast_PortfolioDoesNotExist_SaysSoInsteadOfClaimingAForecast()
         {
-            var team = new Team { Id = 12, Name = "Test Team" };
+            portfolioRepositoryMock.Setup(x => x.Exists(12)).Returns(false);
 
-            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            var subject = CreateSubject();
+
+            var response = subject.UpdateForecastForProject(12);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response, Is.InstanceOf<NotFoundResult>());
+
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Never);
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public void UpdateForecastsForTeamPortfolios_TeamWorksFeaturesOfPortfolios_ForecastsEachNowAndSaysHowMany()
+        {
+            teamRepositoryMock.Setup(x => x.Exists(12)).Returns(true);
             portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([1, 2, 3]);
 
             var subject = CreateSubject();
@@ -121,24 +140,24 @@ namespace Lighthouse.Backend.Tests.API
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(response.Result, Is.InstanceOf<AcceptedResult>());
 
-                var okResult = response.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                var acceptedResult = response.Result as AcceptedResult;
+                Assert.That(acceptedResult.StatusCode, Is.EqualTo(202));
+                Assert.That(acceptedResult.Value, Is.EqualTo(3));
 
-                forecastUpdaterMock.Verify(x => x.TriggerUpdate(1), Times.Once);
-                forecastUpdaterMock.Verify(x => x.TriggerUpdate(2), Times.Once);
-                forecastUpdaterMock.Verify(x => x.TriggerUpdate(3), Times.Once);
-                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Exactly(3));
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(1), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(2), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(3), Times.Once);
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Exactly(3));
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamWorksNoFeatureOfAnyPortfolio_DoesNotTriggerUpdates()
+        public void UpdateForecastsForTeamPortfolios_TeamWorksNoFeatureOfAnyPortfolio_SaysNoForecastWasQueued()
         {
-            var team = new Team { Id = 12, Name = "Test Team" };
-
-            teamRepositoryMock.Setup(x => x.GetById(12)).Returns(team);
+            teamRepositoryMock.Setup(x => x.Exists(12)).Returns(true);
             portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([]);
 
             var subject = CreateSubject();
@@ -147,11 +166,12 @@ namespace Lighthouse.Backend.Tests.API
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(response.Result, Is.InstanceOf<AcceptedResult>());
 
-                var okResult = response.Result as OkObjectResult;
-                Assert.That(okResult.StatusCode, Is.EqualTo(200));
+                var acceptedResult = response.Result as AcceptedResult;
+                Assert.That(acceptedResult.Value, Is.Zero);
 
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Never);
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }
@@ -159,7 +179,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void UpdateForecastsForTeamPortfolios_TeamDoesNotExist_ReturnsNotFound()
         {
-            teamRepositoryMock.Setup(x => x.GetById(12)).Returns((Team)null);
+            teamRepositoryMock.Setup(x => x.Exists(12)).Returns(false);
 
             var subject = CreateSubject();
 
@@ -172,6 +192,7 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
 
+                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Never);
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }

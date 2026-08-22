@@ -46,11 +46,57 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             if (teamsStillWaiting.Count > 0)
             {
-                queueService.HoldUntilQueuedWorkClears(forecastKey, teamsStillWaiting, () => TriggerUpdate(id));
+                queueService.HoldUntilQueuedWorkClears(forecastKey, teamsStillWaiting, () => RunTheWaitingForecast(id));
                 return;
             }
 
             base.TriggerUpdate(id);
+        }
+
+        /// <summary>
+        /// Forecasts now, for a person who asked for one and is watching for the answer. The waiting above
+        /// is there for a bulk refresh nobody asked for; someone who pressed a button and was told it
+        /// worked has to see it happen, so this run goes ahead whatever else is in flight. A forecast that
+        /// was already waiting is left exactly where it is: it runs once the teams it waits for have
+        /// landed, over data this run could not have seen.
+        /// </summary>
+        public void TriggerImmediateUpdate(int id)
+        {
+            base.TriggerUpdate(id);
+        }
+
+        /// <summary>
+        /// The forecast a waiting request owes, now that the teams it waited for have left the queue.
+        /// Unlike a fresh request it never stands down: a forecast someone asked for by hand can have
+        /// joined the queue in the meantime, and standing down here would leave the refresh round this
+        /// request keeps a place in waiting for a run that never comes - so the write that round collected
+        /// would never reach the work tracking system. Anything still queued that this run would collide
+        /// with is waited for instead, which passes the place on rather than giving it up.
+        /// </summary>
+        private void RunTheWaitingForecast(int id)
+        {
+            var forecastKey = new UpdateKey(UpdateType.Forecasts, id);
+            var stillToClear = WorkTheWaitingForecastWouldCollideWith(forecastKey, id);
+
+            if (stillToClear.Count > 0)
+            {
+                queueService.HoldUntilQueuedWorkClears(forecastKey, stillToClear, () => RunTheWaitingForecast(id));
+                return;
+            }
+
+            base.TriggerUpdate(id);
+        }
+
+        private List<UpdateKey> WorkTheWaitingForecastWouldCollideWith(UpdateKey forecastKey, int id)
+        {
+            var stillToClear = TeamsOfThePortfolioWaitingToRefresh(id);
+
+            if (updateStatusStore.HasQueuedWork([forecastKey]))
+            {
+                stillToClear.Add(forecastKey);
+            }
+
+            return stillToClear;
         }
 
         /// <summary>

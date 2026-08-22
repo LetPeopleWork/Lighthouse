@@ -28,28 +28,48 @@ namespace Lighthouse.Backend.API
         ILighthouseClock clock)
         : ControllerBase
     {
+        /// <summary>
+        /// Accepted rather than OK, and only for a portfolio that is really there. A forecast runs in the
+        /// background, so the most this can honestly say is that one is now queued and nothing will hold it
+        /// back - saying it is done would be a claim about a simulation that has not started, and saying it
+        /// about a portfolio that does not exist would be a claim about a run that will never happen.
+        /// </summary>
         [HttpPost("update/{id:int}")]
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "id")]
         public ActionResult UpdateForecastForProject(int id)
         {
-            forecastUpdater.TriggerUpdate(id);
+            if (!portfolioRepository.Exists(id))
+            {
+                return NotFound();
+            }
 
-            return Ok();
+            forecastUpdater.TriggerImmediateUpdate(id);
+
+            return Accepted();
         }
 
+        /// <summary>
+        /// Answers with the number of forecasts queued rather than a bare success, because a team can work
+        /// on nothing that is forecast at all, and telling that operator it worked leaves them watching for
+        /// a change that was never going to come.
+        /// </summary>
         [HttpPost("update-portfolios-for-team/{teamId:int}")]
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
-        public ActionResult<bool> UpdateForecastsForTeamPortfolios(int teamId)
+        public ActionResult<int> UpdateForecastsForTeamPortfolios(int teamId)
         {
-            return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, _ =>
+            if (!teamRepository.Exists(teamId))
             {
-                foreach (var portfolioId in portfolioRepository.GetPortfolioIdsForTeam(teamId))
-                {
-                    forecastUpdater.TriggerUpdate(portfolioId);
-                }
+                return NotFound();
+            }
 
-                return true;
-            });
+            var portfolioIds = portfolioRepository.GetPortfolioIdsForTeam(teamId);
+
+            foreach (var portfolioId in portfolioIds)
+            {
+                forecastUpdater.TriggerImmediateUpdate(portfolioId);
+            }
+
+            return Accepted(portfolioIds.Count);
         }
 
         [HttpPost("itemprediction/{id:int}")]

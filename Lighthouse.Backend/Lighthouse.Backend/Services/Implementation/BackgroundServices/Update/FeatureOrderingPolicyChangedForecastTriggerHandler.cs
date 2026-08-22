@@ -7,13 +7,16 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     /// <summary>
-    /// The forecast draws from the order, so changing who owns it changes every date (S5).
+    /// The simulation draws each day's throughput from the first few Features in order, so changing who
+    /// owns that order changes every date. A person just made that change and is watching for the dates
+    /// to move, which is why each Portfolio forecasts immediately instead of taking the ordinary route
+    /// that waits for a refresh they never asked for.
     /// <para>
-    /// ADR-134 SA-16 offered to skip the fan-out when the order is handed over, on the grounds that
-    /// INV-A3 seeds from the sequence already on screen and so nothing moved. That optimisation is
-    /// declined: it only holds the *first* time, and taking the order over again after the tracker has
-    /// re-ranked (AC-5.3) moves plenty. Triggering always is one coalesced run per Portfolio on a rare
-    /// administrative action, where the alternative is silently stale dates.
+    /// Skipping the fan-out when the order is handed over looks safe, because seeding the ranks from the
+    /// sequence already on screen cannot move anybody. That only holds the first time - taking the order
+    /// over again, after the work tracking system has re-ranked everything underneath, moves plenty. So
+    /// this triggers always: one run per Portfolio on a rare administrative action, where the
+    /// alternative is silently stale dates.
     /// </para>
     /// </summary>
     public class FeatureOrderingPolicyChangedForecastTriggerHandler(
@@ -24,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             foreach (var portfolio in portfolioRepository.GetAll())
             {
-                forecastUpdater.TriggerUpdate(portfolio.Id);
+                forecastUpdater.TriggerImmediateUpdate(portfolio.Id);
             }
 
             return Task.CompletedTask;

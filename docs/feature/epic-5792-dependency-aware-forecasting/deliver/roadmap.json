@@ -559,6 +559,25 @@
             "Test proves the reorder is never parked behind a sibling Team that stands Queued."
           ],
           "implementation_notes": "A Feature reorder is human-initiated, so it is exempt on exactly the same grounds as the two ForecastController routes: a person made the change and is waiting to see its effect. This strengthens, and does not replace, the scenario about a Feature reorder forecasting straight away already covered in 04-02."
+        },
+        {
+          "id": "06-04",
+          "name": "A dragged Feature forecasts straight away whichever surface it came from",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "06-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandlerTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandlerTest.cs"
+          ],
+          "criteria": [
+            "FeatureRankChangedForecastTriggerHandler takes the bypass path.",
+            "A Feature moved by hand forecasts straight away even while a sibling Team stands Queued.",
+            "The gold test that fails if a refresh reaches the bypass stays green, proving this handler is not reachable from one."
+          ],
+          "implementation_notes": "FeatureRankChanged is published only by FeatureRankingService.PlaceAsync, which is reached only from FeaturesController's reorder route - a person dragging a Feature. That makes it human-initiated on exactly the grounds the ordering-policy handler was changed for, and leaving it debounced means the same gesture feels responsive or sluggish depending on which surface the user came through, with nothing to explain the difference. TeamDeletedForecastRetriggerHandler is deliberately NOT part of this: it is also human-initiated but drives IPortfolioUpdater, which has no bypass member, so giving it one is a larger change on a second updater's port and team deletion is far less latency-sensitive than dragging a Feature."
         }
       ]
     },
