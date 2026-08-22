@@ -139,9 +139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Project_RuleBasedDelivery_CarriesTheRuleItWasMatchedBy()
         {
             var delivery = ForecastableDelivery();
-            delivery.SelectionMode = DeliverySelectionMode.RuleBased;
-            delivery.RuleDefinitionJson = "{\"mode\":\"and\"}";
-            delivery.RuleSchemaVersion = 1;
+            delivery.SelectFeaturesByRule("{\"mode\":\"and\"}", 1);
 
             var projected = subject.Project(delivery, clock.Today);
 

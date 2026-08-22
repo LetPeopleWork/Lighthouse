@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 
         int? GetPortfolioId(int deliveryId);
 
+        bool IsArchived(int deliveryId);
+
         DeliveryClosureRecord GetOrCreateClosureRecord(int deliveryId);
 
         IReadOnlyDictionary<int, DeliveryClosureRecord> GetClosureRecordsByDelivery(IEnumerable<int> deliveryIds);

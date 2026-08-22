@@ -454,7 +454,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .Select((offset, index) =>
                 {
                     var delivery = new Delivery($"Release {index}", DateTime.UtcNow.AddDays(1), portfolioId: 1, TestToday.Ambient);
-                    delivery.Date = clock.TodayAsUtcMidnight.AddDays(offset);
+                    delivery.Reschedule(clock.TodayAsUtcMidnight.AddDays(offset));
                     return delivery;
                 })
                 .ToList();
@@ -763,7 +763,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             var delivery = await dbContext.Deliveries.SingleAsync(d => d.Id == fixture.DeliveryId);
-            delivery.Date = delivery.Date.AddDays(daysToAdd);
+            delivery.Reschedule(delivery.Date.AddDays(daysToAdd));
             await dbContext.SaveChangesAsync();
             return delivery.Date;
         }

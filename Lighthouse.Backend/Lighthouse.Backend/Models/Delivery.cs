@@ -9,6 +9,12 @@ namespace Lighthouse.Backend.Models
     {
         private readonly List<Feature> features = [];
 
+        private string name;
+        private DateTime date;
+        private DeliverySelectionMode selectionMode = DeliverySelectionMode.Manual;
+        private string? ruleDefinitionJson;
+        private int? ruleSchemaVersion;
+
         public Delivery(string name, DateTime date, int portfolioId, DateOnly today)
         {
             if (string.IsNullOrEmpty(name))
@@ -35,9 +41,14 @@ namespace Lighthouse.Backend.Models
 
         public Guid ConcurrencyToken { get; set; }
 
-        public string Name { get; set; }
-        
-        public DateTime Date { get; set; }
+        // Everything archiving freezes can be given to a new Delivery but never assigned to one that
+        // already exists: each has a method that refuses once the Delivery is archived. Leaving the
+        // setters open would put the refusal in the hands of whoever writes the next call site.
+#pragma warning disable S2292 // An auto-property is exactly what these must not be: the field has to be reachable from the methods that refuse when the Delivery is archived, while callers may only set it as the Delivery is created.
+        public string Name { get => name; init => name = value; }
+
+        public DateTime Date { get => date; init => date = value; }
+#pragma warning restore S2292
         
         public int PortfolioId { get; set; }
         
@@ -57,13 +68,51 @@ namespace Lighthouse.Backend.Models
             .Distinct()
             .Order();
 
-        public DeliverySelectionMode SelectionMode { get; set; } = DeliverySelectionMode.Manual;
+#pragma warning disable S2292 // An auto-property is exactly what these must not be: the field has to be reachable from the methods that refuse when the Delivery is archived, while callers may only set it as the Delivery is created.
+        public DeliverySelectionMode SelectionMode { get => selectionMode; init => selectionMode = value; }
 
-        public string? RuleDefinitionJson { get; set; }
+        public string? RuleDefinitionJson { get => ruleDefinitionJson; init => ruleDefinitionJson = value; }
 
-        public int? RuleSchemaVersion { get; set; }
+        public int? RuleSchemaVersion { get => ruleSchemaVersion; init => ruleSchemaVersion = value; }
+#pragma warning restore S2292
 
         public DateTime? ArchivedOn { get; private set; }
+
+        public void Rename(string name)
+        {
+            RefuseWhenArchived();
+
+            this.name = name;
+            MarkAsChanged();
+        }
+
+        public void Reschedule(DateTime date)
+        {
+            RefuseWhenArchived();
+
+            this.date = date;
+            MarkAsChanged();
+        }
+
+        public void SelectFeaturesByHand()
+        {
+            RefuseWhenArchived();
+
+            selectionMode = DeliverySelectionMode.Manual;
+            ruleDefinitionJson = null;
+            ruleSchemaVersion = null;
+            MarkAsChanged();
+        }
+
+        public void SelectFeaturesByRule(string ruleDefinitionJson, int ruleSchemaVersion)
+        {
+            RefuseWhenArchived();
+
+            selectionMode = DeliverySelectionMode.RuleBased;
+            this.ruleDefinitionJson = ruleDefinitionJson;
+            this.ruleSchemaVersion = ruleSchemaVersion;
+            MarkAsChanged();
+        }
 
         public void Archive(DateTime archivedOn)
         {
@@ -89,14 +138,19 @@ namespace Lighthouse.Backend.Models
 
         public void ReplaceFeatures(IEnumerable<Feature> newFeatures)
         {
-            if (ArchivedOn is not null)
-            {
-                throw DeliveryArchivedException.CannotBeChanged(Id);
-            }
+            RefuseWhenArchived();
 
             features.Clear();
             features.AddRange(newFeatures);
             MarkAsChanged();
+        }
+
+        private void RefuseWhenArchived()
+        {
+            if (ArchivedOn is not null)
+            {
+                throw DeliveryArchivedException.CannotBeChanged(Id);
+            }
         }
 
         /// <summary>

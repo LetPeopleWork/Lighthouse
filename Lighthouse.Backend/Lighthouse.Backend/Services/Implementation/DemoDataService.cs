@@ -120,12 +120,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id, clock.Today)
-            {
-                SelectionMode = DeliverySelectionMode.RuleBased,
-                RuleSchemaVersion = WorkItemRuleSet.SchemaVersion,
-                RuleDefinitionJson = BuildAllFeaturesRuleDefinition(),
-            };
+            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id, clock.Today);
+            delivery.SelectFeaturesByRule(BuildAllFeaturesRuleDefinition(), WorkItemRuleSet.SchemaVersion);
 
             deliveryRepository.Add(delivery);
             await deliveryRepository.Save();
@@ -143,12 +139,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var delivery = new Delivery(MultiTeamDeliveryName, clock.TodayAsUtcMidnight.AddDays(MultiTeamDeliveryDays), portfolio.Id, clock.Today)
-            {
-                SelectionMode = DeliverySelectionMode.RuleBased,
-                RuleSchemaVersion = WorkItemRuleSet.SchemaVersion,
-                RuleDefinitionJson = BuildAllFeaturesRuleDefinition(),
-            };
+            var delivery = new Delivery(MultiTeamDeliveryName, clock.TodayAsUtcMidnight.AddDays(MultiTeamDeliveryDays), portfolio.Id, clock.Today);
+            delivery.SelectFeaturesByRule(BuildAllFeaturesRuleDefinition(), WorkItemRuleSet.SchemaVersion);
 
             deliveryRepository.Add(delivery);
             await deliveryRepository.Save();

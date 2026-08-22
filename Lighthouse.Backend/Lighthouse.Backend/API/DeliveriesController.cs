@@ -150,25 +150,12 @@ namespace Lighthouse.Backend.API
                 ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
                 : request.Date.ToUniversalTime();
 
-            var delivery = new Delivery(request.Name, utcDate, portfolioId, clock.Today)
-            {
-                SelectionMode = request.SelectionMode
-            };
+            var delivery = new Delivery(request.Name, utcDate, portfolioId, clock.Today);
 
-            switch (delivery.SelectionMode)
+            var selectionError = ApplyFeatureSelection(request, delivery);
+            if (selectionError != null)
             {
-                case DeliverySelectionMode.RuleBased:
-                    CreateRuleBasedDelivery(request, delivery);
-                    break;
-                case DeliverySelectionMode.Manual:
-                    var featureNotFoundError = CreateManualFeatureSelectionDelivery(request, delivery);
-                    if (featureNotFoundError != null)
-                    {
-                        return featureNotFoundError;
-                    }
-                    break;
-                default:
-                    throw new NotSupportedException($"Delivery Mode {delivery.SelectionMode} is not supported");
+                return selectionError;
             }
 
             deliveryRepository.Add(delivery);
@@ -220,24 +207,13 @@ namespace Lighthouse.Backend.API
                 ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
                 : request.Date.ToUniversalTime();
 
-            existingDelivery.Name = request.Name;
-            existingDelivery.Date = utcDate;
-            existingDelivery.SelectionMode = request.SelectionMode;
+            existingDelivery.Rename(request.Name);
+            existingDelivery.Reschedule(utcDate);
 
-            switch (existingDelivery.SelectionMode)
+            var selectionError = ApplyFeatureSelection(request, existingDelivery);
+            if (selectionError != null)
             {
-                case DeliverySelectionMode.RuleBased:
-                    CreateRuleBasedDelivery(request, existingDelivery);
-                    break;
-                case DeliverySelectionMode.Manual:
-                    var featureNotFoundError = CreateManualFeatureSelectionDelivery(request, existingDelivery);
-                    if (featureNotFoundError != null)
-                    {
-                        return featureNotFoundError;
-                    }
-                    break;
-                default:
-                    throw new NotSupportedException($"Delivery Mode {existingDelivery.SelectionMode} is not supported");
+                return selectionError;
             }
 
             if (request.ConcurrencyToken.HasValue)
@@ -378,6 +354,16 @@ namespace Lighthouse.Backend.API
             return null;
         }
 
+        private IActionResult? ApplyFeatureSelection(UpdateDeliveryRequest request, Delivery delivery)
+        {
+            return request.SelectionMode switch
+            {
+                DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
+                DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
+                _ => throw new NotSupportedException($"Delivery Mode {request.SelectionMode} is not supported"),
+            };
+        }
+
         private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(UpdateDeliveryRequest request, Delivery delivery)
         {
             var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds);
@@ -391,13 +377,12 @@ namespace Lighthouse.Backend.API
                 return NotFound($"Feature with ID {missingIds[0]} does not exist");
             }
 
-            delivery.RuleDefinitionJson = null;
-            delivery.RuleSchemaVersion = null;
+            delivery.SelectFeaturesByHand();
             delivery.ReplaceFeatures(featureList);
             return null;
         }
 
-        private void CreateRuleBasedDelivery(UpdateDeliveryRequest request, Delivery delivery)
+        private IActionResult? CreateRuleBasedDelivery(UpdateDeliveryRequest request, Delivery delivery)
         {
             var mode = string.Equals(request.Mode, WorkItemRuleSet.ModeOr, StringComparison.OrdinalIgnoreCase)
                 ? WorkItemRuleSet.ModeOr
@@ -413,12 +398,12 @@ namespace Lighthouse.Backend.API
                     Value = r.Value
                 }).ToList()
             };
-            delivery.RuleDefinitionJson = WorkItemRuleSetJson.Serialize(ruleSet);
-            delivery.RuleSchemaVersion = WorkItemRuleSet.SchemaVersion;
+            delivery.SelectFeaturesByRule(WorkItemRuleSetJson.Serialize(ruleSet), WorkItemRuleSet.SchemaVersion);
 
             var portfolioFeatures = GetFeaturesForPortfolio(delivery.PortfolioId);
             var matchingFeatures = deliveryRuleService.GetMatchingFeaturesForRuleset(ruleSet, portfolioFeatures);
             delivery.ReplaceFeatures(matchingFeatures);
+            return null;
         }
 
         private List<Feature> GetFeaturesForPortfolio(int portfolioId)

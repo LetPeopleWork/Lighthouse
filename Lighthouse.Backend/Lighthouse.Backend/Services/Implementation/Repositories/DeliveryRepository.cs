@@ -106,6 +106,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .FirstOrDefault();
         }
 
+        public bool IsArchived(int deliveryId)
+        {
+            return Context.Deliveries
+                .Any(d => d.Id == deliveryId && d.ArchivedOn != null);
+        }
+
         /// <summary>
         /// One row per Delivery, so archiving a Delivery that was already archived once overwrites the
         /// pin rather than adding a second one nobody could choose between.

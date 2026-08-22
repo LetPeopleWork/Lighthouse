@@ -52,6 +52,8 @@ namespace Lighthouse.Backend.API
                 return scopeCheck;
             }
 
+            RefuseWhenArchived(deliveryId);
+
             var text = request?.Text?.Trim();
             if (string.IsNullOrEmpty(text))
             {
@@ -83,6 +85,8 @@ namespace Lighthouse.Backend.API
             {
                 return scopeCheck;
             }
+
+            RefuseWhenArchived(deliveryId);
 
             var note = await FindNoteAsync(deliveryId, noteId);
             if (note is null)
@@ -118,6 +122,8 @@ namespace Lighthouse.Backend.API
                 return scopeCheck;
             }
 
+            RefuseWhenArchived(deliveryId);
+
             var note = await FindNoteAsync(deliveryId, noteId);
             if (note is null)
             {
@@ -133,6 +139,20 @@ namespace Lighthouse.Backend.API
             await context.SaveChangesAsync(HttpContext?.RequestAborted ?? default);
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Notes are what a Delivery's story is written in, and archiving one is the moment that story
+        /// stops. Reading stays open; writing does not, and the refusal says the Delivery is closed
+        /// rather than that the caller lacks rights, because those send the reader to two very
+        /// different places.
+        /// </summary>
+        private void RefuseWhenArchived(int deliveryId)
+        {
+            if (deliveryRepository.IsArchived(deliveryId))
+            {
+                throw DeliveryArchivedException.CannotBeChanged(deliveryId);
+            }
         }
 
         /// <summary>
