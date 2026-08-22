@@ -461,9 +461,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("FeatureBreakdownJson")
                         .HasColumnType("text");
 
-                    b.Property<int?>("ForecastHowMany")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("HasSufficientData")
                         .HasColumnType("boolean");
 
@@ -518,9 +515,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<string>("FeatureBreakdownJson")
                         .HasColumnType("text");
-
-                    b.Property<int?>("ForecastHowMany")
-                        .HasColumnType("integer");
 
                     b.Property<double?>("LikelihoodPercentage")
                         .HasColumnType("double precision");

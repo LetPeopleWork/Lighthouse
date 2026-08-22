@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Models
 
         public int? EstimatedItemCount { get; set; }
 
-        public int? ForecastHowMany { get; set; }
-
         public double? LikelihoodPercentage { get; set; }
 
         public string? WhenDistributionJson { get; set; }

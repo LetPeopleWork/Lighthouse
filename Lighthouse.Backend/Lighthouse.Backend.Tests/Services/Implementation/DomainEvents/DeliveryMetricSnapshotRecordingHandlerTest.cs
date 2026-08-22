@@ -854,7 +854,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 DoneWork = snapshot.DoneWork,
                 RemainingWork = snapshot.RemainingWork,
                 EstimatedItemCount = snapshot.EstimatedItemCount,
-                ForecastHowMany = snapshot.ForecastHowMany,
                 LikelihoodPercentage = snapshot.LikelihoodPercentage,
                 WhenDistributionJson = snapshot.WhenDistributionJson,
                 FeatureBreakdownJson = snapshot.FeatureBreakdownJson,

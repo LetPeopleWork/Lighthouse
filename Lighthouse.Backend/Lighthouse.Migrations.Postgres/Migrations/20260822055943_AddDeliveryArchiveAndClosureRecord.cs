@@ -28,7 +28,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     DoneWork = table.Column<int>(type: "integer", nullable: false),
                     RemainingWork = table.Column<int>(type: "integer", nullable: false),
                     EstimatedItemCount = table.Column<int>(type: "integer", nullable: true),
-                    ForecastHowMany = table.Column<int>(type: "integer", nullable: true),
                     LikelihoodPercentage = table.Column<double>(type: "double precision", nullable: true),
                     WhenDistributionJson = table.Column<string>(type: "text", nullable: true),
                     FeatureBreakdownJson = table.Column<string>(type: "text", nullable: true),

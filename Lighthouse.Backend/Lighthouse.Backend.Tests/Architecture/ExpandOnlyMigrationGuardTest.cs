@@ -8,7 +8,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         // release dropping the legacy BlockedStates/BlockedTags columns, run only after Phase A's
         // 20260713183553/20260713183603_BackfillBlockedRuleSetJson migrations populated BlockedRuleSetJson
         // for every configured owner (expand-then-contract, per DISCUSS D4).
-        private const long ExpandOnlyBaselineTimestamp = 20260713194145;
+        // Bumped again past 20260822121253_DropUnusedForecastHowMany (Postgres) /
+        // 20260822121242 (Sqlite): ForecastHowMany was created on DeliveryMetricSnapshot and never
+        // written by anything, in any release - a Delivery forecast answers when, not how many, so
+        // nothing ever computed a value for it. Verified null in every row of a real database before
+        // dropping. There is no expand phase because there is nothing to carry over.
+        private const long ExpandOnlyBaselineTimestamp = 20260822121253;
 
         private static readonly string[] DropAndRenameTableOperations = { "DropTable", "RenameTable" };
 

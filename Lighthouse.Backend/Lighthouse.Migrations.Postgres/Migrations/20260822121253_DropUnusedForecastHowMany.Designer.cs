@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lighthouse.Migrations.Postgres.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    [Migration("20260822055943_AddDeliveryArchiveAndClosureRecord")]
-    partial class AddDeliveryArchiveAndClosureRecord
+    [Migration("20260822121253_DropUnusedForecastHowMany")]
+    partial class DropUnusedForecastHowMany
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -518,9 +518,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<string>("FeatureBreakdownJson")
                         .HasColumnType("text");
-
-                    b.Property<int?>("ForecastHowMany")
-                        .HasColumnType("integer");
 
                     b.Property<double?>("LikelihoodPercentage")
                         .HasColumnType("double precision");

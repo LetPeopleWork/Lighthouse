@@ -466,7 +466,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 DoneWork = 4,
                 RemainingWork = 8,
                 EstimatedItemCount = 15,
-                ForecastHowMany = 6,
                 LikelihoodPercentage = 72.5,
                 WhenDistributionJson = whenDistributionJson,
             });
@@ -672,7 +671,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 .ToList();
 
             return point.EstimatedItemCount.HasValue
-                && point.ForecastHowMany.HasValue
                 && point.LikelihoodPercentage.HasValue
                 && whenPercentiles is not null
                 && whenPercentiles.OrderBy(percentile => percentile).SequenceEqual(RecordedWhenPercentiles);
@@ -705,7 +703,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             int DoneWork,
             int RemainingWork,
             int? EstimatedItemCount,
-            int? ForecastHowMany,
             double? LikelihoodPercentage,
             IReadOnlyList<WhenDistributionView>? WhenDistribution,
             IReadOnlyList<FeatureBreakdownView>? FeatureBreakdown);

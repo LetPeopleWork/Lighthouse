@@ -41,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
                     DoneWork = 8,
                     RemainingWork = 12,
                     EstimatedItemCount = null,
-                    ForecastHowMany = null,
                     LikelihoodPercentage = null,
                     WhenDistributionJson = null,
                 },
@@ -56,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 Assert.That(point.DoneWork, Is.EqualTo(8));
                 Assert.That(point.RemainingWork, Is.EqualTo(12));
                 Assert.That(point.EstimatedItemCount, Is.Null);
-                Assert.That(point.ForecastHowMany, Is.Null);
                 Assert.That(point.LikelihoodPercentage, Is.Null);
                 Assert.That(point.WhenDistribution, Is.Null);
             }

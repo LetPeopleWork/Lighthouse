@@ -1,0 +1,29 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.5698.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/models/Delivery/ArchivedDelivery.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedDeliveriesSection.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedFeatureGrid.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/ArchiveConfirmationDialog.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryMetricsTab.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+    "src/pages/Portfolios/Detail/PortfolioDeliveryView.tsx",
+    "src/utils/deliveries/deliveryArchivedRefusal.ts",
+    "src/services/Api/ApiError.ts"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-5698-frontend.json" },
+  "tempDirName": ".stryker-tmp-5698"
+}

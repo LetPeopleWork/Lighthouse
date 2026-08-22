@@ -310,6 +310,7 @@ namespace Lighthouse.Backend.Models
             {
                 TotalItems = totalItems,
                 IsUsingDefaultSize = feature.IsUsingDefaultFeatureSize,
+                Url = feature.Url,
             };
         }
 
