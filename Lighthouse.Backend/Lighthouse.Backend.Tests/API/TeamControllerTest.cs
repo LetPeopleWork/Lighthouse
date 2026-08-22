@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API
     public class TeamControllerTest
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
+        private Mock<IPortfolioRepository> portfolioRepositoryMock;
         private Mock<IWorkItemRepository> workItemRepoMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
@@ -40,7 +40,8 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
+            portfolioRepositoryMock = new Mock<IPortfolioRepository>();
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(It.IsAny<int>())).Returns([]);
             workItemRepoMock = new Mock<IWorkItemRepository>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
@@ -102,25 +103,50 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task Delete_WhenTeamIsInvolvedInPortfolios_PublishesTeamDeletedWithAffectedPortfolioIds()
+        public async Task Delete_WhenTeamWorksFeaturesOfPortfolio_PublishesTeamDeletedWithThatPortfolioId()
         {
             const int teamId = 42;
 
-            var portfolio1 = CreatePortfolio(1, "Portfolio A");
-            var portfolio2 = CreatePortfolio(2, "Portfolio B");
+            // The team reaches this portfolio only through the features it works on, and does not own it.
+            // Deleting a team used to read the affected portfolios from a stored team-to-portfolio relation
+            // that nothing deliberately maintained, so a portfolio like this one was left with stale numbers.
+            var workedPortfolio = CreatePortfolio(1, "Portfolio A");
+            var unrelatedPortfolio = CreatePortfolio(2, "Portfolio B");
 
-            var team = new Team { Id = teamId, Name = "Involved Team" };
-            team.Portfolios.Add(portfolio1);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(teamId)).Returns([workedPortfolio.Id]);
 
-            teamRepositoryMock.Setup(x => x.GetById(teamId)).Returns(team);
-
-            var subject = CreateSubject(portfolios: [portfolio1, portfolio2]);
+            var subject = CreateSubject(portfolios: [workedPortfolio, unrelatedPortfolio]);
 
             await subject.DeleteTeam(teamId, CancellationToken.None);
 
             domainEventDispatcherMock.Verify(
                 x => x.PublishAsync(
-                    It.Is<TeamDeleted>(e => e.TeamId == teamId && e.AffectedPortfolioIds.SequenceEqual(new[] { portfolio1.Id })),
+                    It.Is<TeamDeleted>(e => e.TeamId == teamId && e.AffectedPortfolioIds.SequenceEqual(new[] { workedPortfolio.Id })),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task Delete_WhenTeamOwnsAndWorksPortfolios_PublishesEveryAffectedPortfolioIdOnce()
+        {
+            const int teamId = 42;
+
+            var ownedAndWorked = CreatePortfolio(1, "Owned And Worked");
+            ownedAndWorked.OwningTeamId = teamId;
+            var ownedOnly = CreatePortfolio(2, "Owned Only");
+            ownedOnly.OwningTeamId = teamId;
+            var workedOnly = CreatePortfolio(3, "Worked Only");
+            var unrelated = CreatePortfolio(4, "Unrelated");
+
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(teamId)).Returns([ownedAndWorked.Id, workedOnly.Id]);
+
+            var subject = CreateSubject(portfolios: [ownedAndWorked, ownedOnly, workedOnly, unrelated]);
+
+            await subject.DeleteTeam(teamId, CancellationToken.None);
+
+            domainEventDispatcherMock.Verify(
+                x => x.PublishAsync(
+                    It.Is<TeamDeleted>(e => e.AffectedPortfolioIds.OrderBy(id => id).SequenceEqual(new[] { ownedAndWorked.Id, ownedOnly.Id, workedOnly.Id })),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
         }

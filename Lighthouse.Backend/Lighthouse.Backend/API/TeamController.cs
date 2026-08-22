@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class TeamController(
         IRepository<Team> teamRepository,
-        IRepository<Portfolio> projectRepository,
+        IPortfolioRepository portfolioRepository,
         IWorkItemRepository workItemRepository,
         ITeamUpdater teamUpdateService,
         IBlackoutPeriodService blackoutPeriodService,
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.API
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
             {
-                var allPortfolios = projectRepository.GetAll().ToList();
+                var allPortfolios = portfolioRepository.GetAll().ToList();
                 var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
                 var readablePortfolioIds = await rbacAdministrationService
                     .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)
@@ -91,15 +91,14 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public async Task<IActionResult> DeleteTeam(int teamId, CancellationToken cancellationToken)
         {
-            var team = teamRepository.GetById(teamId);
-            var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];
+            var workedPortfolioIds = portfolioRepository.GetPortfolioIdsForTeam(teamId);
 
-            var owningPortfolioIds = projectRepository.GetAll()
+            var owningPortfolioIds = portfolioRepository.GetAll()
                 .Where(p => p.OwningTeamId == teamId)
                 .Select(p => p.Id)
                 .ToList();
 
-            IReadOnlyList<int> allAffectedIds = affectedPortfolioIds.Union(owningPortfolioIds).Distinct().ToList();
+            IReadOnlyList<int> allAffectedIds = workedPortfolioIds.Union(owningPortfolioIds).Distinct().ToList();
 
             await updateQueueService.EnqueueAndAwaitAsync(
                 UpdateType.TeamDelete,
