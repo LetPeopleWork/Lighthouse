@@ -16,6 +16,20 @@ const wireRow = {
 	teamsWithoutForecast: [],
 	selectionMode: "Manual",
 	concurrencyToken: "33333333-3333-3333-3333-333333333333",
+	featureBreakdown: [
+		{
+			referenceId: "FTR-1",
+			name: "Checkout rewrite",
+			completion: 60,
+			likelihood: 72,
+			totalItems: 20,
+			isUsingDefaultSize: false,
+		},
+	],
+	whenDistribution: [{ probability: 85, expectedDate: "2026-06-14T00:00:00Z" }],
+	rules: [],
+	mode: "and",
+	metricSnapshotCount: 11,
 };
 
 describe("ArchivedDelivery", () => {
@@ -40,6 +54,80 @@ describe("ArchivedDelivery", () => {
 		);
 	});
 
+	it("carries the Feature rows themselves, so there is nothing to look up", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse(wireRow),
+		);
+
+		expect(archived.featureBreakdown).toEqual([
+			{
+				referenceId: "FTR-1",
+				name: "Checkout rewrite",
+				completion: 60,
+				likelihood: 72,
+				totalItems: 20,
+				isUsingDefaultSize: false,
+			},
+		]);
+	});
+
+	it("accepts a Feature row recorded before sizes were kept", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse({
+				...wireRow,
+				featureBreakdown: [
+					{
+						referenceId: "FTR-9",
+						name: "Older row",
+						completion: 100,
+						likelihood: null,
+					},
+				],
+			}),
+		);
+
+		expect(archived.featureBreakdown[0].totalItems).toBeNull();
+		expect(archived.featureBreakdown[0].isUsingDefaultSize).toBeNull();
+		expect(archived.featureBreakdown[0].likelihood).toBeNull();
+	});
+
+	it("keeps the forecast dates that were worked out on the closing day", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse(wireRow),
+		);
+
+		expect(archived.whenDistribution).toHaveLength(1);
+		expect(archived.whenDistribution[0].probability).toBe(85);
+		expect(archived.whenDistribution[0].expectedDate).toEqual(
+			new Date("2026-06-14T00:00:00Z"),
+		);
+	});
+
+	it("keeps the rule the Delivery was picking its Features by", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse({
+				...wireRow,
+				selectionMode: "RuleBased",
+				rules: [{ fieldKey: "tag", operator: "equals", value: "phoenix" }],
+				mode: "or",
+			}),
+		);
+
+		expect(archived.isRuleBased).toBe(true);
+		expect(archived.rules).toEqual([
+			{ fieldKey: "tag", operator: "equals", value: "phoenix" },
+		]);
+		expect(archived.mode).toBe("or");
+	});
+
+	it("counts the days of history standing behind the record", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse(wireRow),
+		);
+
+		expect(archived.metricSnapshotCount).toBe(11);
+	});
+
 	it("carries none of the live fields a Delivery is worked out from", () => {
 		const archived = ArchivedDelivery.fromParsed(
 			ArchivedDeliverySchema.parse({
@@ -53,6 +141,27 @@ describe("ArchivedDelivery", () => {
 		expect("features" in archived).toBe(false);
 		expect("completionDates" in archived).toBe(false);
 		expect("featureLikelihoods" in archived).toBe(false);
+	});
+
+	it("gives a pinned Feature row no id to reach a live Feature by", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse({
+				...wireRow,
+				featureBreakdown: [
+					{
+						referenceId: "FTR-1",
+						name: "Checkout rewrite",
+						completion: 60,
+						likelihood: 72,
+						id: 4242,
+						url: "https://tracker.example/FTR-1",
+					},
+				],
+			}),
+		);
+
+		expect("id" in archived.featureBreakdown[0]).toBe(false);
+		expect("url" in archived.featureBreakdown[0]).toBe(false);
 	});
 
 	it("keeps a Delivery that closed without a forecast, and the Teams that explain why", () => {
@@ -92,5 +201,12 @@ describe("ArchivedDelivery", () => {
 		void totalWork;
 
 		expect(() => ArchivedDeliverySchema.parse(withoutTotalWork)).toThrow();
+	});
+
+	it("refuses a row that arrives without the Feature rows it was closed with", () => {
+		const { featureBreakdown, ...withoutRows } = wireRow;
+		void featureBreakdown;
+
+		expect(() => ArchivedDeliverySchema.parse(withoutRows)).toThrow();
 	});
 });

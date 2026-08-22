@@ -1,5 +1,7 @@
 import type { DataGridExportTable } from "../../../../../components/Common/DataGrid/types";
 import type { IDelivery } from "../../../../../models/Delivery";
+import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
+import type { FeatureMetric } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import type { IWhenForecast } from "../../../../../models/Forecasts/WhenForecast";
@@ -12,6 +14,7 @@ import {
 	cannotBeForecast,
 } from "../../../../../utils/forecast/cannotForecast";
 import { featureLikelihoodLabel } from "../../../../../utils/forecast/featureLikelihoodLabel";
+import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
 
 /** The words this instance uses, so an exported file reads in the reader's own vocabulary. */
 export interface DeliveryExportTerms {
@@ -170,6 +173,74 @@ export function buildDeliveryExportTable(
 		rows: [
 			deliveryRow(delivery, terms),
 			...features.map((feature) => featureRow(feature, delivery, teams, terms)),
+		],
+	};
+}
+
+const archivedDeliveryRow = (
+	archived: ArchivedDelivery,
+	{ deliveryTerm }: DeliveryExportTerms,
+): string[] => [
+	`${archived.name} (${deliveryTerm})`,
+	NOTHING_TO_SAY,
+	progress(archived.totalWork, archived.remainingWork),
+	...FORECAST_PROBABILITIES.map((probability) =>
+		dateFor(archived.whenDistribution, probability),
+	),
+	archived.likelihoodPercentage === null
+		? NOTHING_TO_SAY
+		: `${Math.round(archived.likelihoodPercentage)}%`,
+	NOTHING_TO_SAY,
+	NOTHING_TO_SAY,
+	NOTHING_TO_SAY,
+];
+
+// The record keeps how far along a Feature was as a percentage and how many items it held, so the
+// same "done of total" cell a live export writes is recoverable exactly. A record written before
+// item counts were kept has no total, and half a fraction is worse than none.
+const pinnedProgress = (row: FeatureMetric): string =>
+	row.totalItems === null
+		? NOTHING_TO_SAY
+		: `${Math.round((row.completion / 100) * row.totalItems)}/${row.totalItems}`;
+
+const pinnedLikelihood = (row: FeatureMetric): string =>
+	row.likelihood === null
+		? CANNOT_FORECAST_SHORT
+		: formatLikelihood(row.likelihood, {
+				hasRemainingWork: row.completion < 100,
+				precision: "round",
+			});
+
+const archivedFeatureRow = (row: FeatureMetric): string[] => [
+	getWorkItemName(row.name, row.referenceId),
+	NOTHING_TO_SAY,
+	pinnedProgress(row),
+	...FORECAST_PROBABILITIES.map(() => NOTHING_TO_SAY),
+	pinnedLikelihood(row),
+	NOTHING_TO_SAY,
+	NOTHING_TO_SAY,
+	row.isUsingDefaultSize === true ? "Yes" : NOTHING_TO_SAY,
+];
+
+/**
+ * The same table, for a Delivery that has been retired. Same columns and the same Delivery-first
+ * shape, so a report built from a closed Delivery lines up beside one built from a running Delivery
+ * without the reader having to notice which is which.
+ *
+ * The record never held a Feature's Team, state, dependencies or its own forecast dates, and those
+ * cells are left empty rather than filled from anywhere. Anything written there would be today's
+ * answer under a heading that promises the closing day's.
+ */
+export function buildArchivedDeliveryExportTable(
+	archived: ArchivedDelivery,
+	rows: readonly FeatureMetric[],
+	terms: DeliveryExportTerms,
+): DataGridExportTable {
+	return {
+		headers: HEADERS,
+		rows: [
+			archivedDeliveryRow(archived, terms),
+			...rows.map(archivedFeatureRow),
 		],
 	};
 }

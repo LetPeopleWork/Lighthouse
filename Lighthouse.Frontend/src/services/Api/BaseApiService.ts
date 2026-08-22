@@ -55,6 +55,7 @@ export class BaseApiService {
 			parsed.message,
 			parsed.technicalDetails,
 			parsed.fieldName,
+			parsed.problemCode,
 		);
 	}
 
@@ -66,6 +67,7 @@ export class BaseApiService {
 		message: string;
 		technicalDetails?: string;
 		fieldName?: string;
+		problemCode?: string;
 	} {
 		const fallbackMessage = axiosMessage ?? String(status);
 
@@ -82,6 +84,8 @@ export class BaseApiService {
 				TechnicalDetails?: unknown;
 				fieldName?: unknown;
 				FieldName?: unknown;
+				code?: unknown;
+				Code?: unknown;
 			};
 
 			return {
@@ -94,6 +98,7 @@ export class BaseApiService {
 					payload.fieldName,
 					payload.FieldName,
 				),
+				problemCode: BaseApiService.extractString(payload.code, payload.Code),
 			};
 		}
 

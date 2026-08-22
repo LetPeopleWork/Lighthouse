@@ -33,6 +33,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 		handleEditDelivery,
 		handleArchiveDelivery,
 		handleArchiveConfirmation,
+		handleUnarchiveDelivery,
 		handleDeleteConfirmation,
 		handleCloseCreateModal,
 		handleCloseEditModal,
@@ -82,6 +83,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 					archivedDeliveries={archivedDeliveries}
 					canEdit={canEdit}
 					onDelete={handleDeleteDelivery}
+					onUnarchive={handleUnarchiveDelivery}
 				/>
 			</Box>
 

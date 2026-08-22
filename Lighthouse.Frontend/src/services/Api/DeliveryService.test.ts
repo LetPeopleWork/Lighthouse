@@ -98,6 +98,22 @@ describe("DeliveryService", () => {
 							teamsWithoutForecast: [],
 							selectionMode: "Manual",
 							concurrencyToken: "33333333-3333-3333-3333-333333333333",
+							featureBreakdown: [
+								{
+									referenceId: "FTR-1",
+									name: "Checkout rewrite",
+									completion: 100,
+									likelihood: 91.2,
+									totalItems: 30,
+									isUsingDefaultSize: false,
+								},
+							],
+							whenDistribution: [
+								{ probability: 85, expectedDate: "2026-04-29T00:00:00Z" },
+							],
+							rules: [],
+							mode: "and",
+							metricSnapshotCount: 11,
 						},
 					],
 				},
@@ -113,6 +129,11 @@ describe("DeliveryService", () => {
 			expect(result.archived[0].concurrencyToken).toBe(
 				"33333333-3333-3333-3333-333333333333",
 			);
+			expect(result.archived[0].featureBreakdown).toHaveLength(1);
+			expect(result.archived[0].featureBreakdown[0].name).toBe(
+				"Checkout rewrite",
+			);
+			expect(result.archived[0].metricSnapshotCount).toBe(11);
 		});
 	});
 
@@ -138,6 +159,29 @@ describe("DeliveryService", () => {
 			await expect(
 				deliveryService.archive(12, "33333333-3333-3333-3333-333333333333"),
 			).rejects.toMatchObject({ code: 409 });
+		});
+	});
+
+	describe("a refusal that names the archived state", () => {
+		it("carries the reason through to the caller instead of a bare conflict", async () => {
+			mockedAxios.isAxiosError.mockReturnValue(true);
+			mockedAxios.post.mockRejectedValue({
+				isAxiosError: true,
+				message: "Request failed with status code 409",
+				response: {
+					status: 409,
+					data: {
+						title: "Delivery archived",
+						detail: "Delivery 12 is archived and cannot be changed.",
+						code: "delivery-archived",
+						deliveryId: 12,
+					},
+				},
+			});
+
+			await expect(
+				deliveryService.addNote(12, "late note"),
+			).rejects.toMatchObject({ code: 409, problemCode: "delivery-archived" });
 		});
 	});
 

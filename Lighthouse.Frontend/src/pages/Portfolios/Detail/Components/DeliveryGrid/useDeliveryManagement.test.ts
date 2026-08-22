@@ -1,13 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
-import {
-	ArchivedDelivery,
-	ArchivedDeliverySchema,
-} from "../../../../../models/Delivery/ArchivedDelivery";
+import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
 import { Feature } from "../../../../../models/Feature";
 import { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { ApiError } from "../../../../../services/Api/ApiError";
+import { makeArchivedDelivery } from "../../../../../tests/ArchivedDeliveryFixture";
 import {
 	createMockApiServiceContext,
 	createMockFeatureService,
@@ -892,24 +890,7 @@ describe("useDeliveryManagement", () => {
 
 	describe("Archiving", () => {
 		const archivedRow = (id: number, name: string): ArchivedDelivery =>
-			ArchivedDelivery.fromParsed(
-				ArchivedDeliverySchema.parse({
-					id,
-					name,
-					date: "2026-05-01T00:00:00Z",
-					portfolioId: 1,
-					archivedOn: "2026-05-04T00:00:00Z",
-					progress: 100,
-					totalWork: 30,
-					doneWork: 30,
-					remainingWork: 0,
-					likelihoodPercentage: 91,
-					hasSufficientData: true,
-					teamsWithoutForecast: [],
-					selectionMode: "Manual",
-					concurrencyToken: "22222222-2222-2222-2222-222222222222",
-				}),
-			);
+			makeArchivedDelivery({ id, name });
 
 		it("keeps the retired Deliveries apart from the ones still running", async () => {
 			const portfolio = getMockPortfolio();

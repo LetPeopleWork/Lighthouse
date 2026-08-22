@@ -4,13 +4,11 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { Delivery } from "../../../models/Delivery";
-import {
-	ArchivedDelivery,
-	ArchivedDeliverySchema,
-} from "../../../models/Delivery/ArchivedDelivery";
+import type { ArchivedDelivery } from "../../../models/Delivery/ArchivedDelivery";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { makeArchivedDelivery } from "../../../tests/ArchivedDeliveryFixture";
 import {
 	createMockApiServiceContext,
 	createMockDeliveryService,
@@ -61,24 +59,7 @@ const buildDelivery = (id: number, name: string): Delivery => {
 };
 
 const buildArchived = (id: number, name: string): ArchivedDelivery =>
-	ArchivedDelivery.fromParsed(
-		ArchivedDeliverySchema.parse({
-			id,
-			name,
-			date: "2026-05-01T00:00:00Z",
-			portfolioId: 1,
-			archivedOn: "2026-05-04T00:00:00Z",
-			progress: 100,
-			totalWork: 30,
-			doneWork: 30,
-			remainingWork: 0,
-			likelihoodPercentage: 91,
-			hasSufficientData: true,
-			teamsWithoutForecast: [],
-			selectionMode: "Manual",
-			concurrencyToken: "22222222-2222-2222-2222-222222222222",
-		}),
-	);
+	makeArchivedDelivery({ id, name });
 
 const renderView = (options?: {
 	active?: Delivery[];
@@ -248,6 +229,65 @@ describe("PortfolioDeliveryView - retiring a Delivery", () => {
 
 		await userEvent.click(screen.getByLabelText("archive"));
 		await userEvent.click(screen.getByRole("button", { name: "Archive" }));
+
+		expect(
+			await screen.findByText(/changed by someone else/i),
+		).toBeInTheDocument();
+	});
+
+	it("brings a retired Delivery back on the version it is looking at", async () => {
+		const { deliveryService } = renderView({
+			archived: [buildArchived(9, "Autumn Launch")],
+		});
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: /Archived/ }),
+		);
+		await userEvent.click(await screen.findByLabelText("unarchive"));
+
+		await waitFor(() => {
+			expect(deliveryService.unarchive).toHaveBeenCalledWith(
+				9,
+				"22222222-2222-2222-2222-222222222222",
+			);
+		});
+	});
+
+	it("brings one back on a lapsed licence, so nothing is trapped in the archive", async () => {
+		const { deliveryService } = renderView({
+			archived: [buildArchived(9, "Autumn Launch")],
+			canUsePremiumFeatures: false,
+		});
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: /Archived/ }),
+		);
+		const unarchive = await screen.findByLabelText("unarchive");
+
+		expect(unarchive).not.toBeDisabled();
+
+		await userEvent.click(unarchive);
+
+		await waitFor(() => {
+			expect(deliveryService.unarchive).toHaveBeenCalled();
+		});
+	});
+
+	it("says so when the retired Delivery moved on before it could be brought back", async () => {
+		const deliveryService = createMockDeliveryService();
+		(deliveryService.unarchive as ReturnType<typeof vi.fn>).mockRejectedValue(
+			new ApiError(409, "Request failed with status code 409"),
+		);
+
+		renderView({
+			archived: [buildArchived(9, "Autumn Launch")],
+			deliveryService,
+		});
+
+		await userEvent.click(
+			await screen.findByRole("button", { name: /Archived/ }),
+		);
+		await userEvent.click(await screen.findByLabelText("unarchive"));
 
 		expect(
 			await screen.findByText(/changed by someone else/i),

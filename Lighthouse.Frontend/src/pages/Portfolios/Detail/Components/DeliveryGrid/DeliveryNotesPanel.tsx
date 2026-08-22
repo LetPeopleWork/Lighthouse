@@ -2,18 +2,38 @@ import { Box, Button, Stack, TextField, Typography } from "@mui/material";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type { DeliveryNote } from "../../../../../models/Delivery/DeliveryNote";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../../../services/TerminologyContext";
+import {
+	archivedRefusalMessage,
+	isArchivedRefusal,
+} from "../../../../../utils/deliveries/deliveryArchivedRefusal";
 
 interface DeliveryNotesPanelProps {
 	deliveryId: number;
 	canWrite: boolean;
+	/** A retired Delivery's notes are a record of what happened, so nothing here may rewrite them. */
+	isReadOnly?: boolean;
 }
 
 const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 	deliveryId,
 	canWrite,
+	isReadOnly = false,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
+	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+	const canChangeNotes = canWrite && !isReadOnly;
+
+	// Being told a note could not be saved sends somebody to try again; being told the Delivery is
+	// retired tells them what to do instead, so the server's own reason is repeated rather than
+	// flattened into the general one.
+	const reasonFor = (failure: unknown, fallback: string): string =>
+		isArchivedRefusal(failure)
+			? archivedRefusalMessage(deliveryTerm)
+			: fallback;
 	const [notes, setNotes] = useState<DeliveryNote[]>([]);
 	const [text, setText] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -49,8 +69,8 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 			setNotes((existing) => [saved, ...existing]);
 			setText("");
 			setError(null);
-		} catch {
-			setError("The note could not be saved.");
+		} catch (failure) {
+			setError(reasonFor(failure, "The note could not be saved."));
 		} finally {
 			setIsSaving(false);
 		}
@@ -84,8 +104,8 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 				existing.map((note) => (note.id === noteId ? updated : note)),
 			);
 			cancelEdit();
-		} catch {
-			setEditError("The note could not be saved.");
+		} catch (failure) {
+			setEditError(reasonFor(failure, "The note could not be saved."));
 		}
 	};
 
@@ -93,14 +113,14 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 		try {
 			await deliveryService.deleteNote(deliveryId, noteId);
 			setNotes((existing) => existing.filter((note) => note.id !== noteId));
-		} catch {
-			setError("The note could not be withdrawn.");
+		} catch (failure) {
+			setError(reasonFor(failure, "The note could not be withdrawn."));
 		}
 	};
 
 	return (
 		<Box sx={{ p: 2 }} data-testid="delivery-notes-panel">
-			{canWrite && (
+			{canChangeNotes && (
 				<Stack spacing={1} sx={{ mb: 2 }}>
 					<TextField
 						label="Add a note"
@@ -192,7 +212,7 @@ const DeliveryNotesPanel: React.FC<DeliveryNotesPanelProps> = ({
 											: note.createdOn}
 										{note.lastEditedOn ? ` · edited ${note.lastEditedOn}` : ""}
 									</Typography>
-									{note.canModify && (
+									{note.canModify && canChangeNotes && (
 										<>
 											<Button
 												size="small"

@@ -1,4 +1,36 @@
 import { z } from "zod";
+import {
+	DeliverySelectionMode,
+	type IWorkItemRuleCondition,
+	ruleConditionSchema,
+} from "../WorkItemRules";
+import type {
+	FeatureMetric,
+	WhenDistributionPoint,
+} from "./DeliveryMetricsHistory";
+
+/**
+ * A Feature as the Delivery had it on its last day. There is no id and no link on it, and there is
+ * not meant to be: the Feature may have been renamed, moved to another Team or deleted since, and a
+ * row that could reach it would show today's answer under a heading promising the closing day's.
+ */
+const ArchivedFeatureRowSchema = z.object({
+	referenceId: z.string(),
+	name: z.string(),
+	completion: z.number(),
+	likelihood: z
+		.number()
+		.nullish()
+		.transform((value) => value ?? null),
+	totalItems: z
+		.number()
+		.nullish()
+		.transform((value) => value ?? null),
+	isUsingDefaultSize: z
+		.boolean()
+		.nullish()
+		.transform((value) => value ?? null),
+});
 
 export const ArchivedDeliverySchema = z.object({
 	id: z.number(),
@@ -15,6 +47,13 @@ export const ArchivedDeliverySchema = z.object({
 	teamsWithoutForecast: z.array(z.string()),
 	selectionMode: z.union([z.string(), z.number()]),
 	concurrencyToken: z.string(),
+	featureBreakdown: z.array(ArchivedFeatureRowSchema),
+	whenDistribution: z.array(
+		z.object({ probability: z.number(), expectedDate: z.coerce.date() }),
+	),
+	rules: z.array(ruleConditionSchema).default([]),
+	mode: z.string().default("and"),
+	metricSnapshotCount: z.number(),
 });
 
 export type IArchivedDelivery = z.infer<typeof ArchivedDeliverySchema>;
@@ -23,9 +62,9 @@ export type IArchivedDelivery = z.infer<typeof ArchivedDeliverySchema>;
  * A Delivery that has been retired, as it was written down on the day it closed.
  *
  * This is a type of its own rather than a Delivery with some fields left empty, and that is the
- * whole point: it carries no Features and no forecast, so nothing reading one can reach for a
- * number that only a Delivery still in flight can have. Every value here was worked out once, at
- * closing time, and is never worked out again.
+ * whole point: every value here was worked out once, at closing time, and is never worked out
+ * again. Its Feature rows travel with it in full rather than as ids to look up, so there is nothing
+ * on it to fetch a live Feature by even if somebody wanted to.
  */
 export class ArchivedDelivery {
 	readonly id: number;
@@ -42,6 +81,11 @@ export class ArchivedDelivery {
 	readonly teamsWithoutForecast: string[];
 	readonly selectionMode: string | number;
 	readonly concurrencyToken: string;
+	readonly featureBreakdown: FeatureMetric[];
+	readonly whenDistribution: WhenDistributionPoint[];
+	readonly rules: IWorkItemRuleCondition[];
+	readonly mode: "and" | "or";
+	readonly metricSnapshotCount: number;
 
 	private constructor(data: IArchivedDelivery) {
 		this.id = data.id;
@@ -58,10 +102,22 @@ export class ArchivedDelivery {
 		this.teamsWithoutForecast = data.teamsWithoutForecast;
 		this.selectionMode = data.selectionMode;
 		this.concurrencyToken = data.concurrencyToken;
+		this.featureBreakdown = data.featureBreakdown;
+		this.whenDistribution = data.whenDistribution;
+		this.rules = data.rules;
+		this.mode = data.mode.toLowerCase() === "or" ? "or" : "and";
+		this.metricSnapshotCount = data.metricSnapshotCount;
 	}
 
 	static fromParsed(data: IArchivedDelivery): ArchivedDelivery {
 		return new ArchivedDelivery(data);
+	}
+
+	get isRuleBased(): boolean {
+		return (
+			this.selectionMode === DeliverySelectionMode.RuleBased ||
+			this.selectionMode === "RuleBased"
+		);
 	}
 
 	getFormattedDate(): string {
