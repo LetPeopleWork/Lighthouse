@@ -1,0 +1,74 @@
+schema_version: 1
+id: privacy-decider
+created: 2026-08-22
+created_in_feature: epic-5733-opt-in-usage-data
+
+display_name: Privacy Decider
+
+aliases:
+  - consenting-user
+  - usage-data-decider
+  - the-person-at-the-browser
+
+short_description: >
+  Any human using Lighthouse, in the specific moment they are asked whether the product may send
+  usage data about how they use it. The same human as a flow-coach, delivery-forecaster or
+  product-owner doing their day-to-day work — but here acting on the tool rather than with it,
+  making a decision about themselves rather than about their teams' flow. Deliberately NOT scoped to
+  a licence tier or a role: this decision belongs to the person at the browser, not to a permission.
+
+primary_jobs:
+  - job-user-decide-once-whether-lighthouse-may-learn-from-me
+
+goals:
+  - Understand exactly what would leave this machine before agreeing to anything
+  - Decide once, properly, rather than dismissing a dialog unread
+  - Be able to change my mind later without hunting through settings for the switch
+  - Help improve a tool I rely on, if the cost to me is genuinely small and genuinely stated
+
+frustrations:
+  - Consent dialogs describe categories ("usage data", "product improvement") rather than fields
+  - A promise of "we won't ask again" routinely means "we'll ask again next quarter"
+  - The only way to find out what a tool sends is to read its network traffic
+  - A control I agreed to once becomes impossible to find when I want to change it
+  - Dismissing a prompt is treated as an answer, or as permission to ask again tomorrow
+
+mental_model:
+  - Opt-in means nothing has been sent yet — not that sending started and I can stop it
+  - If I cannot see the list, there is no list, and I am agreeing to whatever they add later
+  - A permanent indicator is a promise; a dialog that appears once is a transaction
+  - Clearing my browser data should reset this, because that is what clearing browser data means
+  - The organisation's administrator and I are different people with different authority, and I
+    should be able to tell which of us turned something off
+
+vocabulary:
+  - term: usage data
+    means: facts about how the product is used, not the content I put into it
+  - term: opt in
+    means: nothing happens until I actively say yes
+  - term: anonymous
+    means: nothing here can be traced back to me personally, by anyone, including the vendor
+  - term: tracking
+    means: any observation of my behaviour that leaves my machine — the word does not distinguish
+      between a heartbeat and a full session recording, and a product that argues about that
+      distinction has already lost the conversation
+
+related_personas:
+  - id: community-respondent
+    relation: >
+      The nearest existing persona and the source of the recorded evidence for this one's anxieties —
+      "I worry an in-app survey is quietly phoning home my usage data" and "once I dismiss a nag it
+      often comes back next session". Distinct because community-respondent is acting outbound
+      (volunteering feedback, possibly raising a hand for a trial) and is Community-tier by
+      definition, while the privacy-decider is acting defensively, in-app, on any tier.
+  - id: config-admin
+    relation: >
+      Holds the instance-wide switch that can override this person's choice. Their controls sit on
+      opposite sides of the same decision and must be distinguishable in the UI — "the administrator
+      disabled this" and "you declined" cannot look the same.
+
+not_this_persona:
+  - The platform-operator, who cares about the Prometheus metrics endpoint. That is a different
+    thing that unfortunately shares the word telemetry.
+  - Anyone with a permission. Consent here is deliberately not RBAC-gated, and on an auth-off or
+    standalone instance there is no role to check.

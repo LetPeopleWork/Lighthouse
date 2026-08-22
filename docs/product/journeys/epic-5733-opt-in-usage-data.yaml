@@ -1,0 +1,171 @@
+schema_version: 1
+feature_id: epic-5733-opt-in-usage-data
+updated: 2026-08-22
+note: >
+  ADO Epic #5733 "Opt-In Telemtry", superseding the Removed #5015 whose non-negotiables it inherits
+  verbatim. Grounded in a pre-DISCUSS code reality check. Four facts shape every journey below.
+  One: "Telemetry" already means the OpenTelemetry-to-Prometheus scrape endpoint in this codebase
+  (TelemetryConfiguration.cs) — operator-facing, self-hosted, nothing leaving the cluster — so the
+  vendor phone-home is named Usage Data instead. Two: authentication is optional and impossible in
+  standalone, and with auth off DisabledAuthenticationHandler gives every caller the subject
+  "lighthouse|auth-disabled", so consent cannot be scoped to a user account and is scoped to the
+  browser via an opaque token minted after the click (never a fingerprint, which would need consent
+  before it could be taken). Three: the product currently ships the sentence "Lighthouse never tracks
+  how you use it" in SurveyNudge.tsx and claims "no telemetry" in its CRA self-assessment — both are
+  corrected in slice 01 or slice 01 does not ship. Four: the instance already calls GitHub for the
+  release check, unconsented and undocumented; that is named in the docs rather than changed.
+  Five carpaccio units — one SPIKE and four slices; see
+  docs/feature/epic-5733-opt-in-usage-data/.
+
+journeys:
+
+  - name: decide-whether-lighthouse-may-learn-from-me
+    goal: >
+      Someone using Lighthouse sees exactly what would leave their machine, decides once, and can
+      undo that decision at any moment from a control that is always visible.
+    persona: "privacy-decider (secondary: community-respondent, whose recorded anxieties this journey
+      is written against)"
+
+    emotional_arc:
+      start: Wary — "a popup asking to send my usage somewhere. Every one of these I have ever read
+        described a category and meant everything."
+      middle: Disarmed — "it lists five fields. It says what is never sent. It says who runs the
+        collector. It tells me whether it will ask me again, and which answer means it won't."
+      end: Settled — "there is a small icon in the footer that says which way it is set, and clicking
+        it changes my mind. I do not have to remember where this lives."
+
+    steps:
+      - step: Notice the question, or go looking for it
+        action: The Usage Data dialog appears unprompted after a few days of the instance being used,
+          or the footer indicator is clicked at any time
+        output: A dialog naming every field in the payload, the collector and its operator, what is
+          never sent, and a link to the full docs page.
+      - step: Decide
+        action: Press either "Yes, share usage data" or "No"
+        output: An opaque token minted server-side and stored in this browser; the footer indicator
+          flips in the same interaction, with no reload.
+      - step: Check what is happening at any later moment
+        action: Read the footer indicator, or hover it
+        output: A tooltip stating in words whether usage data is being sent from this browser.
+      - step: Change my mind
+        action: Click the indicator, choose the other answer
+        output: The state flips, and the next scheduled emit either happens or does not.
+
+    error_paths:
+      - situation: The dialog is opened and closed without choosing
+        recovery: Nothing is written to the browser and nothing is transmitted. The browser stays
+          undecided and is eligible to be asked again next session — a dismissal is not an answer.
+      - situation: The backend cannot be reached when the indicator renders
+        recovery: It renders in the not-sending state. An unknown state is reported as not sending,
+          never as sending.
+      - situation: The user clears their browser storage
+        recovery: Equivalent to never having decided. The browser stops counting as consenting and
+          becomes eligible to be asked again — which is what clearing browser data is supposed to
+          mean.
+      - situation: The collector is unreachable, slow, or erroring
+        recovery: No user-visible failure, no retry storm, at most one log line per attempt. Consent
+          is held; nothing is sent; nothing is queued for later.
+      - situation: The administrator has switched Usage Data off
+        recovery: The dialog never appears, and the indicator reads not-sending with a tooltip saying
+          the administrator disabled it — distinguishable from "you declined".
+
+    shared_artifacts:
+      - artifact: the consent token
+        source: minted server-side on the click, once, for grant and refusal alike; stored in this
+          browser
+        consumers: the footer indicator, the emit gate, the re-ask cadence
+      - artifact: the instance identifier
+        source: minted lazily on the first consent anywhere on the instance and persisted; an
+          instance that never consents never acquires one
+        consumers: the heartbeat, every later product event, the maintainer's installed-base census
+      - artifact: the field list
+        source: authored once, in docs/settings/usagedata.md
+        consumers: the consent dialog, the docs page, the payload assertion in CI — three consumers
+          that must agree, which is why an event shipping ahead of its documentation is a defect
+
+  - name: enforce-an-organisational-policy-on-usage-data
+    goal: >
+      A system administrator stops both the asking and the sending for the whole instance, and can
+      demonstrate it in one screenshot.
+    persona: config-admin
+
+    emotional_arc:
+      start: Exposed — "the security questionnaire asks whether this tool phones home, and my only
+        honest answer is that it depends on what each of my users clicked."
+      middle: In control — "one switch, in Optional Features, guarded by system administrator. Off
+        means off, including for people who already said yes."
+      end: Able to answer — "I can screenshot it. And the page tells me that turning it back on
+        resumes the consents I suspended rather than silently re-collecting them."
+
+    steps:
+      - step: Find the control
+        action: Settings → Configuration → Optional Features → Usage Data
+        output: The switch, its state, and a plain-words description of what off and on actually do.
+      - step: Turn it off
+        action: Toggle it off
+        output: Emission stops instance-wide, including for browsers holding live consent; the dialog
+          stops appearing; every footer indicator reads not-sending on the next load.
+      - step: Turn it back on
+        action: Toggle it on
+        output: Emission resumes for browsers that had consented, without asking any of them again.
+
+    error_paths:
+      - situation: A Community administrator tries to move the switch
+        recovery: The control carries the existing premium affordance and tooltip, and a request made
+          anyway is refused explicitly — not accepted and silently dropped, which is what
+          OptionalFeaturesController does today and what this Epic fixes. A privacy control whose
+          write can vanish is worse than no control.
+      - situation: A stale browser tab is open across the switch being turned off
+        recovery: The gate is on the emit path, not on the UI, so the tab cannot keep sending.
+      - situation: The administrator expects off to erase existing consent
+        recovery: It does not — it suspends. The settings page says so in plain words, because
+          "my consent came back without me" is the reading this earns if left implicit.
+
+    shared_artifacts:
+      - artifact: the UsageData OptionalFeature flag
+        source: seeded enabled, owned by the administrator thereafter; the seeder refreshes how a
+          feature presents itself on every upgrade but never whether it is on
+        consumers: the emit gate, the dialog's eligibility check, the footer indicator's tooltip
+
+  - name: learn-whether-what-we-shipped-landed
+    goal: >
+      The maintainer answers "how many instances, on which version" and "did anyone use this
+      feature" from data rather than from three support tickets and a sample of one.
+    persona: lighthouse-maintainer
+
+    emotional_arc:
+      start: Blind — "seven KPIs across five features say deferred-pending-telemetry-feature, and the
+        installed base is inferred from GitHub download counts."
+      middle: Sighted — "consenting instances report once a day. The census is biased and the docs
+        say exactly how."
+      end: Deciding — "a deprecation date with a number attached, and a shipped feature I can either
+        invest in or retire on evidence."
+
+    steps:
+      - step: See the installed base
+        action: Open the collector dashboard
+        output: Distinct instance identifiers reporting in the last 24 hours, split by version,
+          deployment mode and licence tier.
+      - step: Ask whether a feature landed
+        action: Read the counts for the two-to-four named product events
+        output: Usage over the last 30 days, split by version and tier.
+      - step: Close the loop
+        action: Update the KPI contracts the events now source
+        output: Outcomes moving off deferred-pending-telemetry-feature and naming their live source.
+
+    error_paths:
+      - situation: Uptake is too low for any ratio to mean anything
+        recovery: That is the slice-02 learning hypothesis firing, not a measurement bug. The
+          denominator is reported, and a ratio computed on too few instances is not published.
+      - situation: The census is read as "how many Lighthouse instances exist"
+        recovery: It is not. It counts instances with at least one consenting user, and both the docs
+          and the dashboard say so. A biased denominator that is named is usable; an unnamed one is
+          not.
+      - situation: The first real product question cannot be answered from the events chosen
+        recovery: That is the slice-04 learning hypothesis firing. It means the selection method
+          needs rethinking, not that a fifth event should be quietly added.
+
+    shared_artifacts:
+      - artifact: the instance identifier
+        source: see the consent journey — one identifier, minted once per instance on first consent
+        consumers: the census, every event count, every per-version split

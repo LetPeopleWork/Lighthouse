@@ -44,6 +44,7 @@ feature_context:
   - epic-5792-dependency-aware-forecasting
   - epic-5698-deliveries-as-durable-records
   - epic-5565-delivery-date-sync
+  - epic-5733-opt-in-usage-data
 
 jobs:
   - id: job-rbac-bootstrap
@@ -5979,3 +5980,222 @@ jobs:
         than 1, because unlike every other job here there is no partial answer today: the mechanism
         being reported on does not exist yet, so the degradation and its reporting have to arrive
         together or the feature ships with a silent failure mode built in.
+
+  - id: job-maintainer-see-the-installed-base
+    title: Know how many Lighthouse instances exist and which versions they run
+    persona: lighthouse-maintainer
+    feature_context: epic-5733-opt-in-usage-data
+    created: 2026-08-22
+    note: >
+      NEW in epic-5733-opt-in-usage-data (ADO #5733, superseding the Removed #5015). Lighthouse is
+      self-hosted and no instance reports anything, so the installed base is genuinely unknown — its
+      only proxies are GitHub download counts and whoever happens to post in the community channel.
+      The instance heartbeat this Epic adds is the first signal of its kind, and it is gated on a
+      browser holding live consent, so the census counts instances with at least one consenting user
+      rather than instances.
+    job_story: >
+      When I am planning a breaking change, an upgrade path, or dropping support for something,
+      I want to know how many instances exist and which versions they are running,
+      so I can pick a date that does not strand people, and afterwards see whether the upgrade
+      actually propagated.
+    dimensions:
+      functional: >
+        A daily heartbeat from consenting instances carrying an anonymous instance identifier, the
+        Lighthouse version, the deployment mode (standalone / container / cluster) and the licence
+        tier — five fields, enumerated in the consent dialog and in the docs before any is sent.
+      emotional: >
+        Move from guessing ("I think most people are on a recent version") to knowing, and from
+        anxiety about breaking an invisible user to a dated, defensible deprecation decision.
+      social: >
+        Be a maintainer who announces deprecations with a number attached rather than an apology
+        afterwards.
+    forces:
+      push: >
+        Every support conversation starts by asking what version they are on, because there is no
+        other way to find out. Deprecation dates are set by feel. An upgrade ships and nobody knows
+        whether anyone took it.
+      pull: >
+        One small daily signal answers all three questions at once, and it is the cheapest possible
+        payload — no user in it, nothing about what anyone does.
+      anxiety: >
+        That a phone-home, however minimal, breaks the promise the product has made in its own UI and
+        in its CRA self-assessment. Mitigated by making consent the precondition for the very first
+        byte, and by correcting both of those surfaces in the same slice.
+      habit: >
+        The habit is inferring the installed base from GitHub download counts and community chatter,
+        and treating "we cannot know" as a fixed constraint rather than a decision.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — every deprecation, migration and support decision currently rests on a guess.
+        Current satisfaction: 0, not 1: there is no partial answer today, only proxies that measure
+        downloads rather than running instances. Gap: 4 — the largest in this Epic, and the cheapest
+        to close, because the payload has no user in it and needs no event vocabulary.
+
+  - id: job-maintainer-know-if-a-shipped-feature-landed
+    title: Tell whether a shipped feature is actually being used
+    persona: lighthouse-maintainer
+    feature_context: epic-5733-opt-in-usage-data
+    created: 2026-08-22
+    note: >
+      NEW in epic-5733-opt-in-usage-data. Seven outcome KPIs across five earlier features sit at
+      status deferred-pending-telemetry-feature in docs/product/kpi-contracts.yaml, each naming the
+      telemetry gap as blocked_by. This is the job those KPIs were written for. It is deliberately
+      sequenced last in the Epic: the event vocabulary should be chosen once there is a real
+      consenting population to spend it on.
+    job_story: >
+      When I have shipped a feature,
+      I want to see whether anyone turned it on and kept using it,
+      so I can decide to invest further, fix it, or retire it — instead of reading three support
+      tickets and calling it a signal.
+    dimensions:
+      functional: >
+        A small named set of product events (two to four, chosen deliberately per slice) carrying the
+        instance identifier and nothing about the customer's content, subject to the same consent and
+        the same administrator switch as the heartbeat, enumerated in the docs and the consent dialog
+        before any is emitted.
+      emotional: >
+        Move from building on faith to building on evidence — and from the specific discomfort of not
+        knowing whether the last three months of work mattered to anyone.
+      social: >
+        Be able to tell the community why a feature is being invested in or retired, with the reason
+        rather than the assertion.
+    forces:
+      push: >
+        Post-release questions are answered from community chatter and from the vendor's own instance,
+        which is a sample of one. Seven KPIs have been sitting unmeasurable for months.
+      pull: >
+        A handful of named events answers the question directly, and the KPI contracts already say
+        exactly which questions matter — the minimum event set does not have to be guessed.
+      anxiety: >
+        That "a few events" becomes "instrument everything", which is both a privacy problem and the
+        thing the originating Epic explicitly warned against. Mitigated by a hard two-to-four limit
+        per slice and by requiring every event to be documented before it is emitted.
+        Second worry: whether widening the payload requires re-consent from browsers that agreed to
+        a narrower one. Unresolved — a legal question, flagged rather than assumed.
+      habit: >
+        The habit is treating "we cannot measure adoption" as a property of being self-hosted rather
+        than as a decision that was never revisited.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — this is the Epic's stated primary goal ("gauge whether certain features had
+        an effect or not") and it gates the product's whole feedback loop. Current satisfaction: 1 —
+        community feedback and the vendor demo instance are real signals, just heavily biased and
+        tiny. Gap: 4 — high, but scored below a 5 because closing it depends on a consenting
+        population that does not exist yet, so the event set alone does not deliver the outcome.
+
+  - id: job-user-decide-once-whether-lighthouse-may-learn-from-me
+    title: Decide, on evidence, whether Lighthouse may learn from how I use it
+    persona: privacy-decider
+    feature_context: epic-5733-opt-in-usage-data
+    created: 2026-08-22
+    note: >
+      NEW in epic-5733-opt-in-usage-data. The consent unit is the browser, not the user account:
+      authentication is optional in Lighthouse and impossible in standalone, and with auth off every
+      caller shares the subject "lighthouse|auth-disabled", so an account-scoped consent would
+      collapse to one person deciding for everybody. The record is an opaque token minted after the
+      click — deliberately not a device fingerprint, which would need consent before it could be
+      taken and so could never record consent in the first place.
+    job_story: >
+      When Lighthouse asks whether it may send usage data,
+      I want to see exactly what would leave my machine and decide once,
+      so I can help improve the tool without feeling watched — and change my mind later without
+      hunting through settings for the switch.
+    dimensions:
+      functional: >
+        A dialog that names every field in the payload, says where it goes and who runs it, says what
+        is never sent, and offers two decisions and no dismiss; a permanent footer indicator showing
+        the current state in words; and a one-click revocation that stops the next transmission.
+      emotional: >
+        Move from the low background unease of not knowing what a tool sends home, to a settled sense
+        of having read the list and chosen — and knowing the choice is still mine.
+      social: >
+        Contribute to something used by peers, visibly and voluntarily, rather than being harvested.
+        Weak for someone who declines, and that is fine: the job is the decision, not the yes.
+    forces:
+      push: >
+        Nothing in the product says what it sends anywhere, and the one statement that exists — a
+        popup claiming Lighthouse never tracks you — is about to stop being true. Meanwhile the
+        instance already calls GitHub for the release check and nobody has ever been told.
+      pull: >
+        A list rather than a category, a named recipient, and a control that stays where you can see
+        it. Consent to a specific thing is easy to give; consent to "usage data" is not.
+      anxiety: >
+        The recorded frustrations of the community-respondent persona are the exact risks here:
+        "I worry an in-app survey is quietly phoning home my usage data", and "once I dismiss a nag it
+        often comes back next session — I cannot make it stop". The second is answered by no
+        remind-me-later and an honest statement of the re-ask cadence; the first by making nothing
+        leave before the click and proving it.
+      habit: >
+        The habit is dismissing consent dialogs unread, because almost all of them are unreadable and
+        almost none of them are honest about whether they will return.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance: 5 — this is the non-negotiable the whole Epic is built around; getting it wrong
+        does not merely fail the job, it damages the product's standing. Current satisfaction: 0 —
+        there is no consent surface at all, and the only relevant statement in the product is one that
+        is about to become false. Gap: 5 — the highest here, and the reason the walking skeleton
+        leads with the consent path rather than with the events.
+
+  - id: job-admin-stop-lighthouse-asking-my-people
+    title: Enforce an organisational policy on usage data with one switch
+    persona: config-admin
+    feature_context: epic-5733-opt-in-usage-data
+    created: 2026-08-22
+    note: >
+      NEW in epic-5733-opt-in-usage-data. Modelled as a premium OptionalFeature defaulting to on: it
+      governs whether Lighthouse may ask, not whether the user consented. Turning it off suspends
+      existing consent rather than revoking it, and turning it back on resumes silently — the
+      administrator overrode the user's choice, the user never withdrew it. The premium gating is a
+      deliberate commercial line: a Community administrator can see the switch and cannot move it.
+    job_story: >
+      When my organisation's policy forbids product analytics,
+      I want one switch that stops the asking for everyone and guarantees nothing can be sent,
+      so I can close the security review with a screenshot instead of a discussion, and without
+      relying on every individual answering no.
+    dimensions:
+      functional: >
+        An instance-wide, system-administrator-only switch that both suppresses the prompt and stops
+        emission at the emit path — including from browsers holding live consent and from stale tabs
+        — with the suspend-and-resume behaviour stated in plain words on the settings page.
+      emotional: >
+        Move from "I have to trust that nobody clicked yes" to being able to demonstrate the control,
+        which is the difference between a policy and a hope.
+      social: >
+        Be the administrator who can answer the security questionnaire in one screen rather than
+        escalating it to the vendor.
+    forces:
+      push: >
+        Without an instance-level lever, an organisational policy is enforced by asking every user
+        individually and hoping — which is not an answer a security review accepts.
+      pull: >
+        One toggle, in the place toggles already live, guarded by the permission that already guards
+        them, visible in a screenshot.
+      anxiety: >
+        That the switch does not actually do what it says. This is a live risk rather than a
+        hypothetical: the existing premium gate on optional features silently drops the write and
+        returns success, so a Community administrator today can turn something "off" and have nothing
+        happen. That defect is fixed as part of this job, because a privacy control cannot ship on it.
+        Second worry: that turning it off destroys consent that would then have to be re-collected —
+        answered by suspend-and-resume, and by saying so on the page.
+      habit: >
+        The habit is looking for privacy controls in a security or privacy section, not in a list of
+        optional features. Watch the first support question for whether this home was the right one.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — high, and specifically load-bearing for regulated and enterprise adopters,
+        but it serves fewer people than the individual consent decision. Current satisfaction: 0 —
+        nothing to govern today, and the mechanism that would govern it is itself defective. Gap: 4 —
+        real, and cheap to close because the toggle scaffolding, the permission guard and the premium
+        field all already exist.
