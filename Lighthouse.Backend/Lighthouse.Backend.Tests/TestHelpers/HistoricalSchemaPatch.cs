@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Portfolios", "FetchFingerprint", "TEXT", "AddFetchFingerprintToQueryOwners"),
             new("Portfolios", "DependencyOverrideAdditionalFieldDefinitionId", "INTEGER", "AddPortfolioDependencySettings"),
             new("Portfolios", "IgnoreDependencies", "boolean", "AddPortfolioDependencySettings"),
+            new("Deliveries", "ArchivedOn", "timestamp with time zone", "AddDeliveryArchiveAndClosureRecord"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>
