@@ -148,16 +148,21 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
             finally
             {
-                try
-                {
-                    await cleanupService.CleanupAsync();
-                }
+                await CleanUpOrphanedFeatures();
+            }
+        }
+
+        private async Task CleanUpOrphanedFeatures()
+        {
+            try
+            {
+                await cleanupService.CleanupAsync();
+            }
 #pragma warning disable CA1031 // cleanup failures must not propagate to the refresh queue
-                catch (Exception ex)
+            catch (Exception ex)
 #pragma warning restore CA1031
-                {
-                    Logger.LogWarning(ex, "Orphaned-feature cleanup after portfolio update failed (non-fatal)");
-                }
+            {
+                Logger.LogWarning(ex, "Orphaned-feature cleanup after portfolio update failed (non-fatal)");
             }
         }
     }

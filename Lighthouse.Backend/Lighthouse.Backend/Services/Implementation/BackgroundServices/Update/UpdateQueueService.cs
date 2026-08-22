@@ -73,13 +73,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             var updateKey = new UpdateKey(updateType, id);
 
-            if (maintenanceGate.ActiveOperationId != null)
+            if (IsBlockedByDatabaseMaintenance(updateKey))
             {
-                logger.LogInformation("Update for {UpdateType} with ID {Id} skipped because a database {OperationType} operation is active.", updateType, id, maintenanceGate.ActiveOperationType);
                 return;
             }
 
-            var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
+            var updateStatus = QueuedStatusFor(updateKey);
             if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
                 // The in-flight run read its state before this trigger was raised, so it cannot reflect
@@ -96,7 +95,65 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             _ = NotifyListeners(updateKey, updateStatus);
 
-            queue.Writer.TryWrite(ExecuteUpdateAsync(updateKey, updateTask, updateStatus, RoundForNewWork()));
+            var round = RoundForNewWork();
+            queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, updateTask, updateStatus, round));
+        }
+
+        public Task EnqueueAndAwaitAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, CancellationToken cancellationToken = default)
+        {
+            var updateKey = new UpdateKey(updateType, id);
+
+            if (IsBlockedByDatabaseMaintenance(updateKey))
+            {
+                return Task.CompletedTask;
+            }
+
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var updateStatus = QueuedStatusFor(updateKey);
+
+            if (!statusStore.TryAdmit(updateKey, updateStatus))
+            {
+                logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued; awaiting the in-flight completion.", updateType, id);
+                if (awaiters.TryGetValue(updateKey, out var existing))
+                {
+                    return RegisterCancellation(existing.Task, cancellationToken);
+                }
+
+                if (completionNotifier.IsDistributed)
+                {
+                    var crossPodAwaiter = awaiters.GetOrAdd(updateKey, _ => new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
+                    return RegisterCancellation(crossPodAwaiter.Task, cancellationToken);
+                }
+
+                return Task.CompletedTask;
+            }
+
+            awaiters[updateKey] = tcs;
+
+            logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
+
+            _ = NotifyListeners(updateKey, updateStatus);
+
+            var round = RoundForNewWork();
+            queue.Writer.TryWrite(() => RunAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, round));
+
+            return RegisterCancellation(tcs.Task, cancellationToken);
+        }
+
+        private bool IsBlockedByDatabaseMaintenance(UpdateKey updateKey)
+        {
+            if (maintenanceGate.ActiveOperationId == null)
+            {
+                return false;
+            }
+
+            logger.LogInformation("Update for {UpdateType} with ID {Id} skipped because a database {OperationType} operation is active.", updateKey.UpdateType, updateKey.Id, maintenanceGate.ActiveOperationType);
+            return true;
+        }
+
+        private static UpdateStatus QueuedStatusFor(UpdateKey updateKey)
+        {
+            return new UpdateStatus { UpdateType = updateKey.UpdateType, Id = updateKey.Id, Status = UpdateProgress.Queued };
         }
 
         /// <summary>
@@ -122,47 +179,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             runningRound.Join();
             return runningRound;
-        }
-
-        public Task EnqueueAndAwaitAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, CancellationToken cancellationToken = default)
-        {
-            var updateKey = new UpdateKey(updateType, id);
-
-            if (maintenanceGate.ActiveOperationId != null)
-            {
-                logger.LogInformation("Update for {UpdateType} with ID {Id} skipped because a database {OperationType} operation is active.", updateType, id, maintenanceGate.ActiveOperationType);
-                return Task.CompletedTask;
-            }
-
-            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var updateStatus = new UpdateStatus { UpdateType = updateType, Id = id, Status = UpdateProgress.Queued };
-
-            if (!statusStore.TryAdmit(updateKey, updateStatus))
-            {
-                logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued; awaiting the in-flight completion.", updateType, id);
-                if (awaiters.TryGetValue(updateKey, out var existing))
-                {
-                    return RegisterCancellation(existing.Task, cancellationToken);
-                }
-
-                if (completionNotifier.IsDistributed)
-                {
-                    var crossPodAwaiter = awaiters.GetOrAdd(updateKey, _ => new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously));
-                    return RegisterCancellation(crossPodAwaiter.Task, cancellationToken);
-                }
-
-                return Task.CompletedTask;
-            }
-
-            awaiters[updateKey] = tcs;
-
-            logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
-
-            _ = NotifyListeners(updateKey, updateStatus);
-
-            queue.Writer.TryWrite(ExecuteAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, RoundForNewWork()));
-
-            return RegisterCancellation(tcs.Task, cancellationToken);
         }
 
         public void HoldUntilQueuedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
@@ -249,54 +265,51 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return observer.Task;
         }
 
-        private Func<Task> ExecuteUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, WriteBackRound round)
+        private async Task RunUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, WriteBackRound round)
         {
-            return async () =>
+            await using var executionScope = await executionLock.AcquireAsync(updateKey);
+
+            statusStore.Advance(updateKey, UpdateProgress.InProgress);
+
+            UpdateProgress terminalProgress;
+            try
             {
-                await using var executionScope = await executionLock.AcquireAsync(updateKey);
+                await ExecuteUpdateTask(updateTask, round);
+                terminalProgress = UpdateProgress.Completed;
+            }
+            catch (Exception ex)
+            {
+                terminalProgress = UpdateProgress.Failed;
+                logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateKey.UpdateType, updateKey.Id);
+            }
 
-                statusStore.Advance(updateKey, UpdateProgress.InProgress);
+            // The follow-up is decided BEFORE the key is marked terminal. `HasActiveWork` counts only
+            // Queued and InProgress, so advancing to Completed first and requeueing after opens exactly
+            // the idle window the coalescing exists to close - two statements wide, and a CI run has
+            // already landed in it.
+            if (TryScheduleRerun(updateKey, updateStatus))
+            {
+                return;
+            }
 
-                UpdateProgress terminalProgress;
-                try
-                {
-                    await ExecuteUpdateTask(updateTask, round);
-                    terminalProgress = UpdateProgress.Completed;
-                }
-                catch (Exception ex)
-                {
-                    terminalProgress = UpdateProgress.Failed;
-                    logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateKey.UpdateType, updateKey.Id);
-                }
+            var terminalStatus = statusStore.Advance(updateKey, terminalProgress) ?? updateStatus;
+            statusStore.Remove(updateKey);
 
-                // The follow-up is decided BEFORE the key is marked terminal. `HasActiveWork` counts only
-                // Queued and InProgress, so advancing to Completed first and requeueing after opens exactly
-                // the idle window the coalescing exists to close — two statements wide, and CI run
-                // 31203153029 landed in it.
-                if (TryScheduleRerun(updateKey, updateStatus))
-                {
-                    return;
-                }
+            // A trigger can land in the window between the check above and this removal: it saw the key
+            // still admitted, so it parked a rerun instead of admitting its own. Re-check now that the
+            // key is gone, otherwise that trigger would be lost after all.
+            if (pendingReruns.TryRemove(updateKey, out var lateRerun))
+            {
+                EnqueueUpdate(updateKey.UpdateType, updateKey.Id, lateRerun);
+            }
 
-                var terminalStatus = statusStore.Advance(updateKey, terminalProgress) ?? updateStatus;
-                statusStore.Remove(updateKey);
+            // Reached on the failure path too: the catch above only records the outcome. Work held
+            // behind a key that failed must still be let go, or a single failing refresh would strand
+            // it until something unrelated happens to poke the same key again.
+            ReleaseClearedHolds();
 
-                // A trigger can land in the window between the check above and this removal: it saw the key
-                // still admitted, so it parked a rerun instead of admitting its own. Re-check now that the
-                // key is gone, otherwise that trigger would be lost after all.
-                if (pendingReruns.TryRemove(updateKey, out var lateRerun))
-                {
-                    EnqueueUpdate(updateKey.UpdateType, updateKey.Id, lateRerun);
-                }
-
-                // Reached on the failure path too: the catch above only records the outcome. Work held
-                // behind a key that failed must still be let go, or a single failing refresh would strand
-                // it until something unrelated happens to poke the same key again.
-                ReleaseClearedHolds();
-
-                await completionNotifier.PublishCompletionAsync(updateKey);
-                await NotifyListeners(updateKey, terminalStatus);
-            };
+            await completionNotifier.PublishCompletionAsync(updateKey);
+            await NotifyListeners(updateKey, terminalStatus);
         }
 
         private bool TryScheduleRerun(UpdateKey updateKey, UpdateStatus updateStatus)
@@ -311,7 +324,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // would read exactly the stale state the follow-up is about to correct.
             statusStore.Requeue(updateKey);
 
-            if (queue.Writer.TryWrite(ExecuteUpdateAsync(updateKey, rerun, updateStatus, RoundForNewWork())))
+            var round = RoundForNewWork();
+
+            if (queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, rerun, updateStatus, round)))
             {
                 logger.LogInformation("Running the coalesced follow-up update for {UpdateType} with ID {Id}.", updateKey.UpdateType, updateKey.Id);
                 return true;
@@ -323,36 +338,33 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return false;
         }
 
-        private Func<Task> ExecuteAwaitableUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs, WriteBackRound round)
+        private async Task RunAwaitableUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs, WriteBackRound round)
         {
-            return async () =>
+            await using var executionScope = await executionLock.AcquireAsync(updateKey);
+
+            statusStore.Advance(updateKey, UpdateProgress.InProgress);
+
+            UpdateStatus terminalStatus = updateStatus;
+            try
             {
-                await using var executionScope = await executionLock.AcquireAsync(updateKey);
-
-                statusStore.Advance(updateKey, UpdateProgress.InProgress);
-
-                UpdateStatus terminalStatus = updateStatus;
-                try
-                {
-                    await ExecuteUpdateTask(updateTask, round);
-                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
-                    tcs.TrySetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Failed) ?? terminalStatus;
-                    logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateKey.UpdateType, updateKey.Id);
-                    tcs.TrySetException(ex);
-                }
-                finally
-                {
-                    awaiters.TryRemove(updateKey, out _);
-                    statusStore.Remove(updateKey);
-                    ReleaseClearedHolds();
-                    await completionNotifier.PublishCompletionAsync(updateKey);
-                    await NotifyListeners(updateKey, terminalStatus);
-                }
-            };
+                await ExecuteUpdateTask(updateTask, round);
+                terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
+                tcs.TrySetResult(true);
+            }
+            catch (Exception ex)
+            {
+                terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Failed) ?? terminalStatus;
+                logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateKey.UpdateType, updateKey.Id);
+                tcs.TrySetException(ex);
+            }
+            finally
+            {
+                awaiters.TryRemove(updateKey, out _);
+                statusStore.Remove(updateKey);
+                ReleaseClearedHolds();
+                await completionNotifier.PublishCompletionAsync(updateKey);
+                await NotifyListeners(updateKey, terminalStatus);
+            }
         }
 
         private async Task ExecuteUpdateTask(Func<IServiceProvider, Task> updateTask, WriteBackRound round)

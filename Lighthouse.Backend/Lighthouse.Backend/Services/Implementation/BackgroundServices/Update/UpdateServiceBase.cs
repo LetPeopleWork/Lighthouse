@@ -18,6 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         protected ILogger<UpdateServiceBase<TEntity>> Logger { get; } = logger;
 
+        private static string EntityTypeName => typeof(TEntity).Name;
+
         public virtual void TriggerUpdate(int id)
         {
             updateQueueService.EnqueueUpdate(updateType, id, async serviceProvider =>
@@ -28,7 +30,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogError(exception, "An exception occurred while updating {Entity} with ID {Id}: {Exception}", typeof(TEntity).Name, id, exception.Message);
+                    Logger.LogError(exception, "An exception occurred while updating {Entity} with ID {Id}: {Exception}", EntityTypeName, id, exception.Message);
                 }
                 finally
                 {
@@ -56,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             catch (Exception exception)
 #pragma warning restore CA1031
             {
-                Logger.LogError(exception, "Write-back flush failed for {Entity} with ID {Id}: {Exception}", typeof(TEntity).Name, id, exception.Message);
+                Logger.LogError(exception, "Write-back flush failed for {Entity} with ID {Id}: {Exception}", EntityTypeName, id, exception.Message);
             }
         }
 
@@ -67,16 +69,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// </summary>
         protected void ReportUpdateSummary(IServiceProvider serviceProvider, string entityName, SyncOutcome outcome, long durationMs, bool success)
         {
-            var summary = new RefreshRoundSummary(typeof(TEntity).Name, entityName, durationMs, success) { Outcome = outcome };
-            var round = RoundOf(serviceProvider);
+            var summary = new RefreshRoundSummary(EntityTypeName, entityName, durationMs, success) { Outcome = outcome };
 
-            if (round == null)
-            {
-                WriteSummary(summary);
-                return;
-            }
-
-            round.ReportRefresh(summary);
+            HandToRound(serviceProvider, summary, static (round, reported) => round.ReportRefresh(reported));
         }
 
         /// <summary>
@@ -85,12 +80,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// </summary>
         protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success)
         {
-            var summary = new RefreshRoundSummary(typeof(TEntity).Name, entityName, durationMs, success)
+            var summary = new RefreshRoundSummary(EntityTypeName, entityName, durationMs, success)
             {
                 ForecastDurationMs = durationMs,
                 ForecastSucceeded = success,
             };
 
+            HandToRound(serviceProvider, summary, static (round, reported) => round.ReportForecast(reported));
+        }
+
+        /// <summary>
+        /// A summary belongs to the round it was produced in, which says everything it has to say once its
+        /// last execution is out. Work running outside a round has nobody to hand it to and writes its own
+        /// line there and then.
+        /// </summary>
+        private void HandToRound(IServiceProvider serviceProvider, RefreshRoundSummary summary, Action<WriteBackRound, RefreshRoundSummary> report)
+        {
             var round = RoundOf(serviceProvider);
 
             if (round == null)
@@ -99,7 +104,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            round.ReportForecast(summary);
+            report(round, summary);
         }
 
         private static WriteBackRound? RoundOf(IServiceProvider serviceProvider)

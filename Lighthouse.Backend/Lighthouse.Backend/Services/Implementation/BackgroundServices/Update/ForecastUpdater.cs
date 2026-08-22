@@ -35,9 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// </summary>
         public override void TriggerUpdate(int id)
         {
-            var forecastKey = new UpdateKey(UpdateType.Forecasts, id);
-
-            if (AForecastForThisPortfolioIsAlreadyOwed(forecastKey))
+            if (AForecastForThisPortfolioIsAlreadyOwed(id))
             {
                 return;
             }
@@ -46,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             if (teamsStillWaiting.Count > 0)
             {
-                queueService.HoldUntilQueuedWorkClears(forecastKey, teamsStillWaiting, () => RunTheWaitingForecast(id));
+                HoldTheForecastUntil(id, teamsStillWaiting);
                 return;
             }
 
@@ -73,23 +71,29 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// would never reach the work tracking system. Anything still queued that this run would collide
         /// with is waited for instead, which passes the place on rather than giving it up.
         /// </summary>
-        private void RunTheWaitingForecast(int id)
+        private void RunTheWaitingForecast(int portfolioId)
         {
-            var forecastKey = new UpdateKey(UpdateType.Forecasts, id);
-            var stillToClear = WorkTheWaitingForecastWouldCollideWith(forecastKey, id);
+            var stillToClear = WorkTheWaitingForecastWouldCollideWith(portfolioId);
 
             if (stillToClear.Count > 0)
             {
-                queueService.HoldUntilQueuedWorkClears(forecastKey, stillToClear, () => RunTheWaitingForecast(id));
+                HoldTheForecastUntil(portfolioId, stillToClear);
                 return;
             }
 
-            base.TriggerUpdate(id);
+            base.TriggerUpdate(portfolioId);
         }
 
-        private List<UpdateKey> WorkTheWaitingForecastWouldCollideWith(UpdateKey forecastKey, int id)
+        private void HoldTheForecastUntil(int portfolioId, IReadOnlyCollection<UpdateKey> waitingOn)
         {
-            var stillToClear = TeamsOfThePortfolioWaitingToRefresh(id);
+            queueService.HoldUntilQueuedWorkClears(
+                ForecastKeyFor(portfolioId), waitingOn, () => RunTheWaitingForecast(portfolioId));
+        }
+
+        private List<UpdateKey> WorkTheWaitingForecastWouldCollideWith(int portfolioId)
+        {
+            var forecastKey = ForecastKeyFor(portfolioId);
+            var stillToClear = TeamsOfThePortfolioWaitingToRefresh(portfolioId);
 
             if (updateStatusStore.HasQueuedWork([forecastKey]))
             {
@@ -106,15 +110,17 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// running deliberately does not count: it read its data before this request existed, so that
         /// request still needs a run of its own.
         /// </summary>
-        private bool AForecastForThisPortfolioIsAlreadyOwed(UpdateKey forecastKey)
+        private bool AForecastForThisPortfolioIsAlreadyOwed(int portfolioId)
         {
+            var forecastKey = ForecastKeyFor(portfolioId);
+
             return queueService.IsHeld(forecastKey) || updateStatusStore.HasQueuedWork([forecastKey]);
         }
 
-        private List<UpdateKey> TeamsOfThePortfolioWaitingToRefresh(int id)
+        private List<UpdateKey> TeamsOfThePortfolioWaitingToRefresh(int portfolioId)
         {
             using var scope = scopeFactory.CreateScope();
-            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(id);
+            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId);
 
             if (portfolio == null)
             {
@@ -126,6 +132,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 .ToList();
 
             return updateStatusStore.HasQueuedWork(teamKeys) ? teamKeys : [];
+        }
+
+        private static UpdateKey ForecastKeyFor(int portfolioId)
+        {
+            return new UpdateKey(UpdateType.Forecasts, portfolioId);
         }
 
         protected override RefreshSettings GetRefreshSettings()
@@ -140,9 +151,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
-            var portfolioRepo = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
+            var portfolio = serviceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(id);
 
-            var portfolio = portfolioRepo.GetById(id);
             if (portfolio == null)
             {
                 return;
@@ -155,43 +165,54 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             try
             {
-                var forecastService = serviceProvider.GetRequiredService<IForecastService>();
-                await forecastService.UpdateForecastsForPortfolio(portfolio);
-
-                var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
-                serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
-                    portfolio.WorkTrackingSystemConnection,
-                    writeBackTriggerService.ResolveForecastWriteBackForPortfolio(portfolio));
-
-                await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
-
-                itemCount = portfolio.Features.Count;
+                itemCount = await ForecastPortfolio(portfolio, serviceProvider);
                 success = true;
             }
             finally
             {
                 stopwatch.Stop();
 
-                // Forecasting reads what an earlier refresh already fetched, so it never contacts the
-                // work tracking system - there is nothing scanned or downloaded to record here.
-                var outcome = SyncOutcome.None;
-
-                await refreshLogService.LogRefreshAsync(new RefreshLog
-                {
-                    Type = RefreshType.Forecast,
-                    EntityId = portfolio.Id,
-                    EntityName = portfolio.Name,
-                    ItemCount = itemCount,
-                    Mode = outcome.Mode,
-                    RecordsScanned = outcome.RecordsScanned,
-                    RecordsFetched = outcome.RecordsFetched,
-                    DurationMs = stopwatch.ElapsedMilliseconds,
-                    ExecutedAt = DateTime.UtcNow,
-                    Success = success
-                });
-
+                await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success);
                 ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success);
             }
+        }
+
+        private async Task<int> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
+        {
+            await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio);
+
+            var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
+            serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
+                portfolio.WorkTrackingSystemConnection,
+                writeBackTriggerService.ResolveForecastWriteBackForPortfolio(portfolio));
+
+            await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
+
+            return portfolio.Features.Count;
+        }
+
+        /// <summary>
+        /// Forecasting reads what an earlier refresh already fetched, so it never contacts the work
+        /// tracking system - there is nothing scanned or downloaded to record.
+        /// </summary>
+        private static Task LogForecastRefresh(
+            IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success)
+        {
+            var nothingFetched = SyncOutcome.None;
+
+            return refreshLogService.LogRefreshAsync(new RefreshLog
+            {
+                Type = RefreshType.Forecast,
+                EntityId = portfolio.Id,
+                EntityName = portfolio.Name,
+                ItemCount = itemCount,
+                Mode = nothingFetched.Mode,
+                RecordsScanned = nothingFetched.RecordsScanned,
+                RecordsFetched = nothingFetched.RecordsFetched,
+                DurationMs = durationMs,
+                ExecutedAt = DateTime.UtcNow,
+                Success = success
+            });
         }
     }
 }
