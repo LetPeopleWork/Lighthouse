@@ -1317,3 +1317,43 @@ existing tests are the guard.
 
 ---
 
+
+---
+
+## Wave: DEVOPS / [REF] Assessment — wave skipped, one item carried
+
+Assessed 2026-08-22 and **deliberately not run as a wave** (maintainer decision). This feature adds no
+deployment unit, no configuration surface, no secret, and no rollout mechanism, so there is nothing for a
+platform architect to decide. Recorded item by item rather than skipped silently.
+
+| Concern | Verdict |
+|---|---|
+| Infrastructure, containers, Helm chart | **N/A** — the sync runs inside the existing `PortfolioUpdater` background refresh, in the existing process. No new deployment unit. |
+| Configuration, environment variables, settings | **N/A by design** — D9 adds no setting and no schedule; the sync rides the Portfolio's existing cadence. |
+| Secrets and credentials | **N/A** — reuses the Portfolio's existing work tracking connection credential and its encryption. |
+| Database migration | **Routine, not a platform decision** — expand-only nullable columns, generated across all providers by the existing `CreateMigration` script. |
+| CI runtime | **Known cost, no pipeline work** — registering the provider in `Program.cs` pulls in the full backend Integration suite: longer run, wider flake exposure. Recorded in Constraints Established. |
+| Deployment and rollout | **N/A** — Premium-gated, and nothing changes for a Portfolio until someone binds a Delivery. Nullable columns mean an un-bound instance is byte-identical in behaviour, so no feature flag and no staged rollout. |
+| External API rate limits | **N/A at this volume** — ADR-171 batches to two calls per refresh, constant in the number of bound Deliveries, against a refresh that already fetches every Feature with `*all`. |
+| Broken-source monitoring | **Product, not ops** — D6 and D12 surface it on the Delivery itself, which is where the person who can fix it looks. No alerting surface is warranted for a state that is visible and self-explaining. |
+| Observability | **The one live item.** See below. |
+
+### The one item — per-phase refresh timing
+
+`RefreshLog` records `DurationMs` for the **whole** refresh and nothing per phase
+(`Models/RefreshLog.cs`). The outcome KPI — refresh duration with five bound Deliveries within 5% of the
+same Portfolio unbound — is measurable as stated, because it is a before/after comparison. What is **not**
+measurable is *attribution*: whether a miss came from source re-sync or from the Feature fetch.
+
+That matters because ADR-171's cost caveat names exactly one remaining lever if the budget is missed — a
+slower cadence for source re-sync than for the Feature fetch — and that change cannot be justified
+without knowing the split. As it stands the caveat points at a lever with no evidence available to pull
+it.
+
+**AC-DEVOPS.1** — a Portfolio refresh that re-syncs at least one source-bound Delivery records the time
+spent in source re-sync separately from the total, so a refresh-duration regression can be attributed to
+a phase rather than inferred.
+
+Deliberately **not** specified here: whether that lands as a column on `RefreshLog` (a migration), as
+structured logging, or on an existing metrics surface. DELIVER should check what already exists before
+adding a table column for one number. Owned by whichever slice first makes a real Jira call — slice 01a.
