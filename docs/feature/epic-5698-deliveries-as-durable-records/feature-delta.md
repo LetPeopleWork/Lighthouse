@@ -265,8 +265,8 @@ retyping exercise.
 Before: the forecaster reads the likelihood badge, the three forecast chips and every Feature row off
 the screen and retypes them into a slide — the Work Items dialog exports, this grid does not.
 After: open the Delivery, click **Copy to Clipboard** (or **Export to CSV**) on its Feature grid → sees
-a header block (`Delivery,Q3 Platform` / `Date,2026-09-12` / `Forecast 70%,2026-09-05` / … /
-`Remaining Work Items,48`), a blank line, then the Feature grid with the columns currently on screen.
+one table: a settled set of columns, the Delivery itself as the first row (`Q3 Platform (Delivery)`,
+its progress, its four forecast dates, its likelihood), then a row per Feature under the same headings.
 Decision enabled: whether the numbers in front of leadership match the tool, without a transcription
 step that can silently change one of them.
 
@@ -275,21 +275,25 @@ step that can silently change one of them.
   Copy to Clipboard and Export to CSV.
 - AC-01.2 Both are disabled without a premium licence and carry the existing "Premium feature —
   Upgrade to use" tooltip. No new gate, no new copy.
-- AC-01.3 With a premium licence, Export to CSV downloads one file whose first block is the nine
-  header fields as `key,value` rows in the ADO-stated order, followed by one blank line, followed by
-  the grid's header row and its data rows.
+- AC-01.3 With a premium licence, Export to CSV downloads one file holding a single table: a header
+  row reading `Name`, `Team`, `Progress`, `Forecast 50%`, `Forecast 70%`, `Forecast 85%`,
+  `Forecast 95%`, `Likelihood`, `State`, `Dependencies`, `Warnings`; then the Delivery itself as the
+  first data row, named `<Delivery name> (<Delivery term>)` and carrying its own progress, its four
+  forecast dates and its likelihood; then one row per Feature.
 - AC-01.4 Copy to Clipboard writes the same content, tab-separated as `text/plain` and as an HTML
   table for `text/html`, so a paste into a spreadsheet lands in cells and a paste into a document
   lands as a table.
-- AC-01.5 Only the columns currently visible on the grid are exported, in their current order and
-  current sort — hiding a column removes it from the export.
-- AC-01.6 A header value that is absent renders as an empty value, never as `null`, `undefined`,
-  `NaN` or `0`. Specifically: a Delivery that cannot be forecast exports an empty Likelihood and empty
-  Forecast 70/85/95 rows rather than a fabricated number.
+- AC-01.5 The exported column set is settled and does not follow the grid: hiding a column or
+  reordering the columns on screen leaves the file unchanged. The reader's sort and any active filter
+  do carry over — the Features are exported in the order, and only the ones, the grid is showing.
+- AC-01.6 A value nobody computed renders as an empty cell, never as `null`, `undefined`, `NaN` or
+  `0`. Specifically: a Delivery that cannot be forecast exports an empty Likelihood and empty
+  Forecast 50/70/85/95 cells rather than a fabricated number.
 - AC-01.7 A Delivery name containing a comma, a quote or a newline round-trips through the CSV
   unchanged when re-opened in a spreadsheet.
-- AC-01.8 The header block's field labels honour the tenant's Terminology — a tenant that renamed
-  Delivery to Milestone and Work Item to Ticket exports `Milestone,…` and `Total Tickets,…`.
+- AC-01.8 The file reads in the tenant's own vocabulary — a tenant that renamed Delivery to Milestone
+  exports the first row as `Q3 Platform (Milestone)`, and a tenant that renamed Feature to Epic sees a
+  dependency it may not open named `an Epic you do not have access to`.
 
 ---
 
@@ -1166,8 +1170,9 @@ scenarios need a targeted re-run:
   has a narrower, explicitly named column set (D36/D37). Behaviour is newly *implementable* rather
   than changed in intent, but any scenario that asserts live-grid columns on an archived Delivery
   will now be wrong.
-- **AC-01.x export scenarios run against an archived Delivery** — the exported grid carries the
-  archived column set (D8 inherits D36).
+- **AC-01.x export scenarios run against an archived Delivery** — unaffected. The exported column set
+  is settled by slice 01b and no longer follows whichever columns the grid is showing, so the
+  archived grid's narrower column set does not reach the file.
 - **Any scenario asserting how an archived, un-forecastable Delivery renders** — it now reads
   INSUFFICIENT_FORECAST_DATA naming its teams rather than CANNOT_FORECAST naming none (D38).
 - **US-04 needs a new AC for the free-tier slot** (D42), and it is **provisional** pending the

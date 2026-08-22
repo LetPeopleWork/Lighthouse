@@ -2,6 +2,14 @@
 
 **Epic** #5698 · **Story** US-01 · **ADO** #4309 · **Estimate** ≤1 day
 
+> **Superseded in part by [slice 01b](slice-01b-one-table-export.md).** Verification found the
+> artifact this slice shipped unreadable: the header block below could not be sorted or filtered, and
+> the grid beneath it exported a raw JSON array where a forecast belonged and blanks where progress,
+> team and likelihood belonged. Slice 01b replaces the header block with one table whose first row is
+> the Delivery, and settles the column set instead of following whichever columns are on screen.
+> The export section of this document describes what was shipped, not what is there now; the goal,
+> the premium gate and the absent-value rule still hold.
+
 ## Goal
 A Delivery's headline numbers and its Feature grid leave Lighthouse as one CSV file or one clipboard
 paste.
