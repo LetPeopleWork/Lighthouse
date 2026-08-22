@@ -383,7 +383,6 @@ const ArchivedDeliveryRow: React.FC<ArchivedDeliveryRowProps> = ({
 						deliveryId={archived.id}
 						featureTerm={featureTerm}
 						featuresTerm={featuresTerm}
-						workItemsTerm={workItemsTerm}
 						exportFileName={archived.name}
 						exportTable={exportTable}
 					/>

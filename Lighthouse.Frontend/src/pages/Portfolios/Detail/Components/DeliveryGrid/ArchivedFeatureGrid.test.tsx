@@ -19,6 +19,7 @@ const pinnedRows: FeatureMetric[] = [
 		likelihood: 72,
 		totalItems: 20,
 		isUsingDefaultSize: false,
+		url: "https://tracker.example/FTR-1",
 	},
 	{
 		referenceId: "FTR-2",
@@ -27,6 +28,8 @@ const pinnedRows: FeatureMetric[] = [
 		likelihood: null,
 		totalItems: 8,
 		isUsingDefaultSize: true,
+		// A record written before the link was kept. The row still renders, unlinked.
+		url: null,
 	},
 ];
 
@@ -37,7 +40,6 @@ const renderGrid = (rows: FeatureMetric[] = pinnedRows) =>
 			deliveryId={9}
 			featureTerm="Feature"
 			featuresTerm="Features"
-			workItemsTerm="Work Items"
 			exportFileName="Autumn Launch"
 			exportTable={vi.fn()}
 		/>,
@@ -55,52 +57,51 @@ describe("ArchivedFeatureGrid", () => {
 	it("lists exactly the Feature rows that were written down", () => {
 		renderGrid();
 
-		expect(screen.getByText("Checkout rewrite")).toBeInTheDocument();
-		expect(screen.getByText("Search relevance")).toBeInTheDocument();
-		expect(screen.getByText("FTR-1")).toBeInTheDocument();
-		expect(screen.getByText("FTR-2")).toBeInTheDocument();
+		expect(screen.getByText("FTR-1: Checkout rewrite")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Search relevance")).toBeInTheDocument();
 	});
 
-	it("shows each row's totals as they were noted", () => {
+	it("answers which Features were in, and nothing else", () => {
 		renderGrid();
 
-		expect(screen.getByText("60%")).toBeInTheDocument();
-		expect(screen.getByText("72%")).toBeInTheDocument();
-		expect(screen.getByText("20")).toBeInTheDocument();
-		expect(screen.getByText("8")).toBeInTheDocument();
-	});
-
-	it("carries only the columns the record held", () => {
-		renderGrid();
-
-		expect(screen.getByText("Reference")).toBeInTheDocument();
 		expect(screen.getByText("Feature Name")).toBeInTheDocument();
-		expect(screen.getByText("Completion")).toBeInTheDocument();
-		expect(screen.getByText("Likelihood")).toBeInTheDocument();
-		expect(screen.getByText("Work Items")).toBeInTheDocument();
+
+		// The record holds a completion, a chance and a size for every row. None of them is what a
+		// reader opens a closed Delivery to find out, and each is a number they would then have to
+		// decide whether to trust.
+		expect(screen.queryByText("Completion")).not.toBeInTheDocument();
+		expect(screen.queryByText("Likelihood")).not.toBeInTheDocument();
+		expect(screen.queryByText("Work Items")).not.toBeInTheDocument();
+		expect(screen.queryByText("Size")).not.toBeInTheDocument();
+		expect(screen.queryByText("Reference")).not.toBeInTheDocument();
 
 		expect(screen.queryByText("State")).not.toBeInTheDocument();
 		expect(screen.queryByText("Team")).not.toBeInTheDocument();
-		expect(screen.queryByText("Forecast")).not.toBeInTheDocument();
 		expect(screen.queryByText("Depends On")).not.toBeInTheDocument();
 	});
 
-	it("offers no way through to the Feature as it stands today", () => {
+	it("names each Feature by its reference and its name together", () => {
 		renderGrid();
 
-		expect(screen.queryByRole("link")).not.toBeInTheDocument();
+		expect(screen.getByText("FTR-1: Checkout rewrite")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Search relevance")).toBeInTheDocument();
 	});
 
-	it("says a Feature could not be forecast rather than showing a blank chance", () => {
+	it("opens the Feature in the work tracking system where the record kept a link", () => {
 		renderGrid();
 
-		expect(screen.getByText("Cannot forecast")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", { name: "FTR-1: Checkout rewrite" }),
+		).toHaveAttribute("href", "https://tracker.example/FTR-1");
 	});
 
-	it("marks the Feature whose size was a default rather than a count", () => {
+	it("still lists a row written before links were kept, without one", () => {
 		renderGrid();
 
-		expect(screen.getByText("Estimated")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Search relevance")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: "FTR-2: Search relevance" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("says so when the Delivery closed holding no Features at all", () => {
@@ -109,7 +110,7 @@ describe("ArchivedFeatureGrid", () => {
 		expect(screen.getByText("No Features in this record")).toBeInTheDocument();
 	});
 
-	it("shows a dash where a row recorded before sizes were kept has no count", () => {
+	it("lists a row that recorded nothing but a name", () => {
 		renderGrid([
 			{
 				referenceId: "FTR-9",
@@ -118,10 +119,10 @@ describe("ArchivedFeatureGrid", () => {
 				likelihood: null,
 				totalItems: null,
 				isUsingDefaultSize: null,
+				url: null,
 			},
 		]);
 
-		expect(screen.getByText("Older row")).toBeInTheDocument();
-		expect(screen.getByText("—")).toBeInTheDocument();
+		expect(screen.getByText("FTR-9: Older row")).toBeInTheDocument();
 	});
 });

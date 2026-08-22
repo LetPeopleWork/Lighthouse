@@ -11,7 +11,7 @@ vi.mock("../../../../../services/TerminologyContext", () => ({
 }));
 
 const renderDialog = (overrides?: {
-	onConfirm?: () => void;
+	onConfirm?: (stopAsking: boolean) => void;
 	onCancel?: () => void;
 }) =>
 	render(
@@ -40,13 +40,36 @@ describe("ArchiveConfirmationDialog", () => {
 		expect(body).toMatch(/bring it back/i);
 	});
 
-	it("says archiving is not deleting, and that deleting stays available on it", () => {
+	// The dialog used to spell out that deleting still works on an archived Delivery. It was dropped
+	// for length: somebody who archives every week reads this every week. What may never come back
+	// is a claim in the other direction, and the forbidden-word cases below are what hold that line.
+	it("confirms without asking to be left alone, unless the box is ticked", async () => {
+		const user = userEvent.setup();
+		const onConfirm = vi.fn();
+		renderDialog({ onConfirm });
+
+		await user.click(screen.getByRole("button", { name: "Archive" }));
+
+		expect(onConfirm).toHaveBeenCalledWith(false);
+	});
+
+	it("passes on that this reader does not want asking again", async () => {
+		const user = userEvent.setup();
+		const onConfirm = vi.fn();
+		renderDialog({ onConfirm });
+
+		await user.click(screen.getByTestId("skip-archive-confirmation"));
+		await user.click(screen.getByRole("button", { name: "Archive" }));
+
+		expect(onConfirm).toHaveBeenCalledWith(true);
+	});
+
+	it("stays short enough to be read rather than dismissed", () => {
 		renderDialog();
 
 		const body = document.body.textContent ?? "";
 
-		expect(body).toMatch(/not the same as deleting/i);
-		expect(body).toMatch(/can still be deleted/i);
+		expect(body.length).toBeLessThan(240);
 	});
 
 	// Archiving and deleting both remain, and delete still takes the written-down numbers with it.

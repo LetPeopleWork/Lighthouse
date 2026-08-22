@@ -127,17 +127,17 @@ describe("Reading a retired Delivery as the record it was", () => {
 
 		await openRecord();
 
-		expect(await screen.findByText("Checkout rewrite")).toBeInTheDocument();
-		expect(screen.getByText("Search relevance")).toBeInTheDocument();
-		expect(screen.getByText("60%")).toBeInTheDocument();
-		expect(screen.getByText("72%")).toBeInTheDocument();
+		expect(
+			await screen.findByText("FTR-1: Checkout rewrite"),
+		).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Search relevance")).toBeInTheDocument();
 	});
 
 	it("asks the server for no Feature while opening the record", async () => {
 		const { featureService } = renderSection();
 
 		await openRecord();
-		await screen.findByText("Checkout rewrite");
+		await screen.findByText("FTR-1: Checkout rewrite");
 
 		expect(featureService.getFeaturesByIds).not.toHaveBeenCalled();
 	});
@@ -154,7 +154,7 @@ describe("Reading a retired Delivery as the record it was", () => {
 		renderSection();
 
 		await openRecord();
-		await screen.findByText("Checkout rewrite");
+		await screen.findByText("FTR-1: Checkout rewrite");
 		await userEvent.click(screen.getByTestId("export-button"));
 
 		await waitFor(() =>
@@ -205,7 +205,9 @@ describe("Reading a retired Delivery as the record it was", () => {
 
 		await openRecord();
 
-		expect(await screen.findByText("Checkout rewrite")).toBeInTheDocument();
+		expect(
+			await screen.findByText("FTR-1: Checkout rewrite"),
+		).toBeInTheDocument();
 	});
 
 	it("lists the notes written before it closed, with nowhere to write another", async () => {

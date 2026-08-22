@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useErrorSnackbar } from "../../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useArchiveConfirmationPreference } from "../../../../../hooks/useArchiveConfirmationPreference";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
 import type { IFeature } from "../../../../../models/Feature";
@@ -67,6 +68,11 @@ export const useDeliveryManagement = ({
 }: UseDeliveryManagementProps) => {
 	const { getTerm } = useTerminology();
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+
+	const {
+		shouldConfirm: shouldConfirmBeforeArchiving,
+		stopAsking: stopAskingBeforeArchiving,
+	} = useArchiveConfirmationPreference();
 
 	const [deliveries, setDeliveries] = useState<Delivery[]>([]);
 	const [archivedDeliveries, setArchivedDeliveries] = useState<
@@ -203,7 +209,13 @@ export const useDeliveryManagement = ({
 		setSelectedDelivery(delivery);
 	};
 
-	const handleArchiveDelivery = (delivery: Delivery) => {
+	const handleArchiveDelivery = async (delivery: Delivery) => {
+		// Somebody who has said they do not want asking again gets the action, not the question.
+		if (!shouldConfirmBeforeArchiving) {
+			await archiveDelivery(delivery);
+			return;
+		}
+
 		setDeliveryToArchive(delivery);
 		setArchiveDialogOpen(true);
 	};
@@ -300,8 +312,32 @@ export const useDeliveryManagement = ({
 		setDeliveryToDelete(null);
 	};
 
-	const handleArchiveConfirmation = async (confirmed: boolean) => {
+	const archiveDelivery = async (delivery: Delivery) => {
+		try {
+			await deliveryService.archive(delivery.id, delivery.concurrencyToken);
+			forgetDelivery(delivery.id);
+			await fetchDeliveries();
+		} catch (error) {
+			console.error("Failed to archive delivery:", error);
+			showError(
+				refusalMessage(
+					error,
+					deliveryTerm,
+					`Failed to archive ${deliveryTerm}`,
+				),
+			);
+		}
+	};
+
+	const handleArchiveConfirmation = async (
+		confirmed: boolean,
+		stopAsking = false,
+	) => {
 		if (confirmed && deliveryToArchive) {
+			if (stopAsking) {
+				stopAskingBeforeArchiving();
+			}
+
 			try {
 				await deliveryService.archive(
 					deliveryToArchive.id,

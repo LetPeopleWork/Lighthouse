@@ -67,6 +67,7 @@ describe("ArchivedDelivery", () => {
 				likelihood: 72,
 				totalItems: 20,
 				isUsingDefaultSize: false,
+				url: null,
 			},
 		]);
 	});
@@ -143,7 +144,7 @@ describe("ArchivedDelivery", () => {
 		expect("featureLikelihoods" in archived).toBe(false);
 	});
 
-	it("gives a pinned Feature row no id to reach a live Feature by", () => {
+	it("gives a pinned Feature row no id to reach a live Feature by, but keeps its link", () => {
 		const archived = ArchivedDelivery.fromParsed(
 			ArchivedDeliverySchema.parse({
 				...wireRow,
@@ -160,8 +161,13 @@ describe("ArchivedDelivery", () => {
 			}),
 		);
 
+		// An id is a way to fetch the Feature as it stands today, which is the one thing this record
+		// must not offer. A link is not: it opens the work tracking system, and nothing it shows can
+		// travel back into this view.
 		expect("id" in archived.featureBreakdown[0]).toBe(false);
-		expect("url" in archived.featureBreakdown[0]).toBe(false);
+		expect(archived.featureBreakdown[0].url).toBe(
+			"https://tracker.example/FTR-1",
+		);
 	});
 
 	it("keeps a Delivery that closed without a forecast, and the Teams that explain why", () => {

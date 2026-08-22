@@ -12,6 +12,9 @@ export interface FeatureMetric {
 	// Optional: snapshots recorded before Epic #5585 slice 02 carry neither (D5, no backfill).
 	totalItems: number | null;
 	isUsingDefaultSize: boolean | null;
+	// Where the Feature lived when the row was written. Absent on rows written before it was kept,
+	// which render unlinked.
+	url: string | null;
 }
 
 export interface DeliveryMetricsHistoryPoint {
@@ -54,6 +57,13 @@ function asNullableNumber(value: unknown, context: string): number | null {
 		return null;
 	}
 	return asNumber(value, context);
+}
+
+function asNullableString(value: unknown, context: string): string | null {
+	if (value === null || value === undefined) {
+		return null;
+	}
+	return asString(value, context);
 }
 
 function asNullableBoolean(value: unknown, context: string): boolean | null {
@@ -132,6 +142,7 @@ function parseFeatureBreakdown(value: unknown): FeatureMetric[] {
 				metric.isUsingDefaultSize,
 				"featureBreakdown.isUsingDefaultSize",
 			),
+			url: asNullableString(metric.url, "featureBreakdown.url"),
 		};
 	});
 }

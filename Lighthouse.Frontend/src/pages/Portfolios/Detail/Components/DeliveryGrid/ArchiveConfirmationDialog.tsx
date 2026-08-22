@@ -1,29 +1,32 @@
 import {
 	Button,
+	Checkbox,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogContentText,
 	DialogTitle,
+	FormControlLabel,
 } from "@mui/material";
 import type React from "react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 
 interface ArchiveConfirmationDialogProps {
 	open: boolean;
 	itemName: string;
-	onConfirm: () => void;
+	/** Told whether this reader ticked the box, so the caller can stop asking. */
+	onConfirm: (stopAsking: boolean) => void;
 	onCancel: () => void;
 }
 
 /**
  * Deliberately not the delete dialog with different words. Archiving and deleting are both still
- * available on the same thing, and a reader who leaves here believing an archived one is out of
- * harm's way is being set up to archive something instead of copying it somewhere else. So this
- * says what archiving does — delists it, writes the numbers down, can be undone — and says plainly
- * that deleting still works on it afterwards, and it promises nothing beyond that.
+ * available on the same thing, so this says what archiving does — delists it, writes the numbers
+ * down, can be undone — and promises nothing beyond that. In particular it must not suggest that an
+ * archived one is out of harm's way, because deleting still works on it and takes the written-down
+ * numbers with it.
  */
 const ArchiveConfirmationDialog: React.FC<ArchiveConfirmationDialogProps> = ({
 	open,
@@ -33,9 +36,9 @@ const ArchiveConfirmationDialog: React.FC<ArchiveConfirmationDialogProps> = ({
 }) => {
 	const titleId = useId();
 	const descriptionId = useId();
+	const [suppressed, setSuppressed] = useState(false);
 
 	const { getTerm } = useTerminology();
-	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
 
 	return (
@@ -50,21 +53,26 @@ const ArchiveConfirmationDialog: React.FC<ArchiveConfirmationDialogProps> = ({
 				<DialogContentText id={descriptionId}>
 					This takes {itemName} out of the active {deliveriesTerm} list and
 					writes down the numbers it shows right now, so they stay as they stand
-					today.
+					today. You can bring it back at any time.
 				</DialogContentText>
-				<DialogContentText sx={{ mt: 2 }}>
-					You can bring it back at any time. Archiving is not the same as
-					deleting, and it does not stand in the way of deleting either — an
-					archived {deliveryTerm} can still be deleted, and deleting one takes
-					the numbers written down here with it.
-				</DialogContentText>
+				<FormControlLabel
+					sx={{ mt: 2 }}
+					control={
+						<Checkbox
+							checked={suppressed}
+							onChange={(event) => setSuppressed(event.target.checked)}
+							data-testid="skip-archive-confirmation"
+						/>
+					}
+					label="Don't ask me again"
+				/>
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={onCancel} color="primary">
 					Cancel
 				</Button>
 				<Button
-					onClick={onConfirm}
+					onClick={() => onConfirm(suppressed)}
 					color="primary"
 					variant="contained"
 					autoFocus

@@ -10,14 +10,22 @@ import type {
 } from "./DeliveryMetricsHistory";
 
 /**
- * A Feature as the Delivery had it on its last day. There is no id and no link on it, and there is
- * not meant to be: the Feature may have been renamed, moved to another Team or deleted since, and a
- * row that could reach it would show today's answer under a heading promising the closing day's.
+ * A Feature as the Delivery had it on its last day. It carries no id — nothing here may be used to
+ * go and re-read the Feature and show today's numbers under a heading promising the closing day's.
+ *
+ * The link is the deliberate exception, and it is a link out to the work tracking system rather than
+ * back into Lighthouse. What it opens is the Feature as it stands now, which may since have been
+ * renamed, moved or deleted; that is worth it to be able to go and look, and it cannot pull a number
+ * back into this view.
  */
 const ArchivedFeatureRowSchema = z.object({
 	referenceId: z.string(),
 	name: z.string(),
 	completion: z.number(),
+	url: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? null),
 	likelihood: z
 		.number()
 		.nullish()

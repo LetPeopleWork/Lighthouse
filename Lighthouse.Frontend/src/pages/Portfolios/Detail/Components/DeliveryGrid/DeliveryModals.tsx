@@ -34,7 +34,7 @@ interface DeliveryModalsProps {
 		mode?: "and" | "or";
 	}) => Promise<void>;
 	onDeleteConfirmation: (confirmed: boolean) => void;
-	onArchiveConfirmation: (confirmed: boolean) => void;
+	onArchiveConfirmation: (confirmed: boolean, stopAsking?: boolean) => void;
 }
 
 export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
@@ -79,7 +79,7 @@ export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
 					open={archiveDialogOpen}
 					itemName={deliveryToArchive.name}
 					onCancel={() => onArchiveConfirmation(false)}
-					onConfirm={() => onArchiveConfirmation(true)}
+					onConfirm={(stopAsking) => onArchiveConfirmation(true, stopAsking)}
 				/>
 			)}
 

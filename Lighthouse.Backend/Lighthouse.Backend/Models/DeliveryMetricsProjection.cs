@@ -14,5 +14,12 @@ namespace Lighthouse.Backend.Models
         public int? TotalItems { get; init; }
 
         public bool? IsUsingDefaultSize { get; init; }
+
+        /// <summary>
+        /// Where the Feature lived in the work tracking system, kept so a closed Delivery's list is
+        /// still something a reader can click through. Optional for the same reason as the two
+        /// above: records written before it existed keep deserialising, and render unlinked.
+        /// </summary>
+        public string? Url { get; init; }
     }
 }
