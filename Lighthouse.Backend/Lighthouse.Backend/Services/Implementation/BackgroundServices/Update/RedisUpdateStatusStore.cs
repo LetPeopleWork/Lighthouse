@@ -85,6 +85,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 .Any(progress => progress is UpdateProgress.Queued or UpdateProgress.InProgress);
         }
 
+        public bool HasQueuedWork(IReadOnlyCollection<UpdateKey> keys)
+        {
+            if (keys.Count == 0)
+            {
+                // Redis rejects a field-less HMGET outright, and a caller waiting on nothing is never held back anyway.
+                return false;
+            }
+
+            var fields = keys.Select(key => (RedisValue)key.ToString()).ToArray();
+
+            return database.HashGet(StatusHashKey, fields)
+                .Any(value => !value.IsNull && (UpdateProgress)(int)(long)value == UpdateProgress.Queued);
+        }
+
         private static UpdateStatus StatusFor(UpdateKey key, long ordinal)
         {
             return new UpdateStatus
