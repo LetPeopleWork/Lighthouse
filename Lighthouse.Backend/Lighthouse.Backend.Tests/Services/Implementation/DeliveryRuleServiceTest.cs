@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -574,7 +575,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             };
             delivery.ReplaceFeatures([CreateFeature("OriginalFeature")]);
 
-            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
 
             Assert.That(delivery.Features, Has.Count.EqualTo(1));
             Assert.That(delivery.Features[0].Name, Is.EqualTo("OriginalFeature"));
@@ -594,7 +595,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 RuleSchemaVersion = 1
             };
 
-            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
 
             Assert.That(delivery.Features.Select(f => f.Name), Is.EquivalentTo(["Epic1"]));
         }
@@ -620,7 +621,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 RuleSchemaVersion = 1
             };
 
-            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
 
             Assert.That(delivery.Features, Has.Count.EqualTo(2));
             Assert.That(delivery.Features.Select(f => f.Name), Is.EquivalentTo(["Epic1", "Epic2"]));
@@ -638,7 +639,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 RuleDefinitionJson = null
             };
 
-            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
 
             Assert.That(delivery.Features, Is.Empty);
         }
@@ -663,7 +664,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             };
             delivery.ReplaceFeatures([CreateFeature("OldFeature")]);
 
-            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery]);
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery]));
 
             Assert.That(delivery.Features, Has.Count.EqualTo(1));
             Assert.That(delivery.Features[0].Name, Is.EqualTo("NewFeature"));
@@ -700,7 +701,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 RuleSchemaVersion = 1
             };
 
-            subject.RecomputeRuleBasedDeliveries(portfolio, [delivery1, delivery2]);
+            subject.RecomputeRuleBasedDeliveries(portfolio, new RecordableDeliveries([delivery1, delivery2]));
 
             using (Assert.EnterMultipleScope())
             {

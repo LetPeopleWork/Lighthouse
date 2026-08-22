@@ -7,6 +7,10 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
     {
         IEnumerable<Delivery> GetByPortfolioAsync(int portfolioId);
 
+        RecordableDeliveries GetRecordableByPortfolio(int portfolioId);
+
+        Task<bool> TrySaveRecomputedDeliveries();
+
         Delivery? GetByIdForUpdate(int id);
 
         List<Feature> GetFeaturesByIds(IEnumerable<int> featureIds);
@@ -14,5 +18,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         int? GetPortfolioId(int deliveryId);
 
         DeliveryClosureRecord GetOrCreateClosureRecord(int deliveryId);
+
+        IReadOnlyDictionary<int, DeliveryClosureRecord> GetClosureRecordsByDelivery(IEnumerable<int> deliveryIds);
     }
 }

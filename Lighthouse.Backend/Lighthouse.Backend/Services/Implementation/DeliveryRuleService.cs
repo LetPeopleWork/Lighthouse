@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -50,7 +51,11 @@ namespace Lighthouse.Backend.Services.Implementation
             return ruleEvaluator.Match(ruleSet, features, fieldProvider);
         }
 
-        public void RecomputeRuleBasedDeliveries(Portfolio portfolio, IEnumerable<Delivery> deliveries)
+        /// <summary>
+        /// Takes the narrowed collection rather than any list of Deliveries, so a Delivery that has
+        /// been retired cannot reach the re-match loop by being passed to it.
+        /// </summary>
+        public void RecomputeRuleBasedDeliveries(Portfolio portfolio, RecordableDeliveries deliveries)
         {
             foreach (var delivery in deliveries.Where(d => d.SelectionMode == DeliverySelectionMode.RuleBased))
             {

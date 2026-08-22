@@ -239,8 +239,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team);
             SetupProjects(project);
 
-            var expectedDeliveries = new List<Delivery>();
-            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(expectedDeliveries);
+            var expectedDeliveries = new RecordableDeliveries([]);
+            deliveryRepositoryMock.Setup(x => x.GetRecordableByPortfolio(project.Id)).Returns(expectedDeliveries);
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
@@ -255,12 +255,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var project = CreateProject(team);
             SetupProjects(project);
 
-            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(project.Id)).Returns(new List<Delivery>());
+            deliveryRepositoryMock.Setup(x => x.GetRecordableByPortfolio(project.Id)).Returns(new RecordableDeliveries([]));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
+            deliveryRepositoryMock.Verify(x => x.TrySaveRecomputedDeliveries(), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_ADeliveryWasRetiredWhileTheRefreshWasRunning_LetsTheRefreshFinish()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            deliveryRepositoryMock.Setup(x => x.GetRecordableByPortfolio(project.Id)).Returns(new RecordableDeliveries([]));
+            deliveryRepositoryMock.Setup(x => x.TrySaveRecomputedDeliveries()).ReturnsAsync(false);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(recordedRefresh?.Success, Is.True,
+                "Somebody retiring a Delivery in the middle of a refresh is ordinary. Reporting the whole refresh " +
+                "as failed sends an operator looking for a fault that is not there.");
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(project), Times.Once);
         }
 
         [Test]

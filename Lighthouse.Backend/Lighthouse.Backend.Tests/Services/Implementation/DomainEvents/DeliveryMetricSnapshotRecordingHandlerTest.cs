@@ -322,6 +322,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_RetiredDelivery_StopsAddingDailyRowsForIt()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+            await HandlePortfolioForecastsUpdated(fixture);
+            var rowsWhenItWasRetired = await SnapshotRowCountFor(fixture.DeliveryId);
+
+            await RetireDelivery(fixture);
+
+            for (var refresh = 0; refresh < 5; refresh++)
+            {
+                await HandlePortfolioForecastsUpdated(fixture);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rowsWhenItWasRetired, Is.EqualTo(1));
+                Assert.That(await SnapshotRowCountFor(fixture.DeliveryId), Is.EqualTo(rowsWhenItWasRetired));
+            }
+        }
+
+        [Test]
+        public async Task HandleAsync_RetiredDeliveryAlongsideALiveOne_KeepsRecordingTheLiveOne()
+        {
+            var (portfolio, team) = await SeedPortfolioWithTeam();
+            var retiring = await SeedDeliveryWithWork(portfolio, team, remainingWork: 6, totalWork: 10);
+            var live = await SeedDeliveryWithWork(portfolio, team, remainingWork: 2, totalWork: 8);
+            var fixture = new RecorderFixture { PortfolioId = portfolio.Id, DeliveryId = retiring.Id };
+
+            await RetireDelivery(fixture);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await SnapshotRowCountFor(retiring.Id), Is.Zero);
+                Assert.That(await SnapshotRowCountFor(live.Id), Is.EqualTo(1));
+            }
+        }
+
+        [Test]
         public async Task HandleAsync_DeliveryWithNoPlottableFeatures_RecordsNullFeatureBreakdown()
         {
             var fixture = await SeedDeliveryWithNoPlottableFeatures();
@@ -422,8 +461,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository
-                .Setup(repository => repository.GetByPortfolioAsync(It.IsAny<int>()))
-                .Returns(deliveries);
+                .Setup(repository => repository.GetRecordableByPortfolio(It.IsAny<int>()))
+                .Returns(new RecordableDeliveries(deliveries));
 
             var snapshotRepository = new Mock<IDeliveryMetricSnapshotRepository>();
             snapshotRepository
@@ -737,6 +776,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 .SingleAsync(s => s.DeliveryId == fixture.DeliveryId && s.RecordedDay == today);
 
             return ToView(snapshot);
+        }
+
+        private async Task RetireDelivery(RecorderFixture fixture)
+        {
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            var delivery = deliveryRepository.GetById(fixture.DeliveryId)!;
+
+            delivery.Archive(clock.TodayAsUtcMidnight);
+            await deliveryRepository.Save();
+        }
+
+        private async Task<int> SnapshotRowCountFor(int deliveryId)
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            return await dbContext.DeliveryMetricSnapshots.CountAsync(s => s.DeliveryId == deliveryId);
         }
 
         private async Task<int> TodaysSnapshotRowCount(RecorderFixture fixture)

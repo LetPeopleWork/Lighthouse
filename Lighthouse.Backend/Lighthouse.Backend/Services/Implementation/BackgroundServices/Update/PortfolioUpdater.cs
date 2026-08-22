@@ -38,6 +38,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return minutesSinceLastUpdate >= refreshSettings.RefreshAfter;
         }
 
+        /// <summary>
+        /// Somebody retiring or editing a Delivery while this refresh is already running wins. The
+        /// refresh is holding copies read before that happened, so it is not reported as a failure
+        /// when its write is refused: the next refresh reads the Deliveries again, and a Delivery
+        /// that has been retired is by then not among the ones it is handed at all.
+        /// </summary>
+        private async Task SaveRecomputedDeliveries(IDeliveryRepository deliveryRepository, Portfolio project)
+        {
+            if (!await deliveryRepository.TrySaveRecomputedDeliveries())
+            {
+                Logger.LogInformation(
+                    "A Delivery of Portfolio {PortfolioName} was changed while its refresh was running; the refresh leaves it as it now stands and will pick it up next time",
+                    project.Name);
+            }
+        }
+
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
             var projectRepository = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
@@ -75,12 +91,12 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     outcome = await workItemService.UpdateFeaturesForPortfolio(project);
                     await domainEventDispatcher.PublishAsync(new PortfolioFeaturesRefreshed(project.Id));
 
-                    var deliveries = deliveryRepository.GetByPortfolioAsync(project.Id);
+                    var deliveries = deliveryRepository.GetRecordableByPortfolio(project.Id);
                     deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
-                    await deliveryRepository.Save();
+                    await SaveRecomputedDeliveries(deliveryRepository, project);
 
                     // Both passes stage into the same collector and reach the tracker once, in the flush
-                    // UpdateServiceBase runs at the end of this execution (ADR-144).
+                    // that runs at the end of this execution.
                     var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
                     var writeBackCollector = serviceProvider.GetRequiredService<IWriteBackCollector>();
 

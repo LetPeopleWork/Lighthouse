@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var snapshot = new DeliveryMetricSnapshot { DeliveryId = delivery.Id, RecordedDay = clock.Today };
 
             var deliveryRepositoryMock = new Mock<IDeliveryRepository>();
-            deliveryRepositoryMock.Setup(repository => repository.GetByPortfolioAsync(PortfolioId)).Returns([delivery]);
+            deliveryRepositoryMock.Setup(repository => repository.GetRecordableByPortfolio(PortfolioId)).Returns(new RecordableDeliveries([delivery]));
 
             var snapshotRepositoryMock = new Mock<IDeliveryMetricSnapshotRepository>();
             snapshotRepositoryMock.Setup(repository => repository.GetOrCreateForDay(delivery.Id, clock.Today)).Returns(snapshot);

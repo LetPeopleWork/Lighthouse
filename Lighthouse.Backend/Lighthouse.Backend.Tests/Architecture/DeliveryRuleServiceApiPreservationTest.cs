@@ -2,6 +2,7 @@ using System.Reflection;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -31,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             AssertPublicMethodSignature(
                 methodName: "RecomputeRuleBasedDeliveries",
-                expectedParameterTypes: [typeof(Portfolio), typeof(IEnumerable<Delivery>)],
+                expectedParameterTypes: [typeof(Portfolio), typeof(RecordableDeliveries)],
                 expectedReturnType: typeof(void));
         }
 

@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
             try
             {
-                var deliveries = deliveryRepository.GetByPortfolioAsync(domainEvent.PortfolioId).ToList();
+                var deliveries = deliveryRepository.GetRecordableByPortfolio(domainEvent.PortfolioId);
 
                 // Bug #5567: the recorded day, the forecast window start and the snapshot key are
                 // all the same instance calendar day, read once.

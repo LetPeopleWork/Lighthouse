@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Interfaces
 {
@@ -9,6 +10,6 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetMatchingFeaturesForRuleset(WorkItemRuleSet ruleSet, IEnumerable<Feature> features);
 
-        void RecomputeRuleBasedDeliveries(Portfolio portfolio, IEnumerable<Delivery> deliveries);
+        void RecomputeRuleBasedDeliveries(Portfolio portfolio, RecordableDeliveries deliveries);
     }
 }
