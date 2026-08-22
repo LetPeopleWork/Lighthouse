@@ -15,6 +15,12 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private static readonly UpdateKey KeyNobodyAdmitted = new(UpdateType.Team, 23);
 
+        internal static readonly (Type Store, Func<IConnectionMultiplexer, IUpdateStatusStore> Build)[] StoresComparedAgainstEachOther =
+        [
+            (typeof(InProcessUpdateStatusStore), _ => new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>())),
+            (typeof(RedisUpdateStatusStore), multiplexer => new RedisUpdateStatusStore(multiplexer)),
+        ];
+
         private static readonly (string Description, UpdateKey[] Keys)[] QueuedLookups =
         [
             ("a caller waiting on nothing", []),
@@ -112,10 +118,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await using var redis = await RedisContainerFixture.StartFreshAsync();
             await using var multiplexer = await ConnectionMultiplexer.ConnectAsync(redis.GetConnectionString());
 
-            var inProcess = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>());
-            var acrossPods = new RedisUpdateStatusStore(multiplexer);
+            var stores = StoresComparedAgainstEachOther.Select(entry => entry.Build(multiplexer)).ToArray();
+            var acrossPods = stores.OfType<RedisUpdateStatusStore>().Single();
 
-            foreach (var store in new IUpdateStatusStore[] { inProcess, acrossPods })
+            foreach (var store in stores)
             {
                 store.TryAdmit(KeyWaitingToStart, new UpdateStatus { UpdateType = UpdateType.Team, Id = 21, Status = UpdateProgress.Queued });
                 store.TryAdmit(KeyAlreadyRunning, new UpdateStatus { UpdateType = UpdateType.Team, Id = 22, Status = UpdateProgress.Queued });
@@ -123,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
 
             var disagreements = QueuedLookups
-                .Where(lookup => acrossPods.HasQueuedWork(lookup.Keys) != inProcess.HasQueuedWork(lookup.Keys))
+                .Where(lookup => stores.Select(store => store.HasQueuedWork(lookup.Keys)).Distinct().Count() > 1)
                 .Select(lookup => lookup.Description)
                 .ToArray();
 
