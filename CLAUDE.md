@@ -90,9 +90,20 @@ A change is **not done** until every gate below passes locally. CI enforces them
   build, and only one of the resulting failures ever names the 429. Run the connector categories
   deliberately, when the connector is what you changed.
 
-  Two failure signatures that are **environmental, never regressions**: in a git worktree, exactly 2
-  Licensing tests fail on the gitignored `valid_not_expired_license.json`; and exactly 10 failures
-  inside the `ReleaseService` class mean load contention — re-run that class alone to confirm.
+  Failure signatures that are **environmental, never regressions** — but check which one you have,
+  they are not interchangeable:
+
+  - In a git worktree, exactly **2 Licensing** tests fail on the gitignored
+    `valid_not_expired_license.json`. Absent from every worktree; copy it from the main checkout.
+  - **10 failures in `ReleaseServiceTest`** (the unit class) under a parallel or loaded run are
+    contention — re-running that class alone goes green.
+  - **8 failures in `LighthouseReleaseServiceIntegrationTest`** (`InstallUpdate_SupportedPlatform_*`,
+    "the update process never reached exit within 10 s") are **NOT** contention. They reproduce when
+    the class is run alone on unmodified `main`; the fixture spawns a real update process. Do not
+    "re-run alone to confirm" this one — it confirms nothing. The filter above excludes them.
+  - `GetAllReleases_*` / `GetLatestVersion_*` failing with `Octokit.RateLimitExceededException`
+    (`Limit: 60, Remaining: 0`) means repeated full runs exhausted the **unauthenticated** GitHub API
+    quota. Another reason not to run the suite unfiltered in a loop.
 
 ### SonarQube Cloud (both stacks)
 
