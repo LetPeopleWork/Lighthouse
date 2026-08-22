@@ -176,6 +176,77 @@
             "Test asserts one forecast trigger per derived Portfolio."
           ],
           "implementation_notes": "The call site is ForecastController.cs:45; the route is POST /api/v1/forecast/update-portfolios-for-team/{teamId}. Two existing fixtures populate team.Portfolios by hand, at Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:176 and .../QuietWriteBack/QuietWriteBackAcceptanceTest.cs:305; the suite is green only because they establish a relation production never writes, so no existing test covers the missing-link case. After this phase the forecast trigger no longer depends on that relation, so those fixtures may be establishing something nothing reads any more."
+        },
+        {
+          "id": "02-04",
+          "name": "Team deletion refreshes the Portfolios it actually worked",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs"
+          ],
+          "criteria": [
+            "DeleteTeam resolves affected Portfolio ids through IPortfolioRepository.GetPortfolioIdsForTeam instead of team.Portfolios.",
+            "Regression test pins today's defect: deleting a Team skipped every Portfolio it reached only through the Features it worked.",
+            "Portfolios matched by OwningTeamId keep being included, and the union with the derived ids stays distinct.",
+            "After this step no production code reads Team.Portfolios."
+          ],
+          "implementation_notes": "The call site is TeamController.cs:95 inside DeleteTeam: 'var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];'. Because nothing ever writes that relation, the list is always empty, so only Portfolios matched by OwningTeamId are refreshed after a Team is deleted. This is the third instance of the same defect, after the trigger handler (02-02) and the forecast controller (02-03). Keep the null-team guard behaviour: an unknown team id must still yield an empty derived list rather than throw. The union with owningPortfolioIds and the Distinct() call stay as they are."
+        },
+        {
+          "id": "02-05",
+          "name": "Delete the phantom Team-Portfolio relation from the model",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-04"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/TeamRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandlerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs"
+          ],
+          "criteria": [
+            "Team.Portfolios, the HasMany/WithMany mapping and TeamRepository's Include of it are all gone.",
+            "Portfolio.Teams stays exactly as it is - it is the correct derived model and is read widely.",
+            "Every test that seeded team.Portfolios seeds real FeatureWork links instead, so it establishes something production can actually produce.",
+            "TeamDataRefreshedGoldTest asserts a non-empty set of triggered Portfolio ids; it currently compares empty to empty and pins nothing.",
+            "The mock-only duplicate in the trigger handler test is dropped and the two now-identical no-trigger tests are merged under one honest name.",
+            "No migration is generated in this step."
+          ],
+          "implementation_notes": "Team.Portfolios (Models/Team.cs:27) is a get-only List<Portfolio>; LighthouseAppContext.cs:281 maps it HasMany(t => t.Portfolios).WithMany(p => p.Teams); TeamRepository.cs:24 eager-loads it on every read. Portfolio.Teams (Models/Portfolio.cs:9) is 'public List<Team> Teams => GetTeams();' - a computed property with no backing field, so EF cannot track or write the inverse and clears the collection on fixup. That is why the relation is unwritable even from a test: TeamDataRefreshedGoldTest seeds two portfolios via team.Portfolios.Add and then passes only because both sides of its assertion are empty. Commit 9813472e8 (2026-03-13) turned Portfolio.Teams from a stored list back into a derived one and left this scaffolding standing. Test sites that write team.Portfolios: ManualSortingAcceptanceTest.cs:176, QuietWriteBackAcceptanceTest.cs:305, FasterUpdatesAcceptanceTest.cs:250, TeamControllerTest.cs:113, TeamDataRefreshedGoldTest.cs:61-62, PortfolioRepositoryTest.cs:195. ForecastControllerTest.cs:131 asserts team.Portfolios is empty - that assertion becomes unwritable and unnecessary once the property is gone. Editing the three other epics acceptance tests is explicitly approved by the maintainer."
+        },
+        {
+          "id": "02-06",
+          "name": "Drop the PortfolioTeam table",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-05"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres"
+          ],
+          "criteria": [
+            "The migration is generated with the Create-Migration.ps1 script, never with dotnet ef migrations add directly.",
+            "Migrations are produced for every supported provider in one run.",
+            "The generated migration drops PortfolioTeam and changes nothing else.",
+            "The step lands as its own commit so the destructive change is reviewable in isolation."
+          ],
+          "implementation_notes": "This is a deliberate contraction, accepted by the maintainer despite the expand-only rule, because the alternative is worse: once 02-05 removes the navigation from the model, the EF model snapshot no longer contains PortfolioTeam, so the next migration generated for any unrelated reason would silently carry the DROP. Doing it here makes the drop explicit and reviewable. Risk is near zero - no production code reads the table and the only known rows anywhere are two fossils on the dogfood instance predating 2026-03-13. The script lives at Lighthouse.Backend/Create-Migration.ps1. The migration projects are referenced by HintPath, so build them BEFORE running any dotnet ef or dotnet run command or the tooling reports PendingModelChanges. Inspect the generated Up and Down before handing back and report exactly what they contain."
         }
       ]
     },
