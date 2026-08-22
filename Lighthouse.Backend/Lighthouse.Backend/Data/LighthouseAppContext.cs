@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<DeliveryMetricSnapshot> DeliveryMetricSnapshots { get; set; } = null!;
 
+        public DbSet<DeliveryClosureRecord> DeliveryClosureRecords { get; set; } = null!;
+
         public DbSet<DeliveryNote> DeliveryNotes { get; set; } = null!;
 
         public DbSet<BlackoutPeriod> BlackoutPeriods { get; set; } = null!;
@@ -452,6 +454,18 @@ namespace Lighthouse.Backend.Data
 
                 entity.HasIndex(s => new { s.DeliveryId, s.RecordedDay })
                       .IsUnique();
+            });
+
+            modelBuilder.Entity<DeliveryClosureRecord>(entity =>
+            {
+                // The Delivery's own id is the key, so a second closure for the same Delivery cannot
+                // be written at all rather than being rejected by a check somebody has to remember.
+                entity.HasKey(r => r.DeliveryId);
+
+                entity.HasOne<Delivery>()
+                      .WithOne()
+                      .HasForeignKey<DeliveryClosureRecord>(r => r.DeliveryId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<DeliveryNote>(entity =>

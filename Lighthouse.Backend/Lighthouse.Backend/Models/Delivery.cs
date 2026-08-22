@@ -48,6 +48,8 @@ namespace Lighthouse.Backend.Models
 
         public int? RuleSchemaVersion { get; set; }
 
+        public DateTime? ArchivedOn { get; set; }
+
         public DeliveryMetricsProjection CalculateMetrics(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
         {
             var featureBreakdown = CalculateFeatureBreakdown(today, blackoutPeriods);
