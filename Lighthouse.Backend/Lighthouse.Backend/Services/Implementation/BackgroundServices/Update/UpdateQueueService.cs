@@ -96,7 +96,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             _ = NotifyListeners(updateKey, updateStatus);
 
             var round = RoundForNewWork();
-            queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, updateTask, updateStatus, round));
+
+            if (!queue.Writer.TryWrite(() => RunUpdateAsync(updateKey, updateTask, updateStatus, round)))
+            {
+                AbandonUnqueuedWork(updateKey, round);
+            }
         }
 
         public Task EnqueueAndAwaitAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, CancellationToken cancellationToken = default)
@@ -135,7 +139,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             _ = NotifyListeners(updateKey, updateStatus);
 
             var round = RoundForNewWork();
-            queue.Writer.TryWrite(() => RunAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, round));
+
+            if (!queue.Writer.TryWrite(() => RunAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, round)))
+            {
+                AbandonUnqueuedWork(updateKey, round);
+                awaiters.TryRemove(updateKey, out _);
+                tcs.TrySetResult(false);
+            }
 
             return RegisterCancellation(tcs.Task, cancellationToken);
         }
@@ -149,6 +159,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             logger.LogInformation("Update for {UpdateType} with ID {Id} skipped because a database {OperationType} operation is active.", updateKey.UpdateType, updateKey.Id, maintenanceGate.ActiveOperationType);
             return true;
+        }
+
+        /// <summary>
+        /// Hands back everything queuing this work claimed, for when the queue is already closed and the
+        /// work will therefore never run. Left as it was, the key would stay marked as work in progress
+        /// that nobody is doing: Lighthouse would keep reporting a refresh that never finishes, and
+        /// anything parked until that key clears would stay parked for good.
+        /// </summary>
+        private void AbandonUnqueuedWork(UpdateKey updateKey, WriteBackRound round)
+        {
+            logger.LogInformation("Update for {UpdateType} with ID {Id} was not queued because the update queue is closing.", updateKey.UpdateType, updateKey.Id);
+
+            statusStore.Remove(updateKey);
+            round.Leave();
         }
 
         private static UpdateStatus QueuedStatusFor(UpdateKey updateKey)
@@ -229,7 +253,38 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
             finally
             {
+                // The released work can end up queuing nothing at all - a database operation is running,
+                // or the same key was picked up elsewhere while the hold waited. Nobody took the place
+                // over, so give it back: a round that keeps counting a run that never came never finishes,
+                // and everything it had resolved is silently never written to the work tracking system.
+                if (ReferenceEquals(roundBeingHandedOver.Value, held.Round))
+                {
+                    held.Round.Leave();
+                }
+
                 roundBeingHandedOver.Value = null;
+            }
+        }
+
+        /// <summary>
+        /// Letting held work go runs a callback the caller supplied, and that callback reads from the
+        /// database. This runs between an update being marked finished and everyone being told it
+        /// finished, so a failure in it would otherwise mean nobody is ever told - and a caller on another
+        /// replica waiting for this update would wait until its own timeout instead.
+        /// </summary>
+        private void ReleaseClearedHoldsWithoutFailingTheUpdate()
+        {
+            try
+            {
+                ReleaseClearedHolds();
+            }
+            // Anything the caller's callback throws is caught, because no failure in it may stop this
+            // update from being reported as finished.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogError(exception, "Failed to release held updates after an update finished: {Exception}", exception.Message);
             }
         }
 
@@ -306,7 +361,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // Reached on the failure path too: the catch above only records the outcome. Work held
             // behind a key that failed must still be let go, or a single failing refresh would strand
             // it until something unrelated happens to poke the same key again.
-            ReleaseClearedHolds();
+            ReleaseClearedHoldsWithoutFailingTheUpdate();
 
             await completionNotifier.PublishCompletionAsync(updateKey);
             await NotifyListeners(updateKey, terminalStatus);
@@ -361,7 +416,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 awaiters.TryRemove(updateKey, out _);
                 statusStore.Remove(updateKey);
-                ReleaseClearedHolds();
+                ReleaseClearedHoldsWithoutFailingTheUpdate();
                 await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
             }
@@ -371,7 +426,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             // Set before the scope exists, so anything the update resolves out of that scope - the
             // write-back collector above all - already knows which round it is working for. The value is
-            // confined to this call: work started from outside a running update sees no round.
+            // confined to this call and does not escape to the caller: work the queue starts once this has
+            // returned - the coalesced follow-up, say - opens a round of its own rather than joining this
+            // one, and work started from outside an update sees no round at all.
             roundContext.Current = round;
 
             using (var scope = serviceScopeFactory.CreateScope())

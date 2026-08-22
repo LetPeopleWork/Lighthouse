@@ -757,6 +757,170 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 "Disposing the queue service must release its completion subscription so the distributed pub/sub channel is unsubscribed cleanly.");
         }
 
+        [Test]
+        public void HoldUntilQueuedWorkClears_ReleasedWorkQueuesNothing_GivesTheRoundItsPlaceBack()
+        {
+            // A hold keeps a place in its refresh round for the work it is waiting to let go, and hands
+            // that place over when it releases. If the released work then queues nothing after all -
+            // because the same key is already being processed - nobody takes the place over. A round that
+            // keeps counting a run that never came never finishes, so everything it had resolved is
+            // silently never written to the work tracking system.
+            var roundContext = new WriteBackRoundContext();
+            var round = new WriteBackRound();
+            roundContext.Current = round;
+
+            var subject = CreateSubject(roundContext);
+
+            var forecastKey = new UpdateKey(UpdateType.Forecasts, 61);
+            updateStatuses[forecastKey] = new UpdateStatus { UpdateType = forecastKey.UpdateType, Id = forecastKey.Id, Status = UpdateProgress.InProgress };
+
+            subject.HoldUntilQueuedWorkClears(
+                forecastKey,
+                [new UpdateKey(UpdateType.Team, 62)],
+                () => subject.EnqueueUpdate(forecastKey.UpdateType, forecastKey.Id, _ => Task.CompletedTask));
+
+            var wasTheLastOneOut = round.Leave();
+
+            Assert.That(wasTheLastOneOut, Is.True,
+                "Once the execution that opened the round is out, nothing may still be counted against it: a place kept for released work that never queued would hold the round, and its write-back, open for good.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_ReleasingAHoldThrows_StillPublishesTheCompletion()
+        {
+            // Letting held work go runs a callback that reads from the database. A failure there sits
+            // between the update being marked finished and everyone being told it finished, so callers on
+            // other replicas waiting for this key hear nothing at all and wait until their own timeout.
+            var updateKey = new UpdateKey(UpdateType.Team, 63);
+            var published = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var notifier = NotifierAnnouncing(updateKey, published);
+
+            var subject = CreateSubject(notifier.Object);
+
+            HoldThatIsReadyToBeReleased(subject, () => throw new InvalidOperationException("the release callback went to the database"));
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            var finished = await Task.WhenAny(published.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            Assert.That(finished, Is.SameAs(published.Task),
+                "A hold whose release throws must not take the completion signal down with it.");
+        }
+
+        [Test]
+        public async Task EnqueueAndAwaitAsync_ReleasingAHoldThrows_StillPublishesTheCompletion()
+        {
+            var updateKey = new UpdateKey(UpdateType.PortfolioDelete, 64);
+            var published = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var notifier = NotifierAnnouncing(updateKey, published);
+
+            var subject = CreateSubject(notifier.Object);
+
+            HoldThatIsReadyToBeReleased(subject, () => throw new InvalidOperationException("the release callback went to the database"));
+
+            await subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            var finished = await Task.WhenAny(published.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            Assert.That(finished, Is.SameAs(published.Task),
+                "The awaitable path releases its holds while it is already unwinding, so a throw there discards the completion signal as well.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_UpdateAsksForMoreWorkWhileTheQueueIsClosing_GivesTheRoundItsPlaceBack()
+        {
+            // Work an update asks for takes a place in the round of the update that asked, so both reach
+            // the work tracking system in one conversation. If the queue is already closing, that work is
+            // never queued and the place has to go back - otherwise the round waits forever for a run that
+            // will never happen, and everything it resolved is silently never written.
+            var roundContext = new WriteBackRoundContext();
+            var subject = CreateSubject(roundContext);
+
+            WriteBackRound? round = null;
+            var inFlightStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseInFlight = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            subject.EnqueueUpdate(UpdateType.Team, 65, async _ =>
+            {
+                round = roundContext.Current;
+                inFlightStarted.TrySetResult();
+                await releaseInFlight.Task;
+
+                subject.EnqueueUpdate(UpdateType.Forecasts, 65, _ => Task.CompletedTask);
+            });
+
+            await inFlightStarted.Task;
+
+            var drain = subject.DrainAsync();
+            releaseInFlight.SetResult();
+            await drain;
+
+            var wasTheLastOneOut = round!.Leave();
+
+            Assert.That(wasTheLastOneOut, Is.True,
+                "Work that could not be queued must give its round the place back, or the round never finishes and never writes what it collected.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_QueueAlreadyClosed_DoesNotLeaveTheKeyMarkedAsWorkInProgress()
+        {
+            // Nothing can be queued once the queue is closed. Admitting the key anyway leaves Lighthouse
+            // reporting a refresh that nobody is running and that will never end - and anything parked
+            // until that key clears stays parked for good.
+            var subject = CreateSubject();
+            await subject.DrainAsync();
+
+            var updateKey = new UpdateKey(UpdateType.Team, 66);
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            Assert.That(updateStatuses.ContainsKey(updateKey), Is.False,
+                "An update that could not be queued must not stay admitted, or the key reports work that will never run and can never be admitted again.");
+        }
+
+        [Test]
+        public async Task EnqueueAndAwaitAsync_QueueAlreadyClosed_DoesNotLeaveTheCallerWaiting()
+        {
+            var subject = CreateSubject();
+            await subject.DrainAsync();
+
+            var updateKey = new UpdateKey(UpdateType.PortfolioDelete, 67);
+            var completion = subject.EnqueueAndAwaitAsync(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(completion.IsCompleted, Is.True,
+                    "Work that could not be queued will never complete on its own, so the caller must be let go rather than left awaiting a run that will never start.");
+                Assert.That(updateStatuses.ContainsKey(updateKey), Is.False,
+                    "An update that could not be queued must not stay admitted, or the key reports work that will never run and can never be admitted again.");
+            }
+        }
+
+        /// <summary>
+        /// Parks a hold that the next release sweep will let go: it waits on a key that is queued while the
+        /// hold is taken and gone again by the time this returns.
+        /// </summary>
+        private void HoldThatIsReadyToBeReleased(UpdateQueueService subject, Action onQueuedWorkCleared)
+        {
+            var waitedOn = new UpdateKey(UpdateType.Team, 68);
+            updateStatuses[waitedOn] = new UpdateStatus { UpdateType = waitedOn.UpdateType, Id = waitedOn.Id, Status = UpdateProgress.Queued };
+
+            subject.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Forecasts, 69), [waitedOn], onQueuedWorkCleared);
+
+            updateStatuses.TryRemove(waitedOn, out _);
+        }
+
+        private static Mock<IUpdateCompletionNotifier> NotifierAnnouncing(UpdateKey updateKey, TaskCompletionSource published)
+        {
+            var notifier = new Mock<IUpdateCompletionNotifier>();
+            notifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>())).Returns(Mock.Of<IDisposable>());
+            notifier.Setup(n => n.PublishCompletionAsync(It.IsAny<UpdateKey>())).Returns(Task.CompletedTask);
+            notifier.Setup(n => n.PublishCompletionAsync(updateKey))
+                .Callback(() => published.TrySetResult())
+                .Returns(Task.CompletedTask);
+
+            return notifier;
+        }
+
         private async Task WaitUntilKeyIsIdle(UpdateKey updateKey)
         {
             var deadline = DateTime.UtcNow.AddSeconds(5);
@@ -773,7 +937,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private UpdateQueueService CreateSubject(IUpdateCompletionNotifier completionNotifier)
         {
-            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new InProcessUpdateStatusStore(updateStatuses), new InProcessUpdateExecutionLock(), completionNotifier, serviceScopeFactoryMock.Object, gate, new WriteBackRoundContext());
+            return CreateSubject(completionNotifier, new WriteBackRoundContext());
+        }
+
+        private UpdateQueueService CreateSubject(WriteBackRoundContext roundContext)
+        {
+            return CreateSubject(new InProcessUpdateCompletionNotifier(), roundContext);
+        }
+
+        private UpdateQueueService CreateSubject(IUpdateCompletionNotifier completionNotifier, WriteBackRoundContext roundContext)
+        {
+            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new InProcessUpdateStatusStore(updateStatuses), new InProcessUpdateExecutionLock(), completionNotifier, serviceScopeFactoryMock.Object, gate, roundContext);
         }
     }
 }
