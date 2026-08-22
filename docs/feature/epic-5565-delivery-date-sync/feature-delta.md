@@ -1452,3 +1452,78 @@ a phase rather than inferred.
 Deliberately **not** specified here: whether that lands as a column on `RefreshLog` (a migration), as
 structured logging, or on an existing metrics surface. DELIVER should check what already exists before
 adding a table column for one number. Owned by whichever slice first makes a real Jira call — slice 01a.
+
+---
+
+## Wave: DISTILL / [REF] Scope — distilled now, and what waits (2026-08-22)
+
+**Reconciliation: passed, 0 blocking contradictions.** Two prior commitments were superseded rather than
+left ambiguous, both with an ADR: slice 05's per-connection refusal became per-Portfolio (ADR-180), and
+slice 04's archived exclusion was released once #5698 archiving was confirmed shipped (DES-24).
+
+**Deliberate stop, maintainer decision.** Only the slices whose rules are *pure* are distilled here.
+The reason is structural rather than a shortfall. In C# an acceptance test cannot reference a type that
+does not exist — the whole test project stops compiling — so scenarios land with the contracts they are
+about. For slices 01b, 02, 03 and 05 those contracts are **persistence**: every one of their promises is
+a statement about state that survives a refresh, so writing their scenarios means landing four source
+columns on `Delivery`, three on `Portfolio`, and an expand-only migration per provider. That is the same
+commit as the slice itself. **Those four slices get their scenarios at the head of their own DELIVER
+slice**, where the persistence lands anyway, rather than in a speculative schema change now.
+
+### Distilled — scenario list
+
+| Fixture | Slice | Scenarios | Tags |
+|---|---|---|---|
+| `DeliverySourceBindabilityTest` | 01a | 4 | `@AC-01.3` `@AC-01.5` `@AC-01.8` `@error` |
+| `DeliveryForecastBlockRendererTest` | 04 | 7 | `@AC-05.3` `@AC-05.4` `@AC-05.4b-d` `@error` |
+
+Eleven specifications, all `[Ignore]`d per the project skip convention, so the suite stays green. Three
+of the seven renderer scenarios exist only to pin ADR-179's append-never-guess rule — a deleted closing
+marker, an emoji a human typed, and text on both sides of the block all survive a rewrite.
+
+### Test placement
+
+`Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/`. Precedent: the pure-rule fixtures
+sit beside their implementation namespace, as `WriteBackCollectorTest` and `DeliveryRuleServiceTest` do.
+The through-the-refresh scenarios owed below belong instead under `API/Integration/`, following
+`QuietWriteBack/` — an abstract harness plus per-slice `…Scenarios.cs` / `…Specifications.cs` partial
+pairs.
+
+### Infrastructure policy
+
+`--policy=inherit`. `docs/architecture/atdd-infrastructure-policy.md` already covers every port these
+slices touch: `WebApplicationFactory` for the HTTP driving port, real EF for driven-internal,
+`Mock<IWorkTrackingConnector>` for the tracker. **One row is owed** when the harness is written — the
+`IDeliverySourceProvider` / `IDeliveryForecastPublisher` capabilities, which are faked at the connector
+boundary while the sync and publishing services stay real.
+
+### Owed at DELIVER — no silent N/A
+
+| # | Owed | Slice |
+|---|---|---|
+| 1 | The three source endpoints exercised over HTTP, and the empty-list degradation for the four non-Jira systems | 01a |
+| 2 | Create-and-bind, the four hand-mutation refusals, unbind | 01b |
+| 3 | Re-sync **through the scheduled refresh** — the driving port, not the service in isolation. This is the one wiring scenario nothing else can substitute for | 02 |
+| 4 | Broken-source verdicts, including AC-04.5: a transient read failure must never raise the state | 03 |
+| 5 | Refusal recorded per Portfolio, cleared on success, and inbound still syncing throughout | 05 |
+| 6 | Frontend tab-list unit tests, and one Playwright walking skeleton driven from demo data | 01a/01b |
+| 7 | One confirming observation for OQ-7 — whether a version edit notifies anyone | 04 |
+
+### Adapter coverage
+
+| Adapter | Real-I/O scenario | Status |
+|---|---|---|
+| `DeliveryForecastBlockRenderer` | Pure, no I/O — 7 specifications | **Covered** |
+| `DeliverySourceBindability` | Pure, no I/O — 4 specifications | **Covered** |
+| `JiraWorkTrackingConnector` source read | — | **Owed** — belongs with the contract test ADR-171 recommends, over the `versions` response, the `fixVersion` search, **and** the refusal body ADR-180 keys on |
+| `JiraWorkTrackingConnector` publish | — | **Owed**, same contract test |
+
+### Contract surface landed with the scenarios
+
+`IDeliverySourceProvider`, `IDeliveryForecastPublisher` (both composed onto `IJiraWorkTrackingConnector`),
+`IDeliverySourceResolver`, `IDeliverySourceSyncService`, `IDeliveryForecastPublishingService`,
+`IDeliveryForecastBlockRenderer`, and the nine records and enums in `Models/DeliverySources/`.
+`DeliverySourceResolution` and `DeliveryForecastPublishResult` are closed record hierarchies rather than
+nullables, so a failed read cannot be mistaken for a deleted source and a refusal cannot be mistaken for
+a missing target. The block marker is `🔮`, anchored on its opening line.
+
