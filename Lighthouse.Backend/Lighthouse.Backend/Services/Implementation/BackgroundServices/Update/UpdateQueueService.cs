@@ -18,7 +18,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly ConcurrentDictionary<UpdateKey, TaskCompletionSource<bool>> awaiters = new();
         private readonly ConcurrentDictionary<UpdateKey, Func<IServiceProvider, Task>> pendingReruns = new();
         private readonly ConcurrentDictionary<UpdateKey, HeldUpdate> heldUpdates = new();
+        private readonly AsyncLocal<WriteBackRound?> roundBeingHandedOver = new();
         private readonly IServiceScopeFactory serviceScopeFactory;
+        private readonly WriteBackRoundContext roundContext;
         private readonly DatabaseMaintenanceGate maintenanceGate;
         private readonly Task processingTask;
 
@@ -29,7 +31,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             IUpdateExecutionLock executionLock,
             IUpdateCompletionNotifier completionNotifier,
             IServiceScopeFactory serviceScopeFactory,
-            DatabaseMaintenanceGate maintenanceGate)
+            DatabaseMaintenanceGate maintenanceGate,
+            WriteBackRoundContext roundContext)
         {
             this.logger = logger;
             this.hubContext = hubContext;
@@ -38,6 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             this.completionNotifier = completionNotifier;
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
+            this.roundContext = roundContext;
 
             completionSubscription = completionNotifier.Subscribe(ReleaseAwaiter);
             processingTask = StartProcessingQueue();
@@ -92,7 +96,32 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             _ = NotifyListeners(updateKey, updateStatus);
 
-            queue.Writer.TryWrite(ExecuteUpdateAsync(updateType, id, updateTask, updateKey, updateStatus));
+            queue.Writer.TryWrite(ExecuteUpdateAsync(updateKey, updateTask, updateStatus, RoundForNewWork()));
+        }
+
+        /// <summary>
+        /// Which refresh round work that starts now belongs to. Work an update execution asks for joins
+        /// the round of the execution that asked, so a portfolio refresh and the forecast it triggers
+        /// reach the work tracking system in one conversation rather than two. Work let go by a hold takes
+        /// over the place that hold was keeping for it. Anything else opens a round of its own.
+        /// </summary>
+        private WriteBackRound RoundForNewWork()
+        {
+            if (roundBeingHandedOver.Value is { } handedOver)
+            {
+                roundBeingHandedOver.Value = null;
+                return handedOver;
+            }
+
+            var runningRound = roundContext.Current;
+
+            if (runningRound == null)
+            {
+                return new WriteBackRound();
+            }
+
+            runningRound.Join();
+            return runningRound;
         }
 
         public Task EnqueueAndAwaitAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, CancellationToken cancellationToken = default)
@@ -131,19 +160,24 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             _ = NotifyListeners(updateKey, updateStatus);
 
-            queue.Writer.TryWrite(ExecuteAwaitableUpdateAsync(updateType, id, updateTask, updateKey, updateStatus, tcs));
+            queue.Writer.TryWrite(ExecuteAwaitableUpdateAsync(updateKey, updateTask, updateStatus, tcs, RoundForNewWork()));
 
             return RegisterCancellation(tcs.Task, cancellationToken);
         }
 
         public void HoldUntilQueuedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared)
         {
-            heldUpdates[heldFor] = new HeldUpdate(waitingOn, onQueuedWorkCleared);
+            heldUpdates[heldFor] = new HeldUpdate(waitingOn, onQueuedWorkCleared, RoundForNewWork());
 
             // The work being waited on can finish between the caller looking at it and this line. Releases
             // only ever fire when something leaves the queue, so nothing would come along afterwards to let
             // this one out - check once more now that it is actually held.
             ReleaseClearedHolds();
+        }
+
+        public bool IsHeld(UpdateKey heldFor)
+        {
+            return heldUpdates.ContainsKey(heldFor);
         }
 
         private void ReleaseClearedHolds()
@@ -158,12 +192,32 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 if (heldUpdates.TryRemove(heldFor, out var released))
                 {
                     logger.LogInformation("Releasing the held update for {UpdateType} with ID {Id}; the work it waited for has left the queue.", heldFor.UpdateType, heldFor.Id);
-                    released.Release();
+                    ReleaseIntoItsRound(released);
                 }
             }
         }
 
-        private sealed record HeldUpdate(IReadOnlyCollection<UpdateKey> WaitingOn, Action Release);
+        /// <summary>
+        /// A hold keeps its round open, because what that round already resolved has to travel to the work
+        /// tracking system together with whatever the held work produces. Handing the place over to the
+        /// released work, rather than adding a second one and giving the hold's back, means the round never
+        /// looks finished while the work it waited for is still being arranged.
+        /// </summary>
+        private void ReleaseIntoItsRound(HeldUpdate held)
+        {
+            roundBeingHandedOver.Value = held.Round;
+
+            try
+            {
+                held.Release();
+            }
+            finally
+            {
+                roundBeingHandedOver.Value = null;
+            }
+        }
+
+        private sealed record HeldUpdate(IReadOnlyCollection<UpdateKey> WaitingOn, Action Release, WriteBackRound Round);
 
         private static Task RegisterCancellation(Task task, CancellationToken cancellationToken)
         {
@@ -195,7 +249,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return observer.Task;
         }
 
-        private Func<Task> ExecuteUpdateAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, UpdateKey updateKey, UpdateStatus updateStatus)
+        private Func<Task> ExecuteUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, WriteBackRound round)
         {
             return async () =>
             {
@@ -206,20 +260,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 UpdateProgress terminalProgress;
                 try
                 {
-                    await ExecuteUpdateTask(updateTask);
+                    await ExecuteUpdateTask(updateTask, round);
                     terminalProgress = UpdateProgress.Completed;
                 }
                 catch (Exception ex)
                 {
                     terminalProgress = UpdateProgress.Failed;
-                    logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
+                    logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateKey.UpdateType, updateKey.Id);
                 }
 
                 // The follow-up is decided BEFORE the key is marked terminal. `HasActiveWork` counts only
                 // Queued and InProgress, so advancing to Completed first and requeueing after opens exactly
                 // the idle window the coalescing exists to close — two statements wide, and CI run
                 // 31203153029 landed in it.
-                if (TryScheduleRerun(updateType, id, updateKey, updateStatus))
+                if (TryScheduleRerun(updateKey, updateStatus))
                 {
                     return;
                 }
@@ -232,7 +286,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 // key is gone, otherwise that trigger would be lost after all.
                 if (pendingReruns.TryRemove(updateKey, out var lateRerun))
                 {
-                    EnqueueUpdate(updateType, id, lateRerun);
+                    EnqueueUpdate(updateKey.UpdateType, updateKey.Id, lateRerun);
                 }
 
                 // Reached on the failure path too: the catch above only records the outcome. Work held
@@ -245,7 +299,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             };
         }
 
-        private bool TryScheduleRerun(UpdateType updateType, int id, UpdateKey updateKey, UpdateStatus updateStatus)
+        private bool TryScheduleRerun(UpdateKey updateKey, UpdateStatus updateStatus)
         {
             if (!pendingReruns.TryRemove(updateKey, out var rerun))
             {
@@ -257,9 +311,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // would read exactly the stale state the follow-up is about to correct.
             statusStore.Requeue(updateKey);
 
-            if (queue.Writer.TryWrite(ExecuteUpdateAsync(updateType, id, rerun, updateKey, updateStatus)))
+            if (queue.Writer.TryWrite(ExecuteUpdateAsync(updateKey, rerun, updateStatus, RoundForNewWork())))
             {
-                logger.LogInformation("Running the coalesced follow-up update for {UpdateType} with ID {Id}.", updateType, id);
+                logger.LogInformation("Running the coalesced follow-up update for {UpdateType} with ID {Id}.", updateKey.UpdateType, updateKey.Id);
                 return true;
             }
 
@@ -269,7 +323,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return false;
         }
 
-        private Func<Task> ExecuteAwaitableUpdateAsync(UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask, UpdateKey updateKey, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs)
+        private Func<Task> ExecuteAwaitableUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs, WriteBackRound round)
         {
             return async () =>
             {
@@ -280,14 +334,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 UpdateStatus terminalStatus = updateStatus;
                 try
                 {
-                    await ExecuteUpdateTask(updateTask);
+                    await ExecuteUpdateTask(updateTask, round);
                     terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Completed) ?? updateStatus;
                     tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
                     terminalStatus = statusStore.Advance(updateKey, UpdateProgress.Failed) ?? terminalStatus;
-                    logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateType, id);
+                    logger.LogError(ex, "Error processing update task for {UpdateType} with ID {Id}", updateKey.UpdateType, updateKey.Id);
                     tcs.TrySetException(ex);
                 }
                 finally
@@ -301,8 +355,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             };
         }
 
-        private async Task ExecuteUpdateTask(Func<IServiceProvider, Task> updateTask)
+        private async Task ExecuteUpdateTask(Func<IServiceProvider, Task> updateTask, WriteBackRound round)
         {
+            // Set before the scope exists, so anything the update resolves out of that scope - the
+            // write-back collector above all - already knows which round it is working for. The value is
+            // confined to this call: work started from outside a running update sees no round.
+            roundContext.Current = round;
+
             using (var scope = serviceScopeFactory.CreateScope())
             {
                 await updateTask(scope.ServiceProvider);

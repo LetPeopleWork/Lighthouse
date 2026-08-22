@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
@@ -204,7 +205,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 executionLock,
                 completionNotifier,
                 serviceScopeFactory.Object,
-                maintenanceGate);
+                maintenanceGate,
+                new WriteBackRoundContext());
         }
     }
 }

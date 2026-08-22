@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 "Flushing clears the staging area, so a second terminal flush in the same scope is a no-op.");
         }
 
-        private WriteBackCollector CreateSubject() => new(writeBackServiceMock.Object, loggerMock.Object);
+        private WriteBackCollector CreateSubject() => new(writeBackServiceMock.Object, new WriteBackRoundContext(), loggerMock.Object);
 
         private static WorkTrackingSystemConnection Connection(int id)
             => new() { Id = id, Name = $"Connection {id}", WorkTrackingSystem = WorkTrackingSystems.Jira };

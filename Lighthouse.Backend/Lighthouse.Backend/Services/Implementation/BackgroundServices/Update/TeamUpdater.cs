@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     Success = success
                 });
 
-                LogUpdateSummary(team.Name, outcome, stopwatch.ElapsedMilliseconds, success);
+                ReportUpdateSummary(serviceProvider, team.Name, outcome, stopwatch.ElapsedMilliseconds, success);
             }
         }
 

@@ -35,20 +35,34 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// </summary>
         public override void TriggerUpdate(int id)
         {
+            var forecastKey = new UpdateKey(UpdateType.Forecasts, id);
+
+            if (AForecastForThisPortfolioIsAlreadyOwed(forecastKey))
+            {
+                return;
+            }
+
             var teamsStillWaiting = TeamsOfThePortfolioWaitingToRefresh(id);
 
             if (teamsStillWaiting.Count > 0)
             {
-                queueService.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Forecasts, id), teamsStillWaiting, () => QueueForecast(id));
+                queueService.HoldUntilQueuedWorkClears(forecastKey, teamsStillWaiting, () => TriggerUpdate(id));
                 return;
             }
 
-            QueueForecast(id);
+            base.TriggerUpdate(id);
         }
 
-        private void QueueForecast(int id)
+        /// <summary>
+        /// A forecast that is parked, or sitting in the queue and not started, has not read anything yet, so
+        /// it will see whatever the caller just wrote. Asking for a second one would only run the unseeded
+        /// simulation again and move a date the first one is about to show. A forecast that is already
+        /// running deliberately does not count: it read its data before this request existed, so that
+        /// request still needs a run of its own.
+        /// </summary>
+        private bool AForecastForThisPortfolioIsAlreadyOwed(UpdateKey forecastKey)
         {
-            base.TriggerUpdate(id);
+            return queueService.IsHeld(forecastKey) || updateStatusStore.HasQueuedWork([forecastKey]);
         }
 
         private List<UpdateKey> TeamsOfThePortfolioWaitingToRefresh(int id)
@@ -113,7 +127,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 stopwatch.Stop();
 
                 // Forecasting reads what an earlier refresh already fetched, so it never contacts the
-                // work tracking system - there is nothing scanned or downloaded to report here.
+                // work tracking system - there is nothing scanned or downloaded to record here.
                 var outcome = SyncOutcome.None;
 
                 await refreshLogService.LogRefreshAsync(new RefreshLog
@@ -130,7 +144,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     Success = success
                 });
 
-                LogUpdateSummary(portfolio.Name, outcome, stopwatch.ElapsedMilliseconds, success);
+                ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success);
             }
         }
     }

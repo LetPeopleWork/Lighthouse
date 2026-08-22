@@ -18,7 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         IServiceScopeFactory serviceScopeFactory,
         IUpdateQueueService updateQueueService,
         IOrphanedFeatureCleanupService cleanupService,
-        IDomainEventDispatcher domainEventDispatcher)
+        IDomainEventDispatcher domainEventDispatcher,
+        IForecastUpdater forecastUpdater)
         : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Features),
             IPortfolioUpdater
     {
@@ -84,7 +85,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 try
                 {
                     var workItemService = serviceProvider.GetRequiredService<IWorkItemService>();
-                    var forecastUpdateService = serviceProvider.GetRequiredService<IForecastService>();
                     var deliveryRepository = serviceProvider.GetRequiredService<IDeliveryRepository>();
                     var deliveryRuleService = serviceProvider.GetRequiredService<IDeliveryRuleService>();
 
@@ -95,8 +95,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
                     await SaveRecomputedDeliveries(deliveryRepository, project);
 
-                    // Both passes stage into the same collector and reach the tracker once, in the flush
-                    // that runs at the end of this execution.
+                    // What this pass resolves and what the forecast below resolves belong to the same
+                    // refresh round, and a round reaches the work tracking system once - at the end of
+                    // whichever of its executions finishes last.
                     var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
                     var writeBackCollector = serviceProvider.GetRequiredService<IWriteBackCollector>();
 
@@ -104,13 +105,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         project.WorkTrackingSystemConnection,
                         writeBackTriggerService.ResolveFeatureWriteBackForPortfolio(project));
 
-                    await forecastUpdateService.UpdateForecastsForPortfolio(project);
-
-                    writeBackCollector.Stage(
-                        project.WorkTrackingSystemConnection,
-                        writeBackTriggerService.ResolveForecastWriteBackForPortfolio(project));
-
-                    await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(project.Id));
+                    // Forecasting here as well would run the unseeded simulation a second time for the
+                    // same portfolio in one bulk refresh, and the operator would watch the delivery date
+                    // settle and then move. Handing the intent to the forecast updater lets the queue
+                    // collapse every request raised during this refresh into a single run.
+                    forecastUpdater.TriggerUpdate(project.Id);
 
                     itemCount = project.Features.Count;
                     success = true;
@@ -144,7 +143,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         Success = success
                     });
 
-                    LogUpdateSummary(project.Name, outcome, stopwatch.ElapsedMilliseconds, success);
+                    ReportUpdateSummary(serviceProvider, project.Name, outcome, stopwatch.ElapsedMilliseconds, success);
                 }
             }
             finally

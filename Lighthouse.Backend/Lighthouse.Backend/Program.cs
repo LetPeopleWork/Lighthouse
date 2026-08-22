@@ -1240,6 +1240,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService, Lighthouse.Backend.Services.Implementation.WorkItems.BlockedItemService>();
             builder.Services.AddScoped<IWriteBackService, WriteBackService>();
             builder.Services.AddScoped<IWriteBackTriggerService, WriteBackTriggerService>();
+            // One instance for the whole application: it is how the update queue tells the collector in a
+            // scope which refresh round that scope is working for, and the queue itself lives that long.
+            builder.Services.AddSingleton<WriteBackRoundContext>();
             builder.Services.AddScoped<IWriteBackCollector, WriteBackCollector>();
 
             builder.Services.AddScoped<IAzureDevOpsWorkTrackingConnector, AzureDevOpsWorkTrackingConnector>();
@@ -1260,10 +1263,10 @@ namespace Lighthouse.Backend
             builder.Services.AddHostedService<TeamUpdater>();
             builder.Services.AddSingleton<ITeamUpdater, TeamUpdater>();
 
+            builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
+
             builder.Services.AddHostedService<PortfolioUpdater>();
             builder.Services.AddSingleton<IPortfolioUpdater, PortfolioUpdater>();
-
-            builder.Services.AddSingleton<IForecastUpdater, ForecastUpdater>();
 
             builder.Services.AddSingleton<IOrphanedFeatureCleanupService, OrphanedFeatureCleanupService>();
 

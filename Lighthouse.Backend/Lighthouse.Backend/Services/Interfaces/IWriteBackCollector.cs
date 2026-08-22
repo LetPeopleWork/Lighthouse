@@ -4,9 +4,9 @@ using Lighthouse.Backend.Models.WriteBack;
 namespace Lighthouse.Backend.Services.Interfaces
 {
     /// <summary>
-    /// Staging seam for write-back intents (ADR-144). Scoped: exactly one instance per update
-    /// execution, so every pass inside one <c>Update</c> stages into the same collector and the
-    /// execution reaches the tracker once.
+    /// Staging seam for write-back intents. Scoped: exactly one instance per update execution, and every
+    /// execution of one refresh round stages into the same round, so a refresh reaches the work tracking
+    /// system once however many executions it takes.
     /// </summary>
     public interface IWriteBackCollector
     {
@@ -17,7 +17,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         void Stage(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates);
 
         /// <summary>
-        /// Writes everything staged, once per connection, and clears the staging area.
+        /// Reports that this execution has finished and, when it is the last of its round, writes
+        /// everything the round staged, once per connection, and clears the staging area. Calling it
+        /// again in the same execution does nothing.
         /// </summary>
         Task<IReadOnlyList<WriteBackResult>> FlushAsync();
     }

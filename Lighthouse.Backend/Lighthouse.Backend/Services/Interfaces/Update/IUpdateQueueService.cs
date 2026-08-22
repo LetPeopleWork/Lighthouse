@@ -17,6 +17,13 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         /// </summary>
         void HoldUntilQueuedWorkClears(UpdateKey heldFor, IReadOnlyCollection<UpdateKey> waitingOn, Action onQueuedWorkCleared);
 
+        /// <summary>
+        /// Whether a request for <paramref name="heldFor"/> is parked by <see cref="HoldUntilQueuedWorkClears"/>
+        /// and still waiting to be let go. A caller about to ask for the same work can use this to recognise
+        /// that the work is already promised and let the parked request be the one that does it.
+        /// </summary>
+        bool IsHeld(UpdateKey heldFor);
+
         Task DrainAsync(CancellationToken cancellationToken = default);
     }
 }

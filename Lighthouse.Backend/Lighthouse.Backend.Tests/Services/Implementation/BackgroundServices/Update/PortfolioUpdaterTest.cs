@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -37,6 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IOrphanedFeatureCleanupService> cleanupServiceMock;
+        private Mock<IForecastUpdater> forecastUpdaterMock;
         private Mock<ICryptoService> cryptoServiceMock;
         private Mock<ILogger<PortfolioUpdater>> loggerMock;
 
@@ -47,8 +49,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private RefreshLog? recordedRefresh;
 
         private int idCounter;
-
-        private static readonly string[] ForecastThenEventDispatchOrder = ["forecastWriteBack", "forecastsUpdatedEvent"];
 
         [SetUp]
         public void SetUp()
@@ -73,6 +73,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             cleanupServiceMock = new Mock<IOrphanedFeatureCleanupService>();
+            forecastUpdaterMock = new Mock<IForecastUpdater>();
             loggerMock = new Mock<ILogger<PortfolioUpdater>>();
             teamLoggerMock = new Mock<ILogger<TeamUpdater>>();
             teamRepoMock = new Mock<IRepository<Team>>();
@@ -123,7 +124,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void UpdateProject_TriggersReforecast()
+        public void UpdateProject_AsksForAReforecastInsteadOfRunningOneItself()
         {
             var team = CreateTeam();
 
@@ -133,7 +134,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(project.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(project));
+            using (Assert.EnterMultipleScope())
+            {
+                forecastUpdaterMock.Verify(x => x.TriggerUpdate(project.Id), Times.Once);
+                forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>()), Times.Never,
+                    "Forecasting inside the feature refresh is invisible to the check that collapses a bulk refresh into one run, so the portfolio ends up forecast several times over.");
+            }
+        }
+
+        [Test]
+        public void UpdateProject_LeavesAnnouncingTheNewDeliveryDateToTheForecastRun()
+        {
+            var team = CreateTeam();
+
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                domainEventDispatcherMock.Verify(
+                    x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()),
+                    Times.Never,
+                    "Announcing here as well as at the end of the forecast run gives one round two announcements, and everything listening - the delivery snapshot above all - records that round twice.");
+                domainEventDispatcherMock.Verify(
+                    x => x.PublishAsync(It.Is<PortfolioFeaturesRefreshed>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()),
+                    Times.Once,
+                    "The features pass still has its own announcement; only the forecast one moved.");
+            }
         }
 
         [Test]
@@ -294,45 +324,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(project.Id);
 
             writeBackTriggerServiceMock.Verify(x => x.ResolveFeatureWriteBackForPortfolio(project), Times.Once);
-        }
-
-        [Test]
-        public void UpdateProject_TriggersForecastWriteBackForPortfolio()
-        {
-            var team = CreateTeam();
-
-            var project = CreateProject(team);
-            SetupProjects(project);
-
-            var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
-
-            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(project), Times.Once);
-        }
-
-        [Test]
-        public void UpdateProject_PublishesPortfolioForecastsUpdatedExactlyOnce_AfterForecastWriteBack()
-        {
-            var team = CreateTeam();
-
-            var project = CreateProject(team);
-            SetupProjects(project);
-
-            var dispatchSequence = new List<string>();
-            writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(project))
-                .Callback(() => dispatchSequence.Add("forecastWriteBack"))
-                .Returns([]);
-            domainEventDispatcherMock
-                .Setup(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()))
-                .Callback(() => dispatchSequence.Add("forecastsUpdatedEvent"))
-                .Returns(Task.CompletedTask);
-
-            var subject = CreateSubject();
-            subject.TriggerUpdate(project.Id);
-
-            domainEventDispatcherMock.Verify(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == project.Id), It.IsAny<CancellationToken>()), Times.Once);
-            Assert.That(dispatchSequence, Is.EqualTo(ForecastThenEventDispatchOrder));
         }
 
         [Test]
@@ -614,7 +605,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private PortfolioUpdater CreateSubject()
         {
-            return new PortfolioUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object);
+            return new PortfolioUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object, forecastUpdaterMock.Object);
         }
     }
 }

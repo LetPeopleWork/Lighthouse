@@ -6,27 +6,38 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class WriteBackCollector(
         IWriteBackService writeBackService,
+        WriteBackRoundContext roundContext,
         ILogger<WriteBackCollector> logger)
         : IWriteBackCollector
     {
-        private readonly Dictionary<int, WorkTrackingSystemConnection> connectionsById = [];
+        private readonly WriteBackRound round = roundContext.Current ?? new WriteBackRound();
 
-        private readonly Dictionary<StagingKey, WriteBackFieldUpdate> stagedUpdates = [];
+        private bool hasLeftTheRound;
 
         public void Stage(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
         {
-            foreach (var update in updates)
-            {
-                // Last stage wins, for the connection as much as for the value: a later pass holds the
-                // fresher of both.
-                connectionsById[connection.Id] = connection;
-                stagedUpdates[new StagingKey(connection.Id, update.WorkItemId, update.TargetFieldReference)] = update;
-            }
+            round.Stage(connection, updates);
         }
 
         public async Task<IReadOnlyList<WriteBackResult>> FlushAsync()
         {
-            var pending = TakeStagedUpdates();
+            if (hasLeftTheRound)
+            {
+                return [];
+            }
+
+            hasLeftTheRound = true;
+
+            if (!round.Leave())
+            {
+                // Another execution of this round is still to come - a portfolio refresh that asked for a
+                // forecast, for instance. Writing here would reach the work tracking system once for what
+                // this execution resolved and again for what that one resolves; the last execution out
+                // carries both.
+                return [];
+            }
+
+            var pending = round.TakeStaged();
 
             if (pending.Count == 0)
             {
@@ -37,35 +48,12 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var results = new List<WriteBackResult>();
 
-            foreach (var (connectionId, updates) in pending)
+            foreach (var (connection, updates) in pending)
             {
-                results.Add(await writeBackService.WriteFieldsToWorkItems(connectionsById[connectionId], updates));
+                results.Add(await writeBackService.WriteFieldsToWorkItems(connection, updates));
             }
-
-            connectionsById.Clear();
 
             return results;
         }
-
-        /// <summary>
-        /// Empties the staging area and hands back what was in it, grouped per connection. Draining
-        /// before the first write is what makes the flush terminal: a second flush in the same scope
-        /// finds nothing rather than re-sending.
-        /// </summary>
-        private List<(int ConnectionId, IReadOnlyList<WriteBackFieldUpdate> Updates)> TakeStagedUpdates()
-        {
-            var pending = stagedUpdates
-                .GroupBy(staged => staged.Key.ConnectionId)
-                .Select(group => (
-                    group.Key,
-                    (IReadOnlyList<WriteBackFieldUpdate>)group.Select(staged => staged.Value).ToList()))
-                .ToList();
-
-            stagedUpdates.Clear();
-
-            return pending;
-        }
-
-        private readonly record struct StagingKey(int ConnectionId, string WorkItemId, string TargetFieldReference);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
@@ -440,7 +441,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 new InProcessUpdateExecutionLock(),
                 new InProcessUpdateCompletionNotifier(),
                 ServiceScopeFactory,
-                new DatabaseMaintenanceGate(inProcessUpdateStatusStore));
+                new DatabaseMaintenanceGate(inProcessUpdateStatusStore),
+                new WriteBackRoundContext());
         }
 
         private Portfolio CreatePortfolioWorkedOnBy(Team team)
