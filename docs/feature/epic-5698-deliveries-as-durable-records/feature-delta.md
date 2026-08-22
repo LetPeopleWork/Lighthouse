@@ -1439,7 +1439,7 @@ Precedent-following, per the directory conventions already in the repository. No
 | `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.notes.test.tsx` | NEW | third tab present and always enabled, beside a Metrics tab still gated on history |
 | `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryNotesPanel.test.tsx` | NEW | newest-first order stable across renders, author vs unattributed, empty refusal with a field message, literal rendering of markup, own-note affordances, read-only when archived |
 | `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.archived.test.tsx` | NEW | archived marker and date, grid rendered from the pinned record, Metrics tab reachable and read-only, archived section collapsed by default |
-| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryHeader.test.tsx` | EXTEND | Archive action present for a writer, absent for a reader; confirmation wording, including the words it must not contain |
+| `src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.test.tsx` | EXTEND | Archive action present for a writer, absent for a reader, disabled without a premium licence; confirmation wording, including the words it must not contain. Note this is `DeliverySection`, not `DeliveryHeader` — the latter is the list's own header, carrying the Add button, and knows nothing about an individual Delivery |
 | `src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.test.ts` | EXTEND | archive and un-archive state transitions |
 | `src/models/` + `src/services/Api/` co-located tests | EXTEND | `archivedOn` on the client model and Zod schema; the notes/archive/un-archive calls |
 
