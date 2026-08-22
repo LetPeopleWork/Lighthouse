@@ -1950,31 +1950,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         // Implemented on the connector rather than beside it: the authenticated HTTP path and the JQL
         // encoding that guards it are private to this class, so a sibling could never reach them.
 
+        private const string DeliverySourceNotImplementedYet = "Not yet implemented - DISTILL scaffold";
+
         public IReadOnlyList<DeliverySourceDescriptor> AvailableSources(WorkTrackingSystemConnection connection)
         {
-            throw new NotImplementedException("Not yet implemented - DISTILL scaffold");
+            throw new NotImplementedException(DeliverySourceNotImplementedYet);
         }
 
         public Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey, string projectReference)
         {
-            throw new NotImplementedException("Not yet implemented - DISTILL scaffold");
+            throw new NotImplementedException(DeliverySourceNotImplementedYet);
         }
 
         public Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
             WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences)
         {
-            throw new NotImplementedException("Not yet implemented - DISTILL scaffold");
+            throw new NotImplementedException(DeliverySourceNotImplementedYet);
         }
 
         public bool SupportsDeliveryForecastPublishing(WorkTrackingSystemConnection connection)
         {
-            throw new NotImplementedException("Not yet implemented - DISTILL scaffold");
+            throw new NotImplementedException(DeliverySourceNotImplementedYet);
         }
 
         public Task<DeliveryForecastPublishResult> PublishAsync(
             WorkTrackingSystemConnection connection, DeliveryForecastPublication publication)
         {
-            throw new NotImplementedException("Not yet implemented - DISTILL scaffold");
+            throw new NotImplementedException(DeliverySourceNotImplementedYet);
         }
     }
 }
