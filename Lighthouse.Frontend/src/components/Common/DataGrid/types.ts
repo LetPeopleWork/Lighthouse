@@ -91,6 +91,16 @@ export interface DataGridExportHeaderRow {
 	value: string;
 }
 
+/**
+ * Everything a grid puts in an exported file, built by whoever owns the rows. Half of what a reader
+ * sees in a cell is drawn by a renderer with no field behind it, so a grid that has any such column
+ * has to say what its file contains rather than let the toolbar read it back off the screen.
+ */
+export interface DataGridExportTable {
+	headers: string[];
+	rows: string[][];
+}
+
 export interface DataGridToolbarProps {
 	/** Whether user has premium features available */
 	canUsePremiumFeatures?: boolean;
