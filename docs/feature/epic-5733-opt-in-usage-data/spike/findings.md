@@ -4,6 +4,12 @@ Feature: `epic-5733-opt-in-usage-data` · ADO #5833 · Run 2026-08-22 · Timebox
 
 Companion document: `vendor-research.md` (full citations, per-question evidence, gaps).
 
+> **The collector recommendation in this document was superseded after the spike closed.** Everything
+> here about Plausible stands. The recommendation of a vendor-run Supabase collector does not: the
+> data-protection gap that ranked PostHog behind it was closed afterwards, and the decision went to
+> **PostHog Cloud EU**. Read `wave-decisions.md` for the decision, the evidence that closed the gap,
+> and the two statements below that it corrects. This document is left as the spike's own record.
+
 ---
 
 ## Verdict
@@ -95,6 +101,12 @@ about 3% of the 1M free allowance. It fails on paperwork and proportion, not cap
 - It brings an entire product-analytics platform, its own identity model, and a second processor
   relationship, to carry five fields once a day.
 
+**CORRECTED after the spike closed.** The first two bullets were the reason PostHog ranked second,
+and the first one overstated what the evidence supported. The sub-processor list and the residency
+position were retrieved from PostHog's own repository, and they answer the transfer question: EU
+Cloud rests in Frankfurt and every EU-cloud sub-processor is EU-located. The DPA *terms* remain
+unread. See `wave-decisions.md` for the full evidence and what it changed.
+
 ### Why the vendor-run collector — and why it is not the fallback
 
 The slice brief listed this as the timebox fallback. It is not being picked as one.
@@ -135,7 +147,7 @@ the source JSON has no currency field). PostHog Cloud EU **0/mo** at our volume.
 | | Sees beyond the payload | Suppressible |
 |---|---|---|
 | Plausible | Server IP (required header), derived country, User-Agent, a daily visitor hash of IP+UA+hostname | No — the IP is not optional, it is the bot filter's input |
-| PostHog Cloud EU | Client IP, GeoIP enrichment | IP capture is off by default on new Cloud EU projects; whether that also kills GeoIP is undocumented (INFERENCE: yes) |
+| PostHog Cloud EU | Client IP, GeoIP enrichment | ~~IP capture is off by default on new Cloud EU projects; whether that also kills GeoIP is undocumented (INFERENCE: yes)~~ **CORRECTED — see `wave-decisions.md`.** Discarding the IP does *not* stop GeoIP: their docs state transformations "can still use the IP before it is discarded". Two separate settings. |
 | **Vendor-run (recommended)** | The TLS peer IP reaches the edge, as it does for any HTTP request | **Yes, by our own code** — the function does not read or persist it, and that is assertable in a test we own |
 
 The third row is the argument. On the first two, "we do not store your IP" is a claim about a
