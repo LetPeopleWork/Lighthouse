@@ -79,17 +79,20 @@ namespace Lighthouse.Backend.API
         private List<ArchivedDeliveryDto> ArchivedRows(List<Delivery> deliveries)
         {
             var closureRecords = deliveryRepository.GetClosureRecordsByDelivery(deliveries.Select(delivery => delivery.Id));
+            var snapshotCounts = deliveryMetricSnapshotRepository.GetSnapshotCountsByDelivery(deliveries.Select(delivery => delivery.Id));
 
             return [.. deliveries
                 .Where(delivery => closureRecords.ContainsKey(delivery.Id))
-                .Select(delivery => ArchivedDeliveryProjection.ToDto(IdentityOf(delivery), closureRecords[delivery.Id]))
+                .Select(delivery => ArchivedDeliveryProjection.ToDto(
+                    IdentityOf(delivery, snapshotCounts.TryGetValue(delivery.Id, out var count) ? count : 0),
+                    closureRecords[delivery.Id]))
                 .OrderByDescending(archivedDelivery => archivedDelivery.ArchivedOn)];
         }
 
-        private static ArchivedDeliveryIdentity IdentityOf(Delivery delivery)
+        private static ArchivedDeliveryIdentity IdentityOf(Delivery delivery, int metricSnapshotCount)
         {
             return new ArchivedDeliveryIdentity(
-                delivery.Id, delivery.Name, delivery.Date, delivery.PortfolioId, delivery.ConcurrencyToken);
+                delivery.Id, delivery.Name, delivery.Date, delivery.PortfolioId, delivery.ConcurrencyToken, metricSnapshotCount);
         }
 
         [HttpGet("{deliveryId:int}/metrics-history")]
