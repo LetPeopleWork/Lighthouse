@@ -1046,6 +1046,12 @@ get re-applied.
 - **Fix**: build the constants from bytes — `AKeyMadeOf(0x4D)` filling `EncryptionKey.MaterialLength` and base64-encoding it. Same value at runtime, nothing key-shaped in the source. (`EncryptionBootstrapOrderTests.cs`.)
 - **Rule going forward**: **never write a 32-byte key as a base64 literal in a source file — compute it.** Allowlisting in `.gitleaks.toml` is the wrong fix: it weakens the scanner for every future key in that path to accommodate one fixture. The hook's own message suggests the allowlist; prefer computing. Note also that `gitleaks` is not in the lean-ctx shell allowlist, so the finding cannot be inspected directly from a tool call — diagnose from the diff, or ask the maintainer to run `gitleaks protect --staged --verbose --no-banner`.
 
+### 2026-08-22 — a lifelike GUID in a test fixture trips the same rule
+- **Symptom**: the pre-commit hook reported `generic-api-key` five times over a frontend test fixture. The offending value was a `concurrencyToken` holding a perfectly ordinary version-1 GUID with varied hex in every group, scoring 3.62 entropy. (Not reproduced here — writing the literal into this file trips the hook on *this* file, which is the point being made.)
+- **Root cause**: the same default `generic-api-key` rule as the 2026-08-17 entry. `Token` sits next to a high-entropy string, and a *realistic* GUID has exactly the entropy of a real secret. A version-1 GUID with varied hex is indistinguishable, to the scanner, from a key.
+- **Fix**: use a repeating-digit GUID — `33333333-3333-3333-3333-333333333333` — which is what this repo's existing concurrency tests already do. Same type, same parse, no entropy.
+- **Rule going forward**: **fixture GUIDs are repeating-digit, never lifelike.** As with the key literals above, do not reach for `.gitleaks.toml`: an allowlist weakens the scanner for every future token in that path to accommodate one fixture. Any test writing a realistic GUID next to a field named `token`, `key` or `secret` will hit this.
+
 ## Infra & flakes
 
 ### 2026-08-21 — exploring a work tracking API by hand spends the same rate-limit budget CI needs
