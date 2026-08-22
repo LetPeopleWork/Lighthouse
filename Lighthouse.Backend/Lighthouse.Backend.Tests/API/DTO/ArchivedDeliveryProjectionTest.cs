@@ -128,6 +128,55 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(dto.MetricSnapshotCount, Is.EqualTo(11));
         }
 
+        [Test]
+        public void ToDto_PartlyFinishedDelivery_ReportsTheShareThatWasDone()
+        {
+            var record = ClosureRecordWith(null);
+            record.TotalWork = 14;
+            record.DoneWork = 7;
+
+            var dto = ArchivedDeliveryProjection.ToDto(Identity, record);
+
+            // Half of fourteen, as a percentage. Reading it off either number alone, or dividing the
+            // wrong way round, still lands on a plausible-looking figure.
+            Assert.That(dto.Progress, Is.EqualTo(50.0));
+        }
+
+        [Test]
+        public void ToDto_DeliveryThatFinishedNothing_ReportsNoProgressRatherThanAll()
+        {
+            var record = ClosureRecordWith(null);
+            record.TotalWork = 9;
+            record.DoneWork = 0;
+
+            var dto = ArchivedDeliveryProjection.ToDto(Identity, record);
+
+            Assert.That(dto.Progress, Is.Zero);
+        }
+
+        [Test]
+        public void ToDto_DeliveryHoldingNoWork_ReportsNoProgressRatherThanDividingByZero()
+        {
+            var record = ClosureRecordWith(null);
+            record.TotalWork = 0;
+            record.DoneWork = 0;
+
+            var dto = ArchivedDeliveryProjection.ToDto(Identity, record);
+
+            Assert.That(dto.Progress, Is.Zero);
+        }
+
+        [Test]
+        public void ToDto_TeamsWithoutForecastStoredAsNullText_ReadsAsNoTeamsRatherThanThrowing()
+        {
+            var record = ClosureRecordWith(null);
+            record.TeamsWithoutForecastJson = "null";
+
+            var dto = ArchivedDeliveryProjection.ToDto(Identity, record);
+
+            Assert.That(dto.TeamsWithoutForecast, Is.Empty);
+        }
+
         private static DeliveryClosureRecord ClosureRecordWith(string? featureBreakdownJson)
         {
             return new DeliveryClosureRecord

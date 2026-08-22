@@ -58,6 +58,29 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        [Test]
+        public void CalculateMetrics_FeatureSplitAcrossTwoTeams_AddsTheirWorkUpRatherThanTakingTheLarger()
+        {
+            var alpha = new Team { Id = 1, Name = "Alpha" };
+            var beta = new Team { Id = 2, Name = "Beta" };
+            var shared = new Feature([(alpha, 2, 5), (beta, 3, 7)])
+            {
+                ReferenceId = "EPIC-9",
+                Name = "Shared",
+            };
+
+            var metrics = DeliveryWith(shared).CalculateMetrics(Clock.Today, NoBlackoutPeriods, 85);
+
+            using (Assert.EnterMultipleScope())
+            {
+                // Twelve between them, not the seven the busier team holds. Reporting the larger
+                // share as though it were the whole makes a Feature look smaller than it is, and
+                // further along than it is.
+                Assert.That(SizeOf(metrics, "EPIC-9"), Is.EqualTo(12));
+                Assert.That(EntryFor(metrics, "EPIC-9").Completion, Is.EqualTo(100.0 * 7 / 12).Within(0.001));
+            }
+        }
+
         private static int? SizeOf(DeliveryMetricsProjection metrics, string referenceId)
         {
             return EntryFor(metrics, referenceId).TotalItems;
