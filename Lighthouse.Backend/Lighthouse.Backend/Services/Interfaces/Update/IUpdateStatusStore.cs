@@ -22,5 +22,14 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         void Remove(UpdateKey key);
 
         bool HasActiveWork();
+
+        /// <summary>
+        /// Answers whether any of the given keys is admitted but has not started running yet. Work that is
+        /// already running deliberately does not count: a caller reacting to its own update would otherwise
+        /// find its own key still running and wait for itself forever. Scoped to the keys the caller names,
+        /// because <see cref="HasActiveWork"/> is true whenever anything anywhere is busy and would park a
+        /// caller behind updates that have nothing to do with it.
+        /// </summary>
+        bool HasQueuedWork(IReadOnlyCollection<UpdateKey> keys);
     }
 }

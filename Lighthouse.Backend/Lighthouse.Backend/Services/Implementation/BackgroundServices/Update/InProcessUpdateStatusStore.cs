@@ -55,5 +55,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return updateStatuses.Values.Any(status =>
                 status.Status is UpdateProgress.Queued or UpdateProgress.InProgress);
         }
+
+        public bool HasQueuedWork(IReadOnlyCollection<UpdateKey> keys)
+        {
+            return keys.Any(key =>
+                updateStatuses.TryGetValue(key, out var status) && status.Status == UpdateProgress.Queued);
+        }
     }
 }
