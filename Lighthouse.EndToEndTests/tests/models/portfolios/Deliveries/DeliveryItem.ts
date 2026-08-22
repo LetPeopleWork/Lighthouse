@@ -1,4 +1,5 @@
 import { expect, type Locator } from "@playwright/test";
+import { ArchiveConfirmationDialog } from "./ArchiveConfirmationDialog";
 import { DeliveryDeletionDialog } from "./DeliveryDeletionDialog";
 import { ModifyDeliveriesDialog } from "./ModifyDeliveriesDialog";
 
@@ -146,6 +147,16 @@ export class DeliveryItem {
 		await this.DeleteButton.click();
 
 		return new DeliveryDeletionDialog(this.container.page());
+	}
+
+	async archive(): Promise<ArchiveConfirmationDialog> {
+		await this.ArchiveButton.click();
+
+		return new ArchiveConfirmationDialog(this.container.page());
+	}
+
+	get ArchiveButton(): Locator {
+		return this.container.getByRole("button", { name: "archive", exact: true });
 	}
 
 	get EditButton(): Locator {

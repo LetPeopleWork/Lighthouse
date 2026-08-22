@@ -354,6 +354,51 @@ testWithDemo(
 	},
 );
 testWithDemo(
+	"Take @screenshot of retiring a Delivery and reading the record it leaves",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const portfolioDetailPage = await overviewPage.goToPortfolio(
+			testData.portfolios[0].name,
+		);
+		const deliveryPage = await portfolioDetailPage.goToDeliveries();
+
+		const addDeliveryPage = await deliveryPage.addDelivery();
+		await addDeliveryPage.setDeliveryName("Autumn Launch");
+		await addDeliveryPage.setDeliveryDate(
+			formatLocalDate(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+		);
+		await addDeliveryPage.selectFeatureByIndex(0);
+		await addDeliveryPage.selectFeatureByIndex(1);
+		const savedDeliveryPage = await addDeliveryPage.save();
+
+		const confirmation = await savedDeliveryPage
+			.getDeliveryByName("Autumn Launch")
+			.archive();
+
+		await takeDialogScreenshot(
+			savedDeliveryPage.page.getByRole("dialog"),
+			"features/delivery_archive_confirm.png",
+			0.5,
+			1000,
+		);
+
+		await confirmation.archive();
+
+		await savedDeliveryPage.openArchivedSection();
+		const archived =
+			savedDeliveryPage.getArchivedDeliveryByName("Autumn Launch");
+		await archived.toggleDetails();
+
+		await takePageScreenshot(
+			savedDeliveryPage.page,
+			"features/delivery_archived.png",
+			5,
+			1000,
+		);
+	},
+);
+
+testWithDemo(
 	"Take @screenshot of the team metrics dashboard widgets",
 	async ({ testData, overviewPage }) => {
 		await overviewPage.lightHousePage.goToOverview();

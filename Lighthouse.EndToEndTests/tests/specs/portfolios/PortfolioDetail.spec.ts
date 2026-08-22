@@ -117,6 +117,38 @@ testWithPortfolio(
 			deliveriesPage = await modifyDialog.save();
 		});
 
+		await test.step("Archive Delivery and bring it back", async () => {
+			const delivery = deliveriesPage.getDeliveryByName(deliveryName);
+
+			// Asking and then thinking better of it must leave the Delivery where it was.
+			const cancelled = await delivery.archive();
+			await cancelled.cancel();
+			await expect(
+				deliveriesPage.getDeliveryByName(deliveryName).container,
+			).toBeVisible();
+
+			const confirmed = await deliveriesPage
+				.getDeliveryByName(deliveryName)
+				.archive();
+			await confirmed.archive();
+
+			await expect(
+				deliveriesPage.getDeliveryByName(deliveryName).container,
+			).toHaveCount(0);
+
+			await deliveriesPage.openArchivedSection();
+
+			const archived = deliveriesPage.getArchivedDeliveryByName(deliveryName);
+			await expect(archived.container).toBeVisible();
+			expect(await archived.getArchivedOn()).toContain("Archived:");
+
+			await archived.unarchive();
+
+			await expect(
+				deliveriesPage.getDeliveryByName(deliveryName).container,
+			).toBeVisible();
+		});
+
 		await test.step("Delete Delivery from Portfolio Detail", async () => {
 			let delivery = deliveriesPage.getDeliveryByName(deliveryName);
 			let deleteDialog = await delivery.delete();

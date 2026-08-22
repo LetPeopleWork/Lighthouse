@@ -186,10 +186,36 @@ The delivery row shows the delivery name and date, along with a visual indicator
 - **Manual deliveries** show a touch icon, indicating features are fixed
 - **Rule-based deliveries** show an automatic mode icon, indicating features update automatically based on rules
 
-The row also includes an expand control to reveal included features and their statuses, and action buttons to edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
+The row also includes an expand control to reveal included features and their statuses, and action buttons to archive, edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
 
 {: .recommendation}
 > Use deliveries to communicate release milestones and to group related features — this makes it easier to discuss release risk and progress with stakeholders.
+
+## Archiving a Delivery
+
+Once a delivery has shipped — or been called off — you can archive it. It leaves the active list, and the numbers it was showing at that moment are written down and kept: the likelihood, the forecast dates, and every feature that was in it.
+
+{: .note}
+> Archiving is a premium feature. Bringing a delivery back is not — if your licence lapses you can still un-archive whatever you archived.
+
+Archiving asks for confirmation first. If you retire deliveries often, tick **Don't ask me again** and later archives skip the dialog. That choice is remembered in your browser, so you will see the dialog once on a new machine.
+
+![Archive a Delivery](../assets/features/delivery_archive_confirm.png)
+
+Archived deliveries collect in an **Archived** section below the active ones, collapsed until you open it. Each shows the day it was archived, the numbers as they stood then, and which features were in it.
+
+![An archived Delivery](../assets/features/delivery_archived.png)
+
+The point of archiving is that the record stops moving. Refresh the portfolio, let features be renamed, re-estimated or removed entirely, and an archived delivery still reads exactly as it did on the day it closed. That is what makes it usable as evidence in a review months later.
+
+Because those numbers are fixed, an archived delivery shows less than a live one: which features were in it, and nothing about how far along they are today. Anything else would invite a comparison the record cannot support. Export still gives you the full detail — the same file a live delivery produces, built from the stored numbers.
+
+An archived delivery also stops being maintained: it no longer records daily metrics, and a rule-based delivery stops re-matching features. Its **Metrics** tab still shows the history up to the day it closed. Notes stay readable but can no longer be added, edited or withdrawn.
+
+**Un-archive** returns it to the active list, and live recomputation and daily recording resume from there.
+
+{: .important}
+> Archiving is not a substitute for keeping a copy elsewhere. Deleting an archived delivery still deletes it permanently, and takes the written-down numbers and its metric history with it.
 
 ## Delivery Metrics over Time
 
