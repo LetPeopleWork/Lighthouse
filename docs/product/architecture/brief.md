@@ -6143,3 +6143,392 @@ field reads as active, so a stale client degrades to today's behaviour rather th
 | Archiving never writes into `DeliveryMetricSnapshot` | Integration test asserting the row count is unchanged |
 | A caller with no profile cannot edit an attributed note | Unit test on the authorship predicate — the branch a null-tolerant equality gets wrong |
 | Both export formats carry the same header rows | Vitest test comparing the CSV and clipboard payloads |
+
+---
+
+## Application Architecture — epic-5565-delivery-date-sync (ADO Epic #5565, inbound slices 01a-03)
+
+Feature: epic-5565-delivery-date-sync (a Delivery can be bound to a Jira Release, taking its date and
+its Feature membership from Jira and keeping them in step on the existing refresh cycle; a Release that
+vanishes or loses its date freezes the Delivery and says so)
+Wave: DESIGN
+Date: 2026-08-22
+Architect: Morgan (Solution Architect), interaction mode = PROPOSE
+Paradigm: OOP (C# backend), functional-leaning React (hooks, pure components) on the frontend
+
+**Scope: inbound only.** Slices 04-05 — publishing the forecast into a Jira Version description — are
+**deferred, not designed**. D7 and D8 rest on unverified Jira behaviour, and slice 00's Q3 (the
+Version-write permission bar) and Q4 (whether a delimiter survives a round trip through the Jira UI) are
+open. `quiet-jira-writeback` built a slice on unverified Atlassian behaviour and deleted it. Inbound
+detaches cleanly and ships whole, as the Epic's own scope assessment says.
+
+### Architectural Pattern
+
+**Ports-and-Adapters (Hexagonal)** — unchanged. No new architectural style, no new dependency, no new
+scheduler. The design weight sits in one idea, applied at four seams: **the boundary between "the remote
+told us something" and "Lighthouse changed" is a value, not a side effect.** A handler returns a plan; a
+closed result type names the transient case so it cannot be confused with a deletion; one atomic mutator
+applies the whole snapshot; and the aggregate refuses the hand-edits the remote now owns.
+
+### Key invariants introduced
+
+These bind code outside this Epic, which is why they sit here rather than only in the feature delta.
+
+- **The HTTP contract is list-shaped; the implementation is singular.** `GET .../delivery-sources`
+  returns an array, and `[]` *is* "this connection offers no sources" — which is what makes the tab
+  absent on the four connectors with no Release concept (AC-01.1). Internally there is one
+  `IDeliverySourceProvider`, composed into `IJiraWorkTrackingConnector` beside the existing
+  `IBoardInformationProvider` and injected directly, the house pattern already used at
+  `WizardsController.cs:17`. A second source later is an internal change with **no client change** — the
+  property D1 was buying. **No `SupportsDeliverySources` flag is added** to the shared port; the answer
+  is carried by whether the resolved connector offers the provider, and the connector is resolved per
+  connection, which is D2's substance. *(An earlier draft proposed a handler port plus a DI registry;
+  withdrawn 2026-08-22 — speculative generality that also stranded the handler outside the connector's
+  `private` HttpClient cache.)* (ADR-166)
+- **Release membership crosses the port as reference ids, resolved by a second remote call, batched once
+  per pass.** `fixVersions` is **not stored** — `AdditionalFieldValues` is a `Dictionary<int, string?>`
+  keyed by admin-configured definitions (`WorkItemBase.cs:53`) and a `grep` for `fixVersion` over the
+  backend returns zero, so the `*all` payload is discarded. The adapter issues JQL
+  `fixVersion in (...)` keyed on the **numeric Version id** — which is also the injection answer, since
+  no user-supplied text enters the query — and the domain intersects the returned reference ids with
+  `portfolio.Features` on `ReferenceId`. One refresh costs **two remote calls, constant in the number of
+  bound Deliveries**. (ADR-171)
+- **One resolver, two call sites.** `IDeliverySourceResolver` owns the four-arm switch; the create
+  endpoint and the refresh pass both depend on it. At create only `Resolved` succeeds — `NotFound` and
+  `NoDate` are `400`, `Unavailable` is `502`, nothing is persisted — so a Delivery is never born broken,
+  and `SourceLastSyncedOn` is non-null for the whole life of a binding. (ADR-170)
+- **The remote's lifecycle and Lighthouse's are independent (D13).** A source's retired/released flags
+  gate **bindability only** and never drive Lighthouse's own archiving. A Delivery already bound to a
+  Version that later acquires either flag keeps its binding, keeps syncing, and its date simply stops
+  moving — no new state, no transition. Two consequences are structural rather than conventional: the
+  bindability predicate is one function with one construction site, checked by **both** the options read
+  and the create path so a direct `POST` cannot bind what the picker calls unselectable; and
+  `DeliverySourceResolution` stays **lifecycle-blind** at exactly four arms, because a fifth arm the
+  re-sync must always ignore is an arm somebody will eventually handle. *Why archiving does not
+  propagate: archiving pins a closure snapshot that is not re-derivable, so letting a remote flag choose
+  the freezing moment lets it choose what the permanent record says — and archive status is a decision
+  about Lighthouse's record, not a fact about the plan, which is why D4 does not extend to it.*
+  (ADR-166, ADR-170)
+- **A handler cannot mutate Lighthouse state.** `GetOptions` and `Resolve` read the remote and return
+  values. Only `DeliverySourceSyncService` writes. This is what makes "a failed read left a partial
+  change behind" unrepresentable rather than merely untested. (ADR-166, ADR-170)
+- **`Resolve` returns a closed four-member result — `Resolved`, `NotFound`, `NoDate`, `Unavailable` —
+  never a nullable and never an exception for an expected case.** `Unavailable` being a **member**
+  rather than a throw is the design: a network blip cannot raise the broken-source state, because the
+  transient arm is a named case the switch cannot skip. Throwing would route the two outcomes that must
+  be told apart into one `catch`. (ADR-170)
+- **The broken-source state is recorded by the pass that made the call, never derived at read time.**
+  Stored state alone cannot distinguish "the read failed" from "the read returned nothing"; only the
+  pass knows. Two columns, one exhaustive transition table, one writer. (ADR-170)
+- **The binding is nullable columns on `Delivery`, read through a computed `DeliverySourceBinding?` and
+  written only by `BindToSource`/`Unbind`.** The stored reference is the Jira Version **id**, never its
+  name, so a remote rename leaves the binding resolvable. Both mutators bump `ConcurrencyToken` — the
+  rule ADR-164 establishes, without which optimistic concurrency on this aggregate is decorative.
+  (ADR-167)
+- **A source-bound Delivery refuses hand mutation of its name, date and Features.** `Rename`,
+  `Reschedule`, `ReplaceFeatures` and `ApplyRuleSet` each refuse when bound, beside the archived refusal
+  ADR-164 gives them. D4 becomes a property of the aggregate rather than a UI convention — there is no
+  call path by which a human edit reaches a bound Delivery's remote-owned fields. (ADR-169)
+- **The sync path writes all three fields in one call and applies no date policy.**
+  `ApplySourceSnapshot(record (Name, Date, Features))` — a handler owns membership and date together, so
+  they move together or not at all. No date policy is D5: a Release past its date is a normal state, and
+  Lighthouse agreeing with Jira is the point of the Epic. The asymmetry between the two paths lives in
+  the method names at the call sites, not in a flag. (ADR-169)
+- **The future-date rule leaves the `Delivery` constructor, because it was never an aggregate
+  invariant.** It is already duplicated at `Delivery.cs:16-19`, `DeliveriesController.cs:86-89` and
+  `:144-147`, and the EF parameterless constructor bypasses it — so every Delivery ever loaded from the
+  database has already skipped it. The controller copies stay and become conditional on selection mode.
+  *(This corrects the ADR-027 analysis above, which calls the Delivery constructor "the one model with
+  real invariant enforcement today".)* (ADR-169)
+- **Inbound re-sync is narrowed by `RecordableDeliveries` from the same port the recorder uses.**
+  AC-03.7 — an archived Delivery is not re-synced — holds because the collection has **one construction
+  site that asserts**, not because a `where` was remembered. `RecordableDeliveries` is a **nominal
+  marker, not a refinement type**: ADR-163 point 2 withdraws the "does not compile" overclaim, and the
+  crafter's obligation is that constructor assertion, not the compiler's. Reaching for `GetByPortfolioAsync` and catching
+  `DeliveryArchivedException` would make that guard fire on the hot path as the expected case and
+  destroy the signal ADR-164's concurrency rule depends on. (ADR-168)
+- **The re-sync runs inline at the `PortfolioUpdater` seam, not on the event bus.** Neither existing
+  event sits at the right point — `PortfolioFeaturesRefreshed` is published at `:76`, before the
+  delivery work; `PortfolioForecastsUpdated` at `:97`, after the forecast. Ordering is a hard constraint
+  (after the Feature fetch so `fixVersions` are current, before the forecast run so it is computed
+  against the new target), and an event would move that contract into `Program.cs` registration order —
+  which ADR-144 and ADR-027 D2 both reject, for this reason, on this method. (ADR-168)
+
+### System Context and Capabilities
+
+No new dependency and no new scheduler. Four capabilities, all inbound:
+
+1. Browse the connected Jira project's Releases and preview what one would bring to a Delivery — its
+   date and its Features — with nothing persisted.
+2. Save a previewed Release as a Delivery bound to it, with name, date and Features owned by Jira.
+3. Keep a bound Delivery in step with Jira on the existing Portfolio refresh cycle, accepting a date in
+   the past and rendering it overdue.
+4. Freeze and flag a Delivery whose Release has been deleted or has lost its date, and offer Unbind.
+
+```mermaid
+C4Context
+  title System Context — Delivery date sync (inbound)
+  Person(forecaster, "Delivery Forecaster", "Binds a Delivery to the Release it tracks")
+  Person(admin, "Configuration Admin", "Owns the work tracking connection")
+  System(lighthouse, "Lighthouse", "Forecasting and flow metrics")
+  System_Ext(jira, "Jira Cloud", "Issues, Releases (Versions) and their dates")
+  System_Ext(other, "Azure DevOps / Linear / ServiceNow / CSV", "Work tracking systems with no Release concept")
+  Rel(forecaster, lighthouse, "Binds a Delivery to a Release in")
+  Rel(admin, lighthouse, "Reads source availability from")
+  Rel(lighthouse, jira, "Reads Releases and Feature versions from")
+  Rel(lighthouse, other, "Syncs Features from (offers no Delivery source)")
+```
+
+```mermaid
+C4Container
+  title Container Diagram — Delivery date sync (inbound)
+  Person(forecaster, "Delivery Forecaster")
+  Container(spa, "Lighthouse Frontend", "React 18 + TypeScript", "Renders the source tab, the Release picker, the preview and the broken-source banner")
+  Container(api, "Lighthouse Backend", "C# .NET 10 ASP.NET Core", "Serves the delivery-source endpoints; refuses hand edits to remote-owned fields")
+  Container(refresh, "Portfolio Refresh", "In-process update queue", "Fetches Features, re-matches rules, re-syncs bound Deliveries, then forecasts")
+  ContainerDb(db, "Lighthouse Database", "PostgreSQL or SQLite via EF Core", "Deliveries, their source bindings and their source state")
+  System_Ext(jira, "Jira Cloud", "REST API")
+  Rel(forecaster, spa, "Picks a Release through")
+  Rel(spa, api, "Calls over HTTPS/JSON")
+  Rel(api, jira, "Enumerates project Versions from")
+  Rel(api, db, "Reads and writes through EF Core")
+  Rel(refresh, jira, "Resolves each bound Version from")
+  Rel(refresh, db, "Persists the resolved snapshot into")
+```
+
+### C4 — Component (the source-resolution seam)
+
+The one genuinely complex subsystem: six components, and the seam where all of AC-03.6, AC-03.7,
+AC-04.4, AC-04.5 and AC-04.6 concentrate.
+
+```mermaid
+C4Component
+  title Component Diagram — resolving a bound source during a Portfolio refresh
+  Container_Boundary(backend, "Lighthouse Backend") {
+    Component(updater, "PortfolioUpdater", "C# (EXTEND)", "Reads the narrowed collection once; calls rule re-match then source re-sync; one Save")
+    Component(sync, "DeliverySourceSyncService", "C# (NEW)", "Batches the pass; writes source state")
+    Component(create, "DeliveriesController", "C# (EXTEND)", "Resolves once at create; refuses a bind that does not resolve")
+    Component(resolver, "DeliverySourceResolver", "C# (NEW)", "Owns the four-arm switch; intersects reference ids with the Portfolio's Features")
+    Component(provider, "JiraWorkTrackingConnector : IDeliverySourceProvider", "C# (EXTEND)", "Lists Versions and queries fixVersion; returns reference ids, mutates nothing")
+    Component(resolution, "DeliverySourceResolution", "C# record (NEW)", "Resolved | NotFound | NoDate | Unavailable")
+    Component(delivery, "Delivery", "C# aggregate (EXTEND)", "ApplySourceSnapshot; refuses hand edits while bound")
+  }
+  ContainerDb(db, "Lighthouse Database", "EF Core")
+  System_Ext(jira, "Jira Cloud", "REST API")
+  Rel(updater, sync, "Passes RecordableDeliveries to")
+  Rel(sync, resolver, "Requests one batched resolution from")
+  Rel(create, resolver, "Requests a single resolution from")
+  Rel(resolver, provider, "Calls ResolveMany on")
+  Rel(provider, jira, "Lists Versions and queries fixVersion in")
+  Rel(provider, resolution, "Returns one per reference")
+  Rel(resolver, resolution, "Switches over")
+  Rel(sync, delivery, "Applies the snapshot to, or records the verdict on")
+  Rel(create, delivery, "Constructs and binds")
+  Rel(delivery, db, "Persists through EF Core")
+```
+
+### Component Decomposition
+
+Full table in `docs/feature/epic-5565-delivery-date-sync/feature-delta.md` →
+*Wave: DESIGN / [REF] Component decomposition*. Headline:
+
+- **NEW (backend)**: `IDeliverySourceProvider` (capability interface); `IDeliverySourceResolver` + impl;
+  `IDeliverySourceSyncService` + impl; `DeliverySourcesController`; and six behaviourless model types —
+  `DeliverySourceDescriptor`, `DeliverySourceOption`, `SourceOptionBlockReason`,
+  `DeliverySourceSnapshot`, `DeliverySourceResolution`, `DeliverySourceUnavailableReason`.
+- **EXTEND (backend)**: `Delivery` (four columns, `BindToSource`/`Unbind`/`ApplySourceSnapshot`, four
+  mutators gaining a source-bound refusal, the constructor check deleted); `DeliverySelectionMode`
+  (`SourceBound = 2`, appended); `DeliveriesController`; `UpdateDeliveryRequest`;
+  `DeliveryWithLikelihoodDto`; `PortfolioUpdater`; `LighthouseAppContext`; one additive migration per
+  provider.
+- **UNCHANGED, deliberately**: `IWorkTrackingConnector`; `IDeliveryRepository` / `DeliveryRepository`;
+  `IDeliveryRuleService` / `DeliveryRuleService`; `RuleEvaluator<T>` / `FeatureFieldProvider`.
+- **NEW (frontend)**: `deliverySelectionTabs.ts`; `DeliverySourceTab.tsx`;
+  `models/Delivery/DeliverySource.ts` with hand-rolled boundary parsers.
+- **EXTEND (frontend)**: `DeliveryCreateModal.tsx` (the precursor list-driven refactor, then the source
+  tab); `DeliveryService.ts`; `Delivery.ts`; `DeliverySection.tsx`.
+
+### Driving Ports (HTTP)
+
+Three new routes on a new `DeliverySourcesController`, Portfolio-nested, each on both `api/v1/...` and
+`api/latest/...`.
+
+| Method | Route | Auth | Status |
+|---|---|---|---|
+| GET | `portfolios/{portfolioId:int}/delivery-sources` | `[RbacGuard(PortfolioRead)]` | NEW (01a) |
+| GET | `portfolios/{portfolioId:int}/delivery-sources/{sourceKey}/options` | `[RbacGuard(PortfolioWrite)]` | NEW (01a) |
+| POST | `portfolios/{portfolioId:int}/delivery-sources/{sourceKey}/preview` | `[RbacGuard(PortfolioWrite)]` + `[LicenseGuard(RequirePremium)]` | NEW (01a) |
+
+Nesting rather than the `deliveries/portfolio/{id}` shape the sibling controller uses, for a mechanical
+reason: `RbacGuardAttribute` resolves its scope from a **route value** via `ScopeIdRouteKey`, so a
+nested route is guardable by attribute rather than by the in-action idiom the `{deliveryId}`-rooted
+endpoints are forced into — and the preview endpoint mirrors `delivery-rules/validate`, whose sibling
+already lives at the nested address. **The existing `DeliveriesController` routes are not changed**;
+the two controllers' disagreement is recorded, not repaired.
+
+`POST deliveries/portfolio/{id}` and `PUT deliveries/{id}` are **extended additively** to accept
+`selectionMode: SourceBound` with `sourceKey` + `sourceReference`, and to unbind. Manual and rule
+payloads are byte-identical.
+
+### Driven Ports
+
+| Port | Adapter | Status |
+|---|---|---|
+| `IDeliverySourceProvider` | `JiraWorkTrackingConnector`, which already owns the authenticated HTTP path (`ClientCache :63`, `GetOrCreateClient :1853`) and the JQL encoding | NEW interface, EXTEND adapter |
+| `IWorkTrackingConnectorFactory` | existing | REUSE AS IS — resolves a connector per connection, which is what makes the capability per-connection |
+| `IDeliveryRepository.GetRecordableByPortfolio` | `DeliveryRepository` | **CONSUMED, not added** — ADR-163 / #5698 owns it |
+| `IWorkTrackingConnector` | five existing connectors | UNCHANGED |
+| `ILighthouseClock`, `ILicenseService`, `IRepository<Portfolio>` | existing | REUSED AS IS |
+
+**External integration introduced: Jira Cloud REST, read-only** (`GET rest/api/3/project/{key}/versions`).
+Slice 00 Q2 confirmed the response shape live on 2026-08-22 — `self`, `id`, `name`, `archived`,
+`released`, `projectId`, and `releaseDate` **only when a date is set**.
+
+**Contract tests recommended for the Jira Versions read** — consumer-driven contracts (e.g. Pact), so a
+shape change is caught before production. Two assumptions are worth pinning explicitly because a live
+API can withdraw either silently: that `releaseDate` may be **absent** rather than null (D11's whole
+basis, and the common case on real data), and that an issue's `fixVersions` is an array of objects
+carrying `id` (slice 00 Q1, still unconfirmed).
+
+### Technology Stack
+
+No new dependency, backend or frontend. .NET 10 / EF Core 10 over SQLite and PostgreSQL (MIT); React 18
++ TypeScript with MUI (MIT); NUnit 4.6 + Moq + EF InMemory + ArchUnitNET; Vitest + React Testing
+Library; Playwright; Stryker.NET and StrykerJS at the 80% per-feature gate. One additive, expand-only
+migration per provider via the `CreateMigration` PowerShell script — never `dotnet ef migrations add`.
+
+Two conscious non-adoptions: **Zod is not used** for the three new response shapes (it is still
+`ADOPT-INCREMENTALLY` and gated; the house pattern for a new boundary parser is the hand-rolled
+`asObject`/`asNumber`/`asDate` set in `DeliveryMetricsHistory.ts`), and **no new scheduler, queue or
+broker** (D9 rides the existing refresh).
+
+### Reuse Analysis
+
+Full table in the feature delta. **Headline: 17 EXTEND / REUSE, 7 UNCHANGED, 9 CREATE NEW** — of which
+six are behaviourless records or enums that exist so a rule is a compiler-checked type rather than a
+convention.
+
+**The 2026-08-22 revision moved this table toward EXTEND**, which is the direction the default is meant
+to push: `IDeliverySourceHandler` and `IDeliverySourceRegistry` were deleted, and
+`IJiraWorkTrackingConnector` / `JiraWorkTrackingConnector` moved from UNCHANGED to EXTEND — the
+capability is now composed into the abstraction that already owns the Jira HTTP path, rather than sitting
+outside it behind a registry.
+
+The CREATE-NEWs needing real justification: **`IDeliverySourceProvider`**, a capability interface with no
+existing equivalent, shaped after `IBoardInformationProvider`; **`IDeliverySourceResolver`**, which owns
+the four-arm switch so its two callers cannot drift on which verdicts are recoverable;
+**`IDeliverySourceSyncService`**, because no existing service applies a remote resolution to a Delivery
+and the one overlapping candidate — the rule service — fails on all four of D3's grounds plus a fifth
+(ADR-012's pinned signature is ADR-163's to spend, not this Epic's); and **`DeliverySourcesController`**,
+because `DeliveriesController` already carries eight constructor dependencies behind an
+`#pragma warning disable S107`.
+
+**`Feature` and `WorkItemBase.AdditionalFieldValues` are UNCHANGED on evidence, not by omission**: they
+were the natural home for stored membership and were rejected because a `Dictionary<int, string?>`
+cannot hold an array (S11) and persisting a Jira concept there needs a forward-only migration (ADR-171).
+
+`IDeliveryRepository` is **UNCHANGED by design** — adding no method removes the parallel-edit collision
+with #5698 phase 4, which is editing that file now.
+
+### Integration Patterns
+
+In-process, synchronous. The three read endpoints call Jira inline. Re-sync runs inside the existing
+Portfolio refresh execution, between the Feature fetch and the forecast run, on the same `Save()` as the
+rule recompute — so AC-03.4's "a refresh where nothing changed remotely persists no write" is EF's
+change tracker rather than a hand-rolled comparison. No new domain event, no new queue key, no second
+cadence.
+
+### Quality Attribute Strategies
+
+- **Correctness (the Epic's reason to exist)**: the conflict class is removed rather than managed. There
+  is no last-synced value to reconcile, no divergence state, no merge — because the remote owns the
+  fields and the aggregate refuses hand-writes to them.
+- **Reliability**: a Jira read failure is a *member of the result type*, so it leaves last-known values,
+  changes no state, and does not fail the Portfolio refresh. The four failure modes that were most
+  likely to be conflated (freeze, transient, cleared date, read failure) are four arms of one switch
+  over a closed type.
+- **Security**: three new endpoints, each `PortfolioRead`/`PortfolioWrite`-scoped by attribute because
+  the routes are Portfolio-nested. Premium gating on preview matches rule-based selection's existing
+  gate.
+- **Maintainability**: a second handler is one class plus one DI registration — no port change, no
+  connector change, no frontend change. The four non-Jira connectors are untouched by this Epic.
+- **Performance**: **two** extra remote calls per refresh, **constant in the number of bound
+  Deliveries** — one project-wide `versions` list plus one `fixVersion in (...)` search, grouped in
+  memory. The naive per-Delivery shape would be `2N` (ten calls for five Deliveries) and was rejected
+  as a design decision rather than deferred as an optimisation, because on a small Portfolio — where the
+  baseline refresh is itself short — ten calls could plausibly breach the 5% KPI. This is reasoning from
+  call counts, not a measurement; the KPI is measured off `RefreshLogService` at DELIVER.
+
+### Deployment Architecture
+
+One additive migration per provider (four nullable columns on `Deliveries`). Expand-only, so an older
+API image tolerates the new schema. The frontend ships with the next bundle; absent source fields read
+as unbound, so a stale client degrades to today's behaviour rather than breaking. Three new endpoints ⇒
+three version-gated Lighthouse-Clients wrappers **if** the clients wrap Delivery creation; if not, the
+deferral is recorded in the clients repo rather than silently skipped.
+
+### Sequencing against #5698 (binding)
+
+Verified in this worktree on 2026-08-22: `ArchivedOn`, `RecordableDeliveries`,
+`GetRecordableByPortfolio` and `DeliveryArchivedException` have **zero occurrences** in the backend, and
+`Delivery.Features` is still `public List<Feature> { get; }`. #5698 has shipped through **notes**, not
+archiving — so the whole ADR-163/164 mechanism is outstanding, which is a wider gap than
+"`GetRecordableByPortfolio` is phase-4 work".
+
+Slice 01a is unblocked and can run in parallel. **Slice 01b is hard-blocked, not soft** — an earlier
+draft called it soft, which was wrong: ADR-169 point 2 requires `Rename`, `Reschedule`,
+`ReplaceFeatures` and `ApplyRuleSet` to *exist* so they can gain a second refusal, and all four have
+zero occurrences in the backend today. Split it: **01b-i** — the four columns,
+`BindToSource`/`Unbind`, and the **whole create path**, since create resolves through
+`IDeliverySourceResolver` and so needs none of those mutators — is unblocked and delivers all of US-02;
+**01b-ii** — only the four hand-mutation refusals, i.e. AC-02.2's server half — waits on ADR-164's
+encapsulation commit. Slices 02 and 03 are **hard-blocked**. If #5698 archiving slips, slice 02 is **held, not softened** —
+substituting `GetByPortfolioAsync` plus a predicate would ship the exact convention ADR-163 rejected, in
+the same method, weeks later.
+
+### ADR References (this feature)
+
+- [ADR-166](./adr-166-delivery-source-handler-registry-not-connector-port.md): source handlers in a
+  registry keyed by connection, not members on the connector port; and the Portfolio-nested route shape
+- [ADR-167](./adr-167-source-binding-as-nullable-columns-behind-a-paired-mutator.md): the binding as
+  nullable columns behind a paired mutator, not an owned type and not a table
+- [ADR-168](./adr-168-inbound-resync-sibling-service-at-the-portfolio-updater-seam.md): re-sync as a
+  sibling service at the `PortfolioUpdater` seam, narrowed by `RecordableDeliveries`
+- [ADR-169](./adr-169-remote-owned-fields-refuse-hand-mutation.md): remote-owned fields refuse hand
+  mutation; the future-date rule leaves the constructor
+- [ADR-170](./adr-170-broken-source-as-recorded-verdict.md): broken source as a verdict recorded from a
+  total result type, not a staleness derived at read time; and one resolver shared by create and re-sync
+- [ADR-171](./adr-171-release-membership-by-jql-reference-ids.md): Release membership by a second JQL
+  call returning reference ids, batched once per refresh pass
+
+### Architectural Enforcement (this feature)
+
+| Invariant | Mechanism |
+|---|---|
+| Nothing outside the Jira namespace depends on the connector's concrete type | ArchUnitNET: the controller and application layer depend on `IDeliverySourceProvider`; no `is`, no downcast |
+| Nothing Jira-shaped crosses the port | ArchUnitNET: the resolution and option types reference no Jira namespace; the snapshot carries `IReadOnlyList<string>`, never `Feature` |
+| One pass costs two calls, not 2N | NUnit with a counting fake: five bound Deliveries ⇒ exactly one versions call and one search call |
+| The membership query is never built from the Version name | NUnit: a Version named `") OR key = X` resolves normally and the issued JQL carries only the numeric id |
+| Every work tracking system has a declared source set | NUnit parameterised over all five `WorkTrackingSystems` members; a sixth connector fails until classified |
+| A dateless or retired Release is listed, labelled and unbindable | Integration: `options` returns `IsSelectable = false` with the **distinguishing** reason (`NoDateSet` vs `RetiredAtSource`); a `POST` naming either returns `400`. Vitest asserts the dateless label names Jira as where to fix it, and that the retired label does **not** (AC-01.3, AC-01.8) |
+| A released Release stays bindable | Integration: `options` returns `IsSelectable = true` for a released-but-dated Version; a `POST` naming it succeeds |
+| A flag acquired *after* binding changes nothing | Integration: bind, mark the Version archived remotely, refresh — the Delivery is still bound, still syncing, `SourceUnavailableReason` still null, and no closure pin was written (D13) |
+| A zero-match Release previews a reason, not a blank grid | Integration: `preview` returns `200` with an empty list and an explicit reason — not the `400` `delivery-rules/validate` returns — plus a Vitest assertion (AC-01.5) |
+| A moved target reaches the existing history with no new storage | Integration: a remote date move produces a stepped `TargetDateAtSnapshot`; the recorder runs at `:97`, after the re-sync at `:80` (AC-03.5) |
+| Source-bound selection is Premium on the write path | Integration: a Community `POST` with `SourceBound` returns `403` and does not fall through to the free-tier delivery-count rule |
+| A future selection mode cannot inherit Manual's licence rules | NUnit parameterised over every `DeliverySelectionMode` member: each has an explicit arm in `VerifyDeliveryRequest` |
+| A connector with no sources answers rather than failing | Integration: `GET .../delivery-sources` on an Azure DevOps Portfolio returns `200` with `[]` |
+| The sync service cannot see an archived Delivery | `RecordableDeliveries`' constructor assertion — one construction site, *not* a compile-time guarantee (ADR-163 point 2) — plus an ArchUnitNET rule that it does not depend on `GetByPortfolioAsync` |
+| A refresh that changes nothing writes nothing | Integration: two refreshes over identical remote values issue **no `UPDATE`**. `ApplySourceSnapshot` must compare before applying, because ADR-164's mandatory token bump would otherwise write on every refresh |
+| An archived Delivery is not re-synced | Integration: archive, refresh, assert date/name/Features unchanged **and** no remote call made |
+| The re-sync ordering is the reason this is not an event, so the ordering is asserted | NUnit on `PortfolioUpdater`: after `RecomputeRuleBasedDeliveries`, before `UpdateForecastsForPortfolio` |
+| A transient read failure changes nothing | NUnit, one test per row of ADR-170's transition table; the `Unavailable` row asserts **both** state columns unchanged |
+| A thrown handler is transient, never a deletion | NUnit: a throwing handler resolves to `Unavailable`, never `NotFound` |
+| A withdrawn capability degrades without unbinding | Integration: remove applicability, refresh, assert `CapabilityWithdrawn` and still bound |
+| A bound Delivery refuses hand edits from every path | NUnit: `Rename`/`Reschedule`/`ReplaceFeatures`/`ApplyRuleSet` each throw when source-bound; `ApplySourceSnapshot` throws when not |
+| The hand-entry date rule survives leaving the constructor | NUnit: the constructor no longer throws on a past date, **and** `POST`/`PUT` with a hand-entered past date still return `400` |
+| Binding and unbinding are protected against a concurrent edit | NUnit: `BindToSource` and `Unbind` each change `ConcurrencyToken` |
+| The enum ordinals never move | NUnit reflection pinning `DeliverySelectionMode` and `DeliverySourceUnavailableReason` |
+| The migration applies on a real provider | Migration test on Sqlite and Postgres — InMemory skips migrations |
+| The stored reference survives a remote rename | Integration: bind, rename remotely, refresh, assert the binding resolves and only the displayed name changed |
+| The tab list is server-driven | Vitest: the tab set renders from the `delivery-sources` response; a Jira Release tab is **absent from the DOM** on the four non-Jira systems, not hidden and not disabled |
