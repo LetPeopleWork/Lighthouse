@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
@@ -46,6 +47,15 @@ namespace Lighthouse.Backend.Models
         // an instruction not to touch it. Every write goes through ReplaceFeatures, which is the one
         // place that can refuse.
         public IReadOnlyList<Feature> Features => features;
+
+        // Named here rather than at each reader, so what an archived Delivery says about a team it
+        // was waiting on is the same sentence a live one says.
+        [NotMapped]
+        public IEnumerable<string> TeamsWithoutForecast => features
+            .SelectMany(feature => feature.TeamsWithoutForecast)
+            .Select(team => team.Name)
+            .Distinct()
+            .Order();
 
         public DeliverySelectionMode SelectionMode { get; set; } = DeliverySelectionMode.Manual;
 

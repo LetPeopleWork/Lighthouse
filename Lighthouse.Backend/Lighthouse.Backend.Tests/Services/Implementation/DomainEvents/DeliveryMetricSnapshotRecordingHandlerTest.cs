@@ -4,6 +4,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -142,7 +143,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var handler = new DeliveryMetricSnapshotRecordingHandler(
                 scope.ServiceProvider.GetRequiredService<IDeliveryRepository>(),
                 snapshotRepository.Object,
-                blackoutPeriodService.Object,
+                new DeliveryMetricValuesProjector(blackoutPeriodService.Object),
                 clock,
                 logger.Object);
 
@@ -437,7 +438,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var handler = new DeliveryMetricSnapshotRecordingHandler(
                 deliveryRepository.Object,
                 snapshotRepository.Object,
-                blackoutPeriodService.Object,
+                new DeliveryMetricValuesProjector(blackoutPeriodService.Object),
                 clock,
                 Mock.Of<ILogger<DeliveryMetricSnapshotRecordingHandler>>());
 

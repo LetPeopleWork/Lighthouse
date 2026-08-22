@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.API.DTO
                 TotalWork = totalWork,
                 Features = delivery.Features.Select(f => f.Id).ToList(),
                 FeatureLikelihoods = featureLikelihoods,
-                TeamsWithoutForecast = GetTeamsWithoutForecast(delivery),
+                TeamsWithoutForecast = delivery.TeamsWithoutForecast.ToList(),
                 HasSufficientData = metrics.HasSufficientData,
                 SelectionMode = delivery.SelectionMode,
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
@@ -105,16 +105,6 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             return WorkItemRuleSetJson.Deserialize(ruleDefinitionJson) ?? new WorkItemRuleSet();
-        }
-
-        private static List<string> GetTeamsWithoutForecast(Delivery delivery)
-        {
-            return delivery.Features
-                .SelectMany(feature => feature.TeamsWithoutForecast)
-                .Select(team => team.Name)
-                .Distinct()
-                .Order()
-                .ToList();
         }
 
         private static (double progress, int remainingWork, int totalWork) CalculateDeliveryWork(Delivery delivery)

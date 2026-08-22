@@ -1347,6 +1347,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
             builder.Services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>, PortfolioFeaturesRefreshedMetricsInvalidationHandler>();
             builder.Services.AddScoped<IDomainEventHandler<BlackoutConfigurationChanged>, BlackoutConfigurationChangedMetricsInvalidationHandler>();
+            builder.Services.AddScoped<DeliveryMetricValuesProjector>();
             builder.Services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>, DeliveryMetricSnapshotRecordingHandler>();
              builder.Services.AddScoped<IDomainEventHandler<TeamDataRefreshed>, TeamDataRefreshedForecastTriggerHandler>();
             builder.Services.AddScoped<IDomainEventHandler<FeatureOrderingPolicyChanged>, FeatureOrderingPolicyChangedForecastTriggerHandler>();
