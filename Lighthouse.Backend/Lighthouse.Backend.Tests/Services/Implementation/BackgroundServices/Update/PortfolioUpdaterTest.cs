@@ -309,7 +309,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 "Somebody retiring a Delivery in the middle of a refresh is ordinary. Reporting the whole refresh " +
                 "as failed sends an operator looking for a fault that is not there.");
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(project), Times.Once);
+            forecastUpdaterMock.Verify(x => x.TriggerUpdate(project.Id), Times.Once);
         }
 
         [Test]
