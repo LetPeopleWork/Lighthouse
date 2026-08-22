@@ -31,6 +31,20 @@ Features behind it get the capacity, so their dates move **in**.
 - Cross-Portfolio edges change nothing (AC-5.8).
 - The free-tier hint (US-06): unlicensed instances get the count, the dialog and a warning naming what
   is withheld. Forecast values on an unlicensed instance are byte-identical to a dependency-free run.
+- **A log warning when an unlicensed instance forecasts a Team that has dependencies** (maintainer,
+  2026-08-22). One line per Team per forecast — not per edge, not per Feature — following the same
+  aggregation rule the loop and unforecastable-blocker warnings already use. It tells an operator
+  reading logs, rather than the UI, that the dates they are looking at ignore real dependencies.
+  **Two constraints, both discovered rather than assumed:**
+  - `TheOperatorVisibleLines` in Epic #5687's acceptance suite is
+    `CapturedLogs.AtOrAbove(LogEventLevel.Information)`, so a `WARN` counts toward the "no more than
+    two lines an operator has to read" guarantee. This warning must therefore ride inside the refresh
+    round's reporting rather than adding a line beside it, or it breaks a shipped promise exactly when
+    it fires.
+  - It must not fire on a licensed instance, and it must not fire when a Portfolio ignores its
+    dependencies — both of those present an empty honoured set, and a warning about an empty set would
+    be noise. That falls out of reading the honoured set rather than the licence, which is the single
+    decision point KPI-5 protects.
 - A fixed-seed regression asserting no percentile moves when no dependency exists (AC-5.3).
 
 ## OUT of scope

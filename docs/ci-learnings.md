@@ -1380,3 +1380,26 @@ get re-applied.
   reading state another fixture cleared — re-run the fixture alone before suspecting the connector. When
   adding a connector fixture, give it a connection id no other fixture uses, and never assume the field-key
   cache survives a parallel run.
+
+### 2026-08-22 — `FormattableString.Invariant` is a build error (`S6618`)
+- **Symptom**: `FormattableString.Invariant($"…")` fails the backend build outright rather than warning,
+  because `TreatWarningsAsErrors` promotes it.
+- **Root cause**: SonarCloud `S6618` prefers the allocation-free form for building an
+  invariant-culture string from an interpolated literal.
+- **Fix**: `string.Create(CultureInfo.InvariantCulture, $"…")`.
+- **Rule going forward**: reach for `string.Create(CultureInfo.InvariantCulture, $"…")` whenever a log
+  line, an identifier or any culture-independent string is built from interpolation. `Invariant(...)`
+  reads more naturally and is the habit worth unlearning here.
+
+### 2026-08-22 — flake: `SQLite Error 15: 'locking protocol'` in `IntegrationTestBase.Init`
+- **Symptom**: a single integration test fails in `SetUp` at `EnsureCreated()` with
+  `Microsoft.Data.Sqlite.SqliteException : SQLite Error 15: 'locking protocol'`, taking ~10 s where it
+  normally runs in under a second. Seen twice in one day, on a different test each time
+  (`TeamInProject_WithExistingForecasts_DeleteTeam_SucceedsAsync` both times, but the class varies).
+- **Root cause**: not established. It is a file-locking error raised before any test body runs, so it
+  cannot be caused by the code under test.
+- **Fix**: none. Re-run the test alone; it passes.
+- **Rule going forward**: a failure thrown from `SetUp`/`EnsureCreated` with a SQLite locking code is
+  infrastructure, not a regression — the stack ends in EF's `RelationalDatabaseCreator`, never in
+  product code. Re-run alone before investigating. Distinguish it from the GitHub-quota failures in
+  `LighthouseReleaseServiceIntegrationTest`, which look similar in a summary but are a different cause.

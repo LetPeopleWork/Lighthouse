@@ -405,6 +405,50 @@
           "implementation_notes": "Those three sit at roughly PortfolioUpdater.cs lines 91, 93-95 and 97, all inside the (Features, portfolioId) key and invisible to the (Forecasts, portfolioId) admission check. Follow the shape of Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs for the new scenarios file. Program.cs edits force the full backend Integration suite to run."
         },
         {
+          "id": "05-01a",
+          "name": "Write-back collection spans a refresh round",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IUpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "criteria": [
+            "A portfolio refresh and the forecast it triggers stage into ONE write-back collection and reach the tracker exactly once.",
+            "One_scheduled_refresh_of_a_portfolio_reaches_the_tracker_once passes again, unmodified.",
+            "A_value_written_in_one_execution_is_not_written_again_by_the_next passes again, unmodified.",
+            "A flush failure still cannot fail the refresh it rode in on.",
+            "A forecast triggered on its own, with no portfolio refresh around it, still flushes exactly once."
+          ],
+          "implementation_notes": "Today UpdateServiceBase.TriggerUpdate flushes IWriteBackCollector in its finally, once per execution, and the collector is AddScoped at Program.cs:1242 so every execution gets its own. Moving the forecast into its own execution therefore produces a second tracker write, which breaks a guarantee Epic 5500 deliberately won and pins with acceptance tests. The maintainer chose to lift collection to the refresh round rather than weaken that guarantee. A round is the portfolio refresh plus the forecast it triggers; the forecast must join the round that triggered it, and the flush must happen once, when the last execution of the round finishes. A forecast with no round around it is a round of one. Do NOT weaken or edit the Epic 5500 acceptance tests to make this pass - they are the specification here."
+        },
+        {
+          "id": "05-01b",
+          "name": "One summary line per refresh round",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-01a"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs"
+          ],
+          "criteria": [
+            "A portfolio refresh and the forecast it triggers produce the operator-visible summary of one round, not one each.",
+            "A_portfolio_update_writes_no_more_than_two_lines_the_operator_has_to_read passes again, unmodified.",
+            "A_completed_portfolio_update_says_the_same_thing_in_the_same_shape passes again, unmodified.",
+            "The forecast timing an operator was given earlier in this slice is not lost; it belongs in the round's line."
+          ],
+          "implementation_notes": "UpdateServiceBase emits one summary line per completed execution, so a forecast in its own execution adds a third line and breaks the shape Epic 5687 pins. Earlier in this slice a forecast deliberately gained its own refresh record and its own timing, so the answer is not to silence the forecast but to fold what it reports into the round's line. Do NOT weaken or edit the Epic 5687 acceptance tests to make this pass - they are the specification here."
+        },
+        {
           "id": "05-02",
           "name": "Prove the work tracking system pays nothing extra",
           "agent": "nw-software-crafter",
