@@ -37,8 +37,8 @@ The write-back collector is left untouched.**
    result type** — `Published`, `Refused(string reason)`, `TargetMissing` — mirroring ADR-170's
    four-arm resolution rather than throwing for expected outcomes.
 
-4. **`PortfolioUpdater` calls a `IDeliveryForecastPublishingService` after the forecast run**, beside
-   the existing `writeBackCollector.Stage(...)` for forecasts. It does not stage into the collector.
+4. **The publish runs after the forecast completes.** The exact seam is **reopened** — see the
+   invalidation note below. It does not stage into the collector either way.
 
 ## Rejected alternatives
 
@@ -73,3 +73,27 @@ re-litigated here.
 - The two capabilities can disagree per connection, which is what slice 05 reports on.
 - Registering the publisher in `Program.cs` pulls in the full backend Integration suite, the cost
   already recorded for the inbound provider. It is the same edit, not a second one.
+
+## Invalidation — the forecast seam moved under this ADR (2026-08-22, after rebase)
+
+Written when `PortfolioUpdater` ran the forecast inline and staged forecast write-back beside it. It no
+longer does. Epic #5792 decoupled the forecast: `PortfolioUpdater` now ends with
+`forecastUpdater.TriggerUpdate(project.Id)` and a separate `ForecastUpdater` runs the simulation and
+publishes `PortfolioForecastsUpdated`. The reason recorded upstream is that forecasting inline ran the
+unseeded simulation twice per portfolio in a bulk refresh, so an operator watched the delivery date
+settle and then move.
+
+**What survives**: points 1-3 and the whole rejected-alternatives section. Publishing is still its own
+capability, still two flags, still not a `WriteBackFieldUpdate` — none of that reasoning touches where
+the call sits.
+
+**What is reopened**: point 4. There is no forecast run in `PortfolioUpdater` to sit after any more, so
+the publish belongs at the `ForecastUpdater` seam. That also weakens this ADR's rejection of a
+domain-event handler, which was argued on the grounds that no event sits at the right point;
+`PortfolioForecastsUpdated` now does, and `DeliveryMetricSnapshotRecordingHandler` already consumes it.
+
+**Not decided here.** Choosing between a direct call in `ForecastUpdater` and a handler on
+`PortfolioForecastsUpdated` is slice 04's to make, with the ordering question it drags along: the
+inbound re-sync sets the target date, and the forecast now runs in a different execution, so
+whether a published forecast is measured against a freshly synced date is no longer obvious. That
+ordering claim is the one this Epic must not get wrong.

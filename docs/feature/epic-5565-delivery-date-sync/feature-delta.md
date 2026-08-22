@@ -1231,7 +1231,7 @@ gone. Re-verified in this worktree while designing slices 04-05:
 `Delivery.ArchivedOn` (`Models/Delivery.cs:82`), `Archive`/`Unarchive` (`:120`, `:131`),
 `ReplaceFeatures` (`:142`), `RefuseWhenArchived` (`:180`), `DeliveryArchivedException`,
 `RecordableDeliveries` and `IDeliveryRepository.GetRecordableByPortfolio` all **exist**, with
-`PortfolioUpdater.cs:89` already calling `GetRecordableByPortfolio` and passing the result to
+`PortfolioUpdater.cs:94` already calling `GetRecordableByPortfolio` and passing the result to
 `DeliveryRuleService.RecomputeRuleBasedDeliveries`. `Delivery.Features` is `IReadOnlyList<Feature>`
 behind a private backing list, which is ADR-164's encapsulation.
 
@@ -1315,8 +1315,10 @@ existing tests are the guard.
 - **AC-03.5** (the moved target visible in the metric history) is **free, and that is now stated rather
   than assumed**. `DeliveryMetricSnapshotRecordingHandler` already writes
   `snapshot.TargetDateAtSnapshot = delivery.Date` on every recorded day (ADR-051), and the recorder runs
-  on `PortfolioForecastsUpdated` at `PortfolioUpdater.cs:97` — **after** the re-sync at `:80`. So a date
-  moved by Jira is captured the same day by the machinery that already exists. **No new storage, no
+  on `PortfolioForecastsUpdated`. **The ordering argument this note rested on is stale**: that event was
+  published by `PortfolioUpdater` after the re-sync, and Epic #5792 has since moved it to a separate
+  `ForecastUpdater` running in its own execution. Whether a Jira-moved date is captured the same day now
+  depends on that execution order and must be re-established, not assumed. **No new storage, no
   recorder change, no chart change.** The only enforcement owed is an integration test that a
   remote-moved date produces a stepped `TargetDateAtSnapshot` in the existing history.
 - **AC-01.3** and **AC-01.5** are now designed — see ADR-166 point 5 and its enforcement rows. AC-01.3's
@@ -1372,7 +1374,7 @@ newlines the detail view honours.
 |---|---|
 | `Portfolio` | `PublishForecastToSource` (bool, default false); `LastPublishRefusedOn`, `LastPublishRefusalReason` (both nullable) |
 | `JiraWorkTrackingConnector` | Implements the publisher: `GET` the version to read the current description, `PUT` it back with the rendered block. Reuses `GetOrCreateClient` |
-| `PortfolioUpdater` | One call after `UpdateForecastsForPortfolio`, beside the existing forecast `Stage(...)` |
+| Forecast seam (`ForecastUpdater`, or a `PortfolioForecastsUpdated` handler) | One call after the forecast completes. **Seam reopened** by Epic #5792 decoupling the forecast out of `PortfolioUpdater` — see ADR-178's invalidation note |
 | `LighthouseAppContext` + migrations | Three columns, expand-only, same migration as the inbound four |
 | `PortfolioSettingsDto` / portfolio settings UI | The opt-in switch, and the refusal report |
 
@@ -1400,7 +1402,7 @@ degrade to silence, which is the one failure this slice cannot self-report.
 - **The S15 hold on the archived exclusion is RELEASED.** Slice 04 held it because "there is no field
   to test yet". `Delivery.ArchivedOn`, `Archive`/`Unarchive`, `ReplaceFeatures`,
   `DeliveryArchivedException` and `IDeliveryRepository.GetRecordableByPortfolio` are all **present in
-  the backend today** — `PortfolioUpdater.cs:89` already calls `GetRecordableByPortfolio`. DES-24's
+  the backend today** — `PortfolioUpdater.cs:94` already calls `GetRecordableByPortfolio`. DES-24's
   archived exclusion is therefore designed as live, not deferred.
 - **AC-06.1 (refusal names the project and the time)** — met by the two Portfolio columns, which is a
   deliberate departure from the brief's "against the connection". Reasoning in ADR-180.
