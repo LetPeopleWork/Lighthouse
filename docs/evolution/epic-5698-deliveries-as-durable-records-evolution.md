@@ -106,9 +106,10 @@ rather than trusted to the suite — EF InMemory skips migrations entirely.
   component this Epic only added a button to. Excluding it would have put the headline in the
   seventies while describing less. `ArchivedDeliveriesSection.tsx` at 44.77 % is the genuine gap in
   new code. Backend is 81.58 %.
-- **ADR-162 describes a mechanism that no longer exists.** It records the export header block as a
-  generic toolbar input; slice 01b deleted the header block in favour of one table with the Delivery
-  as its first row. The ADR needs superseding.
+- ~~ADR-162 describes a mechanism that no longer exists.~~ **Closed 2026-08-22**: ADR-162 is marked
+  SUPERSEDED with a note saying what the file it produced actually looked like, and
+  [ADR-172](../product/architecture/adr-172-delivery-export-is-one-settled-table-the-caller-builds.md)
+  records what replaced it.
 - **`TrySaveRecomputedDeliveries` is coarser than intended.** One conflicting Delivery drops that
   cycle's recomputes for its siblings, because the unit of work is the whole session and
   `deliveryRepository.Save()` currently doubles as the save persisting the feature refresh. It

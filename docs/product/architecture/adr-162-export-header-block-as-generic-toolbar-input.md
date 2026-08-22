@@ -1,9 +1,30 @@
 # ADR-162: The export header block is a generic key/value input on the existing grid toolbar, not a second export action owned by the Delivery surface
 
-- **Status**: **Proposed** (DESIGN, 2026-08-21)
+- **Status**: **SUPERSEDED** (2026-08-22) by
+  [ADR-172](./adr-172-delivery-export-is-one-settled-table-the-caller-builds.md)
 - **Date**: 2026-08-21
 - **Feature**: epic-5698-deliveries-as-durable-records (ADO Epic #5698, slice 01)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
+
+> **Superseded after one look at the file it produced.** This was built and shipped in slice 01, then
+> replaced in slice 01b the same week. Nothing described below still exists: `exportHeaderRows` is
+> gone, `deliveryExportHeader.ts` is deleted, and there is no header block.
+>
+> Two things were wrong, and the second is the one worth remembering.
+>
+> The header block put the Delivery's nine values in two columns above a grid with eleven, so the
+> Delivery and its Features were never in the same column — the file could not be sorted, filtered,
+> or read side by side.
+>
+> And the premise underneath it — that the export should *read what is on screen* through the grid's
+> `apiRef` — cannot work on this grid, because half its columns are drawn rather than stored.
+> Forecasts exported as the raw array they are kept in, Likelihood as nothing at all (the field it
+> named does not exist on `IFeature`), Dependencies as the count its `valueGetter` returns for
+> sorting. Five columns shipped wrong and no test noticed, because every test asserted how a cell
+> *renders* and none asserted how it *exports*.
+>
+> ADR-172 reverses both halves: the export is a settled table built by the surface that knows what
+> the values mean, and the Delivery is its first data row.
 
 ## Context
 

@@ -6122,13 +6122,16 @@ field reads as active, so a stale client degrades to today's behaviour rather th
 - [ADR-161](./adr-161-archived-delivery-read-path-cannot-see-live-features.md): archived read path is a
   sibling projection that cannot reach live Features
 - [ADR-162](./adr-162-export-header-block-as-generic-toolbar-input.md): export header block as a
-  generic key/value input on the existing toolbar
+  generic key/value input on the existing toolbar — **superseded by ADR-172**
 - [ADR-163](./adr-163-archived-deliveries-excluded-by-narrowed-port.md): recorder exclusion via a
   narrowed port, not a global query filter
 - [ADR-164](./adr-164-archived-delivery-write-refusal-in-the-aggregate.md): archived write refusal as
   an aggregate invariant surfaced as 409
 - [ADR-165](./adr-165-delivery-note-authorship-and-the-absent-profile.md): note authorship storage and
   the absent-profile predicate
+- [ADR-172](./adr-172-delivery-export-is-one-settled-table-the-caller-builds.md): the Delivery export
+  is one settled table the calling surface builds, with the Delivery as its first data row
+  (supersedes ADR-162)
 
 ### Architectural Enforcement (this feature)
 
