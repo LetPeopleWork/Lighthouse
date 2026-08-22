@@ -201,9 +201,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             return new UpdateQueueService(
                 Mock.Of<ILogger<UpdateQueueService>>(),
                 hubContext.Object,
-                sharedStatusStore,
-                executionLock,
-                completionNotifier,
+                new UpdateSubstrate(sharedStatusStore, executionLock, completionNotifier),
                 serviceScopeFactory.Object,
                 maintenanceGate,
                 new WriteBackRoundContext());

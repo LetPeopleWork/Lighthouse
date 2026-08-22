@@ -503,9 +503,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return new UpdateQueueService(
                 Mock.Of<ILogger<UpdateQueueService>>(),
                 hubContextMock.Object,
-                inProcessUpdateStatusStore,
-                new InProcessUpdateExecutionLock(),
-                new InProcessUpdateCompletionNotifier(),
+                new UpdateSubstrate(inProcessUpdateStatusStore, new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier()),
                 ServiceScopeFactory,
                 new DatabaseMaintenanceGate(inProcessUpdateStatusStore),
                 new WriteBackRoundContext());

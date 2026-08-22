@@ -27,18 +27,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         public UpdateQueueService(
             ILogger<UpdateQueueService> logger,
             IHubContext<UpdateNotificationHub> hubContext,
-            IUpdateStatusStore statusStore,
-            IUpdateExecutionLock executionLock,
-            IUpdateCompletionNotifier completionNotifier,
+            UpdateSubstrate substrate,
             IServiceScopeFactory serviceScopeFactory,
             DatabaseMaintenanceGate maintenanceGate,
             WriteBackRoundContext roundContext)
         {
             this.logger = logger;
             this.hubContext = hubContext;
-            this.statusStore = statusStore;
-            this.executionLock = executionLock;
-            this.completionNotifier = completionNotifier;
+            statusStore = substrate.StatusStore;
+            executionLock = substrate.ExecutionLock;
+            completionNotifier = substrate.CompletionNotifier;
             this.serviceScopeFactory = serviceScopeFactory;
             this.maintenanceGate = maintenanceGate;
             this.roundContext = roundContext;

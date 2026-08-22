@@ -1347,6 +1347,7 @@ namespace Lighthouse.Backend
                 builder.Services.AddSingleton<IUpdateCompletionNotifier, InProcessUpdateCompletionNotifier>();
             }
 
+            builder.Services.AddSingleton<UpdateSubstrate>();
             builder.Services.AddSingleton<IUpdateQueueService, UpdateQueueService>();
 
             builder.Services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
