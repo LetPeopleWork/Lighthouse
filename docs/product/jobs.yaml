@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-21
+updated: 2026-08-22
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -43,6 +43,7 @@ feature_context:
   - epic-4365-dependencies
   - epic-5792-dependency-aware-forecasting
   - epic-5698-deliveries-as-durable-records
+  - epic-5565-delivery-date-sync
 
 jobs:
   - id: job-rbac-bootstrap
@@ -5776,3 +5777,205 @@ jobs:
         gets corrupted on its way to a leadership deck. Current satisfaction: 1 — export exists in the
         product, just not here, which is more irritating than if it existed nowhere. Cheapest job in
         the Epic: the mechanism is entirely built.
+
+  # --- Epic #5565 Sync Delivery Dates with the Work Tracking System (feature epic-5565-delivery-date-sync) ---
+
+  - id: job-forecaster-bind-a-delivery-to-the-release-it-tracks
+    title: Point a Delivery at the Release it already tracks
+    persona: delivery-forecaster
+    feature_context: epic-5565-delivery-date-sync
+    job_story: >
+      When the thing I am forecasting already exists as a Release in the work tracking system,
+      I want to point a Delivery at it instead of describing it again,
+      so I stop maintaining the same date and the same scope in two places that can disagree.
+    dimensions:
+      functional: >
+        A third way to define a Delivery, beside Manual and Rules: pick a Release the connected system
+        offers, and the Delivery takes its name, its date and its Features from that Release. The
+        Release's identifier is what is stored, so a rename on the far side does not break the link.
+        Available only where the connection actually offers it — four of the five connectors have no
+        Release concept and show nothing.
+      emotional: >
+        Move from the low-grade suspicion that comes with owning a hand-copied number, into not having
+        to think about the date at all.
+      social: >
+        A Delivery whose date is visibly the work tracking system's date cannot be argued with as
+        "someone's optimistic guess". The provenance is the credibility.
+    forces:
+      push: >
+        The date already exists and is already maintained by the project system. Copying it into
+        Lighthouse is duplicate effort, and the two copies start disagreeing the first time one moves.
+        Picking the Features by hand repeats the same problem for scope.
+      pull: >
+        One picker replaces a typed name, a typed date and a hand-picked Feature list — and it keeps
+        being right afterwards, which hand entry never does.
+      anxiety: >
+        "Will it actually find my Features?" — met by previewing before saving. The version has to be
+        set on the items Lighthouse tracks for a Release to carry them; that is a convention the team
+        owns, and an item without one is simply not in the Release, exactly as a Feature failing a rule
+        is not in a rule-based Delivery. An empty preview therefore names a Jira-side gap the team can
+        close, rather than leaving the user staring at a blank grid.
+        Second worry: "am I giving up control?" — met by unbind, which returns the Delivery to Manual
+        with everything it last synced, editable.
+      habit: >
+        The habit is creating a Delivery by typing what you already know, because that is the only way
+        the product has ever offered. The picker has to be visibly the same act, one step shorter.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance: 4 — the request came from a customer, and it removes a standing correctness risk
+        rather than an inconvenience. Current satisfaction: 1 — nothing exists; the connector has no
+        Release code at all. Rules can approximate the Feature selection if an admin configures the
+        version as an additional field, but yield no date, match a single string against a list, and
+        break silently on rename, so the approximation is worse than the absence.
+
+  - id: job-forecaster-trust-the-delivery-date-without-rechecking-jira
+    title: Present a forecast without first checking the target still holds
+    persona: delivery-forecaster
+    feature_context: epic-5565-delivery-date-sync
+    job_story: >
+      When a Release date moves in the work tracking system,
+      I want Lighthouse to already know,
+      so I can present a likelihood without first opening the other tool to check what it is measured
+      against.
+    dimensions:
+      functional: >
+        A bound Delivery re-reads its Release's date, name and membership on every Portfolio refresh,
+        on the cadence the Portfolio already runs. A date that has moved into the past is accepted and
+        shown as overdue rather than rejected. A Release that has disappeared freezes the Delivery on
+        its last known values and says so, instead of leaving a stale date looking live.
+      emotional: >
+        Move from the pre-meeting ritual of cross-checking two tools, into quoting the number on screen.
+      social: >
+        Being the person whose forecast is measured against the current target, not last month's — the
+        difference between a forecast that informs a decision and one that gets corrected in the room.
+    forces:
+      push: >
+        A likelihood is a statement about a target. When the target silently moves, the likelihood is
+        quietly wrong, and nobody can tell how long it has been wrong. The current answer is that
+        somebody notices and re-types it.
+      pull: >
+        The date is simply right, with no action and no new setting, on the same cycle everything else
+        on the Delivery already updates.
+      anxiety: >
+        "How do I know it synced?" — met by showing the provenance and the last successful sync on the
+        Delivery itself, and by making a vanished Release say so rather than sit there looking current.
+        Second worry: a transient read failure must not be mistaken for a deleted Release, or every
+        network blip cries wolf.
+      habit: >
+        The habit is checking the other tool before a review, because it has always been the only way
+        to be sure. That habit only dies once the displayed date has been visibly right through a
+        move the user watched happen.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance: 5 — this is the Epic's actual payload. Binding a Delivery to a Release without
+        keeping it in step would just relocate the manual copy. A forecast measured against a stale
+        target is the single most consequential way this product can be wrong while looking right.
+        Current satisfaction: 1 — no mechanism exists, so drift is undetectable rather than merely
+        uncorrected.
+
+  - id: job-po-see-the-forecast-without-opening-lighthouse
+    title: See the forecast on the Release, in the tool I already use
+    persona: product-owner
+    feature_context: epic-5565-delivery-date-sync
+    job_story: >
+      When I plan against a Release in the work tracking system,
+      I want the forecast to be on that Release,
+      so I can judge whether the plan is credible without being asked to learn another tool.
+    dimensions:
+      functional: >
+        An opt-in, per-Portfolio publish that writes the Delivery's forecast — the 85% date, the
+        likelihood of hitting the target, and when it was last updated — into a delimited block on the
+        Release itself. Re-writing replaces the block rather than appending; text around it is never
+        touched. Only Deliveries bound to a Release publish; the rest have nowhere to write to.
+      emotional: >
+        Move from planning against a target date as though it were a forecast, into knowing the
+        difference between the two without asking anyone.
+      social: >
+        The scope conversation happens among the people who own the scope, in their own tool, without a
+        Lighthouse user having to be in the room to translate.
+    forces:
+      push: >
+        The forecast exists and the people who most need it never see it. Today they either ask someone
+        or treat the target date as a prediction, which is precisely the confusion the product exists
+        to remove.
+      pull: >
+        The number appears where they already look, with no new tool, no new login and no new habit.
+      anxiety: >
+        "Is Lighthouse going to change my Release date?" — the decisive worry, and the reason the
+        forecast is written to the description and never to the date field. Lighthouse must not
+        overwrite the field it declares the far side owns, or its own forecast becomes the target it is
+        then measured against.
+        Second worry: notification noise, met by reusing the suppression posture already established
+        for write-back.
+      habit: >
+        The habit is planning to the release date because it is the only date visible. A second,
+        clearly-labelled date next to it is the smallest possible intervention in that habit.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance: 3 — high reach and low certainty. It puts the forecast in front of a much larger
+        audience than opens Lighthouse, but the underlying work item had no description at all, so the
+        demand is inferred from the Epic rather than evidenced by a request. Current satisfaction: 1 —
+        the forecast is invisible outside Lighthouse. Sequenced last deliberately: if the
+        permission bar for writing a Release turns out to be prohibitive, this detaches cleanly and the
+        inbound jobs still ship whole.
+
+  - id: job-config-admin-know-when-a-delivery-source-degrades
+    title: Know when a synced Delivery has stopped being synced
+    persona: config-admin
+    feature_context: epic-5565-delivery-date-sync
+    job_story: >
+      When something on the far side changes underneath a Delivery that was syncing — the Release is
+      deleted, the credential loses sight of the project, or a write is refused —
+      I want Lighthouse to say so where I would look,
+      so I fix the cause instead of discovering months later that a number stopped updating.
+    dimensions:
+      functional: >
+        Three degradations, each visible where the person who can fix it already looks. A vanished
+        Release: the Delivery keeps its last synced values, says the source is unavailable, names when
+        it last synced, and offers a way back to manual control. A connection that no longer offers the
+        capability at all: degrades identically rather than erroring. A refused write: reported against
+        the connection, naming the project and the time, without disabling anything and without a tight
+        retry.
+      emotional: >
+        Move from the background dread of silent staleness into a state where anything that stopped
+        working is something you were told about.
+      social: >
+        Never being the admin who switched something on months ago and cannot say whether it has been
+        working since.
+    forces:
+      push: >
+        A frozen date looks exactly like a live one. A refused write looks exactly like a feature that
+        was never switched on. Both are the kind of quiet wrongness nobody discovers until it has
+        already misinformed a decision.
+      pull: >
+        Each failure names itself, in the place its fix lives, with enough detail to act on — the
+        project, the time, and what was refused.
+      anxiety: >
+        "Will this cry wolf?" — the real risk. A transient read failure must not be mistaken for a
+        deleted Release, or every network blip raises an alarm and the alarms stop being read. Only a
+        resolved "this does not exist" raises the broken-source state.
+        Second worry: that a refused write takes down the reading too. It must not — reading Releases
+        and writing them are separate capabilities, and a credential that can do one but not the other
+        should degrade on one side only.
+      habit: >
+        The habit is trusting that a switch left on is still working, because nothing has ever said
+        otherwise. Reporting the exception is what replaces that assumption with a check.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance: 4 — the two inbound jobs are both about not being quietly wrong, and this is what
+        stops the sync itself becoming a new way to be quietly wrong. Current satisfaction: 0 rather
+        than 1, because unlike every other job here there is no partial answer today: the mechanism
+        being reported on does not exist yet, so the degradation and its reporting have to arrive
+        together or the feature ships with a silent failure mode built in.

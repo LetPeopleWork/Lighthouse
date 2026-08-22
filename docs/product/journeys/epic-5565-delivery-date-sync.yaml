@@ -1,0 +1,186 @@
+schema_version: 1
+feature_id: epic-5565-delivery-date-sync
+updated: 2026-08-22
+note: >
+  ADO Epic #5565, with child #4463 (Delivery Write-Back) absorbed rather than DISCUSSed separately —
+  the conflict policy is the one decision both directions depend on, and settling it with only one
+  direction visible is how the two ends drift. Grounded in a pre-DISCUSS code reality check: a Delivery
+  has no remote identity and no provenance (Delivery.cs), its constructor rejects any date that is not
+  in the future, the Jira connector has no Release code at all, and the selection mode is a two-member
+  int-persisted enum whose binary assumption is hardcoded across roughly eight sites in the create
+  modal. Two facts make the Epic cheap: the full Jira fetch already asks for all fields, so the version
+  data arrives today with no query widening, and rule-based Deliveries already recompute inside the
+  Portfolio refresh cycle, which is the seam both directions plug into. A Delivery source is modelled
+  as a registered handler and a third selection mode owning both membership and date — the registry is
+  what makes the tab absent on the four connectors that have no Release concept. Remote always wins:
+  the bound date and membership are read-only in Lighthouse, which removes the conflict class rather
+  than managing it. Seven carpaccio slices, the first a timeboxed probe; see
+  docs/feature/epic-5565-delivery-date-sync/.
+
+journeys:
+
+  - name: bind-a-delivery-to-the-release-it-tracks
+    goal: >
+      Delivery Forecaster stops maintaining a date and a scope that already exist in the work tracking
+      system, by pointing a Delivery at the Release instead of describing it again.
+    persona: "delivery-forecaster (secondary: config-admin, who owns the connection the tab depends on)"
+
+    emotional_arc:
+      start: Resigned — "the date is in the other tool, I am about to type it in here as well, and I
+        already know these two will disagree within a month."
+      middle: Curious then relieved — "there is a tab for my Releases. Picking one shows me its date
+        and the seven Features it would bring, before I commit to anything."
+      end: Settled — "the Delivery says the date came from Jira. That is not my number to maintain
+        any more, and nobody can call it a guess."
+
+    steps:
+      - step: Discover the Release is available as a source
+        action: Portfolio → Create Delivery
+        output: A third tab beside Manual and Rules, named for the connected system's Release concept.
+          On a Portfolio connected to a system with no Release concept, exactly two tabs and no third.
+      - step: See what a Release would give you
+        action: Pick a Release from the list
+        output: Its date, and the Portfolio Features it would bring, in the same grid the Rules tab's
+          validate step already renders. Nothing saved.
+      - step: Save it
+        action: Save
+        output: A Delivery in the grid, named for the Release, dated from it, marked as coming from it,
+          with name, date and Features not editable.
+      - step: Take the date back if you need to
+        action: Unbind
+        output: Back to Manual with everything it last synced, editable again.
+
+    error_paths:
+      - situation: The Release brings back no Features, because the version has not been set on the
+          items Lighthouse tracks
+        recovery: The preview names that plainly instead of showing an empty grid, and because it is a
+          preview the user finds out before creating anything. Setting the version on those items is a
+          convention the team owns; an item without one is simply not in the Release, exactly as a
+          Feature failing a rule is not in a rule-based Delivery.
+      - situation: The Release has no release date set in the work tracking system
+        recovery: It is listed and labelled as having none, but cannot be selected — the date is the
+          remote system's to own, and if the remote has not set one there is nothing to take. The label
+          says where to fix it. Not an edge case, a release date is optional and most of the Releases on
+          the demo instance have none.
+      - situation: The connected system has no Release concept
+        recovery: The tab is absent, not disabled. The server reports which sources a Portfolio offers;
+          the client renders what it is told.
+      - situation: The instance has no premium licence
+        recovery: The tab is visible and gated with the notice rule-based selection already uses.
+
+    shared_artifacts:
+      - artifact: the Release identifier stored on the Delivery
+        source: the work tracking system's Version object — the id, never the name, so a rename on the
+          far side does not silently empty the Delivery
+      - artifact: the list of sources a Portfolio offers
+        source: the connector, asked per connection rather than per connector, because one connector
+          class can span deployments that do not answer alike
+
+  - name: keep-the-delivery-date-in-step
+    goal: >
+      Delivery Forecaster presents a likelihood without first opening the other tool to check what it
+      is measured against.
+    persona: delivery-forecaster
+
+    emotional_arc:
+      start: Wary — "the target moved last week. Did anyone update Lighthouse? I had better check
+        before I put this on a slide."
+      middle: Noticing — "the header already shows the new date, and the history chart shows the target
+        stepping on the day it moved."
+      end: Unbothered — "I stopped opening the other tool before reviews. The date on screen is the
+        date."
+
+    steps:
+      - step: The target moves on the far side
+        action: nothing — the Portfolio refresh runs on its existing cadence
+        output: Within one refresh, the Delivery header carries the new date and the likelihood is
+          recomputed against it.
+      - step: Scope moves on the far side
+        action: nothing
+        output: A Feature gaining or losing the Release joins or leaves the Delivery on the next refresh.
+      - step: See when it moved
+        action: Open the Delivery's metric history
+        output: The target stepping on the day it changed — recorded already, with no new storage.
+
+    error_paths:
+      - situation: The Release date has moved into the past
+        recovery: Accepted and shown as overdue. Rejecting it would mean Lighthouse quietly disagrees
+          with the far side about the date, which is the failure the Epic exists to remove. Hand entry
+          on a Manual Delivery still refuses a past date.
+      - situation: The read fails transiently
+        recovery: Last known values stand, the Portfolio refresh does not fail, and no alarm is raised —
+          a network blip must not look like a deleted Release.
+      - situation: The Release was deleted
+        recovery: The Delivery is kept, its last synced values frozen, and it says the source is
+          unavailable and when it last synced. Nothing auto-unbinds and nothing is deleted — a Delivery
+          is a durable record, and a vanished remote object does not get to destroy one.
+      - situation: The Release still exists but its date has been removed
+        recovery: The same freeze-and-flag state as a deleted Release, with its own message saying the
+          Release lost its date rather than that it is gone. Not exotic — a dateless Release is the
+          normal state of a Jira version, and the product itself tells users to go set dates there.
+      - situation: The Delivery has been archived
+        recovery: It is not re-synced at all. An archived Delivery renders from its pinned closure
+          snapshot; re-syncing one would un-pin it.
+
+    shared_artifacts:
+      - artifact: the Delivery's target date over time
+        source: the daily metric snapshot's target-at-snapshot field, which already records it
+      - artifact: the last successful sync time
+        source: the sync itself — it is what the broken-source state has to name to be useful
+
+  - name: see-the-forecast-without-opening-lighthouse
+    goal: >
+      Product Owner judges whether a plan is credible from inside the work tracking system, without
+      being asked to learn Lighthouse.
+    persona: "product-owner (secondary: config-admin, who switches publishing on and hears about
+      refusals)"
+
+    emotional_arc:
+      start: Uninformed — "the Release has a date. I have been planning as though that date were a
+        prediction, because it is the only date I can see."
+      middle: Informed — "there is a forecast on the Release now, next to the target, clearly labelled
+        as a different kind of thing."
+      end: Decisive — "we are not going to make it. Cut scope or move the date — and I can have that
+        conversation without leaving the tool I work in."
+
+    steps:
+      - step: Switch it on
+        action: Portfolio settings → publish the forecast to the work tracking system
+        output: Off by default; on for this Portfolio only.
+      - step: Read it where you already work
+        action: Open the project's Releases page, or one Release on it
+        output: A delimited block in its description saying plainly that Lighthouse wrote it and when,
+          then the three forecasts the product itself shows — 70%, 85%, 95% — and the likelihood of
+          hitting the target date, with the target named. Four elements, all four required; the
+          attribution and the headline come first because the Releases list truncates the column.
+      - step: Watch it stay current
+        action: nothing
+        output: The block is found by its marker and replaced in place on each refresh — never appended
+          to, never a second copy, and never touching the team's own text around it.
+
+    error_paths:
+      - situation: The credential cannot write Releases
+        recovery: The refusal is reported against the connection, naming the project and the time.
+          Publishing is not disabled, the Portfolio refresh does not fail, and there is no tight retry.
+          Inbound keeps working throughout — reading Releases and writing them are separate
+          capabilities.
+      - situation: The Release description already holds the team's own text
+        recovery: Kept intact. The Lighthouse block sits between its own markers and only that region is
+          ever rewritten. A Release with no description at all — the common case — gets one created.
+      - situation: Someone hand-edits the numbers inside the Lighthouse block
+        recovery: The next write replaces the block wholesale. Lighthouse never merges an edited block
+          and never treats it as foreign text to preserve, so the published numbers cannot silently
+          drift from the ones the product computed.
+      - situation: A Delivery is not bound to a Release
+        recovery: Skipped silently. There is nowhere to write to, and that is not an error.
+      - situation: Writing would touch the Release's own date field
+        recovery: It never does. Lighthouse must not overwrite the field it declares the far side owns,
+          or its own forecast becomes the target it is then measured against.
+
+    shared_artifacts:
+      - artifact: the published forecast block
+        source: the Delivery's live forecast, written into a delimited region of the Release description
+          that is replaced wholesale each time
+      - artifact: the outbound capability verdict
+        source: the connector, declared separately from the inbound one, so a credential that can read
+          but not write degrades on one side only

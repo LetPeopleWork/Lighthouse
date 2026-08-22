@@ -16,10 +16,15 @@ short_description: >
   constraint?". Distinct from delivery-lead-rte (systemic, cross-team) and flow-coach (per-item
   daily triage): the PO's question is per-item or per-feature, on a post-mortem / stakeholder-review
   cadence.
+  One variant of this persona never opens Lighthouse at all: they plan against a Release in the work
+  tracking system and, absent anything better, read its target date as though it were a prediction.
+  They are reached only by what Lighthouse writes into the tool they already use, which is what
+  job-po-see-the-forecast-without-opening-lighthouse exists for.
 
 primary_jobs:
   - job-po-deep-dive-item-state-time
   - job-po-see-what-a-feature-is-waiting-on  # epic-4365-dependencies (2026-08-14, #4365): see what a Feature waits on without opening the tracker
+  - job-po-see-the-forecast-without-opening-lighthouse  # epic-5565-delivery-date-sync (2026-08-22, #5565 / #4463): read the forecast on the Release in the work tracking system, without opening Lighthouse at all
 
 goals:
   - Explain where a slipped or escalated item spent its time, per workflow state, without
@@ -30,7 +35,7 @@ goals:
     outlier) before committing to a process change
 
 frustrations:
-  - The per-item badge (B1) shows only the CURRENT state's age, not where the item's whole life
+  - The per-item badge shows only the CURRENT state's age, not where the item's whole life
     went
   - Reconstructing an item's state history means reading the work-tracking tool's audit log and
     pivoting by hand

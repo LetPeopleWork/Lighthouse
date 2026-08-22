@@ -30,6 +30,8 @@ primary_jobs:
   - job-forecaster-know-the-forecast-is-ignoring-a-dependency  # epic-5792-dependency-aware-forecasting (2026-08-16, #5792, split from #4365): free-tier honesty
   - job-forecaster-keep-a-finished-delivery-as-evidence  # epic-5698-deliveries-as-durable-records (2026-08-21, #5640): archive a Delivery instead of deleting it, backed by a pinned closure record
   - job-forecaster-share-a-delivery-outside-lighthouse  # epic-5698-deliveries-as-durable-records (2026-08-21, #4309): header + Feature grid out in one paste
+  - job-forecaster-bind-a-delivery-to-the-release-it-tracks  # epic-5565-delivery-date-sync (2026-08-22, #5565): point a Delivery at the Release it already tracks instead of re-typing its date and scope
+  - job-forecaster-trust-the-delivery-date-without-rechecking-jira  # epic-5565-delivery-date-sync (2026-08-22, #5565): the bound date follows the work tracking system, so a likelihood is never measured against a stale target
 
 goals:
   - Produce feature forecast dates the team will actually hit, not optimistic ones inflated by ad-hoc work
