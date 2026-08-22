@@ -22,7 +22,11 @@ at the moment it leaves.
 ## OUT of scope
 - Rendering the archived Feature grid from the pinned record — Slice 05. This slice shows the pinned
   header only.
-- Un-archiving — Slice 05.
+- The un-archive *affordance* in the UI — Slice 05. **The endpoint itself moved into this slice**
+  (2026-08-22): shipping a way in without a way out leaves anyone who archives by mistake stuck until
+  the next release, and the route costs a few lines once `Unarchive()` exists. It is deliberately not
+  premium-gated — gating the way in but not the way out is a capability you sell; gating both traps
+  people in a state.
 - Freezing notes — Slice 05.
 - Actual finish date and any calibration read-out (D2).
 
