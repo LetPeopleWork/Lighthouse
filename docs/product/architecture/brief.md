@@ -6535,3 +6535,225 @@ the same method, weeks later.
 | The migration applies on a real provider | Migration test on Sqlite and Postgres — InMemory skips migrations |
 | The stored reference survives a remote rename | Integration: bind, rename remotely, refresh, assert the binding resolves and only the displayed name changed |
 | The tab list is server-driven | Vitest: the tab set renders from the `delivery-sources` response; a Jira Release tab is **absent from the DOM** on the four non-Jira systems, not hidden and not disabled |
+
+## Application Architecture — epic-5733-opt-in-usage-data (ADO Epic #5733)
+
+Feature: epic-5733-opt-in-usage-data
+Wave: DESIGN
+Date: 2026-08-22
+Architect: Morgan (Solution Architect)
+Paradigm: OOP (C# backend), functional-leaning React (hooks, pure components) on the frontend
+Scope: application / components only. No system-design or domain-model wave ran for this feature.
+
+---
+
+### Architectural Pattern
+
+Ports-and-adapters, unchanged. This feature adds one driven port with one named adapter, one new
+background service, one new durable record, and one new frontend surface. It introduces no new
+architectural style.
+
+Two invariants are new and are the point of the design:
+
+- **The emit gate is fail-closed.** Every uncertainty — a database failure, a missing setting, an
+  absent instance identifier, a cold start — resolves to "do not send". This is the *opposite* of the
+  neighbouring `useRbac` policy, which fails **open** via `PERMISSIVE_SUMMARY` so an RBAC outage never
+  locks a user out. Both are correct for their own question; copying either into the other's place is
+  a defect. A crafter working here will meet both within a few files of each other.
+- **Emitting requires a permit only the gate can construct.** `IUsageDataPublisher.PublishAsync` takes
+  a `UsageDataEmitPermit`, and nothing outside the gate can make one. "Send without checking consent"
+  is not a rule to remember; it does not compile.
+
+---
+
+### System Context (C4 L1)
+
+```mermaid
+C4Context
+  title System Context — Usage Data (Epic 5733)
+  Person(user, "Person using Lighthouse", "Decides, per browser, whether usage data may be sent")
+  Person(admin, "System administrator", "Governs whether Lighthouse may ask, and may suspend sending")
+  Person(maintainer, "Lighthouse maintainer", "Reads the installed-base census")
+  System(lh, "Lighthouse instance", "Self-hosted. Emits a daily heartbeat only while a browser holds live consent")
+  System_Ext(posthog, "PostHog Cloud EU", "Operated by PostHog Inc. Data rests in Frankfurt")
+  System_Ext(github, "GitHub Releases API", "Pre-existing unconsented release check - documented, not changed")
+  Rel(user, lh, "Grants or revokes consent in")
+  Rel(admin, lh, "Suspends or resumes usage data in")
+  Rel(lh, posthog, "Posts heartbeat to")
+  Rel(lh, github, "Checks for releases against")
+  Rel(maintainer, posthog, "Reads the census from")
+```
+
+The GitHub call is drawn deliberately. It is the honest answer to "what else does this instance send",
+it predates this Epic, and the docs page names it as a separate outbound call this consent does not
+cover.
+
+### Container (C4 L2)
+
+```mermaid
+C4Container
+  title Container Diagram — Usage Data
+  Person(user, "Person using Lighthouse")
+  Person(admin, "System administrator")
+  Container(spa, "Lighthouse Frontend", "React 18 + TypeScript", "Renders the footer indicator and the consent dialog")
+  Container(api, "Lighthouse Backend", "ASP.NET Core .NET 10", "Hosts the consent endpoints, the gate and the emitter")
+  ContainerDb(db, "Lighthouse database", "SQLite or PostgreSQL", "Holds consent rows and the instance identifier")
+  System_Ext(posthog, "PostHog Cloud EU", "Capture API")
+  Rel(user, spa, "Decides consent in")
+  Rel(admin, spa, "Toggles the Usage Data switch in")
+  Rel(spa, api, "Reads state from and posts decisions to")
+  Rel(api, db, "Reads and writes consent in")
+  Rel(api, posthog, "Publishes the heartbeat to")
+```
+
+No component diagram. The subsystem is four backend types and two frontend components; an L3 would
+restate the table below.
+
+---
+
+### Component Decomposition
+
+| Component | Location | Change | Responsibility |
+|---|---|---|---|
+| `UsageDataConsent` | `Models/UsageData/` | CREATE NEW | Durable per-browser consent row, keyed by token digest |
+| `IUsageDataConsentRepository` + impl | `Services/{Interfaces,Implementation}/Repositories/` | CREATE NEW | Conditional-update store; `AnyLiveGrantAsync` is a SQL `EXISTS` |
+| `IUsageDataConsentService` + impl | `Services/.../UsageData/` | CREATE NEW | Mints tokens, records grant and refusal, revokes, touches liveness |
+| `IUsageDataGate` + impl | `Services/.../UsageData/` | CREATE NEW | Reads switch + consent fresh on every emit; fail-closed; mints the permit |
+| `UsageDataEmitPermit` | `Models/UsageData/` | CREATE NEW | Capability value; internal constructor; carries the instance identifier |
+| `IUsageDataPublisher` | `Services/Interfaces/UsageData/` | CREATE NEW | Driven port for the collector |
+| `PostHogUsageDataPublisher` | `Services/Implementation/UsageData/` | CREATE NEW | **Named** adapter for the PostHog capture API |
+| `UsageDataHeartbeatService` | `Services/.../BackgroundServices/` | CREATE NEW | Plain `BackgroundService`, daily, silent on failure |
+| `IUsageDataDeploymentModeResolver` | `Services/.../UsageData/` | CREATE NEW | Composes `IPlatformService` + Kubernetes probe |
+| `UsageDataController` | `API/` | CREATE NEW | `GET /state`, `POST /consent`, `DELETE /consent` |
+| `IAppSettingService` / `AppSettingService` | `Services/` | EXTEND | Instance identifier get-or-create, modelled on `EnsureInstallTimestamp` |
+| `AppSettingKeys` | `Models/AppSettings/` | EXTEND | `UsageData:InstanceId` |
+| `OptionalFeatureKeys` + `OptionalFeatureSeeder` | `Models/`, `Services/.../Seeding/` | EXTEND | `UsageData`, `IsPremium = true`, seeded `Enabled = true` |
+| `OptionalFeaturesController` | `API/` | EXTEND (defect fix) | Refuse a premium write explicitly instead of returning the unchanged entity |
+| `UsageDataIndicator` | `components/App/Footer/` | CREATE NEW | Footer icon + tooltip + dialog trigger, fail-closed |
+| `UsageDataDialog` | `components/UsageData/` | CREATE NEW | Enumerates the payload, names the operator, two decisions |
+| `usageDataEligibility.ts` | `components/UsageData/` | CREATE NEW | Pure ask-eligibility function (slice 02), modelled on `nudgeEligibility.ts` |
+| `UsageDataService` | `services/Api/` | CREATE NEW | `BaseApiService` subclass |
+| `ApiServiceContext` | `services/Api/` | EXTEND | Register the new service |
+| `Footer.tsx` | `components/App/Footer/` | EXTEND | Mount the indicator in the right-hand box, beside the version |
+
+---
+
+### Driving Ports
+
+| Surface | Kind | Auth | Slice |
+|---|---|---|---|
+| `GET /api/latest/usagedata/state` | HTTP | None; consent token in a request header when present | 01 |
+| `POST /api/latest/usagedata/consent` | HTTP | None; body carries the decision | 01 |
+| `DELETE /api/latest/usagedata/consent` | HTTP | None; token in header | 01 |
+| Footer indicator opens the dialog | UI | — | 01 |
+| Consent dialog, two decisions | UI | — | 01 |
+| Consent dialog, unprompted on install age | UI | — | 02 |
+| Optional Features, Usage Data toggle | UI | `RbacGuard(SystemAdmin)` | 03 |
+| `POST /api/latest/optionalfeatures/{id}` returning an explicit refusal | HTTP (existing, corrected) | `RbacGuard(SystemAdmin)` | 03 |
+
+The consent endpoints are deliberately unauthenticated. On an auth-off instance there is nothing to
+authenticate against, and consent belongs to the human at the browser rather than to a role. An
+unknown token and an absent token receive byte-identical responses, so the endpoint is not an oracle
+for which tokens exist. `POST /consent` is rate-limited under a `UsageDataConsentPolicy`, matching
+every other anonymous token-minting endpoint in this codebase.
+
+#### The `/state` response contract
+
+This is the most-called surface in the feature and the only contract shared by both stacks. Five
+acceptance criteria each need a field in it, so it is specified here rather than left to
+serialisation. The endpoint sends `Cache-Control: no-store` — a caching proxy in front of it would
+suppress the liveness touch and let consent decay silently under an active user.
+
+| Field | Type | Serves |
+|---|---|---|
+| `decision` | `Undecided` / `Granted` / `Declined` / `Revoked` | indicator state; re-ask eligibility |
+| `isSending` | `bool` | the indicator's single source of truth, already reconciled server-side |
+| `suppressionReason` | `null` / `AdministratorDisabled` / `Declined` / `NotConsented` | lets the tooltip distinguish "the administrator disabled this" from "you declined" |
+| `mayAsk` | `bool` | whether the dialog may appear unprompted; false when the master switch is off |
+| `willAskAgain` | `bool` | drives the honest cadence sentence in the dialog |
+| `askedAt` | `DateTimeOffset?` | the ~3-month Community cadence, computed server-side |
+
+**The anonymous-disclosure decision, taken explicitly.** `willAskAgain` is derived from licence tier,
+and licence tier is otherwise only readable behind `[Authorize]` via `LicenseController`. Rather than
+disclose the tier to an anonymous caller, the endpoint returns the **derived boolean** — an
+unauthenticated caller learns whether *this browser* will be asked again, which it must know to render
+honest copy, and does not learn whether the instance is licensed. `suppressionReason` and `mayAsk`
+disclose that an administrator has disabled a feature, which is not sensitive and is required by the
+tooltip. This is a privacy decision inside a privacy feature and is recorded as one.
+
+`isSending` is computed on the server rather than inferred in the browser, which is what makes the
+indicator fail closed: an unreachable backend yields no response and the component renders
+not-sending, and there is no client-side state that could disagree with the emit gate.
+
+### Driven Ports and Adapters
+
+| Port | Adapter | Technology | Notes |
+|---|---|---|---|
+| `IUsageDataPublisher` | `PostHogUsageDataPublisher` | Named `HttpClient`, PostHog capture API | Base URL configurable for the air-gap requirement |
+| Consent persistence | `UsageDataConsentRepository` | EF Core, SQLite + PostgreSQL | Bespoke interface, not `IRepository<T>` |
+| Instance identifier persistence | `AppSettingService` | EF Core | Existing key/value store |
+| Deployment-mode signal | `UsageDataDeploymentModeResolver` | `IPlatformService` + environment | Composes, does not modify |
+
+---
+
+### Technology Stack
+
+| Choice | Version | Licence | Rationale |
+|---|---|---|---|
+| PostHog Cloud EU | hosted | vendor SaaS, free tier at our volume | Ratified after SPIKE-00. Frankfurt residency; EU-located sub-processors; capture API needs no browser context |
+| `RandomNumberGenerator` | .NET 10 | MIT | Already the house CSPRNG in four services |
+| ArchUnitNET + ArchUnitNET.NUnit | existing | Apache 2.0 | Already adopted; hosts the seam rules below |
+| NUnit 4.6 / Moq / EF InMemory / WebApplicationFactory | existing | MIT / BSD | House backend test stack |
+| Vitest + React Testing Library | existing | MIT | House frontend test stack |
+
+No new library is introduced. PostHog is the only new external dependency and it is a network
+endpoint, not a package.
+
+---
+
+### Quality Attribute Strategies
+
+**Privacy** is the driving attribute and is addressed in four layers, because the strongest layer
+cannot cover everything — see ADR-176. The load-bearing idea is to move the guarantee out of vendor
+configuration, which this repository cannot assert, and into the emitted payload, which it can.
+
+**Correctness under revocation** is structural rather than tested-for: no cached copy of the consent
+state exists, so there is nothing that can be stale.
+
+**Reliability** is defined as silent degradation. An unreachable collector produces no user-visible
+failure, no retry storm, and at most one log line per attempt. Nothing is queued for later — a consent
+that was live at emit time is not a licence to send tomorrow.
+
+**Testability** rests on the permit type. Because the publisher cannot be called without a permit, the
+zero-leak property is a compile-time fact with a behavioural test as backstop, rather than a
+behavioural test alone — which matters because there is no single outbound chokepoint in this codebase
+to observe.
+
+---
+
+### Architectural Enforcement
+
+| Rule | Mechanism |
+|---|---|
+| Only the gate constructs an emit permit | ArchUnitNET, `UsageDataEmitSeamArchUnitTest` |
+| Only the publisher adapter names the collector host | ArchUnitNET |
+| The instance identifier never leaves through an API | ArchUnitNET |
+| The event property set is closed and primitive | ArchUnitNET + NUnit over each declared event |
+| Zero consent produces zero outbound requests | `DelegatingHandler` on the named client, failing the test on any request |
+| The dialog never claims the IP is not transmitted | Vitest forbidden-phrase test, in the shape of `ArchiveConfirmationDialog.test.tsx` |
+| The vendor still discards what it says it discards | Scheduled CI canary reading back through the PostHog query API |
+
+ArchUnitNET fluent slice fields must be declared as concrete `GivenTypesConjunctionWithDescription`
+rather than `IObjectProvider<IType>`, or CA1859 fails the Sonar gate.
+
+---
+
+### ADR References
+
+- [ADR-173](./adr-173-consent-as-a-server-side-record-with-a-liveness-window.md): consent record and liveness window
+- [ADR-174](./adr-174-the-emit-gate-is-uncached-fail-closed-and-mints-a-permit.md): the fail-closed uncached gate and the permit
+- [ADR-175](./adr-175-instance-identifier-as-an-appsettings-scalar-minted-on-first-grant.md): instance identifier
+- [ADR-176](./adr-176-posthog-cloud-eu-as-a-named-adapter-with-payload-carried-privacy-controls.md): named collector adapter and the compensating control
+- [ADR-177](./adr-177-deployment-mode-is-a-usage-data-owned-closed-value-set.md): deployment-mode value set
+
+---

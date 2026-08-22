@@ -601,7 +601,7 @@ dogfood *is* its acceptance (AC-04.6).
 |---|---|---|---|
 | OUT-usagedata-consent-uptake | ≥ 20% of browsers shown the dialog answer Yes, within 60 days of slice 02 | Consent grants ÷ dialogs shown, both counted at the collector | 02 |
 | OUT-usagedata-instances-reporting | ≥ 25 distinct instance identifiers report in a rolling 24h window within 90 days of slice 02 | Distinct instance identifiers at the collector | 01, 02 |
-| OUT-usagedata-zero-leak-before-consent | Exactly 0 bytes leave an instance that has no consenting browser | Automated: an integration test asserting no outbound call on the collector host across a full emit cycle with zero consent, plus a packet-level check on a clean instance at slice 01 acceptance | 01 |
+| OUT-usagedata-zero-leak-before-consent | **0 requests to the collector host** from an instance that has no consenting browser | Automated: an integration test asserting no outbound call on the collector host across a full emit cycle with zero consent, plus an ArchUnitNET rule forbidding ad-hoc HTTP client construction so the assertion cannot be bypassed | 01 |
 | OUT-usagedata-revocation-latency | 100% of revocations stop the next emit; 0 emits after a revoke | Automated assertion at the emit path (AC-03.2) | 01 |
 | OUT-usagedata-payload-purity | 0 events carrying customer content across the whole event set | Automated invariant over emitted payloads (AC-08.3), run in CI | 01, 04 |
 | OUT-usagedata-kpis-unblocked | ≥ 3 of the 7 KPIs at `deferred-pending-telemetry-feature` move to a live measurement source within 30 days of slice 04 | Count in `docs/product/kpi-contracts.yaml` | 04 |
@@ -726,3 +726,332 @@ deliberately leaves open:
 seven KPIs are CI gates rather than dashboards, and `OUT-usagedata-zero-leak-before-consent` needs a
 test that asserts the *absence* of network traffic, which is a harness capability this repository does
 not have today.
+
+---
+
+## Wave: DESIGN / [REF] DDD Decision
+
+**No DDD wave ran, and none is warranted.** Design scope was application/components only.
+
+Usage Data is a **supporting subdomain**, not a core one: it carries no business rules worth
+modelling, no invariants beyond "may we send", and no ubiquitous language a domain expert would
+recognise. It is a consent record, a gate and an outbound adapter. Introducing aggregates, domain
+events or a bounded-context map here would be ceremony over four types.
+
+One boundary decision does carry weight and is recorded as a DDD-shaped fact: **Usage Data shares no
+state with SurveyNudge.** They share an idea (install-age gating, a quiet cadence) and no data. The
+survey nudge's state is one instance-wide row; consent is per browser. Merging them would force
+browser scope onto a shipped instance-wide behaviour.
+
+`Telemetry` keeps its existing meaning throughout — the OpenTelemetry/Prometheus scrape. Occupied
+names verified: `TelemetryConfiguration`, `TelemetryLoggingConfiguration`, `TelemetryConfigurator`,
+config section `"Telemetry"`. Everything new is `UsageData*`. No collision.
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+Full table in `docs/product/architecture/brief.md` under
+`## Application Architecture — epic-5733-opt-in-usage-data`. Summary: 12 new backend types, 4 new
+frontend components, 6 extensions, 1 defect fix.
+
+The four that carry the design:
+
+| Component | Why it exists |
+|---|---|
+| `UsageDataConsent` + bespoke repository | One row per browser, keyed by token digest, with a `LastSeenAt` liveness stamp. `AnyLiveGrantAsync` is a SQL `EXISTS`, which is also how "revoking the last browser stops the heartbeat" happens with no rule of its own |
+| `IUsageDataGate` | Reads the master switch and the consent set **fresh on every emit**. Fail-closed. No cache, so staleness is unrepresentable rather than mitigated |
+| `UsageDataEmitPermit` | Sealed, internal constructor, mintable only by the gate. The publisher requires one, so "emit without checking consent" does not compile |
+| `PostHogUsageDataPublisher` | The **named** adapter. Not a port with a decision attached to it |
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Surface | Kind | Auth | Slice |
+|---|---|---|---|
+| `GET /api/latest/usagedata/state` | HTTP | None; token in a request header when present | 01 |
+| `POST /api/latest/usagedata/consent` | HTTP | None | 01 |
+| `DELETE /api/latest/usagedata/consent` | HTTP | None; token in header | 01 |
+| Footer indicator opens the dialog | UI | — | 01 |
+| Consent dialog, two decisions | UI | — | 01 |
+| Consent dialog, unprompted on install age | UI | — | 02 |
+| Optional Features, Usage Data toggle | UI | `RbacGuard(SystemAdmin)` | 03 |
+| `POST /api/latest/optionalfeatures/{id}` returning an explicit refusal | HTTP (existing, corrected) | `RbacGuard(SystemAdmin)` | 03 |
+
+**Reading of "tokenless".** The DISCUSS ports table marks the state endpoint tokenless. Designed as
+"requires no **authentication**" — per-browser state is unanswerable unless the browser names itself,
+and on an auth-off instance there is nothing to authenticate against. An absent token and an unknown
+token get byte-identical responses so the endpoint is not an oracle.
+
+---
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | Notes |
+|---|---|---|
+| `IUsageDataPublisher` | `PostHogUsageDataPublisher` | `{CollectorBaseUrl}/i/v0/e/`, default `https://eu.i.posthog.com`, configurable for air-gap |
+| Consent persistence | `UsageDataConsentRepository` | Bespoke interface, not `IRepository<T>` |
+| Instance identifier | `AppSettingService` | Existing key/value store |
+| Deployment-mode signal | `UsageDataDeploymentModeResolver` | Composes `IPlatformService`, does not modify it |
+
+**External integration → `nw-platform-architect`.** PostHog Cloud EU. A consumer-driven contract test
+on the capture transport is **not** recommended — emit is fire-and-forget and degrades silently by
+specification. What *is* required is a **scheduled privacy-behaviour canary**: emit one event under a
+reserved identifier, read it back through the PostHog query API, assert the stored record has no
+`$ip`, no `$geoip_*`, and that AI features are off. Needs a PostHog personal API key in CI secrets, an
+egress allowance and a schedule. This is a different thing from a contract test wearing similar
+clothes: it asserts the processor's *handling of data*, not the API's schema.
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+No new library. PostHog is the only new dependency and it is a network endpoint, not a package.
+CSPRNG is `RandomNumberGenerator` (already the house choice in four services). Architecture rules ride
+the existing ArchUnitNET adoption in `Lighthouse.Backend.Tests/Architecture/`.
+
+---
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision | ADR |
+|---|---|---|
+| A1 | Consent is a server-side row keyed by the SHA-256 digest of a CSPRNG token, with a `LastSeenAt` liveness window (default 30 days) | [ADR-173](../../product/architecture/adr-173-consent-as-a-server-side-record-with-a-liveness-window.md) |
+| A2 | The consent store is a bespoke repository, not `IRepository<T>` — that base evaluates predicates client-side over a materialised `DbSet`, and revoke/touch need affected-row counts | ADR-173 |
+| A3 | The emit gate reads switch and consent fresh on every emit; **the "no per-emit database read" constraint is declined for slice 01** | [ADR-174](../../product/architecture/adr-174-the-emit-gate-is-uncached-fail-closed-and-mints-a-permit.md) |
+| A4 | The gate is fail-closed; every uncertainty resolves to "do not send" | ADR-174 |
+| A5 | Publishing requires a `UsageDataEmitPermit` that only the gate can construct | ADR-174 |
+| A6 | The emitter is a plain `BackgroundService`, **not** an `UpdateServiceBase` | ADR-174 |
+| A7 | The domain-event bus is **not** the invalidation channel — it swallows handler exceptions by design | ADR-174 |
+| A8 | Instance identifier is one `AppSettings` scalar, 16 CSPRNG bytes, minted **only on a grant** | [ADR-175](../../product/architecture/adr-175-instance-identifier-as-an-appsettings-scalar-minted-on-first-grant.md) |
+| A9 | A unique index on `AppSetting.Key` ships in the same migration, as the get-or-create arbiter | ADR-175 |
+| A10 | Collector is `PostHogUsageDataPublisher`, named, behind a port | [ADR-176](../../product/architecture/adr-176-posthog-cloud-eu-as-a-named-adapter-with-payload-carried-privacy-controls.md) |
+| A11 | The privacy guarantee moves into the payload (`$ip: null`, `$geoip_disable: true`) where CI can assert it — **verified against PostHog's server source; either property alone suppresses enrichment** | ADR-176 |
+| A12 | A scheduled canary reads the vendor back and asserts no IP, no geo enrichment, AI features off | ADR-176 |
+| A13 | The dialog is bound by a forbidden-phrase test to claim no more than the controls demonstrate | ADR-176 |
+| A14 | Deployment mode is a closed usage-data-owned set including `Kubernetes`; `PlatformService` is composed, not modified | [ADR-177](../../product/architecture/adr-177-deployment-mode-is-a-usage-data-owned-closed-value-set.md) |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+Every component with overlapping responsibility, with evidence. `UNCHANGED` means assessed and left
+alone; where it means "assessed and rejected", the reason is stated.
+
+| Existing | Verdict | Evidence |
+|---|---|---|
+| `IAppSettingService` / `AppSettingService` | **EXTEND** | `EnsureInstallTimestamp()` is already a lazy get-or-create over an `AppSettings` row — the exact shape the instance identifier needs. Private `UpsertSetting`, `TimeProvider` and the repository are all in place |
+| `AppSettingKeys` | **EXTEND** | One constant, existing `Area:Name` convention |
+| `AppSetting` entity | **EXTEND (index only)** | Needs a unique index on `Key` to arbitrate concurrent get-or-create; service is `AddScoped`, so two grants run two `DbContext`s |
+| `OptionalFeature` + `OptionalFeatureKeys` | **EXTEND** | One key. `IsPremium` already exists on the entity |
+| `OptionalFeatureSeeder` | **EXTEND** | `AddOrUpdateCurrentFeatures` seeds a new key with its declared `Enabled` and never overwrites it afterwards — exactly the upgrade semantics required, for free |
+| `OptionalFeaturesController` | **EXTEND (defect fix)** | Line 41 returns the unchanged feature on a premium miss: HTTP 200, write dropped, caller cannot tell. Must be an explicit refusal before a privacy control rides on it. **Shared contract** — grep callers and extend the test factory first |
+| `UpdateServiceBase<TEntity>` + `TeamUpdater`/`PortfolioUpdater`/`ForecastUpdater` | **UNCHANGED — rejected as base class** | `where TEntity : class, IEntity`; iterates `repository.GetAll()`, asks `ShouldUpdateEntity` per row, enqueues per-entity work under an `UpdateType` feeding the SignalR status hub. The heartbeat is instance-scoped with no entity to iterate. Riding it needs a fake entity and two `NotSupportedException` overrides. House precedent for instance-scoped background work is plain `AddHostedService` (`GracefulShutdownService`, `KeyRingFileWatcher`) |
+| `UpdateQueueService` / `IUpdateExecutionLock` | **UNCHANGED** | Cluster-wide single execution is not needed; the identifier is per instance, not per replica |
+| `IDomainEventDispatcher` | **UNCHANGED — rejected as invalidation channel** | Swallows handler exceptions by design (`CA1031` suppressed: *"one failing handler must not abort the others"*). Correct for metrics; for a consent gate a dropped invalidation means sending after a revoke, silently |
+| `PlatformService` / `IPlatformService` | **COMPOSE, not modify** | `IsDocker()` is true in a Kubernetes pod; `KUBERNETES_SERVICE_HOST` appears nowhere. Adding a `SupportedPlatform.Kubernetes` member would touch the release/update path where `Docker` carries operational meaning about in-place updates |
+| `GitHubService` | **UNCHANGED** | Pre-existing unconsented outbound call. Documented in the docs page, not altered. Its bypass of `IHttpClientFactory` is why no outbound chokepoint exists — raised as a board item, not fixed here |
+| `IRandomNumberService` | **UNCHANGED — rejected as unsuitable** | It is `new Random().Next(maxValue)`. Statistical PRNG, sole consumer is the Monte Carlo forecaster. Using it for token or identifier minting would be a security defect |
+| `EmbedSessionTokenService` | **UNCHANGED — technique copied** | CSPRNG + base64url + digest-at-rest + conditional-update-as-verdict. Machinery not shared: single-use 60-second redemption vs long-lived revocable consent |
+| `IEmbedSessionTokenRepository` | **UNCHANGED — cited as precedent** | Its own comment is the justification for A2: *"Deliberately not `IRepository<T>`: single use is a conditional update returning an affected-row count"* |
+| `ApiKeyService` | **UNCHANGED** | `FindMatchingKey` re-derives PBKDF2 across every row per call — a lookup shape this design must not copy |
+| `IRepository<T>` / `RepositoryBase<T>` | **UNCHANGED — rejected for the consent store** | `GetByPredicate` takes `Func<T,bool>` and evaluates client-side over a materialised `DbSet`. Fine for a dozen `AppSettings` rows; would load every consent row per emit |
+| `ISystemInfoService` / `SystemInfo` | **UNCHANGED — deliberately** | Readable by any signed-in viewer including inside an embed frame. Its own doctrine (*"named here rather than at the call site so that a fourth one added later is withheld by this sentence"*) is honoured by keeping the identifier out |
+| `TelemetryConfiguration` / `TelemetryConfigurator` | **UNCHANGED** | Namespace-disjoint. Those names stay OpenTelemetry/Prometheus |
+| `SurveyNudge.tsx` | **EXTEND (copy fix)** | Line 114 ships *"Lighthouse never tracks how you use it"* to every Community user. Corrected in slice 01 or slice 01 does not ship |
+| `nudgeEligibility.ts` | **UNCHANGED — pattern copied** | A pure decision function, not a hook. The model for `usageDataEligibility.ts`. Arithmetic copied, storage not: nudge state is one instance-wide row, consent is per browser |
+| `AppSettingService` survey cadence | **UNCHANGED — arithmetic copied** | Same reason. Sharing would force browser scope onto a shipped instance-wide behaviour |
+| `Footer.tsx` | **EXTEND** | Mount the indicator in the right-hand box beside `LighthouseVersion` |
+| `ExternalLinkButton` | **UNCHANGED — rejected as host** | It is `component="a" href target="_blank"`. The indicator opens a dialog. Hosting it would mean making `link` optional and branching anchor-vs-button. Copied for visual language only |
+| `LighthouseVersion.tsx` | **UNCHANGED** | Already 405 lines and already renders two `Tooltip > IconButton onClick` clusters. Sibling component rather than growing it further |
+| `useRbac` | **UNCHANGED — anti-pattern for this case** | Fails **open** via `PERMISSIVE_SUMMARY` on purpose. The indicator must fail **closed**. Named so the adjacent, obvious thing to copy is not copied |
+| `ApiServiceContext` / `BaseApiService` | **EXTEND** | Register `usageDataService`; subclass `BaseApiService`. Established pattern, plus `MockApiServiceProvider` |
+| `useArchiveConfirmationPreference` | **UNCHANGED — pattern copied** | Closest existing browser-scoped preference. Namespaced key convention (`lighthouse:usagedata:consent`), read in `useEffect` not during render |
+| `ArchiveConfirmationDialog.test.tsx` | **UNCHANGED — technique copied** | Its `it.each([...])("never promises the Delivery is %s")` forbidden-word assertion over rendered copy is the enforcement mechanism for A13 |
+| `SystemSettingsTab.tsx` | **UNCHANGED** | Already disables premium toggles without a licence and shows `LicenseTooltip` — the UI half of the honest-refusal story already ships. Only the API refusal is missing |
+| `Lighthouse.Backend.Tests/Architecture/` | **EXTEND** | ArchUnitNET already adopted; add `UsageDataEmitSeamArchUnitTest` |
+
+---
+
+## Wave: DESIGN / [REF] Contradictions with the DISCUSS Delta
+
+Flagged loudly rather than smoothed over. Four items; three are corrections, one is a declined premise.
+
+1. **S13 points at the wrong affordance.** The delta says the footer *"already renders an icon row
+   with tooltips (`ExternalLinkButton`) beside `LighthouseVersion` — the exact affordance the
+   indicator needs, already styled."* That row is the **"Contact us:"** group — Email, LinkedIn,
+   Slack, Product Board, Ko-fi — and every entry is an `<a href target="_blank">`. A privacy
+   indicator there reads as a sixth way to contact the vendor, and `ExternalLinkButton` cannot host a
+   dialog trigger without becoming two components in a trench coat. The indicator goes in the
+   right-hand box beside `LighthouseVersion`, which already renders exactly this affordance twice.
+
+2. **The "no per-emit database read" constraint is declined for slice 01.** It appears in the DISCUSS
+   handoff (question 4) and in the slice-03 reference class. The slice-01 emit is once per day; a
+   per-emit read is two queries per day. Accepting the constraint would buy a cache whose only
+   possible failure is the one this feature cannot afford. The constraint becomes real at slice 04's
+   per-action events, and the gate interface is shaped to absorb that behind one method.
+
+3. **SPIKE design implication and F4 place the emitter on `UpdateServiceBase`.** *"The daily emit
+   hangs naturally off the `BackgroundServices/Update/UpdateServiceBase` pattern."* It does not — that
+   base is per-entity, queue-backed and wired to the operator's refresh-status surface. Plain
+   `BackgroundService`. The `Program.cs` CI cost that F4 predicts still applies and is still accepted.
+
+4. **"Exactly five fields" risks implying "and nothing else reaches the processor".** AC-02.1 and
+   AC-04.2 are correct about the payload. But the TLS peer address reaches the collector's edge on any
+   HTTP request, and this audience is engineers. The dialog must say so plainly and say what is done
+   about it. **This adds a copy requirement AC-02.1/AC-02.2 do not currently carry**, and A13's
+   forbidden-phrase test enforces the negative half: the dialog may never state the IP is not
+   transmitted, not seen, or never leaves the machine.
+
+---
+
+## Wave: DESIGN / [REF] Assumptions Made Without Being Able to Ask
+
+Running headless in PROPOSE mode. Each is a real decision taken on the architect's judgement; each is
+cheap to reverse and none is load-bearing for the shape of the design.
+
+| # | Assumption | Reverse if |
+|---|---|---|
+| 1 | Consent liveness window = **30 days** | The product owner prefers a different decay. This is a product number, not an architectural one |
+| 2 | "Tokenless" state endpoint means "no authentication", with the consent token in a request header | Intended literally, in which case per-browser state is not answerable and US-01 needs rework |
+| 3 | Instance identifier is minted on a **grant only**, not on a refusal | Read differently — but AC-04.3's "no consenting browser means no identifier at all" seems decisive |
+| 4 | Consent token stored in `localStorage`, not `sessionStorage` | Consent should not survive a browser restart, which would contradict "decide once" |
+| 5 | Deployment mode gains `Kubernetes` now rather than shipping the conflated set | The product owner would rather not spend a value-set decision before the census exists |
+| 6 | PostHog honours `$ip: null` and `$geoip_disable` per-event | **RESOLVED — verified from PostHog's own server source**, not from the unreachable website. See "Assumption 6 — RESOLVED" below. No longer blocking |
+
+---
+
+## Wave: DESIGN / [REF] Open Questions Deferred
+
+**To DISTILL (`nw-acceptance-designer`)**
+
+- The liveness-window gap in AC-03.5 needs its own scenario: cleared storage makes a browser
+  immediately undecided and immediately re-askable, but stops it counting toward the heartbeat only
+  after the window. Both halves are testable; the delta currently implies one behaviour.
+- AC-07.1's refusal is a contract change on an endpoint with existing callers. Extend the test factory
+  before touching it.
+- The zero-leak assertion needs the `DelegatingHandler` harness built as part of slice 01, not after.
+
+**To DELIVER**
+
+- **Verify the PostHog per-event privacy properties before slice 01 ships** (assumption 6). Blocking.
+- Set the canary schedule interval — it is the exposure window for vendor drift.
+- `docs/settings/usagedata.md` is the single source for the field list with three consumers that must
+  agree (dialog, docs, CI assertion). Build the comparison check with the first event, not the fifth.
+- `ARCHITECTURE.md` §16 says "The full set (001–159)" and is stale; correct it to 177 in this change.
+
+**Still open upstream, unchanged by DESIGN**
+
+- DoR-9 (legal sign-off on the consent copy and the ePrivacy Art 5(3) reading) remains open and
+  blocking for slice 01 shipping. DESIGN did not close it and cannot.
+- AC-08.5 (whether a widened payload requires re-consent) is a legal question that now also governs
+  the deployment-mode value set — which is why A14 fixes that set at slice 01 rather than later.
+
+---
+
+## Wave: DESIGN / [REF] Peer Review and Revisions
+
+Adversarial review run 2026-08-22. **Verdict: REJECT** — 5 critical, 11 high. The review was right
+about the things that mattered, including two claims in the first draft that were simply false. What
+follows is what changed, not a defence.
+
+### Corrected — claims that were untrue as written
+
+| # | Finding | Correction |
+|---|---|---|
+| C1 | *"It does not compile"* — the permit was presented as a compile-time guarantee, and the brief rested Testability on it. `Lighthouse.Backend` is **one assembly with `InternalsVisibleTo`**, so an internal constructor is visible to every backend type. The claim was false and "assembly-visible seam" was hand-waving | ADR-174 §2 rewritten. The permit prevents emission *by omission* and gives ArchUnit one greppable type. Enforcement is a test and is now described as one. Separate assembly noted as the only way to make the original claim true; not proposed for slice 01 |
+| C3 | The zero-leak enforcement was a tautology — the `DelegatingHandler` watches the client that is already permit-guarded, and cannot see `GitHubService`'s self-built `GitHubClient`. ADR-174 stated this problem in Context and then claimed the outcome met | New "honesty note" section in ADR-174. Added an ArchUnitNET rule forbidding ad-hoc client construction. **Recommends rescoping `OUT-usagedata-zero-leak-before-consent` from "0 bytes" to "0 requests to the collector host"** — a delta change, flagged below |
+
+### Corrected — defects
+
+| # | Finding | Correction |
+|---|---|---|
+| C2 | **Multi-replica emits N heartbeats/day.** A plain `BackgroundService` runs in every replica; all share one database and one identifier. AC-04.1 violated; every per-day count multiplied by replica count, invisibly. The reuse verdict dismissing `IUpdateExecutionLock` rested on a true clause that did not imply its conclusion | ADR-174 point 8: a `UsageData:LastHeartbeatDay` compare-and-swap. Preferred over the execution lock because it also survives a mid-day restart. Reuse verdict rewritten |
+| H1 | **`Revoked` collapsed into `Declined`**, so a Premium user who granted then revoked would never be asked again — contradicting AC-03.4 | Third enum state. Cadence keys on `Decision` + `AskedAt`; `Revoked` is re-askable |
+| H3 | `POST /consent` was unauthenticated, unrate-limited, and wrote a durable row per call. A single caller could plant one `Granted` row and keep an instance emitting for a full liveness window | `UsageDataConsentPolicy`, matching `AuthLoginPolicy` / `ApiKeysPolicy` / `EmbedSessionPolicy` |
+| Q1 | Write-on-read `LastSeenAt`: unthrottled writes on a hot path with SQLite's process-wide writer lock; and **a caching proxy would suppress the touch and silently decay consent under an active user** | Throttled to a `WHERE LastSeenAt < @stale` conditional update (~7h at a 30-day window), plus a mandatory `Cache-Control: no-store`. Also corrected the claim that the window measures "activity" — it measures a browser still presenting its token |
+| H5 | ADR-175 said the identifier was written *"in the same save"* as the consent row **and** insert-then-catch-unique-violation. Both cannot hold: a violation aborts the save and **loses the user's grant** | Writes separated and ordered: identifier first in its own transaction, then the consent row. New enforcement row: a losing race still records the grant |
+| H4 | The `AppSetting.Key` unique index could fail on upgraded customer databases, bricking an upgrade for a feature they never enabled. And the concurrency test was **vacuous on EF InMemory**, which does not enforce unique indexes | Migration de-duplicates before indexing, with its own test on both providers. Concurrency test moved to SQLite-in-memory or a Postgres container |
+| C4 | The canary could pass vacuously — "property X is absent" is green forever if the API stops projecting it | **Positive control added**: a second event omitting `$geoip_disable`, asserting geo properties *do* appear. Plus a bounded poll for ingestion latency, a stated daily interval, and "AI features off" demoted to layer 3 as probably unanswerable via the query API |
+| C5 | The `/state` response contract was unspecified while five ACs depended on its fields — and AC-02.9's Community/Premium copy needs licence tier, which is otherwise behind `[Authorize]` | DTO specified in the brief. The anonymous-disclosure decision taken explicitly: return the **derived** `willAskAgain` boolean, not the tier |
+
+### Accepted, not yet fixed — carried into DISTILL
+
+- **H6 — slice 01 is oversized and DESIGN made it worse.** DISCUSS accepted a 5-component exception;
+  DESIGN's own summary is 12 backend types + 4 frontend + 6 extensions + 2 migrations + a schema
+  change + an ArchUnit fixture + a test harness + a docs CI check. The reviewer's split (01a consent
+  record/endpoints/indicator/dialog with no emit; 01b gate/publisher/heartbeat/docs/copy) is sound and
+  is **recommended to the product owner** — re-slicing is not the architect's call to make alone.
+- **H2 — AC-05.6 (never in the same session as the survey nudge) has no owner.** A GDPR Art 7(4)
+  requirement with no named mechanism. Proposed: a session-scoped flag written by whichever dialog
+  opens first, owned by the shared caller of the two eligibility functions. Needs a decision in DISTILL.
+- **H10 — no retention or erasure position.** Now written into ADR-175 point 7 as two questions for
+  DoR-9 rather than silently omitted, but unanswered.
+- **AC-01.2 / AC-01.4 / AC-02.7 remain untraceable**: greyscale-safe indicator states, un-gated
+  rendering across all three deployment shapes, and how the indicator flips in the same interaction as
+  the dialog (two components, two directories, no shared state designed). DISTILL must close these.
+- **Clock skew unaddressed** — no ADR states UTC. Given Bug #5567 was exactly a backend UTC-anchor
+  error, all usage-data timestamps must be `timeProvider.GetUtcNow()`, stored UTC, with an enforcement row.
+- **Missing index** — `AnyLiveGrantAsync` filters `Decision` + `LastSeenAt`; only `TokenHash` is
+  indexed, so the "one indexed existence question" is a table scan. Composite index needed.
+- **The slice-04 cache invariant has no test until slice 04.** Recommended: write it now, skipped,
+  with the un-skip condition named, per this repo's own green-before-push convention.
+
+### Accepted as fair criticism of the framing
+
+- **Q2 — I over-promoted a design question to a constraint.** "No per-emit database read" is not an
+  AC, KPI or locked decision; it appears only in the handoff's open questions and a slice brief — and
+  the *same handoff's question 2* asks the opposite ("cheaply enough to run on every emit; D8 demands
+  no staleness"). The two conflict. The honest framing is that question 2 reflects D8 and wins, not
+  that a hard constraint was courageously declined. **The decision stands; the rhetoric was inflated.**
+- **Four alternatives across the set are strawmen** (fingerprinting, already forbidden by D2;
+  `IRandomNumberService`, listed twice; `IOptionsMonitor`; the deliberately-worst hybrid cache). Real
+  reuse rejections belong in the Reuse verdict, where they already appear.
+- **"Four layers" was arithmetic, not depth.** Layer 4 controls what we *claim*, not what happens to
+  data. At design time there are **zero verified preventive controls**. The correct description is:
+  one conditional preventive control, one detective control, one procedural control, and a binding
+  constraint on what the dialog may say.
+
+### Upstream change requested (back-propagation to DISCUSS) — APPROVED and applied
+
+**`OUT-usagedata-zero-leak-before-consent` has been rescoped** from *"exactly 0 bytes leave an
+instance"* to *"0 requests to the collector host"*. Approved by the product owner on 2026-08-22 and
+applied to the Outcome KPIs table above. The original wording cannot be met by any CI gate in a
+codebase with a second, known, unconsented outbound call — and a hard gate that cannot measure its own
+claim is the failure mode this Epic exists to remove. The ArchUnitNET rule forbidding ad-hoc HTTP
+client construction is what stops the narrower claim from being quietly bypassed.
+
+**Slice 01 is NOT re-sliced.** DESIGN flagged it as oversized and observed that its own design made it
+worse. The product owner reviewed and let the walking-skeleton exception stand, on the DISCUSS
+reasoning that removing any one of the five components leaves a path that does not run end to end.
+
+### Assumption 6 — RESOLVED, and not by a spike
+
+**PostHog honours `$ip` and `$geoip_disable` per event. Verified from PostHog's own server source**,
+which removes the need for the pre-slice-01 probe this section originally demanded.
+`PostHog/posthog:nodejs/src/cdp/templates/_transformations/geoip/geoip.template.ts` opens its GeoIP
+transformation with:
+
+```
+if (event.properties?.$geoip_disable or empty(event.properties?.$ip)) {
+    print('geoip disabled or no ip.')
+    return event
+}
+```
+
+Both switches are carried in the event payload, and **either one alone** is sufficient — the event
+returns unenriched. `$ip: null` satisfies the `empty()` branch. So the layer-1 control in ADR-176 is
+a property of the vendor's published code rather than a hoped-for behaviour, and asserting our own
+outbound payload in CI is a real invariant.
+
+A second, independent layer holds by default: PostHog's data-collection documentation states that
+**"EU organizations: Automatically default to IP data capture disabled for GDPR compliance."** The
+safe state is the default rather than something an operator must remember to set.
+
+Two limits worth stating rather than glossing. This is the `master` branch of the transformation
+template — it establishes the mechanism and the branch logic, not that PostHog Cloud EU runs that
+exact build. And it says nothing about whether the raw IP is observed upstream of the transformation
+pipeline, only that it is not used for enrichment and, with IP capture off, not stored. The canary in
+ADR-176 — including its positive control — remains worth running once the project exists, as
+behavioural confirmation rather than as the blocking gate it was written to be.
