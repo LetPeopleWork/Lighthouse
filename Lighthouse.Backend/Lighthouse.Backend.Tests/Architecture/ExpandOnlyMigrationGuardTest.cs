@@ -3,16 +3,25 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class ExpandOnlyMigrationGuardTest
     {
-        // Bumped past 20260713194145_RemoveLegacyBlockedConfiguration (Postgres) / 
-        // 20260713194134_RemoveLegacyBlockedConfiguration (Sqlite): a conscious, documented contract
-        // release dropping the legacy BlockedStates/BlockedTags columns, run only after Phase A's
-        // 20260713183553/20260713183603_BackfillBlockedRuleSetJson migrations populated BlockedRuleSetJson
-        // for every configured owner (expand-then-contract, per DISCUSS D4).
-        // Bumped again past 20260822121253_DropUnusedForecastHowMany (Postgres) /
-        // 20260822121242 (Sqlite): ForecastHowMany was created on DeliveryMetricSnapshot and never
-        // written by anything, in any release - a Delivery forecast answers when, not how many, so
-        // nothing ever computed a value for it. Verified null in every row of a real database before
-        // dropping. There is no expand phase because there is nothing to carry over.
+        // Three deliberate contract releases sit below this line.
+        //
+        // RemoveLegacyBlockedConfiguration dropped the legacy BlockedStates and BlockedTags columns, and
+        // ran only after the BackfillBlockedRuleSetJson migrations had populated BlockedRuleSetJson for
+        // every configured owner.
+        //
+        // RemovePortfolioTeamJoinTable drops the PortfolioTeam table, which had become impossible to
+        // trust. A portfolio's list of teams is computed from the features those teams work on, yet the
+        // table was still mapped as if it were stored, so rows appeared only as a side effect of saving a
+        // portfolio that happened to have its feature graph loaded. Nothing chose to write them and
+        // nothing could rely on them being there. Every reader now derives the link from the feature work
+        // instead. Leaving the drop out of a migration was the more dangerous option, because the model
+        // no longer describes the table, so the next migration generated for any unrelated reason would
+        // have carried this drop along with it, unannounced.
+        //
+        // DropUnusedForecastHowMany drops a column created on DeliveryMetricSnapshot that nothing ever
+        // wrote, in any release: a Delivery forecast answers when, not how many, so no value was ever
+        // computed for it. Verified null in every row of a real database before dropping. There is no
+        // expand phase because there is nothing to carry over.
         private const long ExpandOnlyBaselineTimestamp = 20260822121253;
 
         private static readonly string[] DropAndRenameTableOperations = { "DropTable", "RenameTable" };
@@ -77,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(
                 violations,
                 Is.Empty,
-                "Expand-only discipline (DISCUSS D4): migrations added after the baseline must not drop/rename columns or " +
+                "Expand-only discipline: migrations added after the baseline must not drop/rename columns or " +
                 "tables in their Up method. Destructive (contract) migrations belong in a separate, conscious later release " +
                 "(expand now, contract later) so old pods never depend on a dropped column during a rolling update. " +
                 "If a contract migration is genuinely intended, bump ExpandOnlyBaselineTimestamp past it and document the " +

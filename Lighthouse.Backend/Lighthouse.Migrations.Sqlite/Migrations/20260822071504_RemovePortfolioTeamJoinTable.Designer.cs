@@ -3,6 +3,7 @@ using System;
 using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lighthouse.Backend.Migrations
 {
     [DbContext(typeof(LighthouseAppContext))]
-    partial class LighthouseAppContextModelSnapshot : ModelSnapshot
+    [Migration("20260822071504_RemovePortfolioTeamJoinTable")]
+    partial class RemovePortfolioTeamJoinTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -385,9 +388,6 @@ namespace Lighthouse.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("ArchivedOn")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid>("ConcurrencyToken")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
@@ -418,58 +418,6 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("Deliveries");
                 });
 
-            modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryClosureRecord", b =>
-                {
-                    b.Property<int>("DeliveryId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("ArchivedOn")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("DoneWork")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("EstimatedItemCount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FeatureBreakdownJson")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("HasSufficientData")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<double?>("LikelihoodPercentage")
-                        .HasColumnType("REAL");
-
-                    b.Property<int>("RemainingWork")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("RuleDefinitionJson")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("RuleSchemaVersion")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SelectionMode")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("TargetDateAtClosure")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TeamsWithoutForecastJson")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TotalWork")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("WhenDistributionJson")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("DeliveryId");
-
-                    b.ToTable("DeliveryClosureRecords");
-                });
-
             modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryMetricSnapshot", b =>
                 {
                     b.Property<int>("Id")
@@ -487,6 +435,9 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<string>("FeatureBreakdownJson")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ForecastHowMany")
+                        .HasColumnType("INTEGER");
 
                     b.Property<double?>("LikelihoodPercentage")
                         .HasColumnType("REAL");
@@ -1652,15 +1603,6 @@ namespace Lighthouse.Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Portfolio");
-                });
-
-            modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryClosureRecord", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Delivery", null)
-                        .WithOne()
-                        .HasForeignKey("Lighthouse.Backend.Models.DeliveryClosureRecord", "DeliveryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.DeliveryMetricSnapshot", b =>

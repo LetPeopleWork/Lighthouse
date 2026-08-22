@@ -1613,21 +1613,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("WriteBackMappingDefinition");
                 });
 
-            modelBuilder.Entity("PortfolioTeam", b =>
-                {
-                    b.Property<int>("PortfoliosId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TeamsId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("PortfoliosId", "TeamsId");
-
-                    b.HasIndex("TeamsId");
-
-                    b.ToTable("PortfolioTeam");
-                });
-
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.WhenForecast", b =>
                 {
                     b.HasBaseType("Lighthouse.Backend.Models.Forecast.ForecastBase");
@@ -1932,21 +1917,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Navigation("AdditionalFieldDefinition");
 
                     b.Navigation("WorkTrackingSystemConnection");
-                });
-
-            modelBuilder.Entity("PortfolioTeam", b =>
-                {
-                    b.HasOne("Lighthouse.Backend.Models.Portfolio", null)
-                        .WithMany()
-                        .HasForeignKey("PortfoliosId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Lighthouse.Backend.Models.Team", null)
-                        .WithMany()
-                        .HasForeignKey("TeamsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Lighthouse.Backend.Models.Forecast.WhenForecast", b =>
