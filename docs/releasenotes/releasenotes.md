@@ -4,6 +4,27 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNEXT (not yet released)
+
+## Deliveries you can still read next quarter
+
+A Delivery has always answered *where do we stand today*. That is the right answer while it is running, and the wrong one the moment it ships: the Features move on, get re-estimated, get closed or removed, and the Delivery quietly rewrites itself behind them. Ask in October what you were forecasting in August and there is nothing left to look at — which makes the one review worth having, *what did we say and what actually happened*, impossible.
+
+A Delivery is now something you can keep.
+
+**Archive it when it is done.** It leaves the active list, and what it was showing at that moment is written down: the likelihood, the forecast dates, and every Feature that was in it. Refresh the Portfolio afterwards, rename Features, remove them entirely — the archived Delivery reads exactly as it did on the day it closed. Bring it back at any time and it picks up where it left off.
+
+**Take it with you.** Any Delivery's headline numbers and its Feature grid leave Lighthouse as one CSV or one paste — the Delivery itself as the first row, its Features beneath it, in the columns you would expect. That works on an archived Delivery too, and gives you the numbers as they were pinned.
+
+**Write down what happened.** Deliveries carry notes, so the reason a date moved lives next to the date rather than in somebody's memory or a chat thread nobody can find. Notes stay readable on an archived Delivery; they just stop changing.
+
+Archiving needs a premium licence. Bringing a Delivery back does not — if your licence lapses you can still un-archive anything you archived. Notes are not gated at all.
+
+{: .important}
+> Archiving is not a backup. Deleting an archived Delivery still deletes it permanently, and takes the written-down numbers and its metric history with it.
+
+See [Deliveries](https://docs.lighthouse.letpeople.work/portfolios/detail.html#deliveries) for the full picture.
+
 # Lighthouse v26.8.14.1
 
 ## Faster Updates
