@@ -387,10 +387,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var sp = scope.ServiceProvider;
 
             // Load the portfolio through the SAME repository path production uses (PortfolioUpdater ->
-            // IRepository<Portfolio>.GetById), so EF tracks the full graph — including the PortfolioTeam
-            // join rows via that repository's .Include(p => p.Teams). Loading only the connection diverged
-            // from production and left the join untracked, re-inserting PortfolioTeam on the second refresh
-            // (UNIQUE constraint failed: PortfolioTeam.PortfoliosId, PortfolioTeam.TeamsId).
+            // IRepository<Portfolio>.GetById), so EF tracks the whole graph the refresh then writes over.
+            // Loading only the connection left most of that graph untracked, and the second refresh tried
+            // to insert rows that were already there.
             var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
             var portfolio = portfolioRepository.GetById(portfolioId)
                 ?? throw new InvalidOperationException($"Portfolio {portfolioId} not found");

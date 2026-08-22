@@ -168,7 +168,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         private static readonly string[] WhatTheSyncOwnsRatherThanTheOperator =
         [
-            nameof(Team.Portfolios),
             nameof(Team.WorkItems),
             nameof(Portfolio.Features),
             nameof(Portfolio.Teams),

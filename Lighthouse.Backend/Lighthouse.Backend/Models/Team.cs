@@ -24,8 +24,6 @@
 
         public override int BlockedStalenessThresholdDays { get; set; }
 
-        public List<Portfolio> Portfolios { get; } = [];
-
         public List<WorkItem> WorkItems { get; } = [];
 
         /// <param name="today">

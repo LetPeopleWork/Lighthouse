@@ -286,14 +286,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         }
 
         // @error @driving_port @real-io @AC-2.1 — regression, found by hand on a restored database and by
-        // nothing in this suite. A Portfolio that has Teams has rows in the join table between them, and
-        // writing places over the loaded Feature graph re-inserted those rows. Every fixture here used a
-        // Portfolio with no Teams, which cannot express the failure at all.
+        // nothing in this suite. Writing places over the loaded Feature graph writes back everything else
+        // that graph dragged in, and a Portfolio whose Features carry no Teams drags in far less of it.
+        // Every fixture here used one, so none of them could express the failure.
         [Test]
         public async Task Handing_the_order_over_works_on_a_portfolio_that_has_teams()
         {
             var platform = GivenAPortfolio("Platform");
-            var team = GivenTheresATeamWorkingOn(platform);
+            var team = GivenTheresATeam();
             var searchIndex = GivenAFeatureTheTrackerRanked("Rebuild the search index", "FTR-1", "10", platform);
             var legacyImporter = GivenAFeatureTheTrackerRanked("Retire the legacy importer", "FTR-2", "20", platform);
             GivenTheTeamHasWorkLeftOn(searchIndex, team);

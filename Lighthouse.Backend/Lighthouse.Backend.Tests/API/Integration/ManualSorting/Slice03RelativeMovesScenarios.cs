@@ -132,7 +132,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         public async Task Bringing_a_feature_to_the_front_of_the_queue_brings_its_date_forward_and_pushes_the_displaced_one_back()
         {
             var platform = GivenAPortfolio("Platform");
-            var team = GivenTheresATeamWorkingOn(platform);
+            var team = GivenTheresATeam();
             GivenTheTeamClosedItemsUnevenly(team);
 
             var ids = GivenTheTrackersOrderReads(platform, SearchIndex, LegacyImporter);

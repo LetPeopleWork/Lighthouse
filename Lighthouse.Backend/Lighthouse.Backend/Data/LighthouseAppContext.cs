@@ -279,9 +279,11 @@ namespace Lighthouse.Backend.Data
                 .Property(k => k.ConcurrencyToken)
                 .IsConcurrencyToken();
 
-            modelBuilder.Entity<Team>()
-                .HasMany(t => t.Portfolios)
-                .WithMany(p => p.Teams);
+            // A portfolio's teams are worked out from the work on its features every time they are asked
+            // for. Left to itself EF reads the property as a relationship and puts a portfolio column on
+            // the teams table to store it in.
+            modelBuilder.Entity<Portfolio>()
+                .Ignore(p => p.Teams);
 
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)

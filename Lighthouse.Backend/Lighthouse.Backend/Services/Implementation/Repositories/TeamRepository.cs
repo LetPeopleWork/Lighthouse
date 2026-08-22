@@ -20,11 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return Context.Teams
                 .Include(x => x.WorkTrackingSystemConnection.Options)
                 .Include(x => x.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
-                .Include(x => x.WorkTrackingSystemConnection.WriteBackMappingDefinitions)
-                .Include(x => x.Portfolios)
-                    .ThenInclude(p => p.Features)
-                        .ThenInclude(f => f.FeatureWork)
-                            .ThenInclude(rw => rw.Team);
+                .Include(x => x.WorkTrackingSystemConnection.WriteBackMappingDefinitions);
 #pragma warning restore S8733
         }
 

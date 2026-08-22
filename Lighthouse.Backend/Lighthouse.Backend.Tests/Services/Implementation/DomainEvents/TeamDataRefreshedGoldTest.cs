@@ -29,15 +29,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         public async Task PublishTeamDataRefreshed_TriggersForecastUpdateForEachPortfolioOfTheTeam()
         {
             await SeedDatabase();
-            var team = await SeedTeamWithPortfolios();
+            var seeded = await SeedTeamWithPortfolios();
             var dispatcher = ServiceProvider.GetRequiredService<IDomainEventDispatcher>();
 
-            await dispatcher.PublishAsync(new TeamDataRefreshed(team.Id));
+            await dispatcher.PublishAsync(new TeamDataRefreshed(seeded.TeamId));
 
-            Assert.That(Recorder.TriggeredPortfolioIds, Is.EquivalentTo(team.Portfolios.Select(p => p.Id)));
+            Assert.That(
+                Recorder.TriggeredPortfolioIds,
+                Is.EquivalentTo(new[] { seeded.FirstPortfolioId, seeded.SecondPortfolioId }));
         }
 
-        private async Task<Team> SeedTeamWithPortfolios()
+        private async Task<SeededTeam> SeedTeamWithPortfolios()
         {
             var teamRepository = ServiceProvider.GetRequiredService<IRepository<Team>>();
             var portfolioRepository = ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
@@ -48,26 +50,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira },
             };
 
-            var firstPortfolio = new Portfolio
-            {
-                Name = "Gold Release A",
-                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection A", WorkTrackingSystem = WorkTrackingSystems.Jira },
-            };
-            var secondPortfolio = new Portfolio
-            {
-                Name = "Gold Release B",
-                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection B", WorkTrackingSystem = WorkTrackingSystems.Jira },
-            };
-            team.Portfolios.Add(firstPortfolio);
-            team.Portfolios.Add(secondPortfolio);
-
-            portfolioRepository.Add(firstPortfolio);
-            portfolioRepository.Add(secondPortfolio);
             teamRepository.Add(team);
             await teamRepository.Save();
 
-            return team;
+            var firstPortfolio = PortfolioWorkedOnBy(team, "Gold Release A", "Connection A");
+            var secondPortfolio = PortfolioWorkedOnBy(team, "Gold Release B", "Connection B");
+
+            portfolioRepository.Add(firstPortfolio);
+            portfolioRepository.Add(secondPortfolio);
+            await portfolioRepository.Save();
+
+            return new SeededTeam(team.Id, firstPortfolio.Id, secondPortfolio.Id);
         }
+
+        /// <summary>
+        /// A team reaches a portfolio by working on one of its features, and by nothing else. Anything
+        /// that attaches the two directly is invisible to every read in production.
+        /// </summary>
+        private static Portfolio PortfolioWorkedOnBy(Team team, string portfolioName, string connectionName)
+        {
+            var portfolio = new Portfolio
+            {
+                Name = portfolioName,
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = connectionName, WorkTrackingSystem = WorkTrackingSystems.Jira },
+            };
+
+            var feature = new Feature { Name = $"{portfolioName} Feature", Order = "1" };
+            feature.FeatureWork.Add(new FeatureWork(team, 5, 5, feature));
+            portfolio.Features.Add(feature);
+
+            return portfolio;
+        }
+
+        private sealed record SeededTeam(int TeamId, int FirstPortfolioId, int SecondPortfolioId);
 
         private sealed class RecordingForecastUpdater : IForecastUpdater
         {

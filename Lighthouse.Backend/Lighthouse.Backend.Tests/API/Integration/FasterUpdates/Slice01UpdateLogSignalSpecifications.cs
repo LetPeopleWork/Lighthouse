@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             var connectionId = SeedConnection();
             var portfolioName = $"Portfolio {Guid.NewGuid():N}";
             var portfolioId = SeedPortfolio(connectionId, portfolioName);
-            var teamId = SeedTeam(connectionId, $"Team {Guid.NewGuid():N}", portfolioId);
+            var teamId = SeedTeam(connectionId, $"Team {Guid.NewGuid():N}");
 
             return new SeededPortfolio(portfolioId, portfolioName, teamId);
         }

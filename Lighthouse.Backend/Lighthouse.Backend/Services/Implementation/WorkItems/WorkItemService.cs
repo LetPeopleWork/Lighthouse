@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         IWorkItemRepository workItemRepository,
         IPortfolioMetricsService portfolioMetricsService,
         IRepository<Team> teamRepository,
+        IPortfolioRepository portfolioRepository,
         IWorkItemStateTransitionRepository stateTransitionRepository,
         IFeatureStateTransitionRepository featureStateTransitionRepository,
         IDomainEventDispatcher domainEventDispatcher,
@@ -67,9 +68,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var outcome = (await RefreshWorkItems(team, fetchShape.Changed)) with { Reason = fetchShape.Reason };
 
-            foreach (var portfolio in team.Portfolios.ToList())
+            // What is left under a feature is the sum of its teams' open work, so a team that just
+            // refreshed changes that sum for every portfolio it delivers into. A team reaches a portfolio
+            // by working on one of its features and by nothing else.
+            foreach (var portfolioId in portfolioRepository.GetPortfolioIdsForTeam(team.Id))
             {
-                await UpdateRemainingWorkForPortfolio(portfolio);
+                var portfolio = portfolioRepository.GetById(portfolioId);
+
+                if (portfolio != null)
+                {
+                    await UpdateRemainingWorkForPortfolio(portfolio);
+                }
             }
 
             // The team half has no RefreshUpdateTime on this path, so this write has to save itself.

@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private IWorkItemRepository workItemRepository = Mock.Of<IWorkItemRepository>();
         private IPortfolioMetricsService portfolioMetricsService = Mock.Of<IPortfolioMetricsService>();
         private IRepository<Team> teamRepository = Mock.Of<IRepository<Team>>();
+
+        private IPortfolioRepository portfolioRepository = NoPortfolioTheTeamDeliversInto();
         private IWorkItemStateTransitionRepository stateTransitionRepository = Mock.Of<IWorkItemStateTransitionRepository>();
         private IFeatureStateTransitionRepository featureStateTransitionRepository = Mock.Of<IFeatureStateTransitionRepository>();
         private IDomainEventDispatcher domainEventDispatcher = Mock.Of<IDomainEventDispatcher>();
@@ -74,6 +76,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return this;
         }
 
+        public WorkItemServiceTestBuilder WithPortfolioRepository(IPortfolioRepository repository)
+        {
+            portfolioRepository = repository;
+            return this;
+        }
+
         public WorkItemServiceTestBuilder WithTeamRepository(IRepository<Team> repository)
         {
             teamRepository = repository;
@@ -106,6 +114,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 workItemRepository,
                 portfolioMetricsService,
                 teamRepository,
+                portfolioRepository,
                 stateTransitionRepository,
                 featureStateTransitionRepository,
                 domainEventDispatcher,
@@ -118,6 +127,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 // fixture that faked it would be hiding the one thing it does.
                 new DependencyRefreshReporter(
                     new DependencyHonourPolicy(), Mock.Of<ILogger<DependencyRefreshReporter>>()));
+
+        /// <summary>The team works on nobody's features, which is the state every fixture assumed.</summary>
+        private static IPortfolioRepository NoPortfolioTheTeamDeliversInto()
+            => Mock.Of<IPortfolioRepository>(
+                repository => repository.GetPortfolioIdsForTeam(It.IsAny<int>()) == new List<int>());
 
         /// <summary>No portfolio has a blocked spell already running, which is the state every fixture assumed.</summary>
         private static IFeatureBlockedTransitionRepository NoOpenBlockedSpells()

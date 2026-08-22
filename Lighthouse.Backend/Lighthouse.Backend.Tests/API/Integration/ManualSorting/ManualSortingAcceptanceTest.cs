@@ -146,12 +146,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         }
 
         /// <summary>
-        /// Attaches a Team to a Portfolio, which is what puts a row in the <c>PortfolioTeam</c> join
-        /// table. Every fixture in this suite ran without one until an ordering write over a real
-        /// instance re-inserted those rows and failed on their unique key — a whole class of graph-write
-        /// bug that a Portfolio with no Teams cannot express.
+        /// A Team on its own. It reaches a Portfolio only once <see cref="SeedWorkOn"/> puts it on one of
+        /// that Portfolio's Features, which is the only way production ever links the two.
         /// </summary>
-        protected int SeedTeamOn(int portfolioId)
+        protected int SeedTeam()
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -172,9 +170,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 DoneStates = ["Done"],
             };
 
-            var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
-            team.Portfolios.Add(portfolioRepository.GetById(portfolioId)!);
-
             var teamRepository = sp.GetRequiredService<IRepository<Team>>();
             teamRepository.Add(team);
             teamRepository.Save().GetAwaiter().GetResult();
@@ -184,8 +179,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
         /// <summary>
         /// Puts a Team on a Feature's work. This is the edge that drags the Team into the Feature read
-        /// graph, so the Portfolio the Team belongs to and the Team itself end up tracked together and
-        /// the join row between them becomes part of any write over that graph.
+        /// graph, so the Portfolio the Feature belongs to and the Team end up tracked together and both
+        /// become part of any write over that graph.
         /// </summary>
         protected void SeedWorkOn(int featureId, int teamId, int remainingWorkItems = 3)
         {

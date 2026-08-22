@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             var connectionId = SeedConnection();
             var portfolioId = SeedPortfolio(connectionId, $"Portfolio {Guid.NewGuid():N}");
             var teamName = $"Team {Guid.NewGuid():N}";
-            var teamId = SeedTeam(connectionId, teamName, portfolioId);
+            var teamId = SeedTeam(connectionId, teamName);
 
             SeedFeature(portfolioId, DeliveredFeature, "The feature being delivered", teamId, workAlreadyCounted: 3);
             TheTrackerCanBeScanned();
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             var connectionId = SeedConnection();
             var teamName = $"Team {Guid.NewGuid():N}";
 
-            return new SeededTeam(SeedTeam(connectionId, teamName, portfolioId: null, stalenessThresholdDays), teamName);
+            return new SeededTeam(SeedTeam(connectionId, teamName, stalenessThresholdDays), teamName);
         }
 
         private void GivenTheTrackerHoldsThreeIssues()

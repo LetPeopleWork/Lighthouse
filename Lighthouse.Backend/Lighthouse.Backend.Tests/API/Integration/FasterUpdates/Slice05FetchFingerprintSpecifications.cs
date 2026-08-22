@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             var portfolioName = $"Portfolio {Guid.NewGuid():N}";
             var portfolioId = SeedPortfolio(connectionId, portfolioName);
             var teamName = $"Team {Guid.NewGuid():N}";
-            var teamId = SeedTeam(connectionId, teamName, portfolioId);
+            var teamId = SeedTeam(connectionId, teamName);
 
             TheTrackerCanBeScanned();
 

@@ -225,7 +225,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return portfolio.Id;
         }
 
-        protected int SeedTeam(int connectionId, string name, int? portfolioId = null, int stalenessThresholdDays = 0)
+        protected int SeedTeam(int connectionId, string name, int stalenessThresholdDays = 0)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -244,11 +244,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 StalenessThresholdDays = stalenessThresholdDays,
                 UpdateTime = DateTime.UtcNow,
             };
-
-            if (portfolioId.HasValue)
-            {
-                team.Portfolios.Add(sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId.Value)!);
-            }
 
             var repository = sp.GetRequiredService<IRepository<Team>>();
             repository.Add(team);

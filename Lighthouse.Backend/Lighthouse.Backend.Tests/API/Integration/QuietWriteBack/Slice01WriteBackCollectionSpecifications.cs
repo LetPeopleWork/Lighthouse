@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         {
             var (connectionId, sizeFieldId, forecastFieldId) = SeedPortfolioConnection(system);
             var portfolioId = SeedPortfolio(connectionId);
-            var teamId = SeedTeam(connectionId, portfolioId);
+            var teamId = SeedTeam(connectionId);
 
             return new SeededPortfolio(portfolioId, sizeFieldId, forecastFieldId, teamId);
         }

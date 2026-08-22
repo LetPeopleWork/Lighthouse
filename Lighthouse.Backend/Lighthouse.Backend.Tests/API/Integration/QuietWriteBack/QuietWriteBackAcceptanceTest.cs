@@ -282,7 +282,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             return portfolio.Id;
         }
 
-        protected int SeedTeam(int connectionId, int? portfolioId = null)
+        protected int SeedTeam(int connectionId)
         {
             using var scope = Factory.Services.CreateScope();
             var sp = scope.ServiceProvider;
@@ -299,11 +299,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                 DoneStates = ["Done"],
                 UpdateTime = DateTime.UtcNow,
             };
-
-            if (portfolioId.HasValue)
-            {
-                team.Portfolios.Add(sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId.Value)!);
-            }
 
             var repository = sp.GetRequiredService<IRepository<Team>>();
             repository.Add(team);
@@ -499,7 +494,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             var sp = scope.ServiceProvider;
 
             // Straight through the context, not the repository: the repository's GetAll pulls the whole
-            // Feature graph, and saving it back re-inserts the PortfolioTeam join row it already has.
+            // Feature graph, and this seed only means to move one stored field on one feature.
             var context = sp.GetRequiredService<LighthouseAppContext>();
             var feature = context.Features.First(f => f.ReferenceId == referenceId);
             feature.AdditionalFieldValues[fieldId] = value;
