@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
-            var delivery = JsonNode.Parse(body)!.AsArray()
+            var delivery = JsonNode.Parse(body)!["active"]!.AsArray()
                 .Single(node => node!["id"]!.GetValue<int>() == deliveryId)!
                 .AsObject();
 

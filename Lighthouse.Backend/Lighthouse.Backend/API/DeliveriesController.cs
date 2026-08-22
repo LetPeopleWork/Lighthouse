@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
@@ -31,10 +32,28 @@ namespace Lighthouse.Backend.API
     {
         [HttpGet("portfolio/{portfolioId:int}")]
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
-        [ProducesResponseType<IEnumerable<DeliveryWithLikelihoodDto>>(StatusCodes.Status200OK)]
+        [ProducesResponseType<PortfolioDeliveriesDto>(StatusCodes.Status200OK)]
         public IActionResult GetByPortfolio(int portfolioId)
         {
             var deliveries = deliveryRepository.GetByPortfolioAsync(portfolioId).ToList();
+            var active = deliveries.Where(delivery => delivery.ArchivedOn == null).ToList();
+            var archived = deliveries.Where(delivery => delivery.ArchivedOn != null).ToList();
+
+            return Ok(new PortfolioDeliveriesDto
+            {
+                Active = ActiveRows(active),
+                Archived = ArchivedRows(archived),
+            });
+        }
+
+        /// <summary>
+        /// The forecast window is measured over the Deliveries still running. A retired Delivery is
+        /// not forecast at all, so letting its target date stretch the window would have the screen
+        /// and the day's recorded history read against two different sets of non-working days for a
+        /// Delivery nobody touched.
+        /// </summary>
+        private List<DeliveryWithLikelihoodDto> ActiveRows(List<Delivery> deliveries)
+        {
             var forecastWindowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
                 forecastWindowStart, ForecastWindowEnd(deliveries, forecastWindowStart));
@@ -48,7 +67,29 @@ namespace Lighthouse.Backend.API
                 deliveryDto.MetricSnapshotCount = snapshotCounts.TryGetValue(deliveryDto.Id, out var count) ? count : 0;
             }
 
-            return Ok(deliveryDtos.OrderBy(d => d.Date));
+            return [.. deliveryDtos.OrderBy(d => d.Date)];
+        }
+
+        /// <summary>
+        /// A retired Delivery without a closure record is left out rather than shown with today's
+        /// numbers. Retiring one always writes the record, so the only way here is a row that
+        /// pre-dates this feature or one whose record was removed by hand - and in both cases a row
+        /// of blanks says less than no row at all.
+        /// </summary>
+        private List<ArchivedDeliveryDto> ArchivedRows(List<Delivery> deliveries)
+        {
+            var closureRecords = deliveryRepository.GetClosureRecordsByDelivery(deliveries.Select(delivery => delivery.Id));
+
+            return [.. deliveries
+                .Where(delivery => closureRecords.ContainsKey(delivery.Id))
+                .Select(delivery => ArchivedDeliveryProjection.ToDto(IdentityOf(delivery), closureRecords[delivery.Id]))
+                .OrderByDescending(archivedDelivery => archivedDelivery.ArchivedOn)];
+        }
+
+        private static ArchivedDeliveryIdentity IdentityOf(Delivery delivery)
+        {
+            return new ArchivedDeliveryIdentity(
+                delivery.Id, delivery.Name, delivery.Date, delivery.PortfolioId, delivery.ConcurrencyToken);
         }
 
         [HttpGet("{deliveryId:int}/metrics-history")]

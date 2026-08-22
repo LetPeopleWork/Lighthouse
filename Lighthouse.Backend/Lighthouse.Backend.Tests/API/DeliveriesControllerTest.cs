@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
@@ -112,12 +113,11 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = result as OkObjectResult;
-            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto> ?? throw new NullReferenceException("Deliveries is null");
+            var deliveries = (okResult.Value as PortfolioDeliveriesDto ?? throw new NullReferenceException("Deliveries is null")).Active;
 
-            Assert.That(deliveries, Is.Not.Null);
-            Assert.That(deliveries.Count(), Is.EqualTo(1));
+            Assert.That(deliveries, Has.Count.EqualTo(1));
 
-            var deliveryDto = deliveries.First();
+            var deliveryDto = deliveries[0];
 
             using (Assert.EnterMultipleScope())
             {
@@ -503,12 +503,11 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = result as OkObjectResult;
-            var deliveries = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto>;
+            var deliveries = (okResult.Value as PortfolioDeliveriesDto ?? throw new NullReferenceException("Deliveries is null")).Active;
 
-            Assert.That(deliveries, Is.Not.Null);
-            Assert.That(deliveries.Count(), Is.EqualTo(1));
+            Assert.That(deliveries, Has.Count.EqualTo(1));
 
-            var deliveryDto = deliveries.First();
+            var deliveryDto = deliveries[0];
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(deliveryDto.Id, Is.EqualTo(1));
@@ -545,7 +544,7 @@ namespace Lighthouse.Backend.Tests.API
             var result = controller.GetByPortfolio(portfolioId);
 
             var okResult = result as OkObjectResult;
-            var deliveries = (okResult!.Value as IEnumerable<DeliveryWithLikelihoodDto>)!.ToList();
+            var deliveries = (okResult!.Value as PortfolioDeliveriesDto)!.Active;
 
             using (Assert.EnterMultipleScope())
             {
@@ -576,14 +575,13 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = (OkObjectResult)result;
-            var deliveryDtos = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto> ?? throw new NullReferenceException("DeliveryDtos is null");
+            var deliveryDtos = (okResult.Value as PortfolioDeliveriesDto ?? throw new NullReferenceException("DeliveryDtos is null")).Active;
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deliveryDtos, Is.Not.Null);
-                Assert.That(deliveryDtos.Count(), Is.EqualTo(2));
-                Assert.That(deliveryDtos.First().Name, Is.EqualTo("Q1 Release"));
-                Assert.That(deliveryDtos.Last().Name, Is.EqualTo("Q2 Release"));
+                Assert.That(deliveryDtos, Has.Count.EqualTo(2));
+                Assert.That(deliveryDtos[0].Name, Is.EqualTo("Q1 Release"));
+                Assert.That(deliveryDtos[^1].Name, Is.EqualTo("Q2 Release"));
             }
         }
 
@@ -609,14 +607,13 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             Assert.That(result, Is.InstanceOf<OkObjectResult>());
             var okResult = (OkObjectResult)result;
-            var deliveryDtos = okResult.Value as IEnumerable<DeliveryWithLikelihoodDto> ?? throw new NullReferenceException("DeliveryDtos is null");
+            var deliveryDtos = (okResult.Value as PortfolioDeliveriesDto ?? throw new NullReferenceException("DeliveryDtos is null")).Active;
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deliveryDtos, Is.Not.Null);
-                Assert.That(deliveryDtos.Count(), Is.EqualTo(2));
-                Assert.That(deliveryDtos.First().Name, Is.EqualTo("Hotfix Release"));
-                Assert.That(deliveryDtos.Last().Name, Is.EqualTo("Q1 Release"));
+                Assert.That(deliveryDtos, Has.Count.EqualTo(2));
+                Assert.That(deliveryDtos[0].Name, Is.EqualTo("Hotfix Release"));
+                Assert.That(deliveryDtos[^1].Name, Is.EqualTo("Q1 Release"));
             }
         }
 

@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -91,7 +92,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             response.EnsureSuccessStatusCode();
 
             using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            var keys = payload.RootElement.EnumerateArray().Single().EnumerateObject().Select(property => property.Name).ToList();
+            var keys = payload.RootElement.GetProperty("active").EnumerateArray().Single().EnumerateObject().Select(property => property.Name).ToList();
 
             Assert.That(keys, Is.EquivalentTo(ExpectedDeliveryPayloadKeys));
         }
@@ -189,7 +190,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadAsStringAsync();
-            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(body, JsonOptions)!;
+            var deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(body, JsonOptions)!.Active;
             return deliveries.Single();
         }
     }

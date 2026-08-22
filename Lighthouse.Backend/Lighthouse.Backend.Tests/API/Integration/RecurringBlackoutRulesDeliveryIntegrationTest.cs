@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -211,7 +212,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadAsStringAsync();
-            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(body, JsonOptions)!;
+            var deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(body, JsonOptions)!.Active;
             return deliveries.Single();
         }
     }

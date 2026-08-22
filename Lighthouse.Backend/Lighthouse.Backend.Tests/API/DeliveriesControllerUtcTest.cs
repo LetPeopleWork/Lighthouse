@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
@@ -260,10 +261,9 @@ namespace Lighthouse.Backend.Tests.API
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            var dtos = result.Value as IEnumerable<DeliveryWithLikelihoodDto>;
-            Assert.That(dtos, Is.Not.Null);
+            var dtos = (result.Value as PortfolioDeliveriesDto ?? throw new NullReferenceException("Deliveries is null")).Active;
 
-            foreach (var dto in dtos!)
+            foreach (var dto in dtos)
             {
                 Assert.That(dto.Date.Kind, Is.EqualTo(DateTimeKind.Utc),
                     $"Delivery '{dto.Name}' date should be in UTC");

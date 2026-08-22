@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -162,9 +163,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             var getResponseContent = await getResponse.Content.ReadAsStringAsync();
-            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(getResponseContent,
+            var deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(getResponseContent,
                 JsonSerializerOptions
-            );
+            )!.Active;
 
             if (deliveries == null)
             {
@@ -182,9 +183,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
             getResponseContent = await getResponse.Content.ReadAsStringAsync();
-            deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(getResponseContent,
+            deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(getResponseContent,
                 JsonSerializerOptions
-            );
+            )!.Active;
 
             // Assert
             Assert.That(deliveries, Has.Count.EqualTo(0));
@@ -224,9 +225,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // Get created delivery ID
             var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
-            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
-            var createdDelivery = deliveries!.Single(d => d.Name == "Release 1");
+            var deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
+            var createdDelivery = deliveries.Single(d => d.Name == "Release 1");
 
             // Act - Update delivery: remove feature 1, add feature 2
             var updateRequest = new UpdateDeliveryRequest
@@ -247,9 +248,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // Verify persisted state
             var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             verifyResponse.EnsureSuccessStatusCode();
-            var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
-            var updatedDelivery = updatedDeliveries!.Single();
+            var updatedDeliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
+            var updatedDelivery = updatedDeliveries.Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -301,8 +302,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolioId}");
             getResponse.EnsureSuccessStatusCode();
-            return JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!;
+            return JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
         }
 
         private async Task<DeliveryWithLikelihoodDto> CreateDeliveryAndFetch(int portfolioId, string name, int featureId)
@@ -362,9 +363,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // Get created delivery ID
             var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             getResponse.EnsureSuccessStatusCode();
-            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
-            var createdDelivery = deliveries!.Single(d => d.Name == "Release 1");
+            var deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
+            var createdDelivery = deliveries.Single(d => d.Name == "Release 1");
 
             // Act - Update only name; same features
             var updateRequest = new UpdateDeliveryRequest
@@ -385,9 +386,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // Verify persisted state
             var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
             verifyResponse.EnsureSuccessStatusCode();
-            var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
-            var updatedDelivery = updatedDeliveries!.Single();
+            var updatedDeliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
+            var updatedDelivery = updatedDeliveries.Single();
 
             using (Assert.EnterMultipleScope())
             {
@@ -417,8 +418,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             createResponse.EnsureSuccessStatusCode();
 
             var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
-            var createdDelivery = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Single();
+            var createdDelivery = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active.Single();
 
             var newDate = DateTime.UtcNow.AddDays(60);
             var updateRequest = new UpdateDeliveryRequest
@@ -435,8 +436,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(updateResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
             var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
-            var persistedDelivery = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Single();
+            var persistedDelivery = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active.Single();
 
             Assert.That(persistedDelivery.Date, Is.EqualTo(newDate).Within(TimeSpan.FromSeconds(1)));
         }
@@ -462,9 +463,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             createResponse.EnsureSuccessStatusCode();
 
             var getResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
-            var deliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
-            var deliveryId = deliveries!.Single().Id;
+            var deliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await getResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
+            var deliveryId = deliveries.Single().Id;
 
             // Act - First update: add feature
             var update1 = new UpdateDeliveryRequest
@@ -493,10 +494,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(update2Response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
             var verifyResponse = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
-            var updatedDeliveries = JsonSerializer.Deserialize<List<DeliveryWithLikelihoodDto>>(
-                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions);
+            var updatedDeliveries = JsonSerializer.Deserialize<PortfolioDeliveriesDto>(
+                await verifyResponse.Content.ReadAsStringAsync(), JsonSerializerOptions)!.Active;
 
-            Assert.That(updatedDeliveries!.Single().Features, Is.EquivalentTo(new[] { features[1].Id, features[2].Id }));
+            var expectedFeatureIds = new[] { features[1].Id, features[2].Id };
+            Assert.That(updatedDeliveries.Single().Features, Is.EquivalentTo(expectedFeatureIds));
         }
 
         private async Task<Portfolio> AddPortfolio()
