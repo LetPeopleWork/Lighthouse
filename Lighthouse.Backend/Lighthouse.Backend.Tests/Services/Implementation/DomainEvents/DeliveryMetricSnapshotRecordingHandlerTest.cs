@@ -343,6 +343,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [Test]
+        public async Task HandleAsync_DeliveryBroughtBackAfterBeingRetired_StartsAddingDailyRowsAgain()
+        {
+            var fixture = await SeedDeliveryWithKnownCounts();
+            await HandlePortfolioForecastsUpdated(fixture);
+            await RetireDelivery(fixture);
+
+            clock.SetInstant(FixedInstant.AddDays(1));
+            await HandlePortfolioForecastsUpdated(fixture);
+            var rowsWhileRetired = await SnapshotRowCountFor(fixture.DeliveryId);
+
+            await BringDeliveryBack(fixture);
+            await HandlePortfolioForecastsUpdated(fixture);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(rowsWhileRetired, Is.EqualTo(1));
+                Assert.That(await SnapshotRowCountFor(fixture.DeliveryId), Is.EqualTo(2));
+                Assert.That(await TodaysSnapshotRowCount(fixture), Is.EqualTo(1));
+            }
+        }
+
+        [Test]
         public async Task HandleAsync_RetiredDeliveryAlongsideALiveOne_KeepsRecordingTheLiveOne()
         {
             var (portfolio, team) = await SeedPortfolioWithTeam();
@@ -784,6 +806,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var delivery = deliveryRepository.GetById(fixture.DeliveryId)!;
 
             delivery.Archive(clock.TodayAsUtcMidnight);
+            await deliveryRepository.Save();
+        }
+
+        private async Task BringDeliveryBack(RecorderFixture fixture)
+        {
+            var deliveryRepository = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>();
+            var delivery = deliveryRepository.GetById(fixture.DeliveryId)!;
+
+            delivery.Unarchive();
             await deliveryRepository.Save();
         }
 

@@ -4,9 +4,11 @@ using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -118,6 +120,68 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(await ArchivedOnFor(deliveryId), Is.Null);
                 Assert.That(await ClosureRecordsFor(deliveryId), Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task ArchiveUnarchiveArchive_WithAFeatureAddedInBetween_KeepsTheNewerRecordAndOnlyThat()
+        {
+            var deliveryId = await SeedDeliveryWithForecastableWork();
+            await EnsureOk(Archive(deliveryId, null));
+            var workAtFirstClosure = (await ClosureRecordsFor(deliveryId)).Single().TotalWork;
+
+            await EnsureOk(Unarchive(deliveryId, null));
+            await AddAnotherFeatureToThePortfolio();
+            await EnsureOk(GiveTheDeliveryEveryFeatureInThePortfolio(deliveryId));
+            await EnsureOk(Archive(deliveryId, null));
+
+            var pins = await ClosureRecordsFor(deliveryId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(pins, Has.Count.EqualTo(1));
+                Assert.That(pins.Single().TotalWork, Is.EqualTo(workAtFirstClosure * 2));
+                Assert.That(pins.Single().FeatureBreakdownJson, Does.Contain("Reporting"));
+            }
+        }
+
+        /// <summary>
+        /// One row per Delivery is what makes two competing records impossible, rather than a rule
+        /// somewhere that says to overwrite. Asserted rather than assumed, because a later migration
+        /// that widened the key would leave every other test here still passing.
+        /// </summary>
+        [Test]
+        public async Task ASecondRecordForTheSameDelivery_CannotBeStoredAtAll()
+        {
+            var deliveryId = await SeedDeliveryWithForecastableWork();
+            await EnsureOk(Archive(deliveryId, null));
+
+            using var scope = factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            context.DeliveryClosureRecords.Add(new DeliveryClosureRecord { DeliveryId = deliveryId, ArchivedOn = Today });
+
+            Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+        }
+
+        [Test]
+        public async Task MetricsHistory_ArchivedDelivery_StaysReadableAndStopsOnTheDayItClosed()
+        {
+            var deliveryId = await SeedDeliveryWithForecastableWork();
+            await RecordDaysOfHistory(deliveryId, days: 11);
+            await EnsureOk(Archive(deliveryId, null));
+
+            var atClosure = await MetricsHistoryPointDates(deliveryId);
+
+            for (var refresh = 0; refresh < 3; refresh++)
+            {
+                await RefreshThePortfolioHolding(deliveryId);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(atClosure, Has.Count.EqualTo(11));
+                Assert.That(atClosure[^1], Is.EqualTo(Today));
+                Assert.That(await MetricsHistoryPointDates(deliveryId), Is.EqualTo(atClosure));
             }
         }
 
@@ -315,6 +379,76 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 .Where(delivery => delivery.Id == deliveryId)
                 .Select(delivery => delivery.ArchivedOn)
                 .SingleAsync();
+        }
+
+        private async Task AddAnotherFeatureToThePortfolio()
+        {
+            using var scope = factory.Services.CreateScope();
+            var portfolioRepository = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
+
+            var portfolio = portfolioRepository.GetAll().Single();
+            var team = portfolio.Features.SelectMany(feature => feature.FeatureWork).Select(work => work.Team).First();
+
+            var arrival = new Feature([(team, RemainingWorkItems, TotalWorkItems)]) { Name = "Reporting", ReferenceId = "FTR-2", Order = "12" };
+            var simulation = new SimulationResult();
+            simulation.SimulationResults[10] = 9000;
+            simulation.SimulationResults[20] = 1000;
+            arrival.SetFeatureForecasts([new WhenForecast(simulation) { HasSufficientData = true, TeamId = team.Id }]);
+
+            portfolio.Features.Add(arrival);
+            await portfolioRepository.Save();
+        }
+
+        private async Task<HttpResponseMessage> GiveTheDeliveryEveryFeatureInThePortfolio(int deliveryId)
+        {
+            return await client.PutAsync(
+                $"/api/latest/deliveries/{deliveryId}",
+                JsonContent.Create(new UpdateDeliveryRequest
+                {
+                    Name = "Q3 Launch",
+                    Date = Today.AddDays(30),
+                    FeatureIds = await FeatureIds(),
+                    SelectionMode = DeliverySelectionMode.Manual,
+                }));
+        }
+
+        private async Task RecordDaysOfHistory(int deliveryId, int days)
+        {
+            using var scope = factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var today = DateOnly.FromDateTime(Today);
+
+            for (var daysAgo = days - 1; daysAgo >= 0; daysAgo--)
+            {
+                context.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
+                {
+                    DeliveryId = deliveryId,
+                    RecordedDay = today.AddDays(-daysAgo),
+                    RecordedAt = Today.AddDays(-daysAgo),
+                    TotalWork = TotalWorkItems,
+                    DoneWork = TotalWorkItems - RemainingWorkItems,
+                    RemainingWork = RemainingWorkItems,
+                });
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private async Task RefreshThePortfolioHolding(int deliveryId)
+        {
+            using var scope = factory.Services.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>();
+
+            await handler.HandleAsync(new PortfolioForecastsUpdated(await PortfolioIdFor(deliveryId)), CancellationToken.None);
+        }
+
+        private async Task<List<DateTime>> MetricsHistoryPointDates(int deliveryId)
+        {
+            var response = await client.GetAsync($"/api/latest/deliveries/{deliveryId}/metrics-history");
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            return [.. JsonNode.Parse(body)!["points"]!.AsArray().Select(point => point!["date"]!.GetValue<DateTime>())];
         }
 
         private async Task<List<DeliveryClosureRecord>> ClosureRecordsFor(int deliveryId)
