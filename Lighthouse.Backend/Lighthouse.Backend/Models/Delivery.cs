@@ -73,6 +73,7 @@ namespace Lighthouse.Backend.Models
             }
 
             ArchivedOn = archivedOn;
+            MarkAsChanged();
         }
 
         public void Unarchive()
@@ -83,6 +84,7 @@ namespace Lighthouse.Backend.Models
             }
 
             ArchivedOn = null;
+            MarkAsChanged();
         }
 
         public void ReplaceFeatures(IEnumerable<Feature> newFeatures)
@@ -94,6 +96,20 @@ namespace Lighthouse.Backend.Models
 
             features.Clear();
             features.AddRange(newFeatures);
+            MarkAsChanged();
+        }
+
+        /// <summary>
+        /// Which Features a Delivery contains is part of what the Delivery is, but the database keeps
+        /// that in a table of its own - so changing only the Feature set writes no row for the
+        /// Delivery itself, and optimistic concurrency, which works by comparing that row, never gets
+        /// a chance to notice. Moving the token by hand puts the row back in the write, which is what
+        /// makes two people changing the same Delivery at once a conflict rather than a silent
+        /// last-one-wins.
+        /// </summary>
+        private void MarkAsChanged()
+        {
+            ConcurrencyToken = Guid.NewGuid();
         }
 
         public DeliveryMetricsProjection CalculateMetrics(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods, params int[] percentiles)
@@ -107,7 +123,7 @@ namespace Lighthouse.Backend.Models
             }
 
             // One un-forecastable feature makes the whole delivery un-forecastable - reporting a number
-            // for the rest would quietly ignore work that must still happen (ADR-112 D8).
+            // for the rest would quietly ignore work that must still happen.
             //
             // Stryker disable once all: since the row-set guard below also rejects a missing or
             // zero-trial row, the two detect the same condition and mutating this one is unobservable.
@@ -122,9 +138,9 @@ namespace Lighthouse.Backend.Models
                 return new DeliveryMetricsProjection(100.0, PercentilesOf(DayZeroMarker, today, blackoutPeriods, percentiles), featureBreakdown, hasSufficientData);
             }
 
-            // Backstop at pair grain: guard 2 already covers this once Feature.TeamsWithoutForecast can
-            // name the team, but this is the one place that re-derives the predicate from the row set
-            // the maths actually consumes, so the two cannot drift apart silently (ADR-113 DDD-7).
+            // The check above answers the same question a feature at a time, but this is the one place
+            // that asks it of the rows the arithmetic actually consumes. Keeping both means the two
+            // cannot come to disagree about what can be forecast without something failing loudly.
             var deliveryForecast = DeliveryCompletionForecast.Build(features);
 
             if (deliveryForecast == null)
@@ -140,7 +156,7 @@ namespace Lighthouse.Backend.Models
         }
 
         // ForecastService emits this shape for a feature with nothing left to do, so a delivery whose
-        // work is all done reports today rather than a stale future date (ADR-113 DDD-9).
+        // work is all done reports today rather than a stale future date.
         private static WhenForecast DayZeroMarker => new(new Dictionary<int, int> { { 0, 0 } });
 
         private bool HasRemainingWork()
@@ -148,9 +164,9 @@ namespace Lighthouse.Backend.Models
             return features.Exists(StillHasWork);
         }
 
-        // The exemption is not cosmetic: a finished feature carries ForecastService's day-0 sentinel,
-        // whose null Team stops CreateWhenForecastForSimulationResult assigning the flag, so it reads
-        // false without ever having been asked (ADR-113 D6/AC-02.1).
+        // Features with nothing left to do are left out on purpose. A finished feature carries the
+        // day-0 marker ForecastService emits, which names no team, and the flag never gets set on it -
+        // so counting it would report "not enough history" about a feature nobody ever asked about.
         private bool HasSufficientDataAcrossContributingFeatures()
         {
             return Features.Where(StillHasWork).All(RestsOnEnoughHistory);
@@ -163,7 +179,7 @@ namespace Lighthouse.Backend.Models
             return feature.FeatureWork.Exists(work => work.RemainingWorkItems > 0);
         }
 
-        // Equals feature.Forecast.HasSufficientData without rebuilding the aggregate (AggregatedWhenForecast.cs:26).
+        // The same answer AggregatedWhenForecast gives, without paying to rebuild it.
         private static bool RestsOnEnoughHistory(Feature feature)
         {
             return feature.Forecasts.TrueForAll(forecast => forecast.HasSufficientData);
