@@ -5,7 +5,8 @@ import { Delivery } from "../../../../../models/Delivery";
 import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
-import DeliverySection, { METRICS_GRID_COLUMNS } from "./DeliverySection";
+import { METRICS_GRID_COLUMNS } from "./DeliveryMetricsTab";
+import DeliverySection from "./DeliverySection";
 
 const {
 	mockGetMetricsHistory,

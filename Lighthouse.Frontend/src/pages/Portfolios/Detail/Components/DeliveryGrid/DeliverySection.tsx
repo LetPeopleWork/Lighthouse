@@ -20,11 +20,6 @@ import {
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
-import DeliveryBurnupChart from "../../../../../components/Common/Charts/DeliveryBurnupChart";
-import DeliveryEpicSizeChart from "../../../../../components/Common/Charts/DeliveryEpicSizeChart";
-import DeliveryFeverChart from "../../../../../components/Common/Charts/DeliveryFeverChart";
-import DeliveryPredictabilityChart from "../../../../../components/Common/Charts/DeliveryPredictabilityChart";
-import EnlargeableChart from "../../../../../components/Common/Charts/EnlargeableChart";
 import type {
 	DataGridColumn,
 	DataGridExportTable,
@@ -42,7 +37,6 @@ import ProgressIndicator from "../../../../../components/Common/ProgressIndicato
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { Delivery } from "../../../../../models/Delivery";
-import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -61,10 +55,13 @@ import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../utils/forecast/
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
 import { PREMIUM_UPGRADE_TOOLTIP } from "../../../../../utils/premiumUpgradeTooltip";
+import DeliveryMetricsTab, {
+	MINIMUM_METRIC_SNAPSHOTS,
+	metricsUnavailableReason,
+	useLazyMetricsHistory,
+} from "./DeliveryMetricsTab";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
-
-export const MINIMUM_METRIC_SNAPSHOTS = 3;
 
 // A Feature's own chance of landing, not the Delivery's — the Delivery's asks whether they ALL land,
 // so it sits below any single row's, and the heading must not invite the two to be read as one number.
@@ -97,7 +94,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	canEdit = true,
 	canArchive = false,
 }) => {
-	const { featureService, deliveryService } = useContext(ApiServiceContext);
+	const { featureService } = useContext(ApiServiceContext);
 
 	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
@@ -106,9 +103,11 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const [activeTab, setActiveTab] = useState<"workItems" | "metrics" | "notes">(
 		"workItems",
 	);
-	const [metricsHistory, setMetricsHistory] =
-		useState<DeliveryMetricsHistory | null>(null);
-	const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+	const {
+		history: metricsHistory,
+		isLoading: isLoadingMetrics,
+		load: loadMetricsHistory,
+	} = useLazyMetricsHistory(delivery.id);
 
 	const isMetricsTabDisabled =
 		delivery.metricSnapshotCount < MINIMUM_METRIC_SNAPSHOTS;
@@ -122,26 +121,11 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				return;
 			}
 			setActiveTab(nextTab);
-			if (
-				nextTab !== "metrics" ||
-				metricsHistory !== null ||
-				isLoadingMetrics
-			) {
-				return;
+			if (nextTab === "metrics") {
+				loadMetricsHistory();
 			}
-			setIsLoadingMetrics(true);
-			deliveryService
-				.getMetricsHistory(delivery.id)
-				.then(setMetricsHistory)
-				.finally(() => setIsLoadingMetrics(false));
 		},
-		[
-			deliveryService,
-			delivery.id,
-			metricsHistory,
-			isLoadingMetrics,
-			isMetricsTabDisabled,
-		],
+		[isMetricsTabDisabled, loadMetricsHistory],
 	);
 
 	const handleShowFeatureDetails = useCallback(
@@ -561,7 +545,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									<Tooltip
 										title={
 											isMetricsTabDisabled
-												? `Metrics need at least ${MINIMUM_METRIC_SNAPSHOTS} daily records to chart trends (have ${delivery.metricSnapshotCount}).`
+												? metricsUnavailableReason(delivery.metricSnapshotCount)
 												: ""
 										}
 									>
@@ -585,7 +569,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 							/>
 						)}
 						{activeTab === "metrics" && (
-							<MetricsTab
+							<DeliveryMetricsTab
 								isLoading={isLoadingMetrics}
 								history={metricsHistory}
 								featuresTerm={featuresTerm}
@@ -658,71 +642,6 @@ const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
 				enableExport={true}
 				exportFileName={exportFileName}
 				exportTable={exportTable}
-			/>
-		</Box>
-	);
-};
-
-export const METRICS_GRID_COLUMNS = { xs: "1fr", lg: "1fr 1fr" };
-
-interface MetricsTabProps {
-	isLoading: boolean;
-	history: DeliveryMetricsHistory | null;
-	featuresTerm: string;
-}
-
-const MetricsTab: React.FC<MetricsTabProps> = ({
-	isLoading,
-	history,
-	featuresTerm,
-}) => {
-	if (isLoading || history === null) {
-		return (
-			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-				Loading metrics...
-			</Typography>
-		);
-	}
-
-	return (
-		<Box
-			data-testid="delivery-metrics-grid"
-			sx={{
-				mx: 2,
-				mb: 2,
-				mt: 2,
-				display: "grid",
-				gap: 2,
-				gridTemplateColumns: METRICS_GRID_COLUMNS,
-			}}
-		>
-			<EnlargeableChart
-				ariaLabel="Delivery Burnup"
-				render={(height) => (
-					<DeliveryBurnupChart history={history} height={height} />
-				)}
-			/>
-			<EnlargeableChart
-				ariaLabel="Delivery Predictability"
-				render={(height) => (
-					<DeliveryPredictabilityChart history={history} height={height} />
-				)}
-			/>
-			<EnlargeableChart
-				ariaLabel={`${featuresTerm} over Time`}
-				render={(height) => (
-					<DeliveryEpicSizeChart
-						history={history}
-						featuresTerm={featuresTerm}
-						height={height}
-					/>
-				)}
-			/>
-			<EnlargeableChart
-				ariaLabel="Delivery Progress"
-				render={(height) => (
-					<DeliveryFeverChart history={history} height={height} />
-				)}
 			/>
 		</Box>
 	);
