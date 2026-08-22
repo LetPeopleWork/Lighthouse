@@ -60,7 +60,7 @@ describe("DeliveryService", () => {
 			];
 
 			mockedAxios.get.mockResolvedValue({
-				data: mockDeliveries,
+				data: { active: mockDeliveries, archived: [] },
 			});
 
 			// Act
@@ -70,11 +70,90 @@ describe("DeliveryService", () => {
 			expect(mockedAxios.get).toHaveBeenCalledWith(
 				`/deliveries/portfolio/${portfolioId}`,
 			);
-			expect(result).toHaveLength(2);
-			expect(result[0].name).toBe("Q1 Release");
-			expect(result[0].likelihoodPercentage).toBe(75.5);
-			expect(result[1].name).toBe("Q2 Release");
-			expect(result[1].likelihoodPercentage).toBe(60.0);
+			expect(result.active).toHaveLength(2);
+			expect(result.active[0].name).toBe("Q1 Release");
+			expect(result.active[0].likelihoodPercentage).toBe(75.5);
+			expect(result.active[1].name).toBe("Q2 Release");
+			expect(result.active[1].likelihoodPercentage).toBe(60.0);
+			expect(result.archived).toEqual([]);
+		});
+
+		it("returns the retired Deliveries as the numbers written down at closure", async () => {
+			mockedAxios.get.mockResolvedValue({
+				data: {
+					active: [],
+					archived: [
+						{
+							id: 9,
+							name: "Autumn Launch",
+							date: "2026-05-01T00:00:00Z",
+							portfolioId: 1,
+							archivedOn: "2026-05-04T00:00:00Z",
+							progress: 100,
+							totalWork: 30,
+							doneWork: 30,
+							remainingWork: 0,
+							likelihoodPercentage: 91.2,
+							hasSufficientData: true,
+							teamsWithoutForecast: [],
+							selectionMode: "Manual",
+							concurrencyToken: "33333333-3333-3333-3333-333333333333",
+						},
+					],
+				},
+			});
+
+			const result = await deliveryService.getByPortfolio(1);
+
+			expect(result.active).toEqual([]);
+			expect(result.archived).toHaveLength(1);
+			expect(result.archived[0].name).toBe("Autumn Launch");
+			expect(result.archived[0].doneWork).toBe(30);
+			expect(result.archived[0].likelihoodPercentage).toBe(91.2);
+			expect(result.archived[0].concurrencyToken).toBe(
+				"33333333-3333-3333-3333-333333333333",
+			);
+		});
+	});
+
+	describe("archive", () => {
+		it("asks the server to retire the delivery, naming the version it is acting on", async () => {
+			mockedAxios.post.mockResolvedValue({});
+
+			await deliveryService.archive(12, "33333333-3333-3333-3333-333333333333");
+
+			expect(mockedAxios.post).toHaveBeenCalledWith("/deliveries/12/archive", {
+				concurrencyToken: "33333333-3333-3333-3333-333333333333",
+			});
+		});
+
+		it("lets a refusal of a stale version reach the caller as a conflict", async () => {
+			mockedAxios.isAxiosError.mockReturnValue(true);
+			mockedAxios.post.mockRejectedValue({
+				isAxiosError: true,
+				message: "Request failed with status code 409",
+				response: { status: 409, data: { title: "Delivery archived" } },
+			});
+
+			await expect(
+				deliveryService.archive(12, "33333333-3333-3333-3333-333333333333"),
+			).rejects.toMatchObject({ code: 409 });
+		});
+	});
+
+	describe("unarchive", () => {
+		it("asks the server to bring the delivery back, naming the version it is acting on", async () => {
+			mockedAxios.post.mockResolvedValue({});
+
+			await deliveryService.unarchive(
+				12,
+				"33333333-3333-3333-3333-333333333333",
+			);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/deliveries/12/unarchive",
+				{ concurrencyToken: "33333333-3333-3333-3333-333333333333" },
+			);
 		});
 	});
 

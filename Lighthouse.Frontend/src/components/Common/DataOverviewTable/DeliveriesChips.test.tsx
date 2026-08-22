@@ -15,6 +15,8 @@ const mockDeliveryService = {
 	create: vi.fn(),
 	update: vi.fn(),
 	delete: vi.fn(),
+	archive: vi.fn(),
+	unarchive: vi.fn(),
 	getRuleSchema: vi.fn(),
 	validateRules: vi.fn(),
 	getMetricsHistory: vi.fn(),
@@ -74,7 +76,10 @@ describe("DeliveriesChips", () => {
 	});
 
 	it("should display no deliveries message when portfolio has no deliveries", async () => {
-		mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+		mockDeliveryService.getByPortfolio.mockResolvedValue({
+			active: [],
+			archived: [],
+		});
 
 		renderWithProviders(<DeliveriesChips portfolioId={1} />);
 
@@ -101,7 +106,10 @@ describe("DeliveriesChips", () => {
 			}),
 		];
 
-		mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+		mockDeliveryService.getByPortfolio.mockResolvedValue({
+			active: mockDeliveries,
+			archived: [],
+		});
 
 		renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -138,7 +146,10 @@ describe("DeliveriesChips", () => {
 			}),
 		];
 
-		mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+		mockDeliveryService.getByPortfolio.mockResolvedValue({
+			active: mockDeliveries,
+			archived: [],
+		});
 
 		renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -180,7 +191,10 @@ describe("DeliveriesChips", () => {
 			}),
 		];
 
-		mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+		mockDeliveryService.getByPortfolio.mockResolvedValue({
+			active: mockDeliveries,
+			archived: [],
+		});
 
 		renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -210,7 +224,10 @@ describe("DeliveriesChips", () => {
 			}),
 		];
 
-		mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+		mockDeliveryService.getByPortfolio.mockResolvedValue({
+			active: mockDeliveries,
+			archived: [],
+		});
 
 		renderWithProviders(<DeliveriesChips portfolioId={1} />);
 
@@ -234,7 +251,10 @@ describe("DeliveriesChips", () => {
 				}),
 			];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue({
+				active: mockDeliveries,
+				archived: [],
+			});
 
 			renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -257,7 +277,10 @@ describe("DeliveriesChips", () => {
 				}),
 			];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue({
+				active: mockDeliveries,
+				archived: [],
+			});
 
 			renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -280,7 +303,10 @@ describe("DeliveriesChips", () => {
 				}),
 			];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue({
+				active: mockDeliveries,
+				archived: [],
+			});
 
 			renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -306,7 +332,10 @@ describe("DeliveriesChips", () => {
 				}),
 			];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue({
+				active: mockDeliveries,
+				archived: [],
+			});
 
 			renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -329,7 +358,10 @@ describe("DeliveriesChips", () => {
 				}),
 			];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue({
+				active: mockDeliveries,
+				archived: [],
+			});
 
 			renderWithProviders(<DeliveriesChips portfolioId={100} />);
 
@@ -353,7 +385,10 @@ describe("DeliveriesChips", () => {
 				}),
 			];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue(mockDeliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue({
+				active: mockDeliveries,
+				archived: [],
+			});
 
 			renderWithProviders(<DeliveriesChips portfolioId={100} />);
 

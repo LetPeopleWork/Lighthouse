@@ -1,29 +1,55 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useErrorSnackbar } from "../../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { Delivery } from "../../../../../models/Delivery";
+import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import type {
 	DeliverySelectionMode,
 	IWorkItemRuleCondition,
 } from "../../../../../models/WorkItemRules";
+import { ApiError } from "../../../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 
 interface UseDeliveryManagementProps {
 	portfolio: Portfolio;
 }
 
+// Deleting needs an id to act on and a name to put in the question, and nothing else - which is why
+// a retired Delivery can go down the same path as a running one without pretending to be one.
+export interface DeletableDelivery {
+	id: number;
+	name: string;
+}
+
+const CONCURRENCY_CONFLICT_STATUS = 409;
+
+const STALE_VERSION_MESSAGE =
+	"This was changed by someone else since you opened it. Refresh the page and try again.";
+
+function isConcurrencyConflict(error: unknown): boolean {
+	return (
+		error instanceof ApiError && error.code === CONCURRENCY_CONFLICT_STATUS
+	);
+}
+
 export const useDeliveryManagement = ({
 	portfolio,
 }: UseDeliveryManagementProps) => {
 	const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+	const [archivedDeliveries, setArchivedDeliveries] = useState<
+		ArchivedDelivery[]
+	>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(
 		null,
 	);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [deliveryToDelete, setDeliveryToDelete] = useState<Delivery | null>(
+	const [deliveryToDelete, setDeliveryToDelete] =
+		useState<DeletableDelivery | null>(null);
+	const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+	const [deliveryToArchive, setDeliveryToArchive] = useState<Delivery | null>(
 		null,
 	);
 	const [expandedDeliveries, setExpandedDeliveries] = useState<Set<number>>(
@@ -101,13 +127,29 @@ export const useDeliveryManagement = ({
 		[featureService, showError, loadingFeaturesByDelivery],
 	);
 
+	// A Delivery that has left the live list takes its expansion and its loaded Features with it,
+	// so nothing is left holding rows for something that is no longer there to show them.
+	const forgetDelivery = useCallback((deliveryId: number) => {
+		setExpandedDeliveries((prev) => {
+			const next = new Set(prev);
+			next.delete(deliveryId);
+			return next;
+		});
+		setLoadedFeatures((prev) => {
+			const next = new Map(prev);
+			next.delete(deliveryId);
+			return next;
+		});
+	}, []);
+
 	const fetchDeliveries = useCallback(async () => {
 		setIsLoading(true);
 		try {
 			const portfolioDeliveries = await deliveryService.getByPortfolio(
 				portfolio.id,
 			);
-			setDeliveries(portfolioDeliveries);
+			setDeliveries(portfolioDeliveries.active);
+			setArchivedDeliveries(portfolioDeliveries.archived);
 		} catch (error) {
 			console.error("Failed to fetch deliveries:", error);
 			showError("Failed to fetch deliveries");
@@ -120,13 +162,18 @@ export const useDeliveryManagement = ({
 		setShowCreateModal(true);
 	};
 
-	const handleDeleteDelivery = (delivery: Delivery) => {
+	const handleDeleteDelivery = (delivery: DeletableDelivery) => {
 		setDeliveryToDelete(delivery);
 		setDeleteDialogOpen(true);
 	};
 
 	const handleEditDelivery = (delivery: Delivery) => {
 		setSelectedDelivery(delivery);
+	};
+
+	const handleArchiveDelivery = (delivery: Delivery) => {
+		setDeliveryToArchive(delivery);
+		setArchiveDialogOpen(true);
 	};
 
 	const handleCreateDelivery = async (deliveryData: {
@@ -190,7 +237,7 @@ export const useDeliveryManagement = ({
 				const updatedDeliveries = await deliveryService.getByPortfolio(
 					portfolio.id,
 				);
-				const updatedDelivery = updatedDeliveries.find(
+				const updatedDelivery = updatedDeliveries.active.find(
 					(d) => d.id === deliveryData.id,
 				);
 				if (updatedDelivery) {
@@ -207,16 +254,7 @@ export const useDeliveryManagement = ({
 		if (confirmed && deliveryToDelete) {
 			try {
 				await deliveryService.delete(deliveryToDelete.id);
-				setExpandedDeliveries((prev) => {
-					const next = new Set(prev);
-					next.delete(deliveryToDelete.id);
-					return next;
-				});
-				setLoadedFeatures((prev) => {
-					const next = new Map(prev);
-					next.delete(deliveryToDelete.id);
-					return next;
-				});
+				forgetDelivery(deliveryToDelete.id);
 				await fetchDeliveries();
 			} catch (error) {
 				console.error("Failed to delete delivery:", error);
@@ -226,6 +264,43 @@ export const useDeliveryManagement = ({
 
 		setDeleteDialogOpen(false);
 		setDeliveryToDelete(null);
+	};
+
+	const handleArchiveConfirmation = async (confirmed: boolean) => {
+		if (confirmed && deliveryToArchive) {
+			try {
+				await deliveryService.archive(
+					deliveryToArchive.id,
+					deliveryToArchive.concurrencyToken,
+				);
+				forgetDelivery(deliveryToArchive.id);
+				await fetchDeliveries();
+			} catch (error) {
+				console.error("Failed to archive delivery:", error);
+				showError(
+					isConcurrencyConflict(error)
+						? STALE_VERSION_MESSAGE
+						: "Failed to archive delivery",
+				);
+			}
+		}
+
+		setArchiveDialogOpen(false);
+		setDeliveryToArchive(null);
+	};
+
+	const handleUnarchiveDelivery = async (delivery: ArchivedDelivery) => {
+		try {
+			await deliveryService.unarchive(delivery.id, delivery.concurrencyToken);
+			await fetchDeliveries();
+		} catch (error) {
+			console.error("Failed to unarchive delivery:", error);
+			showError(
+				isConcurrencyConflict(error)
+					? STALE_VERSION_MESSAGE
+					: "Failed to unarchive delivery",
+			);
+		}
 	};
 
 	const handleCloseCreateModal = () => {
@@ -263,11 +338,14 @@ export const useDeliveryManagement = ({
 
 	return {
 		deliveries,
+		archivedDeliveries,
 		isLoading,
 		showCreateModal,
 		selectedDelivery,
 		deleteDialogOpen,
 		deliveryToDelete,
+		archiveDialogOpen,
+		deliveryToArchive,
 		expandedDeliveries,
 		loadedFeatures,
 		loadingFeaturesByDelivery,
@@ -275,6 +353,9 @@ export const useDeliveryManagement = ({
 		handleAddDelivery,
 		handleDeleteDelivery,
 		handleEditDelivery,
+		handleArchiveDelivery,
+		handleArchiveConfirmation,
+		handleUnarchiveDelivery,
 		handleDeleteConfirmation,
 		handleCloseCreateModal,
 		handleCloseEditModal,

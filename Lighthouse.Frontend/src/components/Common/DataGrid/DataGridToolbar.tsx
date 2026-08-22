@@ -7,6 +7,7 @@ import type { GridRowId } from "@mui/x-data-grid";
 import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useState } from "react";
+import { PREMIUM_UPGRADE_TOOLTIP } from "../../../utils/premiumUpgradeTooltip";
 import type { DataGridExportTable, DataGridToolbarProps } from "./types";
 
 const generateFileName = (exportFileName?: string): string => {
@@ -181,7 +182,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 
 	const getCopyTooltipText = () => {
 		if (!canUsePremiumFeatures) {
-			return "Premium feature - Upgrade to use";
+			return PREMIUM_UPGRADE_TOOLTIP;
 		}
 		return copyStatus === "copied" ? "Copied!" : "Copy to Clipboard";
 	};
@@ -190,7 +191,7 @@ const DataGridToolbar: React.FC<DataGridToolbarProps> = ({
 
 	const csvTooltip = canUsePremiumFeatures
 		? "Export to CSV"
-		: "Premium feature - Upgrade to use";
+		: PREMIUM_UPGRADE_TOOLTIP;
 
 	return (
 		<Box

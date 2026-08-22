@@ -1,4 +1,9 @@
+import { z } from "zod";
 import { Delivery, type IDelivery } from "../../models/Delivery";
+import {
+	ArchivedDelivery,
+	ArchivedDeliverySchema,
+} from "../../models/Delivery/ArchivedDelivery";
 import {
 	type DeliveryMetricsHistory,
 	parseDeliveryMetricsHistory,
@@ -26,8 +31,24 @@ export interface IDeliveryUpdateOptions {
 	concurrencyToken?: string;
 }
 
+/**
+ * A Portfolio's Deliveries, with the retired ones kept apart from the ones still running. They
+ * arrive separated rather than flagged because they are worked out from different things - the
+ * running ones from the Features as they stand now, the retired ones from what was written down
+ * when they closed.
+ */
+export interface IPortfolioDeliveries {
+	active: Delivery[];
+	archived: ArchivedDelivery[];
+}
+
+const PortfolioDeliveriesSchema = z.object({
+	active: z.array(z.custom<IDelivery>()),
+	archived: z.array(ArchivedDeliverySchema),
+});
+
 export interface IDeliveryService {
-	getByPortfolio(portfolioId: number): Promise<Delivery[]>;
+	getByPortfolio(portfolioId: number): Promise<IPortfolioDeliveries>;
 	create(
 		portfolioId: number,
 		name: string,
@@ -39,6 +60,8 @@ export interface IDeliveryService {
 	): Promise<void>;
 	update(options: IDeliveryUpdateOptions): Promise<void>;
 	delete(deliveryId: number): Promise<void>;
+	archive(deliveryId: number, concurrencyToken?: string): Promise<void>;
+	unarchive(deliveryId: number, concurrencyToken?: string): Promise<void>;
 	getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema>;
 	validateRules(
 		portfolioId: number,
@@ -60,15 +83,22 @@ export class DeliveryService
 	extends BaseApiService
 	implements IDeliveryService
 {
-	async getByPortfolio(portfolioId: number): Promise<Delivery[]> {
+	async getByPortfolio(portfolioId: number): Promise<IPortfolioDeliveries> {
 		return this.withErrorHandling(async () => {
-			const response = await this.apiService.get<IDelivery[]>(
+			const response = await this.apiService.get<unknown>(
 				`/deliveries/portfolio/${portfolioId}`,
 			);
-			return BaseApiService.asArray(
+			const parsed = BaseApiService.parse(
+				PortfolioDeliveriesSchema,
 				response.data,
-				`/deliveries/portfolio/${portfolioId}`,
-			).map((data) => Delivery.fromBackend(data));
+			);
+
+			return {
+				active: parsed.active.map((data) => Delivery.fromBackend(data)),
+				archived: parsed.archived.map((data) =>
+					ArchivedDelivery.fromParsed(data),
+				),
+			};
 		});
 	}
 
@@ -119,6 +149,25 @@ export class DeliveryService
 	async delete(deliveryId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete<void>(`/deliveries/${deliveryId}`);
+		});
+	}
+
+	async archive(deliveryId: number, concurrencyToken?: string): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.post<void>(`/deliveries/${deliveryId}/archive`, {
+				concurrencyToken,
+			});
+		});
+	}
+
+	async unarchive(
+		deliveryId: number,
+		concurrencyToken?: string,
+	): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.post<void>(`/deliveries/${deliveryId}/unarchive`, {
+				concurrencyToken,
+			});
 		});
 	}
 

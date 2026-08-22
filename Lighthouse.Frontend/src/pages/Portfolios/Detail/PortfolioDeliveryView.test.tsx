@@ -55,7 +55,7 @@ const renderView = (canEdit: boolean | undefined, deliveries: Delivery[]) => {
 	const deliveryService = createMockDeliveryService();
 	(
 		deliveryService.getByPortfolio as ReturnType<typeof vi.fn>
-	).mockResolvedValue(deliveries);
+	).mockResolvedValue({ active: deliveries, archived: [] });
 
 	const context = createMockApiServiceContext({
 		deliveryService,

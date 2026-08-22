@@ -390,10 +390,12 @@ export const createMockRbacService = (): IRbacService => {
 
 export const createMockDeliveryService = (): IDeliveryService => {
 	return {
-		getByPortfolio: vi.fn().mockResolvedValue([]),
+		getByPortfolio: vi.fn().mockResolvedValue({ active: [], archived: [] }),
 		create: vi.fn().mockResolvedValue(undefined),
 		update: vi.fn().mockResolvedValue(undefined),
 		delete: vi.fn().mockResolvedValue(undefined),
+		archive: vi.fn().mockResolvedValue(undefined),
+		unarchive: vi.fn().mockResolvedValue(undefined),
 		getRuleSchema: vi.fn().mockResolvedValue({ fields: [] }),
 		validateRules: vi.fn().mockResolvedValue([]),
 		getMetricsHistory: vi.fn().mockResolvedValue({

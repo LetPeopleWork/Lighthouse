@@ -36,7 +36,7 @@ export const DeliveriesChips: React.FC<DeliveriesChipsProps> = ({
 			try {
 				const fetchedDeliveries =
 					await deliveryService.getByPortfolio(portfolioId);
-				setDeliveries(fetchedDeliveries);
+				setDeliveries(fetchedDeliveries.active);
 			} catch (error) {
 				console.error("Error fetching deliveries:", error);
 				setDeliveries([]);

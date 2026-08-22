@@ -10,6 +10,10 @@ const renderSites = {
 		here,
 		"../../pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
 	),
+	ArchivedDeliveriesSection: resolve(
+		here,
+		"../../pages/Portfolios/Detail/Components/DeliveryGrid/ArchivedDeliveriesSection.tsx",
+	),
 	DeliveriesChips: resolve(
 		here,
 		"../../components/Common/DataOverviewTable/DeliveriesChips.tsx",

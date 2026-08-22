@@ -1,8 +1,13 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
+import {
+	ArchivedDelivery,
+	ArchivedDeliverySchema,
+} from "../../../../../models/Delivery/ArchivedDelivery";
 import { Feature } from "../../../../../models/Feature";
 import { Portfolio } from "../../../../../models/Portfolio/Portfolio";
+import { ApiError } from "../../../../../services/Api/ApiError";
 import {
 	createMockApiServiceContext,
 	createMockFeatureService,
@@ -14,6 +19,8 @@ const mockDeliveryService = {
 	getByPortfolio: vi.fn(),
 	create: vi.fn(),
 	delete: vi.fn(),
+	archive: vi.fn(),
+	unarchive: vi.fn(),
 };
 
 const mockFeatureService = createMockFeatureService();
@@ -26,6 +33,8 @@ const mockApiServiceContext = createMockApiServiceContext({
 		create: mockDeliveryService.create,
 		update: vi.fn(),
 		delete: mockDeliveryService.delete,
+		archive: mockDeliveryService.archive,
+		unarchive: mockDeliveryService.unarchive,
 		getRuleSchema: vi.fn(),
 		validateRules: vi.fn(),
 		getMetricsHistory: vi.fn(),
@@ -54,6 +63,11 @@ vi.mock("react", async () => {
 		useContext: () => mockApiServiceContext,
 	};
 });
+
+const portfolioDeliveries = (
+	active: Delivery[] = [],
+	archived: ArchivedDelivery[] = [],
+) => ({ active, archived });
 
 describe("useDeliveryManagement", () => {
 	const getMockPortfolio = (overrides?: Partial<Portfolio>): Portfolio => {
@@ -109,7 +123,9 @@ describe("useDeliveryManagement", () => {
 	describe("Initial State", () => {
 		it("should initialize with correct default state", async () => {
 			const portfolio = getMockPortfolio();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -134,7 +150,9 @@ describe("useDeliveryManagement", () => {
 				getMockDelivery({ id: 1 }),
 				getMockDelivery({ id: 2 }),
 			];
-			mockDeliveryService.getByPortfolio.mockResolvedValue(deliveries);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries(deliveries),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -168,7 +186,9 @@ describe("useDeliveryManagement", () => {
 	describe("Modal Management", () => {
 		it("should open create modal when handleAddDelivery is called", async () => {
 			const portfolio = getMockPortfolio();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -185,7 +205,9 @@ describe("useDeliveryManagement", () => {
 
 		it("should close create modal when handleCloseCreateModal is called", async () => {
 			const portfolio = getMockPortfolio();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -207,7 +229,9 @@ describe("useDeliveryManagement", () => {
 		it("should set selected delivery when handleEditDelivery is called", async () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -225,7 +249,9 @@ describe("useDeliveryManagement", () => {
 		it("should clear selected delivery when handleCloseEditModal is called", async () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -249,7 +275,9 @@ describe("useDeliveryManagement", () => {
 		it("should open delete dialog when handleDeleteDelivery is called", async () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -271,8 +299,10 @@ describe("useDeliveryManagement", () => {
 			const remainingDeliveries = [getMockDelivery({ id: 2 })];
 
 			mockDeliveryService.getByPortfolio
-				.mockResolvedValueOnce([delivery, ...remainingDeliveries])
-				.mockResolvedValueOnce(remainingDeliveries);
+				.mockResolvedValueOnce(
+					portfolioDeliveries([delivery, ...remainingDeliveries]),
+				)
+				.mockResolvedValueOnce(portfolioDeliveries(remainingDeliveries));
 			mockDeliveryService.delete.mockResolvedValue(null);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -305,8 +335,8 @@ describe("useDeliveryManagement", () => {
 			const features = [getMockFeature({ id: 1 }), getMockFeature({ id: 2 })];
 
 			mockDeliveryService.getByPortfolio
-				.mockResolvedValueOnce([delivery])
-				.mockResolvedValueOnce([]);
+				.mockResolvedValueOnce(portfolioDeliveries([delivery]))
+				.mockResolvedValueOnce(portfolioDeliveries([]));
 			mockDeliveryService.delete.mockResolvedValue(null);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
@@ -344,7 +374,9 @@ describe("useDeliveryManagement", () => {
 		it("should not delete delivery when confirmation is rejected", async () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -368,7 +400,9 @@ describe("useDeliveryManagement", () => {
 		it("should handle delete delivery error", async () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery();
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 			mockDeliveryService.delete.mockRejectedValue(new Error("Delete failed"));
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -402,8 +436,8 @@ describe("useDeliveryManagement", () => {
 			const newDelivery = getMockDelivery(deliveryData);
 
 			mockDeliveryService.getByPortfolio
-				.mockResolvedValueOnce([])
-				.mockResolvedValueOnce([newDelivery]);
+				.mockResolvedValueOnce(portfolioDeliveries([]))
+				.mockResolvedValueOnce(portfolioDeliveries([newDelivery]));
 			mockDeliveryService.create.mockResolvedValue(null);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -445,7 +479,9 @@ describe("useDeliveryManagement", () => {
 				featureIds: [1, 2],
 			};
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
 			mockDeliveryService.create.mockRejectedValue(new Error("Create failed"));
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -472,7 +508,9 @@ describe("useDeliveryManagement", () => {
 				featureIds: [1, 2],
 			};
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
 			const updateSpy = vi.fn().mockResolvedValue(undefined);
 			mockApiServiceContext.deliveryService.update = updateSpy;
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -515,7 +553,9 @@ describe("useDeliveryManagement", () => {
 				featureIds: [1],
 			};
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
 			const updateSpy = vi.fn().mockRejectedValue(new Error("Update failed"));
 			mockApiServiceContext.deliveryService.update = updateSpy;
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -567,9 +607,9 @@ describe("useDeliveryManagement", () => {
 				// Second call: fetchDeliveries() in handleUpdateDelivery
 				// Third call: direct call in handleUpdateDelivery for feature reload
 				if (getByPortfolioCallCount <= 2) {
-					return Promise.resolve([mockDelivery]);
+					return Promise.resolve(portfolioDeliveries([mockDelivery]));
 				}
-				return Promise.resolve([updatedMockDelivery]);
+				return Promise.resolve(portfolioDeliveries([updatedMockDelivery]));
 			});
 
 			// Setup feature service to return different features based on IDs
@@ -651,7 +691,9 @@ describe("useDeliveryManagement", () => {
 			const delivery = getMockDelivery({ id: 1, features: [1, 2] });
 			const features = [getMockFeature({ id: 1 }), getMockFeature({ id: 2 })];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -681,7 +723,9 @@ describe("useDeliveryManagement", () => {
 			const delivery = getMockDelivery({ id: 1, features: [1, 2] });
 			const features = [getMockFeature({ id: 1 }), getMockFeature({ id: 2 })];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -713,7 +757,9 @@ describe("useDeliveryManagement", () => {
 			const delivery = getMockDelivery({ id: 1, features: [1, 2] });
 			const features = [getMockFeature({ id: 1 }), getMockFeature({ id: 2 })];
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -749,7 +795,9 @@ describe("useDeliveryManagement", () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery({ id: 1, features: [] });
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
@@ -772,7 +820,9 @@ describe("useDeliveryManagement", () => {
 			const portfolio = getMockPortfolio();
 			const delivery = getMockDelivery({ id: 1, features: [1, 2] });
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 			mockGetFeaturesByIds.mockRejectedValue(new Error("Feature load failed"));
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -803,7 +853,9 @@ describe("useDeliveryManagement", () => {
 				resolveFeatures = resolve;
 			});
 
-			mockDeliveryService.getByPortfolio.mockResolvedValue([delivery]);
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
 			mockGetFeaturesByIds.mockReturnValue(featuresPromise);
 
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
@@ -835,6 +887,196 @@ describe("useDeliveryManagement", () => {
 					features,
 				);
 			});
+		});
+	});
+
+	describe("Archiving", () => {
+		const archivedRow = (id: number, name: string): ArchivedDelivery =>
+			ArchivedDelivery.fromParsed(
+				ArchivedDeliverySchema.parse({
+					id,
+					name,
+					date: "2026-05-01T00:00:00Z",
+					portfolioId: 1,
+					archivedOn: "2026-05-04T00:00:00Z",
+					progress: 100,
+					totalWork: 30,
+					doneWork: 30,
+					remainingWork: 0,
+					likelihoodPercentage: 91,
+					hasSufficientData: true,
+					teamsWithoutForecast: [],
+					selectionMode: "Manual",
+					concurrencyToken: "22222222-2222-2222-2222-222222222222",
+				}),
+			);
+
+		it("keeps the retired Deliveries apart from the ones still running", async () => {
+			const portfolio = getMockPortfolio();
+			const live = getMockDelivery({ id: 1 });
+			const retired = archivedRow(9, "Autumn Launch");
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([live], [retired]),
+			);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			expect(result.current.deliveries).toEqual([live]);
+			expect(result.current.archivedDeliveries).toEqual([retired]);
+		});
+
+		it("asks before archiving and does nothing while the question is open", async () => {
+			const portfolio = getMockPortfolio();
+			const delivery = getMockDelivery({
+				id: 1,
+				concurrencyToken: "11111111-1111-1111-1111-111111111111",
+			});
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleArchiveDelivery(delivery);
+			});
+
+			expect(result.current.archiveDialogOpen).toBe(true);
+			expect(result.current.deliveryToArchive).toEqual(delivery);
+			expect(mockDeliveryService.archive).not.toHaveBeenCalled();
+		});
+
+		it("archives the version it is looking at, then reads the list again", async () => {
+			const portfolio = getMockPortfolio();
+			const delivery = getMockDelivery({
+				id: 1,
+				concurrencyToken: "11111111-1111-1111-1111-111111111111",
+			});
+			const retired = archivedRow(1, "Test Delivery");
+
+			mockDeliveryService.getByPortfolio
+				.mockResolvedValueOnce(portfolioDeliveries([delivery]))
+				.mockResolvedValueOnce(portfolioDeliveries([], [retired]));
+			mockDeliveryService.archive.mockResolvedValue(undefined);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleArchiveDelivery(delivery);
+			});
+
+			await act(async () => {
+				await result.current.handleArchiveConfirmation(true);
+			});
+
+			expect(mockDeliveryService.archive).toHaveBeenCalledWith(
+				1,
+				"11111111-1111-1111-1111-111111111111",
+			);
+			expect(result.current.archiveDialogOpen).toBe(false);
+			expect(result.current.deliveryToArchive).toBeNull();
+
+			await waitFor(() => {
+				expect(result.current.deliveries).toEqual([]);
+				expect(result.current.archivedDeliveries).toEqual([retired]);
+			});
+		});
+
+		it("leaves the Delivery alone when the question is declined", async () => {
+			const portfolio = getMockPortfolio();
+			const delivery = getMockDelivery({ id: 1 });
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleArchiveDelivery(delivery);
+			});
+
+			await act(async () => {
+				await result.current.handleArchiveConfirmation(false);
+			});
+
+			expect(mockDeliveryService.archive).not.toHaveBeenCalled();
+			expect(result.current.archiveDialogOpen).toBe(false);
+			expect(result.current.deliveries).toEqual([delivery]);
+		});
+
+		it("says a stale version was refused rather than reporting a plain failure", async () => {
+			const portfolio = getMockPortfolio();
+			const delivery = getMockDelivery({ id: 1 });
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([delivery]),
+			);
+			mockDeliveryService.archive.mockRejectedValue(
+				new ApiError(409, "Request failed with status code 409"),
+			);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleArchiveDelivery(delivery);
+			});
+
+			await act(async () => {
+				await result.current.handleArchiveConfirmation(true);
+			});
+
+			expect(mockShowError).toHaveBeenCalledWith(
+				expect.stringMatching(/changed by someone else/i),
+			);
+		});
+
+		it("brings a retired Delivery back on the version it was last written at", async () => {
+			const portfolio = getMockPortfolio();
+			const retired = archivedRow(9, "Autumn Launch");
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([], [retired]),
+			);
+			mockDeliveryService.unarchive.mockResolvedValue(undefined);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			await act(async () => {
+				await result.current.handleUnarchiveDelivery(retired);
+			});
+
+			expect(mockDeliveryService.unarchive).toHaveBeenCalledWith(
+				9,
+				"22222222-2222-2222-2222-222222222222",
+			);
+			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2);
 		});
 	});
 });

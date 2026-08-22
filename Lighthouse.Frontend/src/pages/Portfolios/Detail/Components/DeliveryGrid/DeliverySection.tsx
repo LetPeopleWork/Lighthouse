@@ -1,3 +1,4 @@
+import ArchiveIcon from "@mui/icons-material/Archive";
 import AutoModeIcon from "@mui/icons-material/AutoMode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -59,6 +60,7 @@ import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood
 import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../utils/forecast/insufficientForecastData";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
 import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
+import { PREMIUM_UPGRADE_TOOLTIP } from "../../../../../utils/premiumUpgradeTooltip";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
 
@@ -76,8 +78,10 @@ interface DeliverySectionProps {
 	onToggleExpanded: (deliveryId: number) => void;
 	onDelete: (delivery: Delivery) => void;
 	onEdit: (delivery: Delivery) => void;
+	onArchive?: (delivery: Delivery) => void;
 	teams: IEntityReference[];
 	canEdit?: boolean;
+	canArchive?: boolean;
 }
 
 const DeliverySection: React.FC<DeliverySectionProps> = ({
@@ -88,8 +92,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	onToggleExpanded,
 	onDelete,
 	onEdit,
+	onArchive,
 	teams,
 	canEdit = true,
+	canArchive = false,
 }) => {
 	const { featureService, deliveryService } = useContext(ApiServiceContext);
 
@@ -344,54 +350,84 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 									margin: "12px 0",
 								},
 							},
-							pr: 8,
+							pr: 15,
 						}}
 					>
 						{canEdit && (
-							<IconButton
-								size="small"
-								onClick={(e) => {
-									e.stopPropagation();
-									onEdit(delivery);
-								}}
-								aria-label="edit"
-								sx={{
-									position: "absolute",
-									top: "50%",
-									transform: "translateY(-50%)",
-									right: 48,
-									zIndex: 1,
-									bgcolor: "background.paper",
-									"&:hover": {
-										bgcolor: "primary.light",
-									},
-								}}
-							>
-								<EditIcon />
-							</IconButton>
-						)}
-						{canEdit && (
-							<IconButton
-								size="small"
-								onClick={(e) => {
-									e.stopPropagation();
-									onDelete(delivery);
-								}}
-								aria-label="delete"
+							<Box
 								sx={{
 									position: "absolute",
 									top: "50%",
 									transform: "translateY(-50%)",
 									right: 8,
 									zIndex: 1,
-									bgcolor: "background.paper",
-									"&:hover": {
-										bgcolor: "error.light",
-									},
+									display: "flex",
+									alignItems: "center",
+									gap: 0.5,
 								}}
 							>
-								<DeleteIcon />
-							</IconButton>
+								<Tooltip
+									title={
+										canArchive
+											? `Archive ${deliveryTerm}`
+											: PREMIUM_UPGRADE_TOOLTIP
+									}
+								>
+									{/* The button is disabled without a licence, and a disabled button fires no
+									    events, so the tooltip needs an enabled element of its own to sit on. */}
+									<span>
+										<IconButton
+											size="small"
+											disabled={!canArchive}
+											onClick={(e) => {
+												e.stopPropagation();
+												onArchive?.(delivery);
+											}}
+											aria-label="archive"
+											sx={{
+												bgcolor: "background.paper",
+												"&:hover": {
+													bgcolor: "primary.light",
+												},
+											}}
+										>
+											<ArchiveIcon />
+										</IconButton>
+									</span>
+								</Tooltip>
+								<IconButton
+									size="small"
+									onClick={(e) => {
+										e.stopPropagation();
+										onEdit(delivery);
+									}}
+									aria-label="edit"
+									sx={{
+										bgcolor: "background.paper",
+										"&:hover": {
+											bgcolor: "primary.light",
+										},
+									}}
+								>
+									<EditIcon />
+								</IconButton>
+								<IconButton
+									size="small"
+									onClick={(e) => {
+										e.stopPropagation();
+										onDelete(delivery);
+									}}
+									aria-label="delete"
+									sx={{
+										bgcolor: "background.paper",
+										"&:hover": {
+											bgcolor: "error.light",
+										},
+									}}
+								>
+									<DeleteIcon />
+								</IconButton>
+							</Box>
 						)}
 						<Box
 							sx={{

@@ -1,7 +1,9 @@
 import { Box } from "@mui/material";
 import type React from "react";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { Portfolio } from "../../../models/Portfolio/Portfolio";
 import {
+	ArchivedDeliveriesSection,
 	DeliveryHeader,
 	DeliveryModals,
 	useDeliveryManagement,
@@ -19,13 +21,18 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 }) => {
 	const {
 		deliveries,
+		archivedDeliveries,
 		showCreateModal,
 		selectedDelivery,
 		deleteDialogOpen,
 		deliveryToDelete,
+		archiveDialogOpen,
+		deliveryToArchive,
 		handleAddDelivery,
 		handleDeleteDelivery,
 		handleEditDelivery,
+		handleArchiveDelivery,
+		handleArchiveConfirmation,
 		handleDeleteConfirmation,
 		handleCloseCreateModal,
 		handleCloseEditModal,
@@ -36,6 +43,11 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 		loadingFeaturesByDelivery,
 		handleToggleExpanded,
 	} = useDeliveryManagement({ portfolio });
+
+	// Asked once for the whole list rather than per row: the answer is the same for every Delivery
+	// on the page, and asking per row means a licence lookup for each one.
+	const { licenseStatus } = useLicenseRestrictions();
+	const canArchive = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	return (
 		<Box>
@@ -58,11 +70,19 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 							onToggleExpanded={handleToggleExpanded}
 							onDelete={handleDeleteDelivery}
 							onEdit={handleEditDelivery}
+							onArchive={handleArchiveDelivery}
 							teams={portfolio.involvedTeams}
 							canEdit={canEdit}
+							canArchive={canArchive}
 						/>
 					);
 				})}
+
+				<ArchivedDeliveriesSection
+					archivedDeliveries={archivedDeliveries}
+					canEdit={canEdit}
+					onDelete={handleDeleteDelivery}
+				/>
 			</Box>
 
 			{canEdit && (
@@ -76,7 +96,10 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 					onCloseEditModal={handleCloseEditModal}
 					onCreateDelivery={handleCreateDelivery}
 					onUpdateDelivery={handleUpdateDelivery}
+					deliveryToArchive={deliveryToArchive}
+					archiveDialogOpen={archiveDialogOpen}
 					onDeleteConfirmation={handleDeleteConfirmation}
+					onArchiveConfirmation={handleArchiveConfirmation}
 				/>
 			)}
 		</Box>

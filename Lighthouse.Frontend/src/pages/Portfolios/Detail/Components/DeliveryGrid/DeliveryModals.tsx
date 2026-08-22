@@ -2,14 +2,18 @@ import type React from "react";
 import DeleteConfirmationDialog from "../../../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
+import ArchiveConfirmationDialog from "./ArchiveConfirmationDialog";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
+import type { DeletableDelivery } from "./useDeliveryManagement";
 
 interface DeliveryModalsProps {
 	portfolio: Portfolio;
 	showCreateModal: boolean;
 	selectedDelivery: Delivery | null;
-	deliveryToDelete: Delivery | null;
+	deliveryToDelete: DeletableDelivery | null;
 	deleteDialogOpen: boolean;
+	deliveryToArchive: Delivery | null;
+	archiveDialogOpen: boolean;
 	onCloseCreateModal: () => void;
 	onCloseEditModal: () => void;
 	onCreateDelivery: (deliveryData: {
@@ -30,6 +34,7 @@ interface DeliveryModalsProps {
 		mode?: "and" | "or";
 	}) => Promise<void>;
 	onDeleteConfirmation: (confirmed: boolean) => void;
+	onArchiveConfirmation: (confirmed: boolean) => void;
 }
 
 export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
@@ -38,11 +43,14 @@ export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
 	selectedDelivery,
 	deliveryToDelete,
 	deleteDialogOpen,
+	deliveryToArchive,
+	archiveDialogOpen,
 	onCloseCreateModal,
 	onCloseEditModal,
 	onCreateDelivery,
 	onUpdateDelivery,
 	onDeleteConfirmation,
+	onArchiveConfirmation,
 }) => {
 	const isModalOpen = showCreateModal || !!selectedDelivery;
 	const editingDelivery = selectedDelivery;
@@ -63,6 +71,15 @@ export const DeliveryModals: React.FC<DeliveryModalsProps> = ({
 					itemName={deliveryToDelete.name}
 					onCancel={() => onDeleteConfirmation(false)}
 					onConfirm={() => onDeleteConfirmation(true)}
+				/>
+			)}
+
+			{deliveryToArchive && (
+				<ArchiveConfirmationDialog
+					open={archiveDialogOpen}
+					itemName={deliveryToArchive.name}
+					onCancel={() => onArchiveConfirmation(false)}
+					onConfirm={() => onArchiveConfirmation(true)}
 				/>
 			)}
 

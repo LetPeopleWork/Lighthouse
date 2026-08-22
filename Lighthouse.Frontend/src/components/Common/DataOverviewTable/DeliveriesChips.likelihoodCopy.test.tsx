@@ -72,7 +72,10 @@ async function renderChips(): Promise<void> {
 
 beforeEach(() => {
 	terminology.current = { features: "Features", deliveries: "Deliveries" };
-	getByPortfolio.mockResolvedValue([deliveryWith(81)]);
+	getByPortfolio.mockResolvedValue({
+		active: [deliveryWith(81)],
+		archived: [],
+	});
 });
 
 describe("DeliveriesChips joint framing (#5587 slice-03)", () => {
@@ -111,7 +114,7 @@ describe("DeliveriesChips states the relabel must leave alone", () => {
 	it("still reports that an unforecastable delivery cannot be forecast", async () => {
 		const delivery = deliveryWith(null);
 		delivery.teamsWithoutForecast = ["Beta"];
-		getByPortfolio.mockResolvedValue([delivery]);
+		getByPortfolio.mockResolvedValue({ active: [delivery], archived: [] });
 
 		await renderChips();
 
@@ -123,7 +126,7 @@ describe("DeliveriesChips states the relabel must leave alone", () => {
 	it("still reports insufficient data ahead of any likelihood framing", async () => {
 		const delivery = deliveryWith(81);
 		delivery.hasSufficientData = false;
-		getByPortfolio.mockResolvedValue([delivery]);
+		getByPortfolio.mockResolvedValue({ active: [delivery], archived: [] });
 
 		await renderChips();
 
