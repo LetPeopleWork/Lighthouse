@@ -2,6 +2,7 @@ using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -52,6 +53,7 @@ namespace Lighthouse.Backend.Tests.API
                 rbacAdministrationService.Object,
                 deliveryMetricSnapshotRepository.Object,
                 Mock.Of<IBlackoutPeriodService>(),
+                new DeliveryMetricValuesProjector(Mock.Of<IBlackoutPeriodService>()),
                 TestToday.Clock);
         }
 

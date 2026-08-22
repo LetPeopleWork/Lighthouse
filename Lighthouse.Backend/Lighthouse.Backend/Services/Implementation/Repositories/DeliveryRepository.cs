@@ -53,6 +53,25 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .FirstOrDefault();
         }
 
+        /// <summary>
+        /// One row per Delivery, so archiving a Delivery that was already archived once overwrites the
+        /// pin rather than adding a second one nobody could choose between.
+        /// </summary>
+        public DeliveryClosureRecord GetOrCreateClosureRecord(int deliveryId)
+        {
+            var existing = Context.DeliveryClosureRecords
+                .FirstOrDefault(record => record.DeliveryId == deliveryId);
+
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var closureRecord = new DeliveryClosureRecord { DeliveryId = deliveryId };
+            Context.DeliveryClosureRecords.Add(closureRecord);
+            return closureRecord;
+        }
+
         private IQueryable<Delivery> GetAllDeliveriesWithIncludes()
         {
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.

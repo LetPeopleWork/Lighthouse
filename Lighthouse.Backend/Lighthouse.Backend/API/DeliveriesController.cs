@@ -2,6 +2,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -14,7 +15,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?"; folding it into an aggregate with the unrelated repositories would hide it.
+#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?", and Story #5640 adds the projector as the one place a Delivery's numbers are read; folding either into an aggregate with the unrelated repositories would hide it.
     public class DeliveriesController(
         IDeliveryRepository deliveryRepository,
         IRepository<Portfolio> portfolioRepository,
@@ -23,6 +24,7 @@ namespace Lighthouse.Backend.API
         IRbacAdministrationService rbacAdministrationService,
         IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
         IBlackoutPeriodService blackoutPeriodService,
+        DeliveryMetricValuesProjector deliveryMetricValuesProjector,
         ILighthouseClock clock)
 #pragma warning restore S107
         : ControllerBase
@@ -207,6 +209,113 @@ namespace Lighthouse.Backend.API
         [HttpDelete("{deliveryId:int}")]
         public async Task<IActionResult> DeleteDelivery(int deliveryId)
         {
+            // Archiving is the alternative to deleting, not protection from it: an archived Delivery is
+            // deleted exactly as an active one is, and its pinned record and history go with it.
+            var scopeCheck = await CheckScopeAsync(deliveryId, RbacGuardRequirement.PortfolioWrite);
+            if (scopeCheck != null)
+            {
+                return scopeCheck;
+            }
+
+            deliveryRepository.Remove(deliveryId);
+            await deliveryRepository.Save();
+
+            return NoContent();
+        }
+
+        [HttpPost("{deliveryId:int}/archive")]
+        public async Task<IActionResult> ArchiveDelivery(int deliveryId, [FromBody] ArchiveDeliveryRequest? request)
+        {
+            var scopeCheck = await CheckScopeAsync(deliveryId, RbacGuardRequirement.PortfolioWrite);
+            if (scopeCheck != null)
+            {
+                return scopeCheck;
+            }
+
+            if (!licenseService.CanUsePremiumFeatures())
+            {
+                return StatusCode(403, "Archiving a delivery requires a premium license");
+            }
+
+            var delivery = deliveryRepository.GetById(deliveryId);
+            if (delivery == null)
+            {
+                return NotFound($"Delivery with ID {deliveryId} not found");
+            }
+
+            delivery.Archive(clock.TodayAsUtcMidnight);
+            PinClosureRecord(delivery);
+
+            ApplyClientToken(delivery, request);
+            await deliveryRepository.Save();
+
+            return Ok();
+        }
+
+        [HttpPost("{deliveryId:int}/unarchive")]
+        public async Task<IActionResult> UnarchiveDelivery(int deliveryId, [FromBody] ArchiveDeliveryRequest? request)
+        {
+            var scopeCheck = await CheckScopeAsync(deliveryId, RbacGuardRequirement.PortfolioWrite);
+            if (scopeCheck != null)
+            {
+                return scopeCheck;
+            }
+
+            var delivery = deliveryRepository.GetByIdForUpdate(deliveryId);
+            if (delivery == null)
+            {
+                return NotFound($"Delivery with ID {deliveryId} not found");
+            }
+
+            // The pinned record stays where it is. A Delivery that comes back and closes again
+            // overwrites it, and one that never closes again keeps a record nobody reads.
+            delivery.Unarchive();
+
+            ApplyClientToken(delivery, request);
+            await deliveryRepository.Save();
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Computed here rather than looked up, so a Delivery created and closed on the same afternoon
+        /// - one the daily recorder has never seen - still keeps a complete record of how it read.
+        /// </summary>
+        private void PinClosureRecord(Delivery delivery)
+        {
+            var values = deliveryMetricValuesProjector.Project(delivery, clock.Today);
+            var closureRecord = deliveryRepository.GetOrCreateClosureRecord(delivery.Id);
+
+            closureRecord.ArchivedOn = delivery.ArchivedOn!.Value;
+            closureRecord.TargetDateAtClosure = values.TargetDate;
+            closureRecord.TotalWork = values.TotalWork;
+            closureRecord.DoneWork = values.DoneWork;
+            closureRecord.RemainingWork = values.RemainingWork;
+            closureRecord.EstimatedItemCount = values.EstimatedItemCount;
+            closureRecord.LikelihoodPercentage = values.LikelihoodPercentage;
+            closureRecord.WhenDistributionJson = values.WhenDistributionJson;
+            closureRecord.FeatureBreakdownJson = values.FeatureBreakdownJson;
+            closureRecord.HasSufficientData = values.HasSufficientData;
+            closureRecord.TeamsWithoutForecastJson = values.TeamsWithoutForecastJson;
+            closureRecord.SelectionMode = values.SelectionMode;
+            closureRecord.RuleDefinitionJson = values.RuleDefinitionJson;
+            closureRecord.RuleSchemaVersion = values.RuleSchemaVersion;
+        }
+
+        private void ApplyClientToken(Delivery delivery, ArchiveDeliveryRequest? request)
+        {
+            if (request?.ConcurrencyToken != null)
+            {
+                deliveryRepository.ApplyConcurrencyTokenForEdit(delivery, request.ConcurrencyToken.Value);
+            }
+        }
+
+        /// <summary>
+        /// A route that names only the Delivery carries neither a Portfolio nor a Team id, so the
+        /// declarative guard has no scope to resolve and the check has to happen here instead.
+        /// </summary>
+        private async Task<ActionResult?> CheckScopeAsync(int deliveryId, RbacGuardRequirement requirement)
+        {
             var portfolioId = deliveryRepository.GetPortfolioId(deliveryId);
             if (!portfolioId.HasValue)
             {
@@ -215,17 +324,14 @@ namespace Lighthouse.Backend.API
 
             if (!await rbacAdministrationService.CanSatisfyRequirementAsync(
                     User,
-                    RbacGuardRequirement.PortfolioWrite,
+                    requirement,
                     portfolioId.Value,
                     HttpContext?.RequestAborted ?? default))
             {
                 return Forbid();
             }
 
-            deliveryRepository.Remove(deliveryId);
-            await deliveryRepository.Save();
-
-            return NoContent();
+            return null;
         }
 
         private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(UpdateDeliveryRequest request, Delivery delivery)

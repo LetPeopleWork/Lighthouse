@@ -12,5 +12,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         List<Feature> GetFeaturesByIds(IEnumerable<int> featureIds);
 
         int? GetPortfolioId(int deliveryId);
+
+        DeliveryClosureRecord GetOrCreateClosureRecord(int deliveryId);
     }
 }

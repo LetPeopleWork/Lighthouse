@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -339,6 +340,7 @@ namespace Lighthouse.Backend.Tests.API
                 rbacAdministrationServiceMock.Object,
                 deliveryMetricSnapshotRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
+                new DeliveryMetricValuesProjector(blackoutPeriodServiceMock.Object),
                 clock);
         }
 
