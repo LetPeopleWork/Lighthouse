@@ -1,7 +1,9 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../models/Delivery";
+import { Feature } from "../../models/Feature";
 import { DeliverySelectionMode } from "../../models/WorkItemRules";
+import { ApiError } from "./ApiError";
 import { DeliveryService } from "./DeliveryService";
 
 vi.mock("axios");
@@ -344,6 +346,188 @@ describe("DeliveryService", () => {
 			expect(result.points).toHaveLength(1);
 			expect(result.points[0].totalWork).toBe(20);
 			expect(result.points[0].doneWork).toBe(5);
+		});
+	});
+
+	describe("delivery sources", () => {
+		const featureWireRow = {
+			name: "Checkout rewrite",
+			id: 42,
+			referenceId: "FTR-42",
+			state: "In Progress",
+			type: "Feature",
+			stateCategory: "Doing",
+			lastUpdated: "2026-08-20T00:00:00Z",
+			startedDate: "2026-08-01T00:00:00Z",
+			closedDate: null,
+			cycleTime: 12,
+			workItemAge: 19,
+			size: 20,
+			owningTeam: "Team Alpha",
+			isUsingDefaultFeatureSize: false,
+			parentWorkItemReference: "",
+			remainingWork: { 1: 5 },
+			totalWork: { 1: 20 },
+			forecasts: [],
+		};
+
+		const refusalWithStatus = (status: number, body: string) => {
+			mockedAxios.isAxiosError.mockReturnValue(true);
+			return {
+				isAxiosError: true,
+				message: `Request failed with status code ${status}`,
+				response: { status, data: body },
+			};
+		};
+
+		it("Listing delivery sources for a non-Jira Portfolio yields an empty list and no error", async () => {
+			mockedAxios.get.mockResolvedValue({ data: [] });
+
+			await expect(deliveryService.getDeliverySources(7)).resolves.toEqual([]);
+			expect(mockedAxios.get).toHaveBeenCalledWith(
+				"/portfolios/7/delivery-sources",
+			);
+		});
+
+		it("names the one thing a Jira connection offers a date to be taken from", async () => {
+			mockedAxios.get.mockResolvedValue({
+				data: [{ key: "jira-release", displayName: "Jira Release" }],
+			});
+
+			const sources = await deliveryService.getDeliverySources(7);
+
+			expect(sources).toEqual([
+				{ key: "jira-release", displayName: "Jira Release" },
+			]);
+		});
+
+		it("refuses a source list the server did not shape as one", async () => {
+			mockedAxios.get.mockResolvedValue({ data: [{ key: "jira-release" }] });
+
+			const error = await deliveryService
+				.getDeliverySources(7)
+				.catch((thrown: unknown) => thrown);
+
+			expect(error).toBeInstanceOf(ApiError);
+			expect((error as ApiError).code).toBe("INVALID_RESPONSE");
+			expect((error as ApiError).technicalDetails).toContain("displayName");
+		});
+
+		it("leaves a Release nobody has dated without a date", async () => {
+			mockedAxios.get.mockResolvedValue({
+				data: [
+					{
+						id: "10043",
+						name: "Release 45",
+						projectKey: "PROJ",
+						projectName: "Project Phoenix",
+						isSelectable: false,
+						blockedBecause: "NoDateSet",
+					},
+				],
+			});
+
+			const options = await deliveryService.getDeliverySourceOptions(
+				7,
+				"jira-release",
+			);
+
+			expect(mockedAxios.get).toHaveBeenCalledWith(
+				"/portfolios/7/delivery-sources/jira-release/options",
+			);
+			expect(options[0].date).toBeNull();
+			expect(options[0].blockedBecause).toBe("NoDateSet");
+		});
+
+		it("lets an unknown source key reach the caller as a refusal rather than as nothing on offer", async () => {
+			mockedAxios.get.mockRejectedValue(
+				refusalWithStatus(
+					404,
+					"Portfolio with ID 7 offers no delivery source called 'jira-release'",
+				),
+			);
+
+			const error = await deliveryService
+				.getDeliverySourceOptions(7, "jira-release")
+				.catch((thrown: unknown) => thrown);
+
+			expect(error).toBeInstanceOf(ApiError);
+			expect((error as ApiError).code).toBe(404);
+		});
+
+		it("keeps a connection that could not be reached apart from a Release that is gone", async () => {
+			mockedAxios.get.mockRejectedValue(
+				refusalWithStatus(
+					502,
+					"The delivery source 'jira-release' could not be read right now",
+				),
+			);
+
+			const error = await deliveryService
+				.getDeliverySourceOptions(7, "jira-release")
+				.catch((thrown: unknown) => thrown);
+
+			expect((error as ApiError).code).toBe(502);
+		});
+
+		it("treats a preview with nothing tagged against it as an answer, not a failure", async () => {
+			mockedAxios.post.mockResolvedValue({
+				data: {
+					name: "Release 44",
+					date: "2026-09-30T00:00:00Z",
+					features: [],
+					emptyBecause: "NothingTaggedAgainstTheSource",
+				},
+			});
+
+			const preview = await deliveryService.previewDeliverySource(
+				7,
+				"jira-release",
+				"10042",
+			);
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/portfolios/7/delivery-sources/jira-release/preview",
+				{ sourceReference: "10042" },
+			);
+			expect(preview.features).toEqual([]);
+			expect(preview.emptyBecause).toBe("NothingTaggedAgainstTheSource");
+			expect(preview.date).toEqual(new Date("2026-09-30T00:00:00Z"));
+		});
+
+		it("hands the preview rows back as Features the existing grid can render", async () => {
+			mockedAxios.post.mockResolvedValue({
+				data: {
+					name: "Release 44",
+					date: "2026-09-30T00:00:00Z",
+					features: [featureWireRow],
+					emptyBecause: "None",
+				},
+			});
+
+			const preview = await deliveryService.previewDeliverySource(
+				7,
+				"jira-release",
+				"10042",
+			);
+
+			expect(preview.features[0]).toBeInstanceOf(Feature);
+			expect(preview.features[0].name).toBe("Checkout rewrite");
+		});
+
+		it("keeps a Release carrying no date apart from one that is gone", async () => {
+			mockedAxios.post.mockRejectedValue(
+				refusalWithStatus(
+					400,
+					"'Release 45' carries no date, so there is no date to preview",
+				),
+			);
+
+			const error = await deliveryService
+				.previewDeliverySource(7, "jira-release", "10043")
+				.catch((thrown: unknown) => thrown);
+
+			expect((error as ApiError).code).toBe(400);
 		});
 	});
 });

@@ -8,6 +8,7 @@ import { ApiError } from "../../../../../services/Api/ApiError";
 import { makeArchivedDelivery } from "../../../../../tests/ArchivedDeliveryFixture";
 import {
 	createMockApiServiceContext,
+	createMockDeliveryService,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
 import { useDeliveryManagement } from "./useDeliveryManagement";
@@ -33,19 +34,8 @@ mockFeatureService.getFeaturesByIds = mockGetFeaturesByIds;
 
 const mockApiServiceContext = createMockApiServiceContext({
 	deliveryService: {
-		getByPortfolio: mockDeliveryService.getByPortfolio,
-		create: mockDeliveryService.create,
-		update: vi.fn(),
-		delete: mockDeliveryService.delete,
-		archive: mockDeliveryService.archive,
-		unarchive: mockDeliveryService.unarchive,
-		getRuleSchema: vi.fn(),
-		validateRules: vi.fn(),
-		getMetricsHistory: vi.fn(),
-		getNotes: vi.fn().mockResolvedValue([]),
-		addNote: vi.fn(),
-		updateNote: vi.fn(),
-		deleteNote: vi.fn(),
+		...createMockDeliveryService(),
+		...mockDeliveryService,
 	},
 	featureService: mockFeatureService,
 });

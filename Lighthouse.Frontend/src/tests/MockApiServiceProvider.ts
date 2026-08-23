@@ -416,6 +416,14 @@ export const createMockDeliveryService = (): IDeliveryService => {
 			lastEditedOn: null,
 			authorDisplayName: null,
 		}),
+		getDeliverySources: vi.fn().mockResolvedValue([]),
+		getDeliverySourceOptions: vi.fn().mockResolvedValue([]),
+		previewDeliverySource: vi.fn().mockResolvedValue({
+			name: "",
+			date: new Date("2026-08-21T10:00:00Z"),
+			features: [],
+			emptyBecause: "None",
+		}),
 	};
 };
 

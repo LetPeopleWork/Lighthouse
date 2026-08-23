@@ -12,6 +12,14 @@ import {
 	DeliveryNote,
 	type IDeliveryNote,
 } from "../../models/Delivery/DeliveryNote";
+import {
+	DeliverySourceOptionSchema,
+	DeliverySourcePreviewSchema,
+	DeliverySourceSchema,
+	type IDeliverySource,
+	type IDeliverySourceOption,
+	type IDeliverySourcePreview,
+} from "../../models/Delivery/DeliverySource";
 import type { Feature } from "../../models/Feature";
 import {
 	DeliverySelectionMode,
@@ -79,6 +87,25 @@ export interface IDeliveryService {
 		text: string,
 	): Promise<DeliveryNote>;
 	deleteNote(deliveryId: number, noteId: number): Promise<void>;
+	/**
+	 * Three answers that all look like "nothing" and none of which may be turned into another. An
+	 * empty source list means this connection has nothing a date could be bound to, which is the
+	 * ordinary case and the reason the tab stays hidden. A refusal on a source key means the key is
+	 * unknown or the Release behind it is gone — somebody has to go and fix a setting. A preview
+	 * that resolves with no Features means the Release exists and has nothing tagged against it yet.
+	 * Collapsing the refusal into the empty list is the tempting one, and it silently tells a user
+	 * their configuration is fine when it is not.
+	 */
+	getDeliverySources(portfolioId: number): Promise<IDeliverySource[]>;
+	getDeliverySourceOptions(
+		portfolioId: number,
+		sourceKey: string,
+	): Promise<IDeliverySourceOption[]>;
+	previewDeliverySource(
+		portfolioId: number,
+		sourceKey: string,
+		sourceReference: string,
+	): Promise<IDeliverySourcePreview>;
 }
 
 export class DeliveryService
@@ -245,6 +272,44 @@ export class DeliveryService
 	async deleteNote(deliveryId: number, noteId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/deliveries/${deliveryId}/notes/${noteId}`);
+		});
+	}
+
+	async getDeliverySources(portfolioId: number): Promise<IDeliverySource[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`/portfolios/${portfolioId}/delivery-sources`,
+			);
+			return BaseApiService.parse(z.array(DeliverySourceSchema), response.data);
+		});
+	}
+
+	async getDeliverySourceOptions(
+		portfolioId: number,
+		sourceKey: string,
+	): Promise<IDeliverySourceOption[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				`/portfolios/${portfolioId}/delivery-sources/${sourceKey}/options`,
+			);
+			return BaseApiService.parse(
+				z.array(DeliverySourceOptionSchema),
+				response.data,
+			);
+		});
+	}
+
+	async previewDeliverySource(
+		portfolioId: number,
+		sourceKey: string,
+		sourceReference: string,
+	): Promise<IDeliverySourcePreview> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<unknown>(
+				`/portfolios/${portfolioId}/delivery-sources/${sourceKey}/preview`,
+				{ sourceReference },
+			);
+			return BaseApiService.parse(DeliverySourcePreviewSchema, response.data);
 		});
 	}
 }

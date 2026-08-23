@@ -5,25 +5,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Delivery } from "../../../models/Delivery";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
-import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import {
+	createMockApiServiceContext,
+	createMockDeliveryService,
+} from "../../../tests/MockApiServiceProvider";
 import { DeliveriesChips } from "./DeliveriesChips";
 
-// Mock the delivery service
 const mockDeliveryService = {
+	...createMockDeliveryService(),
 	getByPortfolio: vi.fn(),
-	getAll: vi.fn(),
-	create: vi.fn(),
-	update: vi.fn(),
-	delete: vi.fn(),
-	archive: vi.fn(),
-	unarchive: vi.fn(),
-	getRuleSchema: vi.fn(),
-	validateRules: vi.fn(),
-	getMetricsHistory: vi.fn(),
-	getNotes: vi.fn().mockResolvedValue([]),
-	addNote: vi.fn(),
-	updateNote: vi.fn(),
-	deleteNote: vi.fn(),
 };
 
 const mockApiServiceContext = createMockApiServiceContext({
