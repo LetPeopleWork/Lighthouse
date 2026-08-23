@@ -203,7 +203,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             logger.LogError(
                 "Abandoned {Trials} simulated runs for teams {Teams}: every Feature with work left was waiting on one that had not finished, which can only happen if the Features are waiting on each other in a circle. The dates for those Features are not a forecast",
                 whatWentWrong.RunsGivenUpOn,
-                string.Join(", ", whatWentWrong.TeamsLeftUnfinished));
+                string.Join(", ", whatWentWrong.TeamsCaughtInACircle));
         }
 
         /// <summary>
@@ -219,9 +219,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
 
             logger.LogError(
-                "Gave up on {Trials} simulated runs that passed {Days} simulated days without finishing. Set the first of them going again on its own with starting number {StartingNumber} and run {Trial}. The dates from this forecast are not a forecast",
+                "Gave up on {Trials} simulated runs that passed {Days} simulated days without finishing, for teams {Teams}. Set the first of them going again on its own with starting number {StartingNumber} and run {Trial}. Those teams have no dates from this forecast",
                 whatWentWrong.RunsThatRanOutOfDays,
                 limits.MostDaysOneSimulatedRunMayCover,
+                string.Join(", ", whatWentWrong.TeamsThatRanOutOfDays),
                 draws.StartingNumber,
                 whatWentWrong.FirstRunThatRanOutOfDays);
         }

@@ -14,7 +14,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     /// forecast many times dearer - and, more usefully, hold the dates it produced to the recorded baseline,
     /// because a forecast that got faster by doing less work is the failure actually worth catching.
     /// </summary>
+    // Not run alongside anything else. Every forecast in this project now uses every core it can get, so
+    // a timing taken while two other fixtures are each running ten thousand simulated runs measures the
+    // contention, not the change - the same shape as the ReleaseServiceTest failures that look like
+    // regressions and are not.
     [TestFixture]
+    [NonParallelizable]
     [Category("acceptance")]
     [Category("epic-5792-dependency-aware-forecasting")]
     [Category("slice-02")]
@@ -41,6 +46,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
                 Assert.That(dates, Is.EqualTo(baseline.Features),
                     "It finished in time but produced different dates, which is the cheaper kind of fast.");
+            }
+        }
+
+        /// <summary>
+        /// The timing above is taken over a Portfolio in which nothing waits on anything, which is the one
+        /// shape that skips the work this epic added: with no waits at all, asking whether anything may be
+        /// worked on is a single comparison. A Portfolio that does have waits pays for the readiness check
+        /// on every simulated day, and that is the path worth bounding.
+        /// </summary>
+        [Test]
+        public async Task AForecastWithWaitsInIt_CostsNoMoreThanAForecastShouldTake()
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var dates = await SharedClockBaselineFixture.ForecastTheBenchmarkPortfolio(
+                SharedClockBaselineFixture.PinnedDraws, SharedClockBaselineFixture.EachFeatureWaitsOnTheOneBefore);
+            stopwatch.Stop();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastOfThisPortfolioMayTake),
+                    $"A forecast whose Features wait on one another took {stopwatch.Elapsed.TotalSeconds:F1} " +
+                    "seconds, which is far beyond what one without them costs.");
+
+                Assert.That(dates.Select(feature => feature.P85), Is.All.GreaterThan(0),
+                    "It finished quickly because it produced no dates, which is not the same as being fast.");
             }
         }
     }

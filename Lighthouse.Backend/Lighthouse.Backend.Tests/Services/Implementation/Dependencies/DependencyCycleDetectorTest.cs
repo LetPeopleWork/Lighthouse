@@ -170,7 +170,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             return new FeatureDependencyFacts(
                 referenceId,
                 TheOnePortfolioEverythingHereBelongsTo,
-                TheOneTeamEverythingHereIsWorkedBy,
                 Position: 0,
                 CanBeForecast: true,
                 blockerReferenceIds);

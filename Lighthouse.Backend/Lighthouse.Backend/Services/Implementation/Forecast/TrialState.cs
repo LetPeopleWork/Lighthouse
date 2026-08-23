@@ -1,8 +1,8 @@
 namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
     /// <summary>
-    /// What one simulated run knows: how much work each row still has, and therefore which rows may be
-    /// worked on. It belongs to the run that made it and nothing else can see it.
+    /// What one simulated run knows: how much work each row still has, which day each row finished on, and
+    /// therefore which rows may be worked on. It belongs to the run that made it and nothing else can see it.
     ///
     /// This used to live on the rows themselves, which meant every simulated run wrote to the same counters.
     /// That was safe only for as long as each Team's runs happened on their own; with the Teams on one clock
@@ -11,9 +11,12 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     /// </summary>
     public sealed class TrialState
     {
+        private const int StillHasWorkLeft = -1;
+
         private readonly ForecastRunPlan plan;
         private readonly int[] remainingOfRow;
         private readonly int[] remainingOfTeam;
+        private readonly int[] dayEachRowFinished;
         private readonly int[] rowsReadyToBeWorkedOn;
 
         public TrialState(ForecastRunPlan plan)
@@ -21,6 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             this.plan = plan;
             remainingOfRow = new int[plan.RowCount];
             remainingOfTeam = new int[plan.TeamCount];
+            dayEachRowFinished = new int[plan.RowCount];
             rowsReadyToBeWorkedOn = new int[plan.RowCount];
 
             StartAgain();
@@ -31,6 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         public void StartAgain()
         {
             Array.Clear(remainingOfTeam);
+            Array.Fill(dayEachRowFinished, StillHasWorkLeft);
             RemainingEverywhere = 0;
 
             for (var row = 0; row < remainingOfRow.Length; row++)
@@ -45,16 +50,33 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         public int RemainingOf(int teamIndex) => remainingOfTeam[teamIndex];
 
-        public bool ReadyToBeWorkedOn(int rowIndex)
+        /// <summary>
+        /// A Team learns that its own work is finished the moment it finishes it, and learns that another
+        /// Team's work is finished the following day.
+        ///
+        /// Within a day a Team really does work its items one after another, so finishing what it was
+        /// waiting for and starting the next thing on the same day is what a Team does. Two Teams share no
+        /// such order: they both simply work day N, and asking which of them got there first has no answer.
+        /// Answering it anyway with whatever order the Features happened to arrive from the store would
+        /// hand a whole day of the wait back, silently, depending on nothing a user could see - and in a
+        /// chain of waits across three Teams it would hand back one day per link.
+        /// </summary>
+        public bool ReadyToBeWorkedOn(int rowIndex, int today)
         {
             if (remainingOfRow[rowIndex] <= 0)
             {
                 return false;
             }
 
+            var itsOwnTeam = plan.TeamOf(rowIndex);
+
             foreach (var blocker in plan.MustFinishFirst(rowIndex))
             {
-                if (remainingOfRow[blocker] > 0)
+                var finished = plan.TeamOf(blocker) == itsOwnTeam
+                    ? remainingOfRow[blocker] <= 0
+                    : dayEachRowFinished[blocker] >= 0 && dayEachRowFinished[blocker] < today;
+
+                if (!finished)
                 {
                     return false;
                 }
@@ -64,11 +86,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         }
 
         /// <summary>
-        /// Whether anything at all may be worked on. When the answer is no, no later day can change it -
-        /// what a row waits for only clears when somebody finishes it, and nobody can start anything - so
-        /// the run has ended rather than gone idle.
+        /// Whether anything at all may be worked on today. When the answer is no and no other Team's work
+        /// finished yesterday either, no later day can change it - what a row waits for only clears when
+        /// somebody finishes it, and nobody can start anything - so the run has ended rather than gone idle.
         /// </summary>
-        public bool AnythingCanBeWorkedOn()
+        public bool AnythingCanBeWorkedOn(int today)
         {
             if (plan.NobodyWaitsForAnything)
             {
@@ -77,7 +99,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             for (var row = 0; row < remainingOfRow.Length; row++)
             {
-                if (ReadyToBeWorkedOn(row))
+                if (ReadyToBeWorkedOn(row, today))
                 {
                     return true;
                 }
@@ -93,14 +115,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// Written into a buffer this run already owns rather than a new list, because it is asked for once
         /// per delivered item, which is the busiest thing a forecast does.
         /// </summary>
-        public ReadOnlySpan<int> RowsReadyToBeWorkedOnBy(int teamIndex)
+        public ReadOnlySpan<int> RowsReadyToBeWorkedOnBy(int teamIndex, int today)
         {
             var rowsOfTeam = plan.RowsOf(teamIndex);
             var howMany = 0;
 
             for (var index = 0; index < rowsOfTeam.Length; index++)
             {
-                if (ReadyToBeWorkedOn(rowsOfTeam[index]))
+                if (ReadyToBeWorkedOn(rowsOfTeam[index], today))
                 {
                     rowsReadyToBeWorkedOn[howMany] = rowsOfTeam[index];
                     howMany++;
@@ -111,13 +133,20 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         }
 
         /// <returns>True when that was the last item of the row, which is the day the row finished.</returns>
-        public bool CloseOneItemOf(int rowIndex)
+        public bool CloseOneItemOf(int rowIndex, int today)
         {
             remainingOfRow[rowIndex] -= 1;
             remainingOfTeam[plan.TeamOf(rowIndex)] -= 1;
             RemainingEverywhere -= 1;
 
-            return remainingOfRow[rowIndex] == 0;
+            if (remainingOfRow[rowIndex] > 0)
+            {
+                return false;
+            }
+
+            dayEachRowFinished[rowIndex] = today;
+
+            return true;
         }
     }
 }

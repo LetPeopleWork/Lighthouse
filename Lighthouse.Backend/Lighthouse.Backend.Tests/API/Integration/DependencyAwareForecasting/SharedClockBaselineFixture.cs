@@ -1,5 +1,8 @@
 using System.Text.Json;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -36,10 +39,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             WriteIndented = true,
         };
 
-        internal static Task<BaselinePercentiles[]> ForecastTheBenchmarkPortfolio()
-            => ForecastTheBenchmarkPortfolio(new DrawsFromAPinnedStartingNumber(TheStartingNumberTheBaselineWasRecordedFrom));
+        internal static IDrawStreamFactory PinnedDraws => new DrawsFromAPinnedStartingNumber(TheStartingNumberTheBaselineWasRecordedFrom);
 
-        internal static async Task<BaselinePercentiles[]> ForecastTheBenchmarkPortfolio(IDrawStreamFactory draws)
+        internal static Task<BaselinePercentiles[]> ForecastTheBenchmarkPortfolio()
+            => ForecastTheBenchmarkPortfolio(PinnedDraws);
+
+        internal static Task<BaselinePercentiles[]> ForecastTheBenchmarkPortfolio(IDrawStreamFactory draws)
+            => ForecastTheBenchmarkPortfolio(draws, _ => new NothingWaitsForAnything());
+
+        internal static async Task<BaselinePercentiles[]> ForecastTheBenchmarkPortfolio(
+            IDrawStreamFactory draws, Func<IReadOnlyList<Feature>, IWhatTheForecastWaitsFor> whatWaitsForWhat)
         {
             var benchmark = new BenchmarkPortfolio().Build();
 
@@ -48,7 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 Mock.Of<ILogger<ForecastService>>(),
                 benchmark.TeamMetrics,
                 benchmark.FeatureRepository,
-                new NothingWaitsForAnything(),
+                whatWaitsForWhat(benchmark.Features),
                 draws,
                 ForecastSimulationLimits.Default);
 
@@ -65,6 +74,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         }
 
         internal static IReadOnlyList<int> Percentiles => ThePercentilesLighthouseShows;
+
+        /// <summary>
+        /// A chain of waits down the Portfolio, so that every simulated day of every run has to work out
+        /// what may be started. It is the heaviest shape the readiness check meets, which is what makes it
+        /// the one worth timing.
+        /// </summary>
+        internal static IWhatTheForecastWaitsFor EachFeatureWaitsOnTheOneBefore(IReadOnlyList<Feature> features)
+        {
+            var waits = new Waits();
+
+            for (var index = 1; index < features.Count; index++)
+            {
+                waits.And(features[index].ReferenceId, features[index - 1].ReferenceId);
+            }
+
+            return new WaitsHandedStraightToTheForecast(waits);
+        }
 
         internal static BaselineSet ReadBaseline()
         {

@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                     return HowTheRunEnded.RanOutOfDays;
                 }
 
-                if (!state.AnythingCanBeWorkedOn())
+                if (!state.AnythingCanBeWorkedOn(day))
                 {
                     return HowTheRunEnded.NothingLeftCouldBeStarted;
                 }
@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             for (var closed = 0; closed < delivered && state.RemainingOf(teamIndex) > 0; closed++)
             {
-                var ready = state.RowsReadyToBeWorkedOnBy(teamIndex);
+                var ready = state.RowsReadyToBeWorkedOnBy(teamIndex, day);
 
                 if (ready.IsEmpty)
                 {
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 var howManyItMayWorkOnAtOnce = Math.Min(HowManyFeaturesAtOnce(teamIndex), ready.Length);
                 var worked = ready[draws.Draw(trial, teamId, day, TheDrawsThatPickAFeature + closed, howManyItMayWorkOnAtOnce)];
 
-                if (state.CloseOneItemOf(worked))
+                if (state.CloseOneItemOf(worked, day))
                 {
                     completions.RecordThat(worked, day);
                 }

@@ -126,14 +126,79 @@ the timing and the count of honoured-vs-detected edges (KPI-7) in this brief.
 
 ## Commit gate
 
-**No commit without the maintainer's explicit approval** — the precursor commit especially. It changes
-the loop every date in the product comes from and is, by design, invisible in the output.
+**VOID.** The maintainer lifted the no-commit-without-approval rule for this epic on 2026-08-23; it
+caused more trouble than it prevented. The working agreement that replaced it: run the whole slice,
+then refactor, adversarial review and mutation testing, and hand over once those are fixed.
 
 ## Learning hypothesis verdict
 
-_Not yet run._
+**CONFIRMED — the joint simulation is affordable, and by a wide margin.** Measured on the maintainer's
+machine over a benchmark Portfolio of 25 Features across 6 Teams, three runs each, fastest of three:
 
-## Loose ends to clean up in this slice
+| | fastest | median |
+|---|---|---|
+| Released product (a Task per Team, `new Random()` per draw) | 2150 ms | 3179 ms |
+| Serial joint loop + addressable draw source (precursor 1) | 1973 ms | 1980 ms |
+| Per-trial parallelism (precursor 2) | **430 ms** | 540 ms |
+
+**0.20× the pre-epic wall clock**, against AC-7.2's ceiling of 1.5× and an expectation of ≤1.0×. The
+fallbacks the hypothesis named — concurrency in trial batches, or a joint clock restricted to the Teams
+actually connected by a dependency — are not needed and were not built.
+
+The surprise is in the middle row: the **serial** joint loop is already faster than the released
+product. Removing the `Random` allocated per draw (ADR-154, taken for determinism rather than for
+speed) saved more than the per-Team concurrency was buying. The whole backend suite runs about a minute
+faster as a side effect.
+
+Re-measure with `ForecastWallClockProbe`, which is `[Explicit]` and prints three timings.
+
+## What the design did not predict
+
+DISTILL's *Owed before slice 02* list said a stale `Feature.CanBeForecast` — computed from the previous
+run's persisted forecasts — could let the policy honour an edge whose blocker never completes, and that
+**the loop would not terminate**. It does terminate, and the reason is worth writing down because it
+changes what is at risk.
+
+A blocker whose Team has no measured delivery has no row in the run at all, so it appears in no
+Feature's list of what must finish first, so it holds nothing up. The failure is therefore a wait that
+is **silently not acted on** for one refresh, not a hang: the date reads as the earliest it could
+possibly be, which is what a dropped edge is supposed to produce, but the row carries no note saying
+so. It heals itself on the next run, because the run just finished writes a forecast with no trials for
+that Team, which makes `CanBeForecast` false and the policy drops the edge and warns.
+
+Pinned by `WaitingOnAFeatureWhoseTeamHasNothingMeasured_StillReachesAnEnd`. Whether to close the
+remaining gap — computing that fact from the throughput set the run is building and handing it to the
+policy — is a decision about widening `IWhatTheForecastWaitsFor`, which is a guarded seam, so it is
+left for the maintainer rather than taken at the end of a slice.
+
+## Left open for the maintainer, both surfaced by review
+
+**One Feature in two Portfolios can get two different dates, depending on which refresh ran last.**
+DISTILL raised this as *"Which Features the policy is asked about is unstated"* and called it a product
+decision rather than a detail; honouring cross-Team waits is what made it reachable. Three callers ask
+the one decision over three different sets of Features: the Features view over the whole graph, the
+refresh warning over one Portfolio's Features, and the forecast over *everything any of that
+Portfolio's Teams touches*. A Feature in Portfolios P and Q, waiting on a Feature that lives only in Q
+and is worked by a Team P does not have, therefore has its wait honoured when Q refreshes and dropped
+when P refreshes — and whichever ran last is the date on the screen, while the Features view calls the
+dependency honoured either way. Before this slice the shape was unreachable: the two ends were not one
+Team's work, so the wait was refused everywhere, consistently.
+
+**A Team slow enough to reach the day ceiling now loses its dates rather than getting far-out ones.**
+SA-5's ceiling is 100 000 simulated days. A Team averaging one item every ninety days against a
+thousand still to do reaches it in every run, and those rows come back with no trials at all, which
+also makes the Feature un-forecastable. The released product had no ceiling and would have kept going —
+for something like a billion day-iterations, so "it produced a date" is generous. It is reported at
+Error level naming the Teams, so it is not silent; it is recorded here because it is a real difference
+in behaviour and not one the ADR called out.
+
+## Documentation owed (maintainer, 2026-08-23)
+
+`HowLighthouseForecasts` needs rewriting for the joint clock: what the addressable draw source is and
+why it replaced a sequence, and a worked example of a forecast now that every Team advances on one day
+counter. Not done in this slice — noted so it is not lost.
+
+## Loose ends to clean up in this slice — both DONE
 
 Both found during slice 01's manual verification on the live instance, 2026-08-23. Neither is worth its
 own slice; both are the sort of thing that never gets fixed if it is not written down.

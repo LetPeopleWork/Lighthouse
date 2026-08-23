@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
                 .Select(feature => new FeatureDependencyFacts(
                     feature.ReferenceId,
                     feature.Portfolios.Select(portfolio => portfolio.Id).ToList(),
-                    feature.FeatureWork.Select(work => work.TeamId).Distinct().ToList(),
                     PlaceOf(feature, placeOfEachFeature),
                     feature.CanBeForecast,
                     feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToList()))

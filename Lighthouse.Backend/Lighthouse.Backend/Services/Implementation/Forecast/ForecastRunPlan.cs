@@ -107,6 +107,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         public int TeamOf(int rowIndex) => teamOfRow[rowIndex];
 
+        /// <summary>
+        /// Always at least one. A row exists because a Team has work left on a Feature, and "finished" is
+        /// decided by a row reaching zero having started above it - a row that started at zero would be
+        /// waited on for ever by anything waiting on it.
+        /// </summary>
         public int InitialRemainingOf(int rowIndex) => initialRemainingOfRow[rowIndex];
 
         public int[] MustFinishFirst(int rowIndex) => blockersOfRow[rowIndex];

@@ -439,82 +439,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             Assert.That(TheVerdictFor(honoured, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.OutsideThisPortfolio));
         }
 
-        /// <summary>
-        /// Every Team is now forecast on one clock, so a run does have a moment at which it can see another
-        /// Team finish something. A wait between two Teams is a wait like any other and nothing stands
-        /// against it - which is the whole of what this Epic set out to deliver.
-        /// </summary>
-        [Test]
-        public void ABlockerAnotherTeamIsWorking_IsAWaitLikeAnyOther()
-        {
-            var verdicts = Decide(
-                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
-                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: AnotherTeam));
-
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
-        }
-
-        /// <summary>
-        /// A Feature several Teams are still working is finished when the last of them is done, not the
-        /// first. On one clock that is something a run can see, so the wait is acted on rather than left
-        /// out; that it is the last and not the first is what the simulation itself has to get right.
-        /// </summary>
-        [Test]
-        public void ABlockerSeveralTeamsAreWorking_IsStillAWaitLighthouseActsOn()
-        {
-            var verdicts = Decide(
-                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
-                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: SeveralTeams));
-
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
-        }
-
-        [Test]
-        public void AFeatureSeveralTeamsAreWorking_WaitsOnSomethingLighthouseActsOn()
-        {
-            var verdicts = Decide(
-                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: SeveralTeams),
-                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: TheSameTeam));
-
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
-        }
-
-        /// <summary>
-        /// Nobody is working it, so there is nothing in the run to wait for and the wait holds nothing up.
-        /// </summary>
-        [Test]
-        public void ABlockerNoTeamIsWorking_HoldsNothingUpAndIsLeftAlone()
-        {
-            var verdicts = Decide(
-                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
-                AFeature("F-2", position: 0, portfolioIds: TheSamePortfolio, teamIds: NoTeamAtAll));
-
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").HasNothingWrongWithIt, Is.True);
-        }
-
-        [Test]
-        public void TwoFeaturesNoTeamIsWorking_HaveNothingWrongBetweenThem()
-        {
-            var verdicts = Decide(
-                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: NoTeamAtAll),
-                AFeature("F-2", position: 0, portfolioIds: TheSamePortfolio, teamIds: NoTeamAtAll));
-
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").HasNothingWrongWithIt, Is.True);
-        }
-
-        /// <summary>
-        /// A circle between two Teams is still a circle. Nothing about the Teams involved changes what is
-        /// wrong with it or what the user has to go and fix.
-        /// </summary>
-        [Test]
-        public void ACircleBetweenTwoTeams_IsStillReportedAsACircle()
-        {
-            var verdicts = Decide(
-                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
-                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheFirst, teamIds: AnotherTeam));
-
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.InALoop));
-        }
+        // Which Teams work the two ends of a dependency is no longer something this decision is told, so
+        // the fixtures that used to vary it - a blocker another Team works, a blocker several Teams share,
+        // a circle across two Teams - can no longer say what they were written to say. What they asserted
+        // is now asserted where it can be observed, in ForecastServiceCrossTeamDependencyTest, against
+        // dates that actually move. The guard against a Team rule creeping back in is stronger than a test:
+        // FeatureDependencyFacts no longer carries the Team ids to write one with.
 
         /// <summary>
         /// The cheapest circle there is, and the one that costs most if it gets through: a forecast told to
@@ -604,11 +534,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
         }
 
         [Test]
-        public void ABlockerTheSameOneTeamIsWorking_IsOneLighthouseActsOn()
+        public void ABlockerInTheSamePortfolioThatCanBeForecast_IsOneLighthouseActsOn()
         {
             var verdicts = Decide(
-                AFeature("F-1", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
-                AFeature("F-2", position: 1, portfolioIds: TheSamePortfolio, teamIds: TheSameTeam));
+                AFeature("F-1", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 1, portfolioIds: TheSamePortfolio));
 
             Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
         }
@@ -653,11 +583,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             int? position,
             int[] portfolioIds,
             bool canBeForecast = true,
-            string[]? waitingOn = null,
-            int[]? teamIds = null)
+            string[]? waitingOn = null)
         {
             return new FeatureDependencyFacts(
-                referenceId, portfolioIds, teamIds ?? TheSameTeam, position, canBeForecast, waitingOn ?? NothingWaitedOn);
+                referenceId, portfolioIds, position, canBeForecast, waitingOn ?? NothingWaitedOn);
         }
 
         private static DependencyVerdict TheVerdictFor(

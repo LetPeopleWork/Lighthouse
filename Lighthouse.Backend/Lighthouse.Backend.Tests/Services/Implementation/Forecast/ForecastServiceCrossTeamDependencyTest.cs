@@ -78,6 +78,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         /// <summary>
+        /// The Teams are walked in some order within a simulated day, and that order is whichever Feature the
+        /// store happened to return first - nothing a user chose, nothing they can see. If finishing another
+        /// Team's work released a wait on the same day, the Team waited on being walked first would hand a
+        /// whole day of the wait back; in a chain across three Teams, a day per link.
+        ///
+        /// The same Portfolio in the other order therefore has to produce the same dates, to the day.
+        /// </summary>
+        [Test]
+        public async Task TheDates_DoNotTurnOnWhichFeatureTheStoreReturnedFirst()
+        {
+            var oneWayRound = await TheDatesWith(WaitingOn(TheOneThatWaits, TheOneWaitedOn), TwoTeamsOneEach);
+            var theOtherWayRound = await TheDatesWith(WaitingOn(TheOneThatWaits, TheOneWaitedOn), TwoTeamsOneEachTheOtherWayRound);
+
+            Assert.That(EveryDateIn(theOtherWayRound), Is.EqualTo(EveryDateIn(oneWayRound)),
+                "Listing the Feature waited on before the one waiting moved a date, so the wait is being " +
+                "released part-way through a day and how much of it counts depends on the order the store " +
+                $"returned the Features in. One way: {Read(oneWayRound)} The other: {Read(theOtherWayRound)}");
+        }
+
+        /// <summary>
         /// A shared clock shares time, never delivery. The Team waited on gets through nine items at three a
         /// day and is done on day three; the Team waiting has four items at one a day and finishes on day
         /// seven. Had it picked up the other Team's rate on release it would have finished on day five, and
@@ -160,6 +180,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private static IEnumerable<int> EveryPercentileOf(Dictionary<string, Dictionary<int, int>> dates, string referenceId)
             => ThePercentilesLighthouseShows.Select(percentile => dates[referenceId][percentile]);
 
+        /// <summary>
+        /// Every date, by Feature, in an order of its own rather than the order they were handed over -
+        /// which is the very thing the fixture asking for this is varying.
+        /// </summary>
+        private static List<string> EveryDateIn(Dictionary<string, Dictionary<int, int>> dates)
+            => dates
+                .OrderBy(feature => feature.Key, StringComparer.Ordinal)
+                .Select(feature => $"{feature.Key}: {string.Join("/", EveryPercentileOf(dates, feature.Key))}")
+                .ToList();
+
         private static List<object[]> TheErrorsLogged(Mock<ILogger<ForecastService>> logger)
             => logger.Invocations
                 .Where(invocation => invocation.Arguments.Contains(LogLevel.Error))
@@ -209,6 +239,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 CreateFeature(2, TheOneWaitedOn, [(waitedOn, 6)]),
                 CreateFeature(3, TheThirdOne, [(elsewhere, 2)]),
             ];
+        }
+
+        /// <summary>The same Portfolio, handed over in the order a different store might return it.</summary>
+        private List<Feature> TwoTeamsOneEachTheOtherWayRound()
+        {
+            var theSamePortfolio = TwoTeamsOneEach();
+            theSamePortfolio.Reverse();
+
+            return theSamePortfolio;
         }
 
         private List<Feature> OneTeamThreeTimesFaster()

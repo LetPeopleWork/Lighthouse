@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["S1_CorsFailClosedTests"] = "sets CORS/auth process-global environment variables in setup/teardown",
             ["LighthouseReleaseServiceIntegrationTest"] = "shares a static IGitHubService as a GitHub rate-limit workaround across tests",
             ["LighthouseClockTest"] = "sets and restores the process-global Lighthouse__TimeZone environment variable to prove the __ convention reaches ServiceConfig (Bug #5567)",
+            ["TheJointForecastIsAffordableTest"] = "times a forecast, and a forecast now uses every core it can get; run beside other fixtures each doing the same, it measures the contention rather than the change",
         };
 
         [Test]

@@ -6,7 +6,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
     /// </summary>
     public sealed class WhatTheRunsCouldNotFinish
     {
-        private readonly HashSet<string> teamsLeftUnfinished = new(StringComparer.Ordinal);
+        private readonly HashSet<string> teamsCaughtInACircle = new(StringComparer.Ordinal);
+        private readonly HashSet<string> teamsThatRanOutOfDays = new(StringComparer.Ordinal);
 
         public int RunsGivenUpOn { get; private set; }
 
@@ -14,7 +15,15 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         public int FirstRunThatRanOutOfDays { get; private set; } = -1;
 
-        public IEnumerable<string> TeamsLeftUnfinished => teamsLeftUnfinished.Order(StringComparer.Ordinal);
+        /// <summary>
+        /// Kept apart from the Teams that merely ran out of days, because the line about them says the
+        /// Features must be waiting on each other in a circle. A Portfolio with one real circle and one Team
+        /// slow enough to reach the ceiling would otherwise send an operator hunting a circle that Team is
+        /// not in.
+        /// </summary>
+        public IEnumerable<string> TeamsCaughtInACircle => teamsCaughtInACircle.Order(StringComparer.Ordinal);
+
+        public IEnumerable<string> TeamsThatRanOutOfDays => teamsThatRanOutOfDays.Order(StringComparer.Ordinal);
 
         /// <summary>
         /// The workers' accounts added together. Which run is named as the first to pass the ceiling is the
@@ -29,7 +38,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 all.RunsGivenUpOn += share.RunsGivenUpOn;
                 all.RunsThatRanOutOfDays += share.RunsThatRanOutOfDays;
-                all.teamsLeftUnfinished.UnionWith(share.teamsLeftUnfinished);
+                all.teamsCaughtInACircle.UnionWith(share.teamsCaughtInACircle);
+                all.teamsThatRanOutOfDays.UnionWith(share.teamsThatRanOutOfDays);
 
                 if (share.FirstRunThatRanOutOfDays >= 0
                     && (all.FirstRunThatRanOutOfDays < 0 || share.FirstRunThatRanOutOfDays < all.FirstRunThatRanOutOfDays))
@@ -48,6 +58,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 return;
             }
 
+            var leftUnfinished = ending == HowTheRunEnded.RanOutOfDays ? teamsThatRanOutOfDays : teamsCaughtInACircle;
+
             if (ending == HowTheRunEnded.RanOutOfDays)
             {
                 RunsThatRanOutOfDays++;
@@ -62,7 +74,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 if (state.RemainingOf(team) > 0)
                 {
-                    teamsLeftUnfinished.Add(plan.TeamAt(team).Name);
+                    leftUnfinished.Add(plan.TeamAt(team).Name);
                 }
             }
         }
