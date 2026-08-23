@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -58,13 +59,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         private Mock<IForecastService> forecastServiceMock = null!;
 
         /// <summary>
-        /// Every call the refresh made to the work tracking system, in order, each an immutable snapshot
-        /// of what that call carried. This list is the guarantee: not how many times Lighthouse flushed,
-        /// but how many times and with what it reached the tracker.
+        /// The work tracking system as one test sees it: every call the refresh made to it, in order, each
+        /// an immutable snapshot of what that call carried, and whether a call should fail. The writes are
+        /// the guarantee - not how many times Lighthouse flushed, but how many times and with what it
+        /// reached the tracker.
+        ///
+        /// One of these per test, and the host is handed the object rather than left to read it back off a
+        /// field. A host outlives the test that built it, so a call that arrives late has to land on the
+        /// test that asked for it; a closure reading a field would record it against whichever test is
+        /// running now. The failure has to live here too, and not as a captured copy, because a test turns
+        /// it on and off again while the host is already running.
         /// </summary>
-        private List<IReadOnlyList<WriteBackFieldUpdate>> connectorWrites = null!;
+        private sealed class FakeTracker
+        {
+            internal List<IReadOnlyList<WriteBackFieldUpdate>> Writes { get; } = [];
 
-        private Exception? trackerFailure;
+            internal Exception? Failure { get; set; }
+        }
+
+        private FakeTracker tracker = null!;
 
         /// <summary>
         /// The signals the refresh raised. Nothing persists the fact that a delivery date was announced,
@@ -77,9 +90,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         {
             rootFactory = new TestWebApplicationFactory<Program>();
 
-            connectorWrites = [];
-            trackerFailure = null;
+            tracker = new FakeTracker();
             raisedSignals = new CapturedDomainEvents();
+            forecastServiceMock = new Mock<IForecastService>();
+
+            // Everything the host records into is handed to it as a local, never read back off the fields
+            // above. A host can outlive the test that built it - work handed over late still runs after the
+            // test stopped waiting for it - and a registration that read a field would record that work
+            // against whichever test is running now, which reads there as one Portfolio forecast twice.
+            var trackerForThisTest = tracker;
+            var signalsForThisTest = raisedSignals;
+            var forecastForThisTest = forecastServiceMock;
 
             var licenseServiceMock = new Mock<ILicenseService>();
             licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
@@ -93,14 +114,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             connectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>())).ReturnsAsync([]);
             connectorMock
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .Returns((WorkTrackingSystemConnection _, IReadOnlyList<WriteBackFieldUpdate> updates) => RecordWrite(updates));
+                .Returns((WorkTrackingSystemConnection _, IReadOnlyList<WriteBackFieldUpdate> updates) => RecordWrite(trackerForThisTest, updates));
 
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
                 .Returns(connectorMock.Object);
-
-            forecastServiceMock = new Mock<IForecastService>();
 
             var workItemServiceMock = new Mock<IWorkItemService>();
             workItemServiceMock.Setup(s => s.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>())).ReturnsAsync(SyncOutcome.None);
@@ -117,13 +136,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                     services.AddScoped(_ => connectorFactoryMock.Object);
 
                     services.RemoveAll<IForecastService>();
-                    services.AddScoped(_ => forecastServiceMock.Object);
+                    services.AddScoped(_ => forecastForThisTest.Object);
 
                     services.RemoveAll<IWorkItemService>();
                     services.AddScoped(_ => workItemServiceMock.Object);
 
-                    services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>>(_ => new CapturingDomainEventHandler<PortfolioForecastsUpdated>(raisedSignals));
-                    services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(_ => new CapturingDomainEventHandler<PortfolioFeaturesRefreshed>(raisedSignals));
+                    services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>>(_ => new CapturingDomainEventHandler<PortfolioForecastsUpdated>(signalsForThisTest));
+                    services.AddScoped<IDomainEventHandler<PortfolioFeaturesRefreshed>>(_ => new CapturingDomainEventHandler<PortfolioFeaturesRefreshed>(signalsForThisTest));
                 });
             });
 
@@ -469,9 +488,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         }
 
         private void GivenTheTrackerIsUnreachable()
-            => trackerFailure = new HttpRequestException("The tracker is unreachable");
+            => tracker.Failure = new HttpRequestException("The tracker is unreachable");
 
-        private void GivenTheTrackerIsReachableAgain() => trackerFailure = null;
+        private void GivenTheTrackerIsReachableAgain() => tracker.Failure = null;
 
         // --- When ---
 
@@ -524,13 +543,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         }
 
         /// <summary>
-        /// A forecast that is waiting for the last Team to finish is not in the queue yet, so a single
-        /// idle reading cannot tell "everything is done" from "the next thing has not been handed over
-        /// yet". Idle has to hold still for a while before it means anything.
+        /// A forecast that is waiting for the last Team to finish is not in the queue yet, so the queue
+        /// reads as idle while the round still owes a delivery date. Asking the queue what it is holding
+        /// back covers that, and idle still has to hold still for a while on top, because there is a
+        /// moment where a released forecast has left the holding pen and not yet been admitted.
+        ///
+        /// Returning while a forecast is still owed does not fail this test - it fails the next one. The
+        /// late forecast runs against the host this test is about to dispose and is recorded as if the
+        /// next test had asked for it, which reads there as one portfolio forecast twice.
         /// </summary>
         private async Task WaitUntilTheQueueStaysIdle()
         {
             var statusStore = factory.Services.GetRequiredService<IUpdateStatusStore>();
+            var updateQueue = factory.Services.GetRequiredService<IUpdateQueueService>();
+            var forecastsThatCouldStillBeOwed = ForecastKeysOfEveryPortfolio();
 
             var deadline = DateTime.UtcNow.AddSeconds(60);
             var consecutiveIdleReadings = 0;
@@ -543,8 +569,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 }
 
                 await Task.Delay(20);
-                consecutiveIdleReadings = statusStore.HasActiveWork() ? 0 : consecutiveIdleReadings + 1;
+
+                var stillBusy = statusStore.HasActiveWork() || forecastsThatCouldStillBeOwed.Any(updateQueue.IsHeld);
+                consecutiveIdleReadings = stillBusy ? 0 : consecutiveIdleReadings + 1;
             }
+        }
+
+        private List<UpdateKey> ForecastKeysOfEveryPortfolio()
+        {
+            using var scope = factory.Services.CreateScope();
+
+            return scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>()
+                .GetAll()
+                .Select(portfolio => new UpdateKey(UpdateType.Forecasts, portfolio.Id))
+                .ToList();
         }
 
         // --- Then ---
@@ -556,8 +594,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 "The simulation is not seeded, so a second run for the same portfolio moves the delivery date the first one just showed.");
 
         private void ThenTheTrackerWasReached(int times)
-            => Assert.That(connectorWrites, Has.Count.EqualTo(times),
-                $"The refresh reached the work tracking system {connectorWrites.Count} time(s): {DescribeWrites()}");
+            => Assert.That(tracker.Writes, Has.Count.EqualTo(times),
+                $"The refresh reached the work tracking system {tracker.Writes.Count} time(s): {DescribeWrites()}");
 
         /// <summary>
         /// The set of values one call carried, compared pair for pair. Comparing how many values arrived
@@ -566,8 +604,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         /// </summary>
         private void ThenTheWriteCarriedExactly(int callIndex, params (string WorkItem, string Field, string Value)[] expected)
         {
-            var carried = callIndex < connectorWrites.Count
-                ? ValuesOf(connectorWrites[callIndex])
+            var carried = callIndex < tracker.Writes.Count
+                ? ValuesOf(tracker.Writes[callIndex])
                 : [];
 
             Assert.That(carried, Is.EquivalentTo(expected),
@@ -625,13 +663,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
         // --- Helpers ---
 
-        private Task<WriteBackResult> RecordWrite(IReadOnlyList<WriteBackFieldUpdate> updates)
+        private static Task<WriteBackResult> RecordWrite(FakeTracker trackerForThisTest, IReadOnlyList<WriteBackFieldUpdate> updates)
         {
-            connectorWrites.Add([.. updates]);
+            trackerForThisTest.Writes.Add([.. updates]);
 
-            if (trackerFailure != null)
+            if (trackerForThisTest.Failure != null)
             {
-                throw trackerFailure;
+                throw trackerForThisTest.Failure;
             }
 
             return Task.FromResult(new WriteBackResult
@@ -647,7 +685,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         }
 
         private List<string> ValuesWrittenTo(string fieldReference)
-            => [.. connectorWrites
+            => [.. tracker.Writes
                 .SelectMany(write => write)
                 .Where(update => update.TargetFieldReference == fieldReference)
                 .Select(update => update.Value)];
@@ -656,7 +694,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             => updates.Select(update => (update.WorkItemId, update.TargetFieldReference, update.Value));
 
         private string DescribeWrites()
-            => string.Join(" | ", connectorWrites.Select(write =>
+            => string.Join(" | ", tracker.Writes.Select(write =>
                 string.Join(", ", write.Select(update => $"{update.WorkItemId}/{update.TargetFieldReference}={update.Value}"))));
 
         private string TheForecastDateAfter(int workingDays)
