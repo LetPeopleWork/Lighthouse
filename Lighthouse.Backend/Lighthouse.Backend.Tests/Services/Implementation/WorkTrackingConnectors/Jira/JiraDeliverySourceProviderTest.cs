@@ -113,6 +113,73 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
             """;
 
+        /// <summary>
+        /// A version whose releaseDate is not a date. Jira's own form cannot produce this, but the field
+        /// arrives as free text through importers and bulk edits, and what arrives is what has to be read.
+        /// </summary>
+        private const string AVersionDatedInWordsRatherThanADate = """
+            {
+              "isLast": true,
+              "values": [
+                {
+                  "id": "10010",
+                  "name": "Release 5.0",
+                  "archived": false,
+                  "released": false,
+                  "releaseDate": "sometime in the spring"
+                }
+              ]
+            }
+            """;
+
+        /// <summary>A page that says more is coming and then carries no list of anything at all.</summary>
+        private const string APageAnnouncingMoreAndCarryingNoList = """
+            {
+              "isLast": false,
+              "startAt": 0,
+              "total": 3
+            }
+            """;
+
+        /// <summary>A page whose values key holds a single object where the endpoint documents a list.</summary>
+        private const string APageWhoseValuesAreNotAList = """
+            {
+              "isLast": true,
+              "values": {
+                "id": "10011",
+                "name": "Release 6.0"
+              }
+            }
+            """;
+
+        /// <summary>
+        /// Projects as the search endpoint sends them. The second and third carry the two shapes an
+        /// absent name arrives in: an explicit null, and a key that was simply never sent.
+        /// </summary>
+        private const string CapturedProjectsPayload = """
+            {
+              "isLast": true,
+              "values": [
+                {
+                  "id": "10001",
+                  "key": "LGH",
+                  "name": "Lighthouse Demo"
+                },
+                {
+                  "id": "10002",
+                  "key": "NULLNAME",
+                  "name": null
+                },
+                {
+                  "id": "10003",
+                  "key": "NONAME"
+                }
+              ]
+            }
+            """;
+
+        private static readonly string[] TheProjectKeysInTheCapturedPayload = ["LGH", "NULLNAME", "NONAME"];
+
         [Test]
         public void A_Jira_connection_offers_its_Releases_as_a_delivery_source()
         {
@@ -174,6 +241,96 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(archived.IsSelectable, Is.False);
                 Assert.That(archived.BlockedBecause, Is.EqualTo(SourceOptionBlockReason.RetiredAtSource),
                     "an archived Release carries a date and is still refused, so having a date is not on its own enough. The picker never shows one, but a request that never went through the picker still arrives here.");
+            }
+        }
+
+        [Test]
+        public void The_projects_a_credential_can_see_are_read_by_key_and_by_name()
+        {
+            var (projects, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(CapturedProjectsPayload);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(projects.Select(project => project.Key), Is.EqualTo(TheProjectKeysInTheCapturedPayload),
+                    "the key is what the versions endpoint is addressed by, so reading any other field asks Jira about a project that does not exist.");
+                Assert.That(projects[0].Name, Is.EqualTo("Lighthouse Demo"),
+                    "the name is the only thing telling two projects that both call a Release 'Release 44' apart on the picker.");
+                Assert.That(projects[1].Name, Is.Empty,
+                    "a project Jira names as null still holds Releases somebody may want to bind to, so it is carried with nothing where its name would be.");
+                Assert.That(projects[2].Name, Is.Empty,
+                    "a name that never arrived reads the same way - never a stand-in the picker would then show to a reader.");
+                Assert.That(isLastPage, Is.True);
+            }
+        }
+
+        [Test]
+        public void A_release_date_is_read_as_the_day_Jira_named_in_UTC_rather_than_in_whatever_zone_the_server_sits_in()
+        {
+            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+
+            var dated = options.Single(option => option.Id == TheDatedRelease).Date;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(dated, Is.EqualTo(TheDayTheDatedReleaseShips));
+                Assert.That(dated!.Value.Kind, Is.EqualTo(DateTimeKind.Utc),
+                    "Jira sends a bare calendar day with no zone on it. Read as a local time it is the same ticks carrying a different meaning, which is precisely what nothing downstream can detect - and a forecast then runs against a day the board never named.");
+            }
+        }
+
+        [Test]
+        public void A_Release_Jira_says_has_shipped_is_read_as_shipped()
+        {
+            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Single(option => option.Id == TheDatedRelease).IsReleasedAtSource, Is.True,
+                    "a Release that has shipped has nothing left to forecast; a reader blind to the flag would offer every shipped Release on the instance up for binding again.");
+                Assert.That(options.Single(option => option.Id == TheUndatedRelease).IsReleasedAtSource, Is.False,
+                    "and one that has not shipped must not be dressed up as though it had.");
+            }
+        }
+
+        [Test]
+        public void A_release_date_that_cannot_be_read_leaves_the_Release_dateless_rather_than_dated_at_the_start_of_time()
+        {
+            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(AVersionDatedInWordsRatherThanADate, TheDemoProject);
+
+            var unreadable = options.Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(unreadable.Date, Is.Null,
+                    "falling back on the default instead dates the Release to the first day of the calendar, and a Delivery bound to it is then forecast against that.");
+                Assert.That(unreadable.BlockedBecause, Is.EqualTo(SourceOptionBlockReason.NoDateSet),
+                    "a date nobody can read sends the reader on the same errand as a date nobody set: go and put one on it in Jira.");
+            }
+        }
+
+        [Test]
+        public void A_page_whose_values_are_not_a_list_is_read_as_holding_nothing_rather_than_failing()
+        {
+            var (options, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(APageWhoseValuesAreNotAList, TheDemoProject);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options, Is.Empty,
+                    "a shape the reader cannot walk costs the picker that one project, the way an unreadable one does - it must not take the whole request down with it.");
+                Assert.That(isLastPage, Is.True);
+            }
+        }
+
+        [Test]
+        public void A_page_that_announces_more_and_carries_no_list_ends_the_sweep_rather_than_inviting_another_ask()
+        {
+            var (options, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(APageAnnouncingMoreAndCarryingNoList, TheDemoProject);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options, Is.Empty);
+                Assert.That(isLastPage, Is.True,
+                    "the page said more was coming and then did not say what, and a sweep that takes it at its word asks Jira the same question for as long as it is answered that way.");
             }
         }
 

@@ -49,6 +49,8 @@ namespace Lighthouse.Backend.Tests.API
         private static readonly DeliverySourceDescriptor[] TheJiraReleaseSource =
             [new DeliverySourceDescriptor(JiraReleaseSourceKey, "Jira Release")];
 
+        private static readonly DeliverySourceDescriptor[] NoDeliverySourcesAtAll = [];
+
         private static readonly DateTime TheDateOfTheDatedRelease = new(2026, 8, 22, 0, 0, 0, DateTimeKind.Utc);
 
         private static readonly DeliverySourceOption[] ADatedAndAnUndatedRelease =
@@ -70,6 +72,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDeliverySourceProvider> deliverySourceProviderMock;
         private Mock<IDeliverySourceResolver> deliverySourceResolverMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
+        private Mock<IBlockedItemService> blockedItemServiceMock;
         private DeliverySourcesController subject;
 
         [SetUp]
@@ -83,13 +86,14 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodServiceMock
                 .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
+            blockedItemServiceMock = new Mock<IBlockedItemService>();
 
             subject = new DeliverySourcesController(
                 portfolioRepositoryMock.Object,
                 connectorFactoryMock.Object,
                 deliverySourceResolverMock.Object,
                 blackoutPeriodServiceMock.Object,
-                Mock.Of<IBlockedItemService>(),
+                blockedItemServiceMock.Object,
                 TestToday.Clock);
         }
 
@@ -136,7 +140,12 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = subject.GetDeliverySources(PortfolioId);
 
-            Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+                Assert.That(MessageIn(result), Is.EqualTo($"Portfolio with ID {PortfolioId} not found"),
+                    "the id is what a reader can act on - it is the number in the address bar, and it is the only thing separating this from every other 404 the app can answer with.");
+            }
         }
 
         [Test]
@@ -184,10 +193,31 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+                Assert.That(MessageIn(result), Is.EqualTo($"Portfolio with ID {PortfolioId} offers no delivery source called 'jira-sprint'"),
+                    "naming the key back is what tells a caller they asked for something that does not exist here, rather than that the Portfolio itself is missing.");
                 deliverySourceProviderMock.Verify(
                     p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()),
                     Times.Never,
                     "a key nobody offers is refused before the remote is called, so a made-up request cannot be reported as the remote being unwell.");
+            }
+        }
+
+        [Test]
+        public async Task A_connection_that_reads_delivery_sources_but_offers_none_is_refused_before_the_remote_is_asked()
+        {
+            GivenAPortfolioOn(WorkTrackingSystems.Jira, offersDeliverySources: true);
+            deliverySourceProviderMock.Setup(p => p.AvailableSources(It.IsAny<WorkTrackingSystemConnection>()))
+                .Returns(NoDeliverySourcesAtAll);
+
+            var result = await subject.GetOptions(PortfolioId, JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<NotFoundObjectResult>(),
+                    "offering nothing is how a connection that could read its sources but cannot today says so, and every key is then a key it does not offer.");
+                deliverySourceProviderMock.Verify(
+                    p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()),
+                    Times.Never);
             }
         }
 
@@ -322,8 +352,30 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(gone, Is.TypeOf<NotFoundObjectResult>(),
                     "the remote answered, and what it said was that this Release is not there any more.");
+                Assert.That(MessageIn(gone), Is.EqualTo($"The delivery source '{TheBoundRelease}' no longer exists"),
+                    "this sentence and the one below it are the whole difference between 'go and pick another one' and 'try again in a minute', and the reader has nothing else to go on.");
                 Assert.That(StatusOf(unreachable), Is.EqualTo(StatusCodes.Status502BadGateway),
                     "a remote that could not be asked has said nothing about the Release, so answering 'gone' would invent a deletion out of a network blip.");
+                Assert.That(MessageIn(unreachable), Is.EqualTo($"The delivery source '{TheBoundRelease}' could not be read right now"));
+            }
+        }
+
+        [Test]
+        public async Task A_resolver_that_says_nothing_at_all_about_the_Release_is_answered_as_unreadable_rather_than_as_gone()
+        {
+            GivenAPortfolioOn(WorkTrackingSystems.Jira, offersDeliverySources: true);
+            GivenTheConnectionOffersJiraReleases();
+            deliverySourceResolverMock
+                .Setup(r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>());
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusOf(result), Is.EqualTo(StatusCodes.Status502BadGateway),
+                    "an answer that simply leaves the Release out has said nothing about it, and only 'it is gone' may ever retire a binding.");
+                Assert.That(MessageIn(result), Is.EqualTo($"The delivery source '{TheBoundRelease}' could not be read right now"));
             }
         }
 
@@ -334,7 +386,31 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
 
-            Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+                Assert.That(MessageIn(result), Is.EqualTo("'Release 3.0' carries no date, so there is no date to preview"),
+                    "the Release is there and only its date is missing, so the sentence names the Release the reader has to go and date - a bare 400 sends them looking for a fault instead.");
+            }
+        }
+
+        [Test]
+        public async Task A_Feature_blocked_on_one_of_the_boards_it_sits_on_comes_along_blocked()
+        {
+            var feature = ATrackedFeature();
+            var boardThatBlocksIt = APortfolioNamed(2, "The board that blocks it");
+            var boardThatDoesNot = APortfolioNamed(3, "The board that does not");
+            feature.Portfolios.Add(boardThatBlocksIt);
+            feature.Portfolios.Add(boardThatDoesNot);
+            blockedItemServiceMock.Setup(s => s.IsBlocked(feature, boardThatBlocksIt)).Returns(true);
+
+            GivenTheResolverAnswers(
+                new DeliverySourceResolution.Resolved(TheReleaseAsTheRemoteSeesIt), [feature], taggedItemCount: 1);
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            Assert.That(PreviewIn(result).Features[0].IsBlocked, Is.True,
+                "a Feature is blocked wherever it is blocked; asking every board it appears on to agree would quietly clear it the moment somebody adds it to a second one.");
         }
 
         [Test]
@@ -402,6 +478,10 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         private static int? StatusOf(IActionResult result) => ((ObjectResult)result).StatusCode;
+
+        private static string MessageIn(IActionResult result) => (string)((ObjectResult)result).Value!;
+
+        private static Portfolio APortfolioNamed(int id, string name) => new() { Id = id, Name = name };
 
         private static DeliverySourcePreviewDto PreviewIn(IActionResult result)
         {
