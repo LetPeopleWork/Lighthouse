@@ -1966,6 +1966,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int ProjectPageSize = 100;
 
+        private const int VersionPageSize = 50;
+
+        // Jira is asked for released and unreleased Releases only, so an archived one never crosses the
+        // wire. A Release nobody dated is still listed and refused, because the reader can go and date it
+        // and come back; an archived Release cannot be un-archived from here, so a row nobody can act on
+        // would only be noise. Hiding it is presentation - the server still refuses to bind one, which is
+        // what a request arriving without ever passing through the picker runs into.
+        private const string BindableVersionStatuses = "released,unreleased";
+
         // One call per project, so an instance with hundreds of them must not fire hundreds of requests at
         // once - and must not walk them one at a time either, which is what made the first measurement of
         // this seven times slower than it needed to be.
@@ -2053,18 +2062,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private async Task<IReadOnlyList<DeliverySourceOption>> ReadReleasesOf(HttpClient client, DeliverySourceProject project)
         {
-            var response = await client.GetAsync($"rest/api/3/project/{Uri.EscapeDataString(project.Key)}/versions");
+            var releases = new List<DeliverySourceOption>();
 
-            if (!response.IsSuccessStatusCode)
+            while (true)
             {
-                logger.LogInformation(
-                    "Jira did not let us read the Releases of project {ProjectKey} ({StatusCode}) - offering the other projects without it",
-                    project.Key, response.StatusCode);
+                var response = await client.GetAsync(
+                    $"rest/api/3/project/{Uri.EscapeDataString(project.Key)}/version" +
+                    $"?startAt={releases.Count}&maxResults={VersionPageSize}&status={BindableVersionStatuses}");
 
-                return [];
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogInformation(
+                        "Jira did not let us read the Releases of project {ProjectKey} ({StatusCode}) - offering the other projects without it",
+                        project.Key, response.StatusCode);
+
+                    return releases;
+                }
+
+                var (page, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(await response.Content.ReadAsStringAsync(), project);
+                releases.AddRange(page);
+
+                if (isLastPage || page.Count == 0)
+                {
+                    return releases;
+                }
             }
-
-            return JiraReleaseVersionReader.ReadOptions(await response.Content.ReadAsStringAsync(), project);
         }
 
         /// <summary>

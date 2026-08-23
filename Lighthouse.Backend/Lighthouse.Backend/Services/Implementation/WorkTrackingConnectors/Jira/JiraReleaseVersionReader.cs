@@ -5,7 +5,7 @@ using Lighthouse.Backend.Models.DeliverySources;
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     /// <summary>
-    /// Turns the answer of Jira's project versions endpoint into the sources a Delivery can bind to.
+    /// Turns the answer of Jira's project versions endpoints into the sources a Delivery can bind to.
     /// Kept apart from the connector and free of any I/O, so the shapes that are awkward to arrange on a
     /// real board - a Release nobody dated, a Release somebody archived - can be specified directly.
     /// </summary>
@@ -19,13 +19,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// The projects the credential can see, as key and name. Jira answers this one page at a time and
-        /// says on every page whether it was the last, so the caller is handed the whole set rather than a
-        /// first page that quietly looks complete.
+        /// The projects the credential can see, as key and name.
         /// </summary>
         public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsLastPage) ReadProjectPage(string projectPagePayload)
+            => ReadPage(projectPagePayload, project => new DeliverySourceProject(ReadText(project, "key"), ReadText(project, "name")));
+
+        /// <summary>
+        /// One page of a project's versions. The paginated endpoint wraps the same version objects the bare
+        /// list returns, so this is the wrapper coming off rather than a second way of reading a version.
+        /// </summary>
+        public static (IReadOnlyList<DeliverySourceOption> Options, bool IsLastPage) ReadOptionPage(string versionPagePayload, DeliverySourceProject project)
+            => ReadPage(versionPagePayload, version => ToOption(version, project));
+
+        /// <summary>
+        /// Jira answers these one page at a time and says on every page whether it was the last, so a caller
+        /// following that flag is handed the whole set rather than a first page that quietly looks complete.
+        /// </summary>
+        private static (IReadOnlyList<T> Values, bool IsLastPage) ReadPage<T>(string pagePayload, Func<JsonElement, T> readOne)
         {
-            using var payload = JsonDocument.Parse(projectPagePayload);
+            using var payload = JsonDocument.Parse(pagePayload);
             var root = payload.RootElement;
 
             var isLastPage = !root.TryGetProperty("isLast", out var isLast) || isLast.ValueKind != JsonValueKind.False;
@@ -35,10 +47,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return ([], true);
             }
 
-            IReadOnlyList<DeliverySourceProject> projects =
-                [.. values.EnumerateArray().Select(project => new DeliverySourceProject(ReadText(project, "key"), ReadText(project, "name")))];
+            IReadOnlyList<T> parsed = [.. values.EnumerateArray().Select(readOne)];
 
-            return (projects, isLastPage);
+            return (parsed, isLastPage);
         }
 
         private static DeliverySourceOption ToOption(JsonElement version, DeliverySourceProject project)

@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(archived.IsRetiredAtSource, Is.True);
                 Assert.That(archived.IsSelectable, Is.False);
                 Assert.That(archived.BlockedBecause, Is.EqualTo(SourceOptionBlockReason.RetiredAtSource),
-                    "an archived Release carries a date and is still refused, so having a date is not on its own enough.");
+                    "an archived Release carries a date and is still refused, so having a date is not on its own enough. The picker never shows one, but a request that never went through the picker still arrives here.");
             }
         }
 
@@ -217,6 +217,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(options.Select(option => option.Project.Key), Is.EquivalentTo(TwoProjectsThatBothNameARelease44),
                 "the two rows read identically otherwise, so without the project the reader picks one of them at random.");
+        }
+
+        [Test]
+        public async Task A_Release_somebody_archived_is_not_offered_at_all()
+        {
+            var jira = AJira()
+                .WithProject("REL", "Release coordination")
+                .WithShippedReleaseIn("REL", TheDatedRelease, TheDatedReleaseName, "2026-08-22")
+                .WithArchivedReleaseIn("REL", TheDeletedRelease, "Release 0.9", "2025-01-15");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
+                    "a reader cannot un-archive a Release from here, so a row they can do nothing about is only noise - unlike a dateless one, which they can go and date.");
+                Assert.That(options.Single().IsSelectable, Is.True,
+                    "a Release that already shipped is routinely still tracked to closure, and the filter that hides archived ones must not take it with them.");
+                Assert.That(QueryValue(jira.VersionListRequests.Single(), "status"), Is.EqualTo("released,unreleased"),
+                    "Jira is asked to leave them out rather than being asked for everything and then having some dropped here.");
+            }
+        }
+
+        [Test]
+        public async Task A_project_carrying_more_Releases_than_one_page_offers_all_of_them()
+        {
+            var jira = AJira()
+                .WithProject("REL", "Release coordination")
+                .WithReleaseIn("REL", TheDatedRelease, TheDatedReleaseName, "2026-08-22")
+                .WithReleaseIn("REL", "10007", "Release 2.0", "2026-09-01");
+            jira.VersionsPerPage = 1;
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options, Has.Count.EqualTo(2),
+                "a long-lived project carries hundreds of Releases, so stopping at the first page would quietly hide most of them.");
         }
 
         [Test]
@@ -405,7 +443,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly Dictionary<string, HttpStatusCode> refusalsById = new(StringComparer.Ordinal);
             private readonly Dictionary<string, List<string>> releaseIdsByIssueKey = new(StringComparer.Ordinal);
             private readonly List<DeliverySourceProject> projects = [];
-            private readonly Dictionary<string, List<string>> versionsByProjectKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, List<StubVersion>> versionsByProjectKey = new(StringComparer.Ordinal);
             private readonly HashSet<string> projectsRefusingTheirVersions = new(StringComparer.Ordinal);
 
             public JiraStub()
@@ -432,7 +470,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     && !uri.AbsolutePath.EndsWith("/project/search", StringComparison.Ordinal))];
 
             public IReadOnlyList<Uri> VersionListRequests =>
-                [.. Requests.Where(uri => uri.AbsolutePath.EndsWith("/versions", StringComparison.Ordinal))];
+                [.. Requests.Where(uri => uri.AbsolutePath.EndsWith("/version", StringComparison.Ordinal))];
+
+            /// <summary>How many versions this Jira will part with per page, so paging can be provoked with two.</summary>
+            public int VersionsPerPage { get; set; } = 50;
 
             public JiraStub WithProject(string key, string name)
             {
@@ -442,19 +483,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
 
             public JiraStub WithReleaseIn(string projectKey, string id, string name, string? releaseDate)
-            {
-                var date = releaseDate is null ? string.Empty : $",\"releaseDate\":\"{releaseDate}\"";
+                => WithVersionIn(projectKey, id, name, releaseDate, archived: false, released: false);
 
-                if (!versionsByProjectKey.TryGetValue(projectKey, out var versions))
-                {
-                    versions = [];
-                    versionsByProjectKey[projectKey] = versions;
-                }
+            public JiraStub WithShippedReleaseIn(string projectKey, string id, string name, string releaseDate)
+                => WithVersionIn(projectKey, id, name, releaseDate, archived: false, released: true);
 
-                versions.Add($"{{\"id\":\"{id}\",\"name\":\"{name}\",\"archived\":false,\"released\":false{date}}}");
-
-                return this;
-            }
+            public JiraStub WithArchivedReleaseIn(string projectKey, string id, string name, string releaseDate)
+                => WithVersionIn(projectKey, id, name, releaseDate, archived: true, released: true);
 
             public JiraStub WithUnreadableVersionsIn(string projectKey)
             {
@@ -462,6 +497,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 return this;
             }
+
+            private JiraStub WithVersionIn(string projectKey, string id, string name, string? releaseDate, bool archived, bool released)
+            {
+                var date = releaseDate is null ? string.Empty : $",\"releaseDate\":\"{releaseDate}\"";
+                var json =
+                    $"{{\"id\":\"{id}\",\"name\":\"{name}\",\"archived\":{Flag(archived)},\"released\":{Flag(released)}{date}}}";
+
+                if (!versionsByProjectKey.TryGetValue(projectKey, out var versions))
+                {
+                    versions = [];
+                    versionsByProjectKey[projectKey] = versions;
+                }
+
+                versions.Add(new StubVersion(json, archived));
+
+                return this;
+            }
+
+            private static string Flag(bool value) => value ? "true" : "false";
+
+            private sealed record StubVersion(string Json, bool Archived);
 
             public JiraStub WithRelease(string id, string name, string? releaseDate)
             {
@@ -515,9 +571,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Ok($"{{\"isLast\":true,\"values\":[{string.Join(",", projects.Select(ProjectJson))}]}}");
                 }
 
-                if (path.EndsWith("/versions", StringComparison.Ordinal))
+                if (path.EndsWith("/version", StringComparison.Ordinal))
                 {
-                    return RespondWithVersionsOf(path.Split('/')[^2]);
+                    return RespondWithVersionsOf(path.Split('/')[^2], uri);
                 }
 
                 if (path.Contains("/version/", StringComparison.Ordinal))
@@ -536,16 +592,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private static string ProjectJson(DeliverySourceProject project)
                 => $"{{\"key\":\"{project.Key}\",\"name\":\"{project.Name}\"}}";
 
-            private HttpResponseMessage RespondWithVersionsOf(string projectKey)
+            /// <summary>
+            /// Answers the way the real endpoint does: only the statuses that were asked for, one page at a
+            /// time, saying on each page whether it was the last. Honouring the status filter is what lets a
+            /// specification tell "we asked Jira to leave archived Releases out" apart from "we asked for
+            /// everything and then dropped some".
+            /// </summary>
+            private HttpResponseMessage RespondWithVersionsOf(string projectKey, Uri uri)
             {
                 if (projectsRefusingTheirVersions.Contains(projectKey))
                 {
                     return Refuse(HttpStatusCode.Forbidden);
                 }
 
-                var versions = versionsByProjectKey.TryGetValue(projectKey, out var known) ? known : [];
+                var wanted = QueryValue(uri, "status").Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var known = versionsByProjectKey.TryGetValue(projectKey, out var all) ? all : [];
 
-                return Ok($"[{string.Join(",", versions)}]");
+                var offered = known
+                    .Where(version => !version.Archived || Array.Exists(wanted, status => status == "archived"))
+                    .ToList();
+
+                var startAt = int.TryParse(QueryValue(uri, "startAt"), out var parsed) ? parsed : 0;
+                var page = offered.Skip(startAt).Take(VersionsPerPage).ToList();
+                var isLast = startAt + page.Count >= offered.Count;
+
+                return Ok(
+                    $"{{\"startAt\":{startAt},\"total\":{offered.Count},\"isLast\":{Flag(isLast)}," +
+                    $"\"values\":[{string.Join(",", page.Select(version => version.Json))}]}}");
             }
 
             private HttpResponseMessage RespondAboutRelease(string id)
