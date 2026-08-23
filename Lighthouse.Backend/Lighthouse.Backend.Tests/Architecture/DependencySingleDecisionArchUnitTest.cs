@@ -579,9 +579,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             var opening = source.IndexOf('[', declaration);
             var closing = source.IndexOf(']', opening);
 
-            return System.Text.RegularExpressions.Regex
-                .Matches(source[opening..closing], "\"([^\"]+)\"")
-                .Select(match => match.Groups[1].Value)
+            // Splitting on the quote leaves every quoted name in an odd position and everything between
+            // them - commas, newlines, indentation - in an even one.
+            return source[opening..closing]
+                .Split('"')
+                .Where((_, position) => position % 2 == 1)
                 .ToList();
         }
 

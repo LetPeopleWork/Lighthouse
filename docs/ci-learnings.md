@@ -781,10 +781,18 @@ get re-applied.
 - **Fix**: Land the code fix on `main`, then dispatch **Nightly Backend CI** to re-scan and clear the gate.
 - **Rule going forward**: To clear a backend Sonar gate failure on `main` (trunk-based, no PRs), fix + push, then trigger the **Nightly Backend CI** workflow (`gh workflow run nightly.yml -R LetPeopleWork/Lighthouse`) — dispatching the main `Build And Deploy` workflow will NOT re-scan.
 
-### 2026-06-20 — external_roslyn:SYSLIB1045: don't `new Regex(...)`, prefer no regex (or `[GeneratedRegex]`)
+### 2026-08-23 (first seen 2026-06-20) — external_roslyn:SYSLIB1045: don't `new Regex(...)`, prefer no regex (or `[GeneratedRegex]`) (Recurrence: 2)
 - **Symptom**: `sonar-gates` `new_violations = 1` (INFO `external_roslyn:SYSLIB1045`, "Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time") on `Lighthouse.Backend.Tests/Health/MigrationsAppliedHealthCheckTest.cs:16` after the epic-5305 slice-02 health-checks push (HEAD ba0a928f). Every other job green; a clean Release `dotnet build` did NOT catch it (INFO, Sonar-only).
 - **Root cause**: a test asserted a message format with `private static readonly Regex = new(@"...", RegexOptions.Compiled)`. SYSLIB1045 flags any runtime-constructed `Regex` that has a constant pattern, steering you to the source-generated `[GeneratedRegex]` partial method instead.
 - **Fix**: removed the regex entirely — the assertion only needed the message suffix, so `Does.Match(regex)` became `Does.EndWith(" migration(s) pending.")` (kills the same string mutant, no `System.Text.RegularExpressions` dependency).
+- **Recurrence 2 (2026-08-23, Story #5784)**: same rule, same shape, in an architecture test written the
+  same day this ledger was read. `Regex.Matches(source, "\"([^\"]+)\"")` pulled the quoted names out of a
+  frontend array literal so the two copies of a reason set could be compared. Fixed with no regex at all:
+  splitting on the quote character leaves every quoted name in an odd position. **The local Release build
+  and `dotnet format analyzers --verify-no-changes` were both clean** — SYSLIB1045 is INFO severity and
+  reaches only the Sonar gate, which is the same trap as the CA1859/CA1861 entry above. The lesson is not
+  "run the sweep": the sweep ran and passed. It is that the rule below has to be applied when the regex is
+  being *typed*, because nothing local will tell you afterwards.
 - **Rule going forward**: do NOT write `new Regex("constant pattern")` (even `RegexOptions.Compiled`, even in test code — `Lighthouse.Backend.Tests/` is analysed and the gate is `new_violations = 0`). First ask whether a plain string check (`Does.EndWith`/`StartsWith`/`Contains`, `string.StartsWith`) removes the need for a regex at all; if a real regex is genuinely required, declare it as a `[GeneratedRegex(@"...")] private static partial Regex Foo();` on a `partial` class. Pre-flight any new C# touching regex: `grep -n "new Regex" <file>` must return nothing.
 
 ### 2026-06-06 — external_roslyn:CA1859: a private helper's PARAMETER should be the concrete type too, not just the return
