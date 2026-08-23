@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -264,29 +265,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 })
                 .ToList();
 
-        private static Waits WaitingOn(string dependent, string blocker) => new Waits().And(dependent, blocker);
+        private static Waits WaitingOn(string dependent, string blocker) => Waits.On(dependent, blocker);
 
         private static string Read(Dictionary<string, Dictionary<int, int>> dates)
             => string.Join(" | ", dates.Select(feature =>
                 $"{feature.Key}: {string.Join("/", feature.Value.Select(percentile => $"{percentile.Key}%={percentile.Value}"))}"));
 
-        /// <summary>
-        /// Waits written out by hand, so a scenario says which Features wait on which and nothing else has to
-        /// be true for it to run. What decides them has its own tests; this one is about what the simulation
-        /// does once it has been told.
-        /// </summary>
-        private sealed class Waits
-        {
-            private readonly List<DependencyVerdict> honoured = [];
-
-            public Waits And(string dependent, string blocker)
-            {
-                honoured.Add(new DependencyVerdict(dependent, blocker, reason: null, blockerPositionedBelow: false));
-                return this;
-            }
-
-            public static implicit operator ForecastWaits(Waits waits)
-                => ForecastWaits.From(new HonouredDependencies(waits.honoured));
-        }
     }
 }

@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             IReadOnlyDictionary<int, RunChartData> throughputByTeam,
             ForecastWaits waits)
         {
-            var takingPart = allRows.Where(row => throughputByTeam.ContainsKey(row.Team?.Id ?? -1)).ToArray();
+            var takingPart = allRows.Where(row => row.Team is not null && throughputByTeam.ContainsKey(row.Team.Id)).ToArray();
 
             var teams = takingPart.Select(row => row.Team).Distinct().ToArray();
             var placeOfTeam = teams
@@ -79,12 +79,28 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 teamOfRow,
                 takingPart.Select(row => row.InitialRemainingItems).ToArray(),
                 WhatEachRowWaitsFor(takingPart, waits),
-                teams.Select((_, teamIndex) => Enumerable.Range(0, takingPart.Length).Where(row => teamOfRow[row] == teamIndex).ToArray()).ToArray(),
+                TheRowsOfEachTeam(teamOfRow, teams.Length),
                 teams,
                 teams.Select(team => throughputByTeam[team.Id]).ToArray())
             {
                 NobodyWaitsForAnything = waits.NobodyWaitsForAnything,
             };
+        }
+
+        /// <summary>
+        /// Kept in the order the rows were handed in, because that order decides which Feature a Team works
+        /// on next and it is the order the product has always used.
+        /// </summary>
+        private static int[][] TheRowsOfEachTeam(int[] teamOfRow, int howManyTeams)
+        {
+            var rowsOfTeam = Enumerable.Range(0, howManyTeams).Select(_ => new List<int>()).ToArray();
+
+            for (var row = 0; row < teamOfRow.Length; row++)
+            {
+                rowsOfTeam[teamOfRow[row]].Add(row);
+            }
+
+            return rowsOfTeam.Select(rows => rows.ToArray()).ToArray();
         }
 
         public SimulationResult RowAt(int rowIndex) => rows[rowIndex];
