@@ -75,6 +75,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string TheFileThatHandsOutTheCount = "Lighthouse.Backend/API/FeaturesController.cs";
 
+        private const string TheFrontendsCopyOfTheReasons =
+            "Lighthouse.Frontend/src/models/FeatureDependency.ts";
+
+        private const string TheNameOfTheFrontendsList = "NOT_HONOURED_REASONS";
+
         private const string TheAttributeThatCharges = "LicenseGuard";
 
         private const string ThePayloadTheCountRidesOn = "FeatureDto";
@@ -537,6 +542,50 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
+        /// The reasons exist twice - once as the enum the server sends, once as the list the browser accepts -
+        /// and the browser's copy is a closed set it validates against. So a reason added on the server and
+        /// not here does not degrade: the payload fails to decode and the whole Features view goes blank,
+        /// with a console error naming a value rather than anything about dependencies.
+        ///
+        /// This Epic churns the set on purpose - it added two reasons and the next slice deletes one - which
+        /// is exactly when a pair of lists drifts.
+        /// </summary>
+        [Test]
+        public void TheReasonsTheServerSends_AreTheOnesTheBrowserAccepts()
+        {
+            var asTheBrowserHasThem = TheFrontendsListOfReasons();
+
+            Assert.That(asTheBrowserHasThem, Is.EquivalentTo(Enum.GetNames<NotHonouredReason>()),
+                $"{TheFrontendsCopyOfTheReasons} and the {nameof(NotHonouredReason)} enum have drifted apart. " +
+                "The browser validates against its copy, so a reason only the server knows about does not " +
+                "read oddly - it stops the Feature list decoding at all. Found in the browser's copy: " +
+                string.Join(", ", asTheBrowserHasThem));
+        }
+
+        /// <summary>
+        /// Read out of the source rather than off a response, because the drift this catches is committed
+        /// long before anything is running.
+        /// </summary>
+        private static List<string> TheFrontendsListOfReasons()
+        {
+            var source = WholeFile(TheFrontendsCopyOfTheReasons).Source;
+            var declaration = source.IndexOf(TheNameOfTheFrontendsList, StringComparison.Ordinal);
+
+            Assert.That(declaration, Is.GreaterThanOrEqualTo(0),
+                $"{TheNameOfTheFrontendsList} is no longer in {TheFrontendsCopyOfTheReasons}, so this scan is " +
+                "looking for something that is not there and would pass whatever the two sides said. Point it " +
+                "at whatever the browser validates against now.");
+
+            var opening = source.IndexOf('[', declaration);
+            var closing = source.IndexOf(']', opening);
+
+            return System.Text.RegularExpressions.Regex
+                .Matches(source[opening..closing], "\"([^\"]+)\"")
+                .Select(match => match.Groups[1].Value)
+                .ToList();
+        }
+
+        /// <summary>
         /// A route is charged for by an attribute sitting directly above it, so the paid ones are found by
         /// reading down from each attribute to the signature it guards.
         /// </summary>
@@ -776,13 +825,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             return directory!.FullName;
         }
 
-        /// <summary>
-        /// The shipped randomness source builds a fresh, unseeded Random for every single draw, so two runs of
-        /// it can never be compared to each other. This one starts from a fixed number and therefore draws the
-        /// same sequence every time, on any machine, which is what makes "the same forecast with and without
-        /// dependency data" a statement about the code rather than about luck. Only one team is forecast here,
-        /// and the simulation runs one thread per team, so the draws are handed out in a fixed order.
-        /// </summary>
         private sealed record SourceFile(string RelativePath, string Source, int FirstLine);
     }
 }
