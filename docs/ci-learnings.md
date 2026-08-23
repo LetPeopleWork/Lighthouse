@@ -308,6 +308,13 @@ get re-applied.
 
 ## Runtime / startup
 
+### 2026-08-23 — every boot minting the OAuth state secret onto the same path, and the ones that lost the race died in setup
+
+- **Symptom**: `Verify Backend / backend` red with two fixtures failing in `OneTimeSetUp`, both `System.IOException : The process cannot access the file '…/Lighthouse.Backend/keys/oauth-state-secret.protected' because it is being used by another process`, out of `KeyStoreFile.WriteContents` via `Program.EnsureOAuthStateSecret`. The failing tests (`ForecastControllerCalendarDayAnchorTest`) have nothing to do with encryption, and the same job had been green on the commit before.
+- **Root cause**: `ResolveOrCreateProtectedOAuthStateSecret` checked `File.Exists` and then wrote straight to the final path with `FileShare.None`. Every `WebApplicationFactory` host in the suite boots the real `Program` against the same content root, so on a checkout where the key store is still empty — which every CI checkout is — several hosts start together, all see no secret, and all try to create the same file. One wins and the rest throw. It is timing-dependent, so adding fixtures that boot a host is what tips it over, and it never reproduces on a developer machine because the file has been there since the first run months ago.
+- **Fix**: `KeyStoreFile.WriteIfAbsent` writes to a staging name only that write knows and moves it into place with `overwrite: false`, returning whether it was the one that got there first. `Program.cs` uses it and, when it lost, reads back the secret the winner left through a data protection provider built fresh (the wrapping key may have been written a moment ago by that same winner) rather than carrying a secret the file no longer holds.
+- **Rule going forward**: a key store file that more than one boot can create must never be written straight to its final path — stage it under a unique name, move it into place without overwriting, and have the boot that lost read back what the winner wrote. `File.Exists` followed by a write is a race in any directory two processes share, and in this repo the whole integration suite shares one.
+
 ### 2026-08-16 — a startup step treated the live fallback key store as a rival and refused to boot (243 failures)
 
 - **Symptom**: `Verify Backend / backend` red with **243** failures spread across fixtures with nothing to do with encryption (`OAuthCredentialTest`, `DeliveryRepositoryTest`, the Redis backplane tests, the concurrency-token tests), every one of them the same `System.InvalidOperationException` out of `KeyStoreMigration`, naming `…/data-protection-keys` and `…/keys`, with the same sentence on stderr as `FATAL:`. On a clean runner, with nothing carried in.
@@ -329,6 +336,13 @@ get re-applied.
 - **Rule going forward**: Any reverse-proxy, preview-deploy, or dev-tunnel deployment of Lighthouse MUST include the *public* (browser-facing) origin in `Authentication:AllowedOrigins`, not just the internal container URL. The IdP-driven callback redirect path uses the same CORS fail-closed guard as direct UI traffic — if you can reach the Lighthouse UI in a browser but OAuth callbacks fail with no `OAuthController` log line, check `AllowedOrigins` against the public origin first.
 
 ## Tests
+
+### 2026-08-23 — a wall-clock budget taken on a developer machine, five times over, still failed on the agent
+
+- **Symptom**: `Verify Backend / backend` red on `TheJointForecastIsAffordableTest` — `Expected: less than 10 / But was: 52.27` and `12.94`. Both tests pass locally in under two seconds each.
+- **Root cause**: the bound was 10 seconds against a forecast costing ~2s on a 12-core developer machine, which reads as a generous 5× margin and is not one. Every forecast in that namespace runs **ten to twenty times slower** on the build agent — the fixtures that passed in the same job show the same factor (5s→84.5s, 8s→86s, 2s→25.9s). A 5× margin against a 20× slowdown fails by construction, and `[NonParallelizable]` does not rescue it: it keeps the fixture off the parallel workers, not the rest of the job off the cores.
+- **Fix**: raised to 180s and renamed to say what it is (a guard against a forecast that is stuck, not a budget). The assertion carrying the weight is the one beside it, holding the dates to the recorded baseline — that one is machine-independent. The wall clock stays in the `[Explicit]` probe, which is where a number taken on one machine belongs.
+- **Rule going forward**: never assert a wall clock in CI against a number measured locally, whatever the margin — the agent is 10-20× slower for CPU-bound work, so any margin under ~25× is a red build waiting for a busy runner. If a timing assertion has to exist, size it to catch a hang or an order-of-magnitude blow-up and say so in its name; assert the *output* for everything else.
 
 ### 2026-08-22 — an ArchUnit dependency on a type only used inside an `async` method passes in Debug and fails in Release
 - **Symptom**: `Verify Backend / backend` red on the *first* CI run of a brand-new test — `DependencyAwareForecastSeamArchUnitTest.EveryStoreThatRecordsWorkInFlight_IsComparedAgainstTheOthers` failed with `Types that are "UpdateStatusStoreContainerTests" should depend on any Types that are "InProcessUpdateStatusStore"`, even though that test file constructs the store. Green locally, 105/105 green in the Architecture namespace, green in the full local run — all in Debug.
