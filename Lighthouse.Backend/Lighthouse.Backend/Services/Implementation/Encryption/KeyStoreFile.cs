@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
     {
         private const UnixFileMode ReadableOnlyByItsOwner = UnixFileMode.UserRead | UnixFileMode.UserWrite;
 
+        private const string StagingFileSuffix = ".writing";
+
         public static void Write(string path, byte[] contents)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -19,6 +21,34 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
             WriteContents(path, contents);
             CloseItToEverybodyElse(path);
+        }
+
+        // Two boots sharing a key store both find no secret there and both make one. Written straight to
+        // its final name, the second of them fails outright on a file the first still has open, and
+        // whichever wrote last leaves the other holding a secret the file no longer contains - so one of
+        // them cannot finish a sign-in the other started. Staged under a name only this write knows and
+        // then moved into place, the move alone decides which secret the file holds, and the boot that
+        // lost is told so, so it can read back what the winner left instead of keeping its own.
+        public static bool WriteIfAbsent(string path, byte[] contents)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
+            ArgumentNullException.ThrowIfNull(contents);
+
+            var staging = $"{path}.{Guid.NewGuid():n}{StagingFileSuffix}";
+
+            WriteContents(staging, contents);
+            CloseItToEverybodyElse(staging);
+
+            try
+            {
+                File.Move(staging, path, overwrite: false);
+                return true;
+            }
+            catch (IOException)
+            {
+                File.Delete(staging);
+                return false;
+            }
         }
 
         // Created closed where the platform can create a file closed, so it is never briefly readable while

@@ -615,23 +615,49 @@ namespace Lighthouse.Backend
 
         private static string ResolveOrCreateProtectedOAuthStateSecret(string keyStoreDir)
         {
-            using var transientServices = DataProtectionKeptIn(keyStoreDir);
+            return SecretAlreadyInTheKeyStore(keyStoreDir) ?? SecretMintedIntoTheKeyStore(keyStoreDir);
+        }
 
-            var dataProtectionProvider = transientServices.GetRequiredService<IDataProtectionProvider>();
-            var protector = dataProtectionProvider.CreateProtector(OAuthStateSecretProtectorPurpose);
+        private static string? SecretAlreadyInTheKeyStore(string keyStoreDir)
+        {
             var blobPath = Path.Combine(keyStoreDir, OAuthStateSecretBlobFileName);
 
-            if (File.Exists(blobPath))
+            if (!File.Exists(blobPath))
             {
-                var protectedBytes = File.ReadAllBytes(blobPath);
-                var unprotected = protector.Unprotect(protectedBytes);
-                return Convert.ToBase64String(unprotected);
+                return null;
             }
 
+            using var transientServices = DataProtectionKeptIn(keyStoreDir);
+            var protector = transientServices.GetRequiredService<IDataProtectionProvider>()
+                .CreateProtector(OAuthStateSecretProtectorPurpose);
+
+            return Convert.ToBase64String(protector.Unprotect(File.ReadAllBytes(blobPath)));
+        }
+
+        // Two boots sharing a key store can both reach this having found no secret, and only one of them
+        // gets to write it. The other reads the winner's back rather than carrying its own, because a
+        // sign-in is started under whatever secret one boot holds and finished under whatever the file
+        // holds - and the read is made through a data protection provider built here, so it sees the
+        // wrapping key the winner may have written a moment ago rather than the ring this boot cached.
+        private static string SecretMintedIntoTheKeyStore(string keyStoreDir)
+        {
+            using var transientServices = DataProtectionKeptIn(keyStoreDir);
+            var protector = transientServices.GetRequiredService<IDataProtectionProvider>()
+                .CreateProtector(OAuthStateSecretProtectorPurpose);
+
             var freshSecret = System.Security.Cryptography.RandomNumberGenerator.GetBytes(OAuthStateSecretByteLength);
-            var protectedSecret = protector.Protect(freshSecret);
-            KeyStoreFile.Write(blobPath, protectedSecret);
-            return Convert.ToBase64String(freshSecret);
+            var blobPath = Path.Combine(keyStoreDir, OAuthStateSecretBlobFileName);
+
+            if (KeyStoreFile.WriteIfAbsent(blobPath, protector.Protect(freshSecret)))
+            {
+                return Convert.ToBase64String(freshSecret);
+            }
+
+            return SecretAlreadyInTheKeyStore(keyStoreDir)
+                ?? throw new InvalidOperationException(
+                    $"Another Lighthouse wrote the OAuth state secret to '{blobPath}' while this one was starting, " +
+                    "and it was gone again before this one could read it. Start Lighthouse again, and if it keeps " +
+                    "happening, make sure only one instance is using this key store.");
         }
 
         // Both the OAuth state secret and the encryption key ring are resolved at builder time, BEFORE
