@@ -6757,3 +6757,183 @@ rather than `IObjectProvider<IType>`, or CA1859 fails the Sonar gate.
 - [ADR-177](./adr-177-deployment-mode-is-a-usage-data-owned-closed-value-set.md): deployment-mode value set
 
 ---
+
+## Application Architecture — epic-5511-task-manager
+
+Feature: epic-5511-task-manager (ADO Epic #5511 "Task Manager", absorbing Bug #5788 and Story #5019)
+Wave: DESIGN
+Date: 2026-08-23
+Architect: Morgan (Solution Architect)
+Scope: Application / components
+Paradigm: unchanged — OOP (C# backend), functional-leaning React on the frontend
+
+---
+
+### Architectural Pattern
+
+**Ports-and-adapters, extended.** No new architectural style. Every seam introduced mirrors one already
+in the codebase: the cancellation context copies `WriteBackRoundContext`'s shape, the health verdict
+follows the recorded-verdict pattern of ADR-170, the log sink follows the route the `LoggingLevelSwitch`
+already takes from builder time into DI, and the activity read is an application service over an
+existing port.
+
+---
+
+### Key invariants introduced
+
+- **One truth about what is running.** `IUpdateStatusStore` is the single source for admitted work.
+  Nothing outside the update package injects `ConcurrentDictionary<UpdateKey, UpdateStatus>`, and no
+  parallel projection of running work exists. This closes a live multi-replica defect in
+  `UpdateController` rather than routing around it.
+- **The Redis ordinal hash and both its Lua scripts are frozen.** `MonotonicAdvanceScript` and
+  `RequeueIfAdmittedScript` stay byte-identical; anything richer than an ordinal lives in a sibling hash
+  written outside them. An absent moment is a legitimate state, not an error.
+- **A terminal status tells the truth.** The status delivered over SignalR agrees with the `RefreshLog`
+  row and the summary line written by the same run. `UpdateProgress.Failed` becomes reachable from a
+  periodic refresh, and `Cancelled` is appended after it so every existing ordinal keeps its meaning.
+- **Cancel and failure leave nothing stranded.** Both paths must flush or explicitly abandon the
+  `WriteBackRound` and release work held behind the key. A round that never finishes silently drops
+  everything it staged; held work behind a key that never released stays parked indefinitely.
+- **`ValidateConnection` is the only classifier of connection health**, and
+  `ConnectionHealthService` is the only writer of a verdict. Never-failed-and-never-tested reads
+  `Unknown`, never `Healthy`. A failure the connector cannot classify reads `Unreachable`, never
+  `Authentication failed`.
+- **The connector port widens only where it pages.** A `CancellationToken` appears on the six paging
+  methods and nowhere else, so the parameter never reads as decorative.
+- **The whole surface is System-Administrator-only**, matching what `LogsController` and
+  `SystemInfoController.GetRefreshLog` already decided for the same material.
+- **The single-container product is unchanged.** With no Redis the in-process store answers everything;
+  nothing here requires a backplane.
+
+---
+
+### System Context and Capabilities
+
+Adds one header surface for the operator of an instance:
+
+1. A truthful terminal status for every periodic refresh (Bug #5788).
+2. A live list of admitted work — type, entity name, status — readable from any page.
+3. Elapsed time per row, so a slow refresh is distinguishable from a stuck one.
+4. Cooperative cancellation of a queued or running update, with `Cancelled` as a visible terminal state.
+5. Connection health for every authentication method, absorbing the OAuth-only header icon (Story #5019).
+6. Recent warnings and errors, surfaced without opening the log file.
+
+C4 Container and cancellation-path Component diagrams live in
+`docs/feature/epic-5511-task-manager/feature-delta.md`.
+
+---
+
+### Component Decomposition
+
+Full table in `docs/feature/epic-5511-task-manager/feature-delta.md`. Structural summary:
+
+| Kind | Components |
+|---|---|
+| EXTEND (backend) | `IUpdateStatusStore`, `InProcessUpdateStatusStore`, `RedisUpdateStatusStore`, `UpdateStatus`, `UpdateProgress`, `IUpdateQueueService`, `UpdateQueueService`, `UpdateServiceBase`, `TeamUpdater`, `PortfolioUpdater`, `ForecastUpdater`, `UpdateController`, `IWorkTrackingConnector` (six paging methods), five connectors, `LoggingConfigurator`, `LogsController` |
+| NEW (backend) | `UpdateCancellationContext`, `IUpdateActivityService` + `UpdateActivityService`, `ConnectionHealthVerdict`, `IConnectionHealthService` + `ConnectionHealthService`, `ConnectionHealthController`, `IRecentProblems` + `RecentProblemsSink` |
+| DELETE (backend) | `IOAuthHealthAggregator`, `OAuthHealthAggregator`, `OAuthHealthController` — absorbed by connection health in slice 05 |
+| NEW (frontend) | `TaskManagerIcon`, `TaskManagerPopover`, `ActivitySection`, `ConnectionsSection`, `RecentProblemsSection`, `SystemActivityService` |
+| EXTEND (frontend) | `Header.tsx` (both branches), `UpdateSubscriptionService.ts`, `ApiServiceContext.ts`, `OAuthService.ts` |
+| DELETE (frontend) | `OAuthHealthIcon.tsx` — in slice 05, not before; it is the only health signal until then |
+
+---
+
+### Driving Ports (HTTP + SignalR)
+
+| Method | Route | Guard | Change |
+|---|---|---|---|
+| GET | `/api/latest/update/status` | `[Authorize]` | Existing — re-implemented over `IUpdateStatusStore` |
+| GET | `/api/latest/update/summary` | SystemAdmin | **NEW** — header badge: active count + worst severity |
+| GET | `/api/latest/update/activity` | SystemAdmin | **NEW** — rows with resolved names and moments |
+| POST | `/api/latest/update/{updateType}/{id}/cancel` | SystemAdmin | **NEW** — idempotent, per `UpdateKey` |
+| GET | `/api/latest/connectionhealth` | SystemAdmin | **NEW** — replaces `GET /api/oauth/health` |
+| POST | `/api/latest/connectionhealth/{connectionId}/test` | SystemAdmin | **NEW** — on-demand `ValidateConnection` |
+| GET | `/api/latest/logs/recent` | SystemAdmin (already) | **NEW** route on an existing controller |
+| GET | `/api/oauth/health` | — | **REMOVED** (slice 05) — one caller, deleted in the same slice |
+| SignalR | `updateNotificationHub`, group `GlobalUpdates` | connection-level | Existing — carries the summary; no new transport |
+
+---
+
+### Driven Ports
+
+| Port | Adapter | Change |
+|---|---|---|
+| Update status store | `InProcessUpdateStatusStore` / `RedisUpdateStatusStore` | EXTEND — enumerate; sibling `lighthouse:update-moments` hash |
+| Update notification | `IHubContext<UpdateNotificationHub>` | UNCHANGED |
+| Entity read | `IRepository<Team>` / `IRepository<Portfolio>` | REUSED — name resolution on the read path |
+| Connection health persistence | `LighthouseAppContext` | EXTEND — one additive, expand-only table |
+| Work tracking system | `IWorkTrackingConnector` | EXTEND — token on paging; `ValidateConnection` classifies |
+| Log capture | `RecentProblemsSink` (Serilog `ILogEventSink`) | **NEW** |
+
+---
+
+### Technology Stack
+
+No new technology. ASP.NET Core .NET 10, EF Core, StackExchange.Redis, SignalR, Serilog, React 18 +
+TypeScript + MUI, NUnit 4.6 + Moq + EF InMemory, Vitest + RTL, Playwright — all as already pinned. The
+only additions are one Redis hash, one EF table, one Serilog sink and one MUI `Popover`.
+
+---
+
+### Reuse Analysis
+
+Full table in `docs/feature/epic-5511-task-manager/feature-delta.md`. Zero unjustified `CREATE NEW`.
+The three genuinely new backend units and why extending was rejected:
+
+| New unit | Rejected extension | Why |
+|---|---|---|
+| `UpdateCancellationContext` | `WriteBackRoundContext` | Its `WriteBackRound` has `Join`/`Leave`/`HasFinished` semantics a token has no use for; an execution with no write-back would have to carry a round to carry a token. Same shape, separate state. |
+| `ConnectionHealthService` + `ConnectionHealthVerdict` | `OAuthHealthAggregator` | Its whole shape is "count OAuth credential rows", and the connections that need covering have none. Generalising in place would leave a class named for OAuth as the authority on connections that do not use it. |
+| `RecentProblemsSink` | — | No in-memory log sink exists in any form; `SerilogLogConfiguration` reads a file. |
+
+---
+
+### Quality Attribute Strategies
+
+**Correctness under multiple replicas** is the driving attribute, and it is why `UpdateController` moves
+onto the port and why the ordinal hash stays frozen. The verifiable claim: two replicas behind Redis
+return an identical active count.
+
+**Truthfulness** is the second, and it is why slice 01 ships alone before any UI. The verifiable claim:
+the SignalR terminal status and the `RefreshLog.Success` written by the same run agree, on both paths.
+
+**Hot-path cost** is traded deliberately against read convenience twice, both times the same way: names
+resolved per read rather than stored (ADR-181), moments beside the ordinal rather than inside it
+(ADR-182). The read is a human opening a popover; the write is every admit and advance.
+
+**Testability**: every new unit sits behind a port. `IUpdateActivityService`, `IConnectionHealthService`
+and `IRecentProblems` are all mockable, so the controllers test without a store, a database or a logger.
+
+---
+
+### Deployment Architecture
+
+No infrastructure change. One additive EF migration, generated with the existing `CreateMigration`
+script across all supported providers, expand-only for the release. One additional Redis hash used only
+when Redis is configured. Chart unchanged.
+
+---
+
+### ADR References (this feature)
+
+- [ADR-181](./adr-181-update-activity-is-a-read-through-the-status-store.md): update activity is a read through the status store
+- [ADR-182](./adr-182-update-moments-in-a-sibling-hash.md): moments in a sibling hash, outside the advance script
+- [ADR-183](./adr-183-cancellation-ambient-token-with-paging-widened.md): ambient cancellation token, paging methods widened
+- [ADR-184](./adr-184-connection-health-is-a-recorded-verdict.md): connection health as a recorded verdict
+- [ADR-185](./adr-185-recent-problems-bounded-in-process-sink.md): recent problems as a bounded in-process sink
+- [ADR-186](./adr-186-live-header-summary-sections-fetched-on-open.md): live header summary, sections fetched on open
+
+---
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| Nothing outside the update package injects `ConcurrentDictionary<UpdateKey, UpdateStatus>` | ArchUnit — `UpdateActivitySeamArchUnitTest` |
+| Only `UpdateQueueService` writes `UpdateCancellationContext` | ArchUnit |
+| Only `ConnectionHealthService` writes `ConnectionHealthVerdict` | ArchUnit |
+| The moments hash is never touched from inside a Lua script | Unit test asserting both scripts are byte-identical to their current text |
+| No component fetches connection health directly | Import rule, mirroring the existing `useRbac` constraint |
+| Every new admin route carries `RbacGuard(SystemAdmin)` | Integration test enumerating the new routes |
+
+---

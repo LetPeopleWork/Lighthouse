@@ -1,0 +1,106 @@
+schema_version: 1
+feature_id: epic-5511-task-manager
+updated: 2026-08-23
+note: >
+  ADO Epic #5511, with child Bug #5788 and child User Story #5019 absorbed rather than DISCUSSed
+  separately. Grounded in a pre-DISCUSS code reality check that turned up four facts the Epic's shape
+  now rests on. First, UpdateProgress.Failed is unreachable from any periodic refresh: TriggerUpdate
+  swallows the exception, so the enqueued lambda returns normally and the browser is told the refresh
+  completed, while the RefreshLog row written in the same finally block says it failed. The two records
+  already disagree, and the browser is showing the wrong one. Second, IUpdateStatusStore cannot be
+  enumerated at all - TryGet per key and HasActiveWork as a bool are the whole read surface - and
+  UpdateController bypasses the port entirely by injecting the raw ConcurrentDictionary, which under
+  Redis reports only the pod that answered. Third, nothing anywhere can be cancelled, and no method on
+  IWorkTrackingConnector takes a CancellationToken, while the evidence from Epic #5687 says the
+  wall-clock of a refresh is overwhelmingly connector paging - so how coarse cooperative cancel really
+  is has to be measured, not assumed. Fourth, health is OAuth-only by construction, because the
+  aggregator reads OAuthCredential rows and a PAT connection has none. The Epic is six carpaccio
+  slices; the first repairs the lie before anything is built on it. User decisions set the shape: a
+  header popover rather than a page, one icon carrying activity and worst-of health, System
+  Administrator only, free rather than premium, and cooperative best-effort cancel. Eleven adjacent
+  ideas were analysed and deliberately deferred; they are recorded in the feature delta so a later pass
+  starts from the analysis. See docs/feature/epic-5511-task-manager/.
+
+journeys:
+
+  - name: see-what-lighthouse-is-doing
+    goal: >
+      Platform Operator answers "is it working or is it wedged" with a glance from wherever they
+      already are, and can believe the answer.
+    persona: "platform-operator (secondary: lighthouse-maintainer, dogfooding on Tenant Zero)"
+
+    emotional_arc:
+      start: Uneasy - "the chart has not moved. I cannot tell whether a refresh is running, queued,
+        or quietly failed an hour ago, and the indicator says it completed."
+      middle: Oriented - "one icon in the header. Two things running, one waiting, and I can see how
+        long each has been going."
+      end: In control - "I know what it is doing, I know how long it has been doing it, and if it is
+        doing harm I can stop it without restarting the container."
+
+    steps:
+      - step: Notice
+        action: Look at the header, from any page
+        output: An activity icon that animates while work is running and carries the active count.
+          Amber or red when a connection is unhealthy or a run failed. Absent entirely for anyone who
+          is not a System Administrator.
+      - step: See what is happening
+        action: Click the icon
+        output: A popover listing every admitted update - the tenant's word for Team or Portfolio, the
+          entity's name, and its status - updating live over the SignalR group clients already join.
+          With nothing running it says so in words rather than showing an empty box.
+      - step: Judge whether it is stuck
+        action: Read the row
+        output: How long it has been running or waiting, as a duration. A refresh four seconds old and
+          one forty minutes old stop looking identical.
+      - step: Intervene
+        action: Cancel on the row
+        output: Queued work never runs. Running work stops at its next checkpoint and the row moves to
+          Cancelled - a visible terminal state, not a silent disappearance.
+      - step: Find out why
+        action: Read the Connections and Recent problems sections in the same popover
+        output: Which connection is unhealthy and what warned recently, without opening the log file.
+
+    error_paths:
+      - situation: A refresh failed
+        recovery: The status says Failed, in the browser, in the refresh history and in the log line,
+          all agreeing. Before this Epic the browser said Completed while the other two said otherwise,
+          which is the defect slice 01 repairs before any of this surface is built.
+      - situation: A row is queued and does not move
+        recovery: It reports as queued, honestly. It does not yet say whether it is genuinely waiting
+          behind the single-reader loop, parked behind another key, or a coalesced follow-up - the
+          store cannot currently tell those apart. Deliberately deferred rather than guessed at; the
+          three are recorded as re-entry items A, B and C.
+      - situation: A cancel does not appear to stop anything quickly
+        recovery: The reachable checkpoint granularity is measured by a probe before the slice ships
+          and asserted as a number, so the UI promises what the mechanism can actually deliver rather
+          than what the word "cancel" implies.
+      - situation: A connection's credential has broken but the connector cannot say it was an
+          authentication failure
+        recovery: The connection reads Unreachable, not Authentication failed. Guessing wrong sends an
+          administrator to reissue a credential that was never the problem.
+      - situation: A connection has never failed and has never been tested
+        recovery: It reads Unknown, not Healthy. Claiming health from an absence of evidence is how a
+          status icon becomes decorative.
+      - situation: The instance has just restarted
+        recovery: The Recent problems section is empty and says why - the buffer is per-process and
+          holds events since this instance started. It is not an audit log and the copy does not imply
+          it is.
+
+    shared_artifacts:
+      - artifact: the set of admitted updates
+        source: IUpdateStatusStore, via a new enumeration implemented by both the in-process and the
+          Redis store. Never the raw ConcurrentDictionary, which answers only about the calling pod.
+      - artifact: the entity display name on each row
+        source: resolved on the read path from the repository, never written into UpdateStatus and
+          never into the Redis hash, which holds one integer per key on the hot path of every admit.
+      - artifact: the live signal
+        source: the existing GlobalUpdates SignalR group, which already fires on every status change.
+          No new transport.
+      - artifact: the row and section labels
+        source: the tenant's configured Terminology for team, portfolio and feature.
+      - artifact: connection health
+        source: the outcome of the most recent refresh for that connection, classified where the
+          connector can say so, plus an on-demand test. Never a background probe loop.
+      - artifact: recent warnings
+        source: a bounded in-memory Serilog sink, per process, read through the already-guarded logs
+          controller.

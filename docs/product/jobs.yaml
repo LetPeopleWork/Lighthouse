@@ -45,6 +45,7 @@ feature_context:
   - epic-5698-deliveries-as-durable-records
   - epic-5565-delivery-date-sync
   - epic-5733-opt-in-usage-data
+  - epic-5511-task-manager
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6199,3 +6200,239 @@ jobs:
         nothing to govern today, and the mechanism that would govern it is itself defective. Gap: 4 —
         real, and cheap to close because the toggle scaffolding, the permission guard and the premium
         field all already exist.
+
+  - id: job-operator-trust-that-a-finished-refresh-tells-the-truth
+    title: Believe the status a refresh reports
+    persona: platform-operator
+    feature_context: epic-5511-task-manager
+    created: 2026-08-23
+    note: >
+      NEW in epic-5511-task-manager, from ADO Bug #5788. This job exists because the product currently
+      fails it outright rather than serving it partially: a periodic refresh that throws pushes
+      Status=Completed to the browser while the RefreshLog row written in the same finally block says
+      Success=false. UpdateProgress.Failed exists in the enum and is unreachable from any periodic
+      refresh. Every other job in this Epic is built on the surface this one repairs, which is why it
+      ships first and alone.
+    job_story: >
+      When a scheduled refresh ends,
+      I want the answer I am shown to be the answer that happened,
+      so I can build an operational habit on it instead of treating a green tick as decoration.
+    dimensions:
+      functional: >
+        The terminal status delivered over SignalR agrees with the RefreshLog row and the summary line
+        the same run wrote, on both the success and the failure path.
+      emotional: >
+        Move from a quiet suspicion that the indicators are cosmetic to being able to act on one.
+      social: >
+        Be able to tell a colleague "it failed at 14:20" from the product, rather than from a log file
+        they would have to take on trust.
+    forces:
+      push: >
+        A failure is currently indistinguishable from a success in the browser. The operator finds out
+        days later, from a throughput chart that stopped moving.
+      pull: >
+        The correct answer is already computed and already persisted twice per run. Only the channel the
+        user is looking at reports the wrong one.
+      anxiety: >
+        That letting the exception through changes behaviour for callers that await an update, or
+        strands a write-back round, or leaves work held behind the failed key parked for good. All three
+        are real and all three are acceptance criteria.
+      habit: >
+        Operators have learned to ignore the indicator and open the refresh history instead, which is
+        exactly the habit this Epic is trying to make unnecessary.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance 5 - it is not a missing feature but a false statement, and every surface this Epic
+        adds would repeat it. Current satisfaction 0 - the browser is wrong 100% of the time a periodic
+        refresh fails. Gap 5, the largest in the Epic, and the cheapest to close.
+
+  - id: job-operator-see-what-lighthouse-is-doing-right-now
+    title: See what is running and what is waiting, from wherever I am
+    persona: platform-operator
+    feature_context: epic-5511-task-manager
+    created: 2026-08-23
+    note: >
+      NEW in epic-5511-task-manager. The Epic's central job. Note the constraint the user set on the
+      solution shape: a header popover, not a page - "something you just quickly check, independent of
+      where you are". A surface that costs a navigation does not serve this job even if it shows the
+      same information. Also note the store cannot answer this today: IUpdateStatusStore offers TryGet
+      per key and HasActiveWork as a bool, and nothing that enumerates.
+    job_story: >
+      When I am wondering whether Lighthouse is working or wedged,
+      I want to see what is running and what is waiting without leaving the page I am on,
+      so the question costs me a glance instead of a log download.
+    dimensions:
+      functional: >
+        A live list of every admitted update - type, entity name, status - readable from any page, and
+        correct across replicas rather than reporting only the pod that answered.
+      emotional: >
+        Move from "I think it is stuck, but I cannot tell" to a settled answer in one click.
+      social: >
+        Answer a colleague's "is the sync running?" immediately, rather than promising to check.
+      # The list is admin-only for the same reason the refresh log and the log file already are: it
+      # carries team and portfolio names, connection names and connector failure text.
+    forces:
+      push: >
+        Nothing in the product lists what is running. The only global signal is a boolean count, and
+        under Redis it counts only the calling pod's own dictionary.
+      pull: >
+        The live channel already exists - every client joins a GlobalUpdates SignalR group that already
+        fires on every status change. The surface needs no new transport.
+      anxiety: >
+        That a list of raw update keys is not actually legible - UpdateType has five members and two of
+        them are delete operations the UI has never had to name.
+      habit: >
+        Today the habit is to open Settings, find System Info, and read a refresh history that is not
+        live. The popover has to be enough better to displace that.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance 5 - it is the Epic. Current satisfaction 1 rather than 0 because the refresh history
+        under System Info answers the past tense of the question. Gap 4.
+
+  - id: job-operator-stop-a-refresh-that-is-doing-harm
+    title: Stop a refresh without restarting the instance
+    persona: platform-operator
+    feature_context: epic-5511-task-manager
+    created: 2026-08-23
+    note: >
+      NEW in epic-5511-task-manager. Cancellation is cooperative and best-effort by user decision -
+      hard abort risks half-written work items and an orphaned write-back round. The honest risk is
+      recorded rather than smoothed over: no method on IWorkTrackingConnector takes a CancellationToken,
+      and the evidence from Epic #5687 says the wall-clock of a refresh is overwhelmingly connector
+      paging. So the reachable checkpoint may be coarse. The slice opens with a probe that measures it,
+      and the acceptance criterion asserts the measured number rather than an intention.
+    job_story: >
+      When a refresh is hammering a tracker I need quiet, or chewing through a rate limit I share with
+      other tools,
+      I want to stop it from inside Lighthouse,
+      so my options are not "wait it out" or "restart the container".
+    dimensions:
+      functional: >
+        Queued work is dropped before it starts; running work stops at its next reachable checkpoint;
+        the outcome is a visible terminal state rather than a silent disappearance.
+      emotional: >
+        Move from watching something you caused and cannot stop to having a lever.
+      social: >
+        Be able to answer the platform team's "can you stop it?" with yes.
+    forces:
+      push: >
+        There is no cancel anywhere. The queue holds Func<Task> and no token; restarting the process is
+        the only way to stop a running refresh, and that takes everything else down with it.
+      pull: >
+        The queue already owns the lifecycle of every admitted key, so it is the natural owner of a
+        token per key, and an ambient scoped context already exists for exactly this kind of value.
+      anxiety: >
+        That cancelling mid-flight leaves half-written work items, or strands the write-back round the
+        run belonged to - a round that never finishes silently drops everything it staged.
+      habit: >
+        Operators currently reach for the container restart, which is a bigger hammer with side effects
+        they have learned to tolerate.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance 4 - real and occasionally urgent, but wanted less often than knowing what is running.
+        Current satisfaction 0 - the capability does not exist in any form. Gap 4, with the highest
+        implementation uncertainty in the Epic.
+
+  - id: job-config-admin-know-any-credential-is-failing-not-just-oauth
+    title: Be told when any connection's credential breaks, whatever its authentication method
+    persona: config-admin
+    feature_context: epic-5511-task-manager
+    created: 2026-08-23
+    note: >
+      NEW in epic-5511-task-manager, from ADO User Story #5019. The existing header icon reads
+      OAuthCredential.Status, so a connection with no OAuth credential row is invisible to it - which is
+      every PAT and every scoped API token. Generalising it is not a rename: a Jira 401 currently
+      arrives at the updater as an untyped Exception, so the signal this job needs does not yet exist.
+      Health is derived from classified refresh failures plus an on-demand test, never from a background
+      probe loop - a loop would add recurring outbound calls to rate limits we already share and already
+      trip. A connection that has never failed and never been tested reads Unknown, not Healthy.
+    job_story: >
+      When a connection's credential stops working - a revoked token, an expired PAT, a deprovisioned
+      owner -
+      I want Lighthouse to say so regardless of which authentication method that connection uses,
+      so I fix it before the team notices their data froze.
+    dimensions:
+      functional: >
+        A health state per connection covering every authentication method, plus a way to re-check one
+        on demand.
+      emotional: >
+        Move from discovering a dead credential through a complaint to noticing it yourself.
+      social: >
+        Be the administrator whose integrations do not quietly rot.
+    forces:
+      push: >
+        Non-OAuth authentication fails silently. Lighthouse keeps making 401-returning calls, team data
+        freezes, and the first signal is a flat throughput chart nobody can date.
+      pull: >
+        The refresh that would notice is already happening on a schedule. The signal is a by-product of
+        work already being done, not a new outbound cost.
+      anxiety: >
+        That a mis-classified failure sends someone to reissue a credential that was never the problem.
+        Answered by refusing to say "authentication failed" unless the connector actually said so.
+      habit: >
+        Administrators check a credential when something looks wrong, not on a cadence - so the product
+        has to be the one that notices.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - a dead credential silently freezes a team's data, which is the failure mode this
+        product can least afford. Current satisfaction 1 - OAuth connections are covered today and are a
+        real share of connections. Gap 3.
+
+  - id: job-operator-read-the-warnings-without-reading-the-log
+    title: See recent warnings without deciding to open a log file
+    persona: platform-operator
+    feature_context: epic-5511-task-manager
+    created: 2026-08-23
+    note: >
+      NEW in epic-5511-task-manager. There is no structured log store: Serilog writes to a rolling text
+      file and the read path loads the newest file whole into a string. So this is a new bounded
+      in-memory sink, not a query. Being per-process and restart-scoped is a real limitation and the
+      copy has to say so - an operator who believes a short list is a complete history draws a wrong
+      conclusion from it.
+    job_story: >
+      When something has gone wrong repeatedly,
+      I want the warnings and errors surfaced where I already look,
+      so noticing does not depend on me choosing to read a log file.
+    dimensions:
+      functional: >
+        The most recent warning-and-above events as structured records, in the same popover as the task
+        list, with a link to the full log.
+      emotional: >
+        Move from a suspicion that something has been failing to seeing it.
+      social: >
+        Be able to paste the actual message into a support conversation rather than describing symptoms.
+    forces:
+      push: >
+        Warnings exist only inside a rolling text file. Noticing requires deciding to go and look, which
+        is the step that does not happen.
+      pull: >
+        The events are already being emitted and the level switch is already runtime-adjustable; a sink
+        is a small addition to a pipeline that already exists.
+      anxiety: >
+        That a level filter surfaces noise rather than signal, and the section becomes a wall of text
+        nobody reads. This is the slice's stated hypothesis, and the answer decides whether the follow-up
+        is curation rather than filtering.
+      habit: >
+        The habit is to open the log only after something has already gone visibly wrong - which is by
+        definition too late to be a warning.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - genuinely useful, but it explains a problem rather than surfacing one, so it
+        serves the operator after the task list has already got their attention. Current satisfaction 1 -
+        the log viewer exists and works, it just requires intent. Gap 2, the smallest in the Epic, which
+        is why it ships last.

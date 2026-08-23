@@ -36,6 +36,7 @@ primary_jobs:
   - job-config-admin-paste-a-credential-with-confidence  # epic-5775-secret-encryption-key-custody (2026-08-14, #5775): know what happens to a token before pasting it, in plain words, at the form
   - job-config-admin-point-at-the-field-that-carries-dependencies  # epic-4365-dependencies (2026-08-14, #4365): name the Portfolio's dependency field, like the parent override
   - job-config-admin-know-when-a-delivery-source-degrades  # epic-5565-delivery-date-sync (2026-08-22, #5565): a vanished Release, a lost capability and a refused Release write each say so where the fix lives
+  - job-config-admin-know-any-credential-is-failing-not-just-oauth  # epic-5511-task-manager (2026-08-23, #5019): a PAT or API token that broke fails silently; only OAuth is watched today
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted

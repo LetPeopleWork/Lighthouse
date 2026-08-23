@@ -53,6 +53,11 @@ primary_jobs:
   - job-operator-unique-key-without-effort  # epic-5775 (2026-08-14, #5775): a credential-protecting key that is this instance's alone, with nothing to configure
   - job-operator-know-the-key-is-actually-in-effect  # epic-5775 (2026-08-14, #5775): see which key is in use and whether every stored secret reads under it
   - job-saas-operator-tenant-owned-encryption-key  # epic-5775 (2026-08-14, #5775): per-tenant key owned by the cluster's own secret store
+  # epic-5511-task-manager OPERATIONAL-VISIBILITY jobs (both flavours)
+  - job-operator-trust-that-a-finished-refresh-tells-the-truth  # epic-5511 (2026-08-23, #5788): the browser is told a failed refresh completed
+  - job-operator-see-what-lighthouse-is-doing-right-now  # epic-5511 (2026-08-23, #5511): a live list of running and queued work, from any page
+  - job-operator-stop-a-refresh-that-is-doing-harm  # epic-5511 (2026-08-23, #5511): cancel without restarting the container
+  - job-operator-read-the-warnings-without-reading-the-log  # epic-5511 (2026-08-23, #5511): recent warnings where they already look
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate
