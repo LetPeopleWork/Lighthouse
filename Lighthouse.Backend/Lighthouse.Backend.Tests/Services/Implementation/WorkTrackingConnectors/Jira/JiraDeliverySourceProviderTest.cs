@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using Lighthouse.Backend.Factories;
@@ -604,7 +605,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public HttpMessageHandler Handler { get; }
 
-            public List<Uri> Requests { get; } = [];
+            /// <summary>
+            /// A queue rather than a list because the connector reads several projects at once, and two
+            /// threads adding to a plain list can land on the same slot - which loses a request the
+            /// specifications next door are counting, in a way that only shows up under load.
+            /// </summary>
+            public ConcurrentQueue<Uri> Requests { get; } = new();
 
             public bool RefusesTheSearch { get; set; }
 
@@ -711,7 +717,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private HttpResponseMessage Respond(HttpRequestMessage request)
             {
                 var uri = request.RequestUri ?? new Uri("https://unreached.invalid/");
-                Requests.Add(uri);
+                Requests.Enqueue(uri);
 
                 var path = uri.AbsolutePath;
 
