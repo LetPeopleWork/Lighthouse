@@ -1965,9 +1965,26 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return JiraSources;
         }
 
-        public Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey, string projectReference)
+        /// <summary>
+        /// The source key is checked against what this connection actually offers before anything is
+        /// fetched, so a hand-written request cannot make Lighthouse call Jira for a source that does not
+        /// exist and then report the resulting HTTP failure as if Jira were unwell.
+        /// </summary>
+        public async Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey, string projectReference)
         {
-            throw new NotImplementedException(DeliverySourceNotImplementedYet);
+            if (!Array.Exists(JiraSources, source => source.Key == sourceKey))
+            {
+                throw new ArgumentException(
+                    $"This Jira connection does not offer a delivery source called '{sourceKey}'.", nameof(sourceKey));
+            }
+
+            logger.LogDebug("Getting Releases of Jira project {ProjectReference}", projectReference);
+
+            var client = await GetJiraRestClientAsync(connection);
+            var response = await client.GetAsync($"rest/api/3/project/{Uri.EscapeDataString(projectReference)}/versions");
+            response.EnsureSuccessStatusCode();
+
+            return JiraReleaseVersionReader.ReadOptions(await response.Content.ReadAsStringAsync());
         }
 
         public Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
