@@ -203,6 +203,58 @@ it readable.
   a Feature that is *not* blocked and dates will move, correctly. Do not record "reordering never moves
   a date" as the lesson.
 
-### Slice 02 — <date>
+### Slice 02 — 2026-08-23
 
-_Not yet run._
+Run on the local dev instance (`:5169`) built from `229b708ff`, against the real `LGHTHSDMO` Jira demo
+project. **Cases A-E PASS. F not run** — see the end.
+
+**The shape found on the day, which is not quite the shape the setup section describes.** Worth reading
+before re-running, because two things had drifted since slice 01:
+
+- **The `7 <-> 8` cycle slice 01 planted was gone from Jira**, and the local database still held it. The
+  first refresh dropped it, leaving a clean DAG. Read the verdicts *after* a refresh, never before.
+- **`LGHTHSDMO-10` is worked by both Teams.** That was not planned and it is a gift: it means the
+  cross-Team edge in case D also exercises *"a Feature several Teams are working is finished when the
+  last of them is done"*, which is one of the claims slice 01 deferred to this slice.
+
+| Feature | place | Teams | waits on |
+| --- | --- | --- | --- |
+| `LGHTHSDMO-8` SnapShare Hub | 5 | A | - |
+| `LGHTHSDMO-10` TrendSpotter Insights | 6 | **A and B** | - |
+| `LGHTHSDMO-7` Spotlight Finder | 7 | A | 8 (same Team), 9 (crosses, and sits *below* it) |
+| `LGHTHSDMO-9` BlinkList Directory | 8 | B | 10 (crosses) |
+
+**Use the Portfolio's ignore-dependencies switch as the counterfactual, not the licence.** It isolates
+one variable, needs no licence file, and is reversible. Two traps in doing so:
+
+- **Verdicts are computed at read time; dates are persisted from the last refresh.** Toggle the switch
+  and the reasons change immediately while every date is still the previous run's. Always refresh after
+  toggling, or the comparison is nonsense.
+- **`PUT /api/latest/portfolios/{id}` answers 409 on a stale concurrency token.** Re-`GET` the settings
+  between writes rather than reusing the body.
+
+**The spread, measured first.** Three refreshes, nothing changed: SnapShare 1 day, TrendSpotter 1,
+**BlinkList 0**, Spotlight 2. Tighter than slice 01's 3/2/1/1, which is what the addressable draw source
+buys. Nothing below is a movement unless it beats that.
+
+**Wall clock: 396-565 ms per forecast, against slice 01's recorded 1934-1980 ms baseline on this same
+instance.** Roughly a quarter, on real data, which matches what the benchmark Portfolio showed.
+
+| case | result | evidence |
+| --- | --- | --- |
+| **A** | PASS | SnapShare and TrendSpotter both read **empty** in the Dependencies column - they carry only the far end of somebody else's link. TrendSpotter's warning is `isUsingDefaultFeatureSize`, not a dependency warning, exactly as in slice 01. Both inside a 1-day spread. |
+| **B** | PASS, and more strongly than slice 01 | Honoured vs ignored, three refreshes each: the two Features that wait moved **out** (Spotlight 2027-03-09 -> 2027-08-13, **157 days**; BlinkList 2027-03-20 -> 2027-06-04, **76 days**) and the two that wait on nothing moved **in** (SnapShare 2027-01-15 -> 2026-12-04, **42 days**; TrendSpotter 2027-05-21 -> 2027-03-06, **76 days**). The inward movement is the half a post-hoc date shift could never produce: nothing pushed those two earlier, the Features that could not start stopped consuming the window. |
+| **C** | PASS | No drag needed - BlinkList (place 8) already blocks Spotlight (place 7). That edge reads `notHonouredReason: null` with `blockerPositionedBelow: true`, while Spotlight's *other* edge, in order, reads `false`. Same row, two blockers, only the out-of-order one flagged, both honoured. And it still moved the date: Spotlight's 157 days is with this edge in play. |
+| **D** | **PASS - inverted, which is the slice** | The verdict flipped `CrossesATeam` -> **honoured**, and `CrossesATeam` appears **zero** times in the API response because the value no longer exists. The date ordering flipped with it: with the wait ignored BlinkList lands 2027-03-20, **62 days before** the Feature it waits on; honoured it lands 2027-06-04, **90 days after** it. Slice 01 recorded the first of those as proof the wait was being ignored. |
+| **E** | PASS, on a shape slice 01 could not reach | A **cross-Team** cycle, made by hand in Jira (`10 is blocked by 9`, closing `9 <-> 10` across Team B and Teams A+B). Both edges flipped to `InALoop`; Spotlight's two edges stayed honoured, so a circle does not swallow the reasons around it. One log line named both Features. Forecast completed in **415/396 ms**, and **the abandoned-run guard never fired** - the circle was dropped at the decision and the simulation never saw it, which is the termination argument holding. Dates fell back to where they sit unhonoured. Link removed afterwards and the honoured ordering came straight back. |
+| **F** | **NOT RUN** | Clearing the licence is not reversible from here: the API returns licence *metadata*, not the blob, so a real licence cannot be put back - only the gitignored test fixture, which is a different licence. Judged not worth the trade: F passed in slice 01, and the single thing that changes is that D's edge should now read `NotLicensed` rather than `CrossesATeam`. That is already pinned from two directions in code - the policy asks the licence **last** and only for a wait nothing else stands against, and the closed-set test asserts the enum is exactly the five remaining reasons. Owed, not lost. |
+
+**Why case E is the one worth re-running first if anything is ever suspected.** A cross-Team circle was
+*unreachable* before this slice: the edge was refused for crossing a Team before the cycle detector ever
+looked at it. It is now the shape most likely to expose a mistake, because honoured waits forming a DAG
+is what the run's termination rests on, and the only thing making them a DAG is the policy dropping every
+edge inside a circle.
+
+**Not verified here, and honest about it:** every reading above is off the API, not the rendered row. The
+tooltip wording, the green tick and the warnings-icon grouping are the half a person actually sees, and
+they were confirmed by eye in slice 01 rather than in this run.
