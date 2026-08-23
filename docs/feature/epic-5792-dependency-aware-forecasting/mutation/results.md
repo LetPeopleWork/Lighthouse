@@ -1,3 +1,80 @@
+# Mutation testing — 5784 (Dependencies: forecast jumps over a same-team blocker)
+
+Run 2026-08-23 against `main` @ `9f9ec471d`. Gate is 80 % kill rate per stack.
+
+| stack | score | tested | killed | survived | timeout | wall clock |
+| --- | --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **84.76 %** | 160 | 112 | 21 | 27 | 20 m 48 s |
+| Frontend (StrykerJS 9.x) | **100.00 %** | 32 | 32 | 0 | 0 | 1 m 5 s |
+
+Configs: `stryker.5784.backend.json`, `stryker.5784.frontend.json`, `vitest.stryker.mutation.ts`.
+
+**The gate is met on both stacks.** 16790 mutants were created across the whole project and 16630
+skipped; the 160 tested are the seven files this slice changed. That figure was checked before the run
+was allowed to continue, because globs that fail to match widen silently to the whole backend.
+
+## Frontend
+
+`dependencySentences.ts:25-54` — the branch per reason, which is where a reason mapped to the wrong
+sentence would hide. Every mutant died. Twenty-one of the thirty-two were killed by the one test that
+asserts every reason produces a different sentence: a branch that falls through to another reason's
+wording collapses two sentences into one, and that test counts them.
+
+The rest of the frontend change is threading a renamed term through call sites and two entries added to
+a list of reason names. Both are shapes a type error catches before a test runs, so they are covered by
+`pnpm build` rather than by mutation.
+
+## Backend
+
+| file | killed | survived | timeout |
+| --- | --- | --- | --- |
+| `ForecastService.cs` | 61 | 16 | 27 |
+| `DependencyHonourPolicy.cs` | 34 | 1 | 0 |
+| `DependencyRefreshReporter.cs` | 11 | 4 | 0 |
+| `DependencyFacts.cs` | 3 | 0 | 0 |
+| `ForecastWaits.cs` | 2 | 0 | 0 |
+| `DependencyDecision.cs` | 1 | 0 | 0 |
+
+### What the timeouts say, and why they are the interesting number
+
+All 27 are in `ForecastService` and they land on the loop's own machinery: the trial counter, the
+`while` on remaining work, the day loop's bound, the work-in-progress calculation — and on the two
+lines that make up the guard against a run that cannot finish (`break` at the trial level, `return
+false` at the day level). Mutating either of those hangs the simulation until Stryker kills it.
+
+That is the guard being load-bearing rather than decorative, demonstrated rather than argued. The slice
+brief's warning that "a surviving mutant here is a hang or a wrong date" describes exactly this region,
+and the hang half of it is now evidenced.
+
+### Accepted survivors
+
+**Nothing in the eligibility rule survived.** Every survivor is one of four kinds:
+
+- **Log content (15).** Twelve are pre-existing `LogDebug` calls in `ForecastService` that this slice did
+  not touch — statement deletions and message-string blanks. Two more are the message and the team list
+  of the abandoned-run error; one is `Sum()` → `Max()` on the count of abandoned trials in that same
+  line, which differs only when two teams both abandon in one run. Asserting the wording of a log line
+  buys a test that fails on every rewording and catches nothing.
+- **Ordering inside a log line (3).** `Order()` → `OrderDescending()` on the names in the circle warning,
+  the unlicensed warning and the abandoned-run error. The ordering is there so a repeated message reads
+  the same way twice, not because anything downstream depends on it.
+- **`First()` → `FirstOrDefault()` in `FactsByReferenceId` (1).** Equivalent: the value comes from a
+  `GroupBy`, so the group is non-empty by construction and the two cannot differ. Pre-existing.
+- **`blockers.Length > 0` → `>= 0` (1).** Equivalent: the comparison filters rows with no wait out of the
+  readiness map purely to keep it small. A row admitted with an empty blocker array reads as ready, which
+  is what leaving it out means. Observable behaviour is identical; only the dictionary's size changes.
+
+### Not mutated
+
+- **`API/FeaturesController.cs`** — a constructor parameter and one call site changed in a 400-line file.
+  Mutating it would bury this slice's change under untouched code, and Stryker.NET ignores line ranges.
+  The change is covered by `FeaturesControllerTest` and by the `Slice02DependencyDetail` acceptance suite.
+- **`Program.cs`** — two dependency-injection registrations. Exercised by every integration test that
+  boots the host; a mutation there fails the whole suite rather than one assertion.
+- **Interfaces under `Services/Interfaces/Dependencies/`** — declarations, no behaviour to mutate.
+
+---
+
 # Mutation testing — 5826 (Dependencies: one forecast per Portfolio per refresh batch)
 
 Run 2026-08-22 against `main` @ `ada2a86cc`. Gate is 80 % kill rate per stack.
