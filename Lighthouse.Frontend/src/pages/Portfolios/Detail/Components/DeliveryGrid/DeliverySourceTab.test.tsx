@@ -1,4 +1,5 @@
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -165,6 +166,37 @@ const datelessOption: IDeliverySourceOption = {
 };
 
 const allOptions = [datedInJustATest, datedInProject, datelessOption];
+
+// Kept out of allOptions so the tests that count rows keep counting the same three.
+const retiredOption: IDeliverySourceOption = {
+	id: "10040",
+	name: "Release 40",
+	date: new Date("2026-08-01T12:00:00Z"),
+	projectKey: "PROJ",
+	projectName: "Project X",
+	isSelectable: false,
+	blockedBecause: "RetiredAtSource",
+};
+
+const fixVersionOption: IDeliverySourceOption = {
+	id: "20001",
+	name: "Sprint 9 hotfix",
+	date: new Date("2026-11-20T12:00:00Z"),
+	projectKey: "PROJ",
+	projectName: "Project X",
+	isSelectable: true,
+	blockedBecause: null,
+};
+
+const datedOnASingleDigitDay: IDeliverySourceOption = {
+	id: "10005",
+	name: "Release 5",
+	date: new Date("2027-01-05T12:00:00Z"),
+	projectKey: "PROJ",
+	projectName: "Project X",
+	isSelectable: true,
+	blockedBecause: null,
+};
 
 // A row reads "<name> (<project>)", and both halves are matched when the reader types. Spelled out
 // here because "Release 44" alone names two of the three rows, so a loose query finds two and throws.
@@ -759,5 +791,405 @@ describe("DeliverySourceTab and the name and date it fills in", () => {
 		await user.type(nameField, "Autumn release");
 
 		expect(nameField).toHaveValue("Autumn release");
+	});
+});
+
+describe("DeliverySourceTab option list", () => {
+	const tabListing = (options: IDeliverySourceOption[]) => {
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(options);
+		deliveryService.previewDeliverySource = vi.fn().mockResolvedValue({
+			name: "Release 44",
+			date: new Date("2026-09-30T12:00:00Z"),
+			features: [createFeature(1, "Widget rewrite")],
+			emptyBecause: "None",
+		});
+
+		renderTab(deliveryService);
+		return deliveryService;
+	};
+
+	it("says a Release that is gone from the board is no longer available, rather than undated", async () => {
+		const user = userEvent.setup();
+		tabListing([retiredOption]);
+
+		await openSourceList(user);
+
+		const gone = screen.getByRole("option", { name: /Release 40/ });
+		expect(gone).toHaveTextContent("No longer available");
+		expect(gone).not.toHaveTextContent("No Release Date Set");
+		expect(gone).toHaveAttribute("aria-disabled", "true");
+	});
+
+	it("keeps the picked Release in the box, so the panel below is never unattributed", async () => {
+		const user = userEvent.setup();
+		tabListing(allOptions);
+
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		);
+
+		expect(screen.getByRole("combobox", { name: "Jira Release" })).toHaveValue(
+			RELEASE_44_IN_PROJECT_TEST,
+		);
+	});
+
+	it("marks the Release that was picked, and only that one, when the list is reopened", async () => {
+		const user = userEvent.setup();
+		tabListing(allOptions);
+
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+		await openSourceList(user);
+
+		const marked = screen
+			.getAllByRole("option")
+			.filter((option) => option.getAttribute("aria-selected") === "true");
+
+		expect(marked).toHaveLength(1);
+		expect(marked[0]).toHaveAccessibleName(RELEASE_44_IN_PROJECT_X);
+	});
+
+	it("survives the picker being emptied, and asks for no preview of nothing", async () => {
+		const user = userEvent.setup();
+		const deliveryService = tabListing(allOptions);
+
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		);
+		await screen.findByTestId("delivery-source-preview");
+
+		await user.click(screen.getByTitle("Clear"));
+
+		expect(screen.getByRole("combobox", { name: "Jira Release" })).toHaveValue(
+			"",
+		);
+		expect(deliveryService.previewDeliverySource).toHaveBeenCalledTimes(1);
+	});
+
+	it("asks the server again for a second source rather than showing the first one's list", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([JIRA_RELEASE_SOURCE, JIRA_FIX_VERSION_SOURCE]);
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockImplementation((_portfolioId: number, sourceKey: string) => {
+				if (sourceKey === JIRA_FIX_VERSION_SOURCE.key) {
+					return Promise.resolve([fixVersionOption]);
+				}
+				return Promise.resolve(allOptions);
+			});
+
+		renderModal(deliveryService);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await waitFor(() => {
+			expect(deliveryService.getDeliverySourceOptions).toHaveBeenCalledWith(
+				1,
+				"jira-release",
+			);
+		});
+
+		await user.click(screen.getByRole("button", { name: "Jira Fix Version" }));
+		await waitFor(() => {
+			expect(
+				screen.getByRole("combobox", { name: "Jira Fix Version" }),
+			).toBeInTheDocument();
+		});
+		await user.click(
+			screen.getByRole("combobox", { name: "Jira Fix Version" }),
+		);
+
+		expect(
+			screen.getByRole("option", { name: /Sprint 9 hotfix/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryAllByRole("option", { name: /Release 44/ }),
+		).toHaveLength(0);
+	});
+});
+
+describe("DeliverySourceTab when a preview does not arrive", () => {
+	const PREVIEW_FAILED = /could not be previewed/i;
+
+	const releaseFortyFourInProjectX = {
+		name: "Release 44 in Project X",
+		date: new Date("2026-10-15T12:00:00Z"),
+		features: [createFeature(2, "Login")],
+		emptyBecause: "None",
+	};
+
+	it("claims nothing has failed before anyone has asked for a preview", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+
+		renderTab(deliveryService);
+		await openSourceList(user);
+
+		expect(screen.queryByText(PREVIEW_FAILED)).toBeNull();
+	});
+
+	it("says so when the preview cannot be fetched, and takes it back when the next one arrives", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+		deliveryService.previewDeliverySource = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("boom"))
+			.mockResolvedValue(releaseFortyFourInProjectX);
+
+		renderTab(deliveryService);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		);
+
+		expect(await screen.findByText(PREVIEW_FAILED)).toHaveTextContent(
+			"This Jira Release could not be previewed. Try again in a moment.",
+		);
+
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+
+		await screen.findByTestId("delivery-source-preview");
+		expect(screen.queryByText(PREVIEW_FAILED)).toBeNull();
+	});
+
+	it("ignores a failure belonging to a Release the reader has already moved on from", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+
+		let failTheFirstPick: (reason: Error) => void = () => {};
+		deliveryService.previewDeliverySource = vi
+			.fn()
+			.mockImplementationOnce(
+				() =>
+					new Promise((_resolve, reject) => {
+						failTheFirstPick = reject;
+					}),
+			)
+			.mockResolvedValue(releaseFortyFourInProjectX);
+
+		renderTab(deliveryService);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+		const preview = await screen.findByTestId("delivery-source-preview");
+
+		failTheFirstPick(new Error("boom"));
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 0));
+		});
+
+		expect(screen.queryByText(PREVIEW_FAILED)).toBeNull();
+		expect(preview).toHaveTextContent("Release 44 in Project X");
+	});
+
+	it("says the Release has nothing to show when neither of the two named reasons applies", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+		deliveryService.previewDeliverySource = vi.fn().mockResolvedValue({
+			name: "Release 44",
+			date: new Date("2026-09-30T12:00:00Z"),
+			features: [],
+			emptyBecause: "None",
+		});
+
+		renderTab(deliveryService);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		);
+
+		const empty = await screen.findByTestId("delivery-source-preview-empty");
+		expect(empty).toHaveTextContent(
+			"This Jira Release has no Deliverables to show.",
+		);
+	});
+});
+
+describe("DeliveryCreateModal and the one thing it asks for next", () => {
+	// The date field holds a day on this browser's calendar, not a UTC instant, so the string typed
+	// into it has to be built the same way or a test run either side of midnight names a different day.
+	const dayOnThisBrowsersCalendar = (daysFromToday: number): string => {
+		const day = new Date();
+		day.setDate(day.getDate() + daysFromToday);
+		const month = `${day.getMonth() + 1}`.padStart(2, "0");
+		const dayOfMonth = `${day.getDate()}`.padStart(2, "0");
+
+		return `${day.getFullYear()}-${month}-${dayOfMonth}`;
+	};
+
+	const blockingMessage = () =>
+		within(screen.getByRole("dialog")).getByRole("alert").textContent;
+
+	const typeTheDate = async (
+		user: ReturnType<typeof userEvent.setup>,
+		value: string,
+	) => {
+		await user.clear(screen.getByLabelText("Launch Date"));
+		await user.type(screen.getByLabelText("Launch Date"), value);
+	};
+
+	const modalOfferingNoSource = () => {
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi.fn().mockResolvedValue([]);
+		deliveryService.getRuleSchema = vi.fn().mockResolvedValue({
+			fields: [
+				{
+					fieldKey: "fixVersion",
+					displayName: "Fix Version",
+					isMultiValue: false,
+				},
+			],
+			operators: ["equals"],
+			maxRules: 5,
+			maxValueLength: 100,
+		});
+
+		renderModal(deliveryService);
+		return deliveryService;
+	};
+
+	const modalShowingOneRelease = (options: IDeliverySourceOption[]) => {
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([JIRA_RELEASE_SOURCE]);
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(options);
+		deliveryService.previewDeliverySource = vi.fn().mockResolvedValue({
+			name: "Release 44",
+			date: new Date("2026-10-15T12:00:00Z"),
+			features: [createFeature(1, "Widget rewrite")],
+			emptyBecause: "None",
+		});
+
+		renderModal(deliveryService);
+		return deliveryService;
+	};
+
+	it("names one missing thing at a time, in the order the reader can fix them", async () => {
+		const user = userEvent.setup();
+		modalOfferingNoSource();
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Launch Name")).toBeInTheDocument();
+		});
+		expect(blockingMessage()).toBe("Launch name is required");
+
+		await user.type(screen.getByLabelText("Launch Name"), "Autumn launch");
+		expect(blockingMessage()).toBe("Launch date is required");
+
+		await typeTheDate(user, dayOnThisBrowsersCalendar(-7));
+		expect(blockingMessage()).toBe("Launch date must be in the future");
+
+		await typeTheDate(user, dayOnThisBrowsersCalendar(7));
+		expect(blockingMessage()).toBe("At least one deliverable must be selected");
+	});
+
+	it("does not take a name of nothing but spaces for a name", async () => {
+		const user = userEvent.setup();
+		modalOfferingNoSource();
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Launch Name")).toBeInTheDocument();
+		});
+		await user.type(screen.getByLabelText("Launch Name"), "   ");
+
+		expect(blockingMessage()).toBe("Launch name is required");
+	});
+
+	it("does not treat rules as matched just because the tab was opened", async () => {
+		const user = userEvent.setup();
+		modalOfferingNoSource();
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Launch Name")).toBeInTheDocument();
+		});
+		await user.type(screen.getByLabelText("Launch Name"), "Autumn launch");
+		await typeTheDate(user, dayOnThisBrowsersCalendar(7));
+
+		await user.click(screen.getByRole("button", { name: "Rule-Based" }));
+
+		expect(
+			await screen.findByText("Rules must be validated before saving"),
+		).toBeInTheDocument();
+		expect(screen.queryByText("No features match the rules")).toBeNull();
+	});
+
+	it("refuses today, because a date to launch on has to be a day still to come", async () => {
+		const user = userEvent.setup();
+		modalOfferingNoSource();
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Launch Name")).toBeInTheDocument();
+		});
+		await user.type(screen.getByLabelText("Launch Name"), "Autumn launch");
+		await typeTheDate(user, dayOnThisBrowsersCalendar(0));
+
+		expect(blockingMessage()).toBe("Launch date must be in the future");
+	});
+
+	it("writes a single-digit month and day into the date field with a leading zero", async () => {
+		const user = userEvent.setup();
+		modalShowingOneRelease([datedOnASingleDigitDay]);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await openSourceList(user);
+		await user.click(screen.getByRole("option", { name: /Release 5/ }));
+
+		expect(screen.getByLabelText("Launch Date")).toHaveValue("2027-01-05");
+	});
+
+	it("leaves the picked Release alone when its own tab button is clicked again", async () => {
+		const user = userEvent.setup();
+		modalShowingOneRelease(allOptions);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+		await screen.findByTestId("delivery-source-preview");
+
+		await user.click(screen.getByRole("button", { name: "Jira Release" }));
+
+		expect(blockingMessage()).toBe(
+			"Picking a Jira Release only previews it. Switch to Manual or Rule-Based to save.",
+		);
 	});
 });

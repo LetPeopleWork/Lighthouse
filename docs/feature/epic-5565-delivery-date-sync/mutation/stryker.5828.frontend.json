@@ -27,6 +27,11 @@
     "src/models/Delivery/DeliverySource.ts",
     "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx",
     "src/pages/Portfolios/Detail/Components/DeliveryGrid/deliverySelectionTabs.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:271-292",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:335-353",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:371-392",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:444-459",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:570-591",
     "src/services/Api/DeliveryService.ts:278-315"
   ],
   "thresholds": {

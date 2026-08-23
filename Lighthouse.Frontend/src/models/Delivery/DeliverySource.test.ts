@@ -113,6 +113,17 @@ describe("delivery source option", () => {
 		expect(option.isSelectable).toBe(false);
 	});
 
+	it("names a Release that cannot be bound because it is gone from the board", () => {
+		const option = DeliverySourceOptionSchema.parse({
+			...datedRelease,
+			isSelectable: false,
+			blockedBecause: "RetiredAtSource",
+		});
+
+		expect(option.blockedBecause).toBe("RetiredAtSource");
+		expect(option.isSelectable).toBe(false);
+	});
+
 	it("leaves a bindable Release with no reason it could not be bound", () => {
 		const option = DeliverySourceOptionSchema.parse(datedRelease);
 
