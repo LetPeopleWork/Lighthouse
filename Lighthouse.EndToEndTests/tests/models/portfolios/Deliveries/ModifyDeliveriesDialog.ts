@@ -1,5 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { DeliveriesPage } from "./DeliveriesPage";
+import { DeliverySourceTab } from "./DeliverySourceTab";
 
 export class ModifyDeliveriesDialog {
 	page: Page;
@@ -80,6 +81,17 @@ export class ModifyDeliveriesDialog {
 	async switchToManual(): Promise<void> {
 		const manualButton = this.page.getByRole("button", { name: "Manual" });
 		await manualButton.click();
+	}
+
+	/** The tab a connection adds when it can hand Lighthouse a delivery date of its own. */
+	sourceTab(sourceName: string): Locator {
+		return this.page.getByRole("button", { name: sourceName });
+	}
+
+	async switchToSource(sourceName: string): Promise<DeliverySourceTab> {
+		await this.sourceTab(sourceName).click();
+
+		return new DeliverySourceTab(this.page, sourceName);
 	}
 
 	async addRule(): Promise<void> {

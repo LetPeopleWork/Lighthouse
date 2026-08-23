@@ -1,7 +1,7 @@
 import requests
 import random
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 
 parser = argparse.ArgumentParser()
 parser.add_argument("api_token", type=str, help="API Token for Jira")
@@ -11,6 +11,13 @@ API_TOKEN = args.api_token
 USERNAME = 'atlassian.pushchair@huser-berta.com'
 JIRA_BASE_URL = 'https://letpeoplework.atlassian.net/rest/api/3'
 STORY_POINT_VALUES = [1, 2, 3, 5, 8, 13, 23]
+
+# One Release on this board has to keep a date somebody could still forecast to, because that is what
+# a Delivery can bind its date to. The other two Releases are deliberately left undated - a reader
+# has to be able to see what an undated one looks like on a real board, not only in a test.
+DATED_RELEASE_ID = '10006'
+DATED_RELEASE_NAME = 'Elixir Project'
+DAYS_THE_DATED_RELEASE_STAYS_AHEAD = 30
 
 # Target throughput for each team including "Epics"
 teams_targets = {
@@ -148,6 +155,22 @@ print("\n🔄 Processing workflow transitions...")
 for team in teams_targets.keys():
     print(f"\n📋 Processing workflow transitions for: {team}")
     move_issues_stepwise(team)
+
+# The date is SET to a fixed distance from today, never advanced from whatever it currently is.
+# Advancing would compound: a year of nightly runs would leave this Release due twelve months out,
+# and the demo would be forecasting to a date nobody believes.
+def keep_the_dated_release_ahead_of_today():
+    release_date = (today + timedelta(days=DAYS_THE_DATED_RELEASE_STAYS_AHEAD)).strftime('%Y-%m-%d')
+
+    resp = session.put(f"{JIRA_BASE_URL}/version/{DATED_RELEASE_ID}", json={"releaseDate": release_date})
+    if resp.status_code == 200:
+        print(f"  📅 '{DATED_RELEASE_NAME}' is now due {release_date}")
+    else:
+        print(f"  ❌ Failed to date '{DATED_RELEASE_NAME}': {resp.status_code}, {resp.text}")
+
+
+print("\n📅 Keeping the dated Release ahead of today...")
+keep_the_dated_release_ahead_of_today()
 
 # Print summary
 print("\n📊 Summary of operations:")
