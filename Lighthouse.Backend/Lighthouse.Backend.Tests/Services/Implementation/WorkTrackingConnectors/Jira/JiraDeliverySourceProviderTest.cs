@@ -357,6 +357,33 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        public async Task A_connection_carrying_a_url_that_is_not_one_offers_nothing_rather_than_failing()
+        {
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira().WithTheWorkProject().Handler);
+
+            var options = await subject.GetOptions(AConnectionWhoseUrlIsNotAUrl(), JiraReleaseSourceKey);
+
+            Assert.That(options, Is.Empty,
+                "the picker asks what can be bound and has to be told 'nothing'; a connection nobody can build a request from is one more way of answering that, not a request that failed.");
+        }
+
+        [Test]
+        public async Task A_connection_carrying_a_url_that_is_not_one_leaves_a_binding_unavailable_and_never_missing()
+        {
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira().WithTheWorkProject().Handler);
+
+            var resolutions = await subject.ResolveMany(
+                AConnectionWhoseUrlIsNotAUrl(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolutions[TheDatedRelease], Is.InstanceOf<DeliverySourceResolution.Unavailable>());
+                Assert.That(resolutions[TheDatedRelease], Is.Not.InstanceOf<DeliverySourceResolution.NotFound>(),
+                    "nobody asked Jira anything, so nothing has been said about whether the Release still exists - and only 'it is gone' may retire a binding.");
+            }
+        }
+
+        [Test]
         public async Task A_Release_resolves_to_the_reference_ids_of_the_work_that_carries_it()
         {
             var jira = AJira()
@@ -578,6 +605,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static WorkTrackingSystemConnection AJiraCloudConnection()
             => JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+
+        /// <summary>
+        /// A connection whose url cannot be turned into one, which is what a typo in the connection form
+        /// leaves behind. Nothing reaches the network here: building the client is the step that fails.
+        /// </summary>
+        private static WorkTrackingSystemConnection AConnectionWhoseUrlIsNotAUrl()
+        {
+            var connection = AJiraCloudConnection();
+            var url = connection.Options.Single(option => option.Key == JiraWorkTrackingOptionNames.Url);
+            url.Value = "https://";
+
+            return connection;
+        }
 
         /// <summary>
         /// Lighthouse as it actually serves requests, with the two lifetimes Program.cs gives these: a

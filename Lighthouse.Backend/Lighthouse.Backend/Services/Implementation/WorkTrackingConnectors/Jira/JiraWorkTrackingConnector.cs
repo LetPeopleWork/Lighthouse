@@ -2024,8 +2024,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return remembered;
             }
 
-            var client = await GetJiraRestClientAsync(connection);
-            var (options, sawEveryRelease) = await SweepReleases(client, OfferableVersionStatuses);
+            var (_, options, sawEveryRelease) = await SweepReleasesWithoutThrowing(connection, OfferableVersionStatuses);
 
             // A sweep that lost a project is worth showing once and never worth keeping. The reader is
             // looking at a list with Releases missing from it, and the one thing they will try - close
@@ -2162,8 +2161,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return resolutions;
             }
 
-            var client = await GetJiraRestClientAsync(connection);
-            var (releases, sawEveryRelease) = await SweepEveryRelease(client);
+            var (client, releases, sawEveryRelease) = await SweepReleasesWithoutThrowing(connection, EveryVersionStatus);
 
             var releasesById = releases
                 .DistinctBy(release => release.Id, StringComparer.Ordinal)
@@ -2195,7 +2193,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
             }
 
-            if (datedReleases.Count > 0)
+            if (client is not null && datedReleases.Count > 0)
             {
                 await AddTheWorkThatCarriesTheRelease(client, connection, datedReleases, resolutions);
             }
@@ -2213,24 +2211,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// The sweep a refresh runs, asking for every status so that a Release archived or ticked as
-        /// released since it was bound is still found. A Jira that could not be reached comes back as a
-        /// sweep that saw nothing and knows it, which is what keeps a network blip from reading as a set
-        /// of deleted Releases.
+        /// A sweep that answers rather than throws, and the client it used so a caller that has more to ask
+        /// need not acquire a second one. A Jira that could not be reached comes back as a sweep that saw
+        /// nothing and knows it, which is what keeps a network blip from reading as a set of deleted Releases.
+        ///
+        /// Acquiring the client is inside the guard on purpose. Reaching a Jira Cloud tenant costs a request
+        /// of its own before any Release is asked for, and that request failing outside the guard is the
+        /// difference between a caller answering "could not be asked" and a caller throwing.
         /// </summary>
-        private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepEveryRelease(HttpClient client)
+        private async Task<(HttpClient? Client, IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)>
+            SweepReleasesWithoutThrowing(WorkTrackingSystemConnection connection, string statuses)
         {
             try
             {
-                return await SweepReleases(client, EveryVersionStatus);
+                var client = await GetJiraRestClientAsync(connection);
+                var (releases, sawEverything) = await SweepReleases(client, statuses);
+
+                return (client, releases, sawEverything);
             }
-            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+            catch (Exception exception) when (JiraCouldNotBeAsked(exception))
             {
                 logger.LogInformation(exception, "Could not read the Jira Releases on this connection");
 
-                return ([], false);
+                return (null, [], false);
             }
         }
+
+        /// <summary>
+        /// The ways a conversation with Jira ends without an answer: the request never arrived, it ran out
+        /// of time, what came back was not the JSON it claimed to be, or the connection carries a url that
+        /// is not a url. A caller that has to answer "could not be asked" rather than throw has to recognise
+        /// all four, and a malformed url is the one that used to escape.
+        /// </summary>
+        private static bool JiraCouldNotBeAsked(Exception exception)
+            => exception is HttpRequestException or TaskCanceledException or JsonException or UriFormatException;
 
         /// <summary>
         /// The answer when Jira could not be asked at all. Deliberately not the same answer as a Release Jira
@@ -2304,7 +2318,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         client, OrderedForOffsetPaging(query), ReleaseMembershipFields, pageLimit,
                         issue => CollectCarriedWork(issue, carriedWork));
             }
-            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+            catch (Exception exception) when (JiraCouldNotBeAsked(exception))
             {
                 logger.LogInformation(exception, "Could not find out which work carries the Releases asked about");
 
