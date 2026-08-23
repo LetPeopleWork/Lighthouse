@@ -7,7 +7,6 @@ export const NOT_HONOURED_REASONS = [
 	"InALoop",
 	"BlockerCannotBeForecast",
 	"IgnoredByPortfolio",
-	"CrossesATeam",
 	"NotLicensed",
 ] as const;
 

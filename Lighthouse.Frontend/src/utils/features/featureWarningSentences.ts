@@ -33,7 +33,7 @@ export function featureWarningSentences(
 		isUsingDefaultFeatureSize,
 		dependencies = [],
 	}: FeatureWarningInput,
-	{ workItemsTerm, featureTerm, portfolioTerm, teamTerm }: FeatureWarningTerms,
+	{ workItemsTerm, featureTerm, portfolioTerm }: FeatureWarningTerms,
 ): string[] {
 	const defaultSizeWarning = `No child ${workItemsTerm} were found for this ${featureTerm}. The remaining ${workItemsTerm} displayed are based on the default ${featureTerm} size specified in the advanced project settings.`;
 
@@ -44,7 +44,7 @@ export function featureWarningSentences(
 		...dependencies
 			.filter(isWorthWarningAbout)
 			.map((dependency) =>
-				sentenceFor(dependency, { featureTerm, portfolioTerm, teamTerm }),
+				sentenceFor(dependency, { featureTerm, portfolioTerm }),
 			),
 	];
 }

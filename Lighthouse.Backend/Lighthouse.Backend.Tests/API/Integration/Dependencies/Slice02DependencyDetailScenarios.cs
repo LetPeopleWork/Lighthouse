@@ -27,11 +27,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             NotHonouredReason.BlockerCannotBeForecast,
             NotHonouredReason.IgnoredByPortfolio,
 
-            // Added by the Epic that lets a dependency change a date, which can only account for a wait
-            // both ends of which are one Team's work. Listed here because this is the set a reader meets.
-            NotHonouredReason.CrossesATeam,
-
-            // Added by the same Epic, for a wait nothing but a premium licence stands against.
+            // Added by the Epic that lets a dependency change a date, for a wait nothing but a premium
+            // licence stands against. Listed here because this is the set a reader meets.
             NotHonouredReason.NotLicensed,
         ];
 

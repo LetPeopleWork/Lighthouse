@@ -9,7 +9,6 @@ import { createDependsOnColumn, createStateColumn } from "./columns";
 const THE_DEFAULT_TERMS: DependencyTerms = {
 	featureTerm: "Feature",
 	portfolioTerm: "Portfolio",
-	teamTerm: "Team",
 };
 
 import FeatureListDataGrid from "./FeatureListDataGrid";

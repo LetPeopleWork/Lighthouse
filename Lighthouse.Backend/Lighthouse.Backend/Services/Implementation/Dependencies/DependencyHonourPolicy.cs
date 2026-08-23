@@ -126,9 +126,11 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         /// the same circle reads the same way. Otherwise one member with no delivery to measure would report
         /// that instead, and the user would be told two different things about one circle.
         ///
-        /// Crossing a Team is asked last, and deliberately: it is the only reason here that says nothing is
-        /// wrong with the dependency, only that Lighthouse cannot act on it yet. Asked earlier it would hide
-        /// a circle behind a limitation, and the circle is the one the user has to go and fix.
+        /// Which Teams are working the two ends is no longer asked at all. A forecast used to run each Team
+        /// on a clock of its own, so no Team's run had a moment at which it could see another Team finish
+        /// something; now every Team is on one clock, and a wait between two Teams is a wait like any other.
+        /// A Feature several Teams share is finished when the last of them is done, which the shared clock
+        /// can see and separate clocks could not.
         /// </summary>
         private static NotHonouredReason? ReasonWithinThisPortfolio(
             FeatureDependencyFacts dependent,
@@ -145,29 +147,7 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
                 return NotHonouredReason.BlockerCannotBeForecast;
             }
 
-            if (MoreThanOneTeamHasWorkOnTheseTwo(dependent, blocker))
-            {
-                return NotHonouredReason.CrossesATeam;
-            }
-
             return null;
-        }
-
-        /// <summary>
-        /// A forecast runs each Team on its own clock, so the only moment at which "the Feature waited on is
-        /// finished" is something anyone can observe is a moment inside the run of the Team that has to
-        /// finish it. Two Teams share no such moment, and a Feature several Teams are still working is not
-        /// finished when the first of them stops.
-        ///
-        /// Asked of both ends together rather than of the Feature waited on alone: a Feature waiting that two
-        /// Teams share has one date per Team, and neither of them is the whole wait. Where no Team has work
-        /// on either end there is nothing to run on anybody's clock, the wait holds nothing up, and saying it
-        /// crosses a Team would name a Team nobody involved has.
-        /// </summary>
-        private static bool MoreThanOneTeamHasWorkOnTheseTwo(
-            FeatureDependencyFacts dependent, FeatureDependencyFacts blocker)
-        {
-            return dependent.TeamIds.Concat(blocker.TeamIds).Distinct().Skip(1).Any();
         }
 
         private static List<int> PortfoliosTheyShare(

@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Models.Dependencies
     ///
     /// Most of these say something is wrong with the dependency. One says nothing is wrong with it and
     /// somebody asked to set it aside anyway, which is why it is the only one that raises no warning. The
-    /// last one says nothing is wrong with it either and Lighthouse cannot act on it yet.
+    /// last one says nothing is wrong with it either and this instance has not paid for the behaviour.
     /// </summary>
     public enum NotHonouredReason
     {
@@ -20,13 +20,6 @@ namespace Lighthouse.Backend.Models.Dependencies
         BlockerCannotBeForecast,
 
         IgnoredByPortfolio,
-
-        /// <summary>
-        /// The two ends are not one Team's work. Each Team is forecast on its own clock, so one Team's
-        /// simulated run has no moment at which it can say another Team has finished something - and a
-        /// guess about a moment it cannot see would be a date presented as if it were measured.
-        /// </summary>
-        CrossesATeam,
 
         /// <summary>
         /// Letting a dependency change a date is paid behaviour and this instance has not paid for it. It is

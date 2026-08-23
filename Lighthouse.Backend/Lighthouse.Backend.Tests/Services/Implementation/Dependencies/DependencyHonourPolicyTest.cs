@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             NotHonouredReason.InALoop,
             NotHonouredReason.BlockerCannotBeForecast,
             NotHonouredReason.IgnoredByPortfolio,
-            NotHonouredReason.CrossesATeam,
             NotHonouredReason.NotLicensed,
         ];
 
@@ -440,51 +439,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             Assert.That(TheVerdictFor(honoured, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.OutsideThisPortfolio));
         }
 
+        /// <summary>
+        /// Every Team is now forecast on one clock, so a run does have a moment at which it can see another
+        /// Team finish something. A wait between two Teams is a wait like any other and nothing stands
+        /// against it - which is the whole of what this Epic set out to deliver.
+        /// </summary>
         [Test]
-        public void ABlockerAnotherTeamIsWorking_IsAWaitThatCrossesATeam()
+        public void ABlockerAnotherTeamIsWorking_IsAWaitLikeAnyOther()
         {
             var verdicts = Decide(
                 AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
                 AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: AnotherTeam));
 
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.CrossesATeam));
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
         }
 
         /// <summary>
-        /// A Feature several Teams are still working is not finished when the first of them stops, and no
-        /// one Team's run can see the other two get there. Reading the first Team's finish as the whole
-        /// Feature's would release the Feature waiting early, and nothing in the output would look wrong.
+        /// A Feature several Teams are still working is finished when the last of them is done, not the
+        /// first. On one clock that is something a run can see, so the wait is acted on rather than left
+        /// out; that it is the last and not the first is what the simulation itself has to get right.
         /// </summary>
         [Test]
-        public void ABlockerSeveralTeamsAreWorking_IsAWaitThatCrossesATeamEvenWhenOneOfThemIsTheSame()
+        public void ABlockerSeveralTeamsAreWorking_IsStillAWaitLighthouseActsOn()
         {
             var verdicts = Decide(
                 AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
                 AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: SeveralTeams));
 
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.CrossesATeam));
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
         }
 
-        /// <summary>
-        /// A Feature two Teams share has one date per Team, and neither of them is the whole wait, so the
-        /// question is asked about both ends rather than only about the Feature waited on.
-        /// </summary>
         [Test]
-        public void AFeatureSeveralTeamsAreWorking_WaitsOnNothingThisSliceCanAccountFor()
+        public void AFeatureSeveralTeamsAreWorking_WaitsOnSomethingLighthouseActsOn()
         {
             var verdicts = Decide(
                 AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: SeveralTeams),
                 AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: TheSameTeam));
 
-            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.CrossesATeam));
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
         }
 
         /// <summary>
-        /// Nobody is working it, so there is nothing to run on anybody's clock and the wait holds nothing
-        /// up. Reporting a crossed Team here would name a Team neither end has.
+        /// Nobody is working it, so there is nothing in the run to wait for and the wait holds nothing up.
         /// </summary>
         [Test]
-        public void ABlockerNoTeamIsWorking_CrossesNothingAndIsLeftAlone()
+        public void ABlockerNoTeamIsWorking_HoldsNothingUpAndIsLeftAlone()
         {
             var verdicts = Decide(
                 AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
@@ -504,11 +503,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
         }
 
         /// <summary>
-        /// Crossing a Team is a limit on what Lighthouse can work out, not a fault in the data. A circle is
-        /// a fault, and it is the one the user can go and fix, so it is what they are told about.
+        /// A circle between two Teams is still a circle. Nothing about the Teams involved changes what is
+        /// wrong with it or what the user has to go and fix.
         /// </summary>
         [Test]
-        public void ACircleThatAlsoCrossesATeam_ReportsTheCircle()
+        public void ACircleBetweenTwoTeams_IsStillReportedAsACircle()
         {
             var verdicts = Decide(
                 AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
@@ -551,7 +550,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
         /// date that would not move, which is worse than saying nothing.
         /// </summary>
         [TestCase(NotHonouredReason.InALoop)]
-        [TestCase(NotHonouredReason.CrossesATeam)]
+        [TestCase(NotHonouredReason.BlockerCannotBeForecast)]
         public void ADependencyNoLicenceWouldHaveAccountedFor_SaysWhatIsActuallyWrongWithIt(
             NotHonouredReason whatIsActuallyWrong)
         {
@@ -600,7 +599,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             return
             [
                 AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
-                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: AnotherTeam),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, canBeForecast: false),
             ];
         }
 

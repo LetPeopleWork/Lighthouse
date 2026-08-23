@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.Models.Dependencies
             var waits = ForecastWaits.From(new HonouredDependencies(
             [
                 AVerdict("F-1", "F-2", NotHonouredReason.InALoop),
-                AVerdict("F-1", "F-3", NotHonouredReason.CrossesATeam),
                 AVerdict("F-1", "F-4", NotHonouredReason.NotLicensed),
                 AVerdict("F-1", "F-5", NotHonouredReason.OutsideThisPortfolio),
                 AVerdict("F-1", "F-6", NotHonouredReason.BlockerCannotBeForecast),

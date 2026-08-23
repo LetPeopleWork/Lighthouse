@@ -41,6 +41,11 @@ Feature: Dependencies that cross Teams count too (Epic 5792, Slice 02 — US-07,
   # The one commit in this epic with no exact net, named here so nobody mistakes its absence for an
   # oversight. The released product draws from an unseeded source, so there is no before-run to
   # match draw for draw.
+  # DONE. Asserted by TheDrawSourceChangedTheDistributionDidNotTest, which reproduces the released
+  # product's draw source exactly - a fresh random number per draw, blind to where the draw sat - runs
+  # the benchmark Portfolio through it five times to see its own spread, and holds the new source's
+  # dates to that spread widened by itself, never by less than a day. The recorded baseline it writes is
+  # slice-02-shared-clock-percentiles.json.
   @us-07 @slice-02 @kpi @contract-shape:bounded-change
   Scenario: Changing where the numbers come from leaves the distribution where it was
     Given the percentiles the released product produces for a fixture, over enough runs to see past
@@ -75,6 +80,12 @@ Feature: Dependencies that cross Teams count too (Epic 5792, Slice 02 — US-07,
     Then every percentile is identical to the baseline
     And the Features that received work are the ones nearest the top of the order, as before
 
+  # DONE, in two halves that are not interchangeable. The wall clock itself was measured by hand on one
+  # machine, before and after, and both numbers are recorded in the slice brief - a time recorded on one
+  # machine asserts nothing on another, so a test comparing against a checked-in number would go red in
+  # CI for a reason that is not a defect. TheJointForecastIsAffordableTest carries the half that travels:
+  # a bound loose enough for the slowest build agent, and the dates held to the recorded baseline,
+  # because a forecast that got faster by doing less work is the failure worth catching.
   @us-07 @slice-02 @kpi @contract-shape:bounded-change
   Scenario: The joint forecast is not slower than the product was before this epic
     Given the wall-clock time of a full forecast, recorded on the released product on the machine
@@ -99,6 +110,10 @@ Feature: Dependencies that cross Teams count too (Epic 5792, Slice 02 — US-07,
     Then in every simulated run, "Payment gateway upgrade" finishes no earlier than "Checkout redesign"
     And its dates have moved out to sit behind the other Team's work
 
+  # DONE by deletion, which is the strongest form this can take: the reason a cross-Team wait was left
+  # out no longer exists to be rendered. The closed set of reasons is asserted in two places that both
+  # had to be changed for this to compile - the C# enum against the list the browser holds, and the list
+  # the Features view is allowed to produce - so the warning cannot come back without both noticing.
   @driving_adapter @us-08 @slice-02 @contract-shape:bounded-change
   Scenario: The warning that said a cross-Team wait was ignored is gone
     Given "Payment gateway upgrade" carried the warning that its wait crossed a Team

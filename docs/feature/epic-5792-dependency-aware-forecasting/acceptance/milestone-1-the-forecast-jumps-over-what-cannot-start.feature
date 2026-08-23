@@ -101,12 +101,16 @@ Feature: The forecast jumps over a Feature that cannot start yet (Epic 5792, Sli
     And the row for "Payment gateway upgrade" says why that wait is not in the forecast
     And "Address book rewrite" has moved, so the mechanic was running while it left the other alone
 
-  # MOVED TO SLICE 02 during DELIVER. Every wait slice 01 acts on is one Team's work at both ends, and
-  # the set of them has no circles in it, so whatever still has work always has something at the front of
-  # it that is waiting for nothing. A day on which a Team could start nothing is therefore not a state
-  # slice 01 can reach - it becomes reachable once a Team can be held up by another Team's work. The loop
-  # stops rather than counting days forever if it is ever handed one anyway, and says so in the log; that
-  # guarantee is asserted in ForecastServiceDependencyTest instead.
+  # MOVED TO SLICE 02 during DELIVER, and DONE there. Every wait slice 01 acts on is one Team's work at
+  # both ends, and the set of them has no circles in it, so whatever still has work always has something
+  # at the front of it that is waiting for nothing. A day on which a Team could start nothing is
+  # therefore not a state slice 01 can reach - it becomes reachable once a Team can be held up by
+  # another Team's work.
+  #
+  # Asserted by AFeatureWaitingOnAnotherTeamsWork_StartsOnlyWhenThatWorkIsDone in
+  # ForecastServiceCrossTeamDependencyTest, where every Team delivers one item a day: the Team waiting
+  # lands on day ten rather than day seven, and the difference between those two numbers IS the six idle
+  # days not being handed back. The run reaching an end is the same test returning at all.
   @edge @driving_port @us-05 @slice-02 @contract-shape:bounded-change
   Scenario: A day on which everything is waiting is simply an idle day
     Given the instance is licensed for dependency-aware forecasting
@@ -115,12 +119,15 @@ Feature: The forecast jumps over a Feature that cannot start yet (Epic 5792, Sli
     Then that day's delivery is not carried over to a later day
     And the run still reaches an end
 
-  # MOVED TO SLICE 02 during DELIVER. Each Team runs its own trials on its own clock, so a run belonging
-  # to one Team has no moment at which it can observe the other two finish. Reading the first Team's
-  # finish as the whole Feature's would release the Feature waiting early and nothing in the output
-  # would look wrong; reading the other Teams' counts across runs is a race whose answer changes between
-  # two runs of one build. Slice 01 therefore does not act on this wait at all - it reports it as
-  # crossing a Team, like any other. The joint trial clock is what makes it observable.
+  # MOVED TO SLICE 02 during DELIVER, and DONE there. Each Team used to run its own trials on its own
+  # clock, so a run belonging to one Team had no moment at which it could observe the other two finish.
+  # Reading the first Team's finish as the whole Feature's would release the Feature waiting early and
+  # nothing in the output would look wrong. The joint trial clock is what makes it observable.
+  #
+  # Asserted by WaitingOnAFeatureSeveralTeamsAreWorking_WaitsForTheLastOfThemRatherThanTheFirst in
+  # ForecastServiceCrossTeamDependencyTest: three Teams get through two, six and three items at one a
+  # day, and the Feature waiting lands on day ten rather than the day six it would reach if the first
+  # Team to stop had released it.
   @edge @driving_port @us-05 @slice-02 @contract-shape:bounded-change
   Scenario: A Feature worked by several Teams is only finished when all of them are done
     Given the instance is licensed for dependency-aware forecasting

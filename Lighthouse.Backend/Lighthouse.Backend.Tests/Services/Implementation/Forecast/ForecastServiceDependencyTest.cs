@@ -288,10 +288,5 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             public static implicit operator ForecastWaits(Waits waits)
                 => ForecastWaits.From(new HonouredDependencies(waits.honoured));
         }
-
-        private sealed class WaitsHandedStraightToTheForecast(ForecastWaits waits) : IWhatTheForecastWaitsFor
-        {
-            public ForecastWaits Of(IReadOnlyCollection<Feature> featuresBeingForecast) => waits;
-        }
     }
 }

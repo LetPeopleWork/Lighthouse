@@ -10,7 +10,6 @@ import {
 const terms: DependencyTerms = {
 	featureTerm: "Feature",
 	portfolioTerm: "Portfolio",
-	teamTerm: "Team",
 };
 
 // Every renamed word is a word an instance may already use for something else, so the sentences are
@@ -18,7 +17,6 @@ const terms: DependencyTerms = {
 const renamedTerms: DependencyTerms = {
 	featureTerm: "Initiative",
 	portfolioTerm: "Programme",
-	teamTerm: "Squad",
 };
 
 describe("reasonSentence", () => {
@@ -60,15 +58,11 @@ describe("reasonSentence", () => {
 		);
 	});
 
-	it("says a wait on another team's work is left out of the forecast", () => {
-		expect(reasonSentence("CrossesATeam", "Warehouse sync", terms)).toBe(
-			"This Feature depends on Warehouse sync, which is not the same Team's work. That dependency is not included in the forecast.",
-		);
-	});
-
-	it("names the team in the instance's own word for one", () => {
-		expect(reasonSentence("CrossesATeam", "Warehouse sync", renamedTerms)).toBe(
-			"This Initiative depends on Warehouse sync, which is not the same Squad's work. That dependency is not included in the forecast.",
+	it("names the Portfolio in the instance's own word for one", () => {
+		expect(
+			reasonSentence("OutsideThisPortfolio", "Warehouse sync", renamedTerms),
+		).toBe(
+			"This Initiative depends on Warehouse sync, which is in no Programme they share. That dependency is not included in the forecast.",
 		);
 	});
 
