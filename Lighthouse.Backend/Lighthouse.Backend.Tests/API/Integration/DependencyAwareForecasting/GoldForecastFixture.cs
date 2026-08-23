@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             var randomNumberService = new NotSoRandomNumberService();
             randomNumberService.InitializeRandomNumbers(GoldDrawSequence);
 
-            var forecastService = new ForecastService(randomNumberService, Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object);
+            var forecastService = new ForecastService(randomNumberService, Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything());
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

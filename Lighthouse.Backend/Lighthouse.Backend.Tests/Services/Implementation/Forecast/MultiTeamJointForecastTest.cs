@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private ForecastService CreateSubject(IRandomNumberService randomNumberService)
         {
-            return new ForecastService(randomNumberService, Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object);
+            return new ForecastService(randomNumberService, Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything());
         }
 
         private Team CreateTeam(int[] throughput)

@@ -1,9 +1,12 @@
 ﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
@@ -11,7 +14,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         IRandomNumberService randomNumberService,
         ILogger<ForecastService> logger,
         ITeamMetricsService teamMetricsService,
-        IRepository<Feature> featureRepository)
+        IRepository<Feature> featureRepository,
+        IWhatTheForecastWaitsFor whatTheForecastWaitsFor)
         : IForecastService
     {
         private const int Trials = 10_000;
@@ -80,11 +84,12 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private async Task ForecastFeatures(IEnumerable<Feature> features, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
         {
-            var throughputByTeam = InitializeThroughputPerTeam(features, mode, out var chipStatusByTeam);
+            var featuresToForecast = features as IReadOnlyCollection<Feature> ?? features.ToList();
+            var throughputByTeam = InitializeThroughputPerTeam(featuresToForecast, mode, out var chipStatusByTeam);
 
-            var simulationResults = InitializeSimulationResults(features);
-            await RunMonteCarloSimulation(simulationResults, throughputByTeam);
-            UpdateFeatureForecasts(features, simulationResults, chipStatusByTeam);
+            var simulationResults = InitializeSimulationResults(featuresToForecast);
+            await RunMonteCarloSimulation(simulationResults, throughputByTeam, whatTheForecastWaitsFor.Of(featuresToForecast));
+            UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam);
         }
 
         private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, ThroughputFilterMode mode, out Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
@@ -107,12 +112,20 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return throughputByTeam;
         }
 
-        private async Task RunMonteCarloSimulation(List<SimulationResult> simulationResults, Dictionary<int, RunChartData> throughputByTeam)
+        private async Task RunMonteCarloSimulation(
+            List<SimulationResult> simulationResults,
+            Dictionary<int, RunChartData> throughputByTeam,
+            ForecastWaits waits)
         {
             var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(g => throughputByTeam.ContainsKey(g.Key.Id)).ToList();
 
+            var teamsThatCouldNotFinish = new ConcurrentDictionary<string, int>();
+
             var tasks = groupedSimulationResults.Select(simulationResultsByTeam => Task.Run(() =>
             {
+                var whatIsWaitingForWhat = new WhatEachFeatureIsWaitingFor(simulationResultsByTeam, waits);
+                var trialsAbandoned = 0;
+
                 RunSimulations(() =>
                 {
                     simulationResultsByTeam.ResetRemainingItems();
@@ -121,14 +134,109 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
                     while (simulationResultsByTeam.GetRemainingItems() > 0)
                     {
-                        SimulateIndividualDayForFeatureForecast(simulationResultsByTeam.Key, throughputByTeam[simulationResultsByTeam.Key.Id], simulationResultsByTeam.Select(x => x), simulatedDays);
+                        var anythingCouldBeStarted = SimulateIndividualDayForFeatureForecast(simulationResultsByTeam.Key, throughputByTeam[simulationResultsByTeam.Key.Id], simulationResultsByTeam.Select(x => x), simulatedDays, whatIsWaitingForWhat);
+
+                        if (!anythingCouldBeStarted)
+                        {
+                            trialsAbandoned++;
+                            break;
+                        }
 
                         simulatedDays++;
                     }
                 });
+
+                if (trialsAbandoned > 0)
+                {
+                    teamsThatCouldNotFinish[simulationResultsByTeam.Key.Name] = trialsAbandoned;
+                }
             })).ToList();
 
             await Task.WhenAll(tasks);
+
+            ReportTheRunsThatCouldNotFinish(teamsThatCouldNotFinish);
+        }
+
+        /// <summary>
+        /// A run reaches an end because the waits it was handed lead somewhere: whatever still has work has
+        /// something at the front of it that is waiting for nothing. That is a property of the decision that
+        /// produced them, not of this loop, and if it is ever broken this loop would otherwise spend a
+        /// background thread forever with nothing anywhere saying why. So it stops, and says so.
+        /// </summary>
+        private void ReportTheRunsThatCouldNotFinish(ConcurrentDictionary<string, int> teamsThatCouldNotFinish)
+        {
+            if (teamsThatCouldNotFinish.IsEmpty)
+            {
+                return;
+            }
+
+            logger.LogError(
+                "Abandoned {Trials} simulated runs for teams {Teams}: every Feature with work left was waiting on one that had not finished, which can only happen if the Features are waiting on each other in a circle. The dates for those Features are not a forecast",
+                teamsThatCouldNotFinish.Values.Sum(),
+                string.Join(", ", teamsThatCouldNotFinish.Keys.Order(StringComparer.Ordinal)));
+        }
+
+        /// <summary>
+        /// Which rows in one Team's run have to reach zero before another of them may be worked on, worked
+        /// out once per run and read on every draw. It is built from the rows themselves rather than from
+        /// names, so "has the Feature waited on finished" is answered by the remaining counts the trial
+        /// already resets - there is no per-trial state here to keep in step with anything.
+        ///
+        /// A Feature waited on that has no row in this Team's run has already finished, or is not part of
+        /// this run at all. Either way there is nothing here to wait for, and it holds nobody up.
+        /// </summary>
+        private sealed class WhatEachFeatureIsWaitingFor
+        {
+            private static readonly SimulationResult[] NothingToWaitFor = [];
+
+            private readonly Dictionary<SimulationResult, SimulationResult[]> mustFinishFirst;
+
+            public WhatEachFeatureIsWaitingFor(IEnumerable<SimulationResult> rowsInThisRun, ForecastWaits waits)
+            {
+                if (waits.NobodyWaitsForAnything)
+                {
+                    mustFinishFirst = [];
+                    return;
+                }
+
+                var rowByFeature = rowsInThisRun
+                    .Where(row => row.Feature is not null)
+                    .GroupBy(row => row.Feature.ReferenceId, StringComparer.Ordinal)
+                    .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.First(), StringComparer.Ordinal);
+
+                mustFinishFirst = rowByFeature.Values
+                    .Select(row => (row, blockers: RowsFor(waits.Of(row.Feature.ReferenceId), rowByFeature)))
+                    .Where(pair => pair.blockers.Length > 0)
+                    .ToDictionary(pair => pair.row, pair => pair.blockers);
+            }
+
+            public bool ReadyToBeWorkedOn(SimulationResult row)
+            {
+                if (mustFinishFirst.Count == 0)
+                {
+                    return true;
+                }
+
+                foreach (var blocker in mustFinishFirst.GetValueOrDefault(row, NothingToWaitFor))
+                {
+                    if (blocker.HasWorkRemaining)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            private static SimulationResult[] RowsFor(
+                IReadOnlyList<string> blockerReferenceIds, Dictionary<string, SimulationResult> rowByFeature)
+            {
+                return blockerReferenceIds
+                    .Select(referenceId => rowByFeature.GetValueOrDefault(referenceId))
+                    .Where(row => row is not null)
+                    .Select(row => row!)
+                    .ToArray();
+            }
         }
 
         private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
@@ -177,15 +285,30 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return simulationResults;
         }
 
-        private void SimulateIndividualDayForFeatureForecast(Team team, RunChartData throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay)
+        /// <returns>
+        /// False when everything with work left was waiting on something unfinished. Nothing a later day
+        /// brings can change that - what a Feature waits on only clears when somebody finishes it - so this
+        /// is the end of the run rather than an idle day, and the caller stops rather than counting days
+        /// forever. Delivery drawn for such a day is discarded either way: a team that could not start
+        /// anything did not bank the day, and carrying it forward would give the wait back the time it cost.
+        /// </returns>
+        private bool SimulateIndividualDayForFeatureForecast(Team team, RunChartData throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat)
         {
             var simulatedThroughput = GetSimulatedThroughput(throughput);
 
             for (var closedItems = 0; closedItems < simulatedThroughput && simulationResults.GetRemainingItems() > 0; closedItems++)
             {
-                var simulationResultOfFeatureToUpdate = GetSimulationResultsOfFeatureToUpdate(team, simulationResults);
+                var simulationResultOfFeatureToUpdate = GetSimulationResultsOfFeatureToUpdate(team, simulationResults, whatIsWaitingForWhat);
+
+                if (simulationResultOfFeatureToUpdate is null)
+                {
+                    return false;
+                }
+
                 ReduceRemainingWorkFromFeatureToUpdate(currentlySimulatedDay, simulationResultOfFeatureToUpdate);
             }
+
+            return true;
         }
 
         private static void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
@@ -198,13 +321,28 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
         }
 
-        private SimulationResult GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults)
+        /// <summary>
+        /// The one place a Feature's turn is decided, and the one predicate that says what a dependency does
+        /// to a date. Leaving a Feature that cannot start out of this list is not a postponement applied to
+        /// it afterwards: the work-in-progress window closes up over the gap, so the Features below it come
+        /// into range and take the capacity it could not use.
+        /// </summary>
+        /// <returns>Nothing when every Feature with work left is waiting on one that has not finished.</returns>
+        private SimulationResult? GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat)
         {
-            var featuresRemaining = simulationResults.Where(x => x.HasWorkRemaining);
-            var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP > 0 ? team.FeatureWIP : 1, featuresRemaining.Count());
+            var featuresRemaining = simulationResults
+                .Where(x => x.HasWorkRemaining && whatIsWaitingForWhat.ReadyToBeWorkedOn(x))
+                .ToList();
+
+            if (featuresRemaining.Count == 0)
+            {
+                return null;
+            }
+
+            var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP > 0 ? team.FeatureWIP : 1, featuresRemaining.Count);
             var featureWorkedOn = randomNumberService.GetRandomNumber(featureWorkedOnIndex);
 
-            var itemToUpdate = featuresRemaining.ElementAt(featureWorkedOn);
+            var itemToUpdate = featuresRemaining[featureWorkedOn];
             return itemToUpdate;
         }
 

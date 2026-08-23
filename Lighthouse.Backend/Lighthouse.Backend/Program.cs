@@ -1221,6 +1221,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyReconciler, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyReconciler>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyHonourPolicy, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyDecision, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyDecision>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IWhatTheForecastWaitsFor, Lighthouse.Backend.Services.Implementation.Dependencies.WhatTheForecastWaitsFor>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyRefreshReporter, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyRefreshReporter>();
             builder.Services.AddScoped<IFeatureRankSeeder, FeatureRankSeeder>();
             builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();

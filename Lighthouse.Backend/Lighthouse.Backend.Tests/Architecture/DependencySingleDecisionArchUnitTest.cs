@@ -210,31 +210,58 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// The seeded forecast next door shows the days did not move. It cannot show why, and a run that
-        /// happens to agree today would still agree the day after someone wires the two halves together.
-        /// This says the two halves do not know each other exists, which is the reason the days agree.
+        /// The forecast now acts on dependencies, and reaches exactly two things to do it: the port it asks,
+        /// and the plain answer that port hands back. Everything else this Epic owns stays out of reach - the
+        /// decision itself, the walk that finds circles, the reconciler, the licence. A simulation that could
+        /// reach any of those could decide for itself what a dependency means, and then the warning a reader
+        /// is shown and the date they are given come from two different answers to one question.
         /// </summary>
+        /// <remarks>
+        /// This replaced a rule saying the forecast and this Epic knew nothing of each other at all. That
+        /// rule was the door this work had to come through, and it said so: it held while storing a
+        /// dependency was not allowed to move a date. What replaces it is not weaker, it is narrower - two
+        /// named types instead of none, and nothing between them that could answer a question twice.
+        /// </remarks>
         [Test]
-        public void TheForecastAndThisEpic_KnowNothingOfEachOther()
+        public void TheForecast_ReachesOnlyThePortItAsksAndTheAnswerItIsGiven()
         {
             var theForecastItself = Types().That()
                 .Are(typeof(ForecastService)).Or()
                 .Are(typeof(SimulationResult)).Or()
                 .Are(typeof(Lighthouse.Backend.Services.Implementation.RandomNumberService));
 
+            var whatTheForecastMayReach = Types().That()
+                .Are(typeof(IWhatTheForecastWaitsFor)).Or()
+                .Are(typeof(ForecastWaits));
+
             var whatThisEpicAdded = Types().That()
-                .ResideInNamespaceMatching(TheNamespaceThisEpicOwns).Or()
-                .Are(typeof(FeatureDependencyReference));
+                .ResideInNamespaceMatching(TheNamespaceThisEpicOwns).And()
+                .AreNot(typeof(IWhatTheForecastWaitsFor)).And()
+                .AreNot(typeof(ForecastWaits));
 
             const string reason =
-                "Neither half of this may reach the other. What a Feature waits on is stored and counted here " +
-                "and read by nobody who schedules anything; the simulation still draws from throughput alone, " +
-                "exactly as it did before dependencies existed. Letting a dependency change a forecast is a " +
-                "separate piece of work with its own decisions to make, and this is the door it has to come " +
-                "through rather than arriving as an import nobody noticed.";
+                "The forecast asks one port and reads one plain answer. Anything else this Epic added is a " +
+                "second opinion waiting to happen: a licence read, a circle walk or the decision itself, " +
+                "sitting inside a simulation, is a place where what a dependency does gets worked out for a " +
+                "second time. Ask through the port, and let the one decision behind it answer.";
 
             theForecastItself.Should().NotDependOnAny(whatThisEpicAdded).Because(reason).Check(Architecture);
-            whatThisEpicAdded.Should().NotDependOnAny(theForecastItself).Because(reason).Check(Architecture);
+
+            whatThisEpicAdded.Should().NotDependOnAny(theForecastItself)
+                .Because(
+                    "What a Feature waits on is decided from facts a caller already holds. A decision that " +
+                    "could reach into the simulation could answer differently depending on how far a run had " +
+                    "got, and a screen asking the same question seconds later would be told something else.")
+                .Check(Architecture);
+
+            // Without this the rule above would pass most loudly on a forecast that had stopped asking about
+            // dependencies altogether - which is the one outcome it is not there to permit.
+            Types().That().Are(typeof(ForecastService))
+                .Should().DependOnAny(whatTheForecastMayReach)
+                .Because(
+                    "The forecast has to ask, or the dates it produces ignore every dependency the product " +
+                    "shows on screen and nothing in this file would say so.")
+                .Check(Architecture);
         }
 
         /// <summary>
@@ -290,12 +317,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// would be discovered by a person noticing a screenshot did not match a date.
         /// </summary>
         /// <remarks>
-        /// At most one, rather than exactly one, only because the second reader has not shipped yet: the
-        /// forecast that consumes this decision arrives with its own epic and tightens the word then. The
-        /// weaker form is deliberate, not an oversight.
+        /// Exactly one, tightened from at most one now that the second reader has shipped. The weaker form
+        /// was waiting for the forecast to start consuming this decision; it does, so a run with no decider
+        /// at all is no longer a state anybody is working towards - it is a forecast that quietly ignores
+        /// every dependency on screen.
         /// </remarks>
         [Test]
-        public void AtMostOnePlace_DecidesWhetherADependencyCanBeActedOn()
+        public void ExactlyOnePlace_DecidesWhetherADependencyCanBeActedOn()
         {
             var deciders = Architecture.Classes
                 .Where(candidate => candidate.ImplementedInterfaces
@@ -303,9 +331,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Select(candidate => candidate.FullName)
                 .ToList();
 
-            Assert.That(deciders, Has.Count.LessThanOrEqualTo(1),
+            Assert.That(deciders, Has.Count.EqualTo(1),
                 "A second place deciding whether a dependency can be acted on is how a warning on screen ends " +
-                "up disagreeing with what a forecast actually did. Found: " + string.Join(", ", deciders));
+                "up disagreeing with what a forecast actually did, and no place at all is a forecast ignoring " +
+                "every dependency the product shows. Found: " + string.Join(", ", deciders));
         }
 
         /// <summary>
@@ -565,10 +594,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             portfolio.UpdateFeatures(features);
 
             var forecastService = new ForecastService(
-                new SeededRandomNumberService(TheSeedBothRunsShare),
+                new Lighthouse.Backend.Tests.TestDoubles.SeededRandomNumberService(TheSeedBothRunsShare),
                 Mock.Of<ILogger<ForecastService>>(),
                 teamMetricsService.Object,
-                featureRepository.Object);
+                featureRepository.Object,
+                new Lighthouse.Backend.Tests.TestDoubles.NothingWaitsForAnything());
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 
@@ -753,13 +783,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// dependency data" a statement about the code rather than about luck. Only one team is forecast here,
         /// and the simulation runs one thread per team, so the draws are handed out in a fixed order.
         /// </summary>
-        private sealed class SeededRandomNumberService(int seed) : IRandomNumberService
-        {
-            private readonly Random random = new(seed);
-
-            public int GetRandomNumber(int maxValue) => random.Next(maxValue);
-        }
-
         private sealed record SourceFile(string RelativePath, string Source, int FirstLine);
     }
 }
