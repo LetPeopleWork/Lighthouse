@@ -2003,7 +2003,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// no way to ask for versions across projects in one call - the expanded project search does not
         /// carry them - so it is one call to list the projects and then one per project, run a few at a
         /// time rather than one after another, and remembered for a few minutes so that a picker being
-        /// typed into does not re-ask Jira on every keystroke.
+        /// typed into does not re-ask Jira on every keystroke. Only a complete answer is remembered:
+        /// keeping a short list would make one project's momentary refusal outlast itself.
         ///
         /// The source key is checked against what this connection actually offers before anything is
         /// fetched, so a hand-written request cannot make Lighthouse call Jira for a source that does not
@@ -2021,9 +2022,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var client = await GetJiraRestClientAsync(connection);
-            var (options, _) = await SweepReleases(client, OfferableVersionStatuses);
+            var (options, sawEveryRelease) = await SweepReleases(client, OfferableVersionStatuses);
 
-            deliverySourceOptionsCache.Store(cacheKey, options, DeliverySourceOptionsLifetime);
+            // A sweep that lost a project is worth showing once and never worth keeping. The reader is
+            // looking at a list with Releases missing from it, and the one thing they will try - close
+            // the picker and open it again - would otherwise hand them the same short list for another
+            // five minutes, with nothing on screen to say why.
+            if (sawEveryRelease)
+            {
+                deliverySourceOptionsCache.Store(cacheKey, options, DeliverySourceOptionsLifetime);
+            }
 
             return options;
         }

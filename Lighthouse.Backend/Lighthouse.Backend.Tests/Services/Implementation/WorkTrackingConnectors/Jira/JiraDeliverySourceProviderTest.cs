@@ -63,6 +63,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] TheShippedReleaseOnItsOwn = [TheShippedRelease];
         private static readonly string[] ThreeDatedReleases = [TheDatedRelease, "10007", "10008"];
         private static readonly string[] TwoProjectsThatBothNameARelease44 = ["PROJ", "REL"];
+        private static readonly string[] TheReleasesOfBothProjects = [TheDatedRelease, TheUndatedRelease];
         private static readonly string[] TheWorkOnTheDatedRelease = ["LGH-1", "LGH-2"];
         private static readonly string[] TheWorkOnAShippedRelease = ["LGH-1"];
 
@@ -321,6 +322,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             Assert.That(jira.VersionListRequests, Has.Count.EqualTo(1),
                 "the picker is typed into, and a request per keystroke would cost one call per project every time.");
+        }
+
+        [Test]
+        public async Task A_list_missing_a_project_is_shown_once_and_never_remembered()
+        {
+            var jira = AJira()
+                .WithTheWorkProject()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, null)
+                .WithUnreadableVersionsIn(TheReleaseProject);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var connection = AJiraCloudConnection();
+
+            await subject.GetOptions(connection, JiraReleaseSourceKey);
+            jira.LetsItsVersionsBeReadAgainIn(TheReleaseProject);
+            var options = await subject.GetOptions(connection, JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheReleasesOfBothProjects),
+                "one project refusing for a moment must not leave the picker short for the whole cache lifetime - closing the form and opening it again is the one thing a reader will try, and it has to help.");
         }
 
         [Test]
@@ -621,6 +643,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             public JiraStub WithUnreadableVersionsIn(string projectKey)
             {
                 projectsRefusingTheirVersions.Add(projectKey);
+
+                return this;
+            }
+
+            /// <summary>The refusal lifts, which is what a momentary failure looks like from the caller's side.</summary>
+            public JiraStub LetsItsVersionsBeReadAgainIn(string projectKey)
+            {
+                projectsRefusingTheirVersions.Remove(projectKey);
 
                 return this;
             }
