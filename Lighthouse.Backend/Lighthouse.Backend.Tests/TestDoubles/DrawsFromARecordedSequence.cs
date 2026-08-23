@@ -27,6 +27,8 @@ namespace Lighthouse.Backend.Tests.TestDoubles
             this.numbers = numbers;
         }
 
+        public long StartingNumber => 0;
+
         public IDrawStream ForOneRun() => this;
 
         public int Draw(int trial, int team, int day, int ordinal, int maxExclusive)

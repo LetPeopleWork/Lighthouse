@@ -4,6 +4,7 @@ using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -1328,6 +1329,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IGitHubService, GitHubService>();
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IDrawStreamFactory, DrawStreamFactory>();
+            builder.Services.AddSingleton(ForecastSimulationLimits.Default);
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
             builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
@@ -112,7 +113,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new NothingWaitsForAnything(),
-                recording);
+                recording,
+                ForecastSimulationLimits.Default);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 
@@ -154,6 +156,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             private readonly ConcurrentQueue<DrawAskedFor> recorded = new();
 
             internal List<DrawAskedFor> Recorded => [.. recorded];
+
+            public long StartingNumber => 0;
 
             public IDrawStream ForOneRun() => this;
 

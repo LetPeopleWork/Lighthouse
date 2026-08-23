@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
@@ -218,7 +219,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new WaitsHandedStraightToTheForecast(waits),
-                new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares));
+                new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares),
+                ForecastSimulationLimits.Default);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
@@ -73,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private ForecastService CreateSubject(IDrawStreamFactory draws)
         {
-            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), draws);
+            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), draws, ForecastSimulationLimits.Default);
         }
 
         private Team CreateTeam(int[] throughput)

@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             };
             portfolio.UpdateFeatures(features);
 
-            var forecastService = new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), draws);
+            var forecastService = new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), draws, ForecastSimulationLimits.Default);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

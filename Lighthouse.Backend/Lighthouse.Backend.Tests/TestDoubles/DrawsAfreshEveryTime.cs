@@ -11,6 +11,8 @@ namespace Lighthouse.Backend.Tests.TestDoubles
     /// </summary>
     public sealed class DrawsAfreshEveryTime : IDrawStreamFactory, IDrawStream
     {
+        public long StartingNumber => 0;
+
         public IDrawStream ForOneRun() => this;
 
         public int Draw(int trial, int team, int day, int ordinal, int maxExclusive)

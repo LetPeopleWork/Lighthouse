@@ -650,7 +650,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 teamMetricsService.Object,
                 featureRepository.Object,
                 new Lighthouse.Backend.Tests.TestDoubles.NothingWaitsForAnything(),
-                new Lighthouse.Backend.Tests.TestDoubles.DrawsFromAPinnedStartingNumber(TheSeedBothRunsShare));
+                new Lighthouse.Backend.Tests.TestDoubles.DrawsFromAPinnedStartingNumber(TheSeedBothRunsShare),
+                Lighthouse.Backend.Models.Forecast.ForecastSimulationLimits.Default);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

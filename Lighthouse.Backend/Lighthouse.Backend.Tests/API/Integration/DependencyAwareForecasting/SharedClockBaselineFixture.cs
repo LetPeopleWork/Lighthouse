@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -48,7 +49,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 benchmark.TeamMetrics,
                 benchmark.FeatureRepository,
                 new NothingWaitsForAnything(),
-                draws);
+                draws,
+                ForecastSimulationLimits.Default);
 
             await forecastService.UpdateForecastsForPortfolio(benchmark.Portfolio);
 

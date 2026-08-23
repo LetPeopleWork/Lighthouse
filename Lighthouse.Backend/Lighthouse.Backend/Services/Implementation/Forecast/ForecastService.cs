@@ -1,4 +1,4 @@
-﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using System.Collections.Concurrent;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
@@ -16,15 +15,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         ITeamMetricsService teamMetricsService,
         IRepository<Feature> featureRepository,
         IWhatTheForecastWaitsFor whatTheForecastWaitsFor,
-        IDrawStreamFactory drawStreamFactory)
+        IDrawStreamFactory drawStreamFactory,
+        ForecastSimulationLimits limits)
         : IForecastService
     {
-        private const int Trials = 10_000;
-
-        private const int TheDrawForHowMuchTheTeamDelivers = 0;
-
-        private const int TheDrawsThatPickAFeature = 1;
-
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
         {
             logger.LogDebug("Predicting Work Item Creation for team {TeamName} in the next {Days} days for Work Items {WorkItems} based on the time from {Start} to {End}",
@@ -41,7 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             var simulationResults = new Dictionary<int, int>();
 
-            RunSimulations(_ =>
+            for (var trial = 0; trial < limits.Trials; trial++)
             {
                 var simulatedThroughput = 0;
                 for (var day = 0; day < days; day++)
@@ -49,8 +43,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                     simulatedThroughput += GetSimulatedThroughput(throughput);
                 }
 
-                AddSimulationResult(simulationResults, simulatedThroughput);
-            });
+                simulationResults[simulatedThroughput] = simulationResults.GetValueOrDefault(simulatedThroughput) + 1;
+            }
 
             logger.LogDebug("Finished running Monte Carlo How Many for {Days} days.", days);
 
@@ -93,7 +87,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var throughputByTeam = InitializeThroughputPerTeam(featuresToForecast, mode, out var chipStatusByTeam);
 
             var simulationResults = InitializeSimulationResults(featuresToForecast);
-            await RunMonteCarloSimulation(simulationResults, throughputByTeam, whatTheForecastWaitsFor.Of(featuresToForecast), drawStreamFactory.ForOneRun());
+            var waits = whatTheForecastWaitsFor.Of(featuresToForecast);
+            var draws = drawStreamFactory.ForOneRun();
+
+            await Task.Run(() => RunMonteCarloSimulation(simulationResults, throughputByTeam, waits, draws));
+
             UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam);
         }
 
@@ -117,64 +115,60 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return throughputByTeam;
         }
 
-        private async Task RunMonteCarloSimulation(
+        /// <summary>
+        /// Every Team is simulated on one shared day counter, one run at a time. Each Team still draws its
+        /// own delivery from its own measured history and works on its own rows; what they share is time,
+        /// which is the only thing that makes "has the Feature waited on finished yet?" a question with an
+        /// answer at all.
+        /// </summary>
+        private void RunMonteCarloSimulation(
             List<SimulationResult> simulationResults,
             Dictionary<int, RunChartData> throughputByTeam,
             ForecastWaits waits,
             IDrawStream draws)
         {
-            var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(g => throughputByTeam.ContainsKey(g.Key.Id)).ToList();
+            var plan = ForecastRunPlan.For(simulationResults, throughputByTeam, waits);
 
-            var teamsThatCouldNotFinish = new ConcurrentDictionary<string, int>();
+            if (plan.RowCount == 0)
+            {
+                return;
+            }
 
-            var tasks = groupedSimulationResults
-                .Select(simulationResultsByTeam => Task.Run(() =>
-                {
-                    var trialsAbandoned = SimulateEveryTrialFor(simulationResultsByTeam, throughputByTeam[simulationResultsByTeam.Key.Id], waits, draws);
+            var completions = new TrialCompletions(plan.RowCount);
+            var state = new TrialState(plan);
+            var oneRun = new SimulatedRun(plan, draws, limits.MostDaysOneSimulatedRunMayCover);
 
-                    if (trialsAbandoned > 0)
-                    {
-                        teamsThatCouldNotFinish[simulationResultsByTeam.Key.Name] = trialsAbandoned;
-                    }
-                }))
-                .ToList();
+            var whatWentWrong = new WhatTheRunsCouldNotFinish();
 
-            await Task.WhenAll(tasks);
+            for (var trial = 0; trial < limits.Trials; trial++)
+            {
+                whatWentWrong.Note(oneRun.CarryOut(trial, state, completions), trial, plan, state);
+            }
 
-            ReportTheRunsThatCouldNotFinish(teamsThatCouldNotFinish);
+            RecordTheDaysEachRowFinishedOn(plan, completions);
+
+            ReportTheRunsThatCouldNotFinish(whatWentWrong);
+            ReportTheRunsThatRanOutOfDays(whatWentWrong, draws);
         }
 
-        /// <returns>How many trials ended with work left that nothing could be started on.</returns>
-        private static int SimulateEveryTrialFor(
-            IGrouping<Team, SimulationResult> simulationResultsByTeam, RunChartData throughput, ForecastWaits waits, IDrawStream draws)
+        private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, TrialCompletions completions)
         {
-            var team = simulationResultsByTeam.Key;
-            var rows = simulationResultsByTeam.ToList();
-            var whatIsWaitingForWhat = new WhatEachFeatureIsWaitingFor(rows, waits);
-            var trialsAbandoned = 0;
+            var total = new Dictionary<int, int>[plan.RowCount];
 
-            RunSimulations(trial =>
+            for (var row = 0; row < plan.RowCount; row++)
             {
-                rows.ResetRemainingItems();
+                total[row] = [];
+            }
 
-                var simulatedDays = 1;
+            completions.AddInto(total);
 
-                while (rows.GetRemainingItems() > 0)
+            for (var row = 0; row < plan.RowCount; row++)
+            {
+                foreach (var day in total[row])
                 {
-                    var anythingCouldBeStarted = SimulateIndividualDayForFeatureForecast(
-                        team, throughput, rows, simulatedDays, whatIsWaitingForWhat, draws, trial);
-
-                    if (!anythingCouldBeStarted)
-                    {
-                        trialsAbandoned++;
-                        break;
-                    }
-
-                    simulatedDays++;
+                    plan.RowAt(row).SimulationResults[day.Key] = day.Value;
                 }
-            });
-
-            return trialsAbandoned;
+            }
         }
 
         /// <summary>
@@ -183,86 +177,37 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// produced them, not of this loop, and if it is ever broken this loop would otherwise spend a
         /// background thread forever with nothing anywhere saying why. So it stops, and says so.
         /// </summary>
-        private void ReportTheRunsThatCouldNotFinish(ConcurrentDictionary<string, int> teamsThatCouldNotFinish)
+        private void ReportTheRunsThatCouldNotFinish(WhatTheRunsCouldNotFinish whatWentWrong)
         {
-            if (teamsThatCouldNotFinish.IsEmpty)
+            if (whatWentWrong.RunsGivenUpOn == 0)
             {
                 return;
             }
 
             logger.LogError(
                 "Abandoned {Trials} simulated runs for teams {Teams}: every Feature with work left was waiting on one that had not finished, which can only happen if the Features are waiting on each other in a circle. The dates for those Features are not a forecast",
-                teamsThatCouldNotFinish.Values.Sum(),
-                string.Join(", ", teamsThatCouldNotFinish.Keys.Order(StringComparer.Ordinal)));
+                whatWentWrong.RunsGivenUpOn,
+                string.Join(", ", whatWentWrong.TeamsLeftUnfinished));
         }
 
         /// <summary>
-        /// Which rows in one Team's run have to reach zero before another of them may be worked on, worked
-        /// out once per run and read on every draw. It is built from the rows themselves rather than from
-        /// names, so "has the Feature waited on finished" is answered by the remaining counts the trial
-        /// already resets - there is no per-trial state here to keep in step with anything.
-        ///
-        /// A Feature waited on that has no row in this Team's run has already finished, or is not part of
-        /// this run at all. Either way there is nothing here to wait for, and it holds nobody up.
+        /// Reported apart from the runs that simply had nothing left to start, and named down to the single
+        /// run and the number its draws came from, because those two together set that exact run going again
+        /// on its own. No data can put a run here: it means the way runs end is itself wrong.
         /// </summary>
-        private sealed class WhatEachFeatureIsWaitingFor
+        private void ReportTheRunsThatRanOutOfDays(WhatTheRunsCouldNotFinish whatWentWrong, IDrawStream draws)
         {
-            private static readonly SimulationResult[] NothingToWaitFor = [];
-
-            private readonly Dictionary<SimulationResult, SimulationResult[]> mustFinishFirst;
-
-            /// <remarks>
-            /// One Feature can hold more than one row for the same Team - duplicate pairs are a state the
-            /// store can be in, which is why <see cref="Feature.TeamsWithoutForecast"/> guards against them
-            /// too. Every row of a Feature waited on has to reach zero, and every row of a Feature waiting
-            /// has to be held: taking one row per Feature on either side lets work happen while what it is
-            /// waiting on is unfinished, and the date that comes out looks perfectly ordinary.
-            /// </remarks>
-            public WhatEachFeatureIsWaitingFor(IEnumerable<SimulationResult> rowsInThisRun, ForecastWaits waits)
+            if (whatWentWrong.RunsThatRanOutOfDays == 0)
             {
-                if (waits.NobodyWaitsForAnything)
-                {
-                    mustFinishFirst = [];
-                    return;
-                }
-
-                var rows = rowsInThisRun.Where(row => row.Feature is not null).ToList();
-
-                var rowsByFeature = rows
-                    .GroupBy(row => row.Feature.ReferenceId, StringComparer.Ordinal)
-                    .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.ToArray(), StringComparer.Ordinal);
-
-                mustFinishFirst = rows
-                    .Select(row => (row, blockers: RowsFor(waits.Of(row.Feature.ReferenceId), rowsByFeature)))
-                    .Where(pair => pair.blockers.Length > 0)
-                    .ToDictionary(pair => pair.row, pair => pair.blockers);
+                return;
             }
 
-            public bool ReadyToBeWorkedOn(SimulationResult row)
-            {
-                if (mustFinishFirst.Count == 0)
-                {
-                    return true;
-                }
-
-                foreach (var blocker in mustFinishFirst.GetValueOrDefault(row, NothingToWaitFor))
-                {
-                    if (blocker.HasWorkRemaining)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            private static SimulationResult[] RowsFor(
-                IReadOnlyList<string> blockerReferenceIds, Dictionary<string, SimulationResult[]> rowsByFeature)
-            {
-                return blockerReferenceIds
-                    .SelectMany(referenceId => rowsByFeature.GetValueOrDefault(referenceId, NothingToWaitFor))
-                    .ToArray();
-            }
+            logger.LogError(
+                "Gave up on {Trials} simulated runs that passed {Days} simulated days without finishing. Set the first of them going again on its own with starting number {StartingNumber} and run {Trial}. The dates from this forecast are not a forecast",
+                whatWentWrong.RunsThatRanOutOfDays,
+                limits.MostDaysOneSimulatedRunMayCover,
+                draws.StartingNumber,
+                whatWentWrong.FirstRunThatRanOutOfDays);
         }
 
         private static void UpdateFeatureForecasts(IEnumerable<Feature> features, List<SimulationResult> simulationResults, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
@@ -311,91 +256,53 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return simulationResults;
         }
 
-        /// <returns>
-        /// False when everything with work left was waiting on something unfinished. Nothing a later day
-        /// brings can change that - what a Feature waits on only clears when somebody finishes it - so this
-        /// is the end of the run rather than an idle day, and the caller stops rather than counting days
-        /// forever. Delivery drawn for such a day is discarded either way: a team that could not start
-        /// anything did not bank the day, and carrying it forward would give the wait back the time it cost.
-        /// </returns>
-        private static bool SimulateIndividualDayForFeatureForecast(Team team, RunChartData throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat, IDrawStream draws, int trial)
-        {
-            var simulatedThroughput = throughput.GetCountOnDay(
-                draws.Draw(trial, team.Id, currentlySimulatedDay, TheDrawForHowMuchTheTeamDelivers, throughput.History));
-
-            for (var closedItems = 0; closedItems < simulatedThroughput && simulationResults.GetRemainingItems() > 0; closedItems++)
-            {
-                var simulationResultOfFeatureToUpdate = GetSimulationResultsOfFeatureToUpdate(
-                    team, simulationResults, whatIsWaitingForWhat, draws, trial, currentlySimulatedDay, TheDrawsThatPickAFeature + closedItems);
-
-                if (simulationResultOfFeatureToUpdate is null)
-                {
-                    return false;
-                }
-
-                ReduceRemainingWorkFromFeatureToUpdate(currentlySimulatedDay, simulationResultOfFeatureToUpdate);
-            }
-
-            return true;
-        }
-
-        private static void ReduceRemainingWorkFromFeatureToUpdate(int simulatedDays, SimulationResult featureToUpdate)
-        {
-            featureToUpdate.RemainingItems -= 1;
-
-            if (!featureToUpdate.HasWorkRemaining)
-            {
-                AddSimulationResult(featureToUpdate.SimulationResults, simulatedDays);
-            }
-        }
-
-        /// <summary>
-        /// The one place a Feature's turn is decided, and the one predicate that says what a dependency does
-        /// to a date. Leaving a Feature that cannot start out of this list is not a postponement applied to
-        /// it afterwards: the work-in-progress window closes up over the gap, so the Features below it come
-        /// into range and take the capacity it could not use.
-        /// </summary>
-        /// <returns>Nothing when every Feature with work left is waiting on one that has not finished.</returns>
-        private static SimulationResult? GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat, IDrawStream draws, int trial, int day, int ordinal)
-        {
-            var featuresRemaining = simulationResults
-                .Where(x => x.HasWorkRemaining && whatIsWaitingForWhat.ReadyToBeWorkedOn(x))
-                .ToList();
-
-            if (featuresRemaining.Count == 0)
-            {
-                return null;
-            }
-
-            var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP > 0 ? team.FeatureWIP : 1, featuresRemaining.Count);
-            var featureWorkedOn = draws.Draw(trial, team.Id, day, ordinal, featureWorkedOnIndex);
-
-            var itemToUpdate = featuresRemaining[featureWorkedOn];
-            return itemToUpdate;
-        }
-
-        private static int RecalculateFeatureWIP(int featureWIP, int remainingItems)
-        {
-            return Math.Min(featureWIP, remainingItems);
-        }
-
-        private static void RunSimulations(Action<int> individualSimulation)
-        {
-            for (var trial = 0; trial < Trials; trial++)
-            {
-                individualSimulation(trial);
-            }
-        }
-
-        private static void AddSimulationResult(Dictionary<int, int> simulationResults, int simulationResult)
-        {
-            simulationResults[simulationResult] = simulationResults.GetValueOrDefault(simulationResult) + 1;
-        }
-
         private int GetSimulatedThroughput(RunChartData throughput)
         {
             var randomDay = randomNumberService.GetRandomNumber(throughput.History);
             return throughput.GetCountOnDay(randomDay);
+        }
+
+        /// <summary>
+        /// What the simulated runs left behind, collected as they happen so that the two things worth saying
+        /// about them can be said once at the end rather than ten thousand times.
+        /// </summary>
+        private sealed class WhatTheRunsCouldNotFinish
+        {
+            private readonly HashSet<string> teamsLeftUnfinished = new(StringComparer.Ordinal);
+
+            public int RunsGivenUpOn { get; private set; }
+
+            public int RunsThatRanOutOfDays { get; private set; }
+
+            public int FirstRunThatRanOutOfDays { get; private set; } = -1;
+
+            public IEnumerable<string> TeamsLeftUnfinished => teamsLeftUnfinished.Order(StringComparer.Ordinal);
+
+            public void Note(HowTheRunEnded ending, int trial, ForecastRunPlan plan, TrialState state)
+            {
+                if (ending == HowTheRunEnded.EverythingFinished)
+                {
+                    return;
+                }
+
+                if (ending == HowTheRunEnded.RanOutOfDays)
+                {
+                    RunsThatRanOutOfDays++;
+                    FirstRunThatRanOutOfDays = FirstRunThatRanOutOfDays < 0 ? trial : FirstRunThatRanOutOfDays;
+                }
+                else
+                {
+                    RunsGivenUpOn++;
+                }
+
+                for (var team = 0; team < plan.TeamCount; team++)
+                {
+                    if (state.RemainingOf(team) > 0)
+                    {
+                        teamsLeftUnfinished.Add(plan.TeamAt(team).Name);
+                    }
+                }
+            }
         }
     }
 }

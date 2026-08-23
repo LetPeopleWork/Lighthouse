@@ -21,6 +21,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private readonly ulong runSeed = unchecked((ulong)seed);
 
+        public long StartingNumber => seed;
+
         public int Draw(int trial, int team, int day, int ordinal, int maxExclusive)
         {
             if (maxExclusive <= 1)

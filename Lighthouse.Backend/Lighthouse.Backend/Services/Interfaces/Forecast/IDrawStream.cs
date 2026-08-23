@@ -11,6 +11,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Forecast
     /// </summary>
     public interface IDrawStream
     {
+        /// <summary>
+        /// The number this run's draws all come from. Reported when a run has to be given up on, so that the
+        /// exact run can be set going again on its own rather than hunted for.
+        /// </summary>
+        long StartingNumber { get; }
+
         /// <param name="trial">Which simulated run.</param>
         /// <param name="team">Which Team within that run.</param>
         /// <param name="day">Which simulated day of that Team's work.</param>

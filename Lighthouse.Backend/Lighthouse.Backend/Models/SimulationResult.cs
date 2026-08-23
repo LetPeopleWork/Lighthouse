@@ -1,5 +1,11 @@
-﻿namespace Lighthouse.Backend.Models
+namespace Lighthouse.Backend.Models
 {
+    /// <summary>
+    /// One Team's share of one Feature in a forecast, and how often that share finished on each simulated
+    /// day. It is what a run produces, not what a run works with: the counts that go up and down while a run
+    /// is under way belong to the run that owns them, because ten thousand runs happen at once and two of
+    /// them sharing one counter would be wrong even if neither write ever tore.
+    /// </summary>
     public class SimulationResult
     {
         public SimulationResult()
@@ -11,7 +17,6 @@
             Team = team;
             Feature = feature;
             InitialRemainingItems = remainingItems;
-            RemainingItems = remainingItems;
         }
 
         public Team Team { get; }
@@ -20,31 +25,6 @@
 
         public int InitialRemainingItems { get; }
 
-        public int RemainingItems { get; set; }
-
-        public bool HasWorkRemaining { get => RemainingItems > 0; }
-
         public Dictionary<int, int> SimulationResults { get; } = new Dictionary<int, int>();
-
-        public void ResetRemainingItems()
-        {
-            RemainingItems = InitialRemainingItems;
-        }
-    }
-
-    public static class SimulationResultExtensions
-    {
-        public static int GetRemainingItems(this IEnumerable<SimulationResult> results)
-        {
-            return results.Sum(x => x.RemainingItems);
-        }
-
-        public static void ResetRemainingItems(this IEnumerable<SimulationResult> results)
-        {
-            foreach (var result in results)
-            {
-                result.ResetRemainingItems();
-            }
-        }
     }
 }

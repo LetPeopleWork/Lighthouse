@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -52,7 +53,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 benchmark.TeamMetrics,
                 benchmark.FeatureRepository,
                 new NothingWaitsForAnything(),
-                new DrawsAfreshEveryTime());
+                new DrawsAfreshEveryTime(),
+                ForecastSimulationLimits.Default);
 
             var stopwatch = Stopwatch.StartNew();
             await forecastService.UpdateForecastsForPortfolio(benchmark.Portfolio);
