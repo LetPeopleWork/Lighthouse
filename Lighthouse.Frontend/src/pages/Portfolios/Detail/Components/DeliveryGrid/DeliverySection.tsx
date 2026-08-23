@@ -152,6 +152,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	// The grid hands back the ids in the order the reader is looking at them, so the file is sorted
 	// and filtered the way the screen is.
@@ -169,6 +170,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				workItemsTerm,
 				featureTerm,
 				portfolioTerm,
+				teamTerm,
 			});
 		},
 		[
@@ -179,6 +181,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 			workItemsTerm,
 			featureTerm,
 			portfolioTerm,
+			teamTerm,
 		],
 	);
 

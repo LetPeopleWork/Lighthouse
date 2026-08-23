@@ -10,15 +10,52 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
     /// records anything could answer the screen and a forecast differently.
     /// </summary>
     public class DependencyRefreshReporter(
-        IDependencyHonourPolicy dependencyHonourPolicy,
+        IDependencyDecision dependencyDecision,
         ILogger<DependencyRefreshReporter> logger) : IDependencyRefreshReporter
     {
         public void ReportOn(Portfolio portfolio)
         {
-            var decided = dependencyHonourPolicy.Evaluate(DependencyFacts.About(portfolio.Features));
+            var decided = dependencyDecision.About(portfolio.Features);
 
             ReportTheCircles(portfolio, decided);
             ReportWhatCannotBeForecast(portfolio, decided);
+            ReportWhatAPremiumLicenceWouldHaveAccountedFor(portfolio, decided);
+        }
+
+        /// <summary>
+        /// One line for a Portfolio whose dates are being read as though nothing waited on anything. An
+        /// operator reading logs rather than screens has no other way to learn that, and it is the difference
+        /// between a date they can plan against and one they cannot.
+        ///
+        /// It reads the set of waits held back rather than the licence, which is why it stays silent on a
+        /// licensed instance and on a Portfolio that has set its dependencies aside: both of those present
+        /// nothing held back, and a warning about an empty set is a line that teaches people to skip lines.
+        /// </summary>
+        private void ReportWhatAPremiumLicenceWouldHaveAccountedFor(Portfolio portfolio, HonouredDependencies decided)
+        {
+            var featuresHeldBack = decided.Verdicts
+                .Where(verdict => verdict.Reason == NotHonouredReason.NotLicensed)
+                .Select(verdict => verdict.DependentReferenceId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            if (featuresHeldBack.Count == 0)
+            {
+                return;
+            }
+
+            var teamsReadingWrong = portfolio.Features
+                .Where(feature => featuresHeldBack.Contains(feature.ReferenceId))
+                .SelectMany(feature => feature.Teams)
+                .Select(team => team.Name)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToList();
+
+            logger.LogWarning(
+                "Dates in Portfolio {PortfolioName} read as though nothing were waiting on anything: this instance is not licensed to account for what {Count} Features are waiting on. Teams affected: {Teams}",
+                portfolio.Name,
+                featuresHeldBack.Count,
+                string.Join(", ", teamsReadingWrong));
         }
 
         /// <summary>

@@ -26,6 +26,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             NotHonouredReason.InALoop,
             NotHonouredReason.BlockerCannotBeForecast,
             NotHonouredReason.IgnoredByPortfolio,
+
+            // Added by the Epic that lets a dependency change a date, which can only account for a wait
+            // both ends of which are one Team's work. Listed here because this is the set a reader meets.
+            NotHonouredReason.CrossesATeam,
+
+            // Added by the same Epic, for a wait nothing but a premium licence stands against.
+            NotHonouredReason.NotLicensed,
         ];
 
         // @driving_adapter @us-02 - "Opening the list of Features one is waiting on". The reader finds what

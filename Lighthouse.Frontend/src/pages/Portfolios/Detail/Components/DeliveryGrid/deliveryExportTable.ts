@@ -22,6 +22,7 @@ export interface DeliveryExportTerms {
 	workItemsTerm: string;
 	featureTerm: string;
 	portfolioTerm: string;
+	teamTerm: string;
 }
 
 const FORECAST_PROBABILITIES = [50, 70, 85, 95] as const;

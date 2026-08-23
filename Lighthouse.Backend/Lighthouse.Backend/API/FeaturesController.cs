@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.API
         private readonly IFeatureRankingService featureRankingService;
         private readonly IFeatureOrderingPolicyProvider featureOrderingPolicyProvider;
         private readonly ILighthouseClock clock;
-        private readonly IDependencyHonourPolicy dependencyHonourPolicy;
+        private readonly IDependencyDecision dependencyDecision;
 
 #pragma warning disable S107 // Every parameter is a distinct port this controller drives; bundling them into a parameter object would only hide the arity, not the coupling.
         public FeaturesController(
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.API
             IFeatureRankingService featureRankingService,
             IFeatureOrderingPolicyProvider featureOrderingPolicyProvider,
             ILighthouseClock clock,
-            IDependencyHonourPolicy dependencyHonourPolicy)
+            IDependencyDecision dependencyDecision)
 #pragma warning restore S107
         {
             this.featureRepository = featureRepository;
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.API
             this.featureRankingService = featureRankingService;
             this.featureOrderingPolicyProvider = featureOrderingPolicyProvider;
             this.clock = clock;
-            this.dependencyHonourPolicy = dependencyHonourPolicy;
+            this.dependencyDecision = dependencyDecision;
         }
 
         /// <summary>
@@ -260,7 +260,7 @@ namespace Lighthouse.Backend.API
             var readablePortfolioIds = await GetReadablePortfolioIds(
                 blockers.Values.SelectMany(blocker => blocker.Portfolios).Select(portfolio => portfolio.Id));
 
-            var verdicts = VerdictsBy(dependencyHonourPolicy.Evaluate(DependencyFacts.About(wholeGraph, positions)));
+            var verdicts = VerdictsBy(dependencyDecision.About(wholeGraph, positions));
 
             return new DependenciesAsRead(blockers, readablePortfolioIds, verdicts);
         }

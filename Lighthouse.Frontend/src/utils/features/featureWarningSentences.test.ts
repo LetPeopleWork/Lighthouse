@@ -6,6 +6,7 @@ const TERMS = {
 	workItemsTerm: "Work Items",
 	featureTerm: "Feature",
 	portfolioTerm: "Portfolio",
+	teamTerm: "Team",
 };
 
 const NOTHING_WRONG = {
@@ -49,6 +50,7 @@ describe("featureWarningSentences", () => {
 				workItemsTerm: "Tickets",
 				featureTerm: "Epic",
 				portfolioTerm: "Stream",
+				teamTerm: "Squad",
 			},
 		);
 

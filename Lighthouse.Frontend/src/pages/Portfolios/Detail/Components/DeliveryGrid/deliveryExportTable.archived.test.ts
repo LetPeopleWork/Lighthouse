@@ -16,6 +16,7 @@ const terms: DeliveryExportTerms = {
 	workItemsTerm: "Work Items",
 	featureTerm: "Feature",
 	portfolioTerm: "Portfolio",
+	teamTerm: "Team",
 };
 
 const makeArchived = (overrides: Record<string, unknown> = {}) =>

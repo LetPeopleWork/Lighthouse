@@ -10,6 +10,7 @@ import {
 const terms: DependencyTerms = {
 	featureTerm: "Feature",
 	portfolioTerm: "Portfolio",
+	teamTerm: "Team",
 };
 
 // Every renamed word is a word an instance may already use for something else, so the sentences are
@@ -17,11 +18,12 @@ const terms: DependencyTerms = {
 const renamedTerms: DependencyTerms = {
 	featureTerm: "Initiative",
 	portfolioTerm: "Programme",
+	teamTerm: "Squad",
 };
 
 describe("reasonSentence", () => {
-	// Four reasons, four sentences. A reader meeting the same words for two different reasons has been
-	// told nothing: the whole point of the reason is that it says which of them applies.
+	// One sentence per reason. A reader meeting the same words for two different reasons has been told
+	// nothing: the whole point of the reason is that it says which of them applies.
 	it("says something different for every reason there is", () => {
 		const sentences = NOT_HONOURED_REASONS.map((reason) =>
 			reasonSentence(reason, "Warehouse sync", terms),
@@ -49,6 +51,24 @@ describe("reasonSentence", () => {
 			reasonSentence("BlockerCannotBeForecast", "Warehouse sync", terms),
 		).toBe(
 			"Warehouse sync has no measured delivery to forecast from, so the wait cannot be given a date. That dependency is not included in the forecast.",
+		);
+	});
+
+	it("says what is missing is a premium licence, and what it would account for", () => {
+		expect(reasonSentence("NotLicensed", "Warehouse sync", terms)).toBe(
+			"This Feature depends on Warehouse sync, and that wait is not accounted for in the dates. A premium licence accounts for it.",
+		);
+	});
+
+	it("says a wait on another team's work is left out of the forecast", () => {
+		expect(reasonSentence("CrossesATeam", "Warehouse sync", terms)).toBe(
+			"This Feature depends on Warehouse sync, which is not the same Team's work. That dependency is not included in the forecast.",
+		);
+	});
+
+	it("names the team in the instance's own word for one", () => {
+		expect(reasonSentence("CrossesATeam", "Warehouse sync", renamedTerms)).toBe(
+			"This Initiative depends on Warehouse sync, which is not the same Squad's work. That dependency is not included in the forecast.",
 		);
 	});
 

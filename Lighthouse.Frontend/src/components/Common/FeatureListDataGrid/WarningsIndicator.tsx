@@ -28,10 +28,11 @@ const WarningsIndicator: React.FC<WarningsIndicatorProps> = ({
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
 	const warnings = featureWarningSentences(
 		{ isDoneWithRemainingWork, isUsingDefaultFeatureSize, dependencies },
-		{ workItemsTerm, featureTerm, portfolioTerm },
+		{ workItemsTerm, featureTerm, portfolioTerm, teamTerm },
 	);
 
 	if (warnings.length === 0) {

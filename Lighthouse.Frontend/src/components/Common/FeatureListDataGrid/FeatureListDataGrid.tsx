@@ -103,6 +103,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 		createDependsOnColumn({
 			featureTerm: getTerm(TERMINOLOGY_KEYS.FEATURE),
 			portfolioTerm: getTerm(TERMINOLOGY_KEYS.PORTFOLIO),
+			teamTerm: getTerm(TERMINOLOGY_KEYS.TEAM),
 		}),
 		// The two surfaces that show a place are the two that let you change it, so one flag names both
 		// and neither caller passes the menu in.

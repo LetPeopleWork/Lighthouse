@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
@@ -126,7 +127,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 // The real one: it only reads what the refresh already holds and writes a log line, so a
                 // fixture that faked it would be hiding the one thing it does.
                 new DependencyRefreshReporter(
-                    new DependencyHonourPolicy(), Mock.Of<ILogger<DependencyRefreshReporter>>()));
+                    new DependencyDecision(new DependencyHonourPolicy(), ALicensedInstance()),
+                    Mock.Of<ILogger<DependencyRefreshReporter>>()));
+
+        /// <summary>
+        /// Licensed, because these fixtures are about what a refresh stores and none of them is about what
+        /// an instance has paid for. Unlicensed, every dependency they set up would read as held back and
+        /// the fixture would be testing the licence instead of the refresh.
+        /// </summary>
+        private static ILicenseService ALicensedInstance()
+            => Mock.Of<ILicenseService>(licence => licence.CanUsePremiumFeatures());
 
         /// <summary>The team works on nobody's features, which is the state every fixture assumed.</summary>
         private static IPortfolioRepository NoPortfolioTheTeamDeliversInto()

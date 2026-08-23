@@ -12,6 +12,7 @@ const TERMS = {
 	workItemsTerm: "Work Items",
 	featureTerm: "Feature",
 	portfolioTerm: "Portfolio",
+	teamTerm: "Team",
 };
 
 const TEAMS: IEntityReference[] = [

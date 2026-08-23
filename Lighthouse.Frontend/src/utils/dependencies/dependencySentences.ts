@@ -12,6 +12,7 @@ import type { NotHonouredReason } from "../../models/FeatureDependency";
 export type DependencyTerms = {
 	featureTerm: string;
 	portfolioTerm: string;
+	teamTerm: string;
 };
 
 const LEFT_OUT = "That dependency is not included in the forecast.";
@@ -36,6 +37,17 @@ export const reasonSentence = (
 
 	if (reason === "IgnoredByPortfolio") {
 		return `${terms.portfolioTerm} is set to ignore dependencies.`;
+	}
+
+	// Given only where nothing else stands against the dependency, so it is the one sentence here that
+	// promises a date will move. Said about a wait a licence would not have accounted for either, it
+	// would be selling something that changes nothing.
+	if (reason === "NotLicensed") {
+		return `This ${terms.featureTerm} depends on ${waitedOn}, and that wait is not accounted for in the dates. A premium licence accounts for it.`;
+	}
+
+	if (reason === "CrossesATeam") {
+		return `This ${terms.featureTerm} depends on ${waitedOn}, which is not the same ${terms.teamTerm}'s work. ${LEFT_OUT}`;
 	}
 
 	return `${waitedOn} has no measured delivery to forecast from, so the wait cannot be given a date. ${LEFT_OUT}`;

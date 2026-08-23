@@ -79,8 +79,15 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ThePayloadTheCountRidesOn = "FeatureDto";
 
-        // Declaring it is legitimate and reading it is not, so the rule keys on the dot that tells them apart.
-        private const string TheLicenceFlagThatMustStayUnread = "HasPremiumLicence";
+        // Declaring it is legitimate and reading it anywhere but the decision is not, so the rule keys on
+        // the dot that tells them apart.
+        private const string TheLicenceFlagOnlyTheDecisionMayRead = "HasPremiumLicence";
+
+        private const string TheOnlyFileThatMayReadTheLicenceFlag =
+            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyHonourPolicy.cs";
+
+        private const string TheOnlyFileThatMayAskWhetherTheInstanceHasPaid =
+            "Lighthouse.Backend/Services/Implementation/Dependencies/DependencyDecision.cs";
 
         private static readonly string[] TheWordsThatWouldMeanAPriceWasAsked =
             ["CanUsePremiumFeatures", "LicenseGuard", "ILicenseService", "useLicenseRestrictions"];
@@ -231,25 +238,51 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// The licence flag has a place waiting for it on the decision's input so the next epic need not
-        /// re-cut the type. Declaring it is fine; reading it here is not, and the difference is exactly one
-        /// dot. Nothing else catches this - the four names the licence scan looks for are all about asking
-        /// a service, and this one is a property already sitting in the room.
+        /// The licence flag arrives on the decision's input, and the decision is the only thing that may read
+        /// it. Declaring it is fine; reading it anywhere else is not, and the difference is exactly one dot.
+        /// Nothing else catches this - the four names the licence scan looks for are all about asking a
+        /// service, and this one is a property already sitting in the room.
         /// </summary>
+        /// <remarks>
+        /// This replaced a rule saying the flag was read by nobody at all, which held while a dependency
+        /// could not change a date. Now that one can, the invariant is not that the licence goes unread but
+        /// that it is read once: a second reader is how a warning promising that a purchase moves a date and
+        /// a forecast that never moves it come to be shipped together.
+        /// </remarks>
         [Test]
-        public void NothingThisEpicAdded_ReadsTheLicenceFlagItWasHanded()
+        public void NothingButTheOneDecision_ReadsTheLicenceFlagItWasHanded()
         {
-            var reads = TheSourceThisEpicAdded()
-                .SelectMany(file => LinesMatching(file, line =>
-                    line.Contains($".{TheLicenceFlagThatMustStayUnread}", StringComparison.Ordinal)))
+            var theDecisionsOwnRead = TheSourceThisEpicAdded()
+                .Where(file => file.RelativePath == TheOnlyFileThatMayReadTheLicenceFlag)
+                .SelectMany(file => LinesMatching(file, ReadsTheLicenceFlag))
                 .ToList();
 
-            Assert.That(reads, Is.Empty,
-                $"'{TheLicenceFlagThatMustStayUnread}' is declared for the epic that turns paid behaviour on and is " +
-                "read by nothing until then. A read here would make what a dependency does depend on an instance's " +
-                "licence while every screen in this epic is free, and the two would disagree. Found: " +
-                string.Join(", ", reads));
+            var readsElsewhere = TheSourceThisEpicAdded()
+                .Where(file => file.RelativePath != TheOnlyFileThatMayReadTheLicenceFlag)
+                .SelectMany(file => LinesMatching(file, ReadsTheLicenceFlag))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theDecisionsOwnRead, Is.Not.Empty,
+                    $"{TheOnlyFileThatMayReadTheLicenceFlag} no longer reads " +
+                    $"'{TheLicenceFlagOnlyTheDecisionMayRead}', so this scan is hunting something nothing in the " +
+                    "code does and would pass whatever anybody else read. Point it at wherever the decision " +
+                    "reads the licence now.");
+
+                Assert.That(readsElsewhere, Is.Empty,
+                    $"'{TheLicenceFlagOnlyTheDecisionMayRead}' says whether this instance has paid for a " +
+                    "dependency to change a date, and one place answers that. A second reader is a second " +
+                    "answer, and the day they differ a reader is told a purchase would move a date that stays " +
+                    "where it is. Found: " + string.Join(", ", readsElsewhere));
+            }
         }
+
+        private static bool ReadsTheLicenceFlag(string line)
+            => line.Contains($".{TheLicenceFlagOnlyTheDecisionMayRead}", StringComparison.Ordinal);
+
+        private static bool AsksThePrice(string line)
+            => TheWordsThatWouldMeanAPriceWasAsked.Any(word => line.Contains(word, StringComparison.Ordinal));
 
         /// <summary>
         /// One place decides whether Lighthouse can act on a dependency. A second implementation would let
@@ -428,26 +461,43 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// Everything here is free. The premium flag has a place waiting for it in the design so the next
-        /// epic need not re-cut the type, and this keeps that place empty until that epic arrives - an
-        /// unread field is easy to start reading by accident.
+        /// Reading what a Feature waits on is free; letting it change a date is not. One file asks the
+        /// instance whether it has paid, and hands the answer to the decision as a fact among the others.
+        /// Everything else - every screen, every refresh, the forecast itself - is told what was decided and
+        /// never asks the price for itself.
         /// </summary>
+        /// <remarks>
+        /// This replaced a rule saying nothing in this epic asked at all, which held while every screen it
+        /// owned was free. The half that has not changed is the second assertion: the count still rides on a
+        /// payload every list reads, and putting a paid gate in front of that route would take the whole
+        /// Feature list away from an unlicensed instance to hide one number.
+        /// </remarks>
         [Test]
-        public void NothingThisEpicAdded_AsksWhetherTheLicenceIsPremium()
+        public void NothingButTheOnePlace_AsksWhetherTheInstanceHasPaid()
         {
+            var theOnePlacesOwnAsk = TheSourceThisEpicAdded()
+                .Where(file => file.RelativePath == TheOnlyFileThatMayAskWhetherTheInstanceHasPaid)
+                .SelectMany(file => LinesMatching(file, AsksThePrice))
+                .ToList();
+
             var licenceWords = TheSourceThisEpicAdded()
-                .SelectMany(file => LinesMatching(file, line =>
-                    TheWordsThatWouldMeanAPriceWasAsked.Any(word => line.Contains(word, StringComparison.Ordinal))))
+                .Where(file => file.RelativePath != TheOnlyFileThatMayAskWhetherTheInstanceHasPaid)
+                .SelectMany(file => LinesMatching(file, AsksThePrice))
                 .ToList();
 
             var chargedRoutes = LinesMatching(TheFileThatHandsOutTheCount, TheRouteHandsOutTheCount);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(theOnePlacesOwnAsk, Is.Not.Empty,
+                    $"{TheOnlyFileThatMayAskWhetherTheInstanceHasPaid} no longer asks whether this instance has " +
+                    "paid, so this scan is hunting something nothing in the code does and would stay green " +
+                    "whoever started asking. Point it at whatever asks now.");
+
                 Assert.That(licenceWords, Is.Empty,
-                    "Reading what a Feature waits on costs nothing, on the screen as well as on the wire. A " +
-                    "licence question here would hide the number from most instances and leave the column blank " +
-                    "with no way to tell why. Found: " + string.Join(", ", licenceWords));
+                    "One file asks the instance whether it has paid and hands the answer to the decision. A " +
+                    "second asker is a second answer to a question that has one, and the two of them differ the " +
+                    "first time either one changes. Found: " + string.Join(", ", licenceWords));
 
                 Assert.That(chargedRoutes, Is.Empty,
                     "The count of what a Feature waits on rides along on the Feature payload that every list " +

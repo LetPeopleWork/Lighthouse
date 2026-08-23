@@ -7,6 +7,8 @@ export const NOT_HONOURED_REASONS = [
 	"InALoop",
 	"BlockerCannotBeForecast",
 	"IgnoredByPortfolio",
+	"CrossesATeam",
+	"NotLicensed",
 ] as const;
 
 export type NotHonouredReason = (typeof NOT_HONOURED_REASONS)[number];

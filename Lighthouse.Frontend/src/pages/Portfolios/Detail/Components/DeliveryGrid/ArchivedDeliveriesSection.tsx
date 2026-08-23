@@ -65,6 +65,7 @@ const ArchivedDeliveriesSection: React.FC<ArchivedDeliveriesSectionProps> = ({
 			featuresTerm: getTerm(TERMINOLOGY_KEYS.FEATURES),
 			workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 			portfolioTerm: getTerm(TERMINOLOGY_KEYS.PORTFOLIO),
+			teamTerm: getTerm(TERMINOLOGY_KEYS.TEAM),
 		}),
 		[getTerm],
 	);
@@ -110,6 +111,7 @@ interface ArchivedRowTerms {
 	featuresTerm: string;
 	workItemsTerm: string;
 	portfolioTerm: string;
+	teamTerm: string;
 }
 
 interface ArchivedDeliveryRowProps {
