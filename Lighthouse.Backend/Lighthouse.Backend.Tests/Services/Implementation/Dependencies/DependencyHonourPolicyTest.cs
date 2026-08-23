@@ -517,6 +517,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.InALoop));
         }
 
+        /// <summary>
+        /// The cheapest circle there is, and the one that costs most if it gets through: a forecast told to
+        /// wait for a Feature to finish before that same Feature may be worked on has nothing it can ever
+        /// start. Everything downstream of this decision assumes the waits it is given lead somewhere, so
+        /// this is where that assumption is actually paid for.
+        /// </summary>
+        [Test]
+        public void AFeatureRecordedAsWaitingOnItself_IsNeverOneLighthouseActsOn()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheFirst));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheVerdictFor(verdicts, "F-1", "F-1").IsHonoured, Is.False);
+                Assert.That(TheVerdictFor(verdicts, "F-1", "F-1").Reason, Is.EqualTo(NotHonouredReason.InALoop));
+            }
+        }
+
         [Test]
         public void ADependencyAnUnlicensedInstanceCouldOtherwiseHaveActedOn_SaysThatIsWhatIsMissing()
         {
