@@ -18,7 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
 
             var verdicts = input.FeaturesInScope
                 .SelectMany(dependent => dependent.DependsOnReferenceIds
-                    .Select(blocker => Decide(dependent, blocker, factsByReferenceId, loops, setAside)))
+                    .Select(blocker => Decide(
+                        dependent, blocker, factsByReferenceId, loops, setAside, input.HasPremiumLicence)))
                 .ToList();
 
             return new HonouredDependencies(verdicts);
@@ -35,22 +36,39 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
             string blockerReferenceId,
             Dictionary<string, FeatureDependencyFacts> factsByReferenceId,
             DependencyLoops loops,
-            HashSet<int> portfoliosSettingTheirDependenciesAside)
+            HashSet<int> portfoliosSettingTheirDependenciesAside,
+            bool hasPremiumLicence)
         {
             factsByReferenceId.TryGetValue(blockerReferenceId, out var blocker);
 
             var whereItHasAConsequence = blocker is null ? [] : PortfoliosTheyShare(dependent, blocker);
             var onItsOwnFacts = TheVerdictOnItsFacts(dependent, blockerReferenceId, blocker, whereItHasAConsequence, loops);
 
-            if (!SetAside(dependent, whereItHasAConsequence, portfoliosSettingTheirDependenciesAside))
+            if (SetAside(dependent, whereItHasAConsequence, portfoliosSettingTheirDependenciesAside))
             {
-                return onItsOwnFacts;
+                return AsDecided(onItsOwnFacts, NotHonouredReason.IgnoredByPortfolio);
             }
 
+            if (onItsOwnFacts.IsHonoured && !hasPremiumLicence)
+            {
+                return AsDecided(onItsOwnFacts, NotHonouredReason.NotLicensed);
+            }
+
+            return onItsOwnFacts;
+        }
+
+        /// <summary>
+        /// Whether the instance has paid for it is asked only of a dependency that had nothing else against
+        /// it. Asked first, it would put a licence in front of a circle and a wait on another Team's work -
+        /// waits no licence would account for either - and the reader would be told that buying something
+        /// moves a date that stays exactly where it is.
+        /// </summary>
+        private static DependencyVerdict AsDecided(DependencyVerdict onItsOwnFacts, NotHonouredReason reason)
+        {
             return new DependencyVerdict(
-                dependent.ReferenceId,
-                blockerReferenceId,
-                NotHonouredReason.IgnoredByPortfolio,
+                onItsOwnFacts.DependentReferenceId,
+                onItsOwnFacts.BlockerReferenceId,
+                reason,
                 onItsOwnFacts.BlockerPositionedBelow);
         }
 
@@ -107,6 +125,10 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         /// A circle is decided before anything about the Feature waited on, so every dependency going round
         /// the same circle reads the same way. Otherwise one member with no delivery to measure would report
         /// that instead, and the user would be told two different things about one circle.
+        ///
+        /// Crossing a Team is asked last, and deliberately: it is the only reason here that says nothing is
+        /// wrong with the dependency, only that Lighthouse cannot act on it yet. Asked earlier it would hide
+        /// a circle behind a limitation, and the circle is the one the user has to go and fix.
         /// </summary>
         private static NotHonouredReason? ReasonWithinThisPortfolio(
             FeatureDependencyFacts dependent,
@@ -123,7 +145,29 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
                 return NotHonouredReason.BlockerCannotBeForecast;
             }
 
+            if (MoreThanOneTeamHasWorkOnTheseTwo(dependent, blocker))
+            {
+                return NotHonouredReason.CrossesATeam;
+            }
+
             return null;
+        }
+
+        /// <summary>
+        /// A forecast runs each Team on its own clock, so the only moment at which "the Feature waited on is
+        /// finished" is something anyone can observe is a moment inside the run of the Team that has to
+        /// finish it. Two Teams share no such moment, and a Feature several Teams are still working is not
+        /// finished when the first of them stops.
+        ///
+        /// Asked of both ends together rather than of the Feature waited on alone: a Feature waiting that two
+        /// Teams share has one date per Team, and neither of them is the whole wait. Where no Team has work
+        /// on either end there is nothing to run on anybody's clock, the wait holds nothing up, and saying it
+        /// crosses a Team would name a Team nobody involved has.
+        /// </summary>
+        private static bool MoreThanOneTeamHasWorkOnTheseTwo(
+            FeatureDependencyFacts dependent, FeatureDependencyFacts blocker)
+        {
+            return dependent.TeamIds.Concat(blocker.TeamIds).Distinct().Skip(1).Any();
         }
 
         private static List<int> PortfoliosTheyShare(

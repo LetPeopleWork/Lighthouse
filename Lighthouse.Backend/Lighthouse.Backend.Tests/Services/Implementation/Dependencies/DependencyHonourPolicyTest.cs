@@ -15,9 +15,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             NotHonouredReason.InALoop,
             NotHonouredReason.BlockerCannotBeForecast,
             NotHonouredReason.IgnoredByPortfolio,
+            NotHonouredReason.CrossesATeam,
+            NotHonouredReason.NotLicensed,
         ];
 
         private static readonly int[] TheSamePortfolio = [1];
+
+        private static readonly int[] TheSameTeam = [7];
+
+        private static readonly int[] AnotherTeam = [8];
+
+        private static readonly int[] SeveralTeams = [7, 8, 9];
+
+        private static readonly int[] NoTeamAtAll = [];
 
         private static readonly int[] AnotherPortfolio = [2];
 
@@ -430,11 +440,171 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             Assert.That(TheVerdictFor(honoured, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.OutsideThisPortfolio));
         }
 
+        [Test]
+        public void ABlockerAnotherTeamIsWorking_IsAWaitThatCrossesATeam()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: AnotherTeam));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.CrossesATeam));
+        }
+
+        /// <summary>
+        /// A Feature several Teams are still working is not finished when the first of them stops, and no
+        /// one Team's run can see the other two get there. Reading the first Team's finish as the whole
+        /// Feature's would release the Feature waiting early, and nothing in the output would look wrong.
+        /// </summary>
+        [Test]
+        public void ABlockerSeveralTeamsAreWorking_IsAWaitThatCrossesATeamEvenWhenOneOfThemIsTheSame()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: SeveralTeams));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.CrossesATeam));
+        }
+
+        /// <summary>
+        /// A Feature two Teams share has one date per Team, and neither of them is the whole wait, so the
+        /// question is asked about both ends rather than only about the Feature waited on.
+        /// </summary>
+        [Test]
+        public void AFeatureSeveralTeamsAreWorking_WaitsOnNothingThisSliceCanAccountFor()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: SeveralTeams),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: TheSameTeam));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.CrossesATeam));
+        }
+
+        /// <summary>
+        /// Nobody is working it, so there is nothing to run on anybody's clock and the wait holds nothing
+        /// up. Reporting a crossed Team here would name a Team neither end has.
+        /// </summary>
+        [Test]
+        public void ABlockerNoTeamIsWorking_CrossesNothingAndIsLeftAlone()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
+                AFeature("F-2", position: 0, portfolioIds: TheSamePortfolio, teamIds: NoTeamAtAll));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").HasNothingWrongWithIt, Is.True);
+        }
+
+        [Test]
+        public void TwoFeaturesNoTeamIsWorking_HaveNothingWrongBetweenThem()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: NoTeamAtAll),
+                AFeature("F-2", position: 0, portfolioIds: TheSamePortfolio, teamIds: NoTeamAtAll));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").HasNothingWrongWithIt, Is.True);
+        }
+
+        /// <summary>
+        /// Crossing a Team is a limit on what Lighthouse can work out, not a fault in the data. A circle is
+        /// a fault, and it is the one the user can go and fix, so it is what they are told about.
+        /// </summary>
+        [Test]
+        public void ACircleThatAlsoCrossesATeam_ReportsTheCircle()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheFirst, teamIds: AnotherTeam));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.InALoop));
+        }
+
+        [Test]
+        public void ADependencyAnUnlicensedInstanceCouldOtherwiseHaveActedOn_SaysThatIsWhatIsMissing()
+        {
+            var verdicts = DecideUnlicensed(
+                AFeature("F-1", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 1, portfolioIds: TheSamePortfolio));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.NotLicensed));
+        }
+
+        /// <summary>
+        /// A licence would not have accounted for this wait either. Naming the licence here sells a reader a
+        /// date that would not move, which is worse than saying nothing.
+        /// </summary>
+        [TestCase(NotHonouredReason.InALoop)]
+        [TestCase(NotHonouredReason.CrossesATeam)]
+        public void ADependencyNoLicenceWouldHaveAccountedFor_SaysWhatIsActuallyWrongWithIt(
+            NotHonouredReason whatIsActuallyWrong)
+        {
+            var verdicts = DecideUnlicensed(TheTwoFeaturesThatAre(whatIsActuallyWrong));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(whatIsActuallyWrong));
+        }
+
+        /// <summary>
+        /// Somebody chose to set these aside, and that choice outlives what the instance has paid for. Told
+        /// the licence was what was missing, they would go and buy back a thing they switched off.
+        /// </summary>
+        [Test]
+        public void ADependencySetAsideOnAnUnlicensedInstance_IsStillJustSetAside()
+        {
+            var verdicts = Decide(
+                hasPremiumLicence: false,
+                TheSamePortfolio,
+                AFeature("F-1", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 1, portfolioIds: TheSamePortfolio));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").Reason, Is.EqualTo(NotHonouredReason.IgnoredByPortfolio));
+        }
+
+        [Test]
+        public void ADependencyHeldBackOnlyByTheLicence_IsStillWorthTellingTheReaderAbout()
+        {
+            var verdicts = DecideUnlicensed(
+                AFeature("F-1", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 1, portfolioIds: TheSamePortfolio));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsWorthWarningAbout, Is.True);
+        }
+
+        private static FeatureDependencyFacts[] TheTwoFeaturesThatAre(NotHonouredReason whatIsActuallyWrong)
+        {
+            if (whatIsActuallyWrong == NotHonouredReason.InALoop)
+            {
+                return
+                [
+                    AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                    AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheFirst),
+                ];
+            }
+
+            return
+            [
+                AFeature("F-1", position: 1, portfolioIds: TheSamePortfolio, waitingOn: TheSecond),
+                AFeature("F-2", position: 2, portfolioIds: TheSamePortfolio, teamIds: AnotherTeam),
+            ];
+        }
+
+        [Test]
+        public void ABlockerTheSameOneTeamIsWorking_IsOneLighthouseActsOn()
+        {
+            var verdicts = Decide(
+                AFeature("F-1", position: 2, portfolioIds: TheSamePortfolio, waitingOn: TheSecond, teamIds: TheSameTeam),
+                AFeature("F-2", position: 1, portfolioIds: TheSamePortfolio, teamIds: TheSameTeam));
+
+            Assert.That(TheVerdictFor(verdicts, "F-1", "F-2").IsHonoured, Is.True);
+        }
+
         private static DependencyVerdict AVerdict(NotHonouredReason? reason, bool blockerPositionedBelow)
         {
             return new DependencyVerdict("F-1", "F-2", reason, blockerPositionedBelow);
         }
 
+        /// <summary>
+        /// Licensed, unless a test is about what an instance has paid for. Unlicensed is not a neutral
+        /// starting point any more: it is a reason in its own right, and every scenario here that is about
+        /// something else would end up reading it instead of the thing it set up.
+        /// </summary>
         private static HonouredDependencies Decide(params FeatureDependencyFacts[] featuresInScope)
         {
             return DecideWhile(NobodyIgnoresTheirs, featuresInScope);
@@ -443,8 +613,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
         private static HonouredDependencies DecideWhile(
             int[] portfoliosSettingTheirDependenciesAside, params FeatureDependencyFacts[] featuresInScope)
         {
+            return Decide(hasPremiumLicence: true, portfoliosSettingTheirDependenciesAside, featuresInScope);
+        }
+
+        private static HonouredDependencies DecideUnlicensed(params FeatureDependencyFacts[] featuresInScope)
+        {
+            return Decide(hasPremiumLicence: false, NobodyIgnoresTheirs, featuresInScope);
+        }
+
+        private static HonouredDependencies Decide(
+            bool hasPremiumLicence,
+            int[] portfoliosSettingTheirDependenciesAside,
+            params FeatureDependencyFacts[] featuresInScope)
+        {
             return new DependencyHonourPolicy().Evaluate(
-                new DependencyHonourInput(featuresInScope, HasPremiumLicence: false, portfoliosSettingTheirDependenciesAside));
+                new DependencyHonourInput(featuresInScope, hasPremiumLicence, portfoliosSettingTheirDependenciesAside));
         }
 
         private static FeatureDependencyFacts AFeature(
@@ -452,9 +635,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             int? position,
             int[] portfolioIds,
             bool canBeForecast = true,
-            string[]? waitingOn = null)
+            string[]? waitingOn = null,
+            int[]? teamIds = null)
         {
-            return new FeatureDependencyFacts(referenceId, portfolioIds, position, canBeForecast, waitingOn ?? NothingWaitedOn);
+            return new FeatureDependencyFacts(
+                referenceId, portfolioIds, teamIds ?? TheSameTeam, position, canBeForecast, waitingOn ?? NothingWaitedOn);
         }
 
         private static DependencyVerdict TheVerdictFor(

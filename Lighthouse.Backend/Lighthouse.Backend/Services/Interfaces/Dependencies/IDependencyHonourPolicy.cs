@@ -30,14 +30,21 @@ namespace Lighthouse.Backend.Services.Interfaces.Dependencies
 
     /// <summary>
     /// One Feature as the decision sees it: where the user has put it, which Portfolios it belongs to,
-    /// whether there is any forecast for it to be waited on for, and what it waits on. All of it read off
-    /// what the caller already loaded, so asking costs no queries. The place is absent on read paths that
-    /// never number the Features, and not knowing where something sits is not the same as knowing it sits
-    /// below - so nothing is said about the order rather than everything being reported as out of order.
+    /// which Teams work it, whether there is any forecast for it to be waited on for, and what it waits
+    /// on. All of it read off what the caller already loaded, so asking costs no queries. The place is
+    /// absent on read paths that never number the Features, and not knowing where something sits is not
+    /// the same as knowing it sits below - so nothing is said about the order rather than everything
+    /// being reported as out of order.
     /// </summary>
+    /// <param name="TeamIds">
+    /// Every Team with work on this Feature. It is here rather than worked out by the forecast because
+    /// whether a dependency can be acted on is one decision in one place, and how many Teams stand
+    /// between its two ends is part of that answer today.
+    /// </param>
     public sealed record FeatureDependencyFacts(
         string ReferenceId,
         IReadOnlyCollection<int> PortfolioIds,
+        IReadOnlyCollection<int> TeamIds,
         int? Position,
         bool CanBeForecast,
         IReadOnlyCollection<string> DependsOnReferenceIds);

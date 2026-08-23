@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
     {
         private static readonly int[] TheOnePortfolioEverythingHereBelongsTo = [1];
 
+        private static readonly int[] TheOneTeamEverythingHereIsWorkedBy = [1];
+
         private static readonly string[] NothingAtAll = [];
 
         private static readonly string[] TheOtherTwoInTheCircle = ["F-2", "F-3"];
@@ -168,6 +170,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             return new FeatureDependencyFacts(
                 referenceId,
                 TheOnePortfolioEverythingHereBelongsTo,
+                TheOneTeamEverythingHereIsWorkedBy,
                 Position: 0,
                 CanBeForecast: true,
                 blockerReferenceIds);

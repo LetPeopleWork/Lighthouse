@@ -14,25 +14,27 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
         /// Where each Feature sits, for callers that number them. A caller that does not leaves this out
         /// and nothing is claimed about the order - which is not the same as claiming things are in it.
         /// </param>
-        /// <remarks>
-        /// The licence answer is left false because nothing may read it yet: no dependency changes a
-        /// forecast until that behaviour ships, and until it does an instance's licence has no bearing on
-        /// anything decided here. Whoever turns it on has to hand the real answer in from here.
-        /// </remarks>
+        /// <param name="hasPremiumLicence">
+        /// Whether this instance is licensed for the paid behaviour a dependency has. It is an argument
+        /// rather than something read here so that exactly one component in the product reads the licence
+        /// and everything else is told the same answer.
+        /// </param>
         public static DependencyHonourInput About(
             IReadOnlyCollection<Feature> features,
+            bool hasPremiumLicence,
             IReadOnlyDictionary<int, int>? placeOfEachFeature = null)
         {
             var facts = features
                 .Select(feature => new FeatureDependencyFacts(
                     feature.ReferenceId,
                     feature.Portfolios.Select(portfolio => portfolio.Id).ToList(),
+                    feature.FeatureWork.Select(work => work.TeamId).Distinct().ToList(),
                     PlaceOf(feature, placeOfEachFeature),
                     feature.CanBeForecast,
                     feature.DependsOnReferences.Select(reference => reference.ReferenceId).ToList()))
                 .ToList();
 
-            return new DependencyHonourInput(facts, HasPremiumLicence: false, PortfoliosSettingTheirDependenciesAside(features));
+            return new DependencyHonourInput(facts, hasPremiumLicence, PortfoliosSettingTheirDependenciesAside(features));
         }
 
         /// <summary>
