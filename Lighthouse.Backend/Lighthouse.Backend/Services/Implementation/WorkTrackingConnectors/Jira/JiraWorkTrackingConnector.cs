@@ -1964,6 +1964,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         private static readonly DeliverySourceDescriptor[] JiraSources =
             [new DeliverySourceDescriptor("jira-release", "Jira Release")];
 
+        private const int ProjectPageSize = 100;
+
+        // One call per project, so an instance with hundreds of them must not fire hundreds of requests at
+        // once - and must not walk them one at a time either, which is what made the first measurement of
+        // this seven times slower than it needed to be.
+        private const int MaxParallelProjectReads = 8;
+
+        private static readonly TimeSpan DeliverySourceOptionsLifetime = TimeSpan.FromMinutes(5);
+
+        private readonly Backend.Cache.Cache<string, IReadOnlyList<DeliverySourceOption>> deliverySourceOptionsCache = new();
+
         /// <summary>
         /// Every Jira connection offers the same single source today. It is still answered per connection
         /// rather than by a property on the connector, so that a connection which one day cannot offer its
@@ -1975,25 +1986,85 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// Every Release on this connection, gathered from every project the credential can see. Jira has
+        /// no way to ask for versions across projects in one call - the expanded project search does not
+        /// carry them - so it is one call to list the projects and then one per project, run a few at a
+        /// time rather than one after another, and remembered for a few minutes so that a picker being
+        /// typed into does not re-ask Jira on every keystroke.
+        ///
         /// The source key is checked against what this connection actually offers before anything is
         /// fetched, so a hand-written request cannot make Lighthouse call Jira for a source that does not
         /// exist and then report the resulting HTTP failure as if Jira were unwell.
         /// </summary>
-        public async Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey, string projectReference)
+        public async Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey)
         {
-            if (!Array.Exists(JiraSources, source => source.Key == sourceKey))
+            RejectSourceTheConnectionDoesNotOffer(sourceKey);
+
+            var cacheKey = $"{connection.Id}|{sourceKey}";
+            var remembered = deliverySourceOptionsCache.Get(cacheKey);
+            if (remembered is not null)
             {
-                throw new ArgumentException(
-                    $"This Jira connection does not offer a delivery source called '{sourceKey}'.", nameof(sourceKey));
+                return remembered;
             }
 
-            logger.LogDebug("Getting Releases of Jira project {ProjectReference}", projectReference);
-
             var client = await GetJiraRestClientAsync(connection);
-            var response = await client.GetAsync($"rest/api/3/project/{Uri.EscapeDataString(projectReference)}/versions");
-            response.EnsureSuccessStatusCode();
+            var projects = await ReadVisibleProjects(client);
 
-            return JiraReleaseVersionReader.ReadOptions(await response.Content.ReadAsStringAsync());
+            logger.LogDebug("Getting Releases of {ProjectCount} Jira projects", projects.Count);
+
+            var releasesByProject = new IReadOnlyList<DeliverySourceOption>[projects.Count];
+
+            await Parallel.ForAsync(
+                0,
+                projects.Count,
+                new ParallelOptions { MaxDegreeOfParallelism = MaxParallelProjectReads },
+                async (index, _) => releasesByProject[index] = await ReadReleasesOf(client, projects[index]));
+
+            IReadOnlyList<DeliverySourceOption> options = [.. releasesByProject.SelectMany(releases => releases)];
+            deliverySourceOptionsCache.Store(cacheKey, options, DeliverySourceOptionsLifetime);
+
+            return options;
+        }
+
+        private static async Task<IReadOnlyList<DeliverySourceProject>> ReadVisibleProjects(HttpClient client)
+        {
+            var projects = new List<DeliverySourceProject>();
+
+            while (true)
+            {
+                var response = await client.GetAsync(
+                    $"rest/api/3/project/search?startAt={projects.Count}&maxResults={ProjectPageSize}");
+                response.EnsureSuccessStatusCode();
+
+                var (page, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(await response.Content.ReadAsStringAsync());
+                projects.AddRange(page);
+
+                if (isLastPage || page.Count == 0)
+                {
+                    return projects;
+                }
+            }
+        }
+
+        /// <summary>
+        /// A project the credential can list but whose versions it may not read contributes nothing rather
+        /// than failing the whole list. On a large instance a single such project would otherwise take the
+        /// entire picker away from a reader who has perfectly good projects to choose from.
+        /// </summary>
+        private async Task<IReadOnlyList<DeliverySourceOption>> ReadReleasesOf(HttpClient client, DeliverySourceProject project)
+        {
+            var response = await client.GetAsync($"rest/api/3/project/{Uri.EscapeDataString(project.Key)}/versions");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogInformation(
+                    "Jira did not let us read the Releases of project {ProjectKey} ({StatusCode}) - offering the other projects without it",
+                    project.Key, response.StatusCode);
+
+                return [];
+            }
+
+            return JiraReleaseVersionReader.ReadOptions(await response.Content.ReadAsStringAsync(), project);
         }
 
         /// <summary>
@@ -2093,7 +2164,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// binding a Delivery and something else on every refresh afterwards.
         /// </summary>
         private static DeliverySourceOption ReadOneRelease(string versionPayload)
-            => JiraReleaseVersionReader.ReadOptions($"[{versionPayload}]").Single();
+            => JiraReleaseVersionReader.ReadOptions($"[{versionPayload}]", NoProjectWasAskedFor).Single();
+
+        // A refresh reads one already-bound Release by its id and wants only its name and date back, so
+        // which project it lives in is never asked for. Left blank rather than guessed at.
+        private static readonly DeliverySourceProject NoProjectWasAskedFor = new(string.Empty, string.Empty);
 
         /// <summary>
         /// The answer when Jira could not be asked at all. Deliberately not the same answer as a Release Jira

@@ -11,7 +11,13 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
     {
         IReadOnlyList<DeliverySourceDescriptor> AvailableSources(WorkTrackingSystemConnection connection);
 
-        Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey, string projectReference);
+        /// <summary>
+        /// Everything on this connection a Delivery could bind to, across every project the credential can
+        /// see. Deliberately not narrowed to one project: a customer may coordinate its releases in a
+        /// project of its own while the work itself lives in per-team projects, so the object carrying the
+        /// date is routinely somewhere none of the Portfolio's own data points at.
+        /// </summary>
+        Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey);
 
         /// <summary>
         /// Resolves many bound references in one pass. Batched deliberately: the cost of a refresh must

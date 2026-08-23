@@ -11,14 +11,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     /// </summary>
     public static class JiraReleaseVersionReader
     {
-        public static IReadOnlyList<DeliverySourceOption> ReadOptions(string versionsPayload)
+        public static IReadOnlyList<DeliverySourceOption> ReadOptions(string versionsPayload, DeliverySourceProject project)
         {
             using var payload = JsonDocument.Parse(versionsPayload);
 
-            return [.. payload.RootElement.EnumerateArray().Select(ToOption)];
+            return [.. payload.RootElement.EnumerateArray().Select(version => ToOption(version, project))];
         }
 
-        private static DeliverySourceOption ToOption(JsonElement version)
+        /// <summary>
+        /// The projects the credential can see, as key and name. Jira answers this one page at a time and
+        /// says on every page whether it was the last, so the caller is handed the whole set rather than a
+        /// first page that quietly looks complete.
+        /// </summary>
+        public static (IReadOnlyList<DeliverySourceProject> Projects, bool IsLastPage) ReadProjectPage(string projectPagePayload)
+        {
+            using var payload = JsonDocument.Parse(projectPagePayload);
+            var root = payload.RootElement;
+
+            var isLastPage = !root.TryGetProperty("isLast", out var isLast) || isLast.ValueKind != JsonValueKind.False;
+
+            if (!root.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Array)
+            {
+                return ([], true);
+            }
+
+            IReadOnlyList<DeliverySourceProject> projects =
+                [.. values.EnumerateArray().Select(project => new DeliverySourceProject(ReadText(project, "key"), ReadText(project, "name")))];
+
+            return (projects, isLastPage);
+        }
+
+        private static DeliverySourceOption ToOption(JsonElement version, DeliverySourceProject project)
         {
             var date = ReadReleaseDate(version);
             var isRetiredAtSource = ReadFlag(version, "archived");
@@ -27,9 +50,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ReadText(version, "id"),
                 ReadText(version, "name"),
                 date,
+                project,
                 isRetiredAtSource,
                 ReadFlag(version, "released"),
-                DeliverySourceBindability.IsSelectable(date.HasValue, isRetiredAtSource),
                 DeliverySourceBindability.For(date.HasValue, isRetiredAtSource));
         }
 

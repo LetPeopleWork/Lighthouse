@@ -47,8 +47,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheUndatedReleaseName = "Release 2.0";
         private const string TheDeletedRelease = "10006";
 
+        private static readonly DeliverySourceProject TheDemoProject = new("LGH", "Lighthouse Demo");
+
         private static readonly string[] TheDatedReleaseOnItsOwn = [TheDatedRelease];
         private static readonly string[] ThreeDatedReleases = [TheDatedRelease, "10007", "10008"];
+        private static readonly string[] TwoProjectsThatBothNameARelease44 = ["PROJ", "REL"];
         private static readonly string[] TheWorkOnTheDatedRelease = ["LGH-1", "LGH-2"];
 
         /// <summary>
@@ -119,7 +122,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_with_no_release_date_is_offered_but_cannot_be_selected()
         {
-            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload);
+            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload, TheDemoProject);
 
             var undated = options.Single(option => option.Id == "10005");
 
@@ -138,7 +141,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_that_was_archived_in_Jira_cannot_be_selected()
         {
-            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload);
+            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload, TheDemoProject);
 
             var archived = options.Single(option => option.Id == "10006");
 
@@ -154,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_that_already_shipped_stays_selectable()
         {
-            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload);
+            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload, TheDemoProject);
 
             var shipped = options.Single(option => option.Id == "10004");
 
@@ -176,8 +179,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             Assert.ThrowsAsync<ArgumentException>(
-                async () => await subject.GetOptions(UnreachableJiraConnection(), "jira-sprint", "LGH"),
+                async () => await subject.GetOptions(UnreachableJiraConnection(), "jira-sprint"),
                 "the connection has no url and no credentials, so anything that reached the network would fail differently.");
+        }
+
+        [Test]
+        public async Task Releases_are_gathered_from_every_project_the_credential_can_see()
+        {
+            var jira = AJira()
+                .WithProject("PROJ", "The work")
+                .WithProject("REL", "Release coordination")
+                .WithReleaseIn("REL", TheDatedRelease, TheDatedReleaseName, "2026-08-22");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
+                    "a customer may coordinate its releases in a project holding no work at all, so a Release is never looked for only where the Features are.");
+                Assert.That(jira.VersionListRequests, Has.Count.EqualTo(2),
+                    "every visible project is asked, because nothing in the Portfolio says which one carries the Releases.");
+            }
+        }
+
+        [Test]
+        public async Task Two_Releases_that_share_a_name_in_different_projects_stay_told_apart()
+        {
+            var jira = AJira()
+                .WithProject("PROJ", "The work")
+                .WithProject("REL", "Release coordination")
+                .WithReleaseIn("PROJ", "10101", "Release 44", "2026-09-01")
+                .WithReleaseIn("REL", "10202", "Release 44", "2026-09-01");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Project.Key), Is.EquivalentTo(TwoProjectsThatBothNameARelease44),
+                "the two rows read identically otherwise, so without the project the reader picks one of them at random.");
+        }
+
+        [Test]
+        public async Task A_project_whose_Releases_cannot_be_read_costs_the_reader_only_that_project()
+        {
+            var jira = AJira()
+                .WithProject("PROJ", "The work")
+                .WithProject("LOCKED", "Someone else's project")
+                .WithReleaseIn("PROJ", TheDatedRelease, TheDatedReleaseName, "2026-08-22")
+                .WithUnreadableVersionsIn("LOCKED");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
+                "one project the credential may list but not read must not take the whole picker away from a reader with perfectly good projects to choose from.");
+        }
+
+        [Test]
+        public async Task Asking_twice_in_quick_succession_asks_Jira_once()
+        {
+            var jira = AJira()
+                .WithProject("PROJ", "The work")
+                .WithReleaseIn("PROJ", TheDatedRelease, TheDatedReleaseName, "2026-08-22");
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var connection = AJiraCloudConnection();
+
+            await subject.GetOptions(connection, JiraReleaseSourceKey);
+            await subject.GetOptions(connection, JiraReleaseSourceKey);
+
+            Assert.That(jira.VersionListRequests, Has.Count.EqualTo(1),
+                "the picker is typed into, and a request per keystroke would cost one call per project every time.");
         }
 
         [Test]
@@ -311,6 +383,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static JiraStub AJira() => new();
 
+        private static WorkTrackingSystemConnection AJiraCloudConnection()
+            => JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+
         private static string QueryValue(Uri uri, string name)
         {
             var pairs = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
@@ -329,6 +404,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             private readonly Dictionary<string, string> releasesById = new(StringComparer.Ordinal);
             private readonly Dictionary<string, HttpStatusCode> refusalsById = new(StringComparer.Ordinal);
             private readonly Dictionary<string, List<string>> releaseIdsByIssueKey = new(StringComparer.Ordinal);
+            private readonly List<DeliverySourceProject> projects = [];
+            private readonly Dictionary<string, List<string>> versionsByProjectKey = new(StringComparer.Ordinal);
+            private readonly HashSet<string> projectsRefusingTheirVersions = new(StringComparer.Ordinal);
 
             public JiraStub()
             {
@@ -350,7 +428,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             public bool RefusesTheSearch { get; set; }
 
             public IReadOnlyList<Uri> SearchRequests =>
-                [.. Requests.Where(uri => uri.AbsolutePath.Contains("search", StringComparison.Ordinal))];
+                [.. Requests.Where(uri => uri.AbsolutePath.Contains("/search", StringComparison.Ordinal)
+                    && !uri.AbsolutePath.EndsWith("/project/search", StringComparison.Ordinal))];
+
+            public IReadOnlyList<Uri> VersionListRequests =>
+                [.. Requests.Where(uri => uri.AbsolutePath.EndsWith("/versions", StringComparison.Ordinal))];
+
+            public JiraStub WithProject(string key, string name)
+            {
+                projects.Add(new DeliverySourceProject(key, name));
+
+                return this;
+            }
+
+            public JiraStub WithReleaseIn(string projectKey, string id, string name, string? releaseDate)
+            {
+                var date = releaseDate is null ? string.Empty : $",\"releaseDate\":\"{releaseDate}\"";
+
+                if (!versionsByProjectKey.TryGetValue(projectKey, out var versions))
+                {
+                    versions = [];
+                    versionsByProjectKey[projectKey] = versions;
+                }
+
+                versions.Add($"{{\"id\":\"{id}\",\"name\":\"{name}\",\"archived\":false,\"released\":false{date}}}");
+
+                return this;
+            }
+
+            public JiraStub WithUnreadableVersionsIn(string projectKey)
+            {
+                projectsRefusingTheirVersions.Add(projectKey);
+
+                return this;
+            }
 
             public JiraStub WithRelease(string id, string name, string? releaseDate)
             {
@@ -399,6 +510,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Ok("{\"deploymentType\":\"Cloud\"}");
                 }
 
+                if (path.EndsWith("/project/search", StringComparison.Ordinal))
+                {
+                    return Ok($"{{\"isLast\":true,\"values\":[{string.Join(",", projects.Select(ProjectJson))}]}}");
+                }
+
+                if (path.EndsWith("/versions", StringComparison.Ordinal))
+                {
+                    return RespondWithVersionsOf(path.Split('/')[^2]);
+                }
+
                 if (path.Contains("/version/", StringComparison.Ordinal))
                 {
                     return RespondAboutRelease(path[(path.LastIndexOf('/') + 1)..]);
@@ -410,6 +531,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 }
 
                 return Ok("{}");
+            }
+
+            private static string ProjectJson(DeliverySourceProject project)
+                => $"{{\"key\":\"{project.Key}\",\"name\":\"{project.Name}\"}}";
+
+            private HttpResponseMessage RespondWithVersionsOf(string projectKey)
+            {
+                if (projectsRefusingTheirVersions.Contains(projectKey))
+                {
+                    return Refuse(HttpStatusCode.Forbidden);
+                }
+
+                var versions = versionsByProjectKey.TryGetValue(projectKey, out var known) ? known : [];
+
+                return Ok($"[{string.Join(",", versions)}]");
             }
 
             private HttpResponseMessage RespondAboutRelease(string id)
