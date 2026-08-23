@@ -67,18 +67,13 @@ namespace Lighthouse.Backend.API
                 return NotFound(PortfolioNotFound(portfolioId));
             }
 
-            var connection = portfolio.WorkTrackingSystemConnection;
-            var provider = DeliverySourceProviderFor(portfolio);
-
-            // Checked against what this connection actually offers before the remote is called, so a
-            // hand-written request cannot make Lighthouse go and ask for something that does not exist
-            // and then report the resulting failure as if the remote were unwell.
-            if (provider == null || !provider.AvailableSources(connection).Any(source => source.Key == sourceKey))
+            var provider = ProviderOffering(portfolio, sourceKey);
+            if (provider == null)
             {
                 return NotFound(SourceNotOffered(portfolioId, sourceKey));
             }
 
-            var options = await provider.GetOptions(connection, sourceKey);
+            var options = await provider.GetOptions(portfolio.WorkTrackingSystemConnection, sourceKey);
 
             return Ok(options
                 .Select(option => new DeliverySourceOptionDto(
@@ -103,8 +98,7 @@ namespace Lighthouse.Backend.API
                 return NotFound(PortfolioNotFound(portfolioId));
             }
 
-            var provider = DeliverySourceProviderFor(portfolio);
-            if (provider == null || !provider.AvailableSources(portfolio.WorkTrackingSystemConnection).Any(source => source.Key == sourceKey))
+            if (ProviderOffering(portfolio, sourceKey) == null)
             {
                 return NotFound(SourceNotOffered(portfolioId, sourceKey));
             }
@@ -177,6 +171,21 @@ namespace Lighthouse.Backend.API
                 portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             return connector as IDeliverySourceProvider;
+        }
+
+        /// <summary>
+        /// The connector behind this Portfolio, but only if it says it offers the source that was asked
+        /// for. Checked before the remote is called, so a hand-written request cannot make Lighthouse go
+        /// and ask for something that does not exist and then report the resulting failure as if the
+        /// remote were unwell.
+        /// </summary>
+        private IDeliverySourceProvider? ProviderOffering(Portfolio portfolio, string sourceKey)
+        {
+            var provider = DeliverySourceProviderFor(portfolio);
+            var offersIt = provider?.AvailableSources(portfolio.WorkTrackingSystemConnection)
+                .Any(source => source.Key == sourceKey) == true;
+
+            return offersIt ? provider : null;
         }
     }
 }

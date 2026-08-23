@@ -4,21 +4,6 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
-namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
-{
-    /// <summary>
-    /// What a bound source currently is, seen from one Portfolio: the remote verdict, plus the Features
-    /// this Portfolio tracks among the work tagged against the source. The tagged count is kept
-    /// alongside because it is the only thing that tells a source nobody tagged any work against apart
-    /// from one whose work this Portfolio simply does not cover - two situations that are put right in
-    /// two different places.
-    /// </summary>
-    public sealed record PortfolioSourcePreview(
-        Models.DeliverySources.DeliverySourceResolution Resolution,
-        IReadOnlyList<Models.Feature> TrackedFeatures,
-        int TaggedItemCount);
-}
-
 namespace Lighthouse.Backend.Services.Implementation.DeliverySources
 {
     public class DeliverySourceResolver(IWorkTrackingConnectorFactory workTrackingConnectorFactory) : IDeliverySourceResolver

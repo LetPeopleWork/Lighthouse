@@ -424,7 +424,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			.catch(() => setSources([]));
 	}, [open, deliveryService, portfolio.id]);
 
-	// Load rule schema when switching to rule-based mode (only for premium users)
 	useEffect(() => {
 		if (
 			open &&

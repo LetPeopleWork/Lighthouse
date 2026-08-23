@@ -1,7 +1,20 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliverySources;
 
 namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
 {
+    /// <summary>
+    /// What a bound source currently is, seen from one Portfolio: the remote verdict, plus the Features
+    /// this Portfolio tracks among the work tagged against the source. The tagged count is kept
+    /// alongside because it is the only thing that tells a source nobody tagged any work against apart
+    /// from one whose work this Portfolio simply does not cover - two situations that are put right in
+    /// two different places.
+    /// </summary>
+    public sealed record PortfolioSourcePreview(
+        DeliverySourceResolution Resolution,
+        IReadOnlyList<Feature> TrackedFeatures,
+        int TaggedItemCount);
+
     /// <summary>
     /// Turns a set of bound source references into verdicts, and intersects the remote membership with
     /// the Features the Portfolio actually tracks.
