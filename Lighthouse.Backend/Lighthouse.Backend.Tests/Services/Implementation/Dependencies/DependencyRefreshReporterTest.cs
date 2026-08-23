@@ -41,6 +41,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
                 "Knowing that some dates are wrong is not the same as knowing whose.");
         }
 
+        /// <summary>
+        /// A count dropped straight into a plural noun reads "1 Features". These lines get read out loud in
+        /// support conversations, which is exactly how somebody notices.
+        /// </summary>
+        [Test]
+        public void TheLineAboutOneFeature_SaysFeatureRatherThanFeatures()
+        {
+            var logger = new Mock<ILogger<DependencyRefreshReporter>>();
+
+            ReportOn(APortfolioWhereOneFeatureWaitsOnAnother(), hasPremiumLicence: false, logger);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TheWarnings(logger).Single(), Does.Contain("1 Feature"));
+                Assert.That(TheWarnings(logger).Single(), Does.Not.Contain("1 Features"));
+            }
+        }
+
         [Test]
         public void ALicensedInstance_IsToldNothing()
         {

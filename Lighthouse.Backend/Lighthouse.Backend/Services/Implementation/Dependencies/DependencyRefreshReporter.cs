@@ -52,9 +52,10 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
                 .ToList();
 
             logger.LogWarning(
-                "Dates in Portfolio {PortfolioName} read as though nothing were waiting on anything: this instance is not licensed to account for what {Count} Features are waiting on. Teams affected: {Teams}",
+                "Dates in Portfolio {PortfolioName} read as though nothing were waiting on anything: this instance is not licensed to account for the waits recorded on {Count} {Features}. Teams affected: {Teams}",
                 portfolio.Name,
                 featuresHeldBack.Count,
+                FeatureOrFeatures(featuresHeldBack.Count),
                 string.Join(", ", teamsReadingWrong));
         }
 
@@ -97,10 +98,17 @@ namespace Lighthouse.Backend.Services.Implementation.Dependencies
             }
 
             logger.LogInformation(
-                "Portfolio {PortfolioName} depends on {Count} Features that cannot be forecast, so those dependencies are left out",
+                "Portfolio {PortfolioName} depends on {Count} {Features} that cannot be forecast, so those dependencies are left out",
                 portfolio.Name,
-                withoutADate.Count);
+                withoutADate.Count,
+                FeatureOrFeatures(withoutADate.Count));
         }
+
+        /// <summary>
+        /// A count interpolated straight into a plural noun reads "1 Features", and these lines get read out
+        /// loud. The number stays a value of its own so a log search can still filter on it.
+        /// </summary>
+        private static string FeatureOrFeatures(int howMany) => howMany == 1 ? "Feature" : "Features";
 
         /// <summary>
         /// Both ends of every link the reason was given for. A circle is something a set of Features are in
