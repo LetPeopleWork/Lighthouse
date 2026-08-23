@@ -132,3 +132,20 @@ the loop every date in the product comes from and is, by design, invisible in th
 ## Learning hypothesis verdict
 
 _Not yet run._
+
+## Loose ends to clean up in this slice
+
+Both found during slice 01's manual verification on the live instance, 2026-08-23. Neither is worth its
+own slice; both are the sort of thing that never gets fixed if it is not written down.
+
+- **`RepositoryBase.cs:68` logs every single removal at Information.** A refresh that prunes a few
+  hundred stale items writes a few hundred lines an operator has to scroll past, and Epic #5687's whole
+  point was that a completed update is one line worth reading. It is `Debug` material: the count already
+  reaches the update summary, and the individual ids matter only when somebody is debugging the pruning
+  itself. Note this sits on a shared base class, so it affects every repository, not only work items.
+
+- **The unlicensed warning says "1 Features".** `DependencyRefreshReporter` interpolates a count
+  straight into a plural noun, so a single Feature reads as *"…what 1 Features are waiting on"*. Added
+  in slice 01, mine. The line is otherwise right - one per Portfolio, names the Teams, silent when
+  licensed and silent for a Portfolio that has set its dependencies aside - and it was read out loud
+  during verification, which is exactly how a wording bug gets noticed.
