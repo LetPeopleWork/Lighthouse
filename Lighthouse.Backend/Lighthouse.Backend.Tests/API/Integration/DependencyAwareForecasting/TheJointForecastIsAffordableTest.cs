@@ -10,29 +10,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     /// This is not that measurement, and it deliberately does not pretend to be. A wall clock recorded on
     /// one machine means nothing on another, so a test comparing against a number checked in from somebody's
     /// laptop would go red in CI for a reason that is not a defect - and the first bound written here, five
-    /// times what the forecast costs on a developer machine, did exactly that. Every forecast in this
-    /// namespace runs ten to twenty times slower on a build agent than on the machine the bound was taken
-    /// on, including the ones that passed, so five times over was never going to be enough.
+    /// times what the forecast costs on a developer machine, did exactly that. A build agent takes ten to
+    /// twenty times longer than the machine such a number is taken on, so five times over was never going
+    /// to be enough.
     ///
-    /// What is left is a hang guard rather than a budget: a bound far above anything an agent has ever
-    /// taken, which a forecast reaches only by looping or by doing orders of magnitude more work than it
-    /// used to. The assertion that carries the weight is the one beside it, holding the dates to the
-    /// recorded baseline, because a forecast that got faster by doing less work is the failure actually
-    /// worth catching. Whether the joint clock made a forecast dearer is answered by the measurement, not
-    /// here.
+    /// What is left is a guard against a forecast that is stuck rather than a budget for one that got
+    /// dearer. The benchmark Portfolio forecasts in a fraction of a second, so the bound below sits orders
+    /// of magnitude above it and a run only reaches it by looping or by doing vastly more work than it used
+    /// to. The assertion that carries the weight is the one beside it, holding the dates to the recorded
+    /// baseline, because a forecast that got faster by doing less work is the failure actually worth
+    /// catching.
     /// </summary>
-    // Not run alongside anything else. Every forecast in this project now uses every core it can get, so
-    // a timing taken while two other fixtures are each running ten thousand simulated runs measures the
-    // contention, not the change - the same shape as the ReleaseServiceTest failures that look like
-    // regressions and are not.
     [TestFixture]
-    [NonParallelizable]
     [Category("acceptance")]
     [Category("epic-5792-dependency-aware-forecasting")]
     [Category("slice-02")]
     public class TheJointForecastIsAffordableTest
     {
-        private const int TheMostSecondsAForecastMayTakeBeforeItIsStuck = 180;
+        private const int TheMostSecondsAForecastMayTakeBeforeItIsStuck = 30;
 
         [Test]
         public async Task TheJointForecast_FinishesInTheTimeAForecastShouldTake_AndProducesTheRecordedDates()
@@ -47,9 +42,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             {
                 Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastMayTakeBeforeItIsStuck),
                     $"A forecast of {baseline.Features.Length} Features across a handful of Teams took " +
-                    $"{stopwatch.Elapsed.TotalSeconds:F1} seconds. That is minutes beyond what the slowest " +
-                    "build agent has ever taken, so the simulation is either looping or doing orders of " +
-                    "magnitude more work than it used to.");
+                    $"{stopwatch.Elapsed.TotalSeconds:F1} seconds, where the slowest build agent takes a " +
+                    "fraction of one, so the simulation is either looping or doing orders of magnitude more " +
+                    "work than it used to.");
 
                 Assert.That(dates, Is.EqualTo(baseline.Features),
                     "It finished in time but produced different dates, which is the cheaper kind of fast.");
@@ -74,8 +69,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             {
                 Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastMayTakeBeforeItIsStuck),
                     $"A forecast whose Features wait on one another took {stopwatch.Elapsed.TotalSeconds:F1} " +
-                    "seconds, which is minutes beyond what the slowest build agent has ever taken - the " +
-                    "readiness check on every simulated day is either looping or never settling.");
+                    "seconds, where the slowest build agent takes a fraction of one - the readiness check on " +
+                    "every simulated day is either looping or never settling.");
 
                 Assert.That(dates.Select(feature => feature.P85), Is.All.GreaterThan(0),
                     "It finished quickly because it produced no dates, which is not the same as being fast.");

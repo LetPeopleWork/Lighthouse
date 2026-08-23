@@ -12,6 +12,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     /// How long a forecast of the benchmark Portfolio takes on the machine it is run on. Run by hand,
     /// before and after the simulation is restructured, and the two numbers written into the slice brief.
     ///
+    /// It times the Portfolio at the number of simulated runs the product ships with, which is more than
+    /// the tests around it use. The question it answers is what the change costs a customer, so the numbers
+    /// it prints are not comparable with how long those tests take.
+    ///
     /// It is deliberately not an assertion. A wall clock recorded on one machine says nothing on another,
     /// and a test that compared against a number checked in from somebody's laptop would fail in CI for a
     /// reason that is not a defect - which is what happened the one time a bound was set from a number

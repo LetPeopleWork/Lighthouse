@@ -48,10 +48,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         /// <summary>
         /// What is allowed is the range the released product's own runs covered, widened by that range again
         /// on either side, and never by less than a day. Two runs of an unpinned forecast already differ, so
-        /// a bound tighter than its own wander would fail on the released product itself - and on a Portfolio
-        /// this size ten thousand runs settle so closely that its own range is often nothing at all, while a
-        /// date is still counted in whole days and two samples of one distribution can fall either side of a
-        /// day boundary. A distribution that has really moved shows up as many days, not one.
+        /// a bound tighter than its own wander would fail on the released product itself. Never less than a
+        /// day, because a Portfolio this size can settle so closely that its own range comes out as nothing
+        /// at all, while a date is still counted in whole days and two samples of one distribution can fall
+        /// either side of a day boundary. A distribution that has really moved shows up as many days, not one.
         /// </summary>
         private static IEnumerable<string> WhereItLandsOutside(
             SharedClockBaselineFixture.BaselinePercentiles[] fromTheNewSource,

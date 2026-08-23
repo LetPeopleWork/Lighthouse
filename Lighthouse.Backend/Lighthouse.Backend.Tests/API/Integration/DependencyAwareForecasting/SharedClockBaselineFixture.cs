@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Services.Implementation;
@@ -16,13 +15,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     /// The percentiles a forecast of the benchmark Portfolio produces from one pinned starting number, and
     /// the file they are written down in.
     ///
-    /// This is the baseline the rest of slice 02 is held to. It is recorded once, on the commit that
-    /// replaced where the forecast's numbers come from, and every commit after that has to reproduce it
-    /// exactly - putting every Team on one clock, and then running the simulated runs side by side, are both
-    /// meant to leave every date where it is. Re-recording it to make a failure go away throws away the only
-    /// thing standing under those two changes.
+    /// This is the baseline the rest of slice 02 is held to. Every commit has to reproduce it exactly -
+    /// putting every Team on one clock, and then running the simulated runs side by side, are both meant to
+    /// leave every date where it is, and re-recording the file to make a red test go away throws away the
+    /// only thing standing under either change.
     ///
-    /// Several Teams on purpose. A single-Team Portfolio cannot tell a shared clock from separate ones.
+    /// It has been re-recorded once since it was first written, and not for that reason. The benchmark
+    /// Portfolio was made smaller and given a lower trial count, because the slice was costing minutes of
+    /// CI for more precision than its assertions need. Changing how much work a simulation does moves every
+    /// date by construction, so no implementation, right or wrong, could have reproduced the old file.
+    /// That is the only kind of re-record there is an honest reason for: the workload changed and the
+    /// forecast did not.
     /// </summary>
     internal static class SharedClockBaselineFixture
     {
@@ -59,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 benchmark.FeatureRepository,
                 whatWaitsForWhat(benchmark.Features),
                 draws,
-                ForecastSimulationLimits.Default);
+                BenchmarkPortfolio.Limits);
 
             await forecastService.UpdateForecastsForPortfolio(benchmark.Portfolio);
 

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -7,20 +8,33 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 {
     /// <summary>
-    /// A Portfolio big enough for the time a forecast takes to be worth measuring, and small enough to run
-    /// inside a test. What decides how long a run takes is the number of Teams, how much work each of them
-    /// has left, and how fast they get through it, so those are what this varies.
+    /// The Portfolio every forecast in this slice's tests is run over. It is the smallest shape that still
+    /// has several Teams, delivery histories that differ between them, and one Feature two of them share.
+    /// Cut any of those and the tests stop being able to do their job: with one Team, or with Teams that
+    /// all deliver alike, a forecast that puts everyone on one clock produces exactly what one that gives
+    /// each Team its own clock produces, which is the difference these tests exist to see.
     ///
-    /// Every timing in this slice is taken over this same builder. A benchmark whose workload drifts
-    /// between runs measures the workload rather than the change.
+    /// It runs well under half the simulated runs the product does. What is checked here is that a forecast
+    /// reproduces itself exactly from the same starting number, and that it samples the same distribution;
+    /// neither needs the product's full count, and paying for it made the whole slice cost minutes of CI.
+    ///
+    /// It does not go lower than this. A date is counted in whole days, and below a few thousand runs the
+    /// percentiles wander by more than a day from one run to the next - which the comparison against the
+    /// released product's own spread reads, perhaps one run in ten, as the distribution having moved.
+    ///
+    /// A benchmark whose workload drifts between runs measures the workload rather than the change, so
+    /// everything in this slice is built from here.
     /// </summary>
     internal sealed class BenchmarkPortfolio
     {
+        internal static ForecastSimulationLimits Limits { get; } =
+            new(Trials: 4_000, ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover);
+
         private const int TeamCount = 6;
 
-        private const int FeaturesPerTeam = 4;
+        private const int FeaturesPerTeam = 2;
 
-        private const int RemainingItemsPerFeature = 40;
+        private const int RemainingItemsPerFeature = 12;
 
         private readonly Mock<IRepository<Feature>> featureRepository = new();
 
