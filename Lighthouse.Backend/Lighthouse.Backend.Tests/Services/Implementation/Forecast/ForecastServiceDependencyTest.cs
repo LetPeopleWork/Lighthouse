@@ -59,9 +59,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             var dates = await TheDatesWith(WaitingOn(Second, First));
 
-            Assert.That(
-                ThePercentilesLighthouseShows.All(percentile => dates[Second][percentile] >= dates[First][percentile]),
-                Is.True,
+            Assert.That(NeverFinishesBefore(dates, Second, First), Is.True,
                 $"F-2 waits on F-1 and finished earlier in some of the runs. Read: {Read(dates)}");
         }
 
@@ -157,6 +155,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        /// <summary>
+        /// A Feature can hold two rows for one Team - duplicate pairs are a state the store can be in, and
+        /// the Feature model guards against them elsewhere for the same reason. Both ends have to survive
+        /// it: every row of the Feature waited on has to reach zero before the wait clears, and every row of
+        /// the Feature waiting has to be held while it has not. Taking one row per Feature on either side
+        /// lets work happen while what it waits on is unfinished, and the date that comes out of that looks
+        /// exactly like any other date.
+        /// </summary>
+        [Test]
+        public async Task AFeatureHoldingTwoRowsForOneTeam_IsWaitedOnUntilBothOfThemAreDone()
+        {
+            var dates = await TheDatesWith(WaitingOn(Second, First), TheFirstIsCountedTwice);
+
+            Assert.That(NeverFinishesBefore(dates, Second, First), Is.True,
+                "F-2 finished before F-1 was done, so only one of F-1's two rows is being waited on. " +
+                $"Read: {Read(dates)}");
+        }
+
+        /// <summary>
+        /// Dominance at every percentile. A Feature that can only finish after another one finished no
+        /// earlier than it in any run, so its whole completion distribution is nowhere to the left of the
+        /// other's - which is a claim about the wait rather than about how much work is in the run, and
+        /// therefore not satisfied by a fixture merely having more to get through.
+        /// </summary>
+        private static bool NeverFinishesBefore(
+            Dictionary<string, Dictionary<int, int>> dates, string waiting, string waitedOn)
+            => ThePercentilesLighthouseShows.All(percentile => dates[waiting][percentile] >= dates[waitedOn][percentile]);
+
         private static List<object[]> TheErrorsLogged(Mock<ILogger<ForecastService>> logger)
             => logger.Invocations
                 .Where(invocation => invocation.Arguments.Contains(LogLevel.Error))
@@ -205,6 +231,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private static List<Feature> TheThreeFeatures(Team team) => TheFeatures(team, [7, 5, 9]);
 
         private static List<Feature> TheFirstIsFinished(Team team) => TheFeatures(team, [0, 5, 9]);
+
+        /// <summary>
+        /// F-1 holds nearly all of its work on a second row for the same Team. The first row is one item, so
+        /// a run that waits on only one of them releases F-2 almost immediately - which is what makes this
+        /// fixture able to tell the two apart at all. A fixture whose first row carried most of the work
+        /// would land F-2 late either way and prove nothing.
+        ///
+        /// The row is added the way the store holds one rather than through AddOrUpdateWorkForTeam, which
+        /// exists to heal exactly this and would undo the fixture.
+        /// </summary>
+        private static List<Feature> TheFirstIsCountedTwice(Team team)
+        {
+            var features = TheFeatures(team, [1, 3, 9]);
+            var first = features.Single(candidate => candidate.ReferenceId == First);
+
+            first.FeatureWork.Add(new FeatureWork(team, 15, 15, first));
+
+            return features;
+        }
 
         private static List<Feature> TheFeatures(Team team, int[] remainingWorkPerFeature)
             => remainingWorkPerFeature

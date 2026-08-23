@@ -121,40 +121,54 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             var teamsThatCouldNotFinish = new ConcurrentDictionary<string, int>();
 
-            var tasks = groupedSimulationResults.Select(simulationResultsByTeam => Task.Run(() =>
-            {
-                var whatIsWaitingForWhat = new WhatEachFeatureIsWaitingFor(simulationResultsByTeam, waits);
-                var trialsAbandoned = 0;
-
-                RunSimulations(() =>
+            var tasks = groupedSimulationResults
+                .Select(simulationResultsByTeam => Task.Run(() =>
                 {
-                    simulationResultsByTeam.ResetRemainingItems();
+                    var trialsAbandoned = SimulateEveryTrialFor(simulationResultsByTeam, throughputByTeam[simulationResultsByTeam.Key.Id], waits);
 
-                    var simulatedDays = 1;
-
-                    while (simulationResultsByTeam.GetRemainingItems() > 0)
+                    if (trialsAbandoned > 0)
                     {
-                        var anythingCouldBeStarted = SimulateIndividualDayForFeatureForecast(simulationResultsByTeam.Key, throughputByTeam[simulationResultsByTeam.Key.Id], simulationResultsByTeam.Select(x => x), simulatedDays, whatIsWaitingForWhat);
-
-                        if (!anythingCouldBeStarted)
-                        {
-                            trialsAbandoned++;
-                            break;
-                        }
-
-                        simulatedDays++;
+                        teamsThatCouldNotFinish[simulationResultsByTeam.Key.Name] = trialsAbandoned;
                     }
-                });
-
-                if (trialsAbandoned > 0)
-                {
-                    teamsThatCouldNotFinish[simulationResultsByTeam.Key.Name] = trialsAbandoned;
-                }
-            })).ToList();
+                }))
+                .ToList();
 
             await Task.WhenAll(tasks);
 
             ReportTheRunsThatCouldNotFinish(teamsThatCouldNotFinish);
+        }
+
+        /// <returns>How many trials ended with work left that nothing could be started on.</returns>
+        private int SimulateEveryTrialFor(
+            IGrouping<Team, SimulationResult> simulationResultsByTeam, RunChartData throughput, ForecastWaits waits)
+        {
+            var team = simulationResultsByTeam.Key;
+            var rows = simulationResultsByTeam.ToList();
+            var whatIsWaitingForWhat = new WhatEachFeatureIsWaitingFor(rows, waits);
+            var trialsAbandoned = 0;
+
+            RunSimulations(() =>
+            {
+                rows.ResetRemainingItems();
+
+                var simulatedDays = 1;
+
+                while (rows.GetRemainingItems() > 0)
+                {
+                    var anythingCouldBeStarted = SimulateIndividualDayForFeatureForecast(
+                        team, throughput, rows, simulatedDays, whatIsWaitingForWhat);
+
+                    if (!anythingCouldBeStarted)
+                    {
+                        trialsAbandoned++;
+                        break;
+                    }
+
+                    simulatedDays++;
+                }
+            });
+
+            return trialsAbandoned;
         }
 
         /// <summary>
@@ -191,6 +205,13 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             private readonly Dictionary<SimulationResult, SimulationResult[]> mustFinishFirst;
 
+            /// <remarks>
+            /// One Feature can hold more than one row for the same Team - duplicate pairs are a state the
+            /// store can be in, which is why <see cref="Feature.TeamsWithoutForecast"/> guards against them
+            /// too. Every row of a Feature waited on has to reach zero, and every row of a Feature waiting
+            /// has to be held: taking one row per Feature on either side lets work happen while what it is
+            /// waiting on is unfinished, and the date that comes out looks perfectly ordinary.
+            /// </remarks>
             public WhatEachFeatureIsWaitingFor(IEnumerable<SimulationResult> rowsInThisRun, ForecastWaits waits)
             {
                 if (waits.NobodyWaitsForAnything)
@@ -199,13 +220,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                     return;
                 }
 
-                var rowByFeature = rowsInThisRun
-                    .Where(row => row.Feature is not null)
-                    .GroupBy(row => row.Feature.ReferenceId, StringComparer.Ordinal)
-                    .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.First(), StringComparer.Ordinal);
+                var rows = rowsInThisRun.Where(row => row.Feature is not null).ToList();
 
-                mustFinishFirst = rowByFeature.Values
-                    .Select(row => (row, blockers: RowsFor(waits.Of(row.Feature.ReferenceId), rowByFeature)))
+                var rowsByFeature = rows
+                    .GroupBy(row => row.Feature.ReferenceId, StringComparer.Ordinal)
+                    .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.ToArray(), StringComparer.Ordinal);
+
+                mustFinishFirst = rows
+                    .Select(row => (row, blockers: RowsFor(waits.Of(row.Feature.ReferenceId), rowsByFeature)))
                     .Where(pair => pair.blockers.Length > 0)
                     .ToDictionary(pair => pair.row, pair => pair.blockers);
             }
@@ -229,12 +251,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
 
             private static SimulationResult[] RowsFor(
-                IReadOnlyList<string> blockerReferenceIds, Dictionary<string, SimulationResult> rowByFeature)
+                IReadOnlyList<string> blockerReferenceIds, Dictionary<string, SimulationResult[]> rowsByFeature)
             {
                 return blockerReferenceIds
-                    .Select(referenceId => rowByFeature.GetValueOrDefault(referenceId))
-                    .Where(row => row is not null)
-                    .Select(row => row!)
+                    .SelectMany(referenceId => rowsByFeature.GetValueOrDefault(referenceId, NothingToWaitFor))
                     .ToArray();
             }
         }
