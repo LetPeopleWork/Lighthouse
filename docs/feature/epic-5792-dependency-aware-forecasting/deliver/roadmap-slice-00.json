@@ -1,0 +1,650 @@
+{
+  "roadmap": {
+    "project_id": "epic-5792-dependency-aware-forecasting",
+    "created_at": "2026-08-21",
+    "total_steps": 20,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "00",
+    "ado": {
+      "epic": 5792,
+      "story": 5826
+    },
+    "goal": "One forecast per Portfolio per refresh batch: the Portfolio path stages its forecast on the shared key, and a trigger waits for its sibling Teams."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_at": "2026-08-21",
+    "first_pass": "rejected",
+    "findings": "2 HIGH, 3 MEDIUM, 2 LOW",
+    "high_findings": [
+      "Gold percentiles were captured in the last step, after every production commit, making the epic-boundary scenario assert that the build equals itself. Fixed by phase 00.",
+      "IPortfolioRepository did not exist; PortfolioRepository is registered only as IRepository<Portfolio> at Program.cs:1171, hiding a new port and a DI change. Fixed by re-scoping 02-01."
+    ],
+    "resolution": "All seven findings applied and verified against the file: phase ordering, deps chain, scenario_name titles matched byte-for-byte against the feature files, files_to_modify contents, and the two new criteria.",
+    "spec_changes": "Scenarios #55 and #56 added to milestone-0 during this review; feature-delta scenario count 54 -> 56.",
+    "gates": {
+      "roadmap_integrity": "pass",
+      "quality_gate": "pass",
+      "decomposition_ratio": 0.71
+    }
+  },
+  "phases": [
+    {
+      "id": "00",
+      "name": "Capture the gold forecast from the released build",
+      "depends_on": [],
+      "steps": [
+        {
+          "id": "00-01",
+          "name": "Capture gold percentiles from the released build",
+          "agent": "nw-software-crafter",
+          "deps": [],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/GoldForecastCapture.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/GoldForecastCapture.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/gold/slice-00-baseline-percentiles.json"
+          ],
+          "criteria": [
+            "Gold percentiles are captured from the currently checked-out released build at commit 4c0dea826, before any slice 00 change lands.",
+            "The forecast is driven through the existing test double NotSoRandomNumberService so captured numbers are deterministic.",
+            "Captured artifacts are committed as their own change, separate from every later phase.",
+            "No production file is touched by this step."
+          ],
+          "implementation_notes": "The feature file's own preamble is the authority: a baseline computed from the build under test asserts only that the build equals itself, which is a tautology. Capture must therefore happen FIRST, against the released build still in the working tree at commit 4c0dea826, and the artifacts must be committed before phase 01 begins. The test double lives at Lighthouse.Backend.Tests/TestDoubles/NotSoRandomNumberService.cs. Step 07-03 only asserts against these artifacts and never recaptures them."
+        }
+      ]
+    },
+    {
+      "id": "01",
+      "name": "Restore the forecast timing signal",
+      "depends_on": [
+        "00"
+      ],
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add Forecast refresh type and skipped timing tests",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "00-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshLog.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "criteria": [
+            "RefreshType gains a Forecast member appended after the existing Team and Portfolio members.",
+            "ForecastUpdaterTest gains Ignore-marked tests asserting a RefreshLog row is written for a Portfolio forecast.",
+            "Settings Logs surface shows Forecast rows if it filters on RefreshType.",
+            "Solution builds with zero warnings and the whole suite stays green on main."
+          ],
+          "implementation_notes": "RefreshType at Models/RefreshLog.cs:5-9 has exactly two members today, Team then Portfolio. Forecast must be APPENDED after Portfolio: inserting it anywhere else renumbers the persisted Type values and mislabels every existing RefreshLog row. RED here is RED-by-skip, because a C# test naming a missing type fails to compile and classifies BROKEN not RED: author [Ignore(\"pending - DELIVER (epic-5792)\")] tests alongside minimal skeletons so main always compiles and stays green. Confirm whether the Settings Logs surface filters on RefreshType. No EF migration is expected for an appended enum member; if the storage shape turns out to need one, say so rather than inventing one."
+        },
+        {
+          "id": "01-02",
+          "name": "Time ForecastUpdater.Update and log its summary",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshLogService.cs"
+          ],
+          "criteria": [
+            "A Stopwatch wraps the Update body in a try/finally mirroring TeamUpdater.Update's shape.",
+            "A RefreshLog row of type Forecast is written on success and on failure, and LogUpdateSummary is called with the measured elapsed time.",
+            "Ignore attributes from the previous step are removed and those tests pass.",
+            "The frontend RefreshLog model is widened so a Forecast row is not an unhandled value.",
+            "RemoveOrphanedRefreshLogs reclaims Forecast rows when a Portfolio is deleted."
+          ],
+          "implementation_notes": "Must land first. Once the forecast moves out of PortfolioUpdater's measured span in phase 05, a slow or hung forecast has no symptom anywhere in the product, and the wall-clock baseline the later slices read is unreadable without this. Two follow-ups found while doing 01-01, both required here. Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts types the field as a union of \"Team\" and \"Portfolio\", so it must be widened once Forecast rows are actually written; Settings > System Info > Refresh History builds its dropdown from whatever values arrive and needs no allow-list change. RefreshLogService.RemoveOrphanedRefreshLogs (:70-76) sends any Forecast row through a default arm returning false, so those rows would never be reclaimed when a Portfolio is deleted. Touching a frontend file means this slice's Definition of Done item for the frontend gates is no longer N/A: pnpm test, pnpm build with zero warnings, and a clean Biome check are all required."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Derive the Portfolio-Team link from Features",
+      "depends_on": [
+        "01"
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Introduce IPortfolioRepository with the keyed team query",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPortfolioRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs"
+          ],
+          "criteria": [
+            "New IPortfolioRepository extends IRepository<Portfolio> and carries one keyed query returning distinct Portfolio ids for a Team id.",
+            "PortfolioRepository implements it; Program.cs registers both interfaces so they resolve to the same instance within a scope.",
+            "The query walks FeatureWork.TeamId to Feature to Feature.Portfolios and never calls GetAll.",
+            "Test proves a Portfolio linked only through FeatureWork is returned with no PortfolioTeam row present.",
+            "Every other consumer keeps IRepository<Portfolio>; only the two forecast-trigger sites take the new port."
+          ],
+          "implementation_notes": "There is no IPortfolioRepository today. PortfolioRepository extends RepositoryBase<Portfolio> and is registered ONLY as builder.Services.AddScoped<IRepository<Portfolio>, PortfolioRepository>() at Program.cs:1171. RepositoryBase is generic and must NOT gain a Portfolio-specific query. Team.Portfolios (Models/Team.cs:27) is a persisted many-to-many over PortfolioTeam that no production code ever writes, so on dogfood it holds two residual rows; Portfolio.Teams (Models/Portfolio.cs:9) is derived from Features.SelectMany(f => f.FeatureWork).Select(fw => fw.Team).DistinctBy(t => t.Id) and is always correct. GetAll eager-loads every Feature, Forecast and SimulationResult, far too heavy for a per-Team-refresh trigger. No schema change, no migration, no backfill: PortfolioTeam simply stops being read. Program.cs edits force the full backend Integration suite to run."
+        },
+        {
+          "id": "02-02",
+          "name": "Trigger handler asks the Portfolio side",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandlerTest.cs",
+          "scenario_name": "A Portfolio a Team reaches only through the Features it works is forecast too",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandlerTest.cs"
+          ],
+          "criteria": [
+            "The foreach over team.Portfolios at line 21 is replaced by the new keyed query.",
+            "A Portfolio a Team reaches only through the Features it works is forecast too.",
+            "Team.Portfolios is no longer read anywhere in the handler.",
+            "WorkItemService.cs:70 is left exactly as it is."
+          ],
+          "implementation_notes": "Today the trigger silently does nothing for every Portfolio outside the two residual join rows. KNOWN, DELIBERATELY UNTOUCHED: Services/Implementation/WorkItems/WorkItemService.cs:70, inside UpdateWorkItemsForTeam, has the same wrong read (foreach over team.Portfolios.ToList() calling UpdateRemainingWorkForPortfolio), so a Team refresh never recalculates an affected Portfolio's remaining work. Do NOT fix it here: repairing it would change Feature remaining-work values on refresh, which changes forecast output, and slice 00 changes how often a forecast runs and never what it computes. One change to forecasting at a time."
+        },
+        {
+          "id": "02-03",
+          "name": "Controller route forecasts every derived Portfolio",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs"
+          ],
+          "criteria": [
+            "UpdateForecastsForTeamPortfolios resolves Portfolios through the new keyed query on IPortfolioRepository.",
+            "Regression test pins today's defect: the route returned true and HTTP 200 having run zero forecasts.",
+            "Test asserts one forecast trigger per derived Portfolio."
+          ],
+          "implementation_notes": "The call site is ForecastController.cs:45; the route is POST /api/v1/forecast/update-portfolios-for-team/{teamId}. Two existing fixtures populate team.Portfolios by hand, at Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs:176 and .../QuietWriteBack/QuietWriteBackAcceptanceTest.cs:305; the suite is green only because they establish a relation production never writes, so no existing test covers the missing-link case. After this phase the forecast trigger no longer depends on that relation, so those fixtures may be establishing something nothing reads any more."
+        },
+        {
+          "id": "02-04",
+          "name": "Team deletion refreshes the Portfolios it actually worked",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs"
+          ],
+          "criteria": [
+            "DeleteTeam resolves affected Portfolio ids through IPortfolioRepository.GetPortfolioIdsForTeam instead of team.Portfolios.",
+            "Regression test pins today's defect: deleting a Team skipped every Portfolio it reached only through the Features it worked.",
+            "Portfolios matched by OwningTeamId keep being included, and the union with the derived ids stays distinct.",
+            "After this step no production code reads Team.Portfolios."
+          ],
+          "implementation_notes": "The call site is TeamController.cs:95 inside DeleteTeam: 'var affectedPortfolioIds = team?.Portfolios.Select(p => p.Id).ToList() ?? [];'. Because nothing ever writes that relation, the list is always empty, so only Portfolios matched by OwningTeamId are refreshed after a Team is deleted. This is the third instance of the same defect, after the trigger handler (02-02) and the forecast controller (02-03). Keep the null-team guard behaviour: an unknown team id must still yield an empty derived list rather than throw. The union with owningPortfolioIds and the Distinct() call stay as they are."
+        },
+        {
+          "id": "02-05",
+          "name": "Delete the phantom Team-Portfolio relation from the model",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-04"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/TeamRepository.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/TeamDataRefreshedGoldTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamDataRefreshedForecastTriggerHandlerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs"
+          ],
+          "criteria": [
+            "Team.Portfolios, the HasMany/WithMany mapping and TeamRepository's Include of it are all gone.",
+            "Portfolio.Teams stays exactly as it is - it is the correct derived model and is read widely.",
+            "Every test that seeded team.Portfolios seeds real FeatureWork links instead, so it establishes something production can actually produce.",
+            "TeamDataRefreshedGoldTest asserts a non-empty set of triggered Portfolio ids; it currently compares empty to empty and pins nothing.",
+            "The mock-only duplicate in the trigger handler test is dropped and the two now-identical no-trigger tests are merged under one honest name.",
+            "No migration is generated in this step."
+          ],
+          "implementation_notes": "Team.Portfolios (Models/Team.cs:27) is a get-only List<Portfolio>; LighthouseAppContext.cs:281 maps it HasMany(t => t.Portfolios).WithMany(p => p.Teams); TeamRepository.cs:24 eager-loads it on every read. Portfolio.Teams (Models/Portfolio.cs:9) is 'public List<Team> Teams => GetTeams();' - a computed property with no backing field, so EF cannot track or write the inverse and clears the collection on fixup. That is why the relation is unwritable even from a test: TeamDataRefreshedGoldTest seeds two portfolios via team.Portfolios.Add and then passes only because both sides of its assertion are empty. Commit 9813472e8 (2026-03-13) turned Portfolio.Teams from a stored list back into a derived one and left this scaffolding standing. Test sites that write team.Portfolios: ManualSortingAcceptanceTest.cs:176, QuietWriteBackAcceptanceTest.cs:305, FasterUpdatesAcceptanceTest.cs:250, TeamControllerTest.cs:113, TeamDataRefreshedGoldTest.cs:61-62, PortfolioRepositoryTest.cs:195. ForecastControllerTest.cs:131 asserts team.Portfolios is empty - that assertion becomes unwritable and unnecessary once the property is gone. Editing the three other epics acceptance tests is explicitly approved by the maintainer."
+        },
+        {
+          "id": "02-06",
+          "name": "Drop the PortfolioTeam table",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-05"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres"
+          ],
+          "criteria": [
+            "The migration is generated with the Create-Migration.ps1 script, never with dotnet ef migrations add directly.",
+            "Migrations are produced for every supported provider in one run.",
+            "The generated migration drops PortfolioTeam and changes nothing else.",
+            "The step lands as its own commit so the destructive change is reviewable in isolation."
+          ],
+          "implementation_notes": "This is a deliberate contraction, accepted by the maintainer despite the expand-only rule, because the alternative is worse: once 02-05 removes the navigation from the model, the EF model snapshot no longer contains PortfolioTeam, so the next migration generated for any unrelated reason would silently carry the DROP. Doing it here makes the drop explicit and reviewable. Risk is near zero - no production code reads the table and the only known rows anywhere are two fossils on the dogfood instance predating 2026-03-13. The script lives at Lighthouse.Backend/Create-Migration.ps1. The migration projects are referenced by HintPath, so build them BEFORE running any dotnet ef or dotnet run command or the tooling reports PendingModelChanges. Inspect the generated Up and Down before handing back and report exactly what they contain."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Per-Portfolio active-work query on the status store",
+      "depends_on": [
+        "02"
+      ],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Add queued-key query to status store port",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "02-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateStatusStoreTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IUpdateStatusStore.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/InProcessUpdateStatusStore.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateStatusStoreTest.cs"
+          ],
+          "criteria": [
+            "One additive member answers whether any key in a caller-supplied set stands Queued.",
+            "No existing member changes signature or meaning; DatabaseMaintenanceGate compiles and behaves unchanged.",
+            "In-process adapter answers from its injected ConcurrentDictionary without touching unrelated keys.",
+            "Parameterised contract test covers empty set, no match, and one match."
+          ],
+          "implementation_notes": "The existing HasActiveWork at IUpdateStatusStore.cs:24 scans the whole store and is true whenever anything anywhere is refreshing; a debounce built on it would park every forecast behind every unrelated update. Do not reuse it and do not change it, because DatabaseMaintenanceGate also reads this port."
+        },
+        {
+          "id": "03-02",
+          "name": "Redis adapter answers with one batched read",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/UpdateStatusStoreContainerTests.cs",
+          "scenario_name": "The same answer is given where the record of work in flight is kept outside the application",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/RedisUpdateStatusStore.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/UpdateStatusStoreContainerTests.cs"
+          ],
+          "criteria": [
+            "RedisUpdateStatusStore answers the new query with one batched read of the lighthouse:update-status hash.",
+            "No whole-hash scan is issued for the query.",
+            "Container test carries Category requires-docker and asserts the same answer as the in-process adapter."
+          ],
+          "implementation_notes": "Additive only, matching the port member added in 03-01 exactly."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Forecast trigger parks behind sibling work",
+      "depends_on": [
+        "03"
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Override TriggerUpdate to park behind queued siblings",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "03-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "scenario_name": "A forecast asked for while a sibling Team is still waiting to refresh is not run yet",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "criteria": [
+            "UpdateServiceBase.TriggerUpdate becomes virtual; one keyword changes and nothing else in that class moves.",
+            "ForecastUpdater reads the Portfolio's Team set and calls base only when no sibling key stands Queued.",
+            "InProgress is excluded from the sibling test.",
+            "Test proves a forecast asked for while a sibling Team waits is not run yet."
+          ],
+          "implementation_notes": "The write-back flush contract in UpdateServiceBase's finally is untouched. InProgress is excluded because TeamDataService.UpdateTeamData publishes TeamDataRefreshed while its own (Team, id) key is still InProgress, so a rule counting InProgress would park every trigger on its own execution and the system would never forecast; that is safe because UpdateQueueService runs a single-reader loop. If this reason is worth a comment, write the reason itself in plain language and never cite a section id."
+        },
+        {
+          "id": "04-02",
+          "name": "Immediate forecast when nothing is worth waiting for",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "scenario_name": "A Portfolio with one Team is forecast immediately, with nothing to wait for",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "criteria": [
+            "A Portfolio with one Team is forecast immediately, with nothing to wait for.",
+            "A Team's own Queued key is never mistaken for something it has to wait for.",
+            "Queued work elsewhere in the instance never delays this Portfolio's forecast.",
+            "A Team in two Portfolios forecasts both, neither waiting on the other's work.",
+            "A change to the order of Features still forecasts straight away."
+          ],
+          "implementation_notes": "Also covers the scenarios \"A Team's own refresh is never mistaken for something it has to wait for\", \"Work elsewhere in the instance never delays this Portfolio's forecast\", \"A Team belonging to two Portfolios forecasts both, and neither waits on the other's work\" and \"A change to the order of Features still forecasts straight away\"."
+        },
+        {
+          "id": "04-03",
+          "name": "Drain parked triggers when the last sibling leaves",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "scenario_name": "The last Team failing to refresh still releases the forecast its siblings are owed",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "criteria": [
+            "A parked trigger stores its intent, reusing the pendingReruns shape already proven in UpdateQueueService.",
+            "The stored intent drains when the last sibling leaves Queued, whether that sibling succeeded or failed.",
+            "No parked trigger is ever dropped; a dropped trigger loses the write that caused it.",
+            "Test proves the last Team failing still releases the forecast its siblings are owed."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Portfolio refresh triggers instead of forecasting inline",
+      "depends_on": [
+        "04"
+      ],
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Replace PortfolioUpdater's inline forecast with a trigger",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "04-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+          "scenario_name": "Refreshing everything produces one forecast for the Portfolio, not one per Team",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs"
+          ],
+          "criteria": [
+            "The inline UpdateForecastsForPortfolio call, its write-back staging and the PortfolioForecastsUpdated publish leave Update.",
+            "PortfolioUpdater takes an IForecastUpdater dependency and triggers it; registration is singleton to singleton.",
+            "No dependency cycle arises: ForecastUpdater does not depend on IPortfolioUpdater.",
+            "Test proves refreshing everything produces one forecast for the Portfolio, not one per Team."
+          ],
+          "implementation_notes": "Those three sit at roughly PortfolioUpdater.cs lines 91, 93-95 and 97, all inside the (Features, portfolioId) key and invisible to the (Forecasts, portfolioId) admission check. Follow the shape of Lighthouse.Backend.Tests/API/Integration/FasterUpdates/Slice01UpdateLogSignalScenarios.cs for the new scenarios file. Program.cs edits force the full backend Integration suite to run."
+        },
+        {
+          "id": "05-01a",
+          "name": "Write-back collection spans a refresh round",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IUpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+          ],
+          "criteria": [
+            "A portfolio refresh and the forecast it triggers stage into ONE write-back collection and reach the tracker exactly once.",
+            "One_scheduled_refresh_of_a_portfolio_reaches_the_tracker_once passes again, unmodified.",
+            "A_value_written_in_one_execution_is_not_written_again_by_the_next passes again, unmodified.",
+            "A flush failure still cannot fail the refresh it rode in on.",
+            "A forecast triggered on its own, with no portfolio refresh around it, still flushes exactly once."
+          ],
+          "implementation_notes": "Today UpdateServiceBase.TriggerUpdate flushes IWriteBackCollector in its finally, once per execution, and the collector is AddScoped at Program.cs:1242 so every execution gets its own. Moving the forecast into its own execution therefore produces a second tracker write, which breaks a guarantee Epic 5500 deliberately won and pins with acceptance tests. The maintainer chose to lift collection to the refresh round rather than weaken that guarantee. A round is the portfolio refresh plus the forecast it triggers; the forecast must join the round that triggered it, and the flush must happen once, when the last execution of the round finishes. A forecast with no round around it is a round of one. Do NOT weaken or edit the Epic 5500 acceptance tests to make this pass - they are the specification here."
+        },
+        {
+          "id": "05-01b",
+          "name": "One summary line per refresh round",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-01a"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs"
+          ],
+          "criteria": [
+            "A portfolio refresh and the forecast it triggers produce the operator-visible summary of one round, not one each.",
+            "A_portfolio_update_writes_no_more_than_two_lines_the_operator_has_to_read passes again, unmodified.",
+            "A_completed_portfolio_update_says_the_same_thing_in_the_same_shape passes again, unmodified.",
+            "The forecast timing an operator was given earlier in this slice is not lost; it belongs in the round's line."
+          ],
+          "implementation_notes": "UpdateServiceBase emits one summary line per completed execution, so a forecast in its own execution adds a third line and breaks the shape Epic 5687 pins. Earlier in this slice a forecast deliberately gained its own refresh record and its own timing, so the answer is not to silence the forecast but to fold what it reports into the round's line. Do NOT weaken or edit the Epic 5687 acceptance tests to make this pass - they are the specification here."
+        },
+        {
+          "id": "05-02",
+          "name": "Prove the work tracking system pays nothing extra",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+          "scenario_name": "Moving the forecast out of the Portfolio refresh costs the work tracking system nothing",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs"
+          ],
+          "criteria": [
+            "Test asserts on connector calls, not on flush count, because flush count rises to two by design.",
+            "Baseline pinned: 160 staged updates, connector called for 24 then 17 across two consecutive refreshes.",
+            "The written field-and-value set is equal before and after, not merely the same size.",
+            "A forecast write-back that fails leaves nothing half-written."
+          ],
+          "implementation_notes": "The scenario has two Thens: the call count AND what was written. Asserting size alone lets a split flush that writes the right number of wrong values pass, so compare the set of (field, value) pairs. Splitting the single flush into two executions is safe: ResolvePortfolioWriteBack partitions mappings on ForecastSources.Contains(m.ValueSource), so the two staging passes are disjoint by construction and the collector's last-stage-wins dedup never fires between them. Also covers the scenario \"A forecast write-back that fails leaves nothing half-written\"."
+        },
+        {
+          "id": "05-03",
+          "name": "Overlapping refreshes yield one settled forecast",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+          "scenario_name": "A Portfolio refresh and a Team refresh overlapping in time produce one forecast",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
+          ],
+          "criteria": [
+            "A Portfolio refresh and a Team refresh overlapping in time produce one forecast.",
+            "Exactly one PortfolioForecastsUpdated is published per Portfolio per refresh batch.",
+            "The date a forecaster is reading stops changing seconds after it appears.",
+            "Everything else the Portfolio refresh does is left exactly where it was.",
+            "Nothing under Services/Implementation/Forecast is modified, only read."
+          ],
+          "implementation_notes": "05-01 moves the PortfolioForecastsUpdated publish out of PortfolioUpdater but pins no count; without a count assertion a second publish would make the dates visibly settle twice. Also covers the scenarios \"The date a forecaster is reading stops changing seconds after it appears\" and \"Everything else the Portfolio refresh does is left exactly where it was\"."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Human-initiated forecasts bypass the debounce",
+      "depends_on": [
+        "05"
+      ],
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Add a bypass path to the forecast port",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "05-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "criteria": [
+            "IForecastUpdater exposes a path that runs a forecast without the sibling check.",
+            "The event-driven trigger from TeamDataRefreshed keeps the debounce; only the explicit path bypasses it.",
+            "Parked intents are neither dropped nor duplicated by a bypass run."
+          ],
+          "implementation_notes": "Decision taken: a human-initiated forecast always runs. Keep the two paths distinct at the port so the event-driven trigger cannot reach the bypass."
+        },
+        {
+          "id": "06-02",
+          "name": "Controller routes always run the forecast",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "06-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+          "scenario_name": "A forecaster who asks for a forecast is never told it happened when it did not",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs"
+          ],
+          "criteria": [
+            "POST forecast/update/{id} takes the bypass path.",
+            "POST forecast/update-portfolios-for-team/{teamId} takes the bypass path.",
+            "Neither route reports success unless a forecast actually ran.",
+            "Test proves a forecaster is never told a forecast happened when it did not."
+          ],
+          "implementation_notes": "Both routes today return success without observing admission and send no SignalR progress frame, so with a debounce in place a person presses refresh, is told it worked, and nothing happens."
+        },
+        {
+          "id": "06-03",
+          "name": "Feature reorder trigger bypasses the debounce too",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "06-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs",
+          "scenario_name": "A change to the order of Features forecasts straight away even mid-refresh",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs"
+          ],
+          "criteria": [
+            "FeatureOrderingPolicyChangedForecastTriggerHandler takes the bypass path added in 06-01.",
+            "A change to the order of Features forecasts straight away even mid-refresh.",
+            "Test proves the reorder is never parked behind a sibling Team that stands Queued."
+          ],
+          "implementation_notes": "A Feature reorder is human-initiated, so it is exempt on exactly the same grounds as the two ForecastController routes: a person made the change and is waiting to see its effect. This strengthens, and does not replace, the scenario about a Feature reorder forecasting straight away already covered in 04-02."
+        },
+        {
+          "id": "06-04",
+          "name": "A dragged Feature forecasts straight away whichever surface it came from",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "06-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandlerTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandlerTest.cs"
+          ],
+          "criteria": [
+            "FeatureRankChangedForecastTriggerHandler takes the bypass path.",
+            "A Feature moved by hand forecasts straight away even while a sibling Team stands Queued.",
+            "The gold test that fails if a refresh reaches the bypass stays green, proving this handler is not reachable from one."
+          ],
+          "implementation_notes": "FeatureRankChanged is published only by FeatureRankingService.PlaceAsync, which is reached only from FeaturesController's reorder route - a person dragging a Feature. That makes it human-initiated on exactly the grounds the ordering-policy handler was changed for, and leaving it debounced means the same gesture feels responsive or sluggish depending on which surface the user came through, with nothing to explain the difference. TeamDeletedForecastRetriggerHandler is deliberately NOT part of this: it is also human-initiated but drives IPortfolioUpdater, which has no bypass member, so giving it one is a larger change on a second updater's port and team deletion is far less latency-sensitive than dragging a Feature."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Architecture seams and the epic boundary",
+      "depends_on": [
+        "06"
+      ],
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "Only ForecastUpdater may depend on IForecastService",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "06-03"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs"
+          ],
+          "criteria": [
+            "ArchUnitNET rule: inside Services.Implementation.BackgroundServices.Update, only ForecastUpdater may depend on IForecastService.",
+            "The rule fails if a second inline forecast call site grows back.",
+            "Rule message states the reason in plain language and cites no section id."
+          ],
+          "implementation_notes": "The defect phase 05 removes is exactly a second component forecasting where the admission check could not see it; this rule stops it returning."
+        },
+        {
+          "id": "07-02",
+          "name": "Both status store adapters answer identically",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "07-01"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateStatusStoreTest.cs",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/UpdateStatusStoreTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencyAwareForecastSeamArchUnitTest.cs"
+          ],
+          "criteria": [
+            "Contract test is parameterised over InProcessUpdateStatusStore and RedisUpdateStatusStore, following UpdateStatusStoreTest's existing shape.",
+            "Both adapters give the same answer for empty, no-match and matching key sets.",
+            "Adding a third adapter that does not answer the query fails the seam test."
+          ]
+        },
+        {
+          "id": "07-03",
+          "name": "Assert the epic boundary against committed gold",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "07-02"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/EpicBoundaryGoldForecastTest.cs",
+          "scenario_name": "How often a forecast runs is the only thing slice 00 changed about forecasting",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/EpicBoundaryGoldForecastTest.cs"
+          ],
+          "criteria": [
+            "Test asserts only against the gold artifacts committed in phase 00 and never recaptures them.",
+            "Percentiles under a pinned starting number match the released build exactly.",
+            "Test proves how often a forecast runs is the only thing slice 00 changed about forecasting.",
+            "A failure means slice 00 changed what a forecast computes."
+          ],
+          "implementation_notes": "Capture belongs to step 00-01 and must NOT be repeated here: a baseline computed from the build under test asserts only that the build equals itself. Maps to the @slice-00 scenario in acceptance/epic-boundary.feature. Drive the forecast through Lighthouse.Backend.Tests/TestDoubles/NotSoRandomNumberService.cs so the comparison is deterministic."
+        }
+      ]
+    }
+  ]
+}
