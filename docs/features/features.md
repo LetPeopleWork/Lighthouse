@@ -92,8 +92,10 @@ The column appears on this page and on the Feature lists of the [Portfolio](../p
 {: .note}
 Dependencies are read and shown on every Lighthouse instance, including the community edition.
 
-{: .important}
-Seeing a dependency is not the same as forecasting around it. The dates Lighthouse shows today do **not** wait for a Feature's dependencies to finish first — they assume your Teams can start whenever their throughput allows. The column and its warnings are there to make the links visible, and to tell you which of them nothing could ever be done about. See [Dependencies](../concepts/howlighthouseforecasts.html#dependencies) for the reasoning.
+With a premium licence, the dates account for these waits: a Feature is not forecast to be worked on until everything it waits on is finished, including when the two are delivered by different Teams. A wait that Lighthouse cannot act on is left out of the dates and says so in the [Warnings](#warnings) column. See [Dependencies](../concepts/howlighthouseforecasts.html#dependencies) for how that works and what it does to the Features below the waiting one.
+
+{: .note}
+Without a premium licence the column and its warnings work exactly as described above, and the dates are the ones you would get if no dependency had been recorded at all.
 
 ### Dependencies a portfolio has set aside
 
@@ -110,6 +112,7 @@ A row warns when:
 - **It depends on a Feature in no Portfolio they share.** Lighthouse reasons within a Portfolio, so a dependency reaching outside every Portfolio the two share can't be taken into account.
 - **It and another Feature are waiting on each other.** A loop has no order to resolve, so neither end of it can be taken into account.
 - **It depends on a Feature with no measured delivery to forecast from.** Nothing has been completed there, so the wait can't be given a date — see [when a Team cannot be forecast](../concepts/howlighthouseforecasts.html#when-a-team-cannot-be-forecast).
+- **It depends on a Feature, and this instance has no premium licence.** The wait is read and shown but left out of the dates. You only ever see this on a dependency that has nothing else wrong with it — a wait a licensed instance would leave out too is never presented as one a licence would buy you.
 - **It depends on a Feature that sits below it in the order.** This is the one warning that isn't about Lighthouse's limits but about yours: something ranked to be built later is being waited on by something ranked to be built sooner. Lighthouse never reorders on its own — see [Moving a Feature](#moving-a-feature).
 
 Having a dependency is not itself a warning. A dependency with nothing wrong with it appears in the Dependencies column and stays silent here, and so does one the portfolio has set aside.

@@ -6,6 +6,73 @@ nav_order: 95
 
 # Lighthouse vNEXT (not yet released)
 
+## See what each Feature is waiting on
+
+Your teams already record dependencies — a Predecessor link in Azure DevOps, an *is blocked by* link in Jira, a relation between two Linear Projects. Lighthouse never read any of it. So the one place your whole delivery is laid out in order was also the one place a Feature's blockers were invisible, and you found out about them in the meeting where the date slipped.
+
+Lighthouse now reads those links and names them. Every Feature list — the [Features page](https://docs.lighthouse.letpeople.work/features/features.html), your Portfolios and your Teams — has a **Dependencies** column listing what that Feature waits on, one per line, each linking straight into your work tracking system. Nothing to configure and nothing to declare: if the link is in your tracker, it is on the row.
+
+Lighthouse does not let you author a dependency, and it never will. What it shows you is what your tracker already says.
+
+Where a dependency cannot be taken at face value, the row says so rather than staying quiet. One warning icon per Feature, with the reasons in its tooltip:
+
+- the Feature it waits on sits in no Portfolio they share
+- the two are waiting on each other, so neither can go first
+- the Feature it waits on has no measured delivery to forecast from
+- it waits on something below it in the order — not a problem, but worth knowing before you re-plan
+
+This is available on **every** Lighthouse instance, community edition included.
+
+### When the links are not where Lighthouse looks
+
+Two settings live under *Dependency Settings* on your [Portfolio's settings page](https://docs.lighthouse.letpeople.work/portfolios/edit.html).
+
+**Dependency Field** (Azure DevOps and Jira) — if your teams keep dependencies in a custom field rather than the tracker's own link, name that field once and Lighthouse reads it instead, splitting on commas or semicolons. It must be defined as an Additional Field on the connection first. Entries that resolve to nothing are passed over; the rest still count. Linear exposes no fields of its own to point at, so a Linear Portfolio goes on reading its Project relations whatever is typed there; a CSV upload names its column on the connection instead.
+
+**Ignore Dependencies** — set a Portfolio's dependencies aside without hiding or deleting one. They keep being read and keep being listed; they simply stop counting. It takes effect on the next read, so there is nothing to re-download, and flipping it back restores exactly the picture you had.
+
+### What reads what
+
+| | Where dependencies come from |
+|---|---|
+| Azure DevOps | the *Predecessor* link, or a field of your own (see above) |
+| Jira Cloud & Data Center | the *is blocked by* end of a **Blocks** link, or a field of your own (see above) — if your administrator renamed the link, Lighthouse tells you what it looked for and what it found instead |
+| Linear | a relation between two Projects |
+| CSV | a column naming what each row waits on, set on the connection |
+| ServiceNow | not available — it has no Features for a dependency to run between |
+
+## Your forecast now waits for what your work waits for
+
+Seeing the dependency was half of it. The date sitting next to it still pretended otherwise — it was built from your Team's throughput alone, as though the work could start tomorrow. So the number everybody actually plans with was the one number that ignored the thing everybody was worried about.
+
+That is fixed. A Feature is no longer forecast to be worked on until everything it waits on has finished. Not adjusted afterwards, not flagged for you to correct by hand — the wait happens inside every one of the ten thousand simulated runs the forecast is built from.
+
+**Across Teams, too.** Every Team now advances on one shared clock inside a run, so a Feature your platform Team delivers can sit behind a Feature your product Team has not finished yet. That was the hard part, and it is the case that actually hurts.
+
+### Two Features move, not one
+
+The Feature that is waiting moves out. That much you would expect. The one you would not expect:
+
+> Three Features, one Team, Feature WIP of 2. Nothing waiting: **17, 13, 22** working days. Record that the second waits on the first: **16, 22, 20**.
+
+The Feature *below* the waiting one came in by two days. Your Team works on the top *Feature WIP* Features in parallel; a Feature that cannot be started yet stops occupying one of those places, and the next Feature that *can* be started moves up into it. Waiting is not only a cost — knowing about it frees capacity that was being modelled as spent.
+
+### What it does not do
+
+**A shared clock shares time, never capacity.** Each Team still draws its own throughput from its own history. Sitting on the same clock as a faster Team has never made a Team faster and does not now.
+
+**Some waits are still left out**, and every one of them says so on the Feature rather than going quiet: the Feature it waits on sits in no Portfolio they share, the two are waiting on each other, the Feature it waits on has no measured delivery to forecast from, or the Portfolio is set to ignore dependencies. That last one is now a genuinely useful question to ask — flip it and the dates read as they would if none of those links existed, which is the closest a forecast gets to *what would this plan look like if we broke the dependencies*.
+
+Dependency-aware dates need a **premium licence**. Reading dependencies and showing them stays on every instance, community edition included. Without a licence the column and its warnings behave exactly as they do with one, and the dates are the ones you would get if no dependency had been recorded. Where a wait would have moved a date and only the licence is in the way, the Feature says so — and only there. A wait a licensed instance would leave out anyway is never dressed up as one a licence would buy you.
+
+See [How Lighthouse Forecasts](https://docs.lighthouse.letpeople.work/concepts/howlighthouseforecasts.html#dependencies) for the full picture.
+
+## One forecast per Portfolio per refresh
+
+A round of *Refresh everything* used to forecast a Portfolio once for every Team that delivers into it, then write the result back to your tracker each time. On a Portfolio with six Teams that is six forecasts and six writes to land on one delivery date.
+
+It is now one forecast and one write per Portfolio per round, and the delivery date is announced once. Refreshes finish sooner, your tracker sees a fraction of the traffic, and a Portfolio refresh that overlaps a Team refresh settles on a single date instead of racing to the last one written.
+
 ## Deliveries you can still read next quarter
 
 A Delivery has always answered *where do we stand today*. That is the right answer while it is running, and the wrong one the moment it ships: the Features move on, get re-estimated, get closed or removed, and the Delivery quietly rewrites itself behind them. Ask in October what you were forecasting in August and there is nothing left to look at — which makes the one review worth having, *what did we say and what actually happened*, impossible.

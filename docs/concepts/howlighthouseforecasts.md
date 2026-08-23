@@ -321,10 +321,36 @@ You cannot *define* a dependency in Lighthouse. There is no screen that says "th
 
 What it does do is **read** the dependencies you already recorded there — Predecessor links in Azure DevOps, *is blocked by* issue links in Jira, Project relations in Linear — and show them on every Feature list, together with a warning on the ones nothing could be done about. See [Dependencies](../features/features.html#dependencies) for what that looks like.
 
-{: .important}
-Reading them is not the same as forecasting around them. The dates on this page come from throughput and the [Feature WIP](#the-impact-of-feature-wip) of each Team, and nothing in that simulation waits for another Feature to finish first. A Feature whose dependency is not done yet can still be forecast to finish next week. Treat the Dependencies column as something to act on yourself, not as something the forecast has already accounted for.
+### Waiting is part of the simulation
 
-That is deliberate, and it is worth saying why. We don't like dependencies. Wherever there are some, you should try to remove them as aggressively as you can — as long as there are many of them, a tool like Lighthouse will not help you very much, and neither will a forecast that pretends to model them precisely. Making them visible is the part that changes behaviour; modelling them is the part that makes the tool complicated and the number no more honest.
+With a premium licence, the dates account for those waits. Inside every simulated run, a Feature's remaining Work Items cannot be started until everything it waits on has finished **in that same run**. The wait is part of the simulation, not an adjustment applied to its result afterwards.
+
+Every Team advances on one shared clock inside a run, which is what lets a wait cross Teams: a Feature delivered by one Team can sit behind a Feature delivered by another.
+
+{: .important}
+A shared clock shares *time*, never capacity. Each Team still draws its own Throughput from its own history, exactly as everywhere else on this page. Being on the same clock as a faster Team does not make a Team faster.
+
+Both directions of movement are real, and the second one surprises people:
+
+- **The waiting Feature moves out.** It cannot be started until the Feature it waits on is done, so its date sits behind that one's.
+- **Features below it can move in.** Your Teams work on the top [Feature WIP](#the-impact-of-feature-wip) Features in parallel. A Feature that cannot be started yet no longer occupies a place in that window, so the next Feature that *can* be started moves up into it and finishes sooner.
+
+### When a wait is read but not accounted for
+
+A wait only moves a date where Lighthouse can act on it. It is still read and still shown, and it is left out of the dates when:
+
+- the Feature it waits on is in no Portfolio they share — Lighthouse reasons within a Portfolio
+- the two are waiting on each other, so there is no order to resolve
+- the Feature it waits on has no measured delivery to forecast from, so the wait cannot be given a date — see [when a Team cannot be forecast](#when-a-team-cannot-be-forecast)
+- the Portfolio is [set to ignore dependencies](../portfolios/edit.html#ignore-dependencies)
+- this instance has no premium licence
+
+Every one of those is said on the Feature itself rather than left for you to infer — see [Warnings](../features/features.html#warnings).
+
+{: .note}
+Reading dependencies and showing them works on every Lighthouse instance, community edition included. Letting one move a date needs a premium licence. Without one, the column and its warnings behave exactly as described here, and the dates are the ones you would get if no dependency had been recorded at all.
+
+We still don't like dependencies. Wherever there are some, you should try to remove them as aggressively as you can — a forecast that accounts for a wait is still the forecast of an organisation that has to wait, and no simulation makes that cheaper. What changed is that Lighthouse no longer leaves the cost quietly out of the number. Making them visible is what changes behaviour; putting them into the dates is what stops the dates flattering you.
 
 Please have a look at the work of [Prateek Singh](https://www.linkedin.com/in/singhpr13/), who wrote among others, this very interesting blog post: [Understanding the Impact of Dependencies](https://singhpr.medium.com/understanding-the-impact-of-dependencies-4cca0d720019)
 

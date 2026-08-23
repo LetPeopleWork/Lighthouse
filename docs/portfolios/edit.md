@@ -241,7 +241,7 @@ If you need to override this behavior (for example, to group work items under a 
 Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.
 
 ## Dependency Settings
-These two settings decide what Lighthouse reads as a dependency for this portfolio, and whether it acts on what it read. Both are available on every instance, including the community edition. What a dependency looks like once it has been read is described on the [Features page](../features/features.html#dependencies).
+These two settings decide what Lighthouse reads as a dependency for this portfolio, and whether it acts on what it read. Both settings are available on every instance, including the community edition; letting a dependency move a forecast date needs a premium licence. What a dependency looks like once it has been read is described on the [Features page](../features/features.html#dependencies).
 
 ### Dependency Field
 By default, Lighthouse reads what a Feature waits on from the native link in your work tracking system — see [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#dependencies), [Jira](../concepts/worktrackingsystems/jira.html#dependencies) and [Linear](../concepts/worktrackingsystems/linear.html#dependencies).
@@ -254,9 +254,11 @@ While a Dependency Field is set, the native links are **not read at all** for th
 Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
 
 {: .important}
-The Dependency Field is currently only read for **Azure DevOps** portfolios. On a portfolio connected to another work tracking system the setting can be selected but has no effect, and dependencies keep coming from that system's own links.
+The Dependency Field is read for **Azure DevOps** and **Jira** portfolios. Linear exposes no fields of its own for a portfolio to point at, so a Linear portfolio keeps reading its Project relations whatever is selected here. A CSV upload names its column on the connection instead — see [Depends On Column](../concepts/worktrackingsystems/csv.html#dependencies).
 
 ### Ignore Dependencies
 Turn this on to have Lighthouse keep reading dependencies but stop acting on them — useful when you want to look at a plan as if those links weren't there, without deleting a single one in your work tracking system.
 
 Nothing is hidden: the dependencies stay in the Dependencies column, greyed out, with the reason on hover, and they stop raising warnings. Turning the toggle back off restores them immediately.
+
+On an instance with a premium licence this also takes the waits out of the forecast, so the dates read as they would if none of those links existed — which is the question the toggle is there to answer. Without a premium licence the dates never waited for a dependency in the first place, so the toggle only changes the column and its warnings. See [Dependencies](../concepts/howlighthouseforecasts.html#dependencies).

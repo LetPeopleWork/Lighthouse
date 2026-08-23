@@ -64,11 +64,9 @@ there is nothing to re-download, and flipping it back restores exactly the pictu
 | CSV | a column naming what each row waits on, set on the connection |
 | ServiceNow | not available — it has no Features for a dependency to run between |
 
-### Your forecasts have not moved
-
-This release **shows** dependencies. It does not feed them into the simulation — every forecast date is
-the one you would have got before, to the trial. Making the forecast honour a dependency is the next
-step, and it is deliberately separate: one change to forecasting at a time.
+**Merged.** Everything above now lives in `docs/releasenotes/releasenotes.md` under vNEXT, ahead of
+Epic #5792's section. The forecast half of the story is drafted in
+`docs/feature/epic-5792-dependency-aware-forecasting/release-note-lines.md`.
 
 ---
 
