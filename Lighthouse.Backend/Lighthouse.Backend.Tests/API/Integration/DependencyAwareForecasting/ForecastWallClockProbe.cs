@@ -14,9 +14,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     ///
     /// It is deliberately not an assertion. A wall clock recorded on one machine says nothing on another,
     /// and a test that compared against a number checked in from somebody's laptop would fail in CI for a
-    /// reason that is not a defect. The guard that does run everywhere lives beside it and bounds the run
-    /// generously enough to survive a slow agent while still catching a restructure that made the forecast
-    /// many times slower.
+    /// reason that is not a defect - which is what happened the one time a bound was set from a number
+    /// taken here. The guard that does run everywhere lives beside it and bounds the run only against a
+    /// forecast that is stuck, leaving the question of whether one got dearer to this measurement.
     /// </summary>
     [TestFixture]
     [Category("epic-5792-dependency-aware-forecasting")]

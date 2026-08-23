@@ -9,10 +9,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     ///
     /// This is not that measurement, and it deliberately does not pretend to be. A wall clock recorded on
     /// one machine means nothing on another, so a test comparing against a number checked in from somebody's
-    /// laptop would go red in CI for a reason that is not a defect. What it does instead is bound the run
-    /// loosely enough to survive the slowest build agent while still catching a restructure that made the
-    /// forecast many times dearer - and, more usefully, hold the dates it produced to the recorded baseline,
-    /// because a forecast that got faster by doing less work is the failure actually worth catching.
+    /// laptop would go red in CI for a reason that is not a defect - and the first bound written here, five
+    /// times what the forecast costs on a developer machine, did exactly that. Every forecast in this
+    /// namespace runs ten to twenty times slower on a build agent than on the machine the bound was taken
+    /// on, including the ones that passed, so five times over was never going to be enough.
+    ///
+    /// What is left is a hang guard rather than a budget: a bound far above anything an agent has ever
+    /// taken, which a forecast reaches only by looping or by doing orders of magnitude more work than it
+    /// used to. The assertion that carries the weight is the one beside it, holding the dates to the
+    /// recorded baseline, because a forecast that got faster by doing less work is the failure actually
+    /// worth catching. Whether the joint clock made a forecast dearer is answered by the measurement, not
+    /// here.
     /// </summary>
     // Not run alongside anything else. Every forecast in this project now uses every core it can get, so
     // a timing taken while two other fixtures are each running ten thousand simulated runs measures the
@@ -25,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     [Category("slice-02")]
     public class TheJointForecastIsAffordableTest
     {
-        private const int TheMostSecondsAForecastOfThisPortfolioMayTake = 10;
+        private const int TheMostSecondsAForecastMayTakeBeforeItIsStuck = 180;
 
         [Test]
         public async Task TheJointForecast_FinishesInTheTimeAForecastShouldTake_AndProducesTheRecordedDates()
@@ -38,11 +45,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastOfThisPortfolioMayTake),
+                Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastMayTakeBeforeItIsStuck),
                     $"A forecast of {baseline.Features.Length} Features across a handful of Teams took " +
-                    $"{stopwatch.Elapsed.TotalSeconds:F1} seconds. Even on a slow build agent that is far " +
-                    "beyond what this has ever cost, so something in the simulation is doing much more work " +
-                    "than it used to.");
+                    $"{stopwatch.Elapsed.TotalSeconds:F1} seconds. That is minutes beyond what the slowest " +
+                    "build agent has ever taken, so the simulation is either looping or doing orders of " +
+                    "magnitude more work than it used to.");
 
                 Assert.That(dates, Is.EqualTo(baseline.Features),
                     "It finished in time but produced different dates, which is the cheaper kind of fast.");
@@ -65,9 +72,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastOfThisPortfolioMayTake),
+                Assert.That(stopwatch.Elapsed.TotalSeconds, Is.LessThan(TheMostSecondsAForecastMayTakeBeforeItIsStuck),
                     $"A forecast whose Features wait on one another took {stopwatch.Elapsed.TotalSeconds:F1} " +
-                    "seconds, which is far beyond what one without them costs.");
+                    "seconds, which is minutes beyond what the slowest build agent has ever taken - the " +
+                    "readiness check on every simulated day is either looping or never settling.");
 
                 Assert.That(dates.Select(feature => feature.P85), Is.All.GreaterThan(0),
                     "It finished quickly because it produced no dates, which is not the same as being fast.");
