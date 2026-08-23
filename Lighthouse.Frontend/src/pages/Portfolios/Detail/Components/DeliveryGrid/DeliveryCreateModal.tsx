@@ -12,32 +12,36 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { LicenseTooltip } from "../../../../../components/App/License/LicenseToolTip";
 import { DeliveryRuleBuilder } from "../../../../../components/Common/DeliveryRuleBuilder";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
 import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { IDelivery } from "../../../../../models/Delivery";
+import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
-import {
+import type {
 	DeliverySelectionMode,
-	type IWorkItemRuleCondition,
-	type IWorkItemRuleSchema,
+	IWorkItemRuleCondition,
+	IWorkItemRuleSchema,
 } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import {
+	clearDeliverySourceOptionsCache,
+	DeliverySourceTab,
+} from "./DeliverySourceTab";
 import {
 	type DeliveryRuleMode,
 	type DeliverySelectionState,
 	type DeliverySelectionTab,
 	type DeliverySelectionTerms,
 	defaultDeliverySelectionTab,
-	deliverySelectionTabs,
+	deliverySelectionTabsFor,
 	deliveryTabForDelivery,
-	deliveryTabForMode,
 	emptySelectionValues,
 	MANUAL_SELECTION_TAB_KEY,
 	RULE_BASED_SELECTION_TAB_KEY,
@@ -81,10 +85,9 @@ const SchemaLoadError: React.FC = () => (
 	</Alert>
 );
 
-const PremiumFeatureNotice: React.FC = () => (
-	<Alert severity="info">
-		Rule-based delivery selection is a premium feature. Please upgrade your
-		license to use this functionality.
+const PremiumFeatureNotice: React.FC<{ message: string }> = ({ message }) => (
+	<Alert severity="info" data-testid="premium-feature-notice">
+		{message}
 	</Alert>
 );
 
@@ -248,8 +251,20 @@ const selectionTabContent: Record<string, React.FC<SelectionContentProps>> = {
 const SelectionModeContent: React.FC<
 	SelectionContentProps & { tab: DeliverySelectionTab; isPremium: boolean }
 > = ({ tab, isPremium, ...contentProps }) => {
-	if (!tab.isEnabled({ isPremium })) {
-		return <PremiumFeatureNotice />;
+	const gate = tab.premiumGate;
+	if (gate && !isPremium) {
+		return <PremiumFeatureNotice message={gate.notice} />;
+	}
+
+	if (tab.source) {
+		return (
+			<DeliverySourceTab
+				portfolioId={contentProps.portfolioId}
+				sourceKey={tab.source.key}
+				sourceName={tab.source.displayName}
+				featuresTerm={contentProps.featuresTerm}
+			/>
+		);
 	}
 
 	const Content = selectionTabContent[tab.key];
@@ -258,32 +273,33 @@ const SelectionModeContent: React.FC<
 
 const SelectionTabButton: React.FC<{
 	tab: DeliverySelectionTab;
-	selectionMode: DeliverySelectionMode;
+	activeTabKey: string;
 	isPremium: boolean;
 	onSelect: (tab: DeliverySelectionTab) => void;
-}> = ({ tab, selectionMode, isPremium, onSelect }) => {
-	const isEnabled = tab.isEnabled({ isPremium });
-	const isSelected = selectionMode === tab.mode;
+}> = ({ tab, activeTabKey, isPremium, onSelect }) => {
+	const gate = tab.premiumGate;
+	const isLocked = !isPremium && gate?.whenLocked === "lockTab";
+	const isSelected = activeTabKey === tab.key;
 	const button = (
 		<Button
 			variant={isSelected ? "contained" : "outlined"}
 			onClick={() => onSelect(tab)}
-			disabled={!isEnabled}
+			disabled={isLocked}
 			aria-pressed={isSelected}
 		>
 			{tab.label}
 		</Button>
 	);
 
-	if (tab.premiumExtraInfo === undefined) {
+	if (gate?.tooltipExtraInfo === undefined) {
 		return button;
 	}
 
 	return (
 		<LicenseTooltip
-			canUseFeature={isEnabled}
+			canUseFeature={isPremium}
 			defaultTooltip=""
-			premiumExtraInfo={tab.premiumExtraInfo}
+			premiumExtraInfo={gate.tooltipExtraInfo}
 		>
 			<span>{button}</span>
 		</LicenseTooltip>
@@ -352,9 +368,10 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [date, setDate] = useState("");
 	const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
 	const [allFeatures, setAllFeatures] = useState<IFeature[]>([]);
-	const [selectionMode, setSelectionMode] = useState<DeliverySelectionMode>(
-		defaultDeliverySelectionTab.mode,
+	const [selectedTabKey, setSelectedTabKey] = useState(
+		defaultDeliverySelectionTab.key,
 	);
+	const [sources, setSources] = useState<IDeliverySource[]>([]);
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
@@ -371,7 +388,10 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		rules?: string;
 	}>({});
 
-	const activeTab = deliveryTabForMode(selectionMode);
+	const tabs = useMemo(() => deliverySelectionTabsFor(sources), [sources]);
+	const activeTab =
+		tabs.find((tab) => tab.key === selectedTabKey) ??
+		defaultDeliverySelectionTab;
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
 		rules,
@@ -391,12 +411,25 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		}
 	}, [open, portfolio.features, featureService]);
 
+	// Which of these a connection offers is the server's answer, so a connection that grows another
+	// one grows another tab here without a line changing.
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+
+		deliveryService
+			.getDeliverySources(portfolio.id)
+			.then((offered) => setSources(offered))
+			.catch(() => setSources([]));
+	}, [open, deliveryService, portfolio.id]);
+
 	// Load rule schema when switching to rule-based mode (only for premium users)
 	useEffect(() => {
 		if (
 			open &&
 			isPremium &&
-			selectionMode === DeliverySelectionMode.RuleBased &&
+			selectedTabKey === RULE_BASED_SELECTION_TAB_KEY &&
 			!ruleSchema &&
 			!loadingSchema
 		) {
@@ -410,7 +443,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	}, [
 		open,
 		isPremium,
-		selectionMode,
+		selectedTabKey,
 		ruleSchema,
 		loadingSchema,
 		deliveryService,
@@ -479,11 +512,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	};
 
 	const handleSelectTab = (tab: DeliverySelectionTab) => {
-		if (tab.mode === selectionMode) {
+		if (tab.key === selectedTabKey) {
 			return;
 		}
 
-		setSelectionMode(tab.mode);
+		setSelectedTabKey(tab.key);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
 	};
@@ -517,13 +550,14 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setName("");
 		setDate("");
 		setSelectedFeatureIds(values.selectedFeatureIds);
-		setSelectionMode(defaultDeliverySelectionTab.mode);
+		setSelectedTabKey(defaultDeliverySelectionTab.key);
 		setRules(values.rules);
 		setMode(values.mode);
 		setRuleSchema(null);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
 		setErrors({});
+		clearDeliverySourceOptionsCache();
 	}, []);
 
 	useEffect(() => {
@@ -533,7 +567,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 
 			setName(editingDelivery.name);
 			setDate(editingDelivery.date.split("T")[0]);
-			setSelectionMode(tab.mode);
+			setSelectedTabKey(tab.key);
 			setSelectedFeatureIds(values.selectedFeatureIds);
 			setRules(values.rules);
 			setMode(values.mode);
@@ -615,12 +649,12 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						<Typography variant="subtitle2" sx={{ mb: 1 }}>
 							Selection Mode
 						</Typography>
-						<ButtonGroup size="small">
-							{deliverySelectionTabs.map((tab) => (
+						<ButtonGroup size="small" aria-label="Selection Mode">
+							{tabs.map((tab) => (
 								<SelectionTabButton
 									key={tab.key}
 									tab={tab}
-									selectionMode={selectionMode}
+									activeTabKey={activeTab.key}
 									isPremium={isPremium}
 									onSelect={handleSelectTab}
 								/>

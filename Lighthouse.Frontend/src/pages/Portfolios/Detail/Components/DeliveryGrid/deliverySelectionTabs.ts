@@ -1,4 +1,5 @@
 import type { IDelivery } from "../../../../../models/Delivery";
+import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
 import {
 	DeliverySelectionMode,
 	type IWorkItemRuleCondition,
@@ -33,13 +34,28 @@ export interface DeliverySelectionFieldErrors {
 	rules?: string;
 }
 
+/**
+ * How a tab behaves under a licence that does not cover it. Locking is right where opening the tab
+ * would start work the licence cannot pay for; explaining is right where the tab has something
+ * worth seeing and a reader shut out of it would never learn what they are missing.
+ */
+export interface DeliveryPremiumGate {
+	whenLocked: "lockTab" | "explainInside";
+	/** Shown in place of the tab body. */
+	notice: string;
+	/** Set only for tabs whose button is wrapped in a licence tooltip. */
+	tooltipExtraInfo?: string;
+}
+
 export interface DeliverySelectionTab {
 	key: string;
 	label: string;
-	mode: DeliverySelectionMode;
-	isEnabled: (context: { isPremium: boolean }) => boolean;
-	/** Set only for tabs whose button is wrapped in a licence tooltip. */
-	premiumExtraInfo?: string;
+	/** Absent on tabs that cannot be saved, so nothing they show is ever written down. */
+	mode?: DeliverySelectionMode;
+	/** Set on tabs that read their choices from the work tracking system. */
+	source?: IDeliverySource;
+	/** Absent on tabs every licence covers. */
+	premiumGate?: DeliveryPremiumGate;
 	/** Recognises a stored delivery as belonging to this tab when the form opens for editing. */
 	claims?: (delivery: IDelivery) => boolean;
 	hydrate: (delivery: IDelivery) => DeliverySelectionValues;
@@ -118,7 +134,6 @@ const manualTab: DeliverySelectionTab = {
 	key: MANUAL_SELECTION_TAB_KEY,
 	label: "Manual",
 	mode: DeliverySelectionMode.Manual,
-	isEnabled: () => true,
 	hydrate: valuesFromDelivery,
 	firstBlockingError: manualBlockingError,
 	fieldErrors: (state, terms) => {
@@ -132,9 +147,13 @@ const ruleBasedTab: DeliverySelectionTab = {
 	key: RULE_BASED_SELECTION_TAB_KEY,
 	label: "Rule-Based",
 	mode: DeliverySelectionMode.RuleBased,
-	isEnabled: (context) => context.isPremium,
-	premiumExtraInfo:
-		"Please obtain a premium license to use rule-based deliveries.",
+	premiumGate: {
+		whenLocked: "lockTab",
+		notice:
+			"Rule-based delivery selection is a premium feature. Please upgrade your license to use this functionality.",
+		tooltipExtraInfo:
+			"Please obtain a premium license to use rule-based deliveries.",
+	},
 	claims: (delivery) =>
 		delivery.selectionMode === DeliverySelectionMode.RuleBased ||
 		(delivery.rules?.length ?? 0) > 0,
@@ -151,21 +170,43 @@ const ruleBasedTab: DeliverySelectionTab = {
 	}),
 };
 
-export const deliverySelectionTabs: DeliverySelectionTab[] = [
-	manualTab,
-	ruleBasedTab,
-];
+const builtInSelectionTabs: DeliverySelectionTab[] = [manualTab, ruleBasedTab];
 
 export const defaultDeliverySelectionTab = manualTab;
 
-export const deliveryTabForMode = (
-	mode: DeliverySelectionMode,
-): DeliverySelectionTab =>
-	deliverySelectionTabs.find((tab) => tab.mode === mode) ??
-	defaultDeliverySelectionTab;
+/**
+ * A tab for one way the connection lets a date be read out of the work tracking system. It carries
+ * no mode and no payload because looking at a source changes nothing yet; the blocking error says
+ * so rather than letting a user press Save and wonder why nothing stuck.
+ */
+const sourceSelectionTab = (source: IDeliverySource): DeliverySelectionTab => ({
+	key: `source:${source.key}`,
+	label: source.displayName,
+	source,
+	premiumGate: {
+		whenLocked: "explainInside",
+		notice: `Taking a delivery date from a ${source.displayName} is a premium feature. Please upgrade your license to use this functionality.`,
+	},
+	hydrate: () => emptySelectionValues(),
+	firstBlockingError: () =>
+		`Picking a ${source.displayName} only previews it. Switch to Manual or Rule-Based to save.`,
+	fieldErrors: () => ({}),
+	toPayload: () => ({ featureIds: [] }),
+});
+
+/**
+ * Every tab this Portfolio should offer. The sources come from the server, so a connection that
+ * grows another one grows another tab here without a line changing.
+ */
+export const deliverySelectionTabsFor = (
+	sources: IDeliverySource[],
+): DeliverySelectionTab[] => [
+	...builtInSelectionTabs,
+	...sources.map(sourceSelectionTab),
+];
 
 export const deliveryTabForDelivery = (
 	delivery: IDelivery,
 ): DeliverySelectionTab =>
-	deliverySelectionTabs.find((tab) => tab.claims?.(delivery) === true) ??
+	builtInSelectionTabs.find((tab) => tab.claims?.(delivery) === true) ??
 	defaultDeliverySelectionTab;

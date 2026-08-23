@@ -55,7 +55,7 @@ export const createMockApiServiceContext = (
 		licensingService: null as unknown as IApiServiceContext["licensingService"],
 		rbacService: createMockRbacService(),
 		demoDataService: null as unknown as IApiServiceContext["demoDataService"],
-		deliveryService: null as unknown as IApiServiceContext["deliveryService"],
+		deliveryService: createMockDeliveryService(),
 		wizardService: null as unknown as IApiServiceContext["wizardService"],
 		systemInfoService: createMockSystemInfoService(),
 		surveyNudgeService: createMockSurveyNudgeService(),
