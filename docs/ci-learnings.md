@@ -54,6 +54,15 @@ is luck, not process: the gate job starts as soon as the backend job finishes.
 (refactor → review → four Stryker rounds) is exactly when this step gets skipped, because the tree has
 been green locally for an hour by then — and none of those gates surface INFO diagnostics.
 
+**Recurrence: 4 — 2026-08-23, forecast test-workload change.** Run **after** `git push`, not before,
+for the third time. Same conditions the Recurrence-2 note already named: a long local gauntlet
+(subagent implementation → review → two load-test rounds → rebase onto 31 commits), a tree green
+locally for over an hour, and eight changed/new `.cs` files. It happened to come back clean — 37 hits,
+all pre-existing CA1861 in generated migrations, none in a touched file — so it cost nothing this
+time. That is the same luck the Recurrence-2 note called out, and luck is not the process. **The
+moment before `git push` is the checkpoint; a green rebase and a green targeted test run are not
+substitutes, because neither surfaces an INFO diagnostic.**
+
 **Recurrence: 3 — 2026-08-09, Epic 5500 slice 02. The filter above is wrong for new files.**
 `sonar-gates` failed on `main` with `new_violations = 7` (NUnit2045 ×2, NUnit2056 ×3, CA1861, CA2016),
 **all seven in a single brand-new test file**, after the mandatory command had been run and reported
@@ -337,12 +346,27 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-23 — a test sitting at 92s was not slow, it was failing slowly against a poll deadline
+
+- **Symptom**: `Slice00OneForecastPerBatchScenarios.A_forecast_write_back_that_failed_leaves_nothing_half_written` sat at **92.2s** in the top-20 slowest table while its six siblings in the same fixture summed to 20s. Two runs later, on run `32647715626`, three tests in that fixture went red at 1m17s–1m24s each with `The update queue never settled within 60s, so nothing can be concluded about how often the portfolio was forecast.`
+- **Root cause**: the 92s *was* the failure, arriving early. `WaitUntilTheQueueStaysIdle` polls for 25 consecutive idle readings at 20ms and resets the count on any activity, with a 60s deadline; the test runs two refresh rounds, so it was already spending most of two deadlines and converging by luck. Reading the duration as "an expensive test" led to a coverage-overhead diagnosis that was entirely wrong and cost a full investigation.
+- **Fix**: none for the deadline directly — the fixture's cost fell to **8.6s** once the sibling forecast fixtures stopped starving it of CPU (see the next entry), and the settle loop was taught to ask `IUpdateQueueService.IsHeld` so it no longer reads idle while a round still owes a delivery date.
+- **Rule going forward**: before treating a slow test as expensive work, check what its duration is *near*. A duration close to a poll deadline, a retry budget, or a multiple of one is a test converging by luck, and it will go red on a busier agent — read the number as a countdown, not a cost.
+
+### 2026-08-23 — making a fixture fast unmasks the concurrency flakes its CPU appetite was hiding
+
+- **Symptom**: after cutting the forecast benchmark's workload ~16×, `Slice00OneForecastPerBatchScenarios` failed **6 runs out of 6** under synthetic load with `Expected: 1, But was: 2` on a delivery-date announcement. Reverting the speed-up made the namespace green 16/16. Every instinct said the speed-up broke it.
+- **Root cause**: it did not. Running `Slice00` **alone** under the same load, on unmodified `main`, with every change reverted, reproduces the failure at ~1 in 20. The slow forecast fixtures had been saturating the cores, and a starved test does not hit the race. Two genuine test-side defects sat underneath — DI registrations closing over mutable fixture fields, so a host outliving its test recorded into whichever test was running then; and the settle loop being blind to work parked by `HoldUntilQueuedWorkClears`.
+- **Fix**: per-test holder objects for everything a registration records into, and `IsHeld` in the settle predicate. That took it from 6/6 failing back to the fixture's own pre-existing baseline. The residual is on `main` and is not caused by the speed-up.
+- **Rule going forward**: when a test starts flaking right after an unrelated fixture got faster, do not assume the speed-up caused it — run the suspect fixture **alone, under load, on the unmodified base** before attributing anything. A heavy neighbour is a scheduler, and removing it changes which interleavings are reachable. State the control result in the commit body, or the next person re-derives it.
+
 ### 2026-08-23 — a wall-clock budget taken on a developer machine, five times over, still failed on the agent
 
 - **Symptom**: `Verify Backend / backend` red on `TheJointForecastIsAffordableTest` — `Expected: less than 10 / But was: 52.27` and `12.94`. Both tests pass locally in under two seconds each.
 - **Root cause**: the bound was 10 seconds against a forecast costing ~2s on a 12-core developer machine, which reads as a generous 5× margin and is not one. Every forecast in that namespace runs **ten to twenty times slower** on the build agent — the fixtures that passed in the same job show the same factor (5s→84.5s, 8s→86s, 2s→25.9s). A 5× margin against a 20× slowdown fails by construction, and `[NonParallelizable]` does not rescue it: it keeps the fixture off the parallel workers, not the rest of the job off the cores.
 - **Fix**: raised to 180s and renamed to say what it is (a guard against a forecast that is stuck, not a budget). The assertion carrying the weight is the one beside it, holding the dates to the recorded baseline — that one is machine-independent. The wall clock stays in the `[Explicit]` probe, which is where a number taken on one machine belongs.
 - **Rule going forward**: never assert a wall clock in CI against a number measured locally, whatever the margin — the agent is 10-20× slower for CPU-bound work, so any margin under ~25× is a red build waiting for a busy runner. If a timing assertion has to exist, size it to catch a hang or an order-of-magnitude blow-up and say so in its name; assert the *output* for everything else.
+- **Update (2026-08-23): most of that 10-20× is coverage instrumentation, not the runner.** Measured directly — the `DependencyAwareForecasting` namespace, 12 tests, `MaxCpuCount=0` on a 12-core box: **16s without `--collect`, 119s with** `--collect:"XPlat Code Coverage"` and `Include="[Lighthouse]*"`, which is what `ci_backend.yml` runs on every push to `main` (`run_sonar` true). **7.4×.** Coverlet instruments `[Lighthouse]*`, and a Monte Carlo inner loop is the worst possible thing to put under it. Two consequences: a local stopwatch under-states the CI cost of simulation-heavy code by ~7×, and cutting simulated work pays ~7× more in CI than locally. The bound in this entry is now **30s, not 180s**, because the same test's workload dropped ~16× — if you change that workload again, re-check the bound rather than assuming the old headroom.
 
 ### 2026-08-22 — an ArchUnit dependency on a type only used inside an `async` method passes in Debug and fails in Release
 - **Symptom**: `Verify Backend / backend` red on the *first* CI run of a brand-new test — `DependencyAwareForecastSeamArchUnitTest.EveryStoreThatRecordsWorkInFlight_IsComparedAgainstTheOthers` failed with `Types that are "UpdateStatusStoreContainerTests" should depend on any Types that are "InProcessUpdateStatusStore"`, even though that test file constructs the store. Green locally, 105/105 green in the Architecture namespace, green in the full local run — all in Debug.
