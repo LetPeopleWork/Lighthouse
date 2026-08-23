@@ -105,9 +105,59 @@ dates moved" is the only evidence that matters and it does not appear in a test 
 
 ## Commit gate
 
-**No commit without the maintainer's explicit approval.** This slice edits the eligibility rule inside
-the Monte Carlo loop.
+**Lifted by the maintainer on 2026-08-23**, before this slice was dispatched: the standing "no commit
+without explicit approval" rule caused more trouble than it prevented. The slice runs on the normal
+slice-boundary discipline, and the diff is reviewed after it is written rather than before each commit.
 
 ## Learning hypothesis verdict
 
-_Not yet run._
+**CONFIRMED, 2026-08-23.** Three Features on one Team, work-in-progress limit two, remaining work
+7 / 5 / 9, one pinned starting number, two runs of one build - the second with F-2 recorded as waiting
+on F-1. 85% dates in working days:
+
+| Feature | Nothing waiting | F-2 waits on F-1 | Moved |
+|---|---|---|---|
+| F-1 | 17 | 16 | in 1 |
+| F-2 (the one waiting) | 13 | 22 | **out 9** |
+| F-3 (below it) | 22 | 20 | **in 2** |
+
+KPI-2 wanted at least one Feature's 85% date to move by three working days or more, and at least one
+Feature ranked below a waiting one to move earlier. Both hold, and the second is the one that matters:
+the work-in-progress window really does close up over the Feature that was left out, so the capacity
+goes to the Features below rather than evaporating. D2's argument for leaving a Feature out of the
+running, rather than shifting its date afterwards, stands - a shift would have moved F-2 and left F-1
+and F-3 exactly where they were.
+
+The reference class warning at the top of this brief was right about the cost, though: the estimate was
+~6h and the eligibility rule itself was the smallest part of it.
+
+## What this slice does not carry, and why
+
+Three acceptance claims turned out to need slice 02's joint trial clock, and are re-tagged in
+`acceptance/milestone-1-the-forecast-jumps-over-what-cannot-start.feature` rather than quietly dropped:
+
+- **A Feature worked by several Teams is only finished when all of them are done.** Each Team runs its
+  own trials, so one Team's run has no moment at which it can see the other two finish, and reading
+  their remaining counts across runs is a race. Slice 01 does not act on such a wait at all: it reports
+  it as crossing a Team.
+- **A day on which everything is waiting is simply an idle day.** Unreachable here. Every wait this
+  slice acts on is one Team's work at both ends and the honoured set has no circles in it, so whatever
+  still has work always has something at the front of it waiting for nothing.
+- **A dropped wait presents the Feature waiting as an earliest-possible rather than a forecast**
+  (SA-15 / ADR-159). A Feature waited on that cannot be forecast is one whose Team has nothing
+  measured; since both ends are the same one Team, the Feature waiting is un-forecastable too and never
+  gets a date to present as a floor. The row warning and the completing run are delivered.
+
+## Termination, and where it actually comes from
+
+The brief expected two guards. What holds the run up is simpler and stronger than either: the waits the
+simulation is handed have no circles in them, because the one decision drops every edge inside one, and
+every wait it acts on is one Team's work at both ends - so the Feature waited on has a row in the same
+run and a Team with delivery to draw from. A set of waits with no circles always has something at the
+front of it waiting for nothing, and the run gets there.
+
+That is a property of the decision, not of the loop. If it is ever broken, the loop would otherwise
+spend a background thread counting simulated days forever with nothing anywhere saying why. So an
+empty eligible set with work still left ends the run and logs one error naming the Teams and how many
+trials were abandoned. It is not how termination is achieved - it is how a mistake in achieving it
+becomes visible, which is what SA-5 asked for.

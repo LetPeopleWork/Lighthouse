@@ -1465,6 +1465,52 @@ measures. Four were found by reading the shipped code in this wave; the rest cam
   and a cross-Team reason; slice 02 deletes the second. Scenarios #19 and #40 are a pair so neither
   direction ships alone.
 
+**Resolved in DELIVER slice 01, 2026-08-23.** Every item above under *Owed before slice 01 is
+dispatched* is answered; what was decided is recorded here rather than left to be re-derived from the
+diff.
+
+- **The three shipped architecture rules were re-cut, not deleted**, and each replacement says what is
+  actually protected now. `TheForecastAndThisEpic_KnowNothingOfEachOther` became
+  `TheForecast_ReachesOnlyThePortItAsksAndTheAnswerItIsGiven` — two named types instead of none, and a
+  further check that the forecast **does** ask, so the rule cannot pass loudest on a forecast that
+  stopped consulting dependencies altogether. `NothingThisEpicAdded_ReadsTheLicenceFlagItWasHanded`
+  became `NothingButTheOneDecision_ReadsTheLicenceFlagItWasHanded`, and
+  `NothingThisEpicAdded_AsksWhetherTheLicenceIsPremium` became
+  `NothingButTheOnePlace_AsksWhetherTheInstanceHasPaid`. Both scans now assert that their one permitted
+  reader still reads — a scan hunting a name nobody uses any more passes for the wrong reason.
+  `AtMostOnePlace_DecidesWhetherADependencyCanBeActedOn` tightened to `ExactlyOnePlace…`, which is what
+  its own remark said it was waiting for.
+- **The seam that supplies the licence answer is `DependencyDecision`**, the one component in the
+  product that reads it. `DependencyFacts.About` now takes the answer as a required argument, so nothing
+  can hard-code it again. Screens, the refresh reporter and the forecast port all ask that one
+  component; the forecast reaches it only through `IWhatTheForecastWaitsFor`, so it never meets the
+  licence, the policy or the circle walk.
+- **AC-6.1's over-promise is fixed at the decision, exactly as this section proposed.** `NotLicensed`
+  replaces only a verdict that would otherwise have been honoured. A cross-Portfolio wait, one in a
+  circle, one whose Feature cannot be forecast and one a Portfolio set aside all keep the reason that is
+  actually true of them, so no unlicensed reader is told a purchase would move a date that stays put.
+- **AC-5.4's cross-Team reason is `NotHonouredReason.CrossesATeam`, decided in the one policy**, with
+  `FeatureDependencyFacts` extended to carry the Teams with work on a Feature — the same shape as the
+  Portfolios it already carried. It is asked **last**, after the circle and the un-forecastable Feature,
+  so a wait that is both in a circle and across Teams still reports the circle: the circle is the one
+  the user can go and fix. Where **no** Team has work on either end nothing crosses anything and the
+  wait is left alone — reporting a crossed Team there would name a Team neither end has.
+- **The reason set churn is as designed**: slice 01 adds `CrossesATeam` and `NotLicensed`; slice 02
+  deletes the first. Scenarios #19 and #40 remain the pair that stops either direction shipping alone.
+- **Three acceptance claims moved to slice 02** and are re-tagged in the feature file with the reason:
+  the multi-Team blocker, the genuinely idle day, and SA-15's earliest-possible floor. All three need a
+  wait this slice does not act on; the slice brief's *What this slice does not carry* section has the
+  argument.
+- **Termination does not rest on `CanBeForecast` here**, which answers half of the first item under
+  *Owed before slice 02* early. Every wait slice 01 acts on is one Team's work at both ends, so the
+  Feature waited on has a row in the same run and a Team with delivery to draw from; the honoured set
+  has no circles in it, so something is always at the front of it waiting for nothing. The stale-fact
+  hazard the item describes is real and remains open **for slice 02**, where a wait can cross Teams.
+- **SA-5's ceiling landed early, in the shape the operability note asked for**: an empty eligible set
+  with work still left ends the run and logs one error per run naming the Teams and the number of
+  trials abandoned. It is not how termination is achieved — it is how a mistake in achieving it becomes
+  visible.
+
 **Owed before slice 02 is dispatched**
 
 - **The three termination guarantees are not independent, and one is not a guarantee.** "The trial loop

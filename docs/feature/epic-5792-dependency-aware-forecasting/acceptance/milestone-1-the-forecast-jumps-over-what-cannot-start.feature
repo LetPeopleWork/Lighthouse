@@ -55,7 +55,7 @@ Feature: The forecast jumps over a Feature that cannot start yet (Epic 5792, Sli
     When the Portfolio is forecast
     Then no date moves because of that dependency
     And the row for "Payment gateway upgrade" warns that the wait crosses a Team and is not in the forecast
-    And the warning uses the instance's own word for a Feature
+    And the warning uses the instance's own word for a Feature and for a Team
 
   @error @driving_port @us-05 @slice-01 @contract-shape:bounded-change
   Scenario: Two Features waiting on each other constrain nothing, and the forecast still finishes
@@ -66,6 +66,11 @@ Feature: The forecast jumps over a Feature that cannot start yet (Epic 5792, Sli
     And neither Feature held the other back in any simulated run
     And both rows carry the warning that names the other
 
+  # The middle Then MOVED TO SLICE 02 during DELIVER. A Feature waited on that cannot be forecast is one
+  # whose Team has nothing measured behind it; slice 01 acts only on a wait both ends of which are the
+  # same one Team's work, and that Team having nothing measured leaves the Feature waiting un-forecastable
+  # too. So there is no run in which a wait is dropped and the Feature waiting still gets a date, and the
+  # floor has nothing to be presented on. The row warning and the completing run are slice 01's.
   @error @driving_port @us-05 @slice-01 @contract-shape:bounded-change
   Scenario: Waiting on a Feature that can never be forecast drops the wait for this run, and says so
     Given the instance is licensed for dependency-aware forecasting
@@ -96,7 +101,13 @@ Feature: The forecast jumps over a Feature that cannot start yet (Epic 5792, Sli
     And the row for "Payment gateway upgrade" says why that wait is not in the forecast
     And "Address book rewrite" has moved, so the mechanic was running while it left the other alone
 
-  @edge @driving_port @us-05 @slice-01 @contract-shape:bounded-change
+  # MOVED TO SLICE 02 during DELIVER. Every wait slice 01 acts on is one Team's work at both ends, and
+  # the set of them has no circles in it, so whatever still has work always has something at the front of
+  # it that is waiting for nothing. A day on which a Team could start nothing is therefore not a state
+  # slice 01 can reach - it becomes reachable once a Team can be held up by another Team's work. The loop
+  # stops rather than counting days forever if it is ever handed one anyway, and says so in the log; that
+  # guarantee is asserted in ForecastServiceDependencyTest instead.
+  @edge @driving_port @us-05 @slice-02 @contract-shape:bounded-change
   Scenario: A day on which everything is waiting is simply an idle day
     Given the instance is licensed for dependency-aware forecasting
     And every Feature the Team could work on is waiting on something unfinished
@@ -104,7 +115,13 @@ Feature: The forecast jumps over a Feature that cannot start yet (Epic 5792, Sli
     Then that day's delivery is not carried over to a later day
     And the run still reaches an end
 
-  @edge @driving_port @us-05 @slice-01 @contract-shape:bounded-change
+  # MOVED TO SLICE 02 during DELIVER. Each Team runs its own trials on its own clock, so a run belonging
+  # to one Team has no moment at which it can observe the other two finish. Reading the first Team's
+  # finish as the whole Feature's would release the Feature waiting early and nothing in the output
+  # would look wrong; reading the other Teams' counts across runs is a race whose answer changes between
+  # two runs of one build. Slice 01 therefore does not act on this wait at all - it reports it as
+  # crossing a Team, like any other. The joint trial clock is what makes it observable.
+  @edge @driving_port @us-05 @slice-02 @contract-shape:bounded-change
   Scenario: A Feature worked by several Teams is only finished when all of them are done
     Given the instance is licensed for dependency-aware forecasting
     And "Checkout redesign" is worked by three Teams, each with work remaining
