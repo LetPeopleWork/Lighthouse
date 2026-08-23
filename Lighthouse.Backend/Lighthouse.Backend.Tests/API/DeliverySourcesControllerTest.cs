@@ -9,8 +9,12 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -52,9 +56,17 @@ namespace Lighthouse.Backend.Tests.API
 
         private static readonly JsonSerializerOptions WireOptions = new(JsonSerializerDefaults.Web);
 
+        private const string TheBoundRelease = "10007";
+        private const string TheTrackedItem = "LGH-1";
+
+        private static readonly DeliverySourceSnapshot TheReleaseAsTheRemoteSeesIt =
+            new("Release 3.0", TheDateOfTheDatedRelease, [TheTrackedItem]);
+
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock;
         private Mock<IDeliverySourceProvider> deliverySourceProviderMock;
+        private Mock<IDeliverySourceResolver> deliverySourceResolverMock;
+        private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private DeliverySourcesController subject;
 
         [SetUp]
@@ -63,10 +75,19 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             deliverySourceProviderMock = new Mock<IDeliverySourceProvider>();
+            deliverySourceResolverMock = new Mock<IDeliverySourceResolver>();
+            blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            blackoutPeriodServiceMock
+                .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns([]);
 
             subject = new DeliverySourcesController(
                 portfolioRepositoryMock.Object,
-                connectorFactoryMock.Object);
+                connectorFactoryMock.Object,
+                deliverySourceResolverMock.Object,
+                blackoutPeriodServiceMock.Object,
+                Mock.Of<IBlockedItemService>(),
+                TestToday.Clock);
         }
 
         [TestCaseSource(nameof(SystemsThatOfferNothing))]
@@ -230,6 +251,186 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(guard.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
                 Assert.That(guard.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
             }
+        }
+
+        [Test]
+        public async Task A_Release_that_matches_no_Feature_in_this_Portfolio_says_why_the_list_is_empty()
+        {
+            GivenTheResolverAnswers(new DeliverySourceResolution.Resolved(TheReleaseAsTheRemoteSeesIt), [], taggedItemCount: 3);
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            Assert.That(result, Is.TypeOf<OkObjectResult>(),
+                "a Release this Portfolio matches nothing in is a real answer to the question that was asked, not a failed request.");
+
+            var preview = PreviewIn(result);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preview.Features, Is.Empty);
+                Assert.That(preview.EmptyBecause, Is.EqualTo(DeliverySourcePreviewEmptyReason.TaggedWorkNotTrackedByThisPortfolio),
+                    "work exists against this Release, it just is not this Portfolio's - which sends the reader to the Portfolio's scope rather than to the board.");
+            }
+        }
+
+        [Test]
+        public async Task A_Release_nobody_tagged_any_work_against_is_told_apart_from_one_this_Portfolio_does_not_track()
+        {
+            GivenTheResolverAnswers(new DeliverySourceResolution.Resolved(TheReleaseAsTheRemoteSeesIt), [], taggedItemCount: 0);
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            Assert.That(PreviewIn(result).EmptyBecause, Is.EqualTo(DeliverySourcePreviewEmptyReason.NothingTaggedAgainstTheSource),
+                "an untagged Release is a tagging gap on the board; an untracked one is a scoping question here, and the two are fixed in different places.");
+        }
+
+        [Test]
+        public async Task A_bound_Release_answers_with_its_date_and_the_Features_that_would_come_along()
+        {
+            GivenTheResolverAnswers(
+                new DeliverySourceResolution.Resolved(TheReleaseAsTheRemoteSeesIt), [ATrackedFeature()], taggedItemCount: 1);
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            var preview = PreviewIn(result);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(preview.Name, Is.EqualTo("Release 3.0"));
+                Assert.That(preview.Date, Is.EqualTo(TheDateOfTheDatedRelease));
+                Assert.That(preview.Features, Has.Count.EqualTo(1));
+                Assert.That(preview.Features[0].ReferenceId, Is.EqualTo(TheTrackedItem),
+                    "the rows are the same shape the Feature grid already renders, so the preview needs no grid of its own.");
+                Assert.That(preview.EmptyBecause, Is.EqualTo(DeliverySourcePreviewEmptyReason.None));
+            }
+        }
+
+        [Test]
+        public async Task A_Release_that_is_gone_and_a_remote_that_could_not_be_asked_are_answered_differently()
+        {
+            GivenTheResolverAnswers(new DeliverySourceResolution.NotFound(), [], taggedItemCount: 0);
+            var gone = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            GivenTheResolverAnswers(
+                new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.CapabilityWithdrawn), [], taggedItemCount: 0);
+            var unreachable = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(gone, Is.TypeOf<NotFoundObjectResult>(),
+                    "the remote answered, and what it said was that this Release is not there any more.");
+                Assert.That(StatusOf(unreachable), Is.EqualTo(StatusCodes.Status502BadGateway),
+                    "a remote that could not be asked has said nothing about the Release, so answering 'gone' would invent a deletion out of a network blip.");
+            }
+        }
+
+        [Test]
+        public async Task A_Release_carrying_no_date_cannot_be_previewed_because_there_is_no_date_to_preview()
+        {
+            GivenTheResolverAnswers(new DeliverySourceResolution.NoDate("Release 3.0"), [], taggedItemCount: 0);
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public async Task The_preview_asks_the_resolver_and_never_queries_the_remote_itself()
+        {
+            GivenTheResolverAnswers(new DeliverySourceResolution.Resolved(TheReleaseAsTheRemoteSeesIt), [], taggedItemCount: 0);
+
+            await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                deliverySourceProviderMock.Verify(
+                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    Times.Never,
+                    "membership is read once, through the resolver, so the remote query language is spelled in exactly one place.");
+                deliverySourceProviderMock.Verify(
+                    p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()),
+                    Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task Previewing_a_source_key_the_connection_does_not_offer_is_not_found()
+        {
+            GivenAPortfolioOn(WorkTrackingSystems.Jira, offersDeliverySources: true);
+            GivenTheConnectionOffersJiraReleases();
+
+            var result = await subject.Preview(PortfolioId, "jira-sprint", ARequestForTheBoundRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+                deliverySourceResolverMock.Verify(
+                    r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    Times.Never,
+                    "a key nobody offers is refused before anything is resolved, so a made-up request cannot be reported as the remote being unwell.");
+            }
+        }
+
+        [Test]
+        public async Task A_Portfolio_that_does_not_exist_has_nothing_to_preview()
+        {
+            portfolioRepositoryMock.Setup(r => r.GetById(PortfolioId)).Returns((Portfolio?)null);
+
+            var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+        }
+
+        [Test]
+        public void Previewing_needs_write_access_and_a_paid_licence()
+        {
+            var guard = GuardOn(nameof(DeliverySourcesController.Preview));
+            var licence = typeof(DeliverySourcesController).GetMethod(nameof(DeliverySourcesController.Preview))!
+                .GetCustomAttribute<LicenseGuardAttribute>();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(guard.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite),
+                    "previewing is part of setting a binding up, so a reader who may not change the Portfolio may not run it.");
+                Assert.That(guard.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+                Assert.That(licence, Is.Not.Null);
+                Assert.That(licence!.RequirePremium, Is.True);
+            }
+        }
+
+        private static int? StatusOf(IActionResult result) => ((ObjectResult)result).StatusCode;
+
+        private static DeliverySourcePreviewDto PreviewIn(IActionResult result)
+        {
+            return (DeliverySourcePreviewDto)((OkObjectResult)result).Value!;
+        }
+
+        private static PreviewDeliverySourceRequest ARequestForTheBoundRelease()
+        {
+            return new PreviewDeliverySourceRequest { SourceReference = TheBoundRelease };
+        }
+
+        private static Feature ATrackedFeature()
+        {
+            return new Feature
+            {
+                Id = 7,
+                ReferenceId = TheTrackedItem,
+                Name = "Something the Portfolio tracks",
+                Type = "Feature",
+                State = "In Progress",
+            };
+        }
+
+        private void GivenTheResolverAnswers(DeliverySourceResolution resolution, List<Feature> trackedFeatures, int taggedItemCount)
+        {
+            GivenAPortfolioOn(WorkTrackingSystems.Jira, offersDeliverySources: true);
+            GivenTheConnectionOffersJiraReleases();
+
+            deliverySourceResolverMock
+                .Setup(r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>
+                {
+                    [TheBoundRelease] = new PortfolioSourcePreview(resolution, trackedFeatures, taggedItemCount),
+                });
         }
 
         private static RbacGuardAttribute GuardOn(string actionName)

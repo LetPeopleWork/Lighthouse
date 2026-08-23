@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.DeliverySources;
 
 namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
 {
@@ -13,7 +12,7 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
     /// </summary>
     public interface IDeliverySourceResolver
     {
-        Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveForPortfolio(
+        Task<IReadOnlyDictionary<string, PortfolioSourcePreview>> ResolveForPortfolio(
             Portfolio portfolio, string sourceKey, IReadOnlyList<string> sourceReferences);
     }
 }
