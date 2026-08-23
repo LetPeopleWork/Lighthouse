@@ -11,13 +11,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     /// </summary>
     public static class JiraReleaseVersionReader
     {
-        public static IReadOnlyList<DeliverySourceOption> ReadOptions(string versionsPayload, DeliverySourceProject project)
-        {
-            using var payload = JsonDocument.Parse(versionsPayload);
-
-            return [.. payload.RootElement.EnumerateArray().Select(version => ToOption(version, project))];
-        }
-
         /// <summary>
         /// The projects the credential can see, as key and name.
         /// </summary>

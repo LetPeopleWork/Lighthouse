@@ -1953,8 +1953,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string DeliverySourceNotImplementedYet = "Not yet implemented - DISTILL scaffold";
 
-        private const string JiraReleaseEndpoint = "rest/api/3/version";
-
         private const string FixVersionsFieldName = "fixVersions";
 
         // The membership search reads identity and which Releases carry it, and nothing else. It is a query of
@@ -1968,12 +1966,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const int VersionPageSize = 50;
 
-        // Jira is asked for released and unreleased Releases only, so an archived one never crosses the
-        // wire. A Release nobody dated is still listed and refused, because the reader can go and date it
-        // and come back; an archived Release cannot be un-archived from here, so a row nobody can act on
-        // would only be noise. Hiding it is presentation - the server still refuses to bind one, which is
-        // what a request arriving without ever passing through the picker runs into.
-        private const string BindableVersionStatuses = "released,unreleased";
+        // The picker is asked for unreleased Releases only, so a finished one never crosses the wire. A
+        // Release nobody dated is still listed and refused, because the reader can go and date it and come
+        // straight back; archived and released both say the Release is finished with, and there is nothing
+        // a reader could do about a row like that except wonder why it was offered.
+        private const string OfferableVersionStatuses = "unreleased";
+
+        // A refresh asks for every status instead. A Release is routinely archived or ticked as released
+        // long after a Delivery bound to it, and leaving those out here would make a perfectly good binding
+        // read as a Release that no longer exists - so ticking Release in Jira would quietly stop the
+        // Delivery syncing. Hiding a Release from the picker and refusing to keep syncing one are separate
+        // decisions, and only the first of them was made.
+        private const string EveryVersionStatus = "archived,released,unreleased";
 
         // One call per project, so an instance with hundreds of them must not fire hundreds of requests at
         // once - and must not walk them one at a time either, which is what made the first measurement of
@@ -2017,25 +2021,51 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var client = await GetJiraRestClientAsync(connection);
-            var projects = await ReadVisibleProjects(client);
+            var (options, _) = await SweepReleases(client, OfferableVersionStatuses);
 
-            logger.LogDebug("Getting Releases of {ProjectCount} Jira projects", projects.Count);
-
-            var releasesByProject = new IReadOnlyList<DeliverySourceOption>[projects.Count];
-
-            await Parallel.ForAsync(
-                0,
-                projects.Count,
-                new ParallelOptions { MaxDegreeOfParallelism = MaxParallelProjectReads },
-                async (index, _) => releasesByProject[index] = await ReadReleasesOf(client, projects[index]));
-
-            IReadOnlyList<DeliverySourceOption> options = [.. releasesByProject.SelectMany(releases => releases)];
             deliverySourceOptionsCache.Store(cacheKey, options, DeliverySourceOptionsLifetime);
 
             return options;
         }
 
-        private static async Task<IReadOnlyList<DeliverySourceProject>> ReadVisibleProjects(HttpClient client)
+        /// <summary>
+        /// Every Release the credential can see with the statuses asked for, each carrying the project it
+        /// came from: one call to list the projects and then one per project, a few at a time.
+        ///
+        /// Whether the sweep saw everything travels back with it, because the two callers want opposite
+        /// things from a sweep that did not. The picker would rather show most of the Releases than none,
+        /// so a project it may not read is simply left out. A refresh may not be so relaxed: a Release
+        /// missing because a page went unread looks exactly like a Release somebody deleted, and only
+        /// deletion may retire a binding.
+        /// </summary>
+        private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepReleases(
+            HttpClient client, string statuses)
+        {
+            var (projects, listedEveryProject) = await ReadVisibleProjects(client);
+
+            logger.LogDebug("Getting Releases of {ProjectCount} Jira projects", projects.Count);
+
+            var readsByProject = new (IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)[projects.Count];
+
+            await Parallel.ForAsync(
+                0,
+                projects.Count,
+                new ParallelOptions { MaxDegreeOfParallelism = MaxParallelProjectReads },
+                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, projects[index], statuses));
+
+            IReadOnlyList<DeliverySourceOption> releases = [.. readsByProject.SelectMany(read => read.Releases)];
+            var sawEverything = listedEveryProject && Array.TrueForAll(readsByProject, read => read.SawEverything);
+
+            return (releases, sawEverything);
+        }
+
+        /// <summary>
+        /// The projects the credential can see. A credential that may not run this at all answers with no
+        /// projects rather than throwing, for the same reason one unreadable project does not fail the
+        /// list: a picker that comes up empty tells the reader something, and one that fails mid-request
+        /// tells them nothing.
+        /// </summary>
+        private async Task<(IReadOnlyList<DeliverySourceProject> Projects, bool SawEverything)> ReadVisibleProjects(HttpClient client)
         {
             var projects = new List<DeliverySourceProject>();
 
@@ -2043,14 +2073,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var response = await client.GetAsync(
                     $"rest/api/3/project/search?startAt={projects.Count}&maxResults={ProjectPageSize}");
-                response.EnsureSuccessStatusCode();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogInformation(
+                        "Jira did not let us list the projects on this connection ({StatusCode}) - no Releases can be offered",
+                        response.StatusCode);
+
+                    return (projects, false);
+                }
 
                 var (page, isLastPage) = JiraReleaseVersionReader.ReadProjectPage(await response.Content.ReadAsStringAsync());
                 projects.AddRange(page);
 
                 if (isLastPage || page.Count == 0)
                 {
-                    return projects;
+                    return (projects, true);
                 }
             }
         }
@@ -2060,7 +2098,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// than failing the whole list. On a large instance a single such project would otherwise take the
         /// entire picker away from a reader who has perfectly good projects to choose from.
         /// </summary>
-        private async Task<IReadOnlyList<DeliverySourceOption>> ReadReleasesOf(HttpClient client, DeliverySourceProject project)
+        private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesOf(
+            HttpClient client, DeliverySourceProject project, string statuses)
         {
             var releases = new List<DeliverySourceOption>();
 
@@ -2068,7 +2107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var response = await client.GetAsync(
                     $"rest/api/3/project/{Uri.EscapeDataString(project.Key)}/version" +
-                    $"?startAt={releases.Count}&maxResults={VersionPageSize}&status={BindableVersionStatuses}");
+                    $"?startAt={releases.Count}&maxResults={VersionPageSize}&status={statuses}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -2076,7 +2115,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                         "Jira did not let us read the Releases of project {ProjectKey} ({StatusCode}) - offering the other projects without it",
                         project.Key, response.StatusCode);
 
-                    return releases;
+                    return (releases, false);
                 }
 
                 var (page, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(await response.Content.ReadAsStringAsync(), project);
@@ -2084,16 +2123,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 if (isLastPage || page.Count == 0)
                 {
-                    return releases;
+                    return (releases, true);
                 }
             }
         }
 
         /// <summary>
-        /// Every bound Release in one pass. Each Release is read for its name and date, and then a single
-        /// search asks Jira which work carries any of them - so the search costs the same whether one Delivery
-        /// is bound or fifty. What comes back for a Release is a verdict rather than a value, because the
-        /// caller has to be able to tell a Release Jira says is gone from a Jira that could not be asked.
+        /// Every bound Release in one pass. One sweep of the projects finds all of them at once and a single
+        /// search asks Jira which work carries any of them - so a refresh costs a sweep and a search whether
+        /// one Delivery is bound or fifty, rather than a read per Delivery. What comes back for a Release is
+        /// a verdict rather than a value, because the caller has to be able to tell a Release Jira says is
+        /// gone from a Jira that could not be asked.
+        ///
+        /// The sweep is made fresh rather than taken from what the picker remembered, because a refresh
+        /// exists to notice that a date moved and would have nothing to report if it read a date from five
+        /// minutes ago.
         /// </summary>
         public async Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
             WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences)
@@ -2108,6 +2152,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var client = await GetJiraRestClientAsync(connection);
+            var (releases, sawEveryRelease) = await SweepEveryRelease(client);
+
+            var releasesById = releases
+                .DistinctBy(release => release.Id, StringComparer.Ordinal)
+                .ToDictionary(release => release.Id, StringComparer.Ordinal);
 
             var datedReleases = new List<(string SourceReference, string VersionId)>();
 
@@ -2118,13 +2167,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     continue;
                 }
 
-                var (verdict, versionId) = await ReadRelease(client, sourceReference);
-
-                resolutions[sourceReference] = verdict;
-
-                if (versionId is not null)
+                if (!releasesById.TryGetValue(sourceReference, out var release))
                 {
-                    datedReleases.Add((sourceReference, versionId));
+                    resolutions[sourceReference] = sawEveryRelease
+                        ? new DeliverySourceResolution.NotFound()
+                        : TheReadCouldNotBeMade();
+
+                    continue;
+                }
+
+                resolutions[sourceReference] = VerdictFor(release);
+
+                if (release.Date.HasValue)
+                {
+                    datedReleases.Add((sourceReference, release.Id));
                 }
             }
 
@@ -2146,51 +2202,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// What one bound Release currently is, and - when it is a Release a forecast could be synced to - the
-        /// version id to ask about in the membership search. The id comes back from here rather than being
-        /// taken from the request, so the value that ends up inside a JQL clause is always one Jira itself
-        /// wrote.
+        /// The sweep a refresh runs, asking for every status so that a Release archived or ticked as
+        /// released since it was bound is still found. A Jira that could not be reached comes back as a
+        /// sweep that saw nothing and knows it, which is what keeps a network blip from reading as a set
+        /// of deleted Releases.
         /// </summary>
-        private async Task<(DeliverySourceResolution Verdict, string? VersionId)> ReadRelease(
-            HttpClient client, string sourceReference)
+        private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepEveryRelease(HttpClient client)
         {
             try
             {
-                var response = await client.GetAsync($"{JiraReleaseEndpoint}/{Uri.EscapeDataString(sourceReference)}");
-
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    return (new DeliverySourceResolution.NotFound(), null);
-                }
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    return (TheReadCouldNotBeMade(), null);
-                }
-
-                var release = ReadOneRelease(await response.Content.ReadAsStringAsync());
-
-                return (VerdictFor(release), release.Date.HasValue ? release.Id : null);
+                return await SweepReleases(client, EveryVersionStatus);
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
             {
-                logger.LogInformation(exception, "Could not read Jira Release {SourceReference}", sourceReference);
+                logger.LogInformation(exception, "Could not read the Jira Releases on this connection");
 
-                return (TheReadCouldNotBeMade(), null);
+                return ([], false);
             }
         }
-
-        /// <summary>
-        /// Jira answers with a bare version here and with a list of them when the whole project is asked for.
-        /// Both go through the one parser, so "nobody set a date on this" cannot come to mean one thing while
-        /// binding a Delivery and something else on every refresh afterwards.
-        /// </summary>
-        private static DeliverySourceOption ReadOneRelease(string versionPayload)
-            => JiraReleaseVersionReader.ReadOptions($"[{versionPayload}]", NoProjectWasAskedFor).Single();
-
-        // A refresh reads one already-bound Release by its id and wants only its name and date back, so
-        // which project it lives in is never asked for. Left blank rather than guessed at.
-        private static readonly DeliverySourceProject NoProjectWasAskedFor = new(string.Empty, string.Empty);
 
         /// <summary>
         /// The answer when Jira could not be asked at all. Deliberately not the same answer as a Release Jira

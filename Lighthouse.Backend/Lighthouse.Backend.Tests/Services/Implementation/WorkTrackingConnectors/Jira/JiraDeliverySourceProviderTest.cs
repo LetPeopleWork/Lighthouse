@@ -46,48 +46,64 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheUndatedRelease = "10005";
         private const string TheUndatedReleaseName = "Release 2.0";
         private const string TheDeletedRelease = "10006";
+        private const string TheShippedRelease = "10009";
+
+        private const string TheReleaseProject = "REL";
+        private const string TheWorkProject = "PROJ";
+        private const string TheLockedProject = "LOCKED";
+
+        private const string TheDayTheDatedReleaseShipsInJira = "2026-08-22";
 
         private static readonly DeliverySourceProject TheDemoProject = new("LGH", "Lighthouse Demo");
 
+        private static readonly DateTime TheDayTheDatedReleaseShips = new(2026, 8, 22, 0, 0, 0, DateTimeKind.Utc);
+
         private static readonly string[] TheDatedReleaseOnItsOwn = [TheDatedRelease];
+        private static readonly string[] TheUndatedReleaseOnItsOwn = [TheUndatedRelease];
+        private static readonly string[] TheShippedReleaseOnItsOwn = [TheShippedRelease];
         private static readonly string[] ThreeDatedReleases = [TheDatedRelease, "10007", "10008"];
         private static readonly string[] TwoProjectsThatBothNameARelease44 = ["PROJ", "REL"];
         private static readonly string[] TheWorkOnTheDatedRelease = ["LGH-1", "LGH-2"];
+        private static readonly string[] TheWorkOnAShippedRelease = ["LGH-1"];
 
         /// <summary>
-        /// Copied from what a real Jira answered on 2026-08-22. The middle entry has no releaseDate key at
-        /// all - not a null, the key is simply absent - which is how Jira reports a Release nobody dated,
-        /// and how two of the three Releases on that instance came back.
+        /// The version objects are copied from what a real Jira answered on 2026-08-22, inside the page
+        /// wrapper the endpoint puts around them. The middle entry has no releaseDate key at all - not a
+        /// null, the key is simply absent - which is how Jira reports a Release nobody dated, and how two
+        /// of the three Releases on that instance came back.
         /// </summary>
         private const string CapturedVersionsPayload = """
-            [
-              {
-                "self": "https://example.atlassian.net/rest/api/3/version/10004",
-                "id": "10004",
-                "name": "Release 1.0",
-                "archived": false,
-                "released": true,
-                "releaseDate": "2026-08-22",
-                "projectId": 10001
-              },
-              {
-                "self": "https://example.atlassian.net/rest/api/3/version/10005",
-                "id": "10005",
-                "name": "Release 2.0",
-                "archived": false,
-                "released": false,
-                "projectId": 10001
-              },
-              {
-                "self": "https://example.atlassian.net/rest/api/3/version/10006",
-                "id": "10006",
-                "name": "Release 0.9",
-                "archived": true,
-                "released": true,
-                "releaseDate": "2025-01-15",
-                "projectId": 10001
-              }
-            ]
+            {
+              "isLast": true,
+              "values": [
+                {
+                  "self": "https://example.atlassian.net/rest/api/3/version/10004",
+                  "id": "10004",
+                  "name": "Release 1.0",
+                  "archived": false,
+                  "released": true,
+                  "releaseDate": "2026-08-22",
+                  "projectId": 10001
+                },
+                {
+                  "self": "https://example.atlassian.net/rest/api/3/version/10005",
+                  "id": "10005",
+                  "name": "Release 2.0",
+                  "archived": false,
+                  "released": false,
+                  "projectId": 10001
+                },
+                {
+                  "self": "https://example.atlassian.net/rest/api/3/version/10006",
+                  "id": "10006",
+                  "name": "Release 0.9",
+                  "archived": true,
+                  "released": true,
+                  "releaseDate": "2025-01-15",
+                  "projectId": 10001
+                }
+              ]
+            }
             """;
 
         [Test]
@@ -122,9 +138,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_with_no_release_date_is_offered_but_cannot_be_selected()
         {
-            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload, TheDemoProject);
+            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
-            var undated = options.Single(option => option.Id == "10005");
+            var undated = options.Single(option => option.Id == TheUndatedRelease);
 
             using (Assert.EnterMultipleScope())
             {
@@ -141,9 +157,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public void A_Release_that_was_archived_in_Jira_cannot_be_selected()
         {
-            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload, TheDemoProject);
+            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
 
-            var archived = options.Single(option => option.Id == "10006");
+            var archived = options.Single(option => option.Id == TheDeletedRelease);
 
             using (Assert.EnterMultipleScope())
             {
@@ -155,21 +171,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public void A_Release_that_already_shipped_stays_selectable()
+        public async Task A_Release_that_already_shipped_is_not_offered_at_all()
         {
-            var options = JiraReleaseVersionReader.ReadOptions(CapturedVersionsPayload, TheDemoProject);
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithShippedReleaseIn(TheReleaseProject, TheShippedRelease, "Release 0.8", "2026-07-01");
 
-            var shipped = options.Single(option => option.Id == "10004");
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(options, Has.Count.EqualTo(3),
-                    "every version Jira returns becomes an option; none are filtered out on the way through.");
-                Assert.That(shipped.IsReleasedAtSource, Is.True);
-                Assert.That(shipped.Date, Is.EqualTo(new DateTime(2026, 8, 22, 0, 0, 0, DateTimeKind.Utc)));
-                Assert.That(shipped.IsSelectable, Is.True,
-                    "a shipped Release is routinely still being tracked to closure, which is exactly when a forecast is worth having.");
-                Assert.That(shipped.BlockedBecause, Is.Null);
+                Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
+                    "a Release that has already shipped has nothing left to forecast, so offering it only invites someone to bind a Delivery to a date that will never move again.");
+                Assert.That(QueryValue(jira.VersionListRequests.Single(), "status"), Is.EqualTo("unreleased"),
+                    "Jira is asked to leave them out rather than being asked for everything and then having some dropped here.");
             }
         }
 
@@ -187,9 +204,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task Releases_are_gathered_from_every_project_the_credential_can_see()
         {
             var jira = AJira()
-                .WithProject("PROJ", "The work")
-                .WithProject("REL", "Release coordination")
-                .WithReleaseIn("REL", TheDatedRelease, TheDatedReleaseName, "2026-08-22");
+                .WithTheWorkProject()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
             var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
@@ -207,10 +224,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task Two_Releases_that_share_a_name_in_different_projects_stay_told_apart()
         {
             var jira = AJira()
-                .WithProject("PROJ", "The work")
-                .WithProject("REL", "Release coordination")
-                .WithReleaseIn("PROJ", "10101", "Release 44", "2026-09-01")
-                .WithReleaseIn("REL", "10202", "Release 44", "2026-09-01");
+                .WithTheWorkProject()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheWorkProject, "10101", "Release 44", "2026-09-01")
+                .WithReleaseIn(TheReleaseProject, "10202", "Release 44", "2026-09-01");
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
             var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
@@ -223,9 +240,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task A_Release_somebody_archived_is_not_offered_at_all()
         {
             var jira = AJira()
-                .WithProject("REL", "Release coordination")
-                .WithShippedReleaseIn("REL", TheDatedRelease, TheDatedReleaseName, "2026-08-22")
-                .WithArchivedReleaseIn("REL", TheDeletedRelease, "Release 0.9", "2025-01-15");
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithArchivedReleaseIn(TheReleaseProject, TheDeletedRelease, "Release 0.9", "2025-01-15");
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
             var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
@@ -234,10 +251,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheDatedReleaseOnItsOwn),
                     "a reader cannot un-archive a Release from here, so a row they can do nothing about is only noise - unlike a dateless one, which they can go and date.");
-                Assert.That(options.Single().IsSelectable, Is.True,
-                    "a Release that already shipped is routinely still tracked to closure, and the filter that hides archived ones must not take it with them.");
-                Assert.That(QueryValue(jira.VersionListRequests.Single(), "status"), Is.EqualTo("released,unreleased"),
+                Assert.That(QueryValue(jira.VersionListRequests.Single(), "status"), Is.EqualTo("unreleased"),
                     "Jira is asked to leave them out rather than being asked for everything and then having some dropped here.");
+            }
+        }
+
+        [Test]
+        public async Task A_Release_nobody_dated_is_still_offered_even_though_it_cannot_be_picked()
+        {
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, releaseDate: null);
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheUndatedReleaseOnItsOwn),
+                    "a missing date is something the reader can go and fix and come straight back to; archived and released both say the Release is finished with, which is why only those two are hidden.");
+                Assert.That(options.Single().BlockedBecause, Is.EqualTo(SourceOptionBlockReason.NoDateSet));
             }
         }
 
@@ -245,9 +278,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task A_project_carrying_more_Releases_than_one_page_offers_all_of_them()
         {
             var jira = AJira()
-                .WithProject("REL", "Release coordination")
-                .WithReleaseIn("REL", TheDatedRelease, TheDatedReleaseName, "2026-08-22")
-                .WithReleaseIn("REL", "10007", "Release 2.0", "2026-09-01");
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, "10007", "Release 2.0", "2026-09-01");
             jira.VersionsPerPage = 1;
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
@@ -261,10 +294,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task A_project_whose_Releases_cannot_be_read_costs_the_reader_only_that_project()
         {
             var jira = AJira()
-                .WithProject("PROJ", "The work")
-                .WithProject("LOCKED", "Someone else's project")
-                .WithReleaseIn("PROJ", TheDatedRelease, TheDatedReleaseName, "2026-08-22")
-                .WithUnreadableVersionsIn("LOCKED");
+                .WithTheWorkProject()
+                .WithProject(TheLockedProject, "Someone else's project")
+                .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithUnreadableVersionsIn(TheLockedProject);
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
             var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
@@ -277,8 +310,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task Asking_twice_in_quick_succession_asks_Jira_once()
         {
             var jira = AJira()
-                .WithProject("PROJ", "The work")
-                .WithReleaseIn("PROJ", TheDatedRelease, TheDatedReleaseName, "2026-08-22");
+                .WithTheWorkProject()
+                .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
             var connection = AJiraCloudConnection();
@@ -294,7 +327,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task A_Release_resolves_to_the_reference_ids_of_the_work_that_carries_it()
         {
             var jira = AJira()
-                .WithRelease(TheDatedRelease, TheDatedReleaseName, "2026-08-22")
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
                 .WithWorkOn("LGH-1", TheDatedRelease)
                 .WithWorkOn("LGH-2", TheDatedRelease)
                 .WithWorkOn("LGH-3", "99999");
@@ -304,7 +338,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(snapshot.Name, Is.EqualTo(TheDatedReleaseName));
-                Assert.That(snapshot.Date, Is.EqualTo(new DateTime(2026, 8, 22, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(snapshot.Date, Is.EqualTo(TheDayTheDatedReleaseShips));
                 Assert.That(snapshot.MemberReferenceIds, Is.EquivalentTo(TheWorkOnTheDatedRelease),
                     "what comes back is the reference the tracker knows the work by; which of those the Portfolio actually holds is not the adapter's question to answer.");
             }
@@ -313,18 +347,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task A_Release_somebody_deleted_in_Jira_resolves_to_nothing_found()
         {
-            var jira = AJira().WithNoSuchRelease(TheDeletedRelease);
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
 
             var resolution = await Resolve(jira, TheDeletedRelease);
 
             Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.NotFound>(),
-                "Jira answered, and the answer was that the Release is gone - which is the one case that may retire the binding.");
+                "every project answered in full and this Release was in none of them, which is the one case that may retire the binding.");
         }
 
         [Test]
         public async Task A_Release_nobody_dated_resolves_to_having_no_date_and_still_names_itself()
         {
-            var jira = AJira().WithRelease(TheUndatedRelease, TheUndatedReleaseName, releaseDate: null);
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, releaseDate: null);
 
             var resolution = await Resolve(jira, TheUndatedRelease);
 
@@ -335,7 +373,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task A_Release_Jira_could_not_be_asked_about_is_unavailable_and_never_missing()
         {
-            var jira = AJira().WithUnreadableRelease(TheDatedRelease);
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithUnreadableVersionsIn("REL");
 
             var resolution = await Resolve(jira, TheDatedRelease);
 
@@ -350,7 +390,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task A_membership_query_Jira_rejects_leaves_the_Release_unavailable_and_never_missing()
         {
-            var jira = AJira().WithRelease(TheDatedRelease, TheDatedReleaseName, "2026-08-22");
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
             jira.RefusesTheSearch = true;
 
             var resolution = await Resolve(jira, TheDatedRelease);
@@ -367,9 +409,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task Every_bound_Release_is_asked_about_in_one_search_rather_than_one_each()
         {
             var jira = AJira()
-                .WithRelease(TheDatedRelease, TheDatedReleaseName, "2026-08-22")
-                .WithRelease("10007", "Release 2.0", "2026-09-01")
-                .WithRelease("10008", "Release 3.0", "2026-09-15");
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, "10007", "Release 2.0", "2026-09-01")
+                .WithReleaseIn(TheReleaseProject, "10008", "Release 3.0", "2026-09-15");
 
             var resolutions = await ResolveAll(jira, ThreeDatedReleases);
 
@@ -379,11 +422,90 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(resolutions, Has.Count.EqualTo(3),
                     "one verdict comes back per Release asked about, so a caller never has to guess what a missing key meant.");
+                Assert.That(jira.VersionListRequests, Has.Count.EqualTo(1),
+                    "three bound Deliveries used to cost three reads of their own; they now come out of the one project sweep, so the bill is a sweep and a search however many Deliveries are bound.");
                 Assert.That(jql, Is.EqualTo("fixVersion in (10004, 10007, 10008)"),
                     "Jira matches a bare number against the version id and a quoted word against the version name, and two Releases may share a name. Asked for: " + jql);
                 Assert.That(jql, Does.Not.Contain(TheDatedReleaseName),
                     "a refresh that keyed on the name would follow whoever renamed the Release, or silently pick the other one. Asked for: " + jql);
             }
+        }
+
+        [Test]
+        public async Task A_Delivery_bound_before_its_Release_shipped_keeps_resolving_afterwards()
+        {
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithShippedReleaseIn(TheReleaseProject, TheShippedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithWorkOn("LGH-1", TheShippedRelease);
+
+            var snapshot = SnapshotOf(await Resolve(jira, TheShippedRelease));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.Date, Is.EqualTo(TheDayTheDatedReleaseShips),
+                    "somebody ticking Release in Jira must not be able to break a Delivery that has been syncing for months; the picker declining to offer it is where the two lifecycles part company, and this is the far side of that.");
+                Assert.That(snapshot.MemberReferenceIds, Is.EquivalentTo(TheWorkOnAShippedRelease),
+                    "the work carried by a shipped Release is exactly what a team tracking it to closure still wants forecast.");
+            }
+        }
+
+        [Test]
+        public async Task An_archived_Release_a_Delivery_is_already_bound_to_still_resolves()
+        {
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithArchivedReleaseIn(TheReleaseProject, TheShippedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
+
+            var snapshot = SnapshotOf(await Resolve(jira, TheShippedRelease));
+
+            Assert.That(snapshot.Date, Is.EqualTo(TheDayTheDatedReleaseShips),
+                "archiving is not deleting, and only a Release Jira says is gone may retire a binding - so a refresh looks at every status even though the picker offers one of them.");
+        }
+
+        [Test]
+        public async Task A_credential_that_cannot_list_the_projects_offers_nothing_rather_than_failing()
+        {
+            var jira = AJira().WithTheReleaseProject();
+            jira.RefusesTheProjectList = true;
+
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            var options = await subject.GetOptions(AJiraCloudConnection(), JiraReleaseSourceKey);
+
+            Assert.That(options, Is.Empty,
+                "one unreadable project already costs the reader only that project; a credential that may not list any at all has to land the same way, or the picker breaks instead of coming up empty.");
+        }
+
+        [Test]
+        public async Task A_credential_that_cannot_list_the_projects_leaves_a_binding_unavailable_and_never_missing()
+        {
+            var jira = AJira().WithTheReleaseProject();
+            jira.RefusesTheProjectList = true;
+
+            var resolution = await Resolve(jira, TheDatedRelease);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Unavailable>());
+                Assert.That(resolution, Is.Not.InstanceOf<DeliverySourceResolution.NotFound>(),
+                    "the sweep never got as far as looking, so it has said nothing about whether the Release exists; an empty picker is a fine answer, an empty refresh is a retired binding.");
+            }
+        }
+
+        [Test]
+        public async Task A_sweep_that_lost_a_page_leaves_a_Release_it_never_saw_unavailable_and_never_missing()
+        {
+            var jira = AJira()
+                .WithTheReleaseProject()
+                .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira)
+                .WithReleaseIn(TheReleaseProject, TheShippedRelease, "Release 2.0", "2026-09-01")
+                .WithVersionsFailingAfterTheFirstPageIn("REL");
+            jira.VersionsPerPage = 1;
+
+            var resolution = await Resolve(jira, TheShippedRelease);
+
+            Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Unavailable>(),
+                "the Release is on the page that never arrived, so it is missing from the sweep for a reason that has nothing to do with it; treating a half-read sweep as the whole truth would retire every binding living past the first page.");
         }
 
         [Test]
@@ -439,12 +561,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         private sealed class JiraStub
         {
-            private readonly Dictionary<string, string> releasesById = new(StringComparer.Ordinal);
-            private readonly Dictionary<string, HttpStatusCode> refusalsById = new(StringComparer.Ordinal);
             private readonly Dictionary<string, List<string>> releaseIdsByIssueKey = new(StringComparer.Ordinal);
             private readonly List<DeliverySourceProject> projects = [];
             private readonly Dictionary<string, List<StubVersion>> versionsByProjectKey = new(StringComparer.Ordinal);
             private readonly HashSet<string> projectsRefusingTheirVersions = new(StringComparer.Ordinal);
+            private readonly HashSet<string> projectsRefusingTheirLaterPages = new(StringComparer.Ordinal);
 
             public JiraStub()
             {
@@ -465,6 +586,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public bool RefusesTheSearch { get; set; }
 
+            public bool RefusesTheProjectList { get; set; }
+
             public IReadOnlyList<Uri> SearchRequests =>
                 [.. Requests.Where(uri => uri.AbsolutePath.Contains("/search", StringComparison.Ordinal)
                     && !uri.AbsolutePath.EndsWith("/project/search", StringComparison.Ordinal))];
@@ -482,6 +605,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 return this;
             }
 
+            public JiraStub WithTheReleaseProject() => WithProject(TheReleaseProject, "Release coordination");
+
+            public JiraStub WithTheWorkProject() => WithProject(TheWorkProject, "The work");
+
             public JiraStub WithReleaseIn(string projectKey, string id, string name, string? releaseDate)
                 => WithVersionIn(projectKey, id, name, releaseDate, archived: false, released: false);
 
@@ -498,6 +625,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 return this;
             }
 
+            /// <summary>A project that answers its first page and then stops, which is how a sweep loses a page.</summary>
+            public JiraStub WithVersionsFailingAfterTheFirstPageIn(string projectKey)
+            {
+                projectsRefusingTheirLaterPages.Add(projectKey);
+
+                return this;
+            }
+
             private JiraStub WithVersionIn(string projectKey, string id, string name, string? releaseDate, bool archived, bool released)
             {
                 var date = releaseDate is null ? string.Empty : $",\"releaseDate\":\"{releaseDate}\"";
@@ -510,36 +645,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     versionsByProjectKey[projectKey] = versions;
                 }
 
-                versions.Add(new StubVersion(json, archived));
+                versions.Add(new StubVersion(json, StatusOf(archived, released)));
 
                 return this;
             }
 
             private static string Flag(bool value) => value ? "true" : "false";
 
-            private sealed record StubVersion(string Json, bool Archived);
-
-            public JiraStub WithRelease(string id, string name, string? releaseDate)
+            /// <summary>Jira grades a version as exactly one of these, and archiving outranks releasing.</summary>
+            private static string StatusOf(bool archived, bool released)
             {
-                var date = releaseDate is null ? string.Empty : $",\"releaseDate\":\"{releaseDate}\"";
-                releasesById[id] = $"{{\"id\":\"{id}\",\"name\":\"{name}\",\"archived\":false,\"released\":false{date}}}";
+                if (archived)
+                {
+                    return "archived";
+                }
 
-                return this;
+                return released ? "released" : "unreleased";
             }
 
-            public JiraStub WithNoSuchRelease(string id)
-            {
-                refusalsById[id] = HttpStatusCode.NotFound;
-
-                return this;
-            }
-
-            public JiraStub WithUnreadableRelease(string id)
-            {
-                refusalsById[id] = HttpStatusCode.InternalServerError;
-
-                return this;
-            }
+            private sealed record StubVersion(string Json, string Status);
 
             public JiraStub WithWorkOn(string issueKey, string releaseId)
             {
@@ -568,17 +692,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
                 if (path.EndsWith("/project/search", StringComparison.Ordinal))
                 {
-                    return Ok($"{{\"isLast\":true,\"values\":[{string.Join(",", projects.Select(ProjectJson))}]}}");
+                    return RefusesTheProjectList
+                        ? Refuse(HttpStatusCode.Forbidden)
+                        : Ok($"{{\"isLast\":true,\"values\":[{string.Join(",", projects.Select(ProjectJson))}]}}");
                 }
 
                 if (path.EndsWith("/version", StringComparison.Ordinal))
                 {
                     return RespondWithVersionsOf(path.Split('/')[^2], uri);
-                }
-
-                if (path.Contains("/version/", StringComparison.Ordinal))
-                {
-                    return RespondAboutRelease(path[(path.LastIndexOf('/') + 1)..]);
                 }
 
                 if (path.Contains("search", StringComparison.Ordinal))
@@ -595,8 +716,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             /// <summary>
             /// Answers the way the real endpoint does: only the statuses that were asked for, one page at a
             /// time, saying on each page whether it was the last. Honouring the status filter is what lets a
-            /// specification tell "we asked Jira to leave archived Releases out" apart from "we asked for
-            /// everything and then dropped some".
+            /// specification tell "we asked Jira to leave the finished Releases out" apart from "we asked
+            /// for everything and then dropped some".
             /// </summary>
             private HttpResponseMessage RespondWithVersionsOf(string projectKey, Uri uri)
             {
@@ -605,30 +726,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Refuse(HttpStatusCode.Forbidden);
                 }
 
+                var startAt = int.TryParse(QueryValue(uri, "startAt"), out var parsed) ? parsed : 0;
+
+                if (startAt > 0 && projectsRefusingTheirLaterPages.Contains(projectKey))
+                {
+                    return Refuse(HttpStatusCode.InternalServerError);
+                }
+
                 var wanted = QueryValue(uri, "status").Split(',', StringSplitOptions.RemoveEmptyEntries);
                 var known = versionsByProjectKey.TryGetValue(projectKey, out var all) ? all : [];
 
-                var offered = known
-                    .Where(version => !version.Archived || Array.Exists(wanted, status => status == "archived"))
-                    .ToList();
+                var offered = known.Where(version => Array.IndexOf(wanted, version.Status) >= 0).ToList();
 
-                var startAt = int.TryParse(QueryValue(uri, "startAt"), out var parsed) ? parsed : 0;
                 var page = offered.Skip(startAt).Take(VersionsPerPage).ToList();
                 var isLast = startAt + page.Count >= offered.Count;
 
                 return Ok(
                     $"{{\"startAt\":{startAt},\"total\":{offered.Count},\"isLast\":{Flag(isLast)}," +
                     $"\"values\":[{string.Join(",", page.Select(version => version.Json))}]}}");
-            }
-
-            private HttpResponseMessage RespondAboutRelease(string id)
-            {
-                if (refusalsById.TryGetValue(id, out var refusal))
-                {
-                    return Refuse(refusal);
-                }
-
-                return releasesById.TryGetValue(id, out var payload) ? Ok(payload) : Refuse(HttpStatusCode.NotFound);
             }
 
             private HttpResponseMessage RespondToSearch(Uri uri)
