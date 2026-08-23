@@ -237,15 +237,14 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(guard.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioRead));
                 Assert.That(guard.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
                 Assert.That(
-                    typeof(DeliverySourcesController).GetMethod(nameof(DeliverySourcesController.GetDeliverySources))!
-                        .GetCustomAttribute<LicenseGuardAttribute>(),
+                    LicenceGuardOn(nameof(DeliverySourcesController.GetDeliverySources)),
                     Is.Null,
-                    "the tab has to be able to render its own locked state, which it cannot do if asking what exists is itself gated.");
+                    "the tab has to be able to render its own locked state, which it cannot do if asking what exists is itself gated. Asking a source what it holds is gated; asking which sources exist is deliberately not, and the two must not be made to match.");
             }
         }
 
         [Test]
-        public void Reading_what_can_be_bound_needs_write_access()
+        public void Reading_what_can_be_bound_needs_write_access_and_a_premium_licence()
         {
             var guard = GuardOn(nameof(DeliverySourcesController.GetOptions));
 
@@ -253,6 +252,9 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(guard.Requirement, Is.EqualTo(RbacGuardRequirement.PortfolioWrite));
                 Assert.That(guard.ScopeIdRouteKey, Is.EqualTo("portfolioId"));
+                Assert.That(
+                    LicenceGuardOn(nameof(DeliverySourcesController.GetOptions))?.RequirePremium, Is.True,
+                    "this route sweeps every project on the customer's connection, and only a premium licence can act on what comes back - so a request made outside the screen must not be able to spend that.");
             }
         }
 
@@ -440,6 +442,12 @@ namespace Lighthouse.Backend.Tests.API
         {
             return typeof(DeliverySourcesController).GetMethod(actionName)!
                 .GetCustomAttribute<RbacGuardAttribute>()!;
+        }
+
+        private static LicenseGuardAttribute? LicenceGuardOn(string actionName)
+        {
+            return typeof(DeliverySourcesController).GetMethod(actionName)!
+                .GetCustomAttribute<LicenseGuardAttribute>();
         }
 
         private static List<DeliverySourceDto> SourcesIn(IActionResult result)

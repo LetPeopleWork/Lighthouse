@@ -55,9 +55,17 @@ namespace Lighthouse.Backend.API
             return Ok(sources);
         }
 
+        /// <summary>
+        /// Listing what a Portfolio could bind to is the most expensive thing this feature does - a sweep of
+        /// every project on the connection - and only a premium licence can act on the answer. The route is
+        /// gated so that a request nobody's screen would ever make cannot drive that sweep against a
+        /// customer's work tracking system anyway.
+        /// </summary>
         [HttpGet("{sourceKey}/options")]
+        [LicenseGuard(RequirePremium = true)]
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
         [ProducesResponseType<List<DeliverySourceOptionDto>>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetOptions(int portfolioId, string sourceKey)
         {
