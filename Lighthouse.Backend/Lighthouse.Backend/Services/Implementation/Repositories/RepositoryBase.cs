@@ -65,7 +65,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public virtual void Remove(int id)
         {
-            logger.LogInformation("Removing item with Id {Id}", id);
+            // Debug rather than Information: a refresh that prunes a few hundred stale items would
+            // otherwise write a few hundred lines for an operator to scroll past, and the count already
+            // reaches the update summary. The individual ids matter only to somebody debugging the pruning.
+            logger.LogDebug("Removing item with Id {Id}", id);
             var itemToRemove = dbSetGetter(Context).Find(id);
 
             Remove(itemToRemove);
