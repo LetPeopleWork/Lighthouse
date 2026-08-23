@@ -649,7 +649,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Mock.Of<ILogger<ForecastService>>(),
                 teamMetricsService.Object,
                 featureRepository.Object,
-                new Lighthouse.Backend.Tests.TestDoubles.NothingWaitsForAnything());
+                new Lighthouse.Backend.Tests.TestDoubles.NothingWaitsForAnything(),
+                new Lighthouse.Backend.Tests.TestDoubles.DrawsFromAPinnedStartingNumber(TheSeedBothRunsShare));
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

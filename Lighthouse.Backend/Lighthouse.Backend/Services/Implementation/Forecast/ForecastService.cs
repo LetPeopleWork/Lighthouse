@@ -15,10 +15,15 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         ILogger<ForecastService> logger,
         ITeamMetricsService teamMetricsService,
         IRepository<Feature> featureRepository,
-        IWhatTheForecastWaitsFor whatTheForecastWaitsFor)
+        IWhatTheForecastWaitsFor whatTheForecastWaitsFor,
+        IDrawStreamFactory drawStreamFactory)
         : IForecastService
     {
         private const int Trials = 10_000;
+
+        private const int TheDrawForHowMuchTheTeamDelivers = 0;
+
+        private const int TheDrawsThatPickAFeature = 1;
 
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
         {
@@ -36,7 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             var simulationResults = new Dictionary<int, int>();
 
-            RunSimulations(() =>
+            RunSimulations(_ =>
             {
                 var simulatedThroughput = 0;
                 for (var day = 0; day < days; day++)
@@ -88,7 +93,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var throughputByTeam = InitializeThroughputPerTeam(featuresToForecast, mode, out var chipStatusByTeam);
 
             var simulationResults = InitializeSimulationResults(featuresToForecast);
-            await RunMonteCarloSimulation(simulationResults, throughputByTeam, whatTheForecastWaitsFor.Of(featuresToForecast));
+            await RunMonteCarloSimulation(simulationResults, throughputByTeam, whatTheForecastWaitsFor.Of(featuresToForecast), drawStreamFactory.ForOneRun());
             UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam);
         }
 
@@ -115,7 +120,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private async Task RunMonteCarloSimulation(
             List<SimulationResult> simulationResults,
             Dictionary<int, RunChartData> throughputByTeam,
-            ForecastWaits waits)
+            ForecastWaits waits,
+            IDrawStream draws)
         {
             var groupedSimulationResults = simulationResults.GroupBy(s => s.Team).Where(g => throughputByTeam.ContainsKey(g.Key.Id)).ToList();
 
@@ -124,7 +130,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var tasks = groupedSimulationResults
                 .Select(simulationResultsByTeam => Task.Run(() =>
                 {
-                    var trialsAbandoned = SimulateEveryTrialFor(simulationResultsByTeam, throughputByTeam[simulationResultsByTeam.Key.Id], waits);
+                    var trialsAbandoned = SimulateEveryTrialFor(simulationResultsByTeam, throughputByTeam[simulationResultsByTeam.Key.Id], waits, draws);
 
                     if (trialsAbandoned > 0)
                     {
@@ -139,15 +145,15 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         }
 
         /// <returns>How many trials ended with work left that nothing could be started on.</returns>
-        private int SimulateEveryTrialFor(
-            IGrouping<Team, SimulationResult> simulationResultsByTeam, RunChartData throughput, ForecastWaits waits)
+        private static int SimulateEveryTrialFor(
+            IGrouping<Team, SimulationResult> simulationResultsByTeam, RunChartData throughput, ForecastWaits waits, IDrawStream draws)
         {
             var team = simulationResultsByTeam.Key;
             var rows = simulationResultsByTeam.ToList();
             var whatIsWaitingForWhat = new WhatEachFeatureIsWaitingFor(rows, waits);
             var trialsAbandoned = 0;
 
-            RunSimulations(() =>
+            RunSimulations(trial =>
             {
                 rows.ResetRemainingItems();
 
@@ -156,7 +162,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 while (rows.GetRemainingItems() > 0)
                 {
                     var anythingCouldBeStarted = SimulateIndividualDayForFeatureForecast(
-                        team, throughput, rows, simulatedDays, whatIsWaitingForWhat);
+                        team, throughput, rows, simulatedDays, whatIsWaitingForWhat, draws, trial);
 
                     if (!anythingCouldBeStarted)
                     {
@@ -312,13 +318,15 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// forever. Delivery drawn for such a day is discarded either way: a team that could not start
         /// anything did not bank the day, and carrying it forward would give the wait back the time it cost.
         /// </returns>
-        private bool SimulateIndividualDayForFeatureForecast(Team team, RunChartData throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat)
+        private static bool SimulateIndividualDayForFeatureForecast(Team team, RunChartData throughput, IEnumerable<SimulationResult> simulationResults, int currentlySimulatedDay, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat, IDrawStream draws, int trial)
         {
-            var simulatedThroughput = GetSimulatedThroughput(throughput);
+            var simulatedThroughput = throughput.GetCountOnDay(
+                draws.Draw(trial, team.Id, currentlySimulatedDay, TheDrawForHowMuchTheTeamDelivers, throughput.History));
 
             for (var closedItems = 0; closedItems < simulatedThroughput && simulationResults.GetRemainingItems() > 0; closedItems++)
             {
-                var simulationResultOfFeatureToUpdate = GetSimulationResultsOfFeatureToUpdate(team, simulationResults, whatIsWaitingForWhat);
+                var simulationResultOfFeatureToUpdate = GetSimulationResultsOfFeatureToUpdate(
+                    team, simulationResults, whatIsWaitingForWhat, draws, trial, currentlySimulatedDay, TheDrawsThatPickAFeature + closedItems);
 
                 if (simulationResultOfFeatureToUpdate is null)
                 {
@@ -348,7 +356,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// into range and take the capacity it could not use.
         /// </summary>
         /// <returns>Nothing when every Feature with work left is waiting on one that has not finished.</returns>
-        private SimulationResult? GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat)
+        private static SimulationResult? GetSimulationResultsOfFeatureToUpdate(Team team, IEnumerable<SimulationResult> simulationResults, WhatEachFeatureIsWaitingFor whatIsWaitingForWhat, IDrawStream draws, int trial, int day, int ordinal)
         {
             var featuresRemaining = simulationResults
                 .Where(x => x.HasWorkRemaining && whatIsWaitingForWhat.ReadyToBeWorkedOn(x))
@@ -360,7 +368,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
 
             var featureWorkedOnIndex = RecalculateFeatureWIP(team.FeatureWIP > 0 ? team.FeatureWIP : 1, featuresRemaining.Count);
-            var featureWorkedOn = randomNumberService.GetRandomNumber(featureWorkedOnIndex);
+            var featureWorkedOn = draws.Draw(trial, team.Id, day, ordinal, featureWorkedOnIndex);
 
             var itemToUpdate = featuresRemaining[featureWorkedOn];
             return itemToUpdate;
@@ -371,11 +379,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             return Math.Min(featureWIP, remainingItems);
         }
 
-        private static void RunSimulations(Action individualSimulation)
+        private static void RunSimulations(Action<int> individualSimulation)
         {
             for (var trial = 0; trial < Trials; trial++)
             {
-                individualSimulation();
+                individualSimulation(trial);
             }
         }
 

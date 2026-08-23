@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
@@ -32,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public async Task FeatureForecast_TwoTeamsWithTwoValueThroughput_IsLaterThanEveryContributingTeam()
         {
-            var subject = CreateSubject(new RandomNumberService());
+            var subject = CreateSubject(new DrawsAfreshEveryTime());
             var feature = SetupFeature(CreateTeam([1, 3]), CreateTeam([1, 3]));
 
             await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature));
@@ -62,7 +63,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             // Plumbing anchor only. A team at throughput 1/day finishes on a single day with probability 1,
             // and the product of point masses IS their maximum - this passes against the old worst-team copy
             // too, so it proves wiring, never the fix. The discriminating fixtures are the two-value ones.
-            var subject = CreateSubject(new NotSoRandomNumberService());
+            var subject = CreateSubject(new DrawsFromARecordedSequence());
             var feature = SetupFeature((CreateTeam([1]), 6), (CreateTeam([1]), 3));
 
             await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature));
@@ -70,9 +71,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(6));
         }
 
-        private ForecastService CreateSubject(IRandomNumberService randomNumberService)
+        private ForecastService CreateSubject(IDrawStreamFactory draws)
         {
-            return new ForecastService(randomNumberService, Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything());
+            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), draws);
         }
 
         private Team CreateTeam(int[] throughput)

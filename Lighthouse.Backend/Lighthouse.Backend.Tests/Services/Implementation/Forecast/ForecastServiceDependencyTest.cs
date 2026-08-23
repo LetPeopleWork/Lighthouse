@@ -217,7 +217,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 logger.Object,
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
-                new WaitsHandedStraightToTheForecast(waits));
+                new WaitsHandedStraightToTheForecast(waits),
+                new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares));
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

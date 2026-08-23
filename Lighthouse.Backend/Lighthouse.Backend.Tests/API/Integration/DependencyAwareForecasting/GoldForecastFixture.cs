@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
@@ -57,7 +58,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
         internal static IReadOnlyList<int> DrawSequence => GoldDrawSequence;
 
-        internal async Task<GoldPercentiles[]> ForecastTheGoldPortfolio()
+        internal Task<GoldPercentiles[]> ForecastTheGoldPortfolio()
+            => ForecastTheGoldPortfolio(new DrawsFromARecordedSequence(GoldDrawSequence));
+
+        internal async Task<GoldPercentiles[]> ForecastTheGoldPortfolio(IDrawStreamFactory draws)
         {
             // One Team, not two. The forecast runs each Team's simulation on its own task, and they
             // would draw concurrently from the single counter inside the fake random number service,
@@ -82,10 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             };
             portfolio.UpdateFeatures(features);
 
-            var randomNumberService = new NotSoRandomNumberService();
-            randomNumberService.InitializeRandomNumbers(GoldDrawSequence);
-
-            var forecastService = new ForecastService(randomNumberService, Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything());
+            var forecastService = new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), draws);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 
