@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         IIssueFactory issueFactory,
         ILogger<JiraWorkTrackingConnector> logger,
         IWorkTrackingAuthStrategyFactory authStrategyFactory,
+        Backend.Cache.Cache<string, object> processWideCache,
         HttpMessageHandler? httpMessageHandlerForTesting = null)
         : IJiraWorkTrackingConnector
     {
@@ -1986,7 +1987,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static readonly TimeSpan DeliverySourceOptionsLifetime = TimeSpan.FromMinutes(5);
 
-        private readonly Backend.Cache.Cache<string, IReadOnlyList<DeliverySourceOption>> deliverySourceOptionsCache = new();
+        // The connector itself is built fresh for every request, so anything it remembers in a field of its
+        // own is written and never read again. The cache this reads and writes is one instance for the whole
+        // application, which is the only way a second request can find what the first one fetched.
+        private const string DeliverySourceOptionsCacheArea = "jira-delivery-source-options";
 
         /// <summary>
         /// Every Jira connection offers the same single source today. It is still answered per connection
@@ -2014,9 +2018,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             RejectSourceTheConnectionDoesNotOffer(sourceKey);
 
-            var cacheKey = $"{connection.Id}|{sourceKey}";
-            var remembered = deliverySourceOptionsCache.Get(cacheKey);
-            if (remembered is not null)
+            var cacheKey = $"{DeliverySourceOptionsCacheArea}|{connection.Id}|{sourceKey}";
+            if (processWideCache.Get(cacheKey) is IReadOnlyList<DeliverySourceOption> remembered)
             {
                 return remembered;
             }
@@ -2030,7 +2033,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // five minutes, with nothing on screen to say why.
             if (sawEveryRelease)
             {
-                deliverySourceOptionsCache.Store(cacheKey, options, DeliverySourceOptionsLifetime);
+                processWideCache.Store(cacheKey, options, DeliverySourceOptionsLifetime);
             }
 
             return options;

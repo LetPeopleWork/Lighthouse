@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -26,6 +27,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             => AConnectorOver(handler, Mock.Of<ILogger<JiraWorkTrackingConnector>>());
 
         public static JiraWorkTrackingConnector AConnectorOver(HttpMessageHandler handler, ILogger<JiraWorkTrackingConnector> logger)
+            => AConnectorOver(handler, logger, new Cache<string, object>());
+
+        /// <summary>
+        /// The cache is a parameter because in the running application it outlives the connector, which is
+        /// built again for every request. A fixture that wants to see two connectors share what one of them
+        /// fetched has to hand both of them the same one.
+        /// </summary>
+        public static JiraWorkTrackingConnector AConnectorOver(
+            HttpMessageHandler handler, ILogger<JiraWorkTrackingConnector> logger, Cache<string, object> processWideCache)
         {
             var strategyMock = new Mock<IWorkTrackingAuthStrategy>();
             strategyMock
@@ -41,6 +51,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
                 logger,
                 factoryMock.Object,
+                processWideCache,
                 handler);
         }
 

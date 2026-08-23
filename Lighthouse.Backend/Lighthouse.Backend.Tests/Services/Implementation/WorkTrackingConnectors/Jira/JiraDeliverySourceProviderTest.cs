@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
+using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
@@ -12,6 +13,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Protected;
@@ -312,20 +314,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task Asking_twice_in_quick_succession_asks_Jira_once()
+        public async Task Two_requests_in_quick_succession_ask_Jira_once()
         {
             var jira = AJira()
                 .WithTheWorkProject()
                 .WithReleaseIn(TheWorkProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
 
-            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            using var application = AnApplicationServingRequestsOver(jira.Handler);
             var connection = AJiraCloudConnection();
 
-            await subject.GetOptions(connection, JiraReleaseSourceKey);
-            await subject.GetOptions(connection, JiraReleaseSourceKey);
+            var (firstConnector, _) = await OptionsInOneRequest(application, connection);
+            var (secondConnector, _) = await OptionsInOneRequest(application, connection);
 
-            Assert.That(jira.VersionListRequests, Has.Count.EqualTo(1),
-                "the picker is typed into, and a request per keystroke would cost one call per project every time.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(secondConnector, Is.Not.SameAs(firstConnector),
+                    "the second request has to be served by a second connector, or nothing here says anything about what one request can remember for the next.");
+                Assert.That(jira.VersionListRequests, Has.Count.EqualTo(1),
+                    "opening the form, closing it and opening it again costs one call per project every time it is not remembered, and an instance with hundreds of projects is the normal case.");
+            }
         }
 
         [Test]
@@ -338,12 +345,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .WithReleaseIn(TheReleaseProject, TheUndatedRelease, TheUndatedReleaseName, null)
                 .WithUnreadableVersionsIn(TheReleaseProject);
 
-            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+            using var application = AnApplicationServingRequestsOver(jira.Handler);
             var connection = AJiraCloudConnection();
 
-            await subject.GetOptions(connection, JiraReleaseSourceKey);
+            await OptionsInOneRequest(application, connection);
             jira.LetsItsVersionsBeReadAgainIn(TheReleaseProject);
-            var options = await subject.GetOptions(connection, JiraReleaseSourceKey);
+            var (_, options) = await OptionsInOneRequest(application, connection);
 
             Assert.That(options.Select(option => option.Id), Is.EquivalentTo(TheReleasesOfBothProjects),
                 "one project refusing for a moment must not leave the picker short for the whole cache lifetime - closing the form and opening it again is the one thing a reader will try, and it has to help.");
@@ -571,6 +578,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static WorkTrackingSystemConnection AJiraCloudConnection()
             => JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+
+        /// <summary>
+        /// Lighthouse as it actually serves requests, with the two lifetimes Program.cs gives these: a
+        /// connector built again for every request, over one cache for the whole process. Only something
+        /// that outlives the connector can hold an answer from one request to the next, and a fixture that
+        /// reuses a single connector cannot tell the two apart - which is how a cache that was written and
+        /// never read once passed for a working one.
+        /// </summary>
+        private static ServiceProvider AnApplicationServingRequestsOver(HttpMessageHandler handler)
+        {
+            var services = new ServiceCollection();
+
+            services.AddSingleton(handler);
+            services.AddSingleton<IIssueFactory>(new IssueFactory(Mock.Of<ILogger<IssueFactory>>()));
+            services.AddSingleton(Mock.Of<ILogger<JiraWorkTrackingConnector>>());
+            services.AddSingleton(AnAuthStrategyFactoryThatSignsNothing());
+            services.AddSingleton<Cache<string, object>>();
+            services.AddScoped<JiraWorkTrackingConnector>();
+
+            return services.BuildServiceProvider();
+        }
+
+        private static IWorkTrackingAuthStrategyFactory AnAuthStrategyFactoryThatSignsNothing()
+        {
+            var strategyMock = new Mock<IWorkTrackingAuthStrategy>();
+            strategyMock
+                .Setup(strategy => strategy.ApplyAsync(
+                    It.IsAny<HttpRequestMessage>(), It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var factoryMock = new Mock<IWorkTrackingAuthStrategyFactory>();
+            factoryMock.Setup(factory => factory.Resolve(It.IsAny<string>())).Returns(strategyMock.Object);
+
+            return factoryMock.Object;
+        }
+
+        private static async Task<(JiraWorkTrackingConnector Connector, IReadOnlyList<DeliverySourceOption> Options)>
+            OptionsInOneRequest(IServiceProvider application, WorkTrackingSystemConnection connection)
+        {
+            using var scope = application.CreateScope();
+            var connector = scope.ServiceProvider.GetRequiredService<JiraWorkTrackingConnector>();
+
+            return (connector, await connector.GetOptions(connection, JiraReleaseSourceKey));
+        }
 
         private static string QueryValue(Uri uri, string name)
         {
@@ -843,7 +894,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return new JiraWorkTrackingConnector(
                 Mock.Of<IIssueFactory>(),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
-                Mock.Of<IWorkTrackingAuthStrategyFactory>());
+                Mock.Of<IWorkTrackingAuthStrategyFactory>(),
+                new Lighthouse.Backend.Cache.Cache<string, object>());
         }
     }
 }

@@ -71,7 +71,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = new JiraWorkTrackingConnector(
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
-                authStrategyFactory);
+                authStrategyFactory,
+                new Lighthouse.Backend.Cache.Cache<string, object>());
 
             return await subject.GetFeaturesForProject(TheDemoPortfolio());
         }

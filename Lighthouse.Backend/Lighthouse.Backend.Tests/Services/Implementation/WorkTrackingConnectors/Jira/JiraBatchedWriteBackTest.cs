@@ -317,6 +317,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 factoryMock.Object,
+                new Lighthouse.Backend.Cache.Cache<string, object>(),
                 handlerMock.Object);
         }
 

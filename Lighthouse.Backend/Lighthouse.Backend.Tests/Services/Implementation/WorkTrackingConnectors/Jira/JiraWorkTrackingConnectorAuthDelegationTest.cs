@@ -67,7 +67,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return new JiraWorkTrackingConnector(
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
-                factory);
+                factory,
+                new Lighthouse.Backend.Cache.Cache<string, object>());
         }
     }
 }
