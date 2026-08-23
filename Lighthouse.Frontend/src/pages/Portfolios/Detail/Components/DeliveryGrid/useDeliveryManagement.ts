@@ -229,15 +229,15 @@ export const useDeliveryManagement = ({
 		mode?: "and" | "or";
 	}) => {
 		try {
-			await deliveryService.create(
-				portfolio.id,
-				deliveryData.name,
-				new Date(deliveryData.date),
-				deliveryData.featureIds,
-				deliveryData.selectionMode,
-				deliveryData.rules,
-				deliveryData.mode,
-			);
+			await deliveryService.create({
+				portfolioId: portfolio.id,
+				name: deliveryData.name,
+				date: new Date(deliveryData.date),
+				featureIds: deliveryData.featureIds,
+				selectionMode: deliveryData.selectionMode,
+				rules: deliveryData.rules,
+				mode: deliveryData.mode,
+			});
 			setShowCreateModal(false);
 			await fetchDeliveries();
 		} catch (error) {

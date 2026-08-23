@@ -459,15 +459,15 @@ describe("useDeliveryManagement", () => {
 				await result.current.handleCreateDelivery(deliveryData);
 			});
 
-			expect(mockDeliveryService.create).toHaveBeenCalledWith(
-				portfolio.id,
-				deliveryData.name,
-				new Date(deliveryData.date),
-				deliveryData.featureIds,
-				undefined,
-				undefined,
-				undefined,
-			);
+			expect(mockDeliveryService.create).toHaveBeenCalledWith({
+				portfolioId: portfolio.id,
+				name: deliveryData.name,
+				date: new Date(deliveryData.date),
+				featureIds: deliveryData.featureIds,
+				selectionMode: undefined,
+				rules: undefined,
+				mode: undefined,
+			});
 			expect(result.current.showCreateModal).toBe(false);
 
 			await waitFor(() => {

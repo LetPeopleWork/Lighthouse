@@ -212,7 +212,7 @@ describe("DeliveryService", () => {
 			mockedAxios.post.mockResolvedValue({});
 
 			// Act
-			await deliveryService.create(portfolioId, name, date, featureIds);
+			await deliveryService.create({ portfolioId, name, date, featureIds });
 
 			// Assert
 			expect(mockedAxios.post).toHaveBeenCalledWith(

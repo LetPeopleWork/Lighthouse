@@ -29,6 +29,20 @@ import {
 } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import {
+	type DeliveryRuleMode,
+	type DeliverySelectionState,
+	type DeliverySelectionTab,
+	type DeliverySelectionTerms,
+	defaultDeliverySelectionTab,
+	deliverySelectionTabs,
+	deliveryTabForDelivery,
+	deliveryTabForMode,
+	emptySelectionValues,
+	MANUAL_SELECTION_TAB_KEY,
+	RULE_BASED_SELECTION_TAB_KEY,
+	ruleInputError,
+} from "./deliverySelectionTabs";
 
 interface DeliveryCreateModalProps {
 	open: boolean;
@@ -41,7 +55,7 @@ interface DeliveryCreateModalProps {
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
-		mode?: "and" | "or";
+		mode?: DeliveryRuleMode;
 	}) => void;
 	onUpdate?: (deliveryData: {
 		id: number;
@@ -50,26 +64,23 @@ interface DeliveryCreateModalProps {
 		featureIds: number[];
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
-		mode?: "and" | "or";
+		mode?: DeliveryRuleMode;
 		concurrencyToken?: string;
 	}) => void;
 }
 
-// Extracted component for loading state
 const LoadingSpinner: React.FC = () => (
 	<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
 		<CircularProgress />
 	</Box>
 );
 
-// Extracted component for schema load failure
 const SchemaLoadError: React.FC = () => (
 	<Alert severity="warning">
 		Failed to load rule schema. Please try again.
 	</Alert>
 );
 
-// Extracted component for premium feature notice
 const PremiumFeatureNotice: React.FC = () => (
 	<Alert severity="info">
 		Rule-based delivery selection is a premium feature. Please upgrade your
@@ -77,7 +88,6 @@ const PremiumFeatureNotice: React.FC = () => (
 	</Alert>
 );
 
-// Extracted component for validation button with loading state
 const ValidationButton: React.FC<{
 	validatingRules: boolean;
 	rulesLength: number;
@@ -93,14 +103,12 @@ const ValidationButton: React.FC<{
 	</Button>
 );
 
-// Extracted component for matched features alert
 const MatchedFeaturesAlert: React.FC<{ count: number }> = ({ count }) => (
 	<Alert severity="success" sx={{ flex: 1 }}>
 		<span data-testid="matched-count">{count} feature(s) matched</span>
 	</Alert>
 );
 
-// Extracted component for matched features grid
 const MatchedFeaturesGrid: React.FC<{
 	features: IFeature[];
 	featuresTerm: string;
@@ -121,22 +129,55 @@ const MatchedFeaturesGrid: React.FC<{
 	</Box>
 );
 
-// Extracted component for rule-based content
-const RuleBasedContent: React.FC<{
+/** Everything any selection tab could need to draw itself; each uses the part it cares about. */
+interface SelectionContentProps {
 	loadingSchema: boolean;
 	ruleSchema: IWorkItemRuleSchema | null;
-	errors: { rules?: string };
+	errors: { features?: string; rules?: string };
+	allFeatures: IFeature[];
+	selectedFeatureIds: number[];
 	rules: IWorkItemRuleCondition[];
-	mode: "and" | "or";
+	mode: DeliveryRuleMode;
 	validatingRules: boolean;
 	rulesValidated: boolean;
 	matchedFeatures: IFeature[];
 	featuresTerm: string;
 	portfolioId: number;
+	onSelectedFeaturesChange: (ids: number[]) => void;
 	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
-	onModeChange: (mode: "and" | "or") => void;
+	onModeChange: (mode: DeliveryRuleMode) => void;
 	onValidateRules: () => void;
-}> = ({
+}
+
+const ManualSelectionContent: React.FC<SelectionContentProps> = ({
+	errors,
+	allFeatures,
+	selectedFeatureIds,
+	featuresTerm,
+	portfolioId,
+	onSelectedFeaturesChange,
+}) => (
+	<>
+		<Typography variant="h6" sx={{ mb: 2 }}>
+			Select {featuresTerm}
+		</Typography>
+		{errors.features && (
+			<Typography color="error" sx={{ mb: 1 }}>
+				{errors.features}
+			</Typography>
+		)}
+		<Box sx={{ height: 300 }}>
+			<FeatureSelector
+				features={allFeatures}
+				selectedFeatureIds={selectedFeatureIds}
+				onChange={onSelectedFeaturesChange}
+				storageKey={`delivery-create-features-${portfolioId}`}
+			/>
+		</Box>
+	</>
+);
+
+const RuleBasedContent: React.FC<SelectionContentProps> = ({
 	loadingSchema,
 	ruleSchema,
 	errors,
@@ -199,118 +240,56 @@ const RuleBasedContent: React.FC<{
 	);
 };
 
-// Extracted component for selection mode content
-const SelectionModeContent: React.FC<{
-	selectionMode: DeliverySelectionMode;
-	isPremium: boolean;
-	loadingSchema: boolean;
-	ruleSchema: IWorkItemRuleSchema | null;
-	errors: { features?: string; rules?: string };
-	allFeatures: IFeature[];
-	selectedFeatureIds: number[];
-	rules: IWorkItemRuleCondition[];
-	mode: "and" | "or";
-	validatingRules: boolean;
-	rulesValidated: boolean;
-	matchedFeatures: IFeature[];
-	featuresTerm: string;
-	portfolioId: number;
-	onSelectedFeaturesChange: (ids: number[]) => void;
-	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
-	onModeChange: (mode: "and" | "or") => void;
-	onValidateRules: () => void;
-}> = ({
-	selectionMode,
-	isPremium,
-	loadingSchema,
-	ruleSchema,
-	errors,
-	allFeatures,
-	selectedFeatureIds,
-	rules,
-	mode,
-	validatingRules,
-	rulesValidated,
-	matchedFeatures,
-	featuresTerm,
-	portfolioId,
-	onSelectedFeaturesChange,
-	onRulesChange,
-	onModeChange,
-	onValidateRules,
-}) => {
-	if (selectionMode === DeliverySelectionMode.Manual) {
-		return (
-			<>
-				<Typography variant="h6" sx={{ mb: 2 }}>
-					Select {featuresTerm}
-				</Typography>
-				{errors.features && (
-					<Typography color="error" sx={{ mb: 1 }}>
-						{errors.features}
-					</Typography>
-				)}
-				<Box sx={{ height: 300 }}>
-					<FeatureSelector
-						features={allFeatures}
-						selectedFeatureIds={selectedFeatureIds}
-						onChange={onSelectedFeaturesChange}
-						storageKey={`delivery-create-features-${portfolioId}`}
-					/>
-				</Box>
-			</>
-		);
-	}
+const selectionTabContent: Record<string, React.FC<SelectionContentProps>> = {
+	[MANUAL_SELECTION_TAB_KEY]: ManualSelectionContent,
+	[RULE_BASED_SELECTION_TAB_KEY]: RuleBasedContent,
+};
 
-	// Rule-based mode
-	if (!isPremium) {
+const SelectionModeContent: React.FC<
+	SelectionContentProps & { tab: DeliverySelectionTab; isPremium: boolean }
+> = ({ tab, isPremium, ...contentProps }) => {
+	if (!tab.isEnabled({ isPremium })) {
 		return <PremiumFeatureNotice />;
 	}
 
+	const Content = selectionTabContent[tab.key];
+	return <Content {...contentProps} />;
+};
+
+const SelectionTabButton: React.FC<{
+	tab: DeliverySelectionTab;
+	selectionMode: DeliverySelectionMode;
+	isPremium: boolean;
+	onSelect: (tab: DeliverySelectionTab) => void;
+}> = ({ tab, selectionMode, isPremium, onSelect }) => {
+	const isEnabled = tab.isEnabled({ isPremium });
+	const isSelected = selectionMode === tab.mode;
+	const button = (
+		<Button
+			variant={isSelected ? "contained" : "outlined"}
+			onClick={() => onSelect(tab)}
+			disabled={!isEnabled}
+			aria-pressed={isSelected}
+		>
+			{tab.label}
+		</Button>
+	);
+
+	if (tab.premiumExtraInfo === undefined) {
+		return button;
+	}
+
 	return (
-		<RuleBasedContent
-			loadingSchema={loadingSchema}
-			ruleSchema={ruleSchema}
-			errors={errors}
-			rules={rules}
-			mode={mode}
-			validatingRules={validatingRules}
-			rulesValidated={rulesValidated}
-			matchedFeatures={matchedFeatures}
-			featuresTerm={featuresTerm}
-			portfolioId={portfolioId}
-			onRulesChange={onRulesChange}
-			onModeChange={onModeChange}
-			onValidateRules={onValidateRules}
-		/>
+		<LicenseTooltip
+			canUseFeature={isEnabled}
+			defaultTooltip=""
+			premiumExtraInfo={tab.premiumExtraInfo}
+		>
+			<span>{button}</span>
+		</LicenseTooltip>
 	);
 };
 
-// Helper function to check if save button should be disabled
-const isSaveDisabled = (
-	name: string,
-	date: string,
-	selectionMode: DeliverySelectionMode,
-	selectedFeatureIds: number[],
-	rulesValidated: boolean,
-	matchedFeaturesLength: number,
-): boolean => {
-	const hasName = name.trim().length > 0;
-	const hasValidDate = isValidFutureDate(date);
-
-	if (!hasName || !hasValidDate) {
-		return true;
-	}
-
-	if (selectionMode === DeliverySelectionMode.Manual) {
-		return selectedFeatureIds.length === 0;
-	}
-
-	// Rule-based mode: must be validated with matches
-	return !rulesValidated || matchedFeaturesLength === 0;
-};
-
-// Helper function to validate future date
 const isValidFutureDate = (date: string): boolean => {
 	if (!date) {
 		return false;
@@ -327,23 +306,19 @@ const isValidFutureDate = (date: string): boolean => {
 interface ValidationOptions {
 	name: string;
 	date: string;
-	selectionMode: DeliverySelectionMode;
-	selectedFeatureIds: number[];
-	rulesValidated: boolean;
-	matchedFeaturesLength: number;
+	tab: DeliverySelectionTab;
+	state: DeliverySelectionState;
+	terms: DeliverySelectionTerms;
 	deliveryTerm: string;
-	featureTerm: string;
 }
 
 const getFirstBlockingError = ({
 	name,
 	date,
-	selectionMode,
-	selectedFeatureIds,
-	rulesValidated,
-	matchedFeaturesLength,
+	tab,
+	state,
+	terms,
 	deliveryTerm,
-	featureTerm,
 }: ValidationOptions): string | null => {
 	if (!name.trim()) {
 		return `${deliveryTerm} name is required`;
@@ -354,20 +329,7 @@ const getFirstBlockingError = ({
 	if (!isValidFutureDate(date)) {
 		return `${deliveryTerm} date must be in the future`;
 	}
-	if (selectionMode === DeliverySelectionMode.Manual) {
-		if (selectedFeatureIds.length === 0) {
-			return `At least one ${featureTerm.toLowerCase()} must be selected`;
-		}
-	} else {
-		// Rule-based mode
-		if (!rulesValidated) {
-			return "Rules must be validated before saving";
-		}
-		if (matchedFeaturesLength === 0) {
-			return "No features match the rules";
-		}
-	}
-	return null;
+	return tab.firstBlockingError(state, terms);
 };
 
 export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
@@ -391,10 +353,10 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
 	const [allFeatures, setAllFeatures] = useState<IFeature[]>([]);
 	const [selectionMode, setSelectionMode] = useState<DeliverySelectionMode>(
-		DeliverySelectionMode.Manual,
+		defaultDeliverySelectionTab.mode,
 	);
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
-	const [mode, setMode] = useState<"and" | "or">("and");
+	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
 		null,
 	);
@@ -408,6 +370,16 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		features?: string;
 		rules?: string;
 	}>({});
+
+	const activeTab = deliveryTabForMode(selectionMode);
+	const selectionState: DeliverySelectionState = {
+		selectedFeatureIds,
+		rules,
+		mode,
+		rulesValidated,
+		matchedFeaturesLength: matchedFeatures.length,
+	};
+	const selectionTerms: DeliverySelectionTerms = { featureTerm };
 
 	useEffect(() => {
 		if (open && portfolio.features.length > 0) {
@@ -446,36 +418,19 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	]);
 
 	const validateForm = () => {
-		const newErrors: typeof errors = {};
+		const newErrors: typeof errors = activeTab.fieldErrors(
+			selectionState,
+			selectionTerms,
+		);
 
 		if (!name.trim()) {
 			newErrors.name = `${deliveryTerm} name is required`;
 		}
 
 		if (!isValidFutureDate(date)) {
-			if (date) {
-				newErrors.date = `${deliveryTerm} date must be in the future`;
-			} else {
-				newErrors.date = `${deliveryTerm} date is required`;
-			}
-		}
-
-		if (selectionMode === DeliverySelectionMode.Manual) {
-			if (selectedFeatureIds.length === 0) {
-				newErrors.features = `At least one ${featureTerm.toLowerCase()} must be selected`;
-			}
-		} else if (rules.length === 0) {
-			newErrors.rules = "At least one rule must be defined";
-		} else if (
-			rules.some(
-				(r) => !r.fieldKey.trim() || !r.operator.trim() || !r.value.trim(),
-			)
-		) {
-			newErrors.rules = "All rule fields must be completed";
-		} else if (!rulesValidated) {
-			newErrors.rules = "Rules must be validated before saving";
-		} else if (matchedFeatures.length === 0) {
-			newErrors.rules = "No features match the rules";
+			newErrors.date = date
+				? `${deliveryTerm} date must be in the future`
+				: `${deliveryTerm} date is required`;
 		}
 
 		setErrors(newErrors);
@@ -483,23 +438,9 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	};
 
 	const handleValidateRules = async () => {
-		if (rules.length === 0) {
-			setErrors((prev) => ({
-				...prev,
-				rules: "At least one rule must be defined",
-			}));
-			return;
-		}
-
-		if (
-			rules.some(
-				(r) => !r.fieldKey.trim() || !r.operator.trim() || !r.value.trim(),
-			)
-		) {
-			setErrors((prev) => ({
-				...prev,
-				rules: "All rule fields must be completed",
-			}));
+		const inputError = ruleInputError(rules);
+		if (inputError !== null) {
+			setErrors((prev) => ({ ...prev, rules: inputError }));
 			return;
 		}
 
@@ -507,15 +448,15 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setErrors((prev) => ({ ...prev, rules: undefined }));
 
 		try {
-			const matchedFeatures = await deliveryService.validateRules(
+			const matched = await deliveryService.validateRules(
 				portfolio.id,
 				rules,
 				mode,
 			);
-			setMatchedFeatures(matchedFeatures);
+			setMatchedFeatures(matched);
 			setRulesValidated(true);
 
-			if (matchedFeatures.length === 0) {
+			if (matched.length === 0) {
 				setErrors((prev) => ({
 					...prev,
 					rules: "No features match the rules",
@@ -537,19 +478,26 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setMatchedFeatures([]);
 	};
 
+	const handleSelectTab = (tab: DeliverySelectionTab) => {
+		if (tab.mode === selectionMode) {
+			return;
+		}
+
+		setSelectionMode(tab.mode);
+		setRulesValidated(false);
+		setMatchedFeatures([]);
+	};
+
 	const handleSave = () => {
 		if (!validateForm()) {
 			return;
 		}
 
-		const isRuleBased = selectionMode === DeliverySelectionMode.RuleBased;
 		const basePayload = {
 			name: name.trim(),
 			date,
-			featureIds: selectedFeatureIds,
-			selectionMode,
-			rules: isRuleBased ? rules : undefined,
-			mode: isRuleBased ? mode : undefined,
+			selectionMode: activeTab.mode,
+			...activeTab.toPayload(selectionState),
 		};
 
 		if (isEditMode && editingDelivery && onUpdate) {
@@ -565,44 +513,32 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	};
 
 	const resetForm = useCallback(() => {
+		const values = emptySelectionValues();
 		setName("");
 		setDate("");
-		setSelectedFeatureIds([]);
-		setSelectionMode(DeliverySelectionMode.Manual);
-		setRules([]);
-		setMode("and");
+		setSelectedFeatureIds(values.selectedFeatureIds);
+		setSelectionMode(defaultDeliverySelectionTab.mode);
+		setRules(values.rules);
+		setMode(values.mode);
 		setRuleSchema(null);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
 		setErrors({});
 	}, []);
 
-	// Initialize form with editing delivery data
 	useEffect(() => {
 		if (open && editingDelivery) {
+			const tab = deliveryTabForDelivery(editingDelivery);
+			const values = tab.hydrate(editingDelivery);
+
 			setName(editingDelivery.name);
-			setDate(editingDelivery.date.split("T")[0]); // Extract date part from ISO string
-			setSelectedFeatureIds(editingDelivery.features || []);
-
-			// Determine selection mode: if delivery has rules, it's rule-based
-			const isRuleBased =
-				editingDelivery.selectionMode === DeliverySelectionMode.RuleBased ||
-				(editingDelivery.rules && editingDelivery.rules.length > 0);
-
-			setSelectionMode(
-				isRuleBased
-					? DeliverySelectionMode.RuleBased
-					: DeliverySelectionMode.Manual,
-			);
-			setRules(
-				editingDelivery.rules?.map((r) => ({
-					fieldKey: r.fieldKey,
-					operator: r.operator,
-					value: r.value,
-				})) || [],
-			);
-			setMode(editingDelivery.mode === "or" ? "or" : "and");
-			// Reset validation state for rule-based edits (user must re-validate)
+			setDate(editingDelivery.date.split("T")[0]);
+			setSelectionMode(tab.mode);
+			setSelectedFeatureIds(values.selectedFeatureIds);
+			setRules(values.rules);
+			setMode(values.mode);
+			// Whatever the rules matched before is not trustworthy once the form reopens, so
+			// the user has to ask for them to be matched again before saving.
 			setRulesValidated(false);
 			setMatchedFeatures([]);
 		}
@@ -613,6 +549,15 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			resetForm();
 		}
 	}, [open, resetForm]);
+
+	const blockingError = getFirstBlockingError({
+		name,
+		date,
+		tab: activeTab,
+		state: selectionState,
+		terms: selectionTerms,
+		deliveryTerm,
+	});
 
 	return (
 		<Dialog
@@ -671,50 +616,20 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 							Selection Mode
 						</Typography>
 						<ButtonGroup size="small">
-							<Button
-								variant={
-									selectionMode === DeliverySelectionMode.Manual
-										? "contained"
-										: "outlined"
-								}
-								onClick={() => {
-									setSelectionMode(DeliverySelectionMode.Manual);
-									setRulesValidated(false);
-									setMatchedFeatures([]);
-								}}
-								aria-pressed={selectionMode === DeliverySelectionMode.Manual}
-							>
-								Manual
-							</Button>
-							<LicenseTooltip
-								canUseFeature={isPremium}
-								defaultTooltip=""
-								premiumExtraInfo="Please obtain a premium license to use rule-based deliveries."
-							>
-								<span>
-									<Button
-										variant={
-											selectionMode === DeliverySelectionMode.RuleBased
-												? "contained"
-												: "outlined"
-										}
-										onClick={() =>
-											setSelectionMode(DeliverySelectionMode.RuleBased)
-										}
-										disabled={!isPremium}
-										aria-pressed={
-											selectionMode === DeliverySelectionMode.RuleBased
-										}
-									>
-										Rule-Based
-									</Button>
-								</span>
-							</LicenseTooltip>
+							{deliverySelectionTabs.map((tab) => (
+								<SelectionTabButton
+									key={tab.key}
+									tab={tab}
+									selectionMode={selectionMode}
+									isPremium={isPremium}
+									onSelect={handleSelectTab}
+								/>
+							))}
 						</ButtonGroup>
 					</Box>
 
 					<SelectionModeContent
-						selectionMode={selectionMode}
+						tab={activeTab}
 						isPremium={isPremium}
 						loadingSchema={loadingSchema}
 						ruleSchema={ruleSchema}
@@ -750,40 +665,18 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 				}}
 			>
 				<Box sx={{ flex: 1, mr: 2 }}>
-					{(() => {
-						const error = getFirstBlockingError({
-							name,
-							date,
-							selectionMode,
-							selectedFeatureIds,
-							rulesValidated,
-							matchedFeaturesLength: matchedFeatures.length,
-							deliveryTerm,
-							featureTerm,
-						});
-
-						return (
-							error && (
-								<Alert severity="error" sx={{ py: 0 }}>
-									{error}
-								</Alert>
-							)
-						);
-					})()}
+					{blockingError && (
+						<Alert severity="error" sx={{ py: 0 }}>
+							{blockingError}
+						</Alert>
+					)}
 				</Box>
 				<Box sx={{ display: "flex", gap: 1 }}>
 					<Button onClick={onClose}>Cancel</Button>
 					<Button
 						onClick={handleSave}
 						variant="contained"
-						disabled={isSaveDisabled(
-							name,
-							date,
-							selectionMode,
-							selectedFeatureIds,
-							rulesValidated,
-							matchedFeatures.length,
-						)}
+						disabled={blockingError !== null}
 					>
 						{isEditMode ? "Update" : "Save"}
 					</Button>

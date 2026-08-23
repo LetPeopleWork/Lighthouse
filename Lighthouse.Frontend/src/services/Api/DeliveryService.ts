@@ -20,6 +20,16 @@ import {
 } from "../../models/WorkItemRules";
 import { BaseApiService } from "./BaseApiService";
 
+export interface IDeliveryCreateOptions {
+	portfolioId: number;
+	name: string;
+	date: Date;
+	featureIds: number[];
+	selectionMode?: DeliverySelectionMode;
+	rules?: IWorkItemRuleCondition[];
+	mode?: "and" | "or";
+}
+
 export interface IDeliveryUpdateOptions {
 	deliveryId: number;
 	name: string;
@@ -49,15 +59,7 @@ const PortfolioDeliveriesSchema = z.object({
 
 export interface IDeliveryService {
 	getByPortfolio(portfolioId: number): Promise<IPortfolioDeliveries>;
-	create(
-		portfolioId: number,
-		name: string,
-		date: Date,
-		featureIds: number[],
-		selectionMode?: DeliverySelectionMode,
-		rules?: IWorkItemRuleCondition[],
-		mode?: "and" | "or",
-	): Promise<void>;
+	create(options: IDeliveryCreateOptions): Promise<void>;
 	update(options: IDeliveryUpdateOptions): Promise<void>;
 	delete(deliveryId: number): Promise<void>;
 	archive(deliveryId: number, concurrencyToken?: string): Promise<void>;
@@ -102,15 +104,15 @@ export class DeliveryService
 		});
 	}
 
-	async create(
-		portfolioId: number,
-		name: string,
-		date: Date,
-		featureIds: number[],
-		selectionMode: DeliverySelectionMode = DeliverySelectionMode.Manual,
-		rules?: IWorkItemRuleCondition[],
-		mode?: "and" | "or",
-	): Promise<void> {
+	async create({
+		portfolioId,
+		name,
+		date,
+		featureIds,
+		selectionMode = DeliverySelectionMode.Manual,
+		rules,
+		mode,
+	}: IDeliveryCreateOptions): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/deliveries/portfolio/${portfolioId}`, {
 				name,
