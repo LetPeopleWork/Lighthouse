@@ -1952,9 +1952,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string DeliverySourceNotImplementedYet = "Not yet implemented - DISTILL scaffold";
 
+        private static readonly DeliverySourceDescriptor[] JiraSources =
+            [new DeliverySourceDescriptor("jira-release", "Jira Release")];
+
+        /// <summary>
+        /// Every Jira connection offers the same single source today. It is still answered per connection
+        /// rather than by a property on the connector, so that a connection which one day cannot offer its
+        /// Releases can say so by returning nothing, without any other connection being affected.
+        /// </summary>
         public IReadOnlyList<DeliverySourceDescriptor> AvailableSources(WorkTrackingSystemConnection connection)
         {
-            throw new NotImplementedException(DeliverySourceNotImplementedYet);
+            return JiraSources;
         }
 
         public Task<IReadOnlyList<DeliverySourceOption>> GetOptions(WorkTrackingSystemConnection connection, string sourceKey, string projectReference)
