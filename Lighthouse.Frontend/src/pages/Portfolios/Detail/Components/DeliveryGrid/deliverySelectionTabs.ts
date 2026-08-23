@@ -17,6 +17,7 @@ export interface DeliverySelectionValues {
 export interface DeliverySelectionState extends DeliverySelectionValues {
 	rulesValidated: boolean;
 	matchedFeaturesLength: number;
+	sourceOptionPicked: boolean;
 }
 
 export interface DeliverySelectionTerms {
@@ -177,8 +178,10 @@ export const defaultDeliverySelectionTab = manualTab;
 
 /**
  * A tab for one way the connection lets a date be read out of the work tracking system. It carries
- * no mode and no payload because looking at a source changes nothing yet; the blocking error says
- * so rather than letting a user press Save and wonder why nothing stuck.
+ * no mode and no payload because looking at a source changes nothing yet. Saving stays blocked from
+ * the moment the tab opens, and the reason changes along the way: with nothing picked there is
+ * nothing to look at yet, and once something is picked the reader has to be told that looking is all
+ * this tab does, rather than pressing Save and wondering why nothing stuck.
  */
 const sourceSelectionTab = (
 	source: IDeliverySource,
@@ -192,8 +195,10 @@ const sourceSelectionTab = (
 		notice: `Taking a ${terms.deliveryTerm.toLowerCase()} date from a ${source.displayName} is a premium feature. Please upgrade your license to use this functionality.`,
 	},
 	hydrate: () => emptySelectionValues(),
-	firstBlockingError: () =>
-		`Picking a ${source.displayName} only previews it. Switch to Manual or Rule-Based to save.`,
+	firstBlockingError: (state) =>
+		state.sourceOptionPicked
+			? `Picking a ${source.displayName} only previews it. Switch to Manual or Rule-Based to save.`
+			: `Pick a ${source.displayName} to see the date it would set.`,
 	fieldErrors: () => ({}),
 	toPayload: () => ({ featureIds: [] }),
 });

@@ -292,7 +292,7 @@ describe("DeliverySourceTab registration", () => {
 		expect(deliveryService.getDeliverySourceOptions).not.toHaveBeenCalled();
 	});
 
-	it("blocks saving while a source tab is showing, and says so", async () => {
+	it("asks for a Release, not for the name and date it will not let you type", async () => {
 		const user = userEvent.setup();
 		const deliveryService = createMockDeliveryService();
 		deliveryService.getDeliverySources = vi
@@ -304,14 +304,38 @@ describe("DeliverySourceTab registration", () => {
 
 		renderModal(deliveryService);
 
-		await user.type(screen.getByLabelText("Launch Name"), "Autumn release");
-		fireEvent.change(screen.getByLabelText("Launch Date"), {
-			target: { value: "2099-12-31" },
-		});
 		await user.click(
 			await screen.findByRole("button", { name: "Jira Release" }),
 		);
 
+		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		expect(screen.getByText(/Pick a Jira Release/i)).toBeInTheDocument();
+		expect(screen.queryByText(/is required/i)).toBeNull();
+	});
+
+	it("blocks saving once a Release is picked, and says so", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([JIRA_RELEASE_SOURCE]);
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+
+		renderModal(deliveryService);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+
+		// The Release filled in a name and a future date, so nothing else is left to complain about:
+		// Save is disabled because this tab saves nothing, and the message is the only thing saying so.
+		expect(screen.getByLabelText("Launch Name")).toHaveValue("Release 44");
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 		expect(
 			screen.getByText(/only previews|does not change|cannot be saved/i),

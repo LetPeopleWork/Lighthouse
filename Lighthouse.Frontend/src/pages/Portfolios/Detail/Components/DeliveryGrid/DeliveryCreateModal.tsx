@@ -369,6 +369,15 @@ const getFirstBlockingError = ({
 	terms,
 	deliveryTerm,
 }: ValidationOptions): string | null => {
+	const tabError = tab.firstBlockingError(state, terms);
+
+	// A tab that fills the name and the date in itself owns them, so it speaks first. Asking someone
+	// to fill in a field they cannot type into names a fix that does not exist, and saying nothing
+	// would be kinder than that.
+	if (tab.source !== undefined) {
+		return tabError;
+	}
+
 	if (!name.trim()) {
 		return `${deliveryTerm} name is required`;
 	}
@@ -378,7 +387,8 @@ const getFirstBlockingError = ({
 	if (!isValidFutureDate(date)) {
 		return `${deliveryTerm} date must be in the future`;
 	}
-	return tab.firstBlockingError(state, terms);
+
+	return tabError;
 };
 
 export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
@@ -414,6 +424,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [loadingSchema, setLoadingSchema] = useState(false);
 	const [validatingRules, setValidatingRules] = useState(false);
 	const [rulesValidated, setRulesValidated] = useState(false);
+	const [sourceOptionPicked, setSourceOptionPicked] = useState(false);
 	const [matchedFeatures, setMatchedFeatures] = useState<IFeature[]>([]);
 	const [errors, setErrors] = useState<{
 		name?: string;
@@ -444,6 +455,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		mode,
 		rulesValidated,
 		matchedFeaturesLength: matchedFeatures.length,
+		sourceOptionPicked,
 	};
 
 	useEffect(() => {
@@ -563,12 +575,16 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setSelectedTabKey(tab.key);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
+		// The picker starts empty again when the tab is next opened, so what it was showing before is
+		// forgotten here too; the name and the date it filled in stay, which is the point of them.
+		setSourceOptionPicked(false);
 	};
 
 	const handleSourceOptionPicked = useCallback(
 		(option: IDeliverySourceOption) => {
 			setName(option.name);
 			setDate(option.date === null ? "" : dateInputValue(option.date));
+			setSourceOptionPicked(true);
 			setErrors((prev) => ({ ...prev, name: undefined, date: undefined }));
 		},
 		[],
@@ -609,6 +625,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setRuleSchema(null);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
+		setSourceOptionPicked(false);
 		setErrors({});
 		clearDeliverySourceOptionsCache();
 	}, []);
