@@ -774,12 +774,21 @@ get re-applied.
 - **Fix**: Replaced every `[ … ]` with `[[ … ]]` in the two chart scripts (and `=` → `==` for the string compare). `chart/scripts/{version-guard,publish}.sh`.
 - **Rule going forward**: In any committed bash script (shebang `#!/usr/bin/env bash`), always use `[[ … ]]` for conditionals, never `[ … ]` — Sonar fires `shelldre:S7688` (MAJOR) otherwise. Note the gate-clear path below.
 
-### 2026-06-28 — pushes to main don't re-scan Sonar; only PRs and the Nightly do
-- **SUPERSEDED 2026-07-05**: CI was reverted to re-run the Sonar SCAN on ALL builds (incl. pushes to main), so a normal push now re-analyses and clears the gate — the Nightly-dispatch workaround below is no longer needed. The rest of this entry is kept for history.
-- **Symptom**: After fixing `new_violations` and pushing straight to `main`, the gate stayed `ERROR`. Manually dispatching the `Build And Deploy Lighthouse` workflow also did nothing.
-- **Root cause**: `ci.yml` runs the backend Sonar SCAN only on PRs (`run_sonar: ${{ github.event_name == 'pull_request' }}`); a push to `main` runs `sonar-gates` as an API STATUS-CHECK against the last analysis (no new scan). A `workflow_dispatch` of the main CI skips even that (the check is `github.event_name == 'push'`-gated). The only thing that re-analyses `main` is the **Nightly Backend CI** (`.github/workflows/nightly.yml`, `run_sonar: true`, `workflow_dispatch`-able).
-- **Fix**: Land the code fix on `main`, then dispatch **Nightly Backend CI** to re-scan and clear the gate.
-- **Rule going forward**: To clear a backend Sonar gate failure on `main` (trunk-based, no PRs), fix + push, then trigger the **Nightly Backend CI** workflow (`gh workflow run nightly.yml -R LetPeopleWork/Lighthouse`) — dispatching the main `Build And Deploy` workflow will NOT re-scan.
+### 2026-07-05 — every push to `main` re-scans Sonar; fix and push, that is all
+
+- **Rule going forward**: a push to `main` runs a full Sonar analysis. To clear a backend gate failure,
+  fix the violation and push. Do **not** dispatch the Nightly, and do not treat a passing `sonar-gates`
+  on a push as "it did not really scan" — it did.
+- **Why this entry exists at all**: between 2026-06-28 and 2026-07-05 the opposite was true, and this
+  entry used to say so in its heading. CI was then reverted to scan on all builds. The stale heading
+  outlived the correction by seven weeks and was still being believed on 2026-08-23, because a
+  `SUPERSEDED` line in the body does not reach anyone reading the section index.
+- **Rule going forward, second half**: when a ledger entry is overturned, **rewrite its heading and its
+  rule**. A correction buried in the body of an entry whose title still states the wrong thing is worse
+  than no entry, because the title is what a grep and a table of contents surface.
+- **History (no longer true)**: `ci.yml` once ran the backend Sonar scan only on pull requests
+  (`run_sonar: ${{ github.event_name == 'pull_request' }}`), so a push to `main` ran `sonar-gates` as an
+  API status check against the previous analysis, and only the Nightly Backend CI re-analysed `main`.
 
 ### 2026-08-23 (first seen 2026-06-20) — external_roslyn:SYSLIB1045: don't `new Regex(...)`, prefer no regex (or `[GeneratedRegex]`) (Recurrence: 2)
 - **Symptom**: `sonar-gates` `new_violations = 1` (INFO `external_roslyn:SYSLIB1045`, "Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time") on `Lighthouse.Backend.Tests/Health/MigrationsAppliedHealthCheckTest.cs:16` after the epic-5305 slice-02 health-checks push (HEAD ba0a928f). Every other job green; a clean Release `dotnet build` did NOT catch it (INFO, Sonar-only).
