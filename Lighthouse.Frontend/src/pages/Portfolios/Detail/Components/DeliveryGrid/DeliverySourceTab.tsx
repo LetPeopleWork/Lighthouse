@@ -10,7 +10,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import LocalDateTimeDisplay from "../../../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import type {
@@ -247,16 +247,32 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	const [selectedId, setSelectedId] = useState("");
 	const [preview, setPreview] = useState<IDeliverySourcePreview | null>(null);
 	const [previewFailed, setPreviewFailed] = useState(false);
+	const awaitedOptionId = useRef("");
 
+	/**
+	 * A preview costs a round trip whose length depends on how much work carries the entry, so two
+	 * picks in a row routinely come back in the other order. Anything but the answer to the pick
+	 * that is still on screen is dropped, because the panel and the picker naming different entries
+	 * is a confidently wrong answer to the only question this tab exists to ask.
+	 */
 	const handleSelect = (option: IDeliverySourceOption) => {
 		setSelectedId(option.id);
 		setPreview(null);
 		setPreviewFailed(false);
+		awaitedOptionId.current = option.id;
 
 		deliveryService
 			.previewDeliverySource(portfolioId, sourceKey, option.id)
-			.then((fetched) => setPreview(fetched))
-			.catch(() => setPreviewFailed(true));
+			.then((fetched) => {
+				if (awaitedOptionId.current === option.id) {
+					setPreview(fetched);
+				}
+			})
+			.catch(() => {
+				if (awaitedOptionId.current === option.id) {
+					setPreviewFailed(true);
+				}
+			});
 	};
 
 	if (failed) {

@@ -534,4 +534,55 @@ describe("DeliverySourceTab preview", () => {
 		});
 		expect(buttons).toHaveLength(0);
 	});
+
+	it("shows the Release that is selected when an earlier preview arrives after a later one", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+
+		let answerTheFirstPick: (preview: Record<string, unknown>) => void =
+			() => {};
+		deliveryService.previewDeliverySource = vi
+			.fn()
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						answerTheFirstPick = resolve;
+					}),
+			)
+			.mockResolvedValue({
+				name: "Release 44 in Project X",
+				date: new Date("2026-10-15T00:00:00Z"),
+				features: [createFeature(2, "Login")],
+				emptyBecause: "None",
+			});
+
+		renderTab(deliveryService);
+
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: /Release 44.*JUSTATEST/ }),
+		);
+		await openSourceList(user);
+		await user.click(screen.getByRole("option", { name: /Release 44.*PROJ/ }));
+
+		const preview = await screen.findByTestId("delivery-source-preview");
+		expect(preview).toHaveTextContent("Release 44 in Project X");
+
+		answerTheFirstPick({
+			name: "Release 44 in Just A Test",
+			date: new Date("2026-09-30T00:00:00Z"),
+			features: [createFeature(1, "Widget rewrite")],
+			emptyBecause: "None",
+		});
+
+		await waitFor(() => {
+			expect(deliveryService.previewDeliverySource).toHaveBeenCalledTimes(2);
+		});
+		expect(preview).toHaveTextContent("Release 44 in Project X");
+		expect(preview).not.toHaveTextContent("Release 44 in Just A Test");
+		expect(within(preview).queryByText("Widget rewrite")).toBeNull();
+	});
 });
