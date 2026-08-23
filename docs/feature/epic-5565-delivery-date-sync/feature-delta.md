@@ -1529,3 +1529,117 @@ boundary while the sync and publishing services stay real.
 nullables, so a failed read cannot be mistaken for a deleted source and a refusal cannot be mistaken for
 a missing target. The block marker is `🔮`, anchored on its opening line.
 
+---
+
+## Wave: DELIVER / [REF] Implementation summary — slice 01a, shipped 2026-08-23
+
+A Jira-connected Portfolio can now be asked what a Delivery could take its date from, and one such
+source can be previewed without saving anything. On the Create Delivery modal a third tab, **Jira
+Release**, sits beside Manual and Rule-Based; it lists the Releases every project the connection can see
+currently offers, and previews one Release's date together with the Portfolio Features tagged with it.
+Nothing is persisted — closing the modal leaves no Delivery and no Delivery change, which is what
+AC-01.7 asked for and what makes this slice cheap to throw away.
+
+Shipped as 30 commits. ADO Story #5828, Epic #5565.
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Result |
+|---|---|
+| Backend suite | 5959 passed, 0 failed, 7 skipped |
+| Frontend suite | 4516 passed, 330 files |
+| `dotnet build` | 0 warnings, under `TreatWarningsAsErrors` |
+| `pnpm build` + Biome | clean, zero warnings |
+| Analyzer sweep | 37 pre-existing, **zero new** across 30 commits |
+| Mutation — backend | **95.83 %** (gate 80 %) |
+| Mutation — frontend | **89.88 %** (gate 80 %) |
+| E2E | `@walking_skeleton` green against the live `letpeoplework` board |
+
+Detail in `mutation/results.md`, including two Stryker config traps that cost four runs to find.
+
+## Wave: DELIVER / [WHY] Upstream Issues — eight things this slice proved wrong
+
+The statements below are left in place above rather than edited, because the reasoning that produced
+them is worth reading. This section is the correction, and where they disagree this one wins.
+
+**1. `ResolveMany` was assigned to slice 02. It had to land here.** The preview needs exactly the same
+membership read, so a preview-only path would have spelled the `fixVersion` query twice and left one
+copy to delete later. Slice 02 still owns `DeliverySourceSyncService`, the `PortfolioUpdater` wiring,
+`RecordableDeliveries` and the broken-source transition table.
+
+**2. AC-01.6 had no coverage at all.** The premium-gated tab state was asserted by nothing. It is now
+proven by mocking `useLicenseRestrictions` to `canUsePremiumFeatures: false` and asserting the tab
+renders, is openable, shows its notice, and fetches no options.
+
+**3. The Zod guidance was backwards.** DESIGN said to hand-roll `asObject`/`asDate` parsers because Zod
+was "still gated". Both halves were false: `zod ^4.4.3` is a real dependency used by **21 files** under
+`src/models`; the gate condition (TypeScript 6 / Vite 8) is exceeded by the installed TypeScript 7.0.2
+and Vite 8.2.1; and the hand-rolled idiom named as "the house pattern" exists in exactly one file, while
+the direct sibling `ArchivedDelivery.ts` uses Zod.
+
+**4. "Mirrors `delivery-rules/validate`" would have shipped a defect.** That route returns **400** on an
+empty list. Copying it would have turned AC-01.5's explicit empty state into an error. The preview
+answers **200 with a reason**, and the reason is a three-member closed set, because "nothing is tagged
+against this Release" and "the tagged work is not tracked by this Portfolio" send the reader to
+different places.
+
+**5. `projectReference` had no source, so `GetOptions` could not be called as designed.** **Nothing on a
+Portfolio holds a Jira project key** — it stores `DataRetrievalValue`, which for Jira is a JQL string,
+and the board the wizard built it from is not persisted. The parameter is removed. Releases are gathered
+across **every project the credential can see**, which also covers the topology the maintainer named,
+where release coordination lives in its own project holding no work at all — no scheme inferring the
+project from the Portfolio's own Features could ever have found it.
+
+**6. Constant-cost resolution was unachievable as written.** DES-12 promised "two calls per refresh,
+constant in N"; with no project reference the adapter fell back to one read per bound Delivery. The
+cross-project sweep restores the property: `1 + P` calls where P is projects-on-the-site, constant in
+the number of bound Deliveries, which is what the KPI cared about.
+
+**7. AC-01.8 is rewritten by two maintainer rulings, 2026-08-23.** It said an archived Release is
+"listed, labelled, and not selectable" and a released one "**is** selectable". Both are overridden:
+**archived and released Releases are hidden from the picker entirely.** The asymmetry that remains is
+deliberate — a dateless Release stays listed because the reader can go and fix it, while archived and
+released both say this Release is finished with.
+
+The server still lets both bind and keep syncing. Hiding is presentation; refusing is the contract, and
+a direct POST never sees the picker. Concretely: `GetOptions` sweeps `status=unreleased` while
+`ResolveMany` sweeps `archived,released,unreleased`. **Do not unify those two status sets** — a Delivery
+bound to a Release that later ships must keep resolving, or marking a version released in Jira would
+silently retire a live Delivery.
+
+**8. The infrastructure-policy document exists project-wide** at
+`docs/architecture/atdd-infrastructure-policy.md`, not only per feature. The `IDeliverySourceProvider`
+row was added there.
+
+## Wave: DELIVER / [REF] Carried forward to slice 01b
+
+Three things that cannot bite while nothing persists, and will the moment something does.
+
+**The picker must always include the currently-bound Release**, even when the unreleased-only filter
+would exclude it. Once 01b persists bindings, editing a Delivery whose Release has since shipped fetches
+options that do not contain its own current value — the control renders with nothing selected, and a
+save can silently unbind or switch it. Filter the choices, never the current value.
+
+**The auto-filled date is the browser's local rendering of a UTC instant.** West of UTC the field and
+the preview both name the day *before* the one Jira holds. They agree with each other, which is why it
+was built this way, and 01a only displays it. 01b saves it. All three suites are pinned to
+`Europe/Zurich`, so no existing test can see this.
+
+**`DeliverySourceUnavailableReason` has no member meaning a transient read failure**; `ResolveMany`
+reports `CapabilityWithdrawn`. Harmless today because nothing reads it, and the design says a higher
+layer must never persist broken-source on `Unavailable` regardless. Slice 02 builds the transition table
+that consumes it and should settle the vocabulary then.
+
+## Wave: DELIVER / [REF] Known gaps, stated rather than left to be found
+
+- **`JiraWorkTrackingConnector.cs` was not mutation-tested.** Roughly 390 delivery-source lines sit in a
+  2363-line file, and Stryker.NET ignores line ranges, so whole-file mutation would have created
+  thousands of mutants in unrelated Jira code that this slice's test filter cannot kill — a meaningless
+  number. Its delivery-source behaviour is covered by the 25 specs in `JiraDeliverySourceProviderTest`.
+- **The rule-based premium notice hardcodes "delivery"** rather than taking the tenant's configured
+  term. Pre-existing and adjacent to this work; the source-tab notice beside it does it correctly.
+- **`No Release Date Set` sits on a per-reason map shared by every source.** Right while Jira is the
+  only one, wrong the day a non-Jira source appears.
+- **The E2E date locator is unverified since the UI feedback pass.** The element it read was removed and
+  the Page Object updated by construction, but Playwright has not run against it since.
+
