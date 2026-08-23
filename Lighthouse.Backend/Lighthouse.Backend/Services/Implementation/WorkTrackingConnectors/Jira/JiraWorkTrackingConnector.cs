@@ -1607,7 +1607,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     client,
                     new CloudSearchRequest(sweepQuery, SweepFields, ExpandChangelog: false, pageLimit, SinglePage: false),
                     onIssue)
-                : WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), pageLimit, onIssue);
+                : WalkDataCenterSearchOffsets(client, OrderedForOffsetPaging(sweepQuery), SweepFields, pageLimit, onIssue);
 
         /// <summary>
         /// The one token-paged walk over Jira Cloud's search endpoint. Both the whole-query download and the
@@ -1662,12 +1662,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// The offset walk over Jira Data Center's search endpoint, which has no page token: the only way to
         /// reach the next page is to ask for the offset after the one just read, and to keep asking until the
-        /// offset has passed the total the instance reports back. Reads identity and the change stamp only -
-        /// naming no field at all would make Data Center return every one of them, which is the whole cost the
-        /// sweep exists to avoid. Answers false when Jira rejects a page, leaving the caller to decide between
-        /// falling back and failing.
+        /// offset has passed the total the instance reports back. The caller names the fields it needs and
+        /// nothing else - naming no field at all would make Data Center return every one of them, which is the
+        /// whole cost the sweep exists to avoid. Answers false when Jira rejects a page, leaving the caller to
+        /// decide between falling back and failing.
         /// </summary>
-        private static async Task<bool> WalkDataCenterSearchOffsets(HttpClient client, string jql, int pageLimit, Func<JsonElement, Task> onIssue)
+        private static async Task<bool> WalkDataCenterSearchOffsets(
+            HttpClient client, string jql, string fields, int pageLimit, Func<JsonElement, Task> onIssue)
         {
             var encodedJql = Uri.EscapeDataString(jql);
             var startAt = 0;
@@ -1676,7 +1677,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             while (startAt < total)
             {
-                var url = $"rest/api/latest/search?jql={encodedJql}&fields={SweepFields}&startAt={startAt}&maxResults={pageSize}";
+                var url = $"rest/api/latest/search?jql={encodedJql}&fields={Uri.EscapeDataString(fields)}&startAt={startAt}&maxResults={pageSize}";
 
                 var response = await client.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
@@ -1952,6 +1953,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string DeliverySourceNotImplementedYet = "Not yet implemented - DISTILL scaffold";
 
+        private const string JiraReleaseEndpoint = "rest/api/3/version";
+
+        private const string FixVersionsFieldName = "fixVersions";
+
+        // The membership search reads identity and which Releases carry it, and nothing else. It is a query of
+        // its own rather than a widening of the identity sweep, which every refresh of every customer runs.
+        private const string ReleaseMembershipFields = "key," + FixVersionsFieldName;
+
         private static readonly DeliverySourceDescriptor[] JiraSources =
             [new DeliverySourceDescriptor("jira-release", "Jira Release")];
 
@@ -1987,10 +1996,207 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return JiraReleaseVersionReader.ReadOptions(await response.Content.ReadAsStringAsync());
         }
 
-        public Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
+        /// <summary>
+        /// Every bound Release in one pass. Each Release is read for its name and date, and then a single
+        /// search asks Jira which work carries any of them - so the search costs the same whether one Delivery
+        /// is bound or fifty. What comes back for a Release is a verdict rather than a value, because the
+        /// caller has to be able to tell a Release Jira says is gone from a Jira that could not be asked.
+        /// </summary>
+        public async Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
             WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences)
         {
-            throw new NotImplementedException(DeliverySourceNotImplementedYet);
+            RejectSourceTheConnectionDoesNotOffer(sourceKey);
+
+            var resolutions = new Dictionary<string, DeliverySourceResolution>(StringComparer.Ordinal);
+
+            if (sourceReferences.Count == 0)
+            {
+                return resolutions;
+            }
+
+            var client = await GetJiraRestClientAsync(connection);
+
+            var datedReleases = new List<(string SourceReference, string VersionId)>();
+
+            foreach (var sourceReference in sourceReferences)
+            {
+                if (resolutions.ContainsKey(sourceReference))
+                {
+                    continue;
+                }
+
+                var (verdict, versionId) = await ReadRelease(client, sourceReference);
+
+                resolutions[sourceReference] = verdict;
+
+                if (versionId is not null)
+                {
+                    datedReleases.Add((sourceReference, versionId));
+                }
+            }
+
+            if (datedReleases.Count > 0)
+            {
+                await AddTheWorkThatCarriesTheRelease(client, connection, datedReleases, resolutions);
+            }
+
+            return resolutions;
+        }
+
+        private static void RejectSourceTheConnectionDoesNotOffer(string sourceKey)
+        {
+            if (!Array.Exists(JiraSources, source => source.Key == sourceKey))
+            {
+                throw new ArgumentException(
+                    $"This Jira connection does not offer a delivery source called '{sourceKey}'.", nameof(sourceKey));
+            }
+        }
+
+        /// <summary>
+        /// What one bound Release currently is, and - when it is a Release a forecast could be synced to - the
+        /// version id to ask about in the membership search. The id comes back from here rather than being
+        /// taken from the request, so the value that ends up inside a JQL clause is always one Jira itself
+        /// wrote.
+        /// </summary>
+        private async Task<(DeliverySourceResolution Verdict, string? VersionId)> ReadRelease(
+            HttpClient client, string sourceReference)
+        {
+            try
+            {
+                var response = await client.GetAsync($"{JiraReleaseEndpoint}/{Uri.EscapeDataString(sourceReference)}");
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return (new DeliverySourceResolution.NotFound(), null);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return (TheReadCouldNotBeMade(), null);
+                }
+
+                var release = ReadOneRelease(await response.Content.ReadAsStringAsync());
+
+                return (VerdictFor(release), release.Date.HasValue ? release.Id : null);
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+            {
+                logger.LogInformation(exception, "Could not read Jira Release {SourceReference}", sourceReference);
+
+                return (TheReadCouldNotBeMade(), null);
+            }
+        }
+
+        /// <summary>
+        /// Jira answers with a bare version here and with a list of them when the whole project is asked for.
+        /// Both go through the one parser, so "nobody set a date on this" cannot come to mean one thing while
+        /// binding a Delivery and something else on every refresh afterwards.
+        /// </summary>
+        private static DeliverySourceOption ReadOneRelease(string versionPayload)
+            => JiraReleaseVersionReader.ReadOptions($"[{versionPayload}]").Single();
+
+        /// <summary>
+        /// The answer when Jira could not be asked at all. Deliberately not the same answer as a Release Jira
+        /// says is gone: only "gone" may ever retire a binding, and an instance that was briefly unreachable has
+        /// said nothing whatsoever about whether the Release still exists. Merging the two arms into one catch
+        /// would turn every network blip into a Delivery that quietly stopped syncing.
+        /// </summary>
+        private static DeliverySourceResolution.Unavailable TheReadCouldNotBeMade()
+            => new(DeliverySourceUnavailableReason.CapabilityWithdrawn);
+
+        private static DeliverySourceResolution VerdictFor(DeliverySourceOption release)
+            => release.Date is { } date
+                ? new DeliverySourceResolution.Resolved(new DeliverySourceSnapshot(release.Name, date, []))
+                : new DeliverySourceResolution.NoDate(release.Name);
+
+        /// <summary>
+        /// The single search that covers every dated Release at once. The version ids come out of Jira's own
+        /// answer rather than out of the request that asked about them, and they go into the query unquoted:
+        /// Jira reads a bare number as a version id and a quoted word as a version name, and two Releases on the
+        /// same board are free to share a name.
+        /// </summary>
+        private async Task AddTheWorkThatCarriesTheRelease(
+            HttpClient client,
+            WorkTrackingSystemConnection connection,
+            List<(string SourceReference, string VersionId)> datedReleases,
+            Dictionary<string, DeliverySourceResolution> resolutions)
+        {
+            var versionIds = datedReleases.Select(dated => dated.VersionId).Distinct(StringComparer.Ordinal).ToArray();
+            var carriedWork = versionIds.ToDictionary(id => id, _ => new List<string>(), StringComparer.Ordinal);
+
+            var query = $"fixVersion in ({string.Join(", ", versionIds)})";
+
+            if (!await TryWalkReleaseMembership(client, connection, query, carriedWork))
+            {
+                foreach (var (sourceReference, _) in datedReleases)
+                {
+                    resolutions[sourceReference] = TheReadCouldNotBeMade();
+                }
+
+                return;
+            }
+
+            foreach (var (sourceReference, versionId) in datedReleases)
+            {
+                var resolved = (DeliverySourceResolution.Resolved)resolutions[sourceReference];
+
+                resolutions[sourceReference] = resolved with
+                {
+                    Snapshot = resolved.Snapshot with { MemberReferenceIds = carriedWork[versionId] },
+                };
+            }
+        }
+
+        private async Task<bool> TryWalkReleaseMembership(
+            HttpClient client,
+            WorkTrackingSystemConnection connection,
+            string query,
+            Dictionary<string, List<string>> carriedWork)
+        {
+            try
+            {
+                var transport = await GetDeploymentType(client, connection);
+                var pageLimit = ResolveIssuesPerRequest(connection);
+
+                return transport == JiraDeployment.Cloud
+                    ? await WalkCloudSearchPages(
+                        client,
+                        new CloudSearchRequest(query, ReleaseMembershipFields, ExpandChangelog: false, pageLimit, SinglePage: false),
+                        issue => CollectCarriedWork(issue, carriedWork))
+                    : await WalkDataCenterSearchOffsets(
+                        client, OrderedForOffsetPaging(query), ReleaseMembershipFields, pageLimit,
+                        issue => CollectCarriedWork(issue, carriedWork));
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
+            {
+                logger.LogInformation(exception, "Could not find out which work carries the Releases asked about");
+
+                return false;
+            }
+        }
+
+        private static Task CollectCarriedWork(JsonElement issue, Dictionary<string, List<string>> carriedWork)
+        {
+            if (!issue.TryGetProperty(JiraFieldNames.KeyPropertyName, out var keyElement)
+                || keyElement.GetString() is not { Length: > 0 } reference
+                || !issue.TryGetProperty(JiraFieldNames.FieldsFieldName, out var fields)
+                || !fields.TryGetProperty(FixVersionsFieldName, out var fixVersions)
+                || fixVersions.ValueKind != JsonValueKind.Array)
+            {
+                return Task.CompletedTask;
+            }
+
+            foreach (var fixVersion in fixVersions.EnumerateArray())
+            {
+                if (fixVersion.TryGetProperty(JiraFieldNames.IdPropertyName, out var id)
+                    && id.GetString() is { } versionId
+                    && carriedWork.TryGetValue(versionId, out var carried))
+                {
+                    carried.Add(reference);
+                }
+            }
+
+            return Task.CompletedTask;
         }
 
         public bool SupportsDeliveryForecastPublishing(WorkTrackingSystemConnection connection)

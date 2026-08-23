@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
@@ -8,8 +10,10 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Protected;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -34,6 +38,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             typeof(LinearWorkTrackingConnector),
             typeof(ServiceNowWorkTrackingConnector),
         ];
+
+        private const string JiraReleaseSourceKey = "jira-release";
+
+        private const string TheDatedRelease = "10004";
+        private const string TheDatedReleaseName = "Release 1.0";
+        private const string TheUndatedRelease = "10005";
+        private const string TheUndatedReleaseName = "Release 2.0";
+        private const string TheDeletedRelease = "10006";
+
+        private static readonly string[] TheDatedReleaseOnItsOwn = [TheDatedRelease];
+        private static readonly string[] ThreeDatedReleases = [TheDatedRelease, "10007", "10008"];
+        private static readonly string[] TheWorkOnTheDatedRelease = ["LGH-1", "LGH-2"];
 
         /// <summary>
         /// Copied from what a real Jira answered on 2026-08-22. The middle entry has no releaseDate key at
@@ -162,6 +178,291 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.ThrowsAsync<ArgumentException>(
                 async () => await subject.GetOptions(UnreachableJiraConnection(), "jira-sprint", "LGH"),
                 "the connection has no url and no credentials, so anything that reached the network would fail differently.");
+        }
+
+        [Test]
+        public async Task A_Release_resolves_to_the_reference_ids_of_the_work_that_carries_it()
+        {
+            var jira = AJira()
+                .WithRelease(TheDatedRelease, TheDatedReleaseName, "2026-08-22")
+                .WithWorkOn("LGH-1", TheDatedRelease)
+                .WithWorkOn("LGH-2", TheDatedRelease)
+                .WithWorkOn("LGH-3", "99999");
+
+            var snapshot = SnapshotOf(await Resolve(jira, TheDatedRelease));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(snapshot.Name, Is.EqualTo(TheDatedReleaseName));
+                Assert.That(snapshot.Date, Is.EqualTo(new DateTime(2026, 8, 22, 0, 0, 0, DateTimeKind.Utc)));
+                Assert.That(snapshot.MemberReferenceIds, Is.EquivalentTo(TheWorkOnTheDatedRelease),
+                    "what comes back is the reference the tracker knows the work by; which of those the Portfolio actually holds is not the adapter's question to answer.");
+            }
+        }
+
+        [Test]
+        public async Task A_Release_somebody_deleted_in_Jira_resolves_to_nothing_found()
+        {
+            var jira = AJira().WithNoSuchRelease(TheDeletedRelease);
+
+            var resolution = await Resolve(jira, TheDeletedRelease);
+
+            Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.NotFound>(),
+                "Jira answered, and the answer was that the Release is gone - which is the one case that may retire the binding.");
+        }
+
+        [Test]
+        public async Task A_Release_nobody_dated_resolves_to_having_no_date_and_still_names_itself()
+        {
+            var jira = AJira().WithRelease(TheUndatedRelease, TheUndatedReleaseName, releaseDate: null);
+
+            var resolution = await Resolve(jira, TheUndatedRelease);
+
+            Assert.That(resolution, Is.EqualTo(new DeliverySourceResolution.NoDate(TheUndatedReleaseName)),
+                "the Release is there and only its date is missing, so the sentence a reader needs names the Release they have to go and date.");
+        }
+
+        [Test]
+        public async Task A_Release_Jira_could_not_be_asked_about_is_unavailable_and_never_missing()
+        {
+            var jira = AJira().WithUnreadableRelease(TheDatedRelease);
+
+            var resolution = await Resolve(jira, TheDatedRelease);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Unavailable>());
+                Assert.That(resolution, Is.Not.InstanceOf<DeliverySourceResolution.NotFound>(),
+                    "a Jira that could not be reached has said nothing about whether the Release still exists; reading silence as a deletion retires a perfectly good binding on the strength of a network blip.");
+            }
+        }
+
+        [Test]
+        public async Task A_membership_query_Jira_rejects_leaves_the_Release_unavailable_and_never_missing()
+        {
+            var jira = AJira().WithRelease(TheDatedRelease, TheDatedReleaseName, "2026-08-22");
+            jira.RefusesTheSearch = true;
+
+            var resolution = await Resolve(jira, TheDatedRelease);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Unavailable>());
+                Assert.That(resolution, Is.Not.InstanceOf<DeliverySourceResolution.NotFound>(),
+                    "the Release itself read back fine; only the search for what carries it failed, which says nothing about the Release being gone.");
+            }
+        }
+
+        [Test]
+        public async Task Every_bound_Release_is_asked_about_in_one_search_rather_than_one_each()
+        {
+            var jira = AJira()
+                .WithRelease(TheDatedRelease, TheDatedReleaseName, "2026-08-22")
+                .WithRelease("10007", "Release 2.0", "2026-09-01")
+                .WithRelease("10008", "Release 3.0", "2026-09-15");
+
+            var resolutions = await ResolveAll(jira, ThreeDatedReleases);
+
+            var jql = QueryValue(jira.SearchRequests.Single(), "jql");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolutions, Has.Count.EqualTo(3),
+                    "one verdict comes back per Release asked about, so a caller never has to guess what a missing key meant.");
+                Assert.That(jql, Is.EqualTo("fixVersion in (10004, 10007, 10008)"),
+                    "Jira matches a bare number against the version id and a quoted word against the version name, and two Releases may share a name. Asked for: " + jql);
+                Assert.That(jql, Does.Not.Contain(TheDatedReleaseName),
+                    "a refresh that keyed on the name would follow whoever renamed the Release, or silently pick the other one. Asked for: " + jql);
+            }
+        }
+
+        [Test]
+        public void ResolveMany_refuses_a_source_key_the_connection_never_offered_before_Jira_is_asked()
+        {
+            var subject = CreateSubject();
+
+            Assert.ThrowsAsync<ArgumentException>(
+                async () => await subject.ResolveMany(UnreachableJiraConnection(), "jira-sprint", TheDatedReleaseOnItsOwn),
+                "the connection has no url and no credentials, so anything that reached the network would fail differently.");
+        }
+
+        private static DeliverySourceSnapshot SnapshotOf(DeliverySourceResolution resolution)
+        {
+            Assert.That(resolution, Is.InstanceOf<DeliverySourceResolution.Resolved>(),
+                $"expected the Release to read back, but Jira's answer was taken as {resolution}.");
+
+            return ((DeliverySourceResolution.Resolved)resolution).Snapshot;
+        }
+
+        private static async Task<DeliverySourceResolution> Resolve(JiraStub jira, string sourceReference)
+        {
+            var resolutions = await ResolveAll(jira, [sourceReference]);
+
+            return resolutions[sourceReference];
+        }
+
+        private static async Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveAll(JiraStub jira, string[] sourceReferences)
+        {
+            var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
+
+            return await subject.ResolveMany(
+                JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection, JiraReleaseSourceKey, sourceReferences);
+        }
+
+        private static JiraStub AJira() => new();
+
+        private static string QueryValue(Uri uri, string name)
+        {
+            var pairs = uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
+            var match = Array.Find(pairs, pair => pair.StartsWith($"{name}=", StringComparison.Ordinal));
+
+            return match is null ? string.Empty : Uri.UnescapeDataString(match[(name.Length + 1)..]);
+        }
+
+        /// <summary>
+        /// A Jira that answers about its Releases and about what carries them, and records every url it was
+        /// asked for. Recording the urls is the only way to see that one search covered every bound Release
+        /// rather than one search each - a count that no return value reveals.
+        /// </summary>
+        private sealed class JiraStub
+        {
+            private readonly Dictionary<string, string> releasesById = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, HttpStatusCode> refusalsById = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, List<string>> releaseIdsByIssueKey = new(StringComparer.Ordinal);
+
+            public JiraStub()
+            {
+                var handlerMock = new Mock<HttpMessageHandler>();
+                handlerMock.Protected()
+                    .Setup<Task<HttpResponseMessage>>(
+                        "SendAsync",
+                        ItExpr.IsAny<HttpRequestMessage>(),
+                        ItExpr.IsAny<CancellationToken>())
+                    .Returns<HttpRequestMessage, CancellationToken>((request, _) => Task.FromResult(Respond(request)));
+
+                Handler = handlerMock.Object;
+            }
+
+            public HttpMessageHandler Handler { get; }
+
+            public List<Uri> Requests { get; } = [];
+
+            public bool RefusesTheSearch { get; set; }
+
+            public IReadOnlyList<Uri> SearchRequests =>
+                [.. Requests.Where(uri => uri.AbsolutePath.Contains("search", StringComparison.Ordinal))];
+
+            public JiraStub WithRelease(string id, string name, string? releaseDate)
+            {
+                var date = releaseDate is null ? string.Empty : $",\"releaseDate\":\"{releaseDate}\"";
+                releasesById[id] = $"{{\"id\":\"{id}\",\"name\":\"{name}\",\"archived\":false,\"released\":false{date}}}";
+
+                return this;
+            }
+
+            public JiraStub WithNoSuchRelease(string id)
+            {
+                refusalsById[id] = HttpStatusCode.NotFound;
+
+                return this;
+            }
+
+            public JiraStub WithUnreadableRelease(string id)
+            {
+                refusalsById[id] = HttpStatusCode.InternalServerError;
+
+                return this;
+            }
+
+            public JiraStub WithWorkOn(string issueKey, string releaseId)
+            {
+                if (!releaseIdsByIssueKey.TryGetValue(issueKey, out var releaseIds))
+                {
+                    releaseIds = [];
+                    releaseIdsByIssueKey[issueKey] = releaseIds;
+                }
+
+                releaseIds.Add(releaseId);
+
+                return this;
+            }
+
+            private HttpResponseMessage Respond(HttpRequestMessage request)
+            {
+                var uri = request.RequestUri ?? new Uri("https://unreached.invalid/");
+                Requests.Add(uri);
+
+                var path = uri.AbsolutePath;
+
+                if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
+                {
+                    return Ok("{\"deploymentType\":\"Cloud\"}");
+                }
+
+                if (path.Contains("/version/", StringComparison.Ordinal))
+                {
+                    return RespondAboutRelease(path[(path.LastIndexOf('/') + 1)..]);
+                }
+
+                if (path.Contains("search", StringComparison.Ordinal))
+                {
+                    return RespondToSearch(uri);
+                }
+
+                return Ok("{}");
+            }
+
+            private HttpResponseMessage RespondAboutRelease(string id)
+            {
+                if (refusalsById.TryGetValue(id, out var refusal))
+                {
+                    return Refuse(refusal);
+                }
+
+                return releasesById.TryGetValue(id, out var payload) ? Ok(payload) : Refuse(HttpStatusCode.NotFound);
+            }
+
+            private HttpResponseMessage RespondToSearch(Uri uri)
+            {
+                if (RefusesTheSearch)
+                {
+                    return Refuse(HttpStatusCode.InternalServerError);
+                }
+
+                var askedAbout = ReleaseIdsNamedIn(QueryValue(uri, "jql"));
+
+                var issues = releaseIdsByIssueKey
+                    .Where(work => work.Value.Exists(askedAbout.Contains))
+                    .Select(work => IssueJson(work.Key, work.Value));
+
+                return Ok($"{{\"issues\":[{string.Join(",", issues)}]}}");
+            }
+
+            private static HashSet<string> ReleaseIdsNamedIn(string jql)
+            {
+                var opening = jql.IndexOf('(', StringComparison.Ordinal);
+                var closing = jql.LastIndexOf(')');
+
+                if (opening < 0 || closing <= opening)
+                {
+                    return [];
+                }
+
+                return [.. jql[(opening + 1)..closing].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+            }
+
+            private static string IssueJson(string issueKey, IEnumerable<string> releaseIds)
+            {
+                var fixVersions = string.Join(",", releaseIds.Select(id => $"{{\"id\":\"{id}\"}}"));
+
+                return $"{{\"key\":\"{issueKey}\",\"fields\":{{\"fixVersions\":[{fixVersions}]}}}}";
+            }
+
+            private static HttpResponseMessage Refuse(HttpStatusCode status)
+                => new(status) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
+
+            private static HttpResponseMessage Ok(string body)
+                => new(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         }
 
         private static WorkTrackingSystemConnection UnreachableJiraConnection()
