@@ -30,6 +30,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// hold the answer to being computed rather than fetched.
     /// </summary>
     [TestFixture]
+    [Category("acceptance")]
+    [Category("epic-5565-delivery-date-sync")]
+    [Category("slice-01a")]
     public class JiraDeliverySourceProviderTest
     {
         private static readonly Type[] SystemsThatOfferNothing =

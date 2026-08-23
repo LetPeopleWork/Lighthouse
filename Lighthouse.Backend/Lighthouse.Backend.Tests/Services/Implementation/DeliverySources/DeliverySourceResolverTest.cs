@@ -14,6 +14,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
     /// Feature belonging to somebody else's board can never be shown as coming along with this date.
     /// </summary>
     [TestFixture]
+    [Category("acceptance")]
+    [Category("epic-5565-delivery-date-sync")]
+    [Category("slice-01a")]
     public class DeliverySourceResolverTest
     {
         private const string SourceKey = "jira-release";

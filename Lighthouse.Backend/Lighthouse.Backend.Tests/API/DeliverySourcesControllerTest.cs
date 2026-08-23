@@ -29,6 +29,9 @@ namespace Lighthouse.Backend.Tests.API
     /// not is exactly the distinction under specification here.
     /// </summary>
     [TestFixture]
+    [Category("acceptance")]
+    [Category("epic-5565-delivery-date-sync")]
+    [Category("slice-01a")]
     public class DeliverySourcesControllerTest
     {
         private const int PortfolioId = 1;
