@@ -1,16 +1,13 @@
 import {
 	Alert,
+	Autocomplete,
 	Box,
 	CircularProgress,
-	FormControl,
-	InputLabel,
-	ListSubheader,
-	MenuItem,
-	Select,
+	TextField,
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import LocalDateTimeDisplay from "../../../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import type {
@@ -27,6 +24,8 @@ export interface DeliverySourceTabProps {
 	sourceName: string;
 	featuresTerm: string;
 	portfolioTerm: string;
+	/** Told which entry is on screen, so the form can show the name and date it would take. */
+	onOptionPicked: (option: IDeliverySourceOption) => void;
 }
 
 const optionCache = new Map<string, IDeliverySourceOption[]>();
@@ -41,7 +40,7 @@ export const clearDeliverySourceOptionsCache = (): void => {
 };
 
 const blockedReason: Record<SourceOptionBlockReason, string> = {
-	NoDateSet: "No date set",
+	NoDateSet: "No Release Date Set",
 	RetiredAtSource: "No longer available",
 };
 
@@ -62,35 +61,16 @@ const emptyPreviewExplanation = (
 	return `This ${sourceName} has no ${featuresTerm} to show.`;
 };
 
-interface OptionGroup {
-	key: string;
-	label: string;
-	options: IDeliverySourceOption[];
-}
-
 /**
- * Two projects on one connection routinely name a Release the same thing, so a flat list would show
- * two identical rows and leave the user guessing which one they picked.
+ * Two projects on one connection routinely name a Release the same thing, so the project it came
+ * from travels with every entry. It is what tells two same-named entries apart on screen, and it is
+ * searchable too, so a reader who remembers only the project can type that instead.
  */
-const groupByProject = (options: IDeliverySourceOption[]): OptionGroup[] => {
-	const groups = new Map<string, OptionGroup>();
+const projectSuffix = (option: IDeliverySourceOption): string =>
+	`(${option.projectName})`;
 
-	for (const option of options) {
-		const group = groups.get(option.projectKey);
-		if (group === undefined) {
-			groups.set(option.projectKey, {
-				key: option.projectKey,
-				label: `${option.projectName} (${option.projectKey})`,
-				options: [option],
-			});
-			continue;
-		}
-
-		group.options.push(option);
-	}
-
-	return [...groups.values()];
-};
+const sourceOptionLabel = (option: IDeliverySourceOption): string =>
+	`${option.name} ${projectSuffix(option)}`;
 
 const useSourceOptions = (portfolioId: number, sourceKey: string) => {
 	const { deliveryService } = useContext(ApiServiceContext);
@@ -131,82 +111,64 @@ const useSourceOptions = (portfolioId: number, sourceKey: string) => {
 	return { options, failed };
 };
 
-const SourceOptionLabel: React.FC<{ option: IDeliverySourceOption }> = ({
-	option,
-}) => (
-	<Box
-		sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}
-	>
-		<span>{option.name}</span>
-		<Typography variant="caption" color="text.secondary">
-			{option.projectKey}
-		</Typography>
-		{option.date === null ? null : (
-			// Carries a test id because a row holds several short pieces of text and the Release name is
-			// free-form: a Release called "2027 Q1" reads as a date to anything that goes looking for one.
-			<Typography
-				variant="caption"
-				color="text.secondary"
-				data-testid="delivery-source-option-date"
-			>
-				<LocalDateTimeDisplay utcDate={option.date} />
-			</Typography>
-		)}
-		{option.blockedBecause === null ? null : (
-			<Typography variant="caption" color="text.secondary">
-				{blockedReason[option.blockedBecause]}
-			</Typography>
-		)}
-	</Box>
-);
+const SourceOptionRow: React.FC<{
+	liProps: React.HTMLAttributes<HTMLLIElement>;
+	option: IDeliverySourceOption;
+}> = ({ liProps, option }) => {
+	// Whether an entry can be picked is the server's verdict, carried on the entry itself. Working it
+	// out again from the date here would give two answers that drift apart, and the drift only shows
+	// up when somebody binds a Release the picker told them they could not. Taking the click handler
+	// away is what makes the refusal real: greying the row out is only a stylesheet away.
+	const rowProps = option.isSelectable
+		? liProps
+		: { ...liProps, onClick: undefined };
 
-const SourceOptionSelect: React.FC<{
+	return (
+		<li {...rowProps}>
+			<span>{option.name}</span>{" "}
+			<Typography component="span" variant="caption" color="text.secondary">
+				{projectSuffix(option)}
+			</Typography>
+			{option.blockedBecause === null ? null : (
+				<Typography
+					component="span"
+					variant="caption"
+					color="text.secondary"
+					sx={{ ml: 1 }}
+				>
+					{blockedReason[option.blockedBecause]}
+				</Typography>
+			)}
+		</li>
+	);
+};
+
+const SourceOptionPicker: React.FC<{
 	sourceName: string;
 	options: IDeliverySourceOption[];
 	selectedId: string;
 	onSelect: (option: IDeliverySourceOption) => void;
-}> = ({ sourceName, options, selectedId, onSelect }) => {
-	const groups = useMemo(() => groupByProject(options), [options]);
-	const labelId = "delivery-source-option-label";
-	const selectId = "delivery-source-option";
-
-	const handleChange = (value: string) => {
-		const picked = options.find((option) => option.id === value);
-		if (picked) {
-			onSelect(picked);
-		}
-	};
-
-	return (
-		<FormControl fullWidth>
-			<InputLabel id={labelId}>{sourceName}</InputLabel>
-			<Select
-				labelId={labelId}
-				id={selectId}
-				label={sourceName}
-				value={selectedId}
-				onChange={(event) => handleChange(event.target.value)}
-			>
-				{groups.flatMap((group) => [
-					<ListSubheader key={group.key}>{group.label}</ListSubheader>,
-					...group.options.map((option) => (
-						// Whether an option can be picked is the server's verdict, carried on the option
-						// itself. Working it out again from the date here would give two answers that
-						// drift apart, and the drift only shows up when somebody binds a Release the
-						// picker told them they could not.
-						<MenuItem
-							key={option.id}
-							value={option.id}
-							disabled={!option.isSelectable}
-						>
-							<SourceOptionLabel option={option} />
-						</MenuItem>
-					)),
-				])}
-			</Select>
-		</FormControl>
-	);
-};
+}> = ({ sourceName, options, selectedId, onSelect }) => (
+	<Autocomplete
+		fullWidth
+		options={options}
+		value={options.find((option) => option.id === selectedId) ?? null}
+		onChange={(_event, picked) => {
+			if (picked !== null) {
+				onSelect(picked);
+			}
+		}}
+		getOptionLabel={sourceOptionLabel}
+		getOptionKey={(option) => option.id}
+		getOptionDisabled={(option) => !option.isSelectable}
+		isOptionEqualToValue={(option, picked) => option.id === picked.id}
+		renderOption={(props, option) => {
+			const { key, ...liProps } = props;
+			return <SourceOptionRow key={key} liProps={liProps} option={option} />;
+		}}
+		renderInput={(params) => <TextField {...params} label={sourceName} />}
+	/>
+);
 
 const SourcePreview: React.FC<{
 	preview: IDeliverySourcePreview;
@@ -252,6 +214,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	sourceName,
 	featuresTerm,
 	portfolioTerm,
+	onOptionPicked,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
 	const { options, failed } = useSourceOptions(portfolioId, sourceKey);
@@ -271,6 +234,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 		setPreview(null);
 		setPreviewFailed(false);
 		awaitedOptionId.current = option.id;
+		onOptionPicked(option);
 
 		deliveryService
 			.previewDeliverySource(portfolioId, sourceKey, option.id)
@@ -308,7 +272,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 			<Typography variant="h6" sx={{ mb: 2 }}>
 				Preview a {sourceName}
 			</Typography>
-			<SourceOptionSelect
+			<SourceOptionPicker
 				sourceName={sourceName}
 				options={options}
 				selectedId={selectedId}

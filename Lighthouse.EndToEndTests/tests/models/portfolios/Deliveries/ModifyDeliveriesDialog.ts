@@ -26,9 +26,20 @@ export class ModifyDeliveriesDialog {
 		return new DeliveriesPage(this.page);
 	}
 
+	/**
+	 * The two fields a source tab fills in and locks, so a test can read what the work tracking system
+	 * handed over instead of writing the expected value down and going stale when someone changes it.
+	 */
+	get deliveryNameInput(): Locator {
+		return this.page.getByRole("textbox", { name: "Delivery Name" });
+	}
+
+	get deliveryDateInput(): Locator {
+		return this.page.getByRole("textbox", { name: "Delivery Date" });
+	}
+
 	async setDeliveryName(name: string): Promise<void> {
-		const nameInput = this.page.getByRole("textbox", { name: "Delivery Name" });
-		await nameInput.fill(name);
+		await this.deliveryNameInput.fill(name);
 	}
 
 	async hasDeliveryNameValidationError(): Promise<boolean> {
@@ -37,8 +48,7 @@ export class ModifyDeliveriesDialog {
 	}
 
 	async setDeliveryDate(date: string): Promise<void> {
-		const dateInput = this.page.getByRole("textbox", { name: "Delivery Date" });
-		await dateInput.fill(date);
+		await this.deliveryDateInput.fill(date);
 	}
 
 	async hasDeliveryDateValidationError(): Promise<boolean> {

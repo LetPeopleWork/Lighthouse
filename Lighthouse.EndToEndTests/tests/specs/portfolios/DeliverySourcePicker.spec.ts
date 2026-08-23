@@ -33,6 +33,12 @@ const TAGGED_EPICS = [
 // the list takes a couple of seconds to fill on this instance.
 const RELEASES_ARRIVE_FROM_JIRA = 60_000;
 
+// The date field holds a plain year-month-day; the preview prints the same day the way this browser
+// writes dates. Converting one into the other is what lets the two be compared without writing the
+// date down here, which would go stale the day somebody moves it in Jira.
+const asShownToTheReader = (yearMonthDay: string): string =>
+	new Date(`${yearMonthDay}T00:00:00`).toLocaleDateString();
+
 // The walking skeleton for the whole slice: Releases a person made in Jira, the dates they did and
 // did not give them, and a forecaster reading off what binding one would mean before binding it.
 //
@@ -95,11 +101,22 @@ test("@walking_skeleton picking a dated Jira Release shows its date and the Feat
 		await jiraReleases.isSelectable(THE_OTHER_RELEASE_WITHOUT_A_DATE),
 	).toBe(false);
 
-	const dateJiraHolds = await jiraReleases.listedDateFor(THE_DATED_RELEASE);
+	// The name and the date belong to the Release while this tab is showing, so neither is the
+	// reader's to type over.
+	await expect(dialog.deliveryNameInput).toBeDisabled();
+	await expect(dialog.deliveryDateInput).toBeDisabled();
+
 	await jiraReleases.pick(THE_DATED_RELEASE);
 
+	// Picking fills the form from the Release itself. Reading the date back out of the field, rather
+	// than naming it here, is what keeps the check a fact about Jira and not about the day this was
+	// written.
+	await expect(dialog.deliveryNameInput).toHaveValue(THE_DATED_RELEASE);
+	const dateJiraHolds = await dialog.deliveryDateInput.inputValue();
+	expect(dateJiraHolds).not.toBe("");
+
 	await expect(jiraReleases.previewSummary).toHaveText(
-		`${THE_DATED_RELEASE} would set the date to ${dateJiraHolds}`,
+		`${THE_DATED_RELEASE} would set the date to ${asShownToTheReader(dateJiraHolds)}`,
 	);
 
 	await expect(jiraReleases.previewGrid).toBeVisible();

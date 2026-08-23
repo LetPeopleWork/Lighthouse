@@ -137,7 +137,9 @@ const datedInJustATest: IDeliverySourceOption = {
 	name: "Release 44",
 	date: new Date("2026-09-30T00:00:00Z"),
 	projectKey: "JUSTATEST",
-	projectName: "Just A Test",
+	// A real project on the live board is called this. The brackets inside the brackets are ugly and
+	// they are still the point: the row stays unambiguous, which two bare "Release 44"s never were.
+	projectName: "Project (Test)",
 	isSelectable: true,
 	blockedBecause: null,
 };
@@ -164,6 +166,12 @@ const datelessOption: IDeliverySourceOption = {
 
 const allOptions = [datedInJustATest, datedInProject, datelessOption];
 
+// A row reads "<name> (<project>)", and both halves are matched when the reader types. Spelled out
+// here because "Release 44" alone names two of the three rows, so a loose query finds two and throws.
+const RELEASE_44_IN_PROJECT_TEST = "Release 44 (Project (Test))";
+const RELEASE_44_IN_PROJECT_X = "Release 44 (Project X)";
+const THE_DATELESS_RELEASE = /^Release 45 \(Project X\)/;
+
 const renderTab = (deliveryService = createMockDeliveryService()) => {
 	const context = createMockApiServiceContext({ deliveryService });
 
@@ -175,6 +183,7 @@ const renderTab = (deliveryService = createMockDeliveryService()) => {
 				sourceName={JIRA_RELEASE_SOURCE.displayName}
 				featuresTerm="Deliverables"
 				portfolioTerm="Value Stream"
+				onOptionPicked={vi.fn()}
 			/>
 		</ApiServiceContext.Provider>,
 	);
@@ -361,7 +370,7 @@ describe("DeliverySourceTab picker", () => {
 		});
 	});
 
-	it("groups the options by their Jira project so equally named Releases stay apart", async () => {
+	it("names the project on every row so equally named Releases stay apart", async () => {
 		const user = userEvent.setup();
 		const deliveryService = createMockDeliveryService();
 		deliveryService.getDeliverySourceOptions = vi
@@ -371,18 +380,64 @@ describe("DeliverySourceTab picker", () => {
 		renderTab(deliveryService);
 		await openSourceList(user);
 
-		expect(screen.getByText("Just A Test (JUSTATEST)")).toBeInTheDocument();
-		expect(screen.getByText("Project X (PROJ)")).toBeInTheDocument();
+		// One row per Release and nothing else. The project used to be a heading over a group of rows,
+		// which is one more kind of thing to read past for someone typing to find a name.
+		expect(screen.getAllByRole("option")).toHaveLength(allOptions.length);
+		expect(screen.queryByText("Project (Test) (JUSTATEST)")).toBeNull();
+		expect(screen.queryByText("Project X (PROJ)")).toBeNull();
 
-		expect(screen.getAllByRole("option", { name: /Release 44/ })).toHaveLength(
-			2,
+		expect(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		).toBeInTheDocument();
+	});
+
+	it("leaves the date off the rows, so the only date on screen is the one being previewed", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+
+		renderTab(deliveryService);
+		await openSourceList(user);
+
+		expect(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		).not.toHaveTextContent(
+			new Date("2026-09-30T00:00:00Z").toLocaleDateString(),
 		);
+	});
+
+	it("narrows the list to what the reader types, matching the Release or the project", async () => {
+		const user = userEvent.setup();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+
+		renderTab(deliveryService);
+		await openSourceList(user);
+		const picker = screen.getByRole("combobox", { name: "Jira Release" });
+
+		await user.type(picker, "45");
+
+		expect(screen.getAllByRole("option")).toHaveLength(1);
 		expect(
-			screen.getByRole("option", { name: /Release 44.*JUSTATEST/ }),
+			screen.getByRole("option", { name: THE_DATELESS_RELEASE }),
 		).toBeInTheDocument();
+
+		// The project half of the row is searchable too, and it is the only way to reach one of two
+		// Releases that share a name.
+		await user.clear(picker);
+		await user.type(picker, "project x");
+
+		expect(screen.getAllByRole("option")).toHaveLength(2);
 		expect(
-			screen.getByRole("option", { name: /Release 44.*PROJ/ }),
-		).toBeInTheDocument();
+			screen.queryByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		).toBeNull();
 	});
 
 	it("lists a dateless Release but refuses to let it be picked, saying what is missing", async () => {
@@ -395,9 +450,9 @@ describe("DeliverySourceTab picker", () => {
 		renderTab(deliveryService);
 		await openSourceList(user);
 
-		const blocked = screen.getByRole("option", { name: /Release 45/ });
+		const blocked = screen.getByRole("option", { name: THE_DATELESS_RELEASE });
 		expect(blocked).toHaveAttribute("aria-disabled", "true");
-		expect(blocked).toHaveTextContent(/no date/i);
+		expect(blocked).toHaveTextContent("No Release Date Set");
 
 		fireEvent.click(blocked);
 
@@ -458,7 +513,7 @@ describe("DeliverySourceTab preview", () => {
 	) => {
 		await openSourceList(user);
 		await user.click(
-			screen.getByRole("option", { name: /Release 44.*JUSTATEST/ }),
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
 		);
 	};
 
@@ -573,10 +628,12 @@ describe("DeliverySourceTab preview", () => {
 
 		await openSourceList(user);
 		await user.click(
-			screen.getByRole("option", { name: /Release 44.*JUSTATEST/ }),
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
 		);
 		await openSourceList(user);
-		await user.click(screen.getByRole("option", { name: /Release 44.*PROJ/ }));
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
 
 		const preview = await screen.findByTestId("delivery-source-preview");
 		expect(preview).toHaveTextContent("Release 44 in Project X");
@@ -594,5 +651,89 @@ describe("DeliverySourceTab preview", () => {
 		expect(preview).toHaveTextContent("Release 44 in Project X");
 		expect(preview).not.toHaveTextContent("Release 44 in Just A Test");
 		expect(within(preview).queryByText("Widget rewrite")).toBeNull();
+	});
+});
+
+describe("DeliverySourceTab and the name and date it fills in", () => {
+	const modalShowingReleases = () => {
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([JIRA_RELEASE_SOURCE]);
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(allOptions);
+		deliveryService.previewDeliverySource = vi.fn().mockResolvedValue({
+			name: "Release 44",
+			date: new Date("2026-09-30T00:00:00Z"),
+			features: [],
+			emptyBecause: "None",
+		});
+
+		renderModal(deliveryService);
+		return deliveryService;
+	};
+
+	const openTheReleaseList = async (
+		user: ReturnType<typeof userEvent.setup>,
+	) => {
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await openSourceList(user);
+	};
+
+	it("greys out the name and the date, because the Release decides both", async () => {
+		const user = userEvent.setup();
+		modalShowingReleases();
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+
+		expect(screen.getByLabelText("Launch Name")).toBeDisabled();
+		expect(screen.getByLabelText("Launch Date")).toBeDisabled();
+	});
+
+	it("fills both from the picked Release, and refills them when another is picked", async () => {
+		const user = userEvent.setup();
+		modalShowingReleases();
+		await openTheReleaseList(user);
+
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
+		);
+
+		expect(screen.getByLabelText("Launch Name")).toHaveValue("Release 44");
+		expect(screen.getByLabelText("Launch Date")).toHaveValue("2026-09-30");
+
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+
+		expect(screen.getByLabelText("Launch Date")).toHaveValue("2026-10-15");
+	});
+
+	it("hands the filled-in name and date back, editable, on the tab that can save them", async () => {
+		const user = userEvent.setup();
+		modalShowingReleases();
+		await openTheReleaseList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+
+		await user.click(screen.getByRole("button", { name: "Manual" }));
+
+		const nameField = screen.getByLabelText("Launch Name");
+		expect(nameField).toBeEnabled();
+		expect(nameField).toHaveValue("Release 44");
+		expect(screen.getByLabelText("Launch Date")).toBeEnabled();
+		expect(screen.getByLabelText("Launch Date")).toHaveValue("2026-10-15");
+
+		await user.clear(nameField);
+		await user.type(nameField, "Autumn release");
+
+		expect(nameField).toHaveValue("Autumn release");
 	});
 });

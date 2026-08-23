@@ -22,9 +22,9 @@ export class DeliverySourceTab {
 	}
 
 	/**
-	 * Addressed by the entry's own name rather than by the whole row: the row also carries the
-	 * project it came from and either its date or the reason it cannot be picked, and matching
-	 * anywhere in it would find rows that merely mention the name.
+	 * Addressed by the entry's own name rather than by the whole row: the row also names the project
+	 * the entry came from, and where it cannot be picked, why, so matching anywhere in the row would
+	 * find rows that merely mention the name.
 	 */
 	option(name: string): Locator {
 		return this.page
@@ -34,24 +34,6 @@ export class DeliverySourceTab {
 
 	async isSelectable(name: string): Promise<boolean> {
 		return (await this.option(name).getAttribute("aria-disabled")) !== "true";
-	}
-
-	/**
-	 * The date the list shows against an entry, in whatever format this browser writes dates. Read
-	 * off the screen rather than constructed, so the check still holds after the date moves.
-	 *
-	 * Addressed by the element that holds it rather than by looking for the first thing in the row
-	 * that reads as a date: the row leads with the entry's own name, and a Release called "2027 Q1"
-	 * parses as one.
-	 */
-	async listedDateFor(name: string): Promise<string> {
-		const shown = this.option(name).getByTestId("delivery-source-option-date");
-
-		if ((await shown.count()) === 0) {
-			throw new Error(`The list shows no date against "${name}"`);
-		}
-
-		return (await shown.innerText()).trim();
 	}
 
 	async pick(name: string): Promise<void> {

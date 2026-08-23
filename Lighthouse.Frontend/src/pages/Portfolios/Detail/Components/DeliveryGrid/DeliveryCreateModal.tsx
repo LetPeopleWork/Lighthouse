@@ -19,7 +19,10 @@ import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
 import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { IDelivery } from "../../../../../models/Delivery";
-import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
+import type {
+	IDeliverySource,
+	IDeliverySourceOption,
+} from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -256,8 +259,15 @@ const SelectionModeContent: React.FC<
 		tab: DeliverySelectionTab;
 		isPremium: boolean;
 		portfolioTerm: string;
+		onSourceOptionPicked: (option: IDeliverySourceOption) => void;
 	}
-> = ({ tab, isPremium, portfolioTerm, ...contentProps }) => {
+> = ({
+	tab,
+	isPremium,
+	portfolioTerm,
+	onSourceOptionPicked,
+	...contentProps
+}) => {
 	const gate = tab.premiumGate;
 	if (gate && !isPremium) {
 		return <PremiumFeatureNotice message={gate.notice} />;
@@ -271,6 +281,7 @@ const SelectionModeContent: React.FC<
 				sourceName={tab.source.displayName}
 				featuresTerm={contentProps.featuresTerm}
 				portfolioTerm={portfolioTerm}
+				onOptionPicked={onSourceOptionPicked}
 			/>
 		);
 	}
@@ -314,6 +325,18 @@ const SelectionTabButton: React.FC<{
 			<span>{button}</span>
 		</LicenseTooltip>
 	);
+};
+
+/**
+ * A date the work tracking system holds, in the form the date field wants. Built from the date as
+ * this browser shows it rather than from UTC, so the field and the preview beside it never name two
+ * different days.
+ */
+const dateInputValue = (date: Date): string => {
+	const month = `${date.getMonth() + 1}`.padStart(2, "0");
+	const day = `${date.getDate()}`.padStart(2, "0");
+
+	return `${date.getFullYear()}-${month}-${day}`;
 };
 
 const isValidFutureDate = (date: string): boolean => {
@@ -410,6 +433,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const activeTab =
 		tabs.find((tab) => tab.key === selectedTabKey) ??
 		defaultDeliverySelectionTab;
+	// On a tab that reads from the work tracking system, the name and the date belong to the entry the
+	// user picks there, so both fields are filled in for them and neither is theirs to type over. That
+	// tab saves nothing, which makes a filled-in field look broken until you know the rest: switching
+	// to Manual or Rule-Based hands the same values back, now editable, and that is how they are saved.
+	const readsFromSource = activeTab.source !== undefined;
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
 		rules,
@@ -537,6 +565,15 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setMatchedFeatures([]);
 	};
 
+	const handleSourceOptionPicked = useCallback(
+		(option: IDeliverySourceOption) => {
+			setName(option.name);
+			setDate(option.date === null ? "" : dateInputValue(option.date));
+			setErrors((prev) => ({ ...prev, name: undefined, date: undefined }));
+		},
+		[],
+	);
+
 	const handleSave = () => {
 		if (!validateForm()) {
 			return;
@@ -640,6 +677,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						type="text"
 						fullWidth
 						variant="outlined"
+						disabled={readsFromSource}
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						error={!!errors.name}
@@ -653,6 +691,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						type="date"
 						fullWidth
 						variant="outlined"
+						disabled={readsFromSource}
 						value={date}
 						onChange={(e) => setDate(e.target.value)}
 						error={!!errors.date}
@@ -702,6 +741,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 							setMatchedFeatures([]);
 						}}
 						onValidateRules={handleValidateRules}
+						onSourceOptionPicked={handleSourceOptionPicked}
 					/>
 				</Box>
 			</DialogContent>
