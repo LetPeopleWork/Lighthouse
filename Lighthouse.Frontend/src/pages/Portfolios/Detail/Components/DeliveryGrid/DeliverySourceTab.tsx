@@ -142,7 +142,13 @@ const SourceOptionLabel: React.FC<{ option: IDeliverySourceOption }> = ({
 			{option.projectKey}
 		</Typography>
 		{option.date === null ? null : (
-			<Typography variant="caption" color="text.secondary">
+			// Carries a test id because a row holds several short pieces of text and the Release name is
+			// free-form: a Release called "2027 Q1" reads as a date to anything that goes looking for one.
+			<Typography
+				variant="caption"
+				color="text.secondary"
+				data-testid="delivery-source-option-date"
+			>
 				<LocalDateTimeDisplay utcDate={option.date} />
 			</Typography>
 		)}

@@ -243,7 +243,10 @@ const RuleBasedContent: React.FC<SelectionContentProps> = ({
 	);
 };
 
-const selectionTabContent: Record<string, React.FC<SelectionContentProps>> = {
+const selectionTabContent: Record<
+	string,
+	React.FC<SelectionContentProps> | undefined
+> = {
 	[MANUAL_SELECTION_TAB_KEY]: ManualSelectionContent,
 	[RULE_BASED_SELECTION_TAB_KEY]: RuleBasedContent,
 };
@@ -272,8 +275,10 @@ const SelectionModeContent: React.FC<
 		);
 	}
 
+	// A tab that neither saves a selection nor reads one from the work tracking system has no body
+	// registered here. Showing nothing keeps a tab added later from taking the whole form down.
 	const Content = selectionTabContent[tab.key];
-	return <Content {...contentProps} />;
+	return Content === undefined ? null : <Content {...contentProps} />;
 };
 
 const SelectionTabButton: React.FC<{

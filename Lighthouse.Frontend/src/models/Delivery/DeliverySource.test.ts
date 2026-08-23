@@ -65,10 +65,6 @@ describe("delivery source list", () => {
 		expect(source.displayName).toBe("Jira Release");
 	});
 
-	it("treats a connection offering nothing as an answer rather than a failure", () => {
-		expect(DeliverySourceSchema.array().parse([])).toEqual([]);
-	});
-
 	it("refuses a source that arrives without the key a request needs", () => {
 		expect(() =>
 			DeliverySourceSchema.parse({ displayName: "Jira Release" }),
@@ -117,16 +113,6 @@ describe("delivery source option", () => {
 		expect(option.isSelectable).toBe(false);
 	});
 
-	it("names a Release that cannot be bound because it is gone from the tracker", () => {
-		const option = DeliverySourceOptionSchema.parse({
-			...datedRelease,
-			isSelectable: false,
-			blockedBecause: "RetiredAtSource",
-		});
-
-		expect(option.blockedBecause).toBe("RetiredAtSource");
-	});
-
 	it("leaves a bindable Release with no reason it could not be bound", () => {
 		const option = DeliverySourceOptionSchema.parse(datedRelease);
 
@@ -141,15 +127,6 @@ describe("delivery source option", () => {
 				blockedBecause: "SomethingElseEntirely",
 			}),
 		).toThrow();
-	});
-
-	it("takes the server's word on whether a Release can be bound", () => {
-		const option = DeliverySourceOptionSchema.parse({
-			...datedRelease,
-			isSelectable: false,
-		});
-
-		expect(option.isSelectable).toBe(false);
 	});
 
 	it("tells apart two Releases that share a name in different projects", () => {

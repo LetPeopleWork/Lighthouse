@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @error - both problems at once still names the one that has to be fixed first.
+        // Both problems at once still names the one that has to be fixed first.
         [Test]
         public void A_retired_source_with_no_date_reports_being_retired()
         {

@@ -39,16 +39,19 @@ export class DeliverySourceTab {
 	/**
 	 * The date the list shows against an entry, in whatever format this browser writes dates. Read
 	 * off the screen rather than constructed, so the check still holds after the date moves.
+	 *
+	 * Addressed by the element that holds it rather than by looking for the first thing in the row
+	 * that reads as a date: the row leads with the entry's own name, and a Release called "2027 Q1"
+	 * parses as one.
 	 */
 	async listedDateFor(name: string): Promise<string> {
-		const parts = await this.option(name).locator("span").allInnerTexts();
-		const date = parts.find((part) => !Number.isNaN(Date.parse(part)));
+		const shown = this.option(name).getByTestId("delivery-source-option-date");
 
-		if (date === undefined) {
+		if ((await shown.count()) === 0) {
 			throw new Error(`The list shows no date against "${name}"`);
 		}
 
-		return date;
+		return (await shown.innerText()).trim();
 	}
 
 	async pick(name: string): Promise<void> {
