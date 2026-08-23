@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
     {
         // @AC-01.3 - the only combination that binds.
         [Test]
-        [Ignore("DISTILL scaffold - slice 01a not yet implemented")]
         public void A_live_source_carrying_a_date_can_be_bound()
         {
             using (Assert.EnterMultipleScope())
@@ -34,7 +33,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
         // @AC-01.5 - listed, so the reader can see it and go and fix it, but not selectable.
         [Test]
-        [Ignore("DISTILL scaffold - slice 01a not yet implemented")]
         public void A_source_with_no_date_is_offered_but_says_what_is_missing()
         {
             using (Assert.EnterMultipleScope())
@@ -48,7 +46,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
         // @AC-01.8 - a retired source is a different problem, and gets a different answer.
         [Test]
-        [Ignore("DISTILL scaffold - slice 01a not yet implemented")]
         public void A_retired_source_cannot_be_bound_even_when_it_has_a_date()
         {
             using (Assert.EnterMultipleScope())
@@ -62,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
         // @error - both problems at once still names the one that has to be fixed first.
         [Test]
-        [Ignore("DISTILL scaffold - slice 01a not yet implemented")]
         public void A_retired_source_with_no_date_reports_being_retired()
         {
             Assert.That(
