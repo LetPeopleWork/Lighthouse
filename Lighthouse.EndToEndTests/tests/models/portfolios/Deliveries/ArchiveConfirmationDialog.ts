@@ -12,7 +12,9 @@ export class ArchiveConfirmationDialog {
 	}
 
 	async archive(): Promise<void> {
-		await this.page.getByRole("button", { name: "Archive", exact: true }).click();
+		await this.page
+			.getByRole("button", { name: "Archive", exact: true })
+			.click();
 	}
 
 	/**
