@@ -21,6 +21,7 @@ export interface DeliverySelectionState extends DeliverySelectionValues {
 
 export interface DeliverySelectionTerms {
 	featureTerm: string;
+	deliveryTerm: string;
 }
 
 export interface DeliverySelectionPayload {
@@ -179,13 +180,16 @@ export const defaultDeliverySelectionTab = manualTab;
  * no mode and no payload because looking at a source changes nothing yet; the blocking error says
  * so rather than letting a user press Save and wonder why nothing stuck.
  */
-const sourceSelectionTab = (source: IDeliverySource): DeliverySelectionTab => ({
+const sourceSelectionTab = (
+	source: IDeliverySource,
+	terms: DeliverySelectionTerms,
+): DeliverySelectionTab => ({
 	key: `source:${source.key}`,
 	label: source.displayName,
 	source,
 	premiumGate: {
 		whenLocked: "explainInside",
-		notice: `Taking a delivery date from a ${source.displayName} is a premium feature. Please upgrade your license to use this functionality.`,
+		notice: `Taking a ${terms.deliveryTerm.toLowerCase()} date from a ${source.displayName} is a premium feature. Please upgrade your license to use this functionality.`,
 	},
 	hydrate: () => emptySelectionValues(),
 	firstBlockingError: () =>
@@ -200,9 +204,10 @@ const sourceSelectionTab = (source: IDeliverySource): DeliverySelectionTab => ({
  */
 export const deliverySelectionTabsFor = (
 	sources: IDeliverySource[],
+	terms: DeliverySelectionTerms,
 ): DeliverySelectionTab[] => [
 	...builtInSelectionTabs,
-	...sources.map(sourceSelectionTab),
+	...sources.map((source) => sourceSelectionTab(source, terms)),
 ];
 
 export const deliveryTabForDelivery = (

@@ -26,6 +26,7 @@ export interface DeliverySourceTabProps {
 	sourceKey: string;
 	sourceName: string;
 	featuresTerm: string;
+	portfolioTerm: string;
 }
 
 const optionCache = new Map<string, IDeliverySourceOption[]>();
@@ -48,13 +49,14 @@ const emptyPreviewExplanation = (
 	reason: DeliverySourcePreviewEmptyReason,
 	sourceName: string,
 	featuresTerm: string,
+	portfolioTerm: string,
 ): string => {
 	if (reason === "NothingTaggedAgainstTheSource") {
 		return `Nothing is tagged against this ${sourceName} yet. Tag the ${featuresTerm} you expect to ship with it and they will show up here.`;
 	}
 
 	if (reason === "TaggedWorkNotTrackedByThisPortfolio") {
-		return `Work is tagged against this ${sourceName}, but none of those ${featuresTerm} are tracked by this Portfolio. Widen what the Portfolio covers to bring them in.`;
+		return `Work is tagged against this ${sourceName}, but none of those ${featuresTerm} are tracked by this ${portfolioTerm}. Widen what the ${portfolioTerm} covers to bring them in.`;
 	}
 
 	return `This ${sourceName} has no ${featuresTerm} to show.`;
@@ -204,8 +206,9 @@ const SourcePreview: React.FC<{
 	preview: IDeliverySourcePreview;
 	sourceName: string;
 	featuresTerm: string;
+	portfolioTerm: string;
 	portfolioId: number;
-}> = ({ preview, sourceName, featuresTerm, portfolioId }) => (
+}> = ({ preview, sourceName, featuresTerm, portfolioTerm, portfolioId }) => (
 	<Box sx={{ mt: 3 }} data-testid="delivery-source-preview">
 		<Typography variant="subtitle2" sx={{ mb: 1 }}>
 			{preview.name} would set the date to{" "}
@@ -217,6 +220,7 @@ const SourcePreview: React.FC<{
 					preview.emptyBecause,
 					sourceName,
 					featuresTerm,
+					portfolioTerm,
 				)}
 			</Alert>
 		) : (
@@ -241,6 +245,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	sourceKey,
 	sourceName,
 	featuresTerm,
+	portfolioTerm,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
 	const { options, failed } = useSourceOptions(portfolioId, sourceKey);
@@ -278,8 +283,8 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	if (failed) {
 		return (
 			<Alert severity="error">
-				The list of {sourceName} entries could not be loaded. Check this
-				Portfolio's connection and try again.
+				The list of {sourceName} entries could not be loaded. Check this{" "}
+				{portfolioTerm}'s connection and try again.
 			</Alert>
 		);
 	}
@@ -313,6 +318,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 					preview={preview}
 					sourceName={sourceName}
 					featuresTerm={featuresTerm}
+					portfolioTerm={portfolioTerm}
 					portfolioId={portfolioId}
 				/>
 			)}

@@ -27,11 +27,15 @@ const licence = vi.hoisted(() => ({ isPremium: true }));
 
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
+		// Every term here is renamed away from the seeded default on purpose. A tenant who calls a
+		// Portfolio a Value Stream must never be shown the word "Portfolio", and a mock that answers
+		// with the default lets a hardcoded one through unnoticed.
 		getTerm: (key: string) => {
 			const terms: Record<string, string> = {
-				[TERMINOLOGY_KEYS.DELIVERY]: "Delivery",
+				[TERMINOLOGY_KEYS.DELIVERY]: "Launch",
 				[TERMINOLOGY_KEYS.FEATURES]: "Deliverables",
 				[TERMINOLOGY_KEYS.FEATURE]: "Deliverable",
+				[TERMINOLOGY_KEYS.PORTFOLIO]: "Value Stream",
 			};
 			return terms[key] || key;
 		},
@@ -170,6 +174,7 @@ const renderTab = (deliveryService = createMockDeliveryService()) => {
 				sourceKey={JIRA_RELEASE_SOURCE.key}
 				sourceName={JIRA_RELEASE_SOURCE.displayName}
 				featuresTerm="Deliverables"
+				portfolioTerm="Value Stream"
 			/>
 		</ApiServiceContext.Provider>,
 	);
@@ -272,6 +277,8 @@ describe("DeliverySourceTab registration", () => {
 
 		const notice = await screen.findByTestId("premium-feature-notice");
 		expect(notice).toHaveTextContent(/Jira Release/);
+		expect(notice).toHaveTextContent(/launch date/);
+		expect(notice).not.toHaveTextContent(/delivery date/i);
 		expect(notice).not.toHaveTextContent(/rule-based/i);
 		expect(deliveryService.getDeliverySourceOptions).not.toHaveBeenCalled();
 	});
@@ -288,8 +295,8 @@ describe("DeliverySourceTab registration", () => {
 
 		renderModal(deliveryService);
 
-		await user.type(screen.getByLabelText("Delivery Name"), "Autumn release");
-		fireEvent.change(screen.getByLabelText("Delivery Date"), {
+		await user.type(screen.getByLabelText("Launch Name"), "Autumn release");
+		fireEvent.change(screen.getByLabelText("Launch Date"), {
 			target: { value: "2099-12-31" },
 		});
 		await user.click(
@@ -428,6 +435,8 @@ describe("DeliverySourceTab picker", () => {
 		const error = await screen.findByRole("alert");
 		expect(error).toHaveTextContent(/could not be loaded/i);
 		expect(error).not.toHaveTextContent(/no releases/i);
+		expect(error).toHaveTextContent(/Value Stream/);
+		expect(error).not.toHaveTextContent(/Portfolio/);
 	});
 });
 
@@ -496,10 +505,10 @@ describe("DeliverySourceTab preview", () => {
 		const empty = await screen.findByTestId("delivery-source-preview-empty");
 		expect(empty).toHaveTextContent(/Deliverables/);
 		expect(empty).toHaveTextContent(/tagged/i);
-		expect(empty).not.toHaveTextContent(/Portfolio/);
+		expect(empty).not.toHaveTextContent(/Value Stream/);
 	});
 
-	it("sends the reader to the Portfolio when the tagged work is out of its scope", async () => {
+	it("sends the reader to the Portfolio, in the tenant’s own word for it, when the tagged work is out of its scope", async () => {
 		const user = userEvent.setup();
 		const deliveryService = previewDeliveryService({
 			name: "Release 44",
@@ -513,7 +522,8 @@ describe("DeliverySourceTab preview", () => {
 
 		const empty = await screen.findByTestId("delivery-source-preview-empty");
 		expect(empty).toHaveTextContent(/Deliverables/);
-		expect(empty).toHaveTextContent(/Portfolio/);
+		expect(empty).toHaveTextContent(/Value Stream/);
+		expect(empty).not.toHaveTextContent(/Portfolio/);
 	});
 
 	it("offers nothing that would persist the picked Release", async () => {

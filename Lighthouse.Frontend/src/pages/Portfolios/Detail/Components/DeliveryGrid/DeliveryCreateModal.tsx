@@ -249,8 +249,12 @@ const selectionTabContent: Record<string, React.FC<SelectionContentProps>> = {
 };
 
 const SelectionModeContent: React.FC<
-	SelectionContentProps & { tab: DeliverySelectionTab; isPremium: boolean }
-> = ({ tab, isPremium, ...contentProps }) => {
+	SelectionContentProps & {
+		tab: DeliverySelectionTab;
+		isPremium: boolean;
+		portfolioTerm: string;
+	}
+> = ({ tab, isPremium, portfolioTerm, ...contentProps }) => {
 	const gate = tab.premiumGate;
 	if (gate && !isPremium) {
 		return <PremiumFeatureNotice message={gate.notice} />;
@@ -263,6 +267,7 @@ const SelectionModeContent: React.FC<
 				sourceKey={tab.source.key}
 				sourceName={tab.source.displayName}
 				featuresTerm={contentProps.featuresTerm}
+				portfolioTerm={portfolioTerm}
 			/>
 		);
 	}
@@ -364,6 +369,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const isEditMode = !!editingDelivery;
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 	const [name, setName] = useState("");
 	const [date, setDate] = useState("");
 	const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
@@ -388,7 +394,14 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		rules?: string;
 	}>({});
 
-	const tabs = useMemo(() => deliverySelectionTabsFor(sources), [sources]);
+	const selectionTerms = useMemo<DeliverySelectionTerms>(
+		() => ({ featureTerm, deliveryTerm }),
+		[featureTerm, deliveryTerm],
+	);
+	const tabs = useMemo(
+		() => deliverySelectionTabsFor(sources, selectionTerms),
+		[sources, selectionTerms],
+	);
 	const activeTab =
 		tabs.find((tab) => tab.key === selectedTabKey) ??
 		defaultDeliverySelectionTab;
@@ -399,7 +412,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		rulesValidated,
 		matchedFeaturesLength: matchedFeatures.length,
 	};
-	const selectionTerms: DeliverySelectionTerms = { featureTerm };
 
 	useEffect(() => {
 		if (open && portfolio.features.length > 0) {
@@ -675,6 +687,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						rulesValidated={rulesValidated}
 						matchedFeatures={matchedFeatures}
 						featuresTerm={featuresTerm}
+						portfolioTerm={portfolioTerm}
 						portfolioId={portfolio.id}
 						onSelectedFeaturesChange={setSelectedFeatureIds}
 						onRulesChange={handleRulesChange}
