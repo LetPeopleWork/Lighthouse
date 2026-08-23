@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
@@ -134,24 +135,36 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 return;
             }
 
-            var completions = new TrialCompletions(plan.RowCount);
-            var state = new TrialState(plan);
             var oneRun = new SimulatedRun(plan, draws, limits.MostDaysOneSimulatedRunMayCover);
+            var workersThatRanThem = new ConcurrentBag<OneWorkersShareOfTheRuns>();
 
-            var whatWentWrong = new WhatTheRunsCouldNotFinish();
+            Parallel.For(
+                0,
+                limits.Trials,
+                () => new OneWorkersShareOfTheRuns(plan),
+                (trial, _, share) =>
+                {
+                    share.CarryOut(oneRun, trial);
+                    return share;
+                },
+                workersThatRanThem.Add);
 
-            for (var trial = 0; trial < limits.Trials; trial++)
-            {
-                whatWentWrong.Note(oneRun.CarryOut(trial, state, completions), trial, plan, state);
-            }
+            var shares = workersThatRanThem.ToList();
 
-            RecordTheDaysEachRowFinishedOn(plan, completions);
+            RecordTheDaysEachRowFinishedOn(plan, shares);
+
+            var whatWentWrong = WhatTheRunsCouldNotFinish.AllOf(shares.Select(share => share.WhatWentWrong));
 
             ReportTheRunsThatCouldNotFinish(whatWentWrong);
             ReportTheRunsThatRanOutOfDays(whatWentWrong, draws);
         }
 
-        private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, TrialCompletions completions)
+        /// <summary>
+        /// Added up once, after every run is over. Counts add up the same whichever worker's share is taken
+        /// first, and the days are written out in order, so how the work happened to be split between workers
+        /// leaves no trace in what comes out.
+        /// </summary>
+        private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
         {
             var total = new Dictionary<int, int>[plan.RowCount];
 
@@ -160,11 +173,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 total[row] = [];
             }
 
-            completions.AddInto(total);
+            foreach (var share in shares)
+            {
+                share.Completions.AddInto(total);
+            }
 
             for (var row = 0; row < plan.RowCount; row++)
             {
-                foreach (var day in total[row])
+                foreach (var day in total[row].OrderBy(finished => finished.Key))
                 {
                     plan.RowAt(row).SimulationResults[day.Key] = day.Value;
                 }
@@ -263,6 +279,24 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         }
 
         /// <summary>
+        /// One worker's share of the simulated runs, and everything that share needs to carry them out. Each
+        /// worker has its own, so nothing at all is written to from two places at once and there is no lock
+        /// anywhere near the busiest loop in the product. The shares are added together once the runs are
+        /// over.
+        /// </summary>
+        private sealed class OneWorkersShareOfTheRuns(ForecastRunPlan plan)
+        {
+            private readonly TrialState state = new(plan);
+
+            public TrialCompletions Completions { get; } = new(plan.RowCount);
+
+            public WhatTheRunsCouldNotFinish WhatWentWrong { get; } = new();
+
+            public void CarryOut(SimulatedRun oneRun, int trial)
+                => WhatWentWrong.Note(oneRun.CarryOut(trial, state, Completions), trial, plan, state);
+        }
+
+        /// <summary>
         /// What the simulated runs left behind, collected as they happen so that the two things worth saying
         /// about them can be said once at the end rather than ten thousand times.
         /// </summary>
@@ -277,6 +311,31 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             public int FirstRunThatRanOutOfDays { get; private set; } = -1;
 
             public IEnumerable<string> TeamsLeftUnfinished => teamsLeftUnfinished.Order(StringComparer.Ordinal);
+
+            /// <summary>
+            /// The workers' accounts added together. Which run is named as the first to pass the ceiling is
+            /// the lowest-numbered one across all of them, not whichever worker happened to report first, so
+            /// what is logged is the same however the runs were shared out.
+            /// </summary>
+            public static WhatTheRunsCouldNotFinish AllOf(IEnumerable<WhatTheRunsCouldNotFinish> shares)
+            {
+                var all = new WhatTheRunsCouldNotFinish();
+
+                foreach (var share in shares)
+                {
+                    all.RunsGivenUpOn += share.RunsGivenUpOn;
+                    all.RunsThatRanOutOfDays += share.RunsThatRanOutOfDays;
+                    all.teamsLeftUnfinished.UnionWith(share.teamsLeftUnfinished);
+
+                    if (share.FirstRunThatRanOutOfDays >= 0
+                        && (all.FirstRunThatRanOutOfDays < 0 || share.FirstRunThatRanOutOfDays < all.FirstRunThatRanOutOfDays))
+                    {
+                        all.FirstRunThatRanOutOfDays = share.FirstRunThatRanOutOfDays;
+                    }
+                }
+
+                return all;
+            }
 
             public void Note(HowTheRunEnded ending, int trial, ForecastRunPlan plan, TrialState state)
             {

@@ -563,7 +563,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private ForecastService CreateSubjectWithPersistentThroughput()
         {
-            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsFromARecordedSequence(), ForecastSimulationLimits.Default);
+            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default);
         }
 
         private ForecastService CreateSubjectWithRealThroughput()

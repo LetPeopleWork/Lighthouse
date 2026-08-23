@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             // Plumbing anchor only. A team at throughput 1/day finishes on a single day with probability 1,
             // and the product of point masses IS their maximum - this passes against the old worst-team copy
             // too, so it proves wiring, never the fix. The discriminating fixtures are the two-value ones.
-            var subject = CreateSubject(new DrawsFromARecordedSequence());
+            var subject = CreateSubject(new DrawsTheSameNumberEveryTime());
             var feature = SetupFeature((CreateTeam([1]), 6), (CreateTeam([1]), 3));
 
             await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature));
