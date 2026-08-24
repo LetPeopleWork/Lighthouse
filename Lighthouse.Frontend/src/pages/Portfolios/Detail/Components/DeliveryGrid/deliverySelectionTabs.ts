@@ -102,7 +102,7 @@ const valuesFromDelivery = (delivery: IDelivery): DeliverySelectionValues => ({
  * sends the number, so comparing a stored delivery against the enum member alone matches nothing
  * that ever came off the wire, and every bound delivery would read as a hand-picked one.
  */
-const isStoredAs = (
+export const isStoredAs = (
 	delivery: IDelivery,
 	mode: DeliverySelectionMode,
 ): boolean =>

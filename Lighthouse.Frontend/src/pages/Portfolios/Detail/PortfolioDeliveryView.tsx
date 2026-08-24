@@ -22,6 +22,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 	const {
 		deliveries,
 		archivedDeliveries,
+		deliverySources,
 		showCreateModal,
 		selectedDelivery,
 		deleteDialogOpen,
@@ -39,6 +40,7 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 		handleCloseEditModal,
 		handleCreateDelivery,
 		handleUpdateDelivery,
+		handleUnbindDelivery,
 		expandedDeliveries,
 		loadedFeatures,
 		loadingFeaturesByDelivery,
@@ -72,9 +74,11 @@ const PortfolioDeliveryView: React.FC<PortfolioDeliveryViewProps> = ({
 							onDelete={handleDeleteDelivery}
 							onEdit={handleEditDelivery}
 							onArchive={handleArchiveDelivery}
+							onUnbind={handleUnbindDelivery}
 							teams={portfolio.involvedTeams}
 							canEdit={canEdit}
 							canArchive={canArchive}
+							deliverySources={deliverySources}
 						/>
 					);
 				})}

@@ -3,13 +3,21 @@ import AutoModeIcon from "@mui/icons-material/AutoMode";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import {
 	Accordion,
 	AccordionDetails,
 	AccordionSummary,
 	Box,
+	Button,
 	Chip,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogContentText,
+	DialogTitle,
 	IconButton,
 	Paper,
 	Tab,
@@ -19,7 +27,7 @@ import {
 } from "@mui/material";
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useId, useMemo, useState } from "react";
 import type {
 	DataGridColumn,
 	DataGridExportTable,
@@ -37,6 +45,7 @@ import ProgressIndicator from "../../../../../components/Common/ProgressIndicato
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { Delivery } from "../../../../../models/Delivery";
+import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -62,6 +71,7 @@ import DeliveryMetricsTab, {
 } from "./DeliveryMetricsTab";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
+import { isStoredAs } from "./deliverySelectionTabs";
 
 // A Feature's own chance of landing, not the Delivery's — the Delivery's asks whether they ALL land,
 // so it sits below any single row's, and the heading must not invite the two to be read as one number.
@@ -79,6 +89,9 @@ interface DeliverySectionProps {
 	teams: IEntityReference[];
 	canEdit?: boolean;
 	canArchive?: boolean;
+	/** Everything this Portfolio's connection offers, so a stored source key can be named. */
+	deliverySources?: IDeliverySource[];
+	onUnbind?: (delivery: Delivery) => void;
 }
 
 const DeliverySection: React.FC<DeliverySectionProps> = ({
@@ -93,12 +106,15 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	teams,
 	canEdit = true,
 	canArchive = false,
+	deliverySources = [],
+	onUnbind,
 }) => {
 	const { featureService } = useContext(ApiServiceContext);
 
 	const [selectedFeature, setSelectedFeature] = useState<IFeature | null>(null);
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
+	const [isUnbindDialogOpen, setIsUnbindDialogOpen] = useState(false);
 
 	const [activeTab, setActiveTab] = useState<"workItems" | "metrics" | "notes">(
 		"workItems",
@@ -185,9 +201,16 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		],
 	);
 
-	const isRuleBased =
-		delivery.selectionMode === DeliverySelectionMode.RuleBased ||
-		(delivery.selectionMode as unknown as string) === "RuleBased";
+	const isRuleBased = isStoredAs(delivery, DeliverySelectionMode.RuleBased);
+	const isSourceBound = isStoredAs(delivery, DeliverySelectionMode.SourceBound);
+
+	// The key is what the row falls back to when the connection no longer offers that source: harder
+	// to read than "Jira Release", but it still says which one, which a blank would not.
+	const sourceLabel =
+		deliverySources.find((source) => source.key === delivery.sourceKey)
+			?.displayName ??
+		delivery.sourceKey ??
+		"";
 
 	const formatDate = (date: Date): string => {
 		return new Date(date).toLocaleDateString("en-US", {
@@ -282,6 +305,17 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		],
 		[featureTerm, delivery, teams, handleShowFeatureDetails],
 	);
+
+	let SelectionModeIcon = TouchAppIcon;
+	let selectionModeHint = "Manual: Features are fixed";
+	if (isSourceBound) {
+		SelectionModeIcon = LinkIcon;
+		selectionModeHint = `Follows the ${sourceLabel} it was bound to`;
+	} else if (isRuleBased) {
+		SelectionModeIcon = AutoModeIcon;
+		selectionModeHint =
+			"Rule-Based: Features automatically update based on rules";
+	}
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
 
@@ -453,25 +487,12 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 										<Typography variant="h6" component="h3">
 											{delivery.name}
 										</Typography>
-										<Tooltip
-											title={
-												isRuleBased
-													? "Rule-Based: Features automatically update based on rules"
-													: "Manual: Features are fixed"
-											}
-										>
+										<Tooltip title={selectionModeHint}>
 											<Box sx={{ display: "flex", alignItems: "center" }}>
-												{isRuleBased ? (
-													<AutoModeIcon
-														fontSize="small"
-														sx={{ color: "text.secondary" }}
-													/>
-												) : (
-													<TouchAppIcon
-														fontSize="small"
-														sx={{ color: "text.secondary" }}
-													/>
-												)}
+												<SelectionModeIcon
+													fontSize="small"
+													sx={{ color: "text.secondary" }}
+												/>
 											</Box>
 										</Tooltip>
 										<Typography variant="body2" color="text.secondary">
@@ -512,6 +533,16 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											/>
 										))}
 									</Box>
+									{isSourceBound && (
+										<SourceProvenance
+											sourceLabel={sourceLabel}
+											deliveryName={delivery.name}
+											deliveryTerm={deliveryTerm}
+											featuresTerm={featuresTerm}
+											canUnbind={canEdit && onUnbind !== undefined}
+											onUnbindRequested={() => setIsUnbindDialogOpen(true)}
+										/>
+									)}
 								</Box>
 								<Box
 									sx={{
@@ -586,6 +617,17 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					</AccordionDetails>
 				</Accordion>
 			</Box>
+			<UnbindConfirmationDialog
+				open={isUnbindDialogOpen}
+				sourceLabel={sourceLabel}
+				deliveryName={delivery.name}
+				featuresTerm={featuresTerm}
+				onCancel={() => setIsUnbindDialogOpen(false)}
+				onConfirm={() => {
+					setIsUnbindDialogOpen(false);
+					onUnbind?.(delivery);
+				}}
+			/>
 			{selectedFeature && (
 				<WorkItemsDialog
 					title={`${getWorkItemName(selectedFeature.name, selectedFeature.referenceId)} ${workItemsTerm}`}
@@ -595,6 +637,138 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				/>
 			)}
 		</Paper>
+	);
+};
+
+interface SourceProvenanceProps {
+	sourceLabel: string;
+	deliveryName: string;
+	deliveryTerm: string;
+	featuresTerm: string;
+	canUnbind: boolean;
+	onUnbindRequested: () => void;
+}
+
+/**
+ * Where the three values on this card came from. Said item by item rather than as one badge, because
+ * a reader who wants to change the date has to know it is not theirs to change here, and a badge
+ * saying "synced" answers neither which thing is synced nor with what.
+ */
+const SourceProvenance: React.FC<SourceProvenanceProps> = ({
+	sourceLabel,
+	deliveryName,
+	deliveryTerm,
+	featuresTerm,
+	canUnbind,
+	onUnbindRequested,
+}) => (
+	<Box
+		data-testid="delivery-source-provenance"
+		sx={{
+			display: "flex",
+			flexDirection: "column",
+			gap: 0.25,
+			borderLeft: 2,
+			borderColor: "divider",
+			pl: 1.5,
+		}}
+	>
+		<Typography
+			variant="body2"
+			color="text.secondary"
+			data-testid="provenance-name"
+		>
+			{`${deliveryTerm} name: taken from the ${sourceLabel} "${deliveryName}"`}
+		</Typography>
+		<Typography
+			variant="body2"
+			color="text.secondary"
+			data-testid="provenance-date"
+		>
+			{`${deliveryTerm} date: the date that ${sourceLabel} carries`}
+		</Typography>
+		<Typography
+			variant="body2"
+			color="text.secondary"
+			data-testid="provenance-features"
+		>
+			{`${featuresTerm}: the ones tagged against that ${sourceLabel}`}
+		</Typography>
+		<Typography
+			variant="caption"
+			color="text.secondary"
+			data-testid="provenance-capture-notice"
+		>
+			{`All three were read when this ${deliveryTerm.toLowerCase()} was bound. It does not follow the ${sourceLabel} yet, so anything changed there since is not shown here.`}
+		</Typography>
+		{canUnbind && (
+			<Box>
+				<Button
+					size="small"
+					startIcon={<LinkOffIcon />}
+					onClick={(event) => {
+						event.stopPropagation();
+						onUnbindRequested();
+					}}
+				>
+					Stop following
+				</Button>
+			</Box>
+		)}
+	</Box>
+);
+
+interface UnbindConfirmationDialogProps {
+	open: boolean;
+	sourceLabel: string;
+	deliveryName: string;
+	featuresTerm: string;
+	onConfirm: () => void;
+	onCancel: () => void;
+}
+
+/**
+ * Asked because the way back is not symmetrical: binding again means finding the same entry in the
+ * work tracking system and picking it a second time, which nothing on this page will do for you.
+ */
+const UnbindConfirmationDialog: React.FC<UnbindConfirmationDialogProps> = ({
+	open,
+	sourceLabel,
+	deliveryName,
+	featuresTerm,
+	onConfirm,
+	onCancel,
+}) => {
+	const titleId = useId();
+	const descriptionId = useId();
+
+	return (
+		<Dialog
+			open={open}
+			onClose={onCancel}
+			aria-labelledby={titleId}
+			aria-describedby={descriptionId}
+		>
+			<DialogTitle id={titleId}>Stop following the {sourceLabel}?</DialogTitle>
+			<DialogContent>
+				<DialogContentText id={descriptionId}>
+					{`"${deliveryName}" keeps the name, the date and the ${featuresTerm} it has right now, and from then on they are yours to edit. It stops taking them from the ${sourceLabel}.`}
+				</DialogContentText>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onCancel} color="primary">
+					Cancel
+				</Button>
+				<Button
+					onClick={onConfirm}
+					color="primary"
+					variant="contained"
+					autoFocus
+				>
+					Stop following
+				</Button>
+			</DialogActions>
+		</Dialog>
 	);
 };
 

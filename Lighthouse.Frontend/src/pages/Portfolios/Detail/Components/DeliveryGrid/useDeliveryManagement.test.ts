@@ -1177,4 +1177,108 @@ describe("useDeliveryManagement", () => {
 			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2);
 		});
 	});
+
+	describe("Releasing a Delivery from its source", () => {
+		it("keeps the name, date and features the source last set, and asks for Manual", async () => {
+			const portfolio = getMockPortfolio();
+			const bound = getMockDelivery({
+				id: 5,
+				name: "Aurora 3.1",
+				date: "2026-09-12T00:00:00",
+				features: [11, 12],
+				concurrencyToken: "33333333-3333-3333-3333-333333333333",
+			});
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			const updateSpy = vi.fn().mockResolvedValue(undefined);
+			mockApiServiceContext.deliveryService.update = updateSpy;
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			await act(async () => {
+				await result.current.handleUnbindDelivery(bound);
+			});
+
+			expect(updateSpy).toHaveBeenCalledWith({
+				deliveryId: 5,
+				name: "Aurora 3.1",
+				date: new Date("2026-09-12T00:00:00"),
+				featureIds: [11, 12],
+				selectionMode: DeliverySelectionMode.Manual,
+				concurrencyToken: "33333333-3333-3333-3333-333333333333",
+			});
+			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2);
+		});
+
+		it("says so in the reader's own word for it when the server refuses", async () => {
+			const portfolio = getMockPortfolio();
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			mockApiServiceContext.deliveryService.update = vi
+				.fn()
+				.mockRejectedValue(new Error("nope"));
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			await act(async () => {
+				await result.current.handleUnbindDelivery(getMockDelivery({ id: 5 }));
+			});
+
+			expect(mockShowError).toHaveBeenCalledWith(
+				"Failed to release this Delivery from its source",
+			);
+		});
+
+		it("offers the sources this Portfolio's connection has, so a binding can be named", async () => {
+			const portfolio = getMockPortfolio();
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			mockApiServiceContext.deliveryService.getDeliverySources = vi
+				.fn()
+				.mockResolvedValue([
+					{ key: "jira-release", displayName: "Jira Release" },
+				]);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.deliverySources).toEqual([
+					{ key: "jira-release", displayName: "Jira Release" },
+				]);
+			});
+		});
+
+		it("carries on with no sources at all when the connection cannot be asked", async () => {
+			const portfolio = getMockPortfolio();
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			mockApiServiceContext.deliveryService.getDeliverySources = vi
+				.fn()
+				.mockRejectedValue(new Error("offline"));
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			expect(result.current.deliverySources).toEqual([]);
+		});
+	});
 });

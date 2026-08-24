@@ -3,12 +3,13 @@ import { useErrorSnackbar } from "../../../../../components/Common/SnackbarError
 import { useArchiveConfirmationPreference } from "../../../../../hooks/useArchiveConfirmationPreference";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
+import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
-import type {
+import {
 	DeliverySelectionMode,
-	IWorkItemRuleCondition,
+	type IWorkItemRuleCondition,
 } from "../../../../../models/WorkItemRules";
 import { ApiError } from "../../../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
@@ -78,6 +79,7 @@ export const useDeliveryManagement = ({
 	const [archivedDeliveries, setArchivedDeliveries] = useState<
 		ArchivedDelivery[]
 	>([]);
+	const [deliverySources, setDeliverySources] = useState<IDeliverySource[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(
@@ -196,6 +198,20 @@ export const useDeliveryManagement = ({
 		}
 	}, [deliveryService, portfolio.id, showError]);
 
+	// Asked once for the whole list rather than per row: it is what turns a stored source key into the
+	// name a reader recognises, and every row on the page would otherwise ask the same question again.
+	// A connection that cannot answer leaves the rows naming the key itself, which is worse to read but
+	// still true, so a failure here is not worth interrupting anyone over.
+	const fetchDeliverySources = useCallback(async () => {
+		try {
+			setDeliverySources(
+				await deliveryService.getDeliverySources(portfolio.id),
+			);
+		} catch {
+			setDeliverySources([]);
+		}
+	}, [deliveryService, portfolio.id]);
+
 	const handleAddDelivery = () => {
 		setShowCreateModal(true);
 	};
@@ -300,6 +316,42 @@ export const useDeliveryManagement = ({
 			console.error("Failed to update delivery:", error);
 			showError(
 				refusalMessage(error, deliveryTerm, `Failed to update ${deliveryTerm}`),
+			);
+		}
+	};
+
+	/**
+	 * The server ignores everything but the mode here: a delivery let go of its source keeps the name,
+	 * the date and the work the source last gave it. They are sent back unchanged anyway, so nothing
+	 * about this call reads as an edit, and from here on they are the reader's to change.
+	 */
+	const handleUnbindDelivery = async (delivery: Delivery) => {
+		try {
+			await deliveryService.update({
+				deliveryId: delivery.id,
+				name: delivery.name,
+				date: new Date(delivery.date),
+				featureIds: delivery.features,
+				selectionMode: DeliverySelectionMode.Manual,
+				concurrencyToken: delivery.concurrencyToken,
+			});
+			setLoadedFeatures((prev) => {
+				const next = new Map(prev);
+				next.delete(delivery.id);
+				return next;
+			});
+			await fetchDeliveries();
+		} catch (error) {
+			console.error(
+				`Failed to release ${deliveryTerm} from its source:`,
+				error,
+			);
+			showError(
+				refusalMessage(
+					error,
+					deliveryTerm,
+					`Failed to release this ${deliveryTerm} from its source`,
+				),
 			);
 		}
 	};
@@ -418,9 +470,14 @@ export const useDeliveryManagement = ({
 		fetchDeliveries();
 	}, [fetchDeliveries]);
 
+	useEffect(() => {
+		fetchDeliverySources();
+	}, [fetchDeliverySources]);
+
 	return {
 		deliveries,
 		archivedDeliveries,
+		deliverySources,
 		isLoading,
 		showCreateModal,
 		selectedDelivery,
@@ -443,6 +500,7 @@ export const useDeliveryManagement = ({
 		handleCloseEditModal,
 		handleCreateDelivery,
 		handleUpdateDelivery,
+		handleUnbindDelivery,
 		handleToggleExpanded,
 	};
 };
