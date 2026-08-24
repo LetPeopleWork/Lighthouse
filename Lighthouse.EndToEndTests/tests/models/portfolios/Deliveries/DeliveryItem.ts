@@ -99,9 +99,14 @@ export class DeliveryItem {
 	 * The marker beside the name saying this delivery takes its name, date and features from the
 	 * named source rather than from whoever is looking at it. Rendered on the collapsed row, so
 	 * nothing has to be opened to see it; its tooltip is also its accessible name.
+	 *
+	 * Matched on the opening words rather than the whole sentence: a reader allowed to unbind is
+	 * additionally invited to click, and a read-only reader is not, so the rest of the label depends
+	 * on who is signed in. Anchored so it cannot start matching a future "Not bound to ..." either.
 	 */
 	boundIndicator(sourceLabel: string): Locator {
-		return this.container.getByLabel(`Bound to ${sourceLabel}`);
+		const literalLabel = sourceLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		return this.container.getByLabel(new RegExp(`^Bound to ${literalLabel}`));
 	}
 
 	async getProgress(): Promise<string | null> {

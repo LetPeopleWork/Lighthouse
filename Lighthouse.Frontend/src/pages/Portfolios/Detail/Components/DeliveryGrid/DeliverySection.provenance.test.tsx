@@ -120,8 +120,14 @@ const renderSection = (props: {
 // only way to let go of one, so nearly every test below starts by finding it.
 const BOUND_TO_JIRA = "Bound to Jira Release";
 
+// What the same marker says to a reader who may act on it. A link icon on its own reads as a status
+// badge, so the sentence has to carry the invitation - and only where the invitation is real.
+const BOUND_TO_JIRA_ACTIONABLE = `${BOUND_TO_JIRA} — click to stop following`;
+
 const openUnbindDialog = async () => {
-	await userEvent.click(screen.getByRole("button", { name: BOUND_TO_JIRA }));
+	await userEvent.click(
+		screen.getByRole("button", { name: BOUND_TO_JIRA_ACTIONABLE }),
+	);
 };
 
 describe("DeliverySection source binding", () => {
@@ -132,7 +138,9 @@ describe("DeliverySection source binding", () => {
 	it("falls back to the stored key when the server no longer offers that source", () => {
 		renderSection({ selectionMode: "SourceBound", sources: [] });
 
-		expect(screen.getByLabelText("Bound to jira-release")).toBeInTheDocument();
+		expect(
+			screen.getByLabelText("Bound to jira-release — click to stop following"),
+		).toBeInTheDocument();
 	});
 
 	it("never unbinds on its own", () => {
@@ -248,6 +256,9 @@ describe("DeliverySection source binding", () => {
 			const marker = screen.getByLabelText(BOUND_TO_JIRA);
 			expect(marker).toBeInTheDocument();
 			expect(
+				screen.queryByLabelText(BOUND_TO_JIRA_ACTIONABLE),
+			).not.toBeInTheDocument();
+			expect(
 				screen.queryByRole("button", { name: BOUND_TO_JIRA }),
 			).not.toBeInTheDocument();
 
@@ -294,14 +305,14 @@ describe("DeliverySection source binding", () => {
 			"SourceBound",
 			DeliverySelectionMode.SourceBound,
 			"LinkIcon",
-			BOUND_TO_JIRA,
+			BOUND_TO_JIRA_ACTIONABLE,
 			true,
 		],
 		[
 			"SourceBound as the server spells it",
 			"SourceBound",
 			"LinkIcon",
-			BOUND_TO_JIRA,
+			BOUND_TO_JIRA_ACTIONABLE,
 			true,
 		],
 	] as [string, WireSelectionMode, string, string, boolean][])(
@@ -322,13 +333,70 @@ describe("DeliverySection source binding", () => {
 		},
 	);
 
+	// The marker was read as a status badge and nothing else: it says which Release the delivery
+	// follows, and a link icon says nothing about being worth pressing.
+	it("says the marker can be pressed, to the reader who may press it", () => {
+		renderSection({ selectionMode: "SourceBound" });
+
+		expect(
+			screen.getByRole("button", { name: BOUND_TO_JIRA_ACTIONABLE }),
+		).toBeInTheDocument();
+	});
+
+	// Words alone are only read once the pointer has already stopped. Breaking the link under the
+	// pointer or the keyboard shows the same thing to a reader who never opens a tooltip.
+	it.each([
+		[
+			"the pointer",
+			(marker: HTMLElement) => userEvent.hover(marker),
+			(marker: HTMLElement) => userEvent.unhover(marker),
+		],
+		[
+			"the keyboard",
+			(marker: HTMLElement) => fireEvent.focusIn(marker),
+			(marker: HTMLElement) => fireEvent.focusOut(marker),
+		],
+	] as [
+		string,
+		(marker: HTMLElement) => void,
+		(marker: HTMLElement) => void,
+	][])(
+		"breaks the link on the marker while %s rests on it, and mends it after",
+		async (_label, arrive, leave) => {
+			renderSection({ selectionMode: "SourceBound" });
+			const marker = screen.getByRole("button", {
+				name: BOUND_TO_JIRA_ACTIONABLE,
+			});
+			expect(within(marker).getByTestId("LinkIcon")).toBeInTheDocument();
+
+			await arrive(marker);
+
+			expect(within(marker).getByTestId("LinkOffIcon")).toBeInTheDocument();
+
+			await leave(marker);
+
+			expect(within(marker).getByTestId("LinkIcon")).toBeInTheDocument();
+		},
+	);
+
+	it("leaves the marker whole for a reader who could not break the link anyway", async () => {
+		renderSection({ selectionMode: "SourceBound", canEdit: false });
+
+		const marker = screen.getByLabelText(BOUND_TO_JIRA);
+		await userEvent.hover(marker);
+		fireEvent.focusIn(marker);
+
+		expect(within(marker).getByTestId("LinkIcon")).toBeInTheDocument();
+		expect(screen.queryByTestId("LinkOffIcon")).not.toBeInTheDocument();
+	});
+
 	it("names the source it was actually bound to, not the first one the connection offers", () => {
 		renderSection({
 			selectionMode: "SourceBound",
 			sources: [AZURE_RELEASE, JIRA_RELEASE],
 		});
 
-		expect(screen.getByLabelText(BOUND_TO_JIRA)).toBeInTheDocument();
+		expect(screen.getByLabelText(BOUND_TO_JIRA_ACTIONABLE)).toBeInTheDocument();
 	});
 
 	it("leaves the source unnamed rather than inventing a name when nothing was stored", () => {
@@ -338,7 +406,9 @@ describe("DeliverySection source binding", () => {
 			sourceKey: null,
 		});
 
-		expect(screen.getByLabelText("Bound to")).toBeInTheDocument();
+		expect(
+			screen.getByLabelText("Bound to — click to stop following"),
+		).toBeInTheDocument();
 	});
 
 	// What the dialog promises has to match what the screen behind it does once the reader says yes,

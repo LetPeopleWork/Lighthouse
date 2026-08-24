@@ -4,6 +4,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import {
 	Accordion,
@@ -121,6 +122,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 	const [isUnbindDialogOpen, setIsUnbindDialogOpen] = useState(false);
+	const [isAboutToUnbind, setIsAboutToUnbind] = useState(false);
 
 	const [activeTab, setActiveTab] = useState<"workItems" | "metrics" | "notes">(
 		"workItems",
@@ -313,7 +315,8 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	);
 
 	// Everyone sees that this Delivery follows a source; only a reader who may edit it can act on
-	// the marker to let go of that source.
+	// the marker to let go of that source, and only they are told so - offering the action to
+	// someone who may only look is a promise the screen cannot keep.
 	const canUnbind = isSourceBound && canEdit && onUnbind !== undefined;
 
 	let SelectionModeIcon = TouchAppIcon;
@@ -324,6 +327,9 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	} else if (isRuleBased) {
 		SelectionModeIcon = AutoModeIcon;
 		selectionModeHint = `Rule-Based: ${featuresTerm} automatically update based on rules`;
+	}
+	if (canUnbind) {
+		selectionModeHint = `${selectionModeHint} — click to stop following`;
 	}
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
@@ -496,6 +502,9 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 										<Typography variant="h6" component="h3">
 											{delivery.name}
 										</Typography>
+										{/* A whole link reads as a badge, not as something to press. Breaking it the moment
+										    the pointer or the keyboard arrives shows what pressing will do, without a second
+										    glyph sitting beside every name for the rest of the time. */}
 										<Tooltip title={selectionModeHint}>
 											{canUnbind ? (
 												<IconButton
@@ -505,9 +514,17 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 														e.stopPropagation();
 														setIsUnbindDialogOpen(true);
 													}}
+													onMouseEnter={() => setIsAboutToUnbind(true)}
+													onMouseLeave={() => setIsAboutToUnbind(false)}
+													onFocus={() => setIsAboutToUnbind(true)}
+													onBlur={() => setIsAboutToUnbind(false)}
 													sx={{ color: "text.secondary", p: 0 }}
 												>
-													<SelectionModeIcon fontSize="small" />
+													{isAboutToUnbind ? (
+														<LinkOffIcon fontSize="small" />
+													) : (
+														<SelectionModeIcon fontSize="small" />
+													)}
 												</IconButton>
 											) : (
 												<Box sx={{ display: "flex", alignItems: "center" }}>
