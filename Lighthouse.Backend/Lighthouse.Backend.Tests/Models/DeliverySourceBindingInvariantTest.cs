@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.Models
         private const string ASecondRelease = "10999";
         private const string ReleaseName = "2026 Q4";
         private const string SourceBoundCode = "delivery-source-bound";
+        private const string NotSourceBoundCode = "delivery-not-source-bound";
+        private const int TheDeliveryOnScreen = 4711;
         private const string RenamedByHand = "Renamed By Hand";
         private const string FeatureAddedByHand = "Added By Hand";
         private const string ARuleChosenByHand = "{\"conditions\":[]}";
@@ -86,18 +88,52 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
-        [Test]
-        public void The_refusal_names_the_Delivery_and_says_which_of_the_two_opposite_things_to_do_about_it()
+        /// <summary>
+        /// A screen shows the sentence, so an empty one leaves somebody looking at a Delivery that
+        /// refused without saying why. "Follows a source" and "follows nothing" are opposite
+        /// instructions - one says release it first, the other says it is already released - and a
+        /// single shared wording would tell somebody to do the reverse of what they need.
+        /// </summary>
+        [TestCaseSource(nameof(EveryRefusalTheBindingRaises))]
+        public void The_refusal_names_the_Delivery_and_says_which_of_the_two_opposite_things_to_do_about_it(
+            Func<Delivery> aDelivery, Action<Delivery> theRefusedMove, string expectedCode, string whatItSaysToDoAboutIt)
         {
-            var delivery = ADeliveryFollowingARelease();
+            var delivery = aDelivery();
+            delivery.Id = TheDeliveryOnScreen;
 
-            var refusal = Assert.Throws<DeliverySourceBoundException>(() => delivery.Rename("Renamed By Hand"));
+            var refusal = Assert.Throws<DeliverySourceBoundException>(() => theRefusedMove(delivery));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(refusal?.DeliveryId, Is.EqualTo(delivery.Id));
-                Assert.That(refusal?.Code, Is.EqualTo(SourceBoundCode));
+                Assert.That(refusal?.DeliveryId, Is.EqualTo(TheDeliveryOnScreen));
+                Assert.That(refusal?.Code, Is.EqualTo(expectedCode));
+                Assert.That(refusal?.Message, Does.Contain($"Delivery {TheDeliveryOnScreen}"));
+                Assert.That(refusal?.Message, Does.Contain(whatItSaysToDoAboutIt));
             }
+        }
+
+        private static IEnumerable<TestCaseData> EveryRefusalTheBindingRaises()
+        {
+            yield return new TestCaseData(
+                    (Func<Delivery>)ADeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.Rename(RenamedByHand)),
+                    SourceBoundCode,
+                    "cannot be changed by hand")
+                .SetName("Editing what the Release owns");
+
+            yield return new TestCaseData(
+                    (Func<Delivery>)ADeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.BindToSource(ReleaseSourceKey, ASecondRelease)),
+                    SourceBoundCode,
+                    "already follows a source")
+                .SetName("Pointing it at a second Release");
+
+            yield return new TestCaseData(
+                    (Func<Delivery>)ADeliveryChosenByHand,
+                    (Action<Delivery>)(delivery => delivery.Unbind()),
+                    NotSourceBoundCode,
+                    "does not follow a source")
+                .SetName("Releasing one that follows nothing");
         }
 
         [Test]
@@ -253,9 +289,10 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCaseSource(nameof(EveryMoveOnAndOffARelease))]
-        public void Moving_a_Delivery_on_or_off_a_Release_moves_the_version_an_open_editor_holds(Action<Delivery> move)
+        public void Moving_a_Delivery_on_or_off_a_Release_moves_the_version_an_open_editor_holds(
+            Func<Delivery> aDelivery, Action<Delivery> move)
         {
-            var delivery = ADeliveryFollowingARelease();
+            var delivery = aDelivery();
             var versionAnOpenEditorHolds = delivery.ConcurrencyToken;
 
             move(delivery);
@@ -320,14 +357,21 @@ namespace Lighthouse.Backend.Tests.Models
                 delivery => Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual)));
         }
 
+        /// <summary>
+        /// Each move starts from the only Delivery it is available on, so neither is reached through
+        /// the other. Binding a Delivery that had just been released would read as moving the version
+        /// even if the bind moved nothing itself, because the release already had.
+        /// </summary>
         private static IEnumerable<TestCaseData> EveryMoveOnAndOffARelease()
         {
-            yield return new TestCaseData((Action<Delivery>)(delivery => delivery.Unbind())).SetName("Unbind");
-            yield return new TestCaseData((Action<Delivery>)(delivery =>
-            {
-                delivery.Unbind();
-                delivery.BindToSource(ReleaseSourceKey, ReleaseId);
-            })).SetName("BindToSource");
+            yield return new TestCaseData(
+                    (Func<Delivery>)ADeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.Unbind()))
+                .SetName("Unbind");
+            yield return new TestCaseData(
+                    (Func<Delivery>)ADeliveryChosenByHand,
+                    (Action<Delivery>)(delivery => delivery.BindToSource(ReleaseSourceKey, ReleaseId)))
+                .SetName("BindToSource");
         }
 
         private static Delivery ADeliveryChosenByHand()

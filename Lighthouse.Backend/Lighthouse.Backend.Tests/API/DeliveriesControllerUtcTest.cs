@@ -25,6 +25,20 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepository;
         private DeliveriesController subject;
 
+        /// <summary>
+        /// One wall-clock reading, read two ways. Left without a zone it is relabelled as UTC and names
+        /// the instant it reads as; called a local time it names an instant the instance zone's offset
+        /// away from that. The two only coincide on a host sitting at UTC, which is why the backend test
+        /// host is pinned to a zone that is not (lighthouse.runsettings).
+        /// </summary>
+        private static readonly DateTime AWallClockReading = new(2026, 12, 31, 10, 0, 0, DateTimeKind.Unspecified);
+
+        private static readonly DateTime TheSameReadingLabelledUtc = new(2026, 12, 31, 10, 0, 0, DateTimeKind.Utc);
+
+        private static readonly TimeSpan WhatTheInstanceZoneAddsThatDay = TimeZoneInfo.Local.GetUtcOffset(AWallClockReading);
+
+        private static DateTime TheInstantThatReadingNamesLocally => TheSameReadingLabelledUtc - WhatTheInstanceZoneAddsThatDay;
+
         [SetUp]
         public void Setup()
         {
@@ -100,7 +114,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var portfolioId = 1;
-            var futureDate = new DateTime(2026, 12, 31, 10, 0, 0, DateTimeKind.Unspecified);
+            var futureDate = AWallClockReading;
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
@@ -123,9 +137,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(capturedDelivery, Is.Not.Null);
                 Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-                Assert.That(capturedDelivery.Date.Year, Is.EqualTo(2026));
-                Assert.That(capturedDelivery.Date.Month, Is.EqualTo(12));
-                Assert.That(capturedDelivery.Date.Day, Is.EqualTo(31));
+                Assert.That(capturedDelivery.Date, Is.EqualTo(TheSameReadingLabelledUtc),
+                    "a reading the browser left without a zone is relabelled, not converted - converting it would move the delivery date by the length of the instance zone's offset.");
             }
 
         }
@@ -135,7 +148,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var portfolioId = 1;
-            var localDate = new DateTime(2026, 12, 31, 10, 0, 0, DateTimeKind.Local);
+            var localDate = DateTime.SpecifyKind(AWallClockReading, DateTimeKind.Local);
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
@@ -157,8 +170,11 @@ namespace Lighthouse.Backend.Tests.API
             // Assert
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(WhatTheInstanceZoneAddsThatDay, Is.Not.EqualTo(TimeSpan.Zero),
+                    "on a test host sitting at UTC a converted reading and a relabelled one are the same instant, and this would pass either way.");
                 Assert.That(capturedDelivery, Is.Not.Null);
                 Assert.That(capturedDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(capturedDelivery.Date, Is.EqualTo(TheInstantThatReadingNamesLocally));
             }
         }
 
@@ -195,7 +211,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var deliveryId = 1;
-            var futureDate = new DateTime(2026, 12, 31, 10, 0, 0, DateTimeKind.Unspecified);
+            var futureDate = AWallClockReading;
             var request = new UpdateDeliveryRequest
             {
                 Name = "Updated Delivery",
@@ -213,9 +229,8 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
-                Assert.That(existingDelivery.Date.Year, Is.EqualTo(2026));
-                Assert.That(existingDelivery.Date.Month, Is.EqualTo(12));
-                Assert.That(existingDelivery.Date.Day, Is.EqualTo(31));
+                Assert.That(existingDelivery.Date, Is.EqualTo(TheSameReadingLabelledUtc),
+                    "a reading the browser left without a zone is relabelled, not converted - converting it would move the delivery date by the length of the instance zone's offset.");
             }
 
         }
@@ -225,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var deliveryId = 1;
-            var localDate = new DateTime(2026, 12, 31, 10, 0, 0, DateTimeKind.Local);
+            var localDate = DateTime.SpecifyKind(AWallClockReading, DateTimeKind.Local);
             var request = new UpdateDeliveryRequest
             {
                 Name = "Updated Delivery",
@@ -241,7 +256,13 @@ namespace Lighthouse.Backend.Tests.API
             await subject.UpdateDelivery(deliveryId, request);
 
             // Assert
-            Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheInstanceZoneAddsThatDay, Is.Not.EqualTo(TimeSpan.Zero),
+                    "on a test host sitting at UTC a converted reading and a relabelled one are the same instant, and this would pass either way.");
+                Assert.That(existingDelivery.Date.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(existingDelivery.Date, Is.EqualTo(TheInstantThatReadingNamesLocally));
+            }
         }
 
         [Test]

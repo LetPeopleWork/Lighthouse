@@ -1301,7 +1301,7 @@ namespace Lighthouse.Backend.Tests.API
         /// </summary>
         [TestCaseSource(nameof(EveryVerdictAReleaseCanComeBackWith))]
         public async Task A_Release_that_does_not_resolve_leaves_no_Delivery_behind_and_says_which_kind_of_no_it_was(
-            DeliverySourceResolution resolution, int expectedStatusCode, bool expectedToPersist)
+            DeliverySourceResolution resolution, int expectedStatusCode, bool expectedToPersist, string? expectedMessage)
         {
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             GivenTheReleaseResolvesTo(resolution, AFeature(1));
@@ -1312,30 +1312,134 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(StatusCodeOf(result), Is.EqualTo(expectedStatusCode));
                 Assert.That(persistedDelivery != null, Is.EqualTo(expectedToPersist));
+                Assert.That(MessageIn(result), Is.EqualTo(expectedMessage),
+                    "the status code alone leaves a caller with four kinds of no and no way to say which Release the answer is about.");
             }
         }
 
         private static IEnumerable<TestCaseData> EveryVerdictAReleaseCanComeBackWith()
         {
-            yield return new TestCaseData(AResolvedRelease(), StatusCodes.Status200OK, true);
-            yield return new TestCaseData(new DeliverySourceResolution.NotFound(), StatusCodes.Status404NotFound, false);
-            yield return new TestCaseData(new DeliverySourceResolution.NoDate(TheNameJiraHolds), StatusCodes.Status400BadRequest, false);
+            yield return new TestCaseData(AResolvedRelease(), StatusCodes.Status200OK, true, null);
+            yield return new TestCaseData(
+                new DeliverySourceResolution.NotFound(),
+                StatusCodes.Status404NotFound,
+                false,
+                $"Source {TheReleaseJiraHolds} does not exist");
+            yield return new TestCaseData(
+                new DeliverySourceResolution.NoDate(TheNameJiraHolds),
+                StatusCodes.Status400BadRequest,
+                false,
+                $"Source {TheReleaseJiraHolds} carries no date");
             yield return new TestCaseData(
                 new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.CapabilityWithdrawn),
                 StatusCodes.Status503ServiceUnavailable,
-                false);
+                false,
+                TheAnswerWhenTheRemoteCouldNotBeAsked);
+        }
+
+        /// <summary>
+        /// A reference the remote left out of its answer says nothing about whether that Release
+        /// exists - only that this attempt did not come back carrying it. Read as a Release that is
+        /// gone, it sends somebody off to re-create a Delivery whose Release never moved.
+        /// </summary>
+        [Test]
+        public async Task A_Release_the_remote_left_out_of_its_answer_is_a_remote_that_could_not_be_asked()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheReleaseResolvesTo(TheOtherReleaseJiraHolds, TheOtherReleaseAsItResolves(), AFeature(2));
+
+            var result = await CreateSubject().CreateDelivery(ThePortfolioItLivesIn, ADeliveryFollowingTheRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusCodeOf(result), Is.EqualTo(StatusCodes.Status503ServiceUnavailable));
+                Assert.That(MessageIn(result), Is.EqualTo(TheAnswerWhenTheRemoteCouldNotBeAsked));
+                Assert.That(persistedDelivery, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// The form sends no name when the Release owns it, so the create cannot read one from the
+        /// payload - and asking the Delivery to be born without a name is refused by the aggregate.
+        /// </summary>
+        [Test]
+        public async Task A_Delivery_created_from_a_Release_takes_its_name_from_the_Release_even_when_the_payload_carries_none()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
+
+            var whatTheFormSendsWhenTheReleaseOwnsTheName = ADeliveryFollowingTheRelease();
+            whatTheFormSendsWhenTheReleaseOwnsTheName.Name = string.Empty;
+
+            var result = await CreateSubject().CreateDelivery(
+                ThePortfolioItLivesIn, whatTheFormSendsWhenTheReleaseOwnsTheName);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(WhatWasPersisted(), Is.EqualTo(new PersistedDelivery(
+                    TheNameJiraHolds,
+                    TheDayTheReleaseShipped,
+                    DeliverySelectionMode.SourceBound,
+                    JiraReleaseSourceKey,
+                    TheReleaseJiraHolds,
+                    false,
+                    1)));
+            }
+        }
+
+        /// <summary>
+        /// A payload can be wrong in two ways at once. The complaint about the fields the client filled
+        /// in is the one that comes back, because it names something the person at the screen can act
+        /// on - being told to buy a licence for a request that is malformed either way sends them off
+        /// to pay for something that would still be refused.
+        /// </summary>
+        [TestCaseSource(nameof(EveryUpdateThatIsWrongInTwoWaysAtOnce))]
+        public async Task An_update_wrong_in_two_ways_answers_the_fields_the_client_filled_in_rather_than_the_mode_it_asked_for(
+            bool hasPremiumLicense, UpdateDeliveryRequest request, string expectedMessage)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasPremiumLicense);
+            GivenTheDeliveryBeingEditedIs(ADeliveryChosenByHand());
+
+            var result = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+                Assert.That(MessageIn(result), Is.EqualTo(expectedMessage));
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryUpdateThatIsWrongInTwoWaysAtOnce()
+        {
+            var followingAReleaseItDoesNotName = AnUpdateFollowingTheRelease(TheReleaseJiraHolds);
+            followingAReleaseItDoesNotName.SourceKey = null;
+            yield return new TestCaseData(
+                    false,
+                    followingAReleaseItDoesNotName,
+                    "A source-bound delivery must name the source it follows")
+                .SetName("Naming no source, on an instance that may not follow one anyway");
+
+            var chosenByRuleWithNeitherANameNorARule = AnUpdateChoosingByRule();
+            chosenByRuleWithNeitherANameNorARule.Name = string.Empty;
+            chosenByRuleWithNeitherANameNorARule.Rules = null;
+            yield return new TestCaseData(
+                    true,
+                    chosenByRuleWithNeitherANameNorARule,
+                    "Name is required")
+                .SetName("Carrying no name and no rule to choose Features by");
         }
 
         /// <summary>
         /// The free-tier cap counts Deliveries, so a mode that merely fell through to it would let the
         /// first bound Delivery in a Portfolio through and refuse only the second.
         /// </summary>
-        [TestCase(true, 0, StatusCodes.Status200OK)]
-        [TestCase(true, 1, StatusCodes.Status200OK)]
-        [TestCase(false, 0, StatusCodes.Status403Forbidden)]
-        [TestCase(false, 1, StatusCodes.Status403Forbidden)]
+        [TestCase(true, 0, StatusCodes.Status200OK, null)]
+        [TestCase(true, 1, StatusCodes.Status200OK, null)]
+        [TestCase(false, 0, StatusCodes.Status403Forbidden, TheAnswerWhenFollowingIsNotLicensed)]
+        [TestCase(false, 1, StatusCodes.Status403Forbidden, TheAnswerWhenFollowingIsNotLicensed)]
         public async Task Following_a_Release_is_premium_from_the_first_Delivery_in_a_Portfolio_onwards(
-            bool hasPremiumLicense, int deliveriesAlreadyInThePortfolio, int expectedStatusCode)
+            bool hasPremiumLicense, int deliveriesAlreadyInThePortfolio, int expectedStatusCode, string? expectedMessage)
         {
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasPremiumLicense);
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(1))
@@ -1348,6 +1452,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(StatusCodeOf(result), Is.EqualTo(expectedStatusCode));
                 Assert.That(persistedDelivery != null, Is.EqualTo(hasPremiumLicense));
+                Assert.That(MessageIn(result), Is.EqualTo(expectedMessage),
+                    "a bare 403 reads as a permission problem, and the way out of this one is a licence.");
             }
         }
 
@@ -1870,6 +1976,8 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         private const string TheKeyOneLetterOut = "jira-relase";
+        private const string TheAnswerWhenTheRemoteCouldNotBeAsked = "The system holding the source could not be reached";
+        private const string TheAnswerWhenFollowingIsNotLicensed = "Following a delivery source requires a premium license";
         private const DeliverySelectionMode AModeNobodyImplements = (DeliverySelectionMode)7;
 
         private static Portfolio ThePortfolio()
