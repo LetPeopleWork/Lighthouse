@@ -4,6 +4,7 @@ import { Delivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
 import { Feature } from "../../../../../models/Feature";
 import { Portfolio } from "../../../../../models/Portfolio/Portfolio";
+import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiError } from "../../../../../services/Api/ApiError";
 import { makeArchivedDelivery } from "../../../../../tests/ArchivedDeliveryFixture";
 import {
@@ -536,6 +537,84 @@ describe("useDeliveryManagement", () => {
 
 			expect(result.current.selectedDelivery).toBeNull();
 			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2); // Initial load + refresh
+		});
+
+		// Which entry of the work tracking system a delivery follows is two fields, and dropping
+		// either one on the way to the server is indistinguishable from asking to follow nothing.
+		it("carries which source entry the delivery follows through to the server", async () => {
+			const portfolio = getMockPortfolio();
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			const updateSpy = vi.fn().mockResolvedValue(undefined);
+			mockApiServiceContext.deliveryService.update = updateSpy;
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			await act(async () => {
+				await result.current.handleUpdateDelivery({
+					id: 1,
+					name: "Release 44",
+					date: "2025-12-25",
+					featureIds: [],
+					selectionMode: DeliverySelectionMode.SourceBound,
+					sourceKey: "jira-release",
+					sourceReference: "10144",
+				});
+			});
+
+			expect(updateSpy).toHaveBeenCalledWith({
+				deliveryId: 1,
+				name: "Release 44",
+				date: new Date("2025-12-25"),
+				featureIds: [],
+				selectionMode: DeliverySelectionMode.SourceBound,
+				sourceKey: "jira-release",
+				sourceReference: "10144",
+				rules: undefined,
+				mode: undefined,
+				concurrencyToken: undefined,
+			});
+		});
+
+		it("carries the same pair through when the delivery is first created", async () => {
+			const portfolio = getMockPortfolio();
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([]),
+			);
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			await act(async () => {
+				await result.current.handleCreateDelivery({
+					name: "Release 44",
+					date: "2025-12-25",
+					featureIds: [],
+					selectionMode: DeliverySelectionMode.SourceBound,
+					sourceKey: "jira-release",
+					sourceReference: "10144",
+				});
+			});
+
+			expect(mockDeliveryService.create).toHaveBeenCalledWith({
+				portfolioId: portfolio.id,
+				name: "Release 44",
+				date: new Date("2025-12-25"),
+				featureIds: [],
+				selectionMode: DeliverySelectionMode.SourceBound,
+				sourceKey: "jira-release",
+				sourceReference: "10144",
+				rules: undefined,
+				mode: undefined,
+			});
 		});
 
 		it("should handle update delivery error", async () => {

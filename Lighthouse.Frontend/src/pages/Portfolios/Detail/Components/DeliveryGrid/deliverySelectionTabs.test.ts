@@ -51,9 +51,9 @@ const formState = (
 	selectedFeatureIds: [],
 	rules: [],
 	mode: "and",
+	sourceReference: null,
 	rulesValidated: false,
 	matchedFeaturesLength: 0,
-	sourceOptionPicked: false,
 	...overrides,
 });
 
@@ -83,11 +83,12 @@ const ruleBasedTab = (): DeliverySelectionTab =>
 const jiraReleaseTab = (): DeliverySelectionTab => tabsFor([JIRA_RELEASE])[2];
 
 describe("a selection nobody has made yet", () => {
-	it("starts with nothing chosen, no rules, and rules that would all have to match", () => {
+	it("starts with nothing chosen, no rules, rules that would all have to match, and nothing followed", () => {
 		expect(emptySelectionValues()).toEqual({
 			selectedFeatureIds: [],
 			rules: [],
 			mode: "and",
+			sourceReference: null,
 		});
 	});
 });
@@ -190,6 +191,20 @@ describe("the manual tab", () => {
 			manualTab().toPayload(formState({ selectedFeatureIds: [3, 4] })),
 		).toEqual({ featureIds: [3, 4] });
 	});
+
+	// The three descriptor shapes are shared with the tab that reads from the work tracking system, so
+	// every slot that tab needed had to be cut into them. None of it may reach this tab's behaviour.
+	it("is untouched by the slots the source tab needed: it neither reads nor writes a binding", () => {
+		const state = formState({
+			selectedFeatureIds: [3],
+			sourceReference: "10144",
+		});
+
+		expect(manualTab().mode).toBe(DeliverySelectionMode.Manual);
+		expect(manualTab().firstBlockingError(state, terms)).toBeNull();
+		expect(manualTab().toPayload(state)).toEqual({ featureIds: [3] });
+		expect(manualTab().claims).toBeUndefined();
+	});
 });
 
 describe("the rule-based tab", () => {
@@ -255,6 +270,24 @@ describe("the rule-based tab", () => {
 			featureIds: [5],
 			rules: [filledInRule()],
 			mode: "or",
+		});
+	});
+
+	it("is untouched by the slots the source tab needed: it neither reads nor writes a binding", () => {
+		const state = formState({
+			selectedFeatureIds: [5],
+			rules: [filledInRule()],
+			rulesValidated: true,
+			matchedFeaturesLength: 1,
+			sourceReference: "10144",
+		});
+
+		expect(ruleBasedTab().mode).toBe(DeliverySelectionMode.RuleBased);
+		expect(ruleBasedTab().firstBlockingError(state, terms)).toBeNull();
+		expect(ruleBasedTab().toPayload(state)).toEqual({
+			featureIds: [5],
+			rules: [filledInRule()],
+			mode: "and",
 		});
 	});
 });
@@ -332,54 +365,133 @@ describe("a tab that reads a date out of the work tracking system", () => {
 		expect(jiraReleaseTab().source).toEqual(JIRA_RELEASE);
 	});
 
-	it("has no selection mode, because nothing it shows is ever written down", () => {
-		expect(jiraReleaseTab().mode).toBeUndefined();
+	it("saves as one that follows the work tracking system", () => {
+		expect(jiraReleaseTab().mode).toBe(DeliverySelectionMode.SourceBound);
 	});
 
-	it("starts from a blank selection whatever delivery the form was opened for", () => {
+	it("reopens on the entry the delivery already follows, and on nothing else", () => {
 		expect(
 			jiraReleaseTab().hydrate(
 				storedDelivery({
 					features: [1, 2],
 					rules: [filledInRule()],
 					mode: "or",
+					sourceReference: "10144",
 				}),
 			),
-		).toEqual({ selectedFeatureIds: [], rules: [], mode: "and" });
+		).toEqual({
+			selectedFeatureIds: [],
+			rules: [],
+			mode: "and",
+			sourceReference: "10144",
+		});
 	});
 
-	it("asks for something to be picked, then says that picking it only previews it", () => {
+	it("asks for something to be picked, and stops asking once something is", () => {
 		expect(jiraReleaseTab().firstBlockingError(formState(), terms)).toBe(
 			"Pick a Jira Release to see the date it would set.",
 		);
 		expect(
 			jiraReleaseTab().firstBlockingError(
-				formState({ sourceOptionPicked: true }),
+				formState({ sourceReference: "10144" }),
 				terms,
 			),
-		).toBe(
-			"Picking a Jira Release only previews it. Switch to Manual or Rule-Based to save.",
-		);
+		).toBeNull();
 	});
 
 	it("never puts a complaint on a field the reader cannot type into", () => {
 		expect(
 			jiraReleaseTab().fieldErrors(
-				formState({ sourceOptionPicked: true }),
+				formState({ sourceReference: "10144" }),
 				terms,
 			),
 		).toEqual({});
 	});
 
-	it("writes nothing down, even once something has been picked", () => {
+	// The server resolves the work from the entry on every sync, so anything chosen or typed on the
+	// way past is not merely unnecessary — sending it would claim a selection the server then ignores.
+	it("writes down which entry it follows, and nothing anyone chose by hand", () => {
 		expect(
 			jiraReleaseTab().toPayload(
 				formState({
 					selectedFeatureIds: [1, 2],
 					rules: [filledInRule()],
 					mode: "or",
+					sourceReference: "10144",
 				}),
 			),
-		).toEqual({ featureIds: [] });
+		).toEqual({
+			featureIds: [],
+			sourceKey: "jira-release",
+			sourceReference: "10144",
+		});
+	});
+
+	it("is offered by no connection that reports no source, whatever a delivery claims to follow", () => {
+		expect(tabsFor().map((tab) => tab.key)).toEqual([
+			MANUAL_SELECTION_TAB_KEY,
+			RULE_BASED_SELECTION_TAB_KEY,
+		]);
+		expect(
+			deliveryTabForDelivery(
+				storedDelivery({
+					selectionMode: DeliverySelectionMode.SourceBound,
+					sourceKey: JIRA_RELEASE.key,
+				}),
+				tabsFor(),
+			).key,
+		).toBe(MANUAL_SELECTION_TAB_KEY);
+	});
+});
+
+describe("which tab a delivery that follows a source reopens on", () => {
+	const bound = (overrides: Partial<IDelivery> = {}): IDelivery =>
+		storedDelivery({
+			selectionMode: DeliverySelectionMode.SourceBound,
+			sourceKey: JIRA_RELEASE.key,
+			sourceReference: "10144",
+			...overrides,
+		});
+
+	const bothSources = (): DeliverySelectionTab[] =>
+		tabsFor([JIRA_RELEASE, JIRA_FIX_VERSION]);
+
+	// The mode arrives as a name on everything read back from the server and as a number on everything
+	// the browser has in hand, so both forms have to name the same tab or half the cases open wrong.
+	it.each([
+		{ form: "the name the server sends", selectionMode: "SourceBound" },
+		{ form: "the number the browser sends", selectionMode: 2 },
+	])("recognises it from $form", ({ selectionMode }) => {
+		expect(
+			deliveryTabForDelivery(
+				bound({
+					selectionMode: selectionMode as unknown as IDelivery["selectionMode"],
+				}),
+				bothSources(),
+			).key,
+		).toBe(`source:${JIRA_RELEASE.key}`);
+	});
+
+	it("opens on the source it follows, not on the first source the connection offers", () => {
+		expect(
+			deliveryTabForDelivery(
+				bound({ sourceKey: JIRA_FIX_VERSION.key }),
+				bothSources(),
+			).key,
+		).toBe(`source:${JIRA_FIX_VERSION.key}`);
+	});
+
+	it("leaves a hand-picked and a rule-based delivery on the tabs they were already on", () => {
+		expect(deliveryTabForDelivery(storedDelivery(), bothSources()).key).toBe(
+			MANUAL_SELECTION_TAB_KEY,
+		);
+		expect(
+			deliveryTabForDelivery(
+				storedDelivery({
+					selectionMode: "RuleBased" as unknown as IDelivery["selectionMode"],
+				}),
+				bothSources(),
+			).key,
+		).toBe(RULE_BASED_SELECTION_TAB_KEY);
 	});
 });

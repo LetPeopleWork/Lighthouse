@@ -266,6 +266,50 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		});
 	});
 
+	// This licence is a Community one, and the tab that reads a date out of the work tracking system
+	// is a premium feature. A Milestone that already follows one was bound while a premium licence
+	// was in force, and losing the licence must not turn it into a hand-picked Milestone the next
+	// time somebody opens it — that would rewrite paid-for data on the way out of a downgrade.
+	it("keeps a Milestone that follows a Release on that Release under a Community licence", async () => {
+		const mockOnUpdate = vi.fn();
+		mockApiContext.deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([
+				{ key: "jira-release", displayName: "Jira Release" },
+			]);
+		renderModal(
+			{
+				...mockEditingDelivery,
+				selectionMode: "SourceBound" as unknown as DeliverySelectionMode,
+				sourceKey: "jira-release",
+				sourceReference: "10144",
+			},
+			vi.fn(),
+			mockOnUpdate,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByLabelText("Milestone Name")).toBeDisabled();
+		});
+		expect(screen.getByLabelText("Milestone Date")).toBeDisabled();
+		expect(screen.getByTestId("premium-feature-notice")).toBeInTheDocument();
+
+		fireEvent.click(screen.getByText("Update"));
+
+		await waitFor(() => {
+			expect(mockOnUpdate).toHaveBeenCalledWith({
+				id: 10,
+				name: "Existing Milestone",
+				date: twoWeeksFromNowFormatted,
+				featureIds: [],
+				selectionMode: DeliverySelectionMode.SourceBound,
+				sourceKey: "jira-release",
+				sourceReference: "10144",
+				rules: undefined,
+			});
+		});
+	});
+
 	it("should preserve feature selection when editing", async () => {
 		renderModal(mockEditingDelivery);
 

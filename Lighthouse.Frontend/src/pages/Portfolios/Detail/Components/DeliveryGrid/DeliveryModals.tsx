@@ -23,6 +23,8 @@ interface DeliveryModalsProps {
 		selectionMode?: number;
 		rules?: { fieldKey: string; operator: string; value: string }[];
 		mode?: "and" | "or";
+		sourceKey?: string;
+		sourceReference?: string;
 	}) => Promise<void>;
 	onUpdateDelivery: (deliveryData: {
 		id: number;
@@ -32,6 +34,8 @@ interface DeliveryModalsProps {
 		selectionMode?: number;
 		rules?: { fieldKey: string; operator: string; value: string }[];
 		mode?: "and" | "or";
+		sourceKey?: string;
+		sourceReference?: string;
 	}) => Promise<void>;
 	onDeleteConfirmation: (confirmed: boolean) => void;
 	onArchiveConfirmation: (confirmed: boolean, stopAsking?: boolean) => void;

@@ -8,10 +8,12 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { IDelivery } from "../../../../../models/Delivery";
 import type { IDeliverySourceOption } from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
+import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -215,6 +217,7 @@ const renderTab = (deliveryService = createMockDeliveryService()) => {
 				sourceName={JIRA_RELEASE_SOURCE.displayName}
 				featuresTerm="Deliverables"
 				portfolioTerm="Value Stream"
+				currentSelection={null}
 				onOptionPicked={vi.fn()}
 			/>
 		</ApiServiceContext.Provider>,
@@ -345,7 +348,7 @@ describe("DeliverySourceTab registration", () => {
 		expect(screen.queryByText(/is required/i)).toBeNull();
 	});
 
-	it("blocks saving once a Release is picked, and says so", async () => {
+	it("lets it be saved once a Release is picked, with nothing left to fill in", async () => {
 		const user = userEvent.setup();
 		const deliveryService = createMockDeliveryService();
 		deliveryService.getDeliverySources = vi
@@ -365,13 +368,13 @@ describe("DeliverySourceTab registration", () => {
 			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
 		);
 
-		// The Release filled in a name and a future date, so nothing else is left to complain about:
-		// Save is disabled because this tab saves nothing, and the message is the only thing saying so.
+		// The Release filled in the name and the date, and picking it is the whole of what this tab has
+		// to be told, so there is nothing left to ask for and nothing left to complain about.
 		expect(screen.getByLabelText("Launch Name")).toHaveValue("Release 44");
-		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
 		expect(
-			screen.getByText(/only previews|does not change|cannot be saved/i),
-		).toBeInTheDocument();
+			screen.queryByText(/only previews|does not change|cannot be saved/i),
+		).toBeNull();
 	});
 
 	it("fetches the option list once for the lifetime of the modal", async () => {
@@ -1188,8 +1191,313 @@ describe("DeliveryCreateModal and the one thing it asks for next", () => {
 
 		await user.click(screen.getByRole("button", { name: "Jira Release" }));
 
-		expect(blockingMessage()).toBe(
-			"Picking a Jira Release only previews it. Switch to Manual or Rule-Based to save.",
+		expect(screen.getByRole("combobox", { name: "Jira Release" })).toHaveValue(
+			RELEASE_44_IN_PROJECT_X,
 		);
+		expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+	});
+
+	// The picker fills the date field in, and it has to fill it in with the day the tracker holds. The
+	// runner is pinned east of UTC, so an entry dated late in the UTC day is the case where reading it
+	// as this browser's day names the day AFTER the board does — the mirror of what a reader west of
+	// UTC gets, and the same defect seen from the other side.
+	it("writes the day the tracker holds into the date field, not the day this browser is having", async () => {
+		const user = userEvent.setup();
+		modalShowingOneRelease([
+			{
+				...datedInProject,
+				date: new Date("2026-10-15T23:30:00Z"),
+			},
+		]);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+
+		expect(screen.getByLabelText("Launch Date")).toHaveValue("2026-10-15");
+	});
+
+	// The server takes whatever day the tracker holds, including one already gone. The browser's own
+	// future-date guard is the one thing that could still refuse it, and refusing it here would put a
+	// Release that shipped last quarter out of reach with no way for anyone to argue.
+	it("lets a Release dated in the past be bound, which no hand-typed date may be", async () => {
+		const user = userEvent.setup();
+		const onSave = vi.fn();
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([JIRA_RELEASE_SOURCE]);
+		deliveryService.getDeliverySourceOptions = vi.fn().mockResolvedValue([
+			{
+				...datedInProject,
+				date: new Date("2025-03-04T00:00:00Z"),
+			},
+		]);
+
+		render(
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					deliveryService,
+					featureService: createMockFeatureService(),
+				})}
+			>
+				<DeliveryCreateModal
+					open={true}
+					portfolio={mockPortfolio}
+					onClose={vi.fn()}
+					onSave={onSave}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await user.click(
+			await screen.findByRole("button", { name: "Jira Release" }),
+		);
+		await openSourceList(user);
+		await user.click(
+			screen.getByRole("option", { name: RELEASE_44_IN_PROJECT_X }),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(onSave).toHaveBeenCalledWith({
+			name: "Release 44",
+			date: "2025-03-04",
+			featureIds: [],
+			selectionMode: DeliverySelectionMode.SourceBound,
+			sourceKey: JIRA_RELEASE_SOURCE.key,
+			sourceReference: datedInProject.id,
+		});
+		expect(screen.queryByText(/must be in the future/i)).toBeNull();
+	});
+});
+
+describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
+	// The server answers with the mode's NAME, never with the number the browser posts back, so a
+	// fixture built from the enum would agree with a comparison that disagrees with every real
+	// response. Every Launch below is therefore written the way the wire writes it.
+	const followingARelease = (): IDelivery =>
+		({
+			id: 42,
+			name: "Release 44",
+			date: "2026-10-15T00:00:00Z",
+			portfolioId: 1,
+			features: [1],
+			selectionMode: "SourceBound",
+			sourceKey: JIRA_RELEASE_SOURCE.key,
+			sourceReference: datedInProject.id,
+			concurrencyToken: "v1",
+		}) as unknown as IDelivery;
+
+	const chosenByHand = (): IDelivery =>
+		({
+			id: 42,
+			name: "Autumn launch",
+			date: "2026-10-15T00:00:00Z",
+			portfolioId: 1,
+			features: [1],
+			selectionMode: "Manual",
+			sourceKey: null,
+			sourceReference: null,
+			concurrencyToken: "v1",
+		}) as unknown as IDelivery;
+
+	const renderEditModal = (
+		deliveryService: ReturnType<typeof createMockDeliveryService>,
+		editingDelivery: IDelivery,
+		onUpdate = vi.fn(),
+	) => {
+		const context = createMockApiServiceContext({
+			deliveryService,
+			featureService: createMockFeatureService(),
+		});
+
+		render(
+			<ApiServiceContext.Provider value={context}>
+				<DeliveryCreateModal
+					open={true}
+					portfolio={mockPortfolio}
+					editingDelivery={editingDelivery}
+					onClose={vi.fn()}
+					onSave={vi.fn()}
+					onUpdate={onUpdate}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		return { deliveryService, onUpdate };
+	};
+
+	const serviceOffering = (options: IDeliverySourceOption[]) => {
+		const deliveryService = createMockDeliveryService();
+		deliveryService.getDeliverySources = vi
+			.fn()
+			.mockResolvedValue([JIRA_RELEASE_SOURCE]);
+		deliveryService.getDeliverySourceOptions = vi
+			.fn()
+			.mockResolvedValue(options);
+		deliveryService.previewDeliverySource = vi.fn().mockResolvedValue({
+			name: "Release 44",
+			date: new Date("2026-10-15T00:00:00Z"),
+			features: [],
+			emptyBecause: "None",
+		});
+
+		return deliveryService;
+	};
+
+	const releaseInTheBox = (): string | null => {
+		const box = screen.queryByRole("combobox", { name: "Jira Release" });
+		return box === null ? null : (box as HTMLInputElement).value;
+	};
+
+	const boundPayload = {
+		id: 42,
+		name: "Release 44",
+		date: "2026-10-15",
+		featureIds: [],
+		selectionMode: DeliverySelectionMode.SourceBound,
+		sourceKey: JIRA_RELEASE_SOURCE.key,
+		sourceReference: datedInProject.id,
+		rules: undefined,
+		mode: undefined,
+		concurrencyToken: "v1",
+	};
+
+	// The binding is what is at risk, and it is at risk in the payload rather than on the screen, so
+	// every row says both what the box shows AND what a save that touched nothing writes down.
+	it.each([
+		{
+			when: "the Release is still on the offered list",
+			offered: allOptions,
+			delivery: followingARelease,
+			shown: RELEASE_44_IN_PROJECT_X,
+			expected: boundPayload,
+		},
+		{
+			when: "the Release has shipped, so the offered list no longer holds it",
+			offered: [datedInJustATest, datelessOption],
+			delivery: followingARelease,
+			shown: "Release 44",
+			expected: boundPayload,
+		},
+		{
+			when: "the Release was archived and the offered list came back empty",
+			offered: [],
+			delivery: followingARelease,
+			shown: "Release 44",
+			expected: boundPayload,
+		},
+		{
+			when: "the Launch follows no Release at all",
+			offered: allOptions,
+			delivery: chosenByHand,
+			shown: null,
+			expected: {
+				id: 42,
+				name: "Autumn launch",
+				date: "2026-10-15",
+				featureIds: [1],
+				selectionMode: DeliverySelectionMode.Manual,
+				sourceKey: undefined,
+				sourceReference: undefined,
+				rules: undefined,
+				mode: undefined,
+				concurrencyToken: "v1",
+			},
+		},
+	])(
+		"shows what it follows and saves it back untouched when $when",
+		async ({ offered, delivery, shown, expected }) => {
+			const { onUpdate } = renderEditModal(
+				serviceOffering(offered),
+				delivery(),
+			);
+
+			await screen.findByRole("button", { name: "Jira Release" });
+			await waitFor(() => {
+				expect(releaseInTheBox()).toBe(shown);
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Update" }));
+
+			expect(onUpdate).toHaveBeenCalledWith(expected);
+		},
+	);
+
+	// Both fields are greyed out by `readsFromSource` in the modal, which is true for any tab that
+	// reads from the work tracking system. On this form nobody chose that tab: it is chosen for them
+	// by the Launch already following a Release, so the greying-out is a consequence nothing asserts
+	// unless it is asserted here.
+	it("greys out the name and the date it takes from the Release", async () => {
+		renderEditModal(serviceOffering(allOptions), followingARelease());
+
+		await screen.findByRole("combobox", { name: "Jira Release" });
+
+		expect(screen.getByLabelText("Launch Name")).toBeDisabled();
+		expect(screen.getByLabelText("Launch Date")).toBeDisabled();
+	});
+
+	// Wandering onto Manual would look like a way to take the Launch back by hand, and it is not one:
+	// the server discards everything sent alongside such a save. Releasing it is its own action.
+	it("offers no other tab as a way out of the Release it follows", async () => {
+		renderEditModal(serviceOffering(allOptions), followingARelease());
+
+		await screen.findByRole("combobox", { name: "Jira Release" });
+
+		expect(selectionModeButtons().map((b) => b.textContent)).toEqual([
+			"Jira Release",
+		]);
+	});
+
+	it("still offers every tab when the Launch was chosen by hand", async () => {
+		renderEditModal(serviceOffering(allOptions), chosenByHand());
+
+		await screen.findByRole("button", { name: "Jira Release" });
+
+		expect(selectionModeButtons().map((b) => b.textContent)).toEqual([
+			"Manual",
+			"Rule-Based",
+			"Jira Release",
+		]);
+	});
+
+	// The list is kept between openings of one form, and the entry a Launch follows is not part of
+	// what the server said, so a cached answer must not be able to swallow it.
+	it("shows the Release it follows even when the list came out of the cache", async () => {
+		const deliveryService = serviceOffering([datedInJustATest]);
+
+		const { unmount } = render(
+			<ApiServiceContext.Provider
+				value={createMockApiServiceContext({
+					deliveryService,
+					featureService: createMockFeatureService(),
+				})}
+			>
+				<DeliverySourceTab
+					portfolioId={1}
+					sourceKey={JIRA_RELEASE_SOURCE.key}
+					sourceName={JIRA_RELEASE_SOURCE.displayName}
+					featuresTerm="Deliverables"
+					portfolioTerm="Value Stream"
+					currentSelection={null}
+					onOptionPicked={vi.fn()}
+				/>
+			</ApiServiceContext.Provider>,
+		);
+
+		await screen.findByRole("combobox", { name: "Jira Release" });
+		unmount();
+
+		renderEditModal(deliveryService, followingARelease());
+
+		await waitFor(() => {
+			expect(releaseInTheBox()).toBe("Release 44");
+		});
+		expect(deliveryService.getDeliverySourceOptions).toHaveBeenCalledTimes(1);
 	});
 });

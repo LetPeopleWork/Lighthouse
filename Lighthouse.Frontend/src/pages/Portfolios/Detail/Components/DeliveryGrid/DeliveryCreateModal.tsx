@@ -12,7 +12,14 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { LicenseTooltip } from "../../../../../components/App/License/LicenseToolTip";
 import { DeliveryRuleBuilder } from "../../../../../components/Common/DeliveryRuleBuilder";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
@@ -35,6 +42,7 @@ import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import {
 	clearDeliverySourceOptionsCache,
+	type DeliverySourceCurrentSelection,
 	DeliverySourceTab,
 } from "./DeliverySourceTab";
 import {
@@ -63,6 +71,8 @@ interface DeliveryCreateModalProps {
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
 		mode?: DeliveryRuleMode;
+		sourceKey?: string;
+		sourceReference?: string;
 	}) => void;
 	onUpdate?: (deliveryData: {
 		id: number;
@@ -72,6 +82,8 @@ interface DeliveryCreateModalProps {
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
 		mode?: DeliveryRuleMode;
+		sourceKey?: string;
+		sourceReference?: string;
 		concurrencyToken?: string;
 	}) => void;
 }
@@ -271,12 +283,14 @@ const SelectionModeContent: React.FC<
 		tab: DeliverySelectionTab;
 		isPremium: boolean;
 		portfolioTerm: string;
+		currentSelection: DeliverySourceCurrentSelection | null;
 		onSourceOptionPicked: (option: IDeliverySourceOption) => void;
 	}
 > = ({
 	tab,
 	isPremium,
 	portfolioTerm,
+	currentSelection,
 	onSourceOptionPicked,
 	...contentProps
 }) => {
@@ -293,6 +307,7 @@ const SelectionModeContent: React.FC<
 				sourceName={tab.source.displayName}
 				featuresTerm={contentProps.featuresTerm}
 				portfolioTerm={portfolioTerm}
+				currentSelection={currentSelection}
 				onOptionPicked={onSourceOptionPicked}
 			/>
 		);
@@ -340,15 +355,57 @@ const SelectionTabButton: React.FC<{
 };
 
 /**
- * A date the work tracking system holds, in the form the date field wants. Built from the date as
- * this browser shows it rather than from UTC, so the field and the preview beside it never name two
- * different days.
+ * A date the work tracking system holds, in the form the date field wants. Read in UTC, because that
+ * is the day the tracker holds and the day that gets stored. Read as this browser's day instead, a
+ * reader west of UTC would be shown the day before the one their board says, and the field would
+ * quietly disagree with the record.
  */
 const dateInputValue = (date: Date): string => {
-	const month = `${date.getMonth() + 1}`.padStart(2, "0");
-	const day = `${date.getDate()}`.padStart(2, "0");
+	const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+	const day = `${date.getUTCDate()}`.padStart(2, "0");
 
-	return `${date.getFullYear()}-${month}-${day}`;
+	return `${date.getUTCFullYear()}-${month}-${day}`;
+};
+
+/**
+ * A delivery that follows a source is released from it by an action of its own, never by wandering
+ * onto another tab: a save made that way has everything typed alongside it discarded by the server,
+ * so the edit would vanish without a word. Offering only the tab it is bound to closes that road.
+ */
+const offeredTabs = (
+	tabs: DeliverySelectionTab[],
+	editingDelivery: IDelivery | null | undefined,
+): DeliverySelectionTab[] => {
+	if (!editingDelivery) {
+		return tabs;
+	}
+
+	const claimed = deliveryTabForDelivery(editingDelivery, tabs);
+	return claimed.source ? [claimed] : tabs;
+};
+
+/**
+ * The entry a delivery being edited already follows, when the tab on screen is the one offering it.
+ * The picker is told separately because the offered list hides entries whose Release has shipped or
+ * been archived, and a binding to one of those has to survive that.
+ */
+const boundSourceSelection = (
+	delivery: IDelivery | null | undefined,
+	tab: DeliverySelectionTab,
+): DeliverySourceCurrentSelection | null => {
+	if (!delivery?.sourceReference) {
+		return null;
+	}
+
+	if (delivery.sourceKey !== tab.source?.key) {
+		return null;
+	}
+
+	return {
+		id: delivery.sourceReference,
+		name: delivery.name,
+		date: new Date(delivery.date),
+	};
 };
 
 const isValidFutureDate = (date: string): boolean => {
@@ -436,8 +493,9 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [loadingSchema, setLoadingSchema] = useState(false);
 	const [validatingRules, setValidatingRules] = useState(false);
 	const [rulesValidated, setRulesValidated] = useState(false);
-	const [sourceOptionPicked, setSourceOptionPicked] = useState(false);
+	const [sourceReference, setSourceReference] = useState<string | null>(null);
 	const [matchedFeatures, setMatchedFeatures] = useState<IFeature[]>([]);
+	const hydratedDeliveryId = useRef<number | null>(null);
 	const [errors, setErrors] = useState<{
 		name?: string;
 		date?: string;
@@ -450,24 +508,28 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		[featureTerm, deliveryTerm],
 	);
 	const tabs = useMemo(
-		() => deliverySelectionTabsFor(sources, selectionTerms),
-		[sources, selectionTerms],
+		() =>
+			offeredTabs(
+				deliverySelectionTabsFor(sources, selectionTerms),
+				editingDelivery,
+			),
+		[sources, selectionTerms, editingDelivery],
 	);
 	const activeTab =
 		tabs.find((tab) => tab.key === selectedTabKey) ??
 		defaultDeliverySelectionTab;
 	// On a tab that reads from the work tracking system, the name and the date belong to the entry the
-	// user picks there, so both fields are filled in for them and neither is theirs to type over. That
-	// tab saves nothing, which makes a filled-in field look broken until you know the rest: switching
-	// to Manual or Rule-Based hands the same values back, now editable, and that is how they are saved.
+	// user picks there, so both fields are filled in for them and neither is theirs to type over: the
+	// tracker owns them from the moment the entry is picked, and typing over them here would be undone
+	// by the next sync.
 	const readsFromSource = activeTab.source !== undefined;
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
 		rules,
 		mode,
+		sourceReference,
 		rulesValidated,
 		matchedFeaturesLength: matchedFeatures.length,
-		sourceOptionPicked,
 	};
 
 	useEffect(() => {
@@ -523,6 +585,14 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			selectionState,
 			selectionTerms,
 		);
+
+		// A tab that fills the name and the date in itself owns both, and the date it brings is whatever
+		// day the tracker holds — a Release that shipped last quarter among them. Judging those fields
+		// here would refuse such a Release for a reason nobody can act on.
+		if (readsFromSource) {
+			setErrors(newErrors);
+			return Object.keys(newErrors).length === 0;
+		}
 
 		if (!name.trim()) {
 			newErrors.name = `${deliveryTerm} name is required`;
@@ -589,14 +659,14 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setMatchedFeatures([]);
 		// The picker starts empty again when the tab is next opened, so what it was showing before is
 		// forgotten here too; the name and the date it filled in stay, which is the point of them.
-		setSourceOptionPicked(false);
+		setSourceReference(null);
 	};
 
 	const handleSourceOptionPicked = useCallback(
 		(option: IDeliverySourceOption) => {
 			setName(option.name);
 			setDate(option.date === null ? "" : dateInputValue(option.date));
-			setSourceOptionPicked(true);
+			setSourceReference(option.id);
 			setErrors((prev) => ({ ...prev, name: undefined, date: undefined }));
 		},
 		[],
@@ -637,28 +707,40 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setRuleSchema(null);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
-		setSourceOptionPicked(false);
+		setSourceReference(values.sourceReference);
+		hydratedDeliveryId.current = null;
 		setErrors({});
 		clearDeliverySourceOptionsCache();
 	}, []);
 
 	useEffect(() => {
-		if (open && editingDelivery) {
-			const tab = deliveryTabForDelivery(editingDelivery);
-			const values = tab.hydrate(editingDelivery);
-
-			setName(editingDelivery.name);
-			setDate(editingDelivery.date.split("T")[0]);
-			setSelectedTabKey(tab.key);
-			setSelectedFeatureIds(values.selectedFeatureIds);
-			setRules(values.rules);
-			setMode(values.mode);
-			// Whatever the rules matched before is not trustworthy once the form reopens, so
-			// the user has to ask for them to be matched again before saving.
-			setRulesValidated(false);
-			setMatchedFeatures([]);
+		if (!(open && editingDelivery)) {
+			return;
 		}
-	}, [open, editingDelivery]);
+
+		const tab = deliveryTabForDelivery(editingDelivery, tabs);
+		setSelectedTabKey(tab.key);
+
+		// Which tab a delivery belongs on is answered twice, because the tabs that read from the work
+		// tracking system only exist once the server has listed them. Only that answer is allowed to
+		// change on the second pass — anything typed while the list was still on its way stays typed.
+		if (hydratedDeliveryId.current === editingDelivery.id) {
+			return;
+		}
+		hydratedDeliveryId.current = editingDelivery.id;
+
+		const values = tab.hydrate(editingDelivery);
+		setName(editingDelivery.name);
+		setDate(editingDelivery.date.split("T")[0]);
+		setSelectedFeatureIds(values.selectedFeatureIds);
+		setRules(values.rules);
+		setMode(values.mode);
+		setSourceReference(values.sourceReference);
+		// Whatever the rules matched before is not trustworthy once the form reopens, so
+		// the user has to ask for them to be matched again before saving.
+		setRulesValidated(false);
+		setMatchedFeatures([]);
+	}, [open, editingDelivery, tabs]);
 
 	useEffect(() => {
 		if (!open) {
@@ -762,6 +844,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						featuresTerm={featuresTerm}
 						portfolioTerm={portfolioTerm}
 						portfolioId={portfolio.id}
+						currentSelection={boundSourceSelection(editingDelivery, activeTab)}
 						onSelectedFeaturesChange={setSelectedFeatureIds}
 						onRulesChange={handleRulesChange}
 						onModeChange={(next) => {

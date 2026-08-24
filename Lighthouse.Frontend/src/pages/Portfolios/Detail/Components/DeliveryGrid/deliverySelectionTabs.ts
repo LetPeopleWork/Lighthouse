@@ -12,12 +12,13 @@ export interface DeliverySelectionValues {
 	selectedFeatureIds: number[];
 	rules: IWorkItemRuleCondition[];
 	mode: DeliveryRuleMode;
+	/** Which entry of a source the delivery follows, or null when it follows none. */
+	sourceReference: string | null;
 }
 
 export interface DeliverySelectionState extends DeliverySelectionValues {
 	rulesValidated: boolean;
 	matchedFeaturesLength: number;
-	sourceOptionPicked: boolean;
 }
 
 export interface DeliverySelectionTerms {
@@ -29,6 +30,8 @@ export interface DeliverySelectionPayload {
 	featureIds: number[];
 	rules?: IWorkItemRuleCondition[];
 	mode?: DeliveryRuleMode;
+	sourceKey?: string;
+	sourceReference?: string;
 }
 
 export interface DeliverySelectionFieldErrors {
@@ -79,6 +82,7 @@ export const emptySelectionValues = (): DeliverySelectionValues => ({
 	selectedFeatureIds: [],
 	rules: [],
 	mode: "and",
+	sourceReference: null,
 });
 
 const valuesFromDelivery = (delivery: IDelivery): DeliverySelectionValues => ({
@@ -90,7 +94,20 @@ const valuesFromDelivery = (delivery: IDelivery): DeliverySelectionValues => ({
 			value: rule.value,
 		})) ?? [],
 	mode: delivery.mode === "or" ? "or" : "and",
+	sourceReference: delivery.sourceReference ?? null,
 });
+
+/**
+ * A delivery read back from the server names its selection mode — "SourceBound" — where the browser
+ * sends the number, so comparing a stored delivery against the enum member alone matches nothing
+ * that ever came off the wire, and every bound delivery would read as a hand-picked one.
+ */
+const isStoredAs = (
+	delivery: IDelivery,
+	mode: DeliverySelectionMode,
+): boolean =>
+	delivery.selectionMode === mode ||
+	(delivery.selectionMode as unknown as string) === DeliverySelectionMode[mode];
 
 export const isIncompleteRule = (rule: IWorkItemRuleCondition): boolean =>
 	!rule.fieldKey.trim() || !rule.operator.trim() || !rule.value.trim();
@@ -157,7 +174,7 @@ const ruleBasedTab: DeliverySelectionTab = {
 			"Please obtain a premium license to use rule-based deliveries.",
 	},
 	claims: (delivery) =>
-		delivery.selectionMode === DeliverySelectionMode.RuleBased ||
+		isStoredAs(delivery, DeliverySelectionMode.RuleBased) ||
 		(delivery.rules?.length ?? 0) > 0,
 	hydrate: valuesFromDelivery,
 	firstBlockingError: ruleBasedBlockingError,
@@ -177,11 +194,11 @@ const builtInSelectionTabs: DeliverySelectionTab[] = [manualTab, ruleBasedTab];
 export const defaultDeliverySelectionTab = manualTab;
 
 /**
- * A tab for one way the connection lets a date be read out of the work tracking system. It carries
- * no mode and no payload because looking at a source changes nothing yet. Saving stays blocked from
- * the moment the tab opens, and the reason changes along the way: with nothing picked there is
- * nothing to look at yet, and once something is picked the reader has to be told that looking is all
- * this tab does, rather than pressing Save and wondering why nothing stuck.
+ * A tab for one way the connection lets a date be read out of the work tracking system. Picking an
+ * entry here binds the delivery to it: from then on the name, the date and the work all come from
+ * the tracker, so the only thing this tab has to be told is which entry, and the only thing that can
+ * block saving is not having said. It writes down no features of its own for the same reason — the
+ * server resolves those from the entry every time it syncs, and anything sent here would be ignored.
  */
 const sourceSelectionTab = (
 	source: IDeliverySource,
@@ -189,18 +206,29 @@ const sourceSelectionTab = (
 ): DeliverySelectionTab => ({
 	key: `source:${source.key}`,
 	label: source.displayName,
+	mode: DeliverySelectionMode.SourceBound,
 	source,
 	premiumGate: {
 		whenLocked: "explainInside",
 		notice: `Taking a ${terms.deliveryTerm.toLowerCase()} date from a ${source.displayName} is a premium feature. Please upgrade your license to use this functionality.`,
 	},
-	hydrate: () => emptySelectionValues(),
+	claims: (delivery) =>
+		isStoredAs(delivery, DeliverySelectionMode.SourceBound) &&
+		delivery.sourceKey === source.key,
+	hydrate: (delivery) => ({
+		...emptySelectionValues(),
+		sourceReference: delivery.sourceReference ?? null,
+	}),
 	firstBlockingError: (state) =>
-		state.sourceOptionPicked
-			? `Picking a ${source.displayName} only previews it. Switch to Manual or Rule-Based to save.`
-			: `Pick a ${source.displayName} to see the date it would set.`,
+		state.sourceReference === null
+			? `Pick a ${source.displayName} to see the date it would set.`
+			: null,
 	fieldErrors: () => ({}),
-	toPayload: () => ({ featureIds: [] }),
+	toPayload: (state) => ({
+		featureIds: [],
+		sourceKey: source.key,
+		sourceReference: state.sourceReference ?? undefined,
+	}),
 });
 
 /**
@@ -215,8 +243,15 @@ export const deliverySelectionTabsFor = (
 	...sources.map((source) => sourceSelectionTab(source, terms)),
 ];
 
+/**
+ * Which tab a stored delivery reopens on. The tabs to search through are handed in because the ones
+ * that read from the work tracking system only exist once the server has said which sources this
+ * connection offers — search the built-in pair alone and a bound delivery reopens as a hand-picked
+ * one, which the next save would make true.
+ */
 export const deliveryTabForDelivery = (
 	delivery: IDelivery,
+	tabs: DeliverySelectionTab[] = builtInSelectionTabs,
 ): DeliverySelectionTab =>
-	builtInSelectionTabs.find((tab) => tab.claims?.(delivery) === true) ??
+	tabs.find((tab) => tab.claims?.(delivery) === true) ??
 	defaultDeliverySelectionTab;

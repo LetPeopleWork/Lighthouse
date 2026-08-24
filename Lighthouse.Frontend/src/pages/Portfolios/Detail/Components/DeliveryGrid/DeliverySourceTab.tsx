@@ -9,7 +9,6 @@ import {
 import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
-import LocalDateTimeDisplay from "../../../../../components/Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import type {
 	DeliverySourcePreviewEmptyReason,
 	IDeliverySourceOption,
@@ -18,12 +17,25 @@ import type {
 } from "../../../../../models/Delivery/DeliverySource";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 
+/**
+ * The entry a delivery already follows, as the delivery itself remembers it. It is remembered
+ * separately from the offered list because the two disagree on purpose: the list hides entries that
+ * have shipped or been archived, while a binding to one of those keeps working.
+ */
+export interface DeliverySourceCurrentSelection {
+	id: string;
+	name: string;
+	date: Date | null;
+}
+
 export interface DeliverySourceTabProps {
 	portfolioId: number;
 	sourceKey: string;
 	sourceName: string;
 	featuresTerm: string;
 	portfolioTerm: string;
+	/** What this delivery follows today, or null when it follows nothing yet. */
+	currentSelection: DeliverySourceCurrentSelection | null;
 	/** Told which entry is on screen, so the form can show the name and date it would take. */
 	onOptionPicked: (option: IDeliverySourceOption) => void;
 }
@@ -69,8 +81,50 @@ const emptyPreviewExplanation = (
 const projectSuffix = (option: IDeliverySourceOption): string =>
 	`(${option.projectName})`;
 
+/**
+ * An entry offered by nobody: the one this delivery already follows, which the server's list can
+ * legitimately no longer hold once its Release has shipped or been archived. Offering it anyway is
+ * what keeps a form opened on such a delivery from showing an empty box and letting the next save
+ * quietly drop the binding. The project is left blank because the delivery never recorded one.
+ */
+const asOfferedEntry = (
+	current: DeliverySourceCurrentSelection,
+): IDeliverySourceOption => ({
+	id: current.id,
+	name: current.name,
+	date: current.date,
+	projectKey: "",
+	projectName: "",
+	isSelectable: true,
+	blockedBecause: null,
+});
+
+const withCurrentSelection = (
+	offered: IDeliverySourceOption[],
+	current: DeliverySourceCurrentSelection | null,
+): IDeliverySourceOption[] => {
+	if (current === null) {
+		return offered;
+	}
+
+	if (offered.some((option) => option.id === current.id)) {
+		return offered;
+	}
+
+	return [asOfferedEntry(current), ...offered];
+};
+
 const sourceOptionLabel = (option: IDeliverySourceOption): string =>
-	`${option.name} ${projectSuffix(option)}`;
+	option.projectName === ""
+		? option.name
+		: `${option.name} ${projectSuffix(option)}`;
+
+/**
+ * Read in UTC, because that is the day the work tracking system holds. Read as this browser's day it
+ * would name the day before west of UTC, and disagree with the date field filled in beside it.
+ */
+const trackerDay = (date: Date): string =>
+	date.toLocaleDateString(undefined, { timeZone: "UTC" });
 
 const useSourceOptions = (portfolioId: number, sourceKey: string) => {
 	const { deliveryService } = useContext(ApiServiceContext);
@@ -126,9 +180,11 @@ const SourceOptionRow: React.FC<{
 	return (
 		<li {...rowProps}>
 			<span>{option.name}</span>{" "}
-			<Typography component="span" variant="caption" color="text.secondary">
-				{projectSuffix(option)}
-			</Typography>
+			{option.projectName === "" ? null : (
+				<Typography component="span" variant="caption" color="text.secondary">
+					{projectSuffix(option)}
+				</Typography>
+			)}
 			{option.blockedBecause === null ? null : (
 				<Typography
 					component="span"
@@ -179,8 +235,7 @@ const SourcePreview: React.FC<{
 }> = ({ preview, sourceName, featuresTerm, portfolioTerm, portfolioId }) => (
 	<Box sx={{ mt: 3 }} data-testid="delivery-source-preview">
 		<Typography variant="subtitle2" sx={{ mb: 1 }}>
-			{preview.name} would set the date to{" "}
-			<LocalDateTimeDisplay utcDate={preview.date} />
+			{preview.name} would set the date to {trackerDay(preview.date)}
 		</Typography>
 		{preview.features.length === 0 ? (
 			<Alert severity="info" data-testid="delivery-source-preview-empty">
@@ -205,8 +260,8 @@ const SourcePreview: React.FC<{
 );
 
 /**
- * Shows what taking this Delivery's date from the work tracking system would mean. It only ever
- * looks: nothing here writes anything, so closing the form leaves the Delivery as it was.
+ * Shows which entry of the work tracking system this Delivery takes its date from, and what that
+ * means for it: the date it would land on and the work that would come along with it.
  */
 export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	portfolioId,
@@ -214,11 +269,16 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	sourceName,
 	featuresTerm,
 	portfolioTerm,
+	currentSelection,
 	onOptionPicked,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
-	const { options, failed } = useSourceOptions(portfolioId, sourceKey);
-	const [selectedId, setSelectedId] = useState("");
+	const { options: offered, failed } = useSourceOptions(portfolioId, sourceKey);
+	// Merged on the way out of the cache rather than into it, so what the server said stays what the
+	// server said and a second form opened on a different Delivery gets its own entry offered.
+	const options =
+		offered === null ? null : withCurrentSelection(offered, currentSelection);
+	const [selectedId, setSelectedId] = useState(currentSelection?.id ?? "");
 	const [preview, setPreview] = useState<IDeliverySourcePreview | null>(null);
 	const [previewFailed, setPreviewFailed] = useState(false);
 	const awaitedOptionId = useRef("");

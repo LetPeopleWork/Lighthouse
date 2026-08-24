@@ -227,6 +227,8 @@ export const useDeliveryManagement = ({
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
 		mode?: "and" | "or";
+		sourceKey?: string;
+		sourceReference?: string;
 	}) => {
 		try {
 			await deliveryService.create({
@@ -237,6 +239,8 @@ export const useDeliveryManagement = ({
 				selectionMode: deliveryData.selectionMode,
 				rules: deliveryData.rules,
 				mode: deliveryData.mode,
+				sourceKey: deliveryData.sourceKey,
+				sourceReference: deliveryData.sourceReference,
 			});
 			setShowCreateModal(false);
 			await fetchDeliveries();
@@ -254,6 +258,8 @@ export const useDeliveryManagement = ({
 		selectionMode?: DeliverySelectionMode;
 		rules?: IWorkItemRuleCondition[];
 		mode?: "and" | "or";
+		sourceKey?: string;
+		sourceReference?: string;
 		concurrencyToken?: string;
 	}) => {
 		try {
@@ -267,6 +273,8 @@ export const useDeliveryManagement = ({
 				selectionMode: deliveryData.selectionMode,
 				rules: deliveryData.rules,
 				mode: deliveryData.mode,
+				sourceKey: deliveryData.sourceKey,
+				sourceReference: deliveryData.sourceReference,
 				concurrencyToken: deliveryData.concurrencyToken,
 			});
 			setSelectedDelivery(null);
