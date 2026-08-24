@@ -135,27 +135,39 @@ const MatchedFeaturesGrid: React.FC<{
 	</Box>
 );
 
-/** Everything any selection tab could need to draw itself; each uses the part it cares about. */
-interface SelectionContentProps {
-	loadingSchema: boolean;
-	ruleSchema: IWorkItemRuleSchema | null;
+interface CommonSelectionContentProps {
 	errors: { features?: string; rules?: string };
+	featuresTerm: string;
+	portfolioId: number;
+}
+
+interface ManualSelectionContentProps extends CommonSelectionContentProps {
 	allFeatures: IFeature[];
 	selectedFeatureIds: number[];
+	onSelectedFeaturesChange: (ids: number[]) => void;
+}
+
+interface RuleBasedContentProps extends CommonSelectionContentProps {
+	loadingSchema: boolean;
+	ruleSchema: IWorkItemRuleSchema | null;
 	rules: IWorkItemRuleCondition[];
 	mode: DeliveryRuleMode;
 	validatingRules: boolean;
 	rulesValidated: boolean;
 	matchedFeatures: IFeature[];
-	featuresTerm: string;
-	portfolioId: number;
-	onSelectedFeaturesChange: (ids: number[]) => void;
 	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
 	onModeChange: (mode: DeliveryRuleMode) => void;
 	onValidateRules: () => void;
 }
 
-const ManualSelectionContent: React.FC<SelectionContentProps> = ({
+/**
+ * The bag the form hands to whichever tab is showing. It is the sum of what every tab needs, so a
+ * tab component that asks for less still fits the registry below and stays free to ignore the rest.
+ */
+type SelectionContentProps = ManualSelectionContentProps &
+	RuleBasedContentProps;
+
+const ManualSelectionContent: React.FC<ManualSelectionContentProps> = ({
 	errors,
 	allFeatures,
 	selectedFeatureIds,
@@ -183,7 +195,7 @@ const ManualSelectionContent: React.FC<SelectionContentProps> = ({
 	</>
 );
 
-const RuleBasedContent: React.FC<SelectionContentProps> = ({
+const RuleBasedContent: React.FC<RuleBasedContentProps> = ({
 	loadingSchema,
 	ruleSchema,
 	errors,
