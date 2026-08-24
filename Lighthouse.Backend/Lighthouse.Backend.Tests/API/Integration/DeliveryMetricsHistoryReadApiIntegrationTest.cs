@@ -307,7 +307,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -352,7 +352,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var portfolio = AddPortfolio(scope.ServiceProvider);
             var laterTarget = DateTime.UtcNow.Date.AddDays(30);
             var earlierTarget = laterTarget.AddDays(-14);
-            var delivery = new Delivery("Release 6", laterTarget, portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 6", laterTarget, portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -398,7 +398,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var delivery = new Delivery("Release 3", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 3", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -411,7 +411,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var delivery = new Delivery("Release 4", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 4", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -445,7 +445,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var delivery = new Delivery("Release 2", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 2", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -480,7 +480,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var delivery = new Delivery("Release 5", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 5", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -511,7 +511,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var delivery = new Delivery("Release 6", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 6", DateTime.UtcNow.AddDays(30), portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -537,7 +537,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
             var targetDate = DateTime.UtcNow.Date.AddDays(40);
-            var delivery = new Delivery("Improving Release", targetDate, portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Improving Release", targetDate, portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
@@ -557,7 +557,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
             var targetDate = DateTime.UtcNow.Date.AddDays(40);
-            var delivery = new Delivery("Degrading Release", targetDate, portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Degrading Release", targetDate, portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 

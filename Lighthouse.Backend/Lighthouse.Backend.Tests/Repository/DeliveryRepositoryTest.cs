@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.Repository
 
         private static Delivery GetTestDelivery(int portfolioId, string name = "Test Delivery")
         {
-            return new Delivery(name, DateTime.UtcNow.AddDays(30), portfolioId, TestToday.Ambient);
+            return new Delivery(name, DateTime.UtcNow.AddDays(30), portfolioId);
         }
     }
 }

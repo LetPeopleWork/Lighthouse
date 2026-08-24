@@ -629,14 +629,14 @@ namespace Lighthouse.Backend.API
         /// either: with no comparison there is no difference to refuse, which is what keeps a browser
         /// rendering the day one off from ever looking like somebody trying to edit the date.
         /// </summary>
-        private Delivery NewDelivery(UpdateDeliveryRequest request, int portfolioId, PortfolioSourcePreview? sourcePreview)
+        private static Delivery NewDelivery(UpdateDeliveryRequest request, int portfolioId, PortfolioSourcePreview? sourcePreview)
         {
             if (sourcePreview?.Resolution is DeliverySourceResolution.Resolved resolved)
             {
-                return new Delivery(resolved.Snapshot.Name, resolved.Snapshot.Date, portfolioId, clock.Today);
+                return new Delivery(resolved.Snapshot.Name, resolved.Snapshot.Date, portfolioId);
             }
 
-            return new Delivery(request.Name, UtcDateOf(request), portfolioId, clock.Today);
+            return new Delivery(request.Name, UtcDateOf(request), portfolioId);
         }
 
         /// <summary>

@@ -394,7 +394,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             const int deliveryId = 42;
             const int portfolioId = 7;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(10), portfolioId, TestToday.Ambient) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(10), portfolioId) { Id = deliveryId };
 
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
             rbacAdministrationServiceMock
@@ -497,7 +497,7 @@ namespace Lighthouse.Backend.Tests.API
             var featureWork = new FeatureWork(team, 20, 100, feature); // 80% progress (80/100 completed)
             feature.FeatureWork.Add(featureWork);
 
-            var delivery = new Delivery("Q1 Release", deliveryDate, portfolioId, TestToday.Ambient)
+            var delivery = new Delivery("Q1 Release", deliveryDate, portfolioId)
             {
                 Id = 1
             };
@@ -541,8 +541,8 @@ namespace Lighthouse.Backend.Tests.API
         public void GetByPortfolio_WithRecordedSnapshots_ReturnsMetricSnapshotCountPerDelivery()
         {
             const int portfolioId = 1;
-            var deliveryWithout = new Delivery("No Snapshots", DateTime.UtcNow.AddDays(30), portfolioId, TestToday.Ambient) { Id = 10 };
-            var deliveryWith = new Delivery("Four Snapshots", DateTime.UtcNow.AddDays(60), portfolioId, TestToday.Ambient) { Id = 20 };
+            var deliveryWithout = new Delivery("No Snapshots", DateTime.UtcNow.AddDays(30), portfolioId) { Id = 10 };
+            var deliveryWith = new Delivery("Four Snapshots", DateTime.UtcNow.AddDays(60), portfolioId) { Id = 20 };
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
                 .Returns([deliveryWithout, deliveryWith]);
@@ -571,8 +571,8 @@ namespace Lighthouse.Backend.Tests.API
             const int portfolioId = 1;
             var expectedDeliveries = new List<Delivery>
             {
-                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId, TestToday.Ambient),
-                new("Q2 Release", DateTime.UtcNow.AddDays(90), portfolioId, TestToday.Ambient)
+                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
+                new("Q2 Release", DateTime.UtcNow.AddDays(90), portfolioId)
             };
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
@@ -603,8 +603,8 @@ namespace Lighthouse.Backend.Tests.API
             const int portfolioId = 1;
             var expectedDeliveries = new List<Delivery>
             {
-                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId, TestToday.Ambient),
-                new("Hotfix Release", DateTime.UtcNow.AddDays(10), portfolioId, TestToday.Ambient)
+                new("Q1 Release", DateTime.UtcNow.AddDays(30), portfolioId),
+                new("Hotfix Release", DateTime.UtcNow.AddDays(10), portfolioId)
             };
 
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(portfolioId))
@@ -633,7 +633,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Original Name", DateTime.UtcNow.AddDays(10), 1, TestToday.Ambient);
+            var existingDelivery = new Delivery("Original Name", DateTime.UtcNow.AddDays(10), 1);
             var feature1 = new Feature { Id = 1, Name = "Feature 1" };
             var feature2 = new Feature { Id = 2, Name = "Feature 2" };
 
@@ -744,7 +744,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Test", DateTime.UtcNow.AddDays(10), 1, TestToday.Ambient);
+            var existingDelivery = new Delivery("Test", DateTime.UtcNow.AddDays(10), 1);
             var request = new UpdateDeliveryRequest
             {
                 Name = "Test Delivery",
@@ -768,7 +768,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private static Delivery GetTestDelivery()
         {
-            return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient);
+            return new Delivery("Existing Delivery", DateTime.UtcNow.AddDays(60), 1);
         }
 
         [Test]
@@ -1052,7 +1052,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
@@ -1082,7 +1082,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             var deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
@@ -1110,7 +1110,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient) { Id = deliveryId };
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1) { Id = deliveryId };
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var request = new UpdateDeliveryRequest
@@ -1144,7 +1144,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             // Arrange
             const int deliveryId = 1;
-            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1, TestToday.Ambient)
+            var existingDelivery = new Delivery("Existing", DateTime.UtcNow.AddDays(60), 1)
             {
                 Id = deliveryId,
                 SelectionMode = DeliverySelectionMode.RuleBased,
@@ -1682,7 +1682,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private static Delivery ADeliveryChosenByHand()
         {
-            var delivery = new Delivery(TheNameOnFile, TheDayOnFile, ThePortfolioItLivesIn, TestToday.Ambient)
+            var delivery = new Delivery(TheNameOnFile, TheDayOnFile, ThePortfolioItLivesIn)
             {
                 Id = TheDeliveryBeingEdited,
             };
@@ -1692,7 +1692,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private static Delivery ADeliveryChosenByRule()
         {
-            var delivery = new Delivery(TheNameOnFile, TheDayOnFile, ThePortfolioItLivesIn, TestToday.Ambient)
+            var delivery = new Delivery(TheNameOnFile, TheDayOnFile, ThePortfolioItLivesIn)
             {
                 Id = TheDeliveryBeingEdited,
             };
@@ -1702,7 +1702,7 @@ namespace Lighthouse.Backend.Tests.API
 
         private static Delivery ADeliveryFollowingTheReleaseInJira()
         {
-            var delivery = new Delivery(TheNameJiraHolds, TheDayTheReleaseShipped, ThePortfolioItLivesIn, TestToday.Ambient)
+            var delivery = new Delivery(TheNameJiraHolds, TheDayTheReleaseShipped, ThePortfolioItLivesIn)
             {
                 Id = TheDeliveryBeingEdited,
             };

@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var deliveryDate = TestToday.AFutureDate;
 
-            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, deliveryDate, 1, TestToday.Ambient)
+            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, deliveryDate, 1)
             {
                 SelectionMode = wayOfChoosing,
                 RuleDefinitionJson = rule,
@@ -86,7 +86,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var deliveryDate = TestToday.AFutureDate;
 
-            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, deliveryDate, 1, TestToday.Ambient));
+            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, deliveryDate, 1));
 
             using var reading = CreateContext();
             var reloaded = await reading.Deliveries.SingleAsync(delivery => delivery.Id == savedId);
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Models
             var deliveryDate = TestToday.AFutureDate;
             var heardFromAt = deliveryDate.AddDays(-10);
 
-            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, deliveryDate, 1, TestToday.Ambient)
+            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, deliveryDate, 1)
             {
                 SelectionMode = DeliverySelectionMode.SourceBound,
                 SourceKey = ReleaseSourceKey,

@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static Delivery ADeliveryChosenByHand()
         {
-            var delivery = new Delivery(ReleaseName, ReleaseDate, 1, TestToday.Ambient);
+            var delivery = new Delivery(ReleaseName, ReleaseDate, 1);
             delivery.ReplaceFeatures(FeaturesTheReleaseNames.Select(name => new Feature { Name = name }).ToList());
 
             return delivery;

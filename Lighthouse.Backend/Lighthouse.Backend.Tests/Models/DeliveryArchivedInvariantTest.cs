@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static Delivery LiveDelivery()
         {
-            return new Delivery("Q3 Release", TestToday.AFutureDate, 1, TestToday.Ambient);
+            return new Delivery("Q3 Release", TestToday.AFutureDate, 1);
         }
 
         private static Delivery ArchivedDelivery()

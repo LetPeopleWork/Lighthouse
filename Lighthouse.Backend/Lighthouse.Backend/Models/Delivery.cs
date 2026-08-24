@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Models
         private DateTime? sourceLastSyncedOn;
         private DeliverySourceUnavailableReason? sourceUnavailableReason;
 
-        public Delivery(string name, DateTime date, int portfolioId, DateOnly today)
+        public Delivery(string name, DateTime date, int portfolioId)
         {
             if (string.IsNullOrEmpty(name))
             {

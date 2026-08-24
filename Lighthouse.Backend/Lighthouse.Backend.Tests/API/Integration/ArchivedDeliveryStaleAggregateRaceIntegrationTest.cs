@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public void ADeliveryThatHasBeenRetired_CannotBePutIntoTheCollectionARefreshReadsFrom()
         {
-            var retired = new Delivery("Q3 Launch", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient) { Id = 7 };
+            var retired = new Delivery("Q3 Launch", DateTime.UtcNow.AddDays(30), 1) { Id = 7 };
             retired.Archive(DateTime.UtcNow);
 
             Assert.Throws<ArgumentException>(() => new RecordableDeliveries([retired]));
@@ -367,7 +367,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Conditions = [new WorkItemRuleCondition { FieldKey = "feature.type", Operator = "equals", Value = MatchedType }],
             };
 
-            var delivery = new Delivery("Q3 Launch", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient)
+            var delivery = new Delivery("Q3 Launch", DateTime.UtcNow.AddDays(30), portfolio.Id)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased,
                 RuleDefinitionJson = JsonSerializer.Serialize(ruleSet),

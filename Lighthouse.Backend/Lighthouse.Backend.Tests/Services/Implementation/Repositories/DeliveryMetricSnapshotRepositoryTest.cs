@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             portfolioRepository.Add(portfolio);
             await portfolioRepository.Save();
 
-            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 1", DateTime.UtcNow.AddDays(30), portfolio.Id);
             DatabaseContext.Deliveries.Add(delivery);
             await DatabaseContext.SaveChangesAsync();
 

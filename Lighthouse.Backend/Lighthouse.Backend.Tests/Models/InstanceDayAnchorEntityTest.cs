@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void ToWhenPercentile_ProjectsFromTheInstanceDay()
         {
             var clock = new FakeLighthouseClock(LateEveningInZurich, Zurich);
-            var delivery = new Delivery("Zone boundary", TestToday.AFutureDate, 1, TestToday.Ambient);
+            var delivery = new Delivery("Zone boundary", TestToday.AFutureDate, 1);
             var team = ContributingTeam();
             var feature = new Feature(team, 10);
             feature.Forecasts.Add(ForecastFrom(team, new Dictionary<int, int> { { 10, 100 } }));

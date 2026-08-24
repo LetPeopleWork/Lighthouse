@@ -374,7 +374,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             context.Portfolios.Add(portfolio);
             await context.SaveChangesAsync();
 
-            var delivery = new Delivery("Release 1", TestToday.AFutureDate, portfolio.Id, TestToday.Ambient);
+            var delivery = new Delivery("Release 1", TestToday.AFutureDate, portfolio.Id);
             context.Deliveries.Add(delivery);
             await context.SaveChangesAsync();
 

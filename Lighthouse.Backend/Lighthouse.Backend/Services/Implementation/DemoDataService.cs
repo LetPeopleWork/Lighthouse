@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id, clock.Today);
+            var delivery = new Delivery(DemoDeliveryName, clock.TodayAsUtcMidnight.AddDays(DemoBurnupDays), portfolio.Id);
             delivery.SelectFeaturesByRule(BuildAllFeaturesRuleDefinition(), WorkItemRuleSet.SchemaVersion);
 
             deliveryRepository.Add(delivery);
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var delivery = new Delivery(MultiTeamDeliveryName, clock.TodayAsUtcMidnight.AddDays(MultiTeamDeliveryDays), portfolio.Id, clock.Today);
+            var delivery = new Delivery(MultiTeamDeliveryName, clock.TodayAsUtcMidnight.AddDays(MultiTeamDeliveryDays), portfolio.Id);
             delivery.SelectFeaturesByRule(BuildAllFeaturesRuleDefinition(), WorkItemRuleSet.SchemaVersion);
 
             deliveryRepository.Add(delivery);

@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act
-            var delivery = new Delivery(name, date, portfolioId, TestToday.Ambient);
+            var delivery = new Delivery(name, date, portfolioId);
 
             using (Assert.EnterMultipleScope())
             {
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var pastDate = DateTime.UtcNow.AddDays(-1);
 
-            var delivery = new Delivery("Past Release", pastDate, 1, TestToday.Ambient);
+            var delivery = new Delivery("Past Release", pastDate, 1);
 
             Assert.That(delivery.Date, Is.EqualTo(pastDate));
         }
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var tomorrow = Clock.TodayAsUtcMidnight.AddDays(1);
 
-            var delivery = new Delivery("Q1 Release", tomorrow, 1, Clock.Today);
+            var delivery = new Delivery("Q1 Release", tomorrow, 1);
 
             Assert.That(delivery.Date, Is.EqualTo(tomorrow));
         }
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => new Delivery(emptyName, futureDate, portfolioId, TestToday.Ambient));
+            var exception = Assert.Throws<ArgumentException>(() => new Delivery(emptyName, futureDate, portfolioId));
             Assert.That(exception.Message, Is.EqualTo("Name cannot be null or empty"));
         }
 
@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.Models
             const int portfolioId = 1;
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => new Delivery(nullName, futureDate, portfolioId, TestToday.Ambient));
+            var exception = Assert.Throws<ArgumentException>(() => new Delivery(nullName, futureDate, portfolioId));
             Assert.That(exception.Message, Is.EqualTo("Name cannot be null or empty"));
         }
 
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void ReplaceFeatures_ValidFeature_AddsToCollection()
         {
             // Arrange
-            var delivery = new Delivery("Test Delivery", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
+            var delivery = new Delivery("Test Delivery", DateTime.UtcNow.AddDays(30), 1);
             var feature = new Feature();
 
             // Act
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void SelectionMode_DefaultsToManual()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
             
             Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
         }
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void SelectionMode_CanBeSetToRuleBased()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
             {
                 SelectionMode = DeliverySelectionMode.RuleBased
             };
@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleDefinitionJson_DefaultsToNull()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
             
             Assert.That(delivery.RuleDefinitionJson, Is.Null);
         }
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleDefinitionJson_CanBeSet()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
             {
                 RuleDefinitionJson = "{\"conditions\":[]}"
             };
@@ -149,7 +149,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleSchemaVersion_DefaultsToNull()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient);
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1);
             
             Assert.That(delivery.RuleSchemaVersion, Is.Null);
         }
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void RuleSchemaVersion_CanBeSet()
         {
-            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1, TestToday.Ambient)
+            var delivery = new Delivery("Test", DateTime.UtcNow.AddDays(30), 1)
             {
                 RuleSchemaVersion = 1
             };

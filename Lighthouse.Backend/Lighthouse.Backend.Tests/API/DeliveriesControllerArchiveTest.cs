@@ -338,7 +338,7 @@ namespace Lighthouse.Backend.Tests.API
             feature.Forecasts.Add(forecast);
             feature.FeatureWork.Add(new FeatureWork { Team = team, TeamId = team.Id, TotalWorkItems = 10, RemainingWorkItems = 4 });
 
-            var delivery = new Delivery("Q1 Release", TestToday.AFutureDate, PortfolioId, TestToday.Ambient) { Id = DeliveryId };
+            var delivery = new Delivery("Q1 Release", TestToday.AFutureDate, PortfolioId) { Id = DeliveryId };
             delivery.ReplaceFeatures([feature]);
             return delivery;
         }
