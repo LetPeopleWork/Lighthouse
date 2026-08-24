@@ -7,6 +7,8 @@ namespace Lighthouse.Backend.Models
 {
     public class Delivery : IConcurrencyTokenEntity
     {
+        private const string SourceBindingScaffold = "Following a source is not implemented yet.";
+
         private readonly List<Feature> features = [];
 
         private string name;
@@ -14,6 +16,10 @@ namespace Lighthouse.Backend.Models
         private DeliverySelectionMode selectionMode = DeliverySelectionMode.Manual;
         private string? ruleDefinitionJson;
         private int? ruleSchemaVersion;
+        private string? sourceKey;
+        private string? sourceReference;
+        private DateTime? sourceLastSyncedOn;
+        private int? sourceUnavailableReason;
 
         public Delivery(string name, DateTime date, int portfolioId, DateOnly today)
         {
@@ -79,11 +85,29 @@ namespace Lighthouse.Backend.Models
         public int? RuleSchemaVersion { get => ruleSchemaVersion; init => ruleSchemaVersion = value; }
 #pragma warning restore S2292
 
+        // These four belong in the database and are kept out of it only until the change that adds
+        // them to every provider at once. Mapping them without that change makes the model disagree
+        // with the migrations, and every boot against a real database then refuses to start.
+#pragma warning disable S2292 // An auto-property is exactly what these must not be: releasing a Delivery from the source it follows has to clear the first two from inside the aggregate, while callers may only set them as the Delivery is created.
+        [NotMapped]
+        public string? SourceKey { get => sourceKey; init => sourceKey = value; }
+
+        [NotMapped]
+        public string? SourceReference { get => sourceReference; init => sourceReference = value; }
+
+        [NotMapped]
+        public DateTime? SourceLastSyncedOn { get => sourceLastSyncedOn; init => sourceLastSyncedOn = value; }
+
+        [NotMapped]
+        public int? SourceUnavailableReason { get => sourceUnavailableReason; init => sourceUnavailableReason = value; }
+#pragma warning restore S2292
+
         public DateTime? ArchivedOn { get; private set; }
 
         public void Rename(string name)
         {
             RefuseWhenArchived();
+            RefuseWhenSourceBound();
 
             this.name = name;
             MarkAsChanged();
@@ -92,6 +116,7 @@ namespace Lighthouse.Backend.Models
         public void Reschedule(DateTime date)
         {
             RefuseWhenArchived();
+            RefuseWhenSourceBound();
 
             this.date = date;
             MarkAsChanged();
@@ -100,6 +125,7 @@ namespace Lighthouse.Backend.Models
         public void SelectFeaturesByHand()
         {
             RefuseWhenArchived();
+            RefuseWhenSourceBound();
 
             selectionMode = DeliverySelectionMode.Manual;
             ruleDefinitionJson = null;
@@ -110,11 +136,22 @@ namespace Lighthouse.Backend.Models
         public void SelectFeaturesByRule(string ruleDefinitionJson, int ruleSchemaVersion)
         {
             RefuseWhenArchived();
+            RefuseWhenSourceBound();
 
             selectionMode = DeliverySelectionMode.RuleBased;
             this.ruleDefinitionJson = ruleDefinitionJson;
             this.ruleSchemaVersion = ruleSchemaVersion;
             MarkAsChanged();
+        }
+
+        public void BindToSource(string sourceKey, string sourceReference)
+        {
+            throw new NotImplementedException($"Delivery {Id} cannot yet be made to follow {sourceKey}/{sourceReference}. {SourceBindingScaffold}");
+        }
+
+        public void Unbind()
+        {
+            throw new NotImplementedException($"Delivery {Id} cannot yet be released from the source it follows. {SourceBindingScaffold}");
         }
 
         public void Archive(DateTime archivedOn)
@@ -142,6 +179,7 @@ namespace Lighthouse.Backend.Models
         public void ReplaceFeatures(IEnumerable<Feature> newFeatures)
         {
             RefuseWhenArchived();
+            RefuseWhenSourceBound();
 
             var replacement = newFeatures.ToList();
 
@@ -182,6 +220,17 @@ namespace Lighthouse.Backend.Models
             if (ArchivedOn is not null)
             {
                 throw DeliveryArchivedException.CannotBeChanged(Id);
+            }
+        }
+
+        // The refusal a Delivery owes its caller once it follows a source arrives together with the
+        // binding that can put one in that state. Until then nothing can reach the branch below, and
+        // this is here so the mutators already name the rule rather than gain it later one by one.
+        private void RefuseWhenSourceBound()
+        {
+            if (SelectionMode == DeliverySelectionMode.SourceBound)
+            {
+                throw new NotImplementedException($"Delivery {Id} follows a source. {SourceBindingScaffold}");
             }
         }
 
