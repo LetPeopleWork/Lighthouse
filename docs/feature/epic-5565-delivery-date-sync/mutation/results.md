@@ -309,3 +309,53 @@ one file. That is exactly the 34 scenarios in the new `deliverySelectionTabs.tes
 and zero warnings**, which implies a clean Biome check on `./src` through the `prebuild` hook. `git
 status` after the terminating mutation run shows only the four files this pass touched, so `inPlace: true`
 left no mutant behind.
+
+---
+
+# Mutation testing - 5829 (Delivery date sync: creating a Delivery from a Release)
+
+Run 2026-08-24 against `4b74684a8`, after the adversarial-review fixes and before the UI feedback
+commits. Gate is 80 % kill rate per stack.
+
+| stack | headline | slice-touched lines only | pre-existing lines |
+| --- | --- | --- | --- |
+| Backend (Stryker.NET 4.16.0) | **70.36 %** (197 killed / 83 survived) | **80.37 %** (86 / 21) | 64.16 % (111 / 62) |
+| Frontend (StrykerJS) | **71.80 %** (494 killed / 119 survived / 75 no-coverage) | **80.09 %** (181 / 45) | 80.88 % (313 / 74) |
+
+**Read the second column, not the first.** Stryker.NET cannot mutate line ranges, so scoping to a file
+mutates all of it: `DeliveriesController.cs` is 667 lines and `Delivery.cs` 385, and this slice touched a
+fraction of each. The headline therefore grades code the slice never wrote. The split is computed by
+intersecting mutant line numbers with `git diff fb2ef842a..HEAD`, so a mutant on a line that merely
+shifted counts as pre-existing - the slice column is if anything pessimistic.
+
+The frontend's 75 no-coverage mutants are an artefact of the same scoping: 71 of them sit in the four
+files listed whole rather than by line range (`Delivery.ts`, `DeliveryService.ts`, `DeliveryModals.tsx`,
+`WorkItemRules.ts`), on pre-existing code whose covering specs are not in the slice-scoped vitest
+include list. Including the 4 in-slice ones, the frontend slice figure is 78.7 %.
+
+## What the survivors bought
+
+Backend, 16 of 21 slice-touched survivors closed (`5a2b6192d`, +6 specs). The three that mattered:
+`MarkAsChanged()` could be deleted from `BindToSource` unnoticed; the absent-from-the-answer 503 path -
+the one that stops a network blip reading as a deleted Release - was driven by nothing; and the
+`DateTimeKind` branch had no case with a Kind other than `Unspecified`. Two existing specs turned out to
+be vacuous: the token row unbound first, so the bind's own bump was invisible, and the UTC specs
+asserted only `Kind == Utc` (true down either branch) plus a day the +1h Zurich shift does not move.
+
+Frontend, the two weak files strengthened (`d50539d29`, +11 tests). `DeliverySection.tsx` 67.2 % and
+`useDeliveryManagement.ts` 51.9 % each hid one real gap: `canreadonly &amp;&amp; onUnbind` could be forced true,
+so a read-only viewer would be offered Stop following with nothing to catch it; and the
+`catch { setDeliverySources([]) }` degradation path was covered by a test asserting `[]`, which is also
+the initial state, so emptying the block changed nothing observable.
+
+Deliberately left: console-only wordings, MUI `sx ` object literals, and `useCallback` dependency arrays -
+pinning a dependency array pins an implementation detail and goes stale on the next refactor.
+
+**Not re-measured after those commits**, by maintainer decision - the added specs were each verified by
+hand-applying their mutant and confirming red, which is the evidence the score would have stood in for.
+
+Configs: `stryker.5829.backend.json`, `stryker.5829.frontend.json`, `mutation-vitest.5829.config.ts`. The
+frontend run needs its own vitest include list: the repo's `vitest.stryker.mutation.ts` is scoped to a
+different feature and would report near-total survival. Frontend line ranges must be recomputed against
+HEAD after any commit - they shift.
+

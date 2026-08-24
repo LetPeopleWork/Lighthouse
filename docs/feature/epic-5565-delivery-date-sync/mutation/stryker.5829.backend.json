@@ -1,0 +1,32 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/Delivery.cs",
+      "**/Models/DeliverySelectionMode.cs",
+      "**/Models/DeliverySourceBoundException.cs",
+      "**/API/DeliveriesController.cs",
+      "**/API/DTO/DeliveryWithLikelihoodDto.cs",
+      "**/API/DTO/UpdateDeliveryRequest.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "off",
+    "test-case-filter": "FullyQualifiedName~DeliverySourceBindingInvariantTest|FullyQualifiedName~DeliverySourceBindingPersistenceTest|FullyQualifiedName~DeliverySelectionModePersistedValueTest|FullyQualifiedName~DeliveryTest|FullyQualifiedName~DeliveryArchivedInvariantTest|FullyQualifiedName~DeliveriesControllerTest|FullyQualifiedName~DeliveriesControllerUtcTest|FullyQualifiedName~DeliveriesControllerArchiveTest|FullyQualifiedName~DeliverySourcesAcceptanceTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 1,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

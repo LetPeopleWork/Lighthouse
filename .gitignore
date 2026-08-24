@@ -436,6 +436,9 @@ StrykerOutput/
 **/.stryker-tmp/
 .stryker-tmp-*/
 **/.stryker-tmp-*/
+# StrykerJS drops instrumented setup files in the package root mid-run; an interrupted
+# run leaves them behind, and they must never be stageable as source.
+**/stryker-setup-*.js
 reports/mutation/
 
 # Stryker mutation-testing configs are local tooling, not source — keep them out of git
