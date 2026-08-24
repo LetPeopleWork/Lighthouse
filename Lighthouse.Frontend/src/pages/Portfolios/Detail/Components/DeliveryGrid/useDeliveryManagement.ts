@@ -69,6 +69,8 @@ export const useDeliveryManagement = ({
 }: UseDeliveryManagementProps) => {
 	const { getTerm } = useTerminology();
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	const {
 		shouldConfirm: shouldConfirmBeforeArchiving,
@@ -125,8 +127,11 @@ export const useDeliveryManagement = ({
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
 			} catch (error) {
-				console.error("Failed to load features for delivery:", error);
-				showError("Failed to load features for delivery");
+				console.error(
+					`Failed to load ${featuresTerm} for ${deliveryTerm}:`,
+					error,
+				);
+				showError(`Failed to load ${featuresTerm} for ${deliveryTerm}`);
 			} finally {
 				setLoadingFeaturesByDelivery((prev) => {
 					const next = new Set(prev);
@@ -135,7 +140,14 @@ export const useDeliveryManagement = ({
 				});
 			}
 		},
-		[featureService, showError, loadingFeaturesByDelivery, loadedFeatures],
+		[
+			featureService,
+			showError,
+			loadingFeaturesByDelivery,
+			loadedFeatures,
+			featuresTerm,
+			deliveryTerm,
+		],
 	);
 
 	const forceReloadFeaturesForDelivery = useCallback(
@@ -154,8 +166,11 @@ export const useDeliveryManagement = ({
 				const features = await featureService.getFeaturesByIds(featureIds);
 				setLoadedFeatures((prev) => new Map(prev).set(delivery.id, features));
 			} catch (error) {
-				console.error("Failed to load features for delivery:", error);
-				showError("Failed to load features for delivery");
+				console.error(
+					`Failed to load ${featuresTerm} for ${deliveryTerm}:`,
+					error,
+				);
+				showError(`Failed to load ${featuresTerm} for ${deliveryTerm}`);
 			} finally {
 				setLoadingFeaturesByDelivery((prev) => {
 					const next = new Set(prev);
@@ -164,7 +179,13 @@ export const useDeliveryManagement = ({
 				});
 			}
 		},
-		[featureService, showError, loadingFeaturesByDelivery],
+		[
+			featureService,
+			showError,
+			loadingFeaturesByDelivery,
+			featuresTerm,
+			deliveryTerm,
+		],
 	);
 
 	// A Delivery that has left the live list takes its expansion and its loaded Features with it,
@@ -191,12 +212,12 @@ export const useDeliveryManagement = ({
 			setDeliveries(portfolioDeliveries.active);
 			setArchivedDeliveries(portfolioDeliveries.archived);
 		} catch (error) {
-			console.error("Failed to fetch deliveries:", error);
-			showError("Failed to fetch deliveries");
+			console.error(`Failed to fetch ${deliveriesTerm}:`, error);
+			showError(`Failed to fetch ${deliveriesTerm}`);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [deliveryService, portfolio.id, showError]);
+	}, [deliveryService, portfolio.id, showError, deliveriesTerm]);
 
 	// Asked once for the whole list rather than per row: it is what turns a stored source key into the
 	// name a reader recognises, and every row on the page would otherwise ask the same question again.
@@ -261,8 +282,8 @@ export const useDeliveryManagement = ({
 			setShowCreateModal(false);
 			await fetchDeliveries();
 		} catch (error) {
-			console.error("Failed to create delivery:", error);
-			showError("Failed to create delivery");
+			console.error(`Failed to create ${deliveryTerm}:`, error);
+			showError(`Failed to create ${deliveryTerm}`);
 		}
 	};
 
@@ -313,7 +334,7 @@ export const useDeliveryManagement = ({
 				}
 			}
 		} catch (error) {
-			console.error("Failed to update delivery:", error);
+			console.error(`Failed to update ${deliveryTerm}:`, error);
 			showError(
 				refusalMessage(error, deliveryTerm, `Failed to update ${deliveryTerm}`),
 			);
@@ -363,8 +384,8 @@ export const useDeliveryManagement = ({
 				forgetDelivery(deliveryToDelete.id);
 				await fetchDeliveries();
 			} catch (error) {
-				console.error("Failed to delete delivery:", error);
-				showError("Failed to delete delivery");
+				console.error(`Failed to delete ${deliveryTerm}:`, error);
+				showError(`Failed to delete ${deliveryTerm}`);
 			}
 		}
 
@@ -378,7 +399,7 @@ export const useDeliveryManagement = ({
 			forgetDelivery(delivery.id);
 			await fetchDeliveries();
 		} catch (error) {
-			console.error("Failed to archive delivery:", error);
+			console.error(`Failed to archive ${deliveryTerm}:`, error);
 			showError(
 				refusalMessage(
 					error,
@@ -406,7 +427,7 @@ export const useDeliveryManagement = ({
 				forgetDelivery(deliveryToArchive.id);
 				await fetchDeliveries();
 			} catch (error) {
-				console.error("Failed to archive delivery:", error);
+				console.error(`Failed to archive ${deliveryTerm}:`, error);
 				showError(
 					refusalMessage(
 						error,
@@ -426,7 +447,7 @@ export const useDeliveryManagement = ({
 			await deliveryService.unarchive(delivery.id, delivery.concurrencyToken);
 			await fetchDeliveries();
 		} catch (error) {
-			console.error("Failed to unarchive delivery:", error);
+			console.error(`Failed to unarchive ${deliveryTerm}:`, error);
 			showError(
 				refusalMessage(
 					error,

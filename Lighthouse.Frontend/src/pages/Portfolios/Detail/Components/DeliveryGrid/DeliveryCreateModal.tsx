@@ -473,6 +473,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const { licenseStatus } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
 	const isEditMode = !!editingDelivery;
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -504,8 +505,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	}>({});
 
 	const selectionTerms = useMemo<DeliverySelectionTerms>(
-		() => ({ featureTerm, deliveryTerm }),
-		[featureTerm, deliveryTerm],
+		() => ({ featureTerm, deliveryTerm, deliveriesTerm }),
+		[featureTerm, deliveryTerm, deliveriesTerm],
 	);
 	const tabs = useMemo(
 		() =>

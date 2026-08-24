@@ -24,6 +24,7 @@ export interface DeliverySelectionState extends DeliverySelectionValues {
 export interface DeliverySelectionTerms {
 	featureTerm: string;
 	deliveryTerm: string;
+	deliveriesTerm: string;
 }
 
 export interface DeliverySelectionPayload {
@@ -162,16 +163,16 @@ const manualTab: DeliverySelectionTab = {
 	toPayload: (state) => ({ featureIds: state.selectedFeatureIds }),
 };
 
-const ruleBasedTab: DeliverySelectionTab = {
+const ruleBasedSelectionTab = (
+	terms: DeliverySelectionTerms,
+): DeliverySelectionTab => ({
 	key: RULE_BASED_SELECTION_TAB_KEY,
 	label: "Rule-Based",
 	mode: DeliverySelectionMode.RuleBased,
 	premiumGate: {
 		whenLocked: "lockTab",
-		notice:
-			"Rule-based delivery selection is a premium feature. Please upgrade your license to use this functionality.",
-		tooltipExtraInfo:
-			"Please obtain a premium license to use rule-based deliveries.",
+		notice: `Rule-based ${terms.deliveryTerm.toLowerCase()} selection is a premium feature. Please upgrade your license to use this functionality.`,
+		tooltipExtraInfo: `Please obtain a premium license to use rule-based ${terms.deliveriesTerm.toLowerCase()}.`,
 	},
 	claims: (delivery) =>
 		isStoredAs(delivery, DeliverySelectionMode.RuleBased) ||
@@ -187,9 +188,11 @@ const ruleBasedTab: DeliverySelectionTab = {
 		rules: state.rules,
 		mode: state.mode,
 	}),
-};
+});
 
-const builtInSelectionTabs: DeliverySelectionTab[] = [manualTab, ruleBasedTab];
+const builtInSelectionTabs = (
+	terms: DeliverySelectionTerms,
+): DeliverySelectionTab[] => [manualTab, ruleBasedSelectionTab(terms)];
 
 export const defaultDeliverySelectionTab = manualTab;
 
@@ -239,7 +242,7 @@ export const deliverySelectionTabsFor = (
 	sources: IDeliverySource[],
 	terms: DeliverySelectionTerms,
 ): DeliverySelectionTab[] => [
-	...builtInSelectionTabs,
+	...builtInSelectionTabs(terms),
 	...sources.map((source) => sourceSelectionTab(source, terms)),
 ];
 
@@ -251,7 +254,7 @@ export const deliverySelectionTabsFor = (
  */
 export const deliveryTabForDelivery = (
 	delivery: IDelivery,
-	tabs: DeliverySelectionTab[] = builtInSelectionTabs,
+	tabs: DeliverySelectionTab[],
 ): DeliverySelectionTab =>
 	tabs.find((tab) => tab.claims?.(delivery) === true) ??
 	defaultDeliverySelectionTab;

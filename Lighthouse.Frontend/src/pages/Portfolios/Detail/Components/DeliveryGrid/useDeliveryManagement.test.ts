@@ -16,7 +16,12 @@ import { useDeliveryManagement } from "./useDeliveryManagement";
 
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => (key === "delivery" ? "Delivery" : key),
+		getTerm: (key: string) =>
+			({
+				delivery: "Delivery",
+				deliveries: "Deliveries",
+				features: "Features",
+			})[key] ?? key,
 	}),
 }));
 
@@ -173,7 +178,7 @@ describe("useDeliveryManagement", () => {
 				expect(result.current.isLoading).toBe(false);
 			});
 
-			expect(mockShowError).toHaveBeenCalledWith("Failed to fetch deliveries");
+			expect(mockShowError).toHaveBeenCalledWith("Failed to fetch Deliveries");
 			expect(result.current.deliveries).toEqual([]);
 		});
 	});
@@ -414,7 +419,7 @@ describe("useDeliveryManagement", () => {
 				await result.current.handleDeleteConfirmation(true);
 			});
 
-			expect(mockShowError).toHaveBeenCalledWith("Failed to delete delivery");
+			expect(mockShowError).toHaveBeenCalledWith("Failed to delete Delivery");
 			expect(result.current.deleteDialogOpen).toBe(false);
 			expect(result.current.deliveryToDelete).toBeNull();
 		});
@@ -489,7 +494,7 @@ describe("useDeliveryManagement", () => {
 				await result.current.handleCreateDelivery(deliveryData);
 			});
 
-			expect(mockShowError).toHaveBeenCalledWith("Failed to create delivery");
+			expect(mockShowError).toHaveBeenCalledWith("Failed to create Delivery");
 		});
 	});
 
@@ -952,7 +957,7 @@ describe("useDeliveryManagement", () => {
 
 			await waitFor(() => {
 				expect(mockShowError).toHaveBeenCalledWith(
-					"Failed to load features for delivery",
+					"Failed to load Features for Delivery",
 				);
 				expect(result.current.loadingFeaturesByDelivery.has(delivery.id)).toBe(
 					false,

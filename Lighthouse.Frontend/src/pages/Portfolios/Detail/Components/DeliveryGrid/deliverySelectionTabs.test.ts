@@ -24,6 +24,7 @@ import {
 const terms: DeliverySelectionTerms = {
 	featureTerm: "Deliverable",
 	deliveryTerm: "Launch",
+	deliveriesTerm: "Launches",
 };
 
 const JIRA_RELEASE: IDeliverySource = {
@@ -298,10 +299,10 @@ describe("what a licence that does not cover a tab says", () => {
 
 		expect(gate?.whenLocked).toBe("lockTab");
 		expect(gate?.notice).toBe(
-			"Rule-based delivery selection is a premium feature. Please upgrade your license to use this functionality.",
+			"Rule-based launch selection is a premium feature. Please upgrade your license to use this functionality.",
 		);
 		expect(gate?.tooltipExtraInfo).toBe(
-			"Please obtain a premium license to use rule-based deliveries.",
+			"Please obtain a premium license to use rule-based launches.",
 		);
 	});
 
@@ -324,6 +325,7 @@ describe("which tab a stored delivery reopens on", () => {
 					selectionMode: DeliverySelectionMode.RuleBased,
 					rules: [],
 				}),
+				tabsFor(),
 			).key,
 		).toBe(RULE_BASED_SELECTION_TAB_KEY);
 	});
@@ -335,12 +337,13 @@ describe("which tab a stored delivery reopens on", () => {
 					selectionMode: DeliverySelectionMode.Manual,
 					rules: [filledInRule()],
 				}),
+				tabsFor(),
 			).key,
 		).toBe(RULE_BASED_SELECTION_TAB_KEY);
 	});
 
 	it("opens manual for one with neither", () => {
-		expect(deliveryTabForDelivery(storedDelivery()).key).toBe(
+		expect(deliveryTabForDelivery(storedDelivery(), tabsFor()).key).toBe(
 			MANUAL_SELECTION_TAB_KEY,
 		);
 	});
