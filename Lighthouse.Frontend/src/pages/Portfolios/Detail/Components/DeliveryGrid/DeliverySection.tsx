@@ -27,7 +27,14 @@ import {
 } from "@mui/material";
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useContext, useId, useMemo, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useId,
+	useMemo,
+	useState,
+} from "react";
 import type {
 	DataGridColumn,
 	DataGridExportTable,
@@ -307,14 +314,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	);
 
 	let SelectionModeIcon = TouchAppIcon;
-	let selectionModeHint = "Manual: Features are fixed";
+	let selectionModeHint = `Manual: ${featuresTerm} are fixed`;
 	if (isSourceBound) {
 		SelectionModeIcon = LinkIcon;
 		selectionModeHint = `Follows the ${sourceLabel} it was bound to`;
 	} else if (isRuleBased) {
 		SelectionModeIcon = AutoModeIcon;
-		selectionModeHint =
-			"Rule-Based: Features automatically update based on rules";
+		selectionModeHint = `Rule-Based: ${featuresTerm} automatically update based on rules`;
 	}
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
@@ -496,7 +502,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											</Box>
 										</Tooltip>
 										<Typography variant="body2" color="text.secondary">
-											Delivery Date: {delivery.getFormattedDate()}
+											{deliveryTerm} Date: {delivery.getFormattedDate()}
 										</Typography>
 										<Chip
 											title={
@@ -741,6 +747,17 @@ const UnbindConfirmationDialog: React.FC<UnbindConfirmationDialogProps> = ({
 }) => {
 	const titleId = useId();
 	const descriptionId = useId();
+	// The dialog is still on screen while it fades out, so the button that started the unbind can be
+	// pressed a second time. That second press sends the same version number the first one has just
+	// spent, and the reader is told someone else changed the delivery moments after their own change
+	// went through.
+	const [asked, setAsked] = useState(false);
+
+	useEffect(() => {
+		if (open) {
+			setAsked(false);
+		}
+	}, [open]);
 
 	return (
 		<Dialog
@@ -760,7 +777,11 @@ const UnbindConfirmationDialog: React.FC<UnbindConfirmationDialogProps> = ({
 					Cancel
 				</Button>
 				<Button
-					onClick={onConfirm}
+					onClick={() => {
+						setAsked(true);
+						onConfirm();
+					}}
+					disabled={asked}
 					color="primary"
 					variant="contained"
 					autoFocus

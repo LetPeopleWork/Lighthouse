@@ -720,15 +720,21 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		}
 
 		const tab = deliveryTabForDelivery(editingDelivery, tabs);
-		setSelectedTabKey(tab.key);
 
 		// Which tab a delivery belongs on is answered twice, because the tabs that read from the work
-		// tracking system only exist once the server has listed them. Only that answer is allowed to
-		// change on the second pass — anything typed while the list was still on its way stays typed.
+		// tracking system only exist once the server has listed them. The second answer is worth
+		// having in one case alone: it now names a tab that did not exist when the form opened.
+		// Anything else it says is the same answer as before, and the reader may have moved to
+		// another tab in the meantime — do not lift this back above the guard, or that move is
+		// silently undone the moment the source list lands.
 		if (hydratedDeliveryId.current === editingDelivery.id) {
+			if (tab.source !== undefined) {
+				setSelectedTabKey(tab.key);
+			}
 			return;
 		}
 		hydratedDeliveryId.current = editingDelivery.id;
+		setSelectedTabKey(tab.key);
 
 		const values = tab.hydrate(editingDelivery);
 		setName(editingDelivery.name);

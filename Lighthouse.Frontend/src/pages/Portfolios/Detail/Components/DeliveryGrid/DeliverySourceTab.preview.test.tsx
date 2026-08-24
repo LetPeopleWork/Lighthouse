@@ -94,11 +94,16 @@ describe("DeliverySourceTab preview", () => {
 		);
 	};
 
-	it("shows the date it would take and the work that would come along", async () => {
+	// The tracker holds the 30th; this browser, pinned two hours east of UTC, has already turned over
+	// to the 1st at that instant. Both days are written out rather than worked out here, because an
+	// expectation built by calling the same formatter the screen calls agrees with it whichever day it
+	// picks — including the wrong one. Move the instant back to UTC midnight and the two days coincide,
+	// which is what let this go untested the first time.
+	it("shows the day the tracker holds, not the day this browser has already turned over to", async () => {
 		const user = userEvent.setup();
 		const deliveryService = previewDeliveryService({
 			name: "Release 44",
-			date: new Date("2026-09-30T00:00:00Z"),
+			date: new Date("2026-09-30T23:30:00Z"),
 			features: [createFeature(1, "Widget rewrite"), createFeature(2, "Login")],
 			emptyBecause: "None",
 		});
@@ -115,9 +120,8 @@ describe("DeliverySourceTab preview", () => {
 		});
 
 		const preview = await screen.findByTestId("delivery-source-preview");
-		expect(preview).toHaveTextContent(
-			new Date("2026-09-30T00:00:00Z").toLocaleDateString(),
-		);
+		expect(preview).toHaveTextContent("9/30/2026");
+		expect(preview).not.toHaveTextContent("10/1/2026");
 		expect(within(preview).getByText("Widget rewrite")).toBeInTheDocument();
 		expect(within(preview).getByText("Login")).toBeInTheDocument();
 	});

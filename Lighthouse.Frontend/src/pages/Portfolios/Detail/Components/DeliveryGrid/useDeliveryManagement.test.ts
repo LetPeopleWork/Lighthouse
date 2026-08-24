@@ -1221,6 +1221,46 @@ describe("useDeliveryManagement", () => {
 			expect(mockDeliveryService.getByPortfolio).toHaveBeenCalledTimes(2);
 		});
 
+		// The dialog that asks for this promises the Delivery keeps the Features it has right now. An
+		// expanded row that empties itself the moment the reader says yes breaks that promise in the
+		// very words it was made, and nothing on this path ever fetches them back.
+		it("leaves an expanded Delivery showing the same rows it was showing", async () => {
+			const portfolio = getMockPortfolio();
+			const bound = getMockDelivery({ id: 5, features: [11, 12] });
+			const rowsOnScreen = [
+				getMockFeature({ id: 11 }),
+				getMockFeature({ id: 12 }),
+			];
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([bound]),
+			);
+			mockGetFeaturesByIds.mockResolvedValue(rowsOnScreen);
+			mockApiServiceContext.deliveryService.update = vi
+				.fn()
+				.mockResolvedValue(undefined);
+
+			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleToggleExpanded(5);
+			});
+
+			await waitFor(() => {
+				expect(result.current.loadedFeatures.get(5)).toEqual(rowsOnScreen);
+			});
+
+			await act(async () => {
+				await result.current.handleUnbindDelivery(bound);
+			});
+
+			expect(result.current.loadedFeatures.get(5)).toEqual(rowsOnScreen);
+		});
+
 		it("says so in the reader's own word for it when the server refuses", async () => {
 			const portfolio = getMockPortfolio();
 

@@ -6,6 +6,7 @@ import { Delivery } from "../../../../../models/Delivery";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
 import type { IWorkItem } from "../../../../../models/WorkItem";
+import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import DeliverySection from "./DeliverySection";
 
 /**
@@ -167,6 +168,41 @@ describe("DeliverySection joint/marginal copy (Story #5587 slice-03)", () => {
 		// The failure this catches: a hardcoded "Features" that survives the rename and silently
 		// contradicts the rest of the UI for every org that renamed the term.
 		expect(screen.queryByText(/All Features by/)).not.toBeInTheDocument();
+	});
+
+	// The icon beside the name is the only place the selection mode is named in words, and MUI hands
+	// the tooltip text to the icon as its accessible name — so the reader on a screen reader hears the
+	// same sentence a mouse would show. All three modes go through one table because two of them said
+	// "Features" out loud until now, in a UI where the third already said the tenant's word.
+	it.each([
+		["Manual", undefined, "Manual: Epics are fixed"],
+		[
+			"Rule-Based",
+			DeliverySelectionMode.RuleBased,
+			"Rule-Based: Epics automatically update based on rules",
+		],
+	] as [string, DeliverySelectionMode | undefined, string][])(
+		"says what a %s delivery follows in the renamed vocabulary",
+		(_label, selectionMode, expected) => {
+			terminology.current = { ...DEFAULT_TERMINOLOGY, features: "Epics" };
+
+			renderSection(deliveryWith({ selectionMode }));
+
+			expect(screen.getByLabelText(expected)).toBeInTheDocument();
+			expect(screen.queryByLabelText(/Features/)).not.toBeInTheDocument();
+		},
+	);
+
+	it("names the date field with the renamed term rather than a literal", () => {
+		terminology.current = { ...DEFAULT_TERMINOLOGY, delivery: "Launch" };
+		const delivery = deliveryWith({});
+
+		renderSection(delivery);
+
+		expect(
+			screen.getByText(`Launch Date: ${delivery.getFormattedDate()}`),
+		).toBeInTheDocument();
+		expect(screen.queryByText(/^Delivery Date:/)).not.toBeInTheDocument();
 	});
 
 	it("keeps the full label reachable under a long renamed term (deferred question 8)", () => {

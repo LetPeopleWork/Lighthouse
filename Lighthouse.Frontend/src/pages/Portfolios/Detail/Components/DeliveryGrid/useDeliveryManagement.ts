@@ -345,6 +345,10 @@ export const useDeliveryManagement = ({
 	 * The server ignores everything but the mode here: a delivery let go of its source keeps the name,
 	 * the date and the work the source last gave it. They are sent back unchanged anyway, so nothing
 	 * about this call reads as an edit, and from here on they are the reader's to change.
+	 *
+	 * Which is why the rows already on screen are left alone. Throwing them away here empties the
+	 * table of an expanded delivery the moment the reader confirms a dialog that promised the
+	 * opposite, and nothing on this path ever puts them back.
 	 */
 	const handleUnbindDelivery = async (delivery: Delivery) => {
 		try {
@@ -355,11 +359,6 @@ export const useDeliveryManagement = ({
 				featureIds: delivery.features,
 				selectionMode: DeliverySelectionMode.Manual,
 				concurrencyToken: delivery.concurrencyToken,
-			});
-			setLoadedFeatures((prev) => {
-				const next = new Map(prev);
-				next.delete(delivery.id);
-				return next;
 			});
 			await fetchDeliveries();
 		} catch (error) {

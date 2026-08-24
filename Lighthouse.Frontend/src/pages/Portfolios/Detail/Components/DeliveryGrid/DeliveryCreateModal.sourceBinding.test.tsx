@@ -1,7 +1,16 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
-import type { IDeliverySourceOption } from "../../../../../models/Delivery/DeliverySource";
+import type {
+	IDeliverySource,
+	IDeliverySourceOption,
+} from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
@@ -261,6 +270,78 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		expect(selectionModeButtons().map((b) => b.textContent)).toEqual([
 			"Jira Release",
 		]);
+	});
+
+	const withSourcesStillOnTheirWay = () => {
+		const deliveryService = serviceOffering(allOptions);
+		let announceTheSources: (sources: IDeliverySource[]) => void = () => {};
+		deliveryService.getDeliverySources = vi.fn().mockImplementation(
+			() =>
+				new Promise<IDeliverySource[]>((resolve) => {
+					announceTheSources = resolve;
+				}),
+		);
+
+		// Settled inside act so that every re-render the arriving list sets off has finished before
+		// anything is read off the screen. Let one of them land afterwards instead and the screen
+		// still reads the way it did a moment ago — which is how a first draft of the test below
+		// went green against the very bug it was written for.
+		const announce = async () => {
+			await act(async () => {
+				announceTheSources([JIRA_RELEASE_SOURCE]);
+			});
+		};
+
+		return { deliveryService, announce };
+	};
+
+	const tabPressedState = () =>
+		Object.fromEntries(
+			selectionModeButtons().map((button) => [
+				button.textContent,
+				button.getAttribute("aria-pressed"),
+			]),
+		);
+
+	// The tabs are rebuilt when the connection finally says which sources it offers, and the form
+	// works out again which one the Launch belongs on. A reader who reached for another tab while
+	// that answer was on its way must still be standing on it afterwards: on the tab they were put
+	// back on the rule builder is gone, and a save writes down that tab's idea of the Launch.
+	it("leaves the reader on the tab they picked when the source list lands afterwards", async () => {
+		const { deliveryService, announce } = withSourcesStillOnTheirWay();
+
+		renderEditModal(deliveryService, chosenByHand());
+
+		fireEvent.click(screen.getByRole("button", { name: "Rule-Based" }));
+		expect(tabPressedState()).toEqual({
+			Manual: "false",
+			"Rule-Based": "true",
+		});
+
+		await announce();
+
+		expect(tabPressedState()).toEqual({
+			Manual: "false",
+			"Rule-Based": "true",
+			"Jira Release": "false",
+		});
+	});
+
+	// The mirror image of the case above, and the one reason the second answer is listened to at all:
+	// the tab this Launch belongs on did not exist when the form opened.
+	it("moves onto the Release tab once the source list names it", async () => {
+		const { deliveryService, announce } = withSourcesStillOnTheirWay();
+
+		renderEditModal(deliveryService, followingARelease());
+
+		expect(tabPressedState()).toEqual({
+			Manual: "true",
+			"Rule-Based": "false",
+		});
+
+		await announce();
+
+		expect(tabPressedState()).toEqual({ "Jira Release": "true" });
 	});
 
 	it("still offers every tab when the Launch was chosen by hand", async () => {

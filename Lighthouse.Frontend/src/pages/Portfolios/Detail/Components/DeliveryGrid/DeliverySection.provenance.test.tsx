@@ -1,4 +1,10 @@
-import { render, screen, within } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
@@ -192,5 +198,51 @@ describe("DeliverySection source provenance", () => {
 
 		expect(onUnbind).toHaveBeenCalledTimes(1);
 		expect(onUnbind.mock.calls[0][0].id).toBe(42);
+	});
+
+	// The dialog fades out rather than vanishing, so the button that started the unbind is still on
+	// screen and still under the pointer. A second press sends the version number the first press has
+	// already spent, and the reader is told someone else changed the delivery moments after their own
+	// change went through.
+	it("takes the answer once however many times it is given", async () => {
+		const onUnbind = vi.fn();
+		renderSection({ selectionMode: "SourceBound", onUnbind });
+
+		await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+
+		const confirm = within(screen.getByRole("dialog")).getByRole("button", {
+			name: UNBIND_LABEL,
+		});
+		await userEvent.click(confirm);
+		// Dispatched rather than pointed at: user-event refuses to drive a control it can see is
+		// disabled, which is the very thing under test — refusing here would prove nothing.
+		fireEvent.click(confirm);
+
+		expect(confirm).toBeDisabled();
+		expect(onUnbind).toHaveBeenCalledTimes(1);
+	});
+
+	// Refusing the second press must not mean refusing every press after it: a delivery whose unbind
+	// failed on the server is still bound, and the reader has to be able to try again.
+	it("takes the answer again the next time the question is asked", async () => {
+		const onUnbind = vi.fn();
+		renderSection({ selectionMode: "SourceBound", onUnbind });
+
+		const askTwice = async () => {
+			await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+			await userEvent.click(
+				within(screen.getByRole("dialog")).getByRole("button", {
+					name: UNBIND_LABEL,
+				}),
+			);
+			await waitFor(() => {
+				expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+			});
+		};
+
+		await askTwice();
+		await askTwice();
+
+		expect(onUnbind).toHaveBeenCalledTimes(2);
 	});
 });

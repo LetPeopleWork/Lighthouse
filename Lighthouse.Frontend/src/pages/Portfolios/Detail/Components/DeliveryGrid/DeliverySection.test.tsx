@@ -13,9 +13,14 @@ const { mockGetFeatureWorkItems } = vi.hoisted(() => ({
 }));
 
 // Mock dependencies
+const TERMS: Record<string, string> = {
+	feature: "Feature",
+	delivery: "Delivery",
+};
+
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) => (key === "feature" ? "Feature" : key),
+		getTerm: (key: string) => TERMS[key] ?? key,
 	}),
 }));
 
@@ -163,7 +168,7 @@ describe("DeliverySection", () => {
 		);
 
 		expect(
-			screen.getByText("No features in this delivery."),
+			screen.getByText("No features in this Delivery."),
 		).toBeInTheDocument();
 	});
 
