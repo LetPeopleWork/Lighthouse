@@ -21,6 +21,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public string? Mode { get; set; }
 
+        public string? SourceKey { get; set; }
+
+        public string? SourceReference { get; set; }
+
         public Guid? ConcurrencyToken { get; set; }
     }
 }

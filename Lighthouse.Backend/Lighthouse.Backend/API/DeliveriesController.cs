@@ -2,11 +2,13 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +28,8 @@ namespace Lighthouse.Backend.API
         IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
         IBlackoutPeriodService blackoutPeriodService,
         DeliveryMetricValuesProjector deliveryMetricValuesProjector,
-        ILighthouseClock clock)
+        ILighthouseClock clock,
+        IDeliverySourceResolver deliverySourceResolver)
 #pragma warning restore S107
         : ControllerBase
     {
@@ -130,14 +133,10 @@ namespace Lighthouse.Backend.API
             int portfolioId,
             [FromBody] UpdateDeliveryRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name))
+            var clientSuppliedFieldsError = VerifyClientSuppliedFields(request);
+            if (clientSuppliedFieldsError != null)
             {
-                return BadRequest("Name is required");
-            }
-
-            if (DateOnly.FromDateTime(request.Date) <= clock.Today)
-            {
-                return BadRequest("Delivery date must be in the future");
+                return clientSuppliedFieldsError;
             }
 
             var deliveryRequestErrorCode = VerifyDeliveryRequest(portfolioId, request);
@@ -152,13 +151,15 @@ namespace Lighthouse.Backend.API
                 return NotFound($"Portfolio with ID {portfolioId} not found");
             }
 
-            var utcDate = request.Date.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
-                : request.Date.ToUniversalTime();
+            var (sourceError, sourcePreview) = await ResolveBoundSource(portfolio, request);
+            if (sourceError != null)
+            {
+                return sourceError;
+            }
 
-            var delivery = new Delivery(request.Name, utcDate, portfolioId, clock.Today);
+            var delivery = NewDelivery(request, portfolioId, sourcePreview);
 
-            var selectionError = ApplyFeatureSelection(request, delivery);
+            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview);
             if (selectionError != null)
             {
                 return selectionError;
@@ -216,7 +217,7 @@ namespace Lighthouse.Backend.API
             existingDelivery.Rename(request.Name);
             existingDelivery.Reschedule(utcDate);
 
-            var selectionError = ApplyFeatureSelection(request, existingDelivery);
+            var selectionError = ApplyFeatureSelection(request, existingDelivery, null);
             if (selectionError != null)
             {
                 return selectionError;
@@ -260,7 +261,7 @@ namespace Lighthouse.Backend.API
 
             if (!licenseService.CanUsePremiumFeatures())
             {
-                return StatusCode(403, "Archiving a delivery requires a premium license");
+                return StatusCode(StatusCodes.Status403Forbidden, "Archiving a delivery requires a premium license");
             }
 
             var delivery = deliveryRepository.GetById(deliveryId);
@@ -360,16 +361,86 @@ namespace Lighthouse.Backend.API
             return null;
         }
 
-        private IActionResult? ApplyFeatureSelection(UpdateDeliveryRequest request, Delivery delivery)
+        /// <summary>
+        /// A Delivery that follows a Release elsewhere is told what it contains by the Release, so the
+        /// name, the date and the Feature ids in the payload are not read at all on that path - not
+        /// compared with the Release and not refused for differing. The client keeps sending them
+        /// because one payload shape serves all three modes.
+        /// </summary>
+        private IActionResult? ApplyFeatureSelection(
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview)
         {
             return request.SelectionMode switch
             {
                 DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
                 DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
+                DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview),
                 // The enum converter accepts any number, so a caller can name a mode that does not
                 // exist. That is a malformed request rather than something broken on our side.
                 _ => BadRequest($"Delivery Mode {request.SelectionMode} is not supported"),
             };
+        }
+
+        private BadRequestObjectResult? BindDeliveryToSource(
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview)
+        {
+            if (sourcePreview?.Resolution is not DeliverySourceResolution.Resolved)
+            {
+                return BadRequest("A delivery can only follow a source that resolved");
+            }
+
+            delivery.ReplaceFeatures(sourcePreview.TrackedFeatures);
+            delivery.BindToSource(request.SourceKey!, request.SourceReference!);
+            return null;
+        }
+
+        /// <summary>
+        /// A remote that could not be asked is answered apart from a Release that is gone: reporting a
+        /// network blip as a deleted Release sends somebody off to re-create a Delivery whose Release
+        /// never moved.
+        /// </summary>
+        private async Task<(IActionResult? Error, PortfolioSourcePreview? Preview)> ResolveBoundSource(
+            Portfolio portfolio, UpdateDeliveryRequest request)
+        {
+            if (request.SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                return (null, null);
+            }
+
+            var previews = await deliverySourceResolver.ResolveForPortfolio(
+                portfolio, request.SourceKey!, [request.SourceReference!]);
+
+            if (!previews.TryGetValue(request.SourceReference!, out var preview))
+            {
+                return (StatusCode(StatusCodes.Status503ServiceUnavailable, SourceCouldNotBeAsked), null);
+            }
+
+            return preview.Resolution switch
+            {
+                DeliverySourceResolution.Resolved => (null, preview),
+                DeliverySourceResolution.NotFound => (NotFound($"Source {request.SourceReference} does not exist"), null),
+                DeliverySourceResolution.NoDate => (BadRequest($"Source {request.SourceReference} carries no date"), null),
+                _ => (StatusCode(StatusCodes.Status503ServiceUnavailable, SourceCouldNotBeAsked), null),
+            };
+        }
+
+        private BadRequestObjectResult? VerifyClientSuppliedFields(UpdateDeliveryRequest request)
+        {
+            if (request.SelectionMode == DeliverySelectionMode.SourceBound)
+            {
+                return string.IsNullOrEmpty(request.SourceKey) || string.IsNullOrEmpty(request.SourceReference)
+                    ? BadRequest("A source-bound delivery must name the source it follows")
+                    : null;
+            }
+
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                return BadRequest("Name is required");
+            }
+
+            return DateOnly.FromDateTime(request.Date) <= clock.Today
+                ? BadRequest("Delivery date must be in the future")
+                : null;
         }
 
         private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(UpdateDeliveryRequest request, Delivery delivery)
@@ -425,24 +496,28 @@ namespace Lighthouse.Backend.API
         {
             if (request.SelectionMode == DeliverySelectionMode.RuleBased)
             {
-                var errorStatus = CheckRuleBasedDeliveryPrerequisites(request);
-                if (errorStatus != null)
-                {
-                    return errorStatus;
-                }
+                return CheckRuleBasedDeliveryPrerequisites(request);
             }
-            else
-            {
-                if (licenseService.CanUsePremiumFeatures())
-                {
-                    return null;
-                }
 
-                var existingDeliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
-                if (existingDeliveries.Any())
-                {
-                    return StatusCode(403, "Free users can only have 1 delivery per portfolio");
-                }
+            // Following a Release is premium in its own right rather than by counting Deliveries: the
+            // free-tier cap below only bites once a Portfolio already holds one, so a mode falling
+            // through to it would hand every free-tier user their first bound Delivery for nothing.
+            if (request.SelectionMode == DeliverySelectionMode.SourceBound)
+            {
+                return licenseService.CanUsePremiumFeatures()
+                    ? null
+                    : StatusCode(StatusCodes.Status403Forbidden, "Following a delivery source requires a premium license");
+            }
+
+            if (licenseService.CanUsePremiumFeatures())
+            {
+                return null;
+            }
+
+            var existingDeliveries = deliveryRepository.GetByPortfolioAsync(portfolioId);
+            if (existingDeliveries.Any())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Free users can only have 1 delivery per portfolio");
             }
 
             return null;
@@ -452,7 +527,7 @@ namespace Lighthouse.Backend.API
         {
             if (!licenseService.CanUsePremiumFeatures())
             {
-                return StatusCode(403, "Rule-based delivery selection requires a premium license");
+                return StatusCode(StatusCodes.Status403Forbidden, "Rule-based delivery selection requires a premium license");
             }
 
             if (request.Rules == null || request.Rules.Count == 0)
@@ -462,6 +537,28 @@ namespace Lighthouse.Backend.API
 
             return null;
         }
+
+        /// <summary>
+        /// The Release the Delivery follows owns its name and its date, so a source-bound create reads
+        /// neither from the payload. The two are deliberately not compared with what the client sent
+        /// either: with no comparison there is no difference to refuse, which is what keeps a browser
+        /// rendering the day one off from ever looking like somebody trying to edit the date.
+        /// </summary>
+        private Delivery NewDelivery(UpdateDeliveryRequest request, int portfolioId, PortfolioSourcePreview? sourcePreview)
+        {
+            if (sourcePreview?.Resolution is DeliverySourceResolution.Resolved resolved)
+            {
+                return new Delivery(resolved.Snapshot.Name, resolved.Snapshot.Date, portfolioId, clock.Today);
+            }
+
+            var utcDate = request.Date.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
+                : request.Date.ToUniversalTime();
+
+            return new Delivery(request.Name, utcDate, portfolioId, clock.Today);
+        }
+
+        private const string SourceCouldNotBeAsked = "The system holding the source could not be reached";
 
         private static DateTime ForecastWindowEnd(List<Delivery> deliveries, DateTime today)
         {

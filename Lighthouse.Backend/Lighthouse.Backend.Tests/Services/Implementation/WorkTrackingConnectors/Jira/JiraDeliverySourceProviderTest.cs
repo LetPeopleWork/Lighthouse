@@ -278,6 +278,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// Jira sends a bare calendar day. It is read into UTC midnight here and handed on unchanged,
+        /// so nothing downstream needs a time zone to make sense of it - and putting one back through a
+        /// named zone would move the day rather than settle it.
+        /// </summary>
+        [TestCase("2026-01-01", 2026, 1, 1)]
+        [TestCase("2026-08-22", 2026, 8, 22)]
+        [TestCase("2026-12-31", 2026, 12, 31)]
+        public void A_bare_Jira_release_date_is_read_as_that_day_at_UTC_midnight(
+            string dateJiraSent, int year, int month, int day)
+        {
+            var (options, _) = JiraReleaseVersionReader.ReadOptionPage(AVersionDated(dateJiraSent), TheDemoProject);
+
+            Assert.That(options.Single().Date, Is.EqualTo(new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc)));
+        }
+
+        [Test]
+        public void A_version_carrying_no_release_date_key_at_all_is_read_as_dateless_rather_than_as_a_payload_that_failed()
+        {
+            var (options, isLastPage) = JiraReleaseVersionReader.ReadOptionPage(CapturedVersionsPayload, TheDemoProject);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Single(option => option.Id == TheUndatedRelease).Date, Is.Null);
+                Assert.That(options, Has.Count.EqualTo(3),
+                    "the entry without the key is still carried - a missing date must not cost the reader the Release, nor the two around it.");
+                Assert.That(isLastPage, Is.True);
+            }
+        }
+
+        private static string AVersionDated(string releaseDate)
+        {
+            return $$"""
+                {
+                  "isLast": true,
+                  "values": [
+                    {
+                      "id": "10011",
+                      "name": "Release 6.0",
+                      "archived": false,
+                      "released": false,
+                      "releaseDate": "{{releaseDate}}"
+                    }
+                  ]
+                }
+                """;
+        }
+
         [Test]
         public void A_Release_Jira_says_has_shipped_is_read_as_shipped()
         {

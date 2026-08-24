@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Mvc;
@@ -55,7 +56,8 @@ namespace Lighthouse.Backend.Tests.API
                 deliveryMetricSnapshotRepository.Object,
                 Mock.Of<IBlackoutPeriodService>(),
                 new DeliveryMetricValuesProjector(Mock.Of<IBlackoutPeriodService>()),
-                TestToday.Clock);
+                TestToday.Clock,
+                Mock.Of<IDeliverySourceResolver>());
         }
 
         [Test]

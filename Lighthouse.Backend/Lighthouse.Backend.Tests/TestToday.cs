@@ -22,9 +22,9 @@ namespace Lighthouse.Backend.Tests
         internal static DateTime AmbientAsUtcMidnight => Clock.TodayAsUtcMidnight;
 
         /// <summary>
-        /// A date the <see cref="Models.Delivery"/> constructor's own guard will accept, for tests
-        /// whose subject is not the delivery date. A literal passes until the calendar reaches it
-        /// and then fails every run after.
+        /// A date far enough ahead that the controller's "must be in the future" guard accepts it,
+        /// for tests whose subject is not the delivery date. A literal passes until the calendar
+        /// reaches it and then fails every run after.
         /// </summary>
         internal static DateTime AFutureDate => Clock.TodayAsUtcMidnight.AddDays(30);
 

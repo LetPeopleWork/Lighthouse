@@ -133,6 +133,8 @@ namespace Lighthouse.Backend.Models
 
         public void BindToSource(string sourceKey, string sourceReference)
         {
+            RefuseWhenArchived();
+
             if (SelectionMode == DeliverySelectionMode.SourceBound)
             {
                 throw DeliverySourceBoundException.AlreadyBound(Id);
@@ -151,6 +153,8 @@ namespace Lighthouse.Backend.Models
         /// </summary>
         public void Unbind()
         {
+            RefuseWhenArchived();
+
             if (SelectionMode != DeliverySelectionMode.SourceBound)
             {
                 throw DeliverySourceBoundException.NotBound(Id);

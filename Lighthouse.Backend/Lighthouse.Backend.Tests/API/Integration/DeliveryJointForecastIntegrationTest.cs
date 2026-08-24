@@ -26,13 +26,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const int TargetDays = 10;
         private const int TailDays = 20;
 
-        // AC-01.12: no schema change, no new DTO field, no new endpoint. Only the VALUES move.
+        // Every key the deliveries payload carries. The CLI and the MCP server read this payload by
+        // name, so a key silently appearing or vanishing breaks them somewhere nobody is looking -
+        // which is why the whole set is written out here and compared exactly. Growing it is a
+        // deliberate act; a diff to this list is the moment to ask whether those clients were told.
         private static readonly string[] ExpectedDeliveryPayloadKeys =
         [
             "id", "name", "date", "portfolioId", "likelihoodPercentage", "teamsWithoutForecast",
             "completionDates", "progress", "remainingWork", "totalWork", "features",
             "featureLikelihoods", "hasSufficientData", "metricSnapshotCount", "selectionMode",
             "rules", "mode", "concurrencyToken",
+            "sourceKey", "sourceReference", "sourceLastSyncedOn", "sourceUnavailableReason",
         ];
 
         private static readonly JsonSerializerOptions JsonOptions = new()

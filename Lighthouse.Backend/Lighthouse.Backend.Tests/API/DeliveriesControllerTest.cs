@@ -8,9 +8,12 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
@@ -29,6 +32,8 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
         private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
+        private Mock<IDeliverySourceResolver> deliverySourceResolverMock;
+        private Delivery? persistedDelivery;
 
         [SetUp]
         public void Setup()
@@ -40,6 +45,9 @@ namespace Lighthouse.Backend.Tests.API
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             deliveryMetricSnapshotRepositoryMock = new Mock<IDeliveryMetricSnapshotRepository>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            deliverySourceResolverMock = new Mock<IDeliverySourceResolver>();
+            persistedDelivery = null;
+            deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>())).Callback<Delivery>(delivery => persistedDelivery = delivery);
 
             blackoutPeriodServiceMock
                 .Setup(x => x.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
@@ -341,7 +349,8 @@ namespace Lighthouse.Backend.Tests.API
                 deliveryMetricSnapshotRepositoryMock.Object,
                 blackoutPeriodServiceMock.Object,
                 new DeliveryMetricValuesProjector(blackoutPeriodServiceMock.Object),
-                clock);
+                clock,
+                deliverySourceResolverMock.Object);
         }
 
         [Test]
@@ -1167,6 +1176,254 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(existingDelivery.RuleSchemaVersion, Is.Null);
                 Assert.That(existingDelivery.Features, Has.Count.EqualTo(1));
             }
+        }
+
+        private const string JiraReleaseSourceKey = "jira-release";
+        private const string TheReleaseJiraHolds = "10412";
+        private const string TheNameJiraHolds = "Autumn Release";
+        private const string TheNameTheBrowserSent = "Autumn Release - typed by hand";
+
+        private static readonly DateTime TheDayTheReleaseShipped = new(2026, 2, 3, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime TheDayTheBrowserSent = new(2026, 2, 2, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly string[] TheWorkTaggedAgainstTheRelease = ["LGH-1"];
+
+        private static readonly List<int> FeatureIdsThatWouldNotResolve = [999];
+
+        /// <summary>
+        /// What a Delivery ends up holding, read back off the aggregate that was handed to the
+        /// repository. Named as a whole rather than asserted one property at a time, so a row that
+        /// must NOT have gained a source binding says so in the same place as the row that must.
+        /// </summary>
+        public sealed record PersistedDelivery(
+            string Name,
+            DateTime Date,
+            DeliverySelectionMode SelectionMode,
+            string? SourceKey,
+            string? SourceReference,
+            bool HoldsARuleDefinition,
+            int FeatureCount);
+
+        /// <summary>
+        /// The Release is what the Delivery follows, so its name, its date and the work tagged against
+        /// it are what gets stored. Whatever the browser had on screen is neither compared with them
+        /// nor refused for differing - it is simply never read, which is what keeps a browser that
+        /// renders the day one off from ever being taken for somebody trying to edit the date.
+        /// </summary>
+        [Test]
+        public async Task Creating_a_Delivery_from_a_Release_persists_Jiras_name_date_and_Features_and_ignores_whatever_the_client_sent()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+
+            var result = await CreateSubject().CreateDelivery(1, ADeliveryFollowingTheRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(WhatWasPersisted(), Is.EqualTo(new PersistedDelivery(
+                    TheNameJiraHolds,
+                    TheDayTheReleaseShipped,
+                    DeliverySelectionMode.SourceBound,
+                    JiraReleaseSourceKey,
+                    TheReleaseJiraHolds,
+                    false,
+                    1)));
+                deliveryRepositoryMock.Verify(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()), Times.Never,
+                    "the Feature ids the browser sent are not looked up at all - had they been, the ones in this request do not exist and the create would have failed instead of ignoring them.");
+            }
+        }
+
+        /// <summary>
+        /// The Manual and Rule-based rows are the regression proof: what those two payloads produce is
+        /// unchanged by a Delivery gaining a third way of choosing its Features.
+        /// </summary>
+        [TestCaseSource(nameof(EveryWayOfChoosingWhatADeliveryContains))]
+        public async Task What_a_created_Delivery_holds_is_settled_by_how_its_Features_were_chosen(
+            UpdateDeliveryRequest request, PersistedDelivery expected)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+
+            var result = await CreateSubject().CreateDelivery(1, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(WhatWasPersisted(), Is.EqualTo(expected));
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryWayOfChoosingWhatADeliveryContains()
+        {
+            yield return new TestCaseData(
+                new UpdateDeliveryRequest
+                {
+                    Name = "Chosen By Hand",
+                    Date = TestToday.AFutureDate,
+                    FeatureIds = [],
+                    SelectionMode = DeliverySelectionMode.Manual,
+                },
+                new PersistedDelivery("Chosen By Hand", TestToday.AFutureDate, DeliverySelectionMode.Manual, null, null, false, 0));
+
+            yield return new TestCaseData(
+                new UpdateDeliveryRequest
+                {
+                    Name = "Chosen By Rule",
+                    Date = TestToday.AFutureDate,
+                    FeatureIds = [],
+                    SelectionMode = DeliverySelectionMode.RuleBased,
+                    Rules = [new WorkItemRuleCondition { FieldKey = "state", Operator = "equals", Value = "Doing" }],
+                },
+                new PersistedDelivery("Chosen By Rule", TestToday.AFutureDate, DeliverySelectionMode.RuleBased, null, null, true, 0));
+
+            yield return new TestCaseData(
+                ADeliveryFollowingTheRelease(),
+                new PersistedDelivery(
+                    TheNameJiraHolds, TheDayTheReleaseShipped, DeliverySelectionMode.SourceBound,
+                    JiraReleaseSourceKey, TheReleaseJiraHolds, false, 1));
+        }
+
+        /// <summary>
+        /// A remote that could not be asked and a Release that is gone are answered differently on
+        /// purpose: reporting a network blip as a deleted Release sends somebody off to re-create a
+        /// Delivery whose Release never moved.
+        /// </summary>
+        [TestCaseSource(nameof(EveryVerdictAReleaseCanComeBackWith))]
+        public async Task A_Release_that_does_not_resolve_leaves_no_Delivery_behind_and_says_which_kind_of_no_it_was(
+            DeliverySourceResolution resolution, int expectedStatusCode, bool expectedToPersist)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheReleaseResolvesTo(resolution, AFeature(1, "Checkout"));
+
+            var result = await CreateSubject().CreateDelivery(1, ADeliveryFollowingTheRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusCodeOf(result), Is.EqualTo(expectedStatusCode));
+                Assert.That(persistedDelivery != null, Is.EqualTo(expectedToPersist));
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryVerdictAReleaseCanComeBackWith()
+        {
+            yield return new TestCaseData(AResolvedRelease(), StatusCodes.Status200OK, true);
+            yield return new TestCaseData(new DeliverySourceResolution.NotFound(), StatusCodes.Status404NotFound, false);
+            yield return new TestCaseData(new DeliverySourceResolution.NoDate(TheNameJiraHolds), StatusCodes.Status400BadRequest, false);
+            yield return new TestCaseData(
+                new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.CapabilityWithdrawn),
+                StatusCodes.Status503ServiceUnavailable,
+                false);
+        }
+
+        /// <summary>
+        /// The free-tier cap counts Deliveries, so a mode that merely fell through to it would let the
+        /// first bound Delivery in a Portfolio through and refuse only the second.
+        /// </summary>
+        [TestCase(true, 0, StatusCodes.Status200OK)]
+        [TestCase(true, 1, StatusCodes.Status200OK)]
+        [TestCase(false, 0, StatusCodes.Status403Forbidden)]
+        [TestCase(false, 1, StatusCodes.Status403Forbidden)]
+        public async Task Following_a_Release_is_premium_from_the_first_Delivery_in_a_Portfolio_onwards(
+            bool hasPremiumLicense, int deliveriesAlreadyInThePortfolio, int expectedStatusCode)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasPremiumLicense);
+            deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(1))
+                .Returns(Enumerable.Range(0, deliveriesAlreadyInThePortfolio).Select(_ => GetTestDelivery()).ToList());
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+
+            var result = await CreateSubject().CreateDelivery(1, ADeliveryFollowingTheRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusCodeOf(result), Is.EqualTo(expectedStatusCode));
+                Assert.That(persistedDelivery != null, Is.EqualTo(hasPremiumLicense));
+            }
+        }
+
+        [TestCase(null, TheReleaseJiraHolds)]
+        [TestCase("", TheReleaseJiraHolds)]
+        [TestCase(JiraReleaseSourceKey, null)]
+        [TestCase(JiraReleaseSourceKey, "")]
+        public async Task A_Delivery_that_names_no_Release_to_follow_is_refused_rather_than_bound_to_nothing(
+            string? sourceKey, string? sourceReference)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+
+            var request = ADeliveryFollowingTheRelease();
+            request.SourceKey = sourceKey;
+            request.SourceReference = sourceReference;
+
+            var result = await CreateSubject().CreateDelivery(1, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+                Assert.That(persistedDelivery, Is.Null);
+            }
+        }
+
+        private static UpdateDeliveryRequest ADeliveryFollowingTheRelease()
+        {
+            return new UpdateDeliveryRequest
+            {
+                Name = TheNameTheBrowserSent,
+                Date = TheDayTheBrowserSent,
+                FeatureIds = FeatureIdsThatWouldNotResolve,
+                SelectionMode = DeliverySelectionMode.SourceBound,
+                SourceKey = JiraReleaseSourceKey,
+                SourceReference = TheReleaseJiraHolds,
+            };
+        }
+
+        private static DeliverySourceResolution.Resolved AResolvedRelease()
+        {
+            return new DeliverySourceResolution.Resolved(
+                new DeliverySourceSnapshot(TheNameJiraHolds, TheDayTheReleaseShipped, TheWorkTaggedAgainstTheRelease));
+        }
+
+        private static Feature AFeature(int id, string name)
+        {
+            return new Feature { Id = id, Name = name, ReferenceId = $"LGH-{id}", Order = "1000", Type = "Epic", State = "New" };
+        }
+
+        private void GivenTheReleaseResolvesTo(DeliverySourceResolution resolution, params Feature[] trackedFeatures)
+        {
+            deliverySourceResolverMock
+                .Setup(x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>
+                {
+                    [TheReleaseJiraHolds] = new(resolution, trackedFeatures, trackedFeatures.Length),
+                });
+        }
+
+        private PersistedDelivery? WhatWasPersisted()
+        {
+            if (persistedDelivery == null)
+            {
+                return null;
+            }
+
+            return new PersistedDelivery(
+                persistedDelivery.Name,
+                persistedDelivery.Date,
+                persistedDelivery.SelectionMode,
+                persistedDelivery.SourceKey,
+                persistedDelivery.SourceReference,
+                persistedDelivery.RuleDefinitionJson != null,
+                persistedDelivery.Features.Count);
+        }
+
+        private static int StatusCodeOf(IActionResult result)
+        {
+            return result switch
+            {
+                ObjectResult objectResult => objectResult.StatusCode ?? 0,
+                StatusCodeResult statusCodeResult => statusCodeResult.StatusCode,
+                _ => 0,
+            };
         }
     }
 }

@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WorkItemRules;
 
 namespace Lighthouse.Backend.API.DTO
@@ -49,6 +50,14 @@ namespace Lighthouse.Backend.API.DTO
 
         public DeliverySelectionMode SelectionMode { get; set; }
 
+        public string? SourceKey { get; set; }
+
+        public string? SourceReference { get; set; }
+
+        public DateTime? SourceLastSyncedOn { get; set; }
+
+        public DeliverySourceUnavailableReason? SourceUnavailableReason { get; set; }
+
         public List<WorkItemRuleCondition> Rules { get; set; } = [];
 
         public string Mode { get; set; } = WorkItemRuleSet.ModeAnd;
@@ -80,6 +89,10 @@ namespace Lighthouse.Backend.API.DTO
                 TeamsWithoutForecast = delivery.TeamsWithoutForecast.ToList(),
                 HasSufficientData = metrics.HasSufficientData,
                 SelectionMode = delivery.SelectionMode,
+                SourceKey = delivery.SourceKey,
+                SourceReference = delivery.SourceReference,
+                SourceLastSyncedOn = delivery.SourceLastSyncedOn,
+                SourceUnavailableReason = delivery.SourceUnavailableReason,
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
                 ConcurrencyToken = delivery.ConcurrencyToken,
