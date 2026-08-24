@@ -14,16 +14,24 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { useDeliveryManagement } from "./useDeliveryManagement";
 
+const { terminology } = vi.hoisted(() => ({
+	terminology: { current: {} as Record<string, string> },
+}));
+
 vi.mock("../../../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
-		getTerm: (key: string) =>
-			({
-				delivery: "Delivery",
-				deliveries: "Deliveries",
-				features: "Features",
-			})[key] ?? key,
+		getTerm: (key: string) => terminology.current[key] ?? key,
 	}),
 }));
+
+// The words a tenant who has renamed nothing sees, so most tests read like the shipped UI. Overriding
+// one of them is the only way a noun hardcoded in a message shows up, because with the seeded words in
+// place a literal and a lookup produce the same sentence.
+const SEEDED_TERMS: Record<string, string> = {
+	delivery: "Delivery",
+	deliveries: "Deliveries",
+	features: "Features",
+};
 
 // Mock the context
 const mockDeliveryService = {
@@ -118,6 +126,7 @@ describe("useDeliveryManagement", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		terminology.current = { ...SEEDED_TERMS };
 	});
 
 	describe("Initial State", () => {
@@ -130,6 +139,9 @@ describe("useDeliveryManagement", () => {
 			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
 
 			expect(result.current.deliveries).toEqual([]);
+			// Read before the connection has been asked: the rows render against this, and anything
+			// here that was not asked for would be named on screen as a source the portfolio follows.
+			expect(result.current.deliverySources).toEqual([]);
 			expect(result.current.isLoading).toBe(true);
 			expect(result.current.showCreateModal).toBe(false);
 			expect(result.current.selectedDelivery).toBeNull();
@@ -803,6 +815,55 @@ describe("useDeliveryManagement", () => {
 			// Should have called getFeaturesByIds twice (initial + reload)
 			expect(getFeaturesByIdsCallCount).toBe(2);
 		});
+
+		// The edit itself went through. What failed is the re-read of the rows an expanded delivery is
+		// showing, so the reader is left looking at the old ones with no sign of it unless we say so.
+		it("says the rows on an expanded delivery could not be re-read after an edit", async () => {
+			const expanded = getMockDelivery({ id: 1, features: [1, 2] });
+
+			terminology.current = { ...SEEDED_TERMS, features: "Epics" };
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([expanded]),
+			);
+			mockGetFeaturesByIds
+				.mockResolvedValueOnce([getMockFeature({ id: 1 })])
+				.mockRejectedValue(new Error("the connection is unreachable"));
+			mockApiServiceContext.deliveryService.update = vi
+				.fn()
+				.mockResolvedValue(undefined);
+
+			const { result } = renderHook(() =>
+				useDeliveryManagement({ portfolio: getMockPortfolio() }),
+			);
+
+			await waitFor(() => {
+				expect(result.current.isLoading).toBe(false);
+			});
+
+			act(() => {
+				result.current.handleToggleExpanded(1);
+			});
+
+			await waitFor(() => {
+				expect(result.current.loadedFeatures.has(1)).toBe(true);
+			});
+
+			await act(async () => {
+				await result.current.handleUpdateDelivery({
+					id: 1,
+					name: "Renamed",
+					date: "2025-12-25",
+					featureIds: [1, 2],
+				});
+			});
+
+			await waitFor(() => {
+				expect(mockShowError).toHaveBeenCalledWith(
+					"Failed to load Epics for Delivery",
+				);
+			});
+			expect(result.current.loadingFeaturesByDelivery.has(1)).toBe(false);
+		});
 	});
 
 	describe("Feature Expansion", () => {
@@ -1324,6 +1385,55 @@ describe("useDeliveryManagement", () => {
 			});
 
 			expect(result.current.deliverySources).toEqual([]);
+		});
+
+		// A connection that has answered once and then stops must leave nothing of its answer behind:
+		// the names it gave belonged to the portfolio that was on screen a moment ago, and showing them
+		// against another one would tell the reader this portfolio follows something it does not. Rows
+		// fall back to the raw stored key, which reads worse and is still true.
+		it("forgets the names it was given when the connection stops answering, and carries on", async () => {
+			const stillRunning = getMockDelivery({ id: 1, features: [1, 2] });
+
+			mockDeliveryService.getByPortfolio.mockResolvedValue(
+				portfolioDeliveries([stillRunning]),
+			);
+			mockGetFeaturesByIds.mockResolvedValue([getMockFeature({ id: 1 })]);
+			mockApiServiceContext.deliveryService.getDeliverySources = vi
+				.fn()
+				.mockResolvedValueOnce([
+					{ key: "jira-release", displayName: "Jira Release" },
+				])
+				.mockRejectedValue(new Error("the connection is unreachable"));
+
+			const { result, rerender } = renderHook(
+				({ portfolio }: { portfolio: Portfolio }) =>
+					useDeliveryManagement({ portfolio }),
+				{ initialProps: { portfolio: getMockPortfolio({ id: 1 }) } },
+			);
+
+			await waitFor(() => {
+				expect(result.current.deliverySources).toEqual([
+					{ key: "jira-release", displayName: "Jira Release" },
+				]);
+			});
+
+			rerender({ portfolio: getMockPortfolio({ id: 2 }) });
+
+			await waitFor(() => {
+				expect(result.current.deliverySources).toEqual([]);
+			});
+
+			// Nobody is interrupted over it, and the page keeps doing everything else it does.
+			expect(mockShowError).not.toHaveBeenCalled();
+			expect(result.current.deliveries).toHaveLength(1);
+
+			act(() => {
+				result.current.handleToggleExpanded(1);
+			});
+
+			await waitFor(() => {
+				expect(result.current.loadedFeatures.get(1)).toHaveLength(1);
+			});
 		});
 	});
 });
