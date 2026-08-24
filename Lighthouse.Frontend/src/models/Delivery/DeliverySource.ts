@@ -43,6 +43,15 @@ export type DeliverySourcePreviewEmptyReason = z.infer<
 	typeof DeliverySourcePreviewEmptyReasonSchema
 >;
 
+/**
+ * Why a Delivery that follows a source has stopped being able to read it. Absent while the binding
+ * is healthy, which is the ordinary case.
+ */
+export type DeliverySourceUnavailableReason =
+	| "SourceNotFound"
+	| "SourceHasNoDate"
+	| "CapabilityWithdrawn";
+
 const wireDate = z
 	.string()
 	.refine((value) => !Number.isNaN(Date.parse(value)))

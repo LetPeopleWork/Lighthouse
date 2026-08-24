@@ -1,11 +1,15 @@
 import { z } from "zod";
 
 /**
- * Selection mode for deliveries
+ * How a Delivery's Features are chosen. The numbers are the storage format: the server keeps this
+ * as a bare number, so the two lists have to agree member for member. Adding one here means adding
+ * it to DeliverySelectionMode.cs in the backend, and vice versa - nothing checks at runtime, and a
+ * mismatch reads every saved Delivery as a kind it never was.
  */
 export enum DeliverySelectionMode {
 	Manual = 0,
 	RuleBased = 1,
+	SourceBound = 2,
 }
 
 /**

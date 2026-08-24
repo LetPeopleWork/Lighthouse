@@ -1,6 +1,6 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IDelivery } from "../../models/Delivery";
+import type { Delivery, IDelivery } from "../../models/Delivery";
 import { Feature } from "../../models/Feature";
 import { DeliverySelectionMode } from "../../models/WorkItemRules";
 import { ApiError } from "./ApiError";
@@ -199,6 +199,179 @@ describe("DeliveryService", () => {
 			expect(mockedAxios.post).toHaveBeenCalledWith(
 				"/deliveries/12/unarchive",
 				{ concurrencyToken: "33333333-3333-3333-3333-333333333333" },
+			);
+		});
+	});
+
+	describe("a Delivery that follows a Release in the work tracking system", () => {
+		const aWireDelivery = (
+			binding: Record<string, unknown> = {},
+		): IDelivery => {
+			return {
+				id: 3,
+				name: "Autumn Release",
+				date: "2026-09-30T00:00:00Z",
+				portfolioId: 1,
+				features: [4, 5],
+				likelihoodPercentage: 80,
+				progress: 40,
+				remainingWork: 6,
+				totalWork: 10,
+				featureLikelihoods: [],
+				completionDates: [],
+				selectionMode: DeliverySelectionMode.Manual,
+				metricSnapshotCount: 0,
+				...binding,
+			} as IDelivery;
+		};
+
+		const bindingOf = (delivery: Delivery) => {
+			return {
+				name: delivery.name,
+				date: delivery.date,
+				features: delivery.features,
+				selectionMode: delivery.selectionMode,
+				sourceKey: delivery.sourceKey,
+				sourceReference: delivery.sourceReference,
+				sourceLastSyncedOn: delivery.sourceLastSyncedOn,
+				sourceUnavailableReason: delivery.sourceUnavailableReason,
+			};
+		};
+
+		const noBinding = {
+			name: "Autumn Release",
+			date: "2026-09-30T00:00:00Z",
+			features: [4, 5],
+			selectionMode: DeliverySelectionMode.Manual,
+			sourceKey: null,
+			sourceReference: null,
+			sourceLastSyncedOn: null,
+			sourceUnavailableReason: null,
+		};
+
+		// The numbers are the storage format on the far side: the server keeps this choice as a
+		// bare number, so a member that changes number re-reads every saved Delivery as a kind it
+		// never was, with no error anywhere. The server pins the same three in
+		// DeliverySelectionModePersistedValueTest.
+		it.each([
+			["Manual", DeliverySelectionMode.Manual, 0],
+			["RuleBased", DeliverySelectionMode.RuleBased, 1],
+			["SourceBound", DeliverySelectionMode.SourceBound, 2],
+		])(
+			"keeps %s on the number the server has already written against it",
+			(_name, wayOfChoosing, numberOnTheServer) => {
+				expect(wayOfChoosing).toBe(numberOnTheServer);
+			},
+		);
+
+		it.each([
+			[
+				"every field filled in",
+				{
+					selectionMode: DeliverySelectionMode.SourceBound,
+					sourceKey: "jira-versions",
+					sourceReference: "10432",
+					sourceLastSyncedOn: "2026-08-20T06:00:00Z",
+					sourceUnavailableReason: "SourceNotFound",
+				},
+				{
+					...noBinding,
+					selectionMode: DeliverySelectionMode.SourceBound,
+					sourceKey: "jira-versions",
+					sourceReference: "10432",
+					sourceLastSyncedOn: "2026-08-20T06:00:00Z",
+					sourceUnavailableReason: "SourceNotFound",
+				},
+			],
+			[
+				"every field sent as null",
+				{
+					sourceKey: null,
+					sourceReference: null,
+					sourceLastSyncedOn: null,
+					sourceUnavailableReason: null,
+				},
+				noBinding,
+			],
+			["no source fields at all", {}, noBinding],
+		])(
+			"reads %s without inventing a binding",
+			async (_case, wire, expected) => {
+				mockedAxios.get.mockResolvedValue({
+					data: { active: [aWireDelivery(wire)], archived: [] },
+				});
+
+				const result = await deliveryService.getByPortfolio(1);
+
+				expect(bindingOf(result.active[0])).toEqual(expected);
+			},
+		);
+
+		it("sends the source it follows when a new Delivery is bound to one", async () => {
+			mockedAxios.post.mockResolvedValue({});
+
+			await deliveryService.create({
+				portfolioId: 1,
+				name: "Autumn Release",
+				date: new Date("2026-09-30T00:00:00Z"),
+				featureIds: [4, 5],
+				selectionMode: DeliverySelectionMode.SourceBound,
+				sourceKey: "jira-versions",
+				sourceReference: "10432",
+			});
+
+			expect(mockedAxios.post).toHaveBeenCalledWith(
+				"/deliveries/portfolio/1",
+				expect.objectContaining({
+					selectionMode: 2,
+					sourceKey: "jira-versions",
+					sourceReference: "10432",
+				}),
+			);
+		});
+
+		it("sends the source it follows when an existing Delivery is bound to one", async () => {
+			mockedAxios.put.mockResolvedValue({});
+
+			await deliveryService.update({
+				deliveryId: 3,
+				name: "Autumn Release",
+				date: new Date("2026-09-30T00:00:00Z"),
+				featureIds: [4, 5],
+				selectionMode: DeliverySelectionMode.SourceBound,
+				sourceKey: "jira-versions",
+				sourceReference: "10432",
+			});
+
+			expect(mockedAxios.put).toHaveBeenCalledWith(
+				"/deliveries/3",
+				expect.objectContaining({
+					selectionMode: 2,
+					sourceKey: "jira-versions",
+					sourceReference: "10432",
+				}),
+			);
+		});
+
+		it("says a Delivery no longer follows anything by asking for manual selection, with no second call", async () => {
+			mockedAxios.put.mockResolvedValue({});
+
+			await deliveryService.update({
+				deliveryId: 3,
+				name: "Autumn Release",
+				date: new Date("2026-09-30T00:00:00Z"),
+				featureIds: [4, 5],
+				selectionMode: DeliverySelectionMode.Manual,
+			});
+
+			expect(mockedAxios.put).toHaveBeenCalledTimes(1);
+			expect(mockedAxios.put).toHaveBeenCalledWith(
+				"/deliveries/3",
+				expect.objectContaining({
+					selectionMode: 0,
+					sourceKey: undefined,
+					sourceReference: undefined,
+				}),
 			);
 		});
 	});

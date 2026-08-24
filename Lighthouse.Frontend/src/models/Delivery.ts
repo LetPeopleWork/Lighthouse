@@ -1,3 +1,4 @@
+import type { DeliverySourceUnavailableReason } from "./Delivery/DeliverySource";
 import { WhenForecast } from "./Forecasts/WhenForecast";
 import {
 	DeliverySelectionMode,
@@ -27,6 +28,10 @@ export interface IDelivery {
 	featureLikelihoods: IFeatureLikelihood[];
 	completionDates: WhenForecast[];
 	selectionMode: DeliverySelectionMode;
+	sourceKey?: string | null;
+	sourceReference?: string | null;
+	sourceLastSyncedOn?: string | null;
+	sourceUnavailableReason?: DeliverySourceUnavailableReason | null;
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
@@ -48,6 +53,10 @@ export class Delivery implements IDelivery {
 	featureLikelihoods!: IFeatureLikelihood[];
 	completionDates!: WhenForecast[];
 	selectionMode!: DeliverySelectionMode;
+	sourceKey!: string | null;
+	sourceReference!: string | null;
+	sourceLastSyncedOn!: string | null;
+	sourceUnavailableReason!: DeliverySourceUnavailableReason | null;
 	rules?: WorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
@@ -70,6 +79,10 @@ export class Delivery implements IDelivery {
 		delivery.hasSufficientData = data.hasSufficientData ?? true;
 		delivery.metricSnapshotCount = data.metricSnapshotCount ?? 0;
 		delivery.selectionMode = data.selectionMode ?? DeliverySelectionMode.Manual;
+		delivery.sourceKey = data.sourceKey ?? null;
+		delivery.sourceReference = data.sourceReference ?? null;
+		delivery.sourceLastSyncedOn = data.sourceLastSyncedOn ?? null;
+		delivery.sourceUnavailableReason = data.sourceUnavailableReason ?? null;
 		delivery.rules = data.rules?.map((r) =>
 			WorkItemRuleCondition.fromBackend(r),
 		);

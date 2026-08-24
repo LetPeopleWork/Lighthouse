@@ -34,16 +34,24 @@ export interface IDeliveryCreateOptions {
 	date: Date;
 	featureIds: number[];
 	selectionMode?: DeliverySelectionMode;
+	sourceKey?: string;
+	sourceReference?: string;
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 }
 
+/**
+ * Asking for manual selection is also how a Delivery stops following a source: the server drops the
+ * binding and keeps whatever name, date and Features the source last gave it.
+ */
 export interface IDeliveryUpdateOptions {
 	deliveryId: number;
 	name: string;
 	date: Date;
 	featureIds: number[];
 	selectionMode?: DeliverySelectionMode;
+	sourceKey?: string;
+	sourceReference?: string;
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
@@ -137,6 +145,8 @@ export class DeliveryService
 		date,
 		featureIds,
 		selectionMode = DeliverySelectionMode.Manual,
+		sourceKey,
+		sourceReference,
 		rules,
 		mode,
 	}: IDeliveryCreateOptions): Promise<void> {
@@ -146,6 +156,8 @@ export class DeliveryService
 				date: date.toISOString(),
 				featureIds,
 				selectionMode,
+				sourceKey,
+				sourceReference,
 				rules,
 				mode,
 			});
@@ -158,6 +170,8 @@ export class DeliveryService
 		date,
 		featureIds,
 		selectionMode = DeliverySelectionMode.Manual,
+		sourceKey,
+		sourceReference,
 		rules,
 		mode,
 		concurrencyToken,
@@ -168,6 +182,8 @@ export class DeliveryService
 				date: date.toISOString(),
 				featureIds,
 				selectionMode,
+				sourceKey,
+				sourceReference,
 				rules,
 				mode,
 				concurrencyToken,
