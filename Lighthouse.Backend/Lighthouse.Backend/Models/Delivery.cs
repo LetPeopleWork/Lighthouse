@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
@@ -19,7 +20,7 @@ namespace Lighthouse.Backend.Models
         private string? sourceKey;
         private string? sourceReference;
         private DateTime? sourceLastSyncedOn;
-        private int? sourceUnavailableReason;
+        private DeliverySourceUnavailableReason? sourceUnavailableReason;
 
         public Delivery(string name, DateTime date, int portfolioId, DateOnly today)
         {
@@ -85,21 +86,14 @@ namespace Lighthouse.Backend.Models
         public int? RuleSchemaVersion { get => ruleSchemaVersion; init => ruleSchemaVersion = value; }
 #pragma warning restore S2292
 
-        // These four belong in the database and are kept out of it only until the change that adds
-        // them to every provider at once. Mapping them without that change makes the model disagree
-        // with the migrations, and every boot against a real database then refuses to start.
 #pragma warning disable S2292 // An auto-property is exactly what these must not be: releasing a Delivery from the source it follows has to clear the first two from inside the aggregate, while callers may only set them as the Delivery is created.
-        [NotMapped]
         public string? SourceKey { get => sourceKey; init => sourceKey = value; }
 
-        [NotMapped]
         public string? SourceReference { get => sourceReference; init => sourceReference = value; }
 
-        [NotMapped]
         public DateTime? SourceLastSyncedOn { get => sourceLastSyncedOn; init => sourceLastSyncedOn = value; }
 
-        [NotMapped]
-        public int? SourceUnavailableReason { get => sourceUnavailableReason; init => sourceUnavailableReason = value; }
+        public DeliverySourceUnavailableReason? SourceUnavailableReason { get => sourceUnavailableReason; init => sourceUnavailableReason = value; }
 #pragma warning restore S2292
 
         public DateTime? ArchivedOn { get; private set; }

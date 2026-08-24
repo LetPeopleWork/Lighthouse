@@ -36,6 +36,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Portfolios", "DependencyOverrideAdditionalFieldDefinitionId", "INTEGER", "AddPortfolioDependencySettings"),
             new("Portfolios", "IgnoreDependencies", "boolean", "AddPortfolioDependencySettings"),
             new("Deliveries", "ArchivedOn", "timestamp with time zone", "AddDeliveryArchiveAndClosureRecord"),
+            new("Deliveries", "SourceKey", "TEXT", "AddDeliverySourceBinding"),
+            new("Deliveries", "SourceReference", "TEXT", "AddDeliverySourceBinding"),
+            new("Deliveries", "SourceLastSyncedOn", "timestamp with time zone", "AddDeliverySourceBinding"),
+            new("Deliveries", "SourceUnavailableReason", "INTEGER", "AddDeliverySourceBinding"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

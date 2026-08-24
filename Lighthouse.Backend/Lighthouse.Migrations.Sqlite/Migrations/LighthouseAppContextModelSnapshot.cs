@@ -411,6 +411,18 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("SelectionMode")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("SourceKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("SourceLastSyncedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceReference")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SourceUnavailableReason")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PortfolioId");
