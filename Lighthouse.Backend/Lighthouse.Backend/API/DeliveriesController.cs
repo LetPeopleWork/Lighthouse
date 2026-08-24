@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?", and Story #5640 adds the projector as the one place a Delivery's numbers are read; folding either into an aggregate with the unrelated repositories would hide it.
+#pragma warning disable S107 // Bug #5567 adds the clock as the named seam for "which calendar day is it?", Story #5640 adds the projector as the one place a Delivery's numbers are read, and Epic #5565 adds the source resolver as the one place a remote Release is asked about; folding any of them into an aggregate with the unrelated repositories would hide it.
     public class DeliveriesController(
         IDeliveryRepository deliveryRepository,
         IRepository<Portfolio> portfolioRepository,
@@ -265,6 +265,14 @@ namespace Lighthouse.Backend.API
         /// </summary>
         private IActionResult? VerifyUpdateRequest(UpdateDeliveryRequest request, bool releasingFromASource)
         {
+            // A mode nobody implements is refused before the Delivery is touched at all. Read later, the
+            // refusal would already have released a bound Delivery from its Release and moved the version
+            // an open browser is holding, on a request that is then answered with an error.
+            if (!Enum.IsDefined(request.SelectionMode))
+            {
+                return BadRequest(NoSuchSelectionMode(request.SelectionMode));
+            }
+
             if (releasingFromASource)
             {
                 return CheckSelectionModePrerequisites(request);
@@ -434,8 +442,13 @@ namespace Lighthouse.Backend.API
                 DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview),
                 // The enum converter accepts any number, so a caller can name a mode that does not
                 // exist. That is a malformed request rather than something broken on our side.
-                _ => BadRequest($"Delivery Mode {request.SelectionMode} is not supported"),
+                _ => BadRequest(NoSuchSelectionMode(request.SelectionMode)),
             };
+        }
+
+        private static string NoSuchSelectionMode(DeliverySelectionMode selectionMode)
+        {
+            return $"Delivery Mode {selectionMode} is not supported";
         }
 
         /// <summary>
@@ -463,6 +476,11 @@ namespace Lighthouse.Backend.API
         /// A remote that could not be asked is answered apart from a Release that is gone: reporting a
         /// network blip as a deleted Release sends somebody off to re-create a Delivery whose Release
         /// never moved.
+        ///
+        /// Whether the connection offers the named source at all is settled first, and separately. A
+        /// connection that does not know the name - because it was mistyped, or because this kind of
+        /// connection cannot read Releases in the first place - is a permanent state of affairs, and
+        /// asking the remote about it either throws or comes back looking exactly like an outage.
         /// </summary>
         private async Task<(IActionResult? Error, PortfolioSourcePreview? Preview)> ResolveBoundSource(
             Portfolio portfolio, UpdateDeliveryRequest request)
@@ -470,6 +488,11 @@ namespace Lighthouse.Backend.API
             if (request.SelectionMode != DeliverySelectionMode.SourceBound)
             {
                 return (null, null);
+            }
+
+            if (!deliverySourceResolver.OffersSource(portfolio, request.SourceKey!))
+            {
+                return (NotFound($"Portfolio with ID {portfolio.Id} offers no delivery source called '{request.SourceKey}'"), null);
             }
 
             var previews = await deliverySourceResolver.ResolveForPortfolio(

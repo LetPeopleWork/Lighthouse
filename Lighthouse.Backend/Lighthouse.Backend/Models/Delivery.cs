@@ -131,8 +131,17 @@ namespace Lighthouse.Backend.Models
             MarkAsChanged();
         }
 
+        /// <summary>
+        /// A Delivery that says it follows a Release while naming none is the state a refresh pass can
+        /// make no sense of: it would look for a Release with no name to look for, and answer that it
+        /// is gone. Nothing reaches this with a blank today, which is why it is checked here rather
+        /// than left to whichever caller is written next.
+        /// </summary>
         public void BindToSource(string sourceKey, string sourceReference)
         {
+            ArgumentException.ThrowIfNullOrEmpty(sourceKey);
+            ArgumentException.ThrowIfNullOrEmpty(sourceReference);
+
             RefuseWhenArchived();
 
             if (SelectionMode == DeliverySelectionMode.SourceBound)

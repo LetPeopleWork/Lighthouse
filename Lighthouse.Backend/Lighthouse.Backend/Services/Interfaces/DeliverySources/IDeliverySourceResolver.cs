@@ -27,5 +27,13 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
     {
         Task<IReadOnlyDictionary<string, PortfolioSourcePreview>> ResolveForPortfolio(
             Portfolio portfolio, string sourceKey, IReadOnlyList<string> sourceReferences);
+
+        /// <summary>
+        /// Whether the connection behind this Portfolio says it offers the named source at all. A
+        /// connection that cannot read remote delivery objects offers none, and so does a connection
+        /// asked for a name it does not know - both are permanent answers about what exists here,
+        /// which is why they must be told apart from a remote that could not be reached.
+        /// </summary>
+        bool OffersSource(Portfolio portfolio, string sourceKey);
     }
 }

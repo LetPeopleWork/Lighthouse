@@ -65,7 +65,10 @@ namespace Lighthouse.Backend.Tests.API
 
             deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Feature>());
 
-            portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(new Portfolio());
+            portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(ThePortfolio());
+            deliverySourceResolverMock
+                .Setup(x => x.OffersSource(It.IsAny<Portfolio>(), JiraReleaseSourceKey))
+                .Returns(true);
             rbacAdministrationServiceMock
                 .Setup(x => x.CanSatisfyRequirementAsync(
                     It.IsAny<ClaimsPrincipal>(),
@@ -1371,6 +1374,73 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        /// <summary>
+        /// A key the connection does not offer - one letter out of the one the picker sends - is
+        /// answered as something that does not exist here. Passed on to the connector instead, it comes
+        /// back as a thrown request the caller reads as Lighthouse being broken.
+        /// </summary>
+        [TestCaseSource(nameof(EveryWayADeliveryCanBePointedAtASource))]
+        public async Task A_source_key_the_connection_does_not_offer_is_answered_as_missing_rather_than_asked_about(
+            Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>> pointItAtTheSource)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheDeliveryBeingEditedIs(ADeliveryChosenByHand());
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
+
+            var request = ADeliveryFollowingTheRelease();
+            request.SourceKey = TheKeyOneLetterOut;
+
+            var result = await pointItAtTheSource(CreateSubject(), request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+                Assert.That(
+                    MessageIn(result),
+                    Is.EqualTo($"Portfolio with ID {ThePortfolioItLivesIn} offers no delivery source called '{TheKeyOneLetterOut}'"),
+                    "naming the key back is what tells a caller they asked for something that does not exist here, rather than that the Portfolio itself is missing.");
+                deliverySourceResolverMock.Verify(
+                    x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    Times.Never,
+                    "the Jira connector throws on a key it does not offer, so asking it would turn a typo into a 500.");
+                Assert.That(persistedDelivery, Is.Null);
+                deliveryRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryWayADeliveryCanBePointedAtASource()
+        {
+            yield return new TestCaseData((Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>>)(
+                    (controller, request) => controller.CreateDelivery(ThePortfolioItLivesIn, request)))
+                .SetName("Creating a Delivery that follows a source");
+            yield return new TestCaseData((Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>>)(
+                    (controller, request) => controller.UpdateDelivery(TheDeliveryBeingEdited, request)))
+                .SetName("Pointing an existing Delivery at a source");
+        }
+
+        /// <summary>
+        /// Only a Jira connection can read Releases today, so a Portfolio on any other connection has
+        /// nothing to follow at all. That is a permanent fact about the connection: answered as a remote
+        /// that could not be reached, it sends somebody off to retry something that will never work.
+        /// </summary>
+        [Test]
+        public async Task A_Portfolio_whose_connection_reads_no_Releases_is_told_so_rather_than_that_the_remote_is_down()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            deliverySourceResolverMock
+                .Setup(x => x.OffersSource(It.IsAny<Portfolio>(), It.IsAny<string>()))
+                .Returns(false);
+
+            var result = await CreateSubject().CreateDelivery(ThePortfolioItLivesIn, ADeliveryFollowingTheRelease());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusCodeOf(result), Is.EqualTo(StatusCodes.Status404NotFound),
+                    "a connection that cannot read Releases at all is not an outage, and 503 would invite a retry that can never succeed.");
+                Assert.That(persistedDelivery, Is.Null);
+            }
+        }
+
         private static UpdateDeliveryRequest ADeliveryFollowingTheRelease()
         {
             return new UpdateDeliveryRequest
@@ -1635,6 +1705,35 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         /// <summary>
+        /// Refused after the release rather than before it, the same request hands back a Delivery that
+        /// has already stopped following its Release and moved the version an open browser was holding -
+        /// on a request the caller is then told was malformed.
+        /// </summary>
+        [Test]
+        public async Task An_update_naming_a_mode_that_does_not_exist_leaves_a_bound_Delivery_following_its_Release()
+        {
+            var bound = ADeliveryFollowingTheReleaseInJira();
+            GivenTheDeliveryBeingEditedIs(bound);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var versionAnOpenEditorHolds = bound.ConcurrencyToken;
+
+            var request = AnUpdateChoosingByHand(TestToday.AFutureDate);
+            request.SelectionMode = AModeNobodyImplements;
+
+            var result = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+                Assert.That(bound.SelectionMode, Is.EqualTo(DeliverySelectionMode.SourceBound));
+                Assert.That(bound.SourceKey, Is.EqualTo(JiraReleaseSourceKey));
+                Assert.That(bound.SourceReference, Is.EqualTo(TheReleaseJiraHolds));
+                Assert.That(bound.ConcurrencyToken, Is.EqualTo(versionAnOpenEditorHolds));
+                deliveryRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        /// <summary>
         /// The version an open browser is holding is pinned against the row exactly once per accepted
         /// update, whichever mode the update leaves the Delivery in. Pinning it twice would discard the
         /// version the browser actually had and turn a conflict into a silent last-one-wins.
@@ -1649,6 +1748,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
                 .Returns(new List<Feature> { AFeature(1) });
             GivenTheReleaseResolvesTo(TheReleaseJiraHolds, AResolvedRelease(), AFeature(1));
+            GivenTheReleaseResolvesTo(TheOtherReleaseJiraHolds, TheOtherReleaseAsItResolves(), AFeature(2));
 
             var tokenTheBrowserWasHolding = Guid.NewGuid();
             request.ConcurrencyToken = tokenTheBrowserWasHolding;
@@ -1673,6 +1773,10 @@ namespace Lighthouse.Backend.Tests.API
                 .SetName("Pinned once when the Delivery starts following a Release");
             yield return new TestCaseData(ADeliveryFollowingTheReleaseInJira(), AnUpdateChoosingByHand(TheDayTheBrowserSent))
                 .SetName("Pinned once when the Delivery is released from its Release");
+            // The transition that moves the aggregate's own version the most times - released, renamed,
+            // rescheduled, re-featured and bound again - and so the one most likely to pin twice.
+            yield return new TestCaseData(ADeliveryFollowingTheReleaseInJira(), AnUpdateFollowingTheRelease(TheOtherReleaseJiraHolds))
+                .SetName("Pinned once when the Delivery is pointed at a different Release");
         }
 
         private void GivenTheDeliveryBeingEditedIs(Delivery delivery)
@@ -1763,6 +1867,19 @@ namespace Lighthouse.Backend.Tests.API
                 delivery.SourceReference,
                 delivery.RuleDefinitionJson != null,
                 delivery.Features.Count);
+        }
+
+        private const string TheKeyOneLetterOut = "jira-relase";
+        private const DeliverySelectionMode AModeNobodyImplements = (DeliverySelectionMode)7;
+
+        private static Portfolio ThePortfolio()
+        {
+            return new Portfolio { Id = ThePortfolioItLivesIn, Name = "Lighthouse" };
+        }
+
+        private static string? MessageIn(IActionResult result)
+        {
+            return (result as ObjectResult)?.Value as string;
         }
 
         private static int StatusCodeOf(IActionResult result)

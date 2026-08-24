@@ -5,6 +5,12 @@ namespace Lighthouse.Backend.Tests.Models
 {
     public class DeliveryArchivedInvariantTest
     {
+        private const string TheNameItClosedWith = "Q3 Release";
+        private const string TheFeatureItClosedWith = "Original";
+        private const string ARuleChosenByHand = "{\"conditions\":[]}";
+        private const string ReleaseSourceKey = "jira-release";
+        private const string TheReleaseItFollowed = "10412";
+
         private static readonly DateTime ClosingInstant = new(2026, 8, 22, 17, 45, 0, DateTimeKind.Utc);
 
         [Test]
@@ -68,28 +74,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void ReplaceFeatures_ArchivedDelivery_IsRefused()
-        {
-            var delivery = LiveDelivery();
-            delivery.ReplaceFeatures([new Feature { Name = "Original" }]);
-            delivery.Archive(ClosingInstant);
-
-            Assert.Throws<DeliveryArchivedException>(() => delivery.ReplaceFeatures([new Feature { Name = "Replacement" }]));
-        }
-
-        [Test]
-        public void ReplaceFeatures_ArchivedDelivery_LeavesTheFeaturesItClosedWith()
-        {
-            var delivery = LiveDelivery();
-            var original = new Feature { Name = "Original" };
-            delivery.ReplaceFeatures([original]);
-            delivery.Archive(ClosingInstant);
-
-            Assert.Throws<DeliveryArchivedException>(() => delivery.ReplaceFeatures([new Feature { Name = "Replacement" }]));
-            Assert.That(delivery.Features.Single(), Is.SameAs(original));
-        }
-
-        [Test]
         public void ReplaceFeatures_UnarchivedDelivery_IsAllowedAgain()
         {
             var delivery = LiveDelivery();
@@ -103,48 +87,90 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(delivery.Features.Single(), Is.SameAs(replacement));
         }
 
-        [Test]
-        public void Rename_ArchivedDelivery_IsRefusedAndLeavesTheNameItClosedWith()
+        /// <summary>
+        /// Every change an archived Delivery must refuse, in one place, each row carrying the check
+        /// that the refusal left the Delivery exactly as it closed. A half-applied change to something
+        /// frozen is worse than none: the closure record was pinned against what the Delivery was.
+        ///
+        /// The list is written out by hand and nothing checks it is complete, so a method added to
+        /// Delivery has to be added here in the same change - left out, its archived behaviour is
+        /// covered by nothing at all.
+        /// </summary>
+        [TestCaseSource(nameof(EveryChangeAnArchivedDeliveryRefuses))]
+        public void A_change_asked_of_an_archived_Delivery_is_refused_and_leaves_it_as_it_closed(
+            Func<Delivery> anArchivedDelivery, Action<Delivery> change, Action<Delivery> stillAsItClosed)
         {
-            var delivery = ArchivedDelivery();
+            var delivery = anArchivedDelivery();
 
-            Assert.Throws<DeliveryArchivedException>(() => delivery.Rename("Renamed After Closing"));
-            Assert.That(delivery.Name, Is.EqualTo("Q3 Release"));
+            Assert.Throws<DeliveryArchivedException>(() => change(delivery));
+
+            stillAsItClosed(delivery);
         }
 
-        [Test]
-        public void Reschedule_ArchivedDelivery_IsRefusedAndLeavesTheDateItClosedWith()
+        private static IEnumerable<TestCaseData> EveryChangeAnArchivedDeliveryRefuses()
         {
-            var delivery = ArchivedDelivery();
-            var dateAtClosure = delivery.Date;
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDelivery,
+                    (Action<Delivery>)(delivery => delivery.Rename("Renamed After Closing")),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.Name, Is.EqualTo(TheNameItClosedWith))))
+                .SetName("Rename");
 
-            Assert.Throws<DeliveryArchivedException>(() => delivery.Reschedule(dateAtClosure.AddDays(30)));
-            Assert.That(delivery.Date, Is.EqualTo(dateAtClosure));
-        }
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDelivery,
+                    (Action<Delivery>)(delivery => delivery.Reschedule(delivery.Date.AddDays(30))),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.Date, Is.EqualTo(TestToday.AFutureDate))))
+                .SetName("Reschedule");
 
-        [Test]
-        public void SelectFeaturesByRule_ArchivedDelivery_IsRefusedAndLeavesTheRuleItClosedWith()
-        {
-            var delivery = ArchivedDelivery();
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDelivery,
+                    (Action<Delivery>)(delivery => delivery.SelectFeaturesByRule(ARuleChosenByHand, 1)),
+                    (Action<Delivery>)(delivery =>
+                    {
+                        using (Assert.EnterMultipleScope())
+                        {
+                            Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+                            Assert.That(delivery.RuleDefinitionJson, Is.Null);
+                        }
+                    }))
+                .SetName("SelectFeaturesByRule");
 
-            Assert.Throws<DeliveryArchivedException>(() => delivery.SelectFeaturesByRule("{\"conditions\":[]}", 1));
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDeliveryChosenByRule,
+                    (Action<Delivery>)(delivery => delivery.SelectFeaturesByHand()),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.RuleBased))))
+                .SetName("SelectFeaturesByHand");
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
-                Assert.That(delivery.RuleDefinitionJson, Is.Null);
-            }
-        }
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDeliveryHoldingAFeature,
+                    (Action<Delivery>)(delivery => delivery.ReplaceFeatures([new Feature { Name = "Replacement" }])),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.Features.Single().Name, Is.EqualTo(TheFeatureItClosedWith))))
+                .SetName("ReplaceFeatures");
 
-        [Test]
-        public void SelectFeaturesByHand_ArchivedDelivery_IsRefused()
-        {
-            var delivery = LiveDelivery();
-            delivery.SelectFeaturesByRule("{\"conditions\":[]}", 1);
-            delivery.Archive(ClosingInstant);
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDelivery,
+                    (Action<Delivery>)(delivery => delivery.BindToSource(ReleaseSourceKey, TheReleaseItFollowed)),
+                    (Action<Delivery>)(delivery =>
+                    {
+                        using (Assert.EnterMultipleScope())
+                        {
+                            Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+                            Assert.That(delivery.SourceKey, Is.Null);
+                        }
+                    }))
+                .SetName("BindToSource");
 
-            Assert.Throws<DeliveryArchivedException>(delivery.SelectFeaturesByHand);
-            Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.RuleBased));
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.Unbind()),
+                    (Action<Delivery>)(delivery =>
+                    {
+                        using (Assert.EnterMultipleScope())
+                        {
+                            Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.SourceBound));
+                            Assert.That(delivery.SourceReference, Is.EqualTo(TheReleaseItFollowed));
+                        }
+                    }))
+                .SetName("Unbind");
         }
 
         [Test]
@@ -187,12 +213,20 @@ namespace Lighthouse.Backend.Tests.Models
         /// created and never assigned afterwards, which is what a setter usable only in an object
         /// initializer means; an ordinary setter would put the refusal back in the hands of whoever
         /// writes the next call site.
+        ///
+        /// The four source fields are here for the same reason and one more: a later pass that wants
+        /// to record when it last heard from the Release will reach for an ordinary setter on the two
+        /// it needs, and there is no reason for that to make the other two assignable with it.
         /// </summary>
         [TestCase(nameof(Delivery.Name))]
         [TestCase(nameof(Delivery.Date))]
         [TestCase(nameof(Delivery.SelectionMode))]
         [TestCase(nameof(Delivery.RuleDefinitionJson))]
         [TestCase(nameof(Delivery.RuleSchemaVersion))]
+        [TestCase(nameof(Delivery.SourceKey))]
+        [TestCase(nameof(Delivery.SourceReference))]
+        [TestCase(nameof(Delivery.SourceLastSyncedOn))]
+        [TestCase(nameof(Delivery.SourceUnavailableReason))]
         public void Delivery_CannotBeAssignedWhatArchivingFreezesOnceItExists(string propertyName)
         {
             var setter = typeof(Delivery).GetProperty(propertyName)!.SetMethod!;
@@ -247,12 +281,39 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static Delivery LiveDelivery()
         {
-            return new Delivery("Q3 Release", TestToday.AFutureDate, 1);
+            return new Delivery(TheNameItClosedWith, TestToday.AFutureDate, 1);
         }
 
         private static Delivery ArchivedDelivery()
         {
             var delivery = LiveDelivery();
+            delivery.Archive(ClosingInstant);
+
+            return delivery;
+        }
+
+        private static Delivery ArchivedDeliveryChosenByRule()
+        {
+            var delivery = LiveDelivery();
+            delivery.SelectFeaturesByRule(ARuleChosenByHand, 1);
+            delivery.Archive(ClosingInstant);
+
+            return delivery;
+        }
+
+        private static Delivery ArchivedDeliveryHoldingAFeature()
+        {
+            var delivery = LiveDelivery();
+            delivery.ReplaceFeatures([new Feature { Name = TheFeatureItClosedWith }]);
+            delivery.Archive(ClosingInstant);
+
+            return delivery;
+        }
+
+        private static Delivery ArchivedDeliveryFollowingARelease()
+        {
+            var delivery = LiveDelivery();
+            delivery.BindToSource(ReleaseSourceKey, TheReleaseItFollowed);
             delivery.Archive(ClosingInstant);
 
             return delivery;

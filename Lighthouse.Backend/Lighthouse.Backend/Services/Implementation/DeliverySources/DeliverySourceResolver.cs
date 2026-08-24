@@ -36,6 +36,17 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             return previews;
         }
 
+        public bool OffersSource(Portfolio portfolio, string sourceKey)
+        {
+            ArgumentNullException.ThrowIfNull(portfolio);
+
+            var connection = portfolio.WorkTrackingSystemConnection;
+            var connector = workTrackingConnectorFactory.GetWorkTrackingConnector(connection.WorkTrackingSystem);
+
+            return connector is IDeliverySourceProvider provider
+                && provider.AvailableSources(connection).Any(source => source.Key == sourceKey);
+        }
+
         /// <summary>
         /// An answer that simply leaves a reference out says nothing about whether it still exists, so it
         /// must never read as a deletion - only a remote that answered may retire a binding.

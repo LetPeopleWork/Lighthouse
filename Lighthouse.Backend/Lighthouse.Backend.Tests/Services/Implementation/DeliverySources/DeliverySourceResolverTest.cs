@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         private static readonly string[] TheBoundReference = [TheRelease];
         private static readonly string[] BothItemsAreTagged = [TrackedItem, UntrackedItem];
         private static readonly string[] OnlyTheUntrackedItemIsTagged = [UntrackedItem];
+        private static readonly string[] JustTheReleaseSource = [SourceKey];
+        private static readonly string[] NoSourcesAtAll = [];
 
         private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock;
         private Mock<IDeliverySourceProvider> providerMock;
@@ -136,6 +138,59 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
             Assert.That(previews[TheRelease].Resolution, Is.TypeOf<DeliverySourceResolution.Unavailable>(),
                 "an answer that simply omits a reference says nothing about whether it exists, so it must not read as deleted.");
+        }
+
+        /// <summary>
+        /// The Jira connector throws on a source key it does not offer, so a key that arrived in a
+        /// hand-written request has to be settled here, against what the connection says it has, before
+        /// anything is asked of the remote at all.
+        /// </summary>
+        [TestCaseSource(nameof(EveryAnswerAConnectionCanGiveAboutWhatItOffers))]
+        public void What_a_connection_offers_is_settled_without_asking_the_remote_anything(
+            bool theConnectorCanReadSources, string[] theSourcesTheConnectionNames, string theKeyAskedFor, bool expectedToBeOffered)
+        {
+            var portfolio = GivenAPortfolioTracking(TrackedItem);
+            GivenAConnectionOffering(theConnectorCanReadSources, theSourcesTheConnectionNames);
+
+            var offered = subject.OffersSource(portfolio, theKeyAskedFor);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(offered, Is.EqualTo(expectedToBeOffered));
+                providerMock.Verify(
+                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    Times.Never,
+                    "a key nobody offers has to be answered without a remote call, or a mistyped key comes back as the remote being unwell.");
+                providerMock.Verify(p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryAnswerAConnectionCanGiveAboutWhatItOffers()
+        {
+            yield return new TestCaseData(true, JustTheReleaseSource, SourceKey, true)
+                .SetName("A connection that names the source offers it");
+            yield return new TestCaseData(true, JustTheReleaseSource, "jira-relase", false)
+                .SetName("A connection asked for a key one letter out offers nothing by that name");
+            yield return new TestCaseData(true, NoSourcesAtAll, SourceKey, false)
+                .SetName("A connection that could read sources but names none offers nothing");
+            yield return new TestCaseData(false, NoSourcesAtAll, SourceKey, false)
+                .SetName("A connection whose connector cannot read sources at all offers nothing");
+        }
+
+        private void GivenAConnectionOffering(bool theConnectorCanReadSources, string[] theSourcesTheConnectionNames)
+        {
+            if (!theConnectorCanReadSources)
+            {
+                connectorFactoryMock
+                    .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                    .Returns(Mock.Of<IWorkTrackingConnector>());
+                return;
+            }
+
+            GivenAConnectorThatReadsSources();
+            providerMock
+                .Setup(p => p.AvailableSources(It.IsAny<WorkTrackingSystemConnection>()))
+                .Returns(theSourcesTheConnectionNames.Select(key => new DeliverySourceDescriptor(key, key)).ToList());
         }
 
         private void GivenTheRemoteAnswers(DeliverySourceResolution resolution)

@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private const string ReleaseSourceKey = "jira-release";
         private const string ReleaseId = "10412";
+        private const string ASecondRelease = "10999";
         private const string ReleaseName = "2026 Q4";
         private const string SourceBoundCode = "delivery-source-bound";
         private const string RenamedByHand = "Renamed By Hand";
@@ -188,16 +189,67 @@ namespace Lighthouse.Backend.Tests.Models
         public void A_Delivery_following_nothing_cannot_be_released()
         {
             var delivery = ADeliveryChosenByHand();
+            var versionAnOpenEditorHolds = delivery.ConcurrencyToken;
 
             Assert.Throws<DeliverySourceBoundException>(delivery.Unbind);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+                Assert.That(delivery.Name, Is.EqualTo(ReleaseName));
+                Assert.That(delivery.Date, Is.EqualTo(ReleaseDate));
+                Assert.That(delivery.Features.Select(feature => feature.Name), Is.EqualTo(FeaturesTheReleaseNames));
+                Assert.That(delivery.SourceKey, Is.Null);
+                Assert.That(delivery.SourceReference, Is.Null);
+                Assert.That(delivery.ConcurrencyToken, Is.EqualTo(versionAnOpenEditorHolds),
+                    "a refusal changes nothing, so it must not expire the version an open browser is holding either.");
+            }
         }
 
         [Test]
         public void A_Delivery_already_following_a_Release_cannot_be_pointed_at_a_second_one()
         {
             var delivery = ADeliveryFollowingARelease();
+            var versionAnOpenEditorHolds = delivery.ConcurrencyToken;
 
-            Assert.Throws<DeliverySourceBoundException>(() => delivery.BindToSource(ReleaseSourceKey, "10999"));
+            Assert.Throws<DeliverySourceBoundException>(() => delivery.BindToSource(ReleaseSourceKey, ASecondRelease));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.SourceBound));
+                Assert.That(delivery.SourceKey, Is.EqualTo(ReleaseSourceKey));
+                Assert.That(delivery.SourceReference, Is.EqualTo(ReleaseId),
+                    "half a re-point - the second Release recorded while the first is still what the Delivery says it follows - is the state a refresh pass cannot recover from.");
+                Assert.That(delivery.Name, Is.EqualTo(ReleaseName));
+                Assert.That(delivery.Date, Is.EqualTo(ReleaseDate));
+                Assert.That(delivery.Features.Select(feature => feature.Name), Is.EqualTo(FeaturesTheReleaseNames));
+                Assert.That(delivery.ConcurrencyToken, Is.EqualTo(versionAnOpenEditorHolds));
+            }
+        }
+
+        /// <summary>
+        /// A Delivery that says it follows a Release while naming none is the state a refresh pass can
+        /// make no sense of: it goes looking for a Release with no name to look for and comes back
+        /// saying it is gone. No route reaches this with a blank today, which is why the aggregate
+        /// checks it rather than leaving it to whichever caller is written next.
+        /// </summary>
+        [TestCase(null, ReleaseId)]
+        [TestCase("", ReleaseId)]
+        [TestCase(ReleaseSourceKey, null)]
+        [TestCase(ReleaseSourceKey, "")]
+        public void A_Delivery_cannot_be_made_to_follow_a_Release_it_does_not_name(
+            string? sourceKey, string? sourceReference)
+        {
+            var delivery = ADeliveryChosenByHand();
+
+            Assert.Catch<ArgumentException>(() => delivery.BindToSource(sourceKey!, sourceReference!));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
+                Assert.That(delivery.SourceKey, Is.Null);
+                Assert.That(delivery.SourceReference, Is.Null);
+            }
         }
 
         [TestCaseSource(nameof(EveryMoveOnAndOffARelease))]
@@ -235,6 +287,10 @@ namespace Lighthouse.Backend.Tests.Models
         /// once for the Delivery that must refuse the write, once for the Delivery that must carry
         /// it out. A refusal that fired for every Delivery rather than only the bound one would
         /// satisfy the first reading and fail the second.
+        ///
+        /// The list is written out by hand and nothing checks it is complete, so a method added to
+        /// Delivery that a bound one must refuse has to be added here in the same change. Left out, it
+        /// is covered by nothing at all and reads as covered.
         /// </summary>
         private static IEnumerable<(string Name, Action<Delivery> Apply, Action<Delivery> TookHold)> TheFiveHandWrites()
         {

@@ -293,31 +293,6 @@ namespace Lighthouse.Backend.Tests.API
             return delivery;
         }
 
-        /// <summary>
-        /// Archiving freezes what a Delivery is, and where it gets its name and date from is part of
-        /// that. Left open, a refresh pass could start driving a Delivery nobody is running any more,
-        /// or release one whose closure record was pinned against the Release it followed.
-        /// </summary>
-        [Test]
-        public void An_archived_Delivery_can_neither_be_made_to_follow_a_Release_nor_released_from_one()
-        {
-            var archivedAndBound = DeliveryWithForecastableWork();
-            archivedAndBound.BindToSource("jira-release", "10412");
-            archivedAndBound.Archive(TestToday.AmbientAsUtcMidnight);
-
-            var archivedAndUnbound = DeliveryWithForecastableWork();
-            archivedAndUnbound.Archive(TestToday.AmbientAsUtcMidnight);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.Throws<DeliveryArchivedException>(archivedAndBound.Unbind);
-                Assert.Throws<DeliveryArchivedException>(() => archivedAndUnbound.BindToSource("jira-release", "10412"));
-                Assert.That(archivedAndBound.SourceReference, Is.EqualTo("10412"),
-                    "the refusal has to leave the frozen Delivery exactly as it was - a half-applied release is worse than none.");
-                Assert.That(archivedAndUnbound.SelectionMode, Is.EqualTo(DeliverySelectionMode.Manual));
-            }
-        }
-
         private DeliveryClosureRecord GivenClosureRecord()
         {
             var closureRecord = new DeliveryClosureRecord { DeliveryId = DeliveryId };
