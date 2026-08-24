@@ -31,7 +31,7 @@
 		"axios": "^1.19.0",
 		"camelcase-keys": "^10.0.2",
 		"date-fns": "^4.4.0",
-		"dayjs": "^1.11.21",
+		"dayjs": "^1.11.23",
 		"lodash.debounce": "^4.0.8",
 		"lorem-ipsum": "^3.0.0",
 		"react": "^19.2.8",
