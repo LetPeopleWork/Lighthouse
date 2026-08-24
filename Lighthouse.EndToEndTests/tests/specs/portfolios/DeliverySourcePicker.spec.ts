@@ -53,7 +53,7 @@ const asShownToTheReader = (yearMonthDay: string): string =>
 //     preview -> DeliverySourceTab.test.tsx
 //   - refusing an edit that fights the binding, and letting go of one -> the backend scenarios and
 //     DeliverySection.provenance.test.tsx
-test("@walking_skeleton a dated Jira Release picked in the form becomes a Delivery carrying its date, its Features and where they came from", async ({
+test("@walking_skeleton a dated Jira Release picked in the form becomes a Delivery carrying its date, its Features and the mark that it follows that Release", async ({
 	request,
 	overviewPage,
 }) => {
@@ -136,23 +136,19 @@ test("@walking_skeleton a dated Jira Release picked in the form becomes a Delive
 	expect(await jiraReleases.previewedCount()).toBe(TAGGED_EPICS.length);
 
 	// Up to here nothing has left the form. Saving is where the Release has to survive the trip to the
-	// server and back: the same day Jira holds, the same four Features, and a row that says out loud
-	// that none of the three is the reader's own.
+	// server and back: the Release's own name, the same day Jira holds, the same four Features, and
+	// the marker naming what the row now follows.
 	const savedDeliveries = await dialog.save();
 	const delivery = savedDeliveries.getDeliveryByName(THE_DATED_RELEASE);
 	await expect(delivery.container).toBeVisible({
 		timeout: THE_SAVED_DELIVERY_COMES_BACK,
 	});
 
+	expect(await delivery.getName()).toBe(THE_DATED_RELEASE);
 	expect(await delivery.getDeliveryDate()).toBe(
 		asShownToTheReader(dateJiraHolds),
 	);
 	expect(await delivery.getScope()).toBe(TAGGED_EPICS.length);
 
-	await expect(delivery.provenance).toBeVisible();
-	await expect(delivery.provenanceName).toContainText(
-		`Jira Release "${THE_DATED_RELEASE}"`,
-	);
-	await expect(delivery.provenanceDate).toContainText("Jira Release");
-	await expect(delivery.provenanceFeatures).toContainText("Jira Release");
+	await expect(delivery.boundIndicator("Jira Release")).toBeVisible();
 });

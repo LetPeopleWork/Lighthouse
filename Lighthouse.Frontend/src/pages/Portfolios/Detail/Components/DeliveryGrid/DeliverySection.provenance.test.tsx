@@ -47,8 +47,8 @@ const AZURE_RELEASE: IDeliverySource = {
 	displayName: "Azure Release",
 };
 
-// Matched exactly rather than loosely: the accordion header is itself a button, and its accessible
-// name is everything written inside it, so a substring match finds the header as well as the control.
+// The dialog's confirming button. Matched exactly rather than loosely, because the dialog's own
+// title opens with the same three words.
 const UNBIND_LABEL = "Stop following";
 
 // The server serialises the selection mode by NAME, so a fixture built from the numeric enum alone
@@ -116,85 +116,23 @@ const renderSection = (props: {
 		</MemoryRouter>,
 	);
 
-const provenanceSlots = () => ({
-	block: screen.queryByTestId("delivery-source-provenance"),
-	name: screen.queryByTestId("provenance-name"),
-	date: screen.queryByTestId("provenance-date"),
-	features: screen.queryByTestId("provenance-features"),
-	captureNotice: screen.queryByTestId("provenance-capture-notice"),
-	unbind: screen.queryByRole("button", { name: UNBIND_LABEL }),
-});
+// The header marker is the whole of what a bound delivery says about its source, and it is also the
+// only way to let go of one, so nearly every test below starts by finding it.
+const BOUND_TO_JIRA = "Bound to Jira Release";
 
-describe("DeliverySection source provenance", () => {
+const openUnbindDialog = async () => {
+	await userEvent.click(screen.getByRole("button", { name: BOUND_TO_JIRA }));
+};
+
+describe("DeliverySection source binding", () => {
 	beforeEach(() => {
 		terminology.current = { ...SEEDED_TERMS };
-	});
-
-	it.each([
-		["Manual", DeliverySelectionMode.Manual, false],
-		["Manual as the server spells it", "Manual", false],
-		["RuleBased", DeliverySelectionMode.RuleBased, false],
-		["RuleBased as the server spells it", "RuleBased", false],
-		["SourceBound", DeliverySelectionMode.SourceBound, true],
-		["SourceBound as the server spells it", "SourceBound", true],
-	] as [string, WireSelectionMode, boolean][])(
-		"a %s delivery shows provenance and a way out: %s",
-		(_label, selectionMode, expectsProvenance) => {
-			renderSection({ selectionMode });
-
-			const slots = provenanceSlots();
-
-			for (const slot of Object.values(slots)) {
-				if (expectsProvenance) {
-					expect(slot).toBeInTheDocument();
-				} else {
-					expect(slot).not.toBeInTheDocument();
-				}
-			}
-		},
-	);
-
-	it("names the release and the handler its name was taken from", () => {
-		renderSection({ selectionMode: "SourceBound" });
-
-		const name = screen.getByTestId("provenance-name");
-
-		expect(name).toHaveTextContent("Jira Release");
-		expect(name).toHaveTextContent("Aurora 3.1");
-	});
-
-	it("says the date is the one that release carries", () => {
-		renderSection({ selectionMode: "SourceBound" });
-
-		const date = screen.getByTestId("provenance-date");
-
-		expect(date).toHaveTextContent(/date/i);
-		expect(date).toHaveTextContent("Jira Release");
-	});
-
-	it("says the features are the ones tagged against that release", () => {
-		renderSection({ selectionMode: "SourceBound" });
-
-		const features = screen.getByTestId("provenance-features");
-
-		expect(features).toHaveTextContent("Features");
-		expect(features).toHaveTextContent("Jira Release");
-	});
-
-	it("admits the three values were read once and do not follow the release yet", () => {
-		renderSection({ selectionMode: "SourceBound" });
-
-		expect(screen.getByTestId("provenance-capture-notice")).toHaveTextContent(
-			/does not follow/i,
-		);
 	});
 
 	it("falls back to the stored key when the server no longer offers that source", () => {
 		renderSection({ selectionMode: "SourceBound", sources: [] });
 
-		expect(screen.getByTestId("provenance-name")).toHaveTextContent(
-			"jira-release",
-		);
+		expect(screen.getByLabelText("Bound to jira-release")).toBeInTheDocument();
 	});
 
 	it("never unbinds on its own", () => {
@@ -208,7 +146,7 @@ describe("DeliverySection source provenance", () => {
 		const onUnbind = vi.fn();
 		renderSection({ selectionMode: "SourceBound", onUnbind });
 
-		await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+		await openUnbindDialog();
 
 		const dialog = screen.getByRole("dialog");
 		expect(dialog).toHaveTextContent("Jira Release");
@@ -220,7 +158,7 @@ describe("DeliverySection source provenance", () => {
 		const onUnbind = vi.fn();
 		renderSection({ selectionMode: "SourceBound", onUnbind });
 
-		await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+		await openUnbindDialog();
 		await userEvent.click(
 			within(screen.getByRole("dialog")).getByRole("button", {
 				name: /cancel/i,
@@ -237,7 +175,7 @@ describe("DeliverySection source provenance", () => {
 		const onUnbind = vi.fn();
 		renderSection({ selectionMode: "SourceBound", onUnbind });
 
-		await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+		await openUnbindDialog();
 		await userEvent.click(
 			within(screen.getByRole("dialog")).getByRole("button", {
 				name: UNBIND_LABEL,
@@ -256,7 +194,7 @@ describe("DeliverySection source provenance", () => {
 		const onUnbind = vi.fn();
 		renderSection({ selectionMode: "SourceBound", onUnbind });
 
-		await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+		await openUnbindDialog();
 
 		const confirm = within(screen.getByRole("dialog")).getByRole("button", {
 			name: UNBIND_LABEL,
@@ -279,7 +217,7 @@ describe("DeliverySection source provenance", () => {
 		renderSection({ selectionMode: "SourceBound", onUnbind });
 
 		const askTwice = async () => {
-			await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+			await openUnbindDialog();
 			await userEvent.click(
 				within(screen.getByRole("dialog")).getByRole("button", {
 					name: UNBIND_LABEL,
@@ -296,56 +234,91 @@ describe("DeliverySection source provenance", () => {
 		expect(onUnbind).toHaveBeenCalledTimes(2);
 	});
 
-	// Two separate reasons the control must not be on screen at all. A greyed-out one still tells a
-	// reader who may only look that this delivery can be released from its source, and invites them to
-	// go asking why the button will not work.
+	// The marker itself is state - this delivery follows a Release - so every reader sees it. Acting
+	// on it is a different thing, and a reader who may only look must find nothing to press: a
+	// greyed-out control would invite them to go asking why it will not work.
 	it.each([
 		["may not edit this portfolio", { canEdit: false }],
 		["is offered no way to unbind", { withUnbindHandler: false }],
 	] as [string, { canEdit?: boolean; withUnbindHandler?: boolean }][])(
-		"offers no way to stop following when the reader %s",
-		(_label, permissions) => {
+		"still says the delivery follows its source, but offers no way out, when the reader %s",
+		async (_label, permissions) => {
 			renderSection({ selectionMode: "SourceBound", ...permissions });
 
+			const marker = screen.getByLabelText(BOUND_TO_JIRA);
+			expect(marker).toBeInTheDocument();
 			expect(
-				screen.getByTestId("delivery-source-provenance"),
-			).toBeInTheDocument();
-			expect(
-				screen.queryByRole("button", { name: UNBIND_LABEL }),
+				screen.queryByRole("button", { name: BOUND_TO_JIRA }),
 			).not.toBeInTheDocument();
+
+			await userEvent.click(marker);
+
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		},
 	);
 
 	// The icon beside the name is the only thing a collapsed card says about where its contents come
 	// from, and MUI hands the tooltip text to it as its accessible name, so a screen reader hears the
-	// same sentence a mouse would show.
+	// same sentence a mouse would show. Only the bound one is worth pressing: the other two follow
+	// nothing, so there is nothing to let go of.
 	it.each([
 		[
 			"Manual",
 			DeliverySelectionMode.Manual,
 			"TouchAppIcon",
 			"Manual: Features are fixed",
+			false,
+		],
+		[
+			"Manual as the server spells it",
+			"Manual",
+			"TouchAppIcon",
+			"Manual: Features are fixed",
+			false,
 		],
 		[
 			"RuleBased",
 			DeliverySelectionMode.RuleBased,
 			"AutoModeIcon",
 			"Rule-Based: Features automatically update based on rules",
+			false,
+		],
+		[
+			"RuleBased as the server spells it",
+			"RuleBased",
+			"AutoModeIcon",
+			"Rule-Based: Features automatically update based on rules",
+			false,
 		],
 		[
 			"SourceBound",
 			DeliverySelectionMode.SourceBound,
 			"LinkIcon",
-			"Follows the Jira Release it was bound to",
+			BOUND_TO_JIRA,
+			true,
 		],
-	] as [string, WireSelectionMode, string, string][])(
-		"marks a %s delivery with its own icon and says what it follows",
-		(_label, selectionMode, iconTestId, hint) => {
+		[
+			"SourceBound as the server spells it",
+			"SourceBound",
+			"LinkIcon",
+			BOUND_TO_JIRA,
+			true,
+		],
+	] as [string, WireSelectionMode, string, string, boolean][])(
+		"marks a %s delivery with its own icon, and offers a way out only where there is a source to let go of",
+		async (_label, selectionMode, iconTestId, hint, followsASource) => {
 			renderSection({ selectionMode });
 
 			const marker = screen.getByLabelText(hint);
-
 			expect(within(marker).getByTestId(iconTestId)).toBeInTheDocument();
+
+			await userEvent.click(marker);
+
+			if (followsASource) {
+				expect(screen.getByRole("dialog")).toBeInTheDocument();
+			} else {
+				expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+			}
 		},
 	);
 
@@ -355,31 +328,17 @@ describe("DeliverySection source provenance", () => {
 			sources: [AZURE_RELEASE, JIRA_RELEASE],
 		});
 
-		expect(screen.getByTestId("provenance-name")).toHaveTextContent(
-			"Jira Release",
-		);
+		expect(screen.getByLabelText(BOUND_TO_JIRA)).toBeInTheDocument();
 	});
 
-	it("leaves the name blank rather than inventing one when nothing was stored", () => {
+	it("leaves the source unnamed rather than inventing a name when nothing was stored", () => {
 		renderSection({
 			selectionMode: "SourceBound",
 			sources: [],
 			sourceKey: null,
 		});
 
-		expect(screen.getByTestId("provenance-name")).toHaveTextContent(
-			'Delivery name: taken from the "Aurora 3.1"',
-		);
-	});
-
-	it("writes the word for a delivery as prose when it lands mid-sentence", () => {
-		terminology.current = { ...SEEDED_TERMS, delivery: "Launch" };
-
-		renderSection({ selectionMode: "SourceBound" });
-
-		expect(screen.getByTestId("provenance-capture-notice")).toHaveTextContent(
-			"All three were read when this launch was bound.",
-		);
+		expect(screen.getByLabelText("Bound to")).toBeInTheDocument();
 	});
 
 	// What the dialog promises has to match what the screen behind it does once the reader says yes,
@@ -388,7 +347,7 @@ describe("DeliverySection source provenance", () => {
 		terminology.current = { ...SEEDED_TERMS, features: "Epics" };
 		renderSection({ selectionMode: "SourceBound" });
 
-		await userEvent.click(screen.getByRole("button", { name: UNBIND_LABEL }));
+		await openUnbindDialog();
 
 		expect(screen.getByRole("dialog")).toHaveTextContent(
 			'"Aurora 3.1" keeps the name, the date and the Epics it has right now, and from then on they are yours to edit. It stops taking them from the Jira Release.',

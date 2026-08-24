@@ -96,23 +96,12 @@ export class DeliveryItem {
 	}
 
 	/**
-	 * Where a bound delivery says its name, its date and its features came from. Rendered on the
-	 * collapsed row, so nothing has to be opened to read it.
+	 * The marker beside the name saying this delivery takes its name, date and features from the
+	 * named source rather than from whoever is looking at it. Rendered on the collapsed row, so
+	 * nothing has to be opened to see it; its tooltip is also its accessible name.
 	 */
-	get provenance(): Locator {
-		return this.container.getByTestId("delivery-source-provenance");
-	}
-
-	get provenanceName(): Locator {
-		return this.container.getByTestId("provenance-name");
-	}
-
-	get provenanceDate(): Locator {
-		return this.container.getByTestId("provenance-date");
-	}
-
-	get provenanceFeatures(): Locator {
-		return this.container.getByTestId("provenance-features");
+	boundIndicator(sourceLabel: string): Locator {
+		return this.container.getByLabel(`Bound to ${sourceLabel}`);
 	}
 
 	async getProgress(): Promise<string | null> {

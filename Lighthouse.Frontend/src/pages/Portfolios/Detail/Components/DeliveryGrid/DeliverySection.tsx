@@ -4,7 +4,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LinkIcon from "@mui/icons-material/Link";
-import LinkOffIcon from "@mui/icons-material/LinkOff";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
 import {
 	Accordion,
@@ -313,11 +312,15 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		[featureTerm, delivery, teams, handleShowFeatureDetails],
 	);
 
+	// Everyone sees that this Delivery follows a source; only a reader who may edit it can act on
+	// the marker to let go of that source.
+	const canUnbind = isSourceBound && canEdit && onUnbind !== undefined;
+
 	let SelectionModeIcon = TouchAppIcon;
 	let selectionModeHint = `Manual: ${featuresTerm} are fixed`;
 	if (isSourceBound) {
 		SelectionModeIcon = LinkIcon;
-		selectionModeHint = `Follows the ${sourceLabel} it was bound to`;
+		selectionModeHint = `Bound to ${sourceLabel}`;
 	} else if (isRuleBased) {
 		SelectionModeIcon = AutoModeIcon;
 		selectionModeHint = `Rule-Based: ${featuresTerm} automatically update based on rules`;
@@ -494,12 +497,26 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											{delivery.name}
 										</Typography>
 										<Tooltip title={selectionModeHint}>
-											<Box sx={{ display: "flex", alignItems: "center" }}>
-												<SelectionModeIcon
-													fontSize="small"
-													sx={{ color: "text.secondary" }}
-												/>
-											</Box>
+											{canUnbind ? (
+												<IconButton
+													size="small"
+													aria-label={selectionModeHint}
+													onClick={(e) => {
+														e.stopPropagation();
+														setIsUnbindDialogOpen(true);
+													}}
+													sx={{ color: "text.secondary", p: 0 }}
+												>
+													<SelectionModeIcon fontSize="small" />
+												</IconButton>
+											) : (
+												<Box sx={{ display: "flex", alignItems: "center" }}>
+													<SelectionModeIcon
+														fontSize="small"
+														sx={{ color: "text.secondary" }}
+													/>
+												</Box>
+											)}
 										</Tooltip>
 										<Typography variant="body2" color="text.secondary">
 											{deliveryTerm} Date: {delivery.getFormattedDate()}
@@ -539,16 +556,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 											/>
 										))}
 									</Box>
-									{isSourceBound && (
-										<SourceProvenance
-											sourceLabel={sourceLabel}
-											deliveryName={delivery.name}
-											deliveryTerm={deliveryTerm}
-											featuresTerm={featuresTerm}
-											canUnbind={canEdit && onUnbind !== undefined}
-											onUnbindRequested={() => setIsUnbindDialogOpen(true)}
-										/>
-									)}
 								</Box>
 								<Box
 									sx={{
@@ -645,84 +652,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		</Paper>
 	);
 };
-
-interface SourceProvenanceProps {
-	sourceLabel: string;
-	deliveryName: string;
-	deliveryTerm: string;
-	featuresTerm: string;
-	canUnbind: boolean;
-	onUnbindRequested: () => void;
-}
-
-/**
- * Where the three values on this card came from. Said item by item rather than as one badge, because
- * a reader who wants to change the date has to know it is not theirs to change here, and a badge
- * saying "synced" answers neither which thing is synced nor with what.
- */
-const SourceProvenance: React.FC<SourceProvenanceProps> = ({
-	sourceLabel,
-	deliveryName,
-	deliveryTerm,
-	featuresTerm,
-	canUnbind,
-	onUnbindRequested,
-}) => (
-	<Box
-		data-testid="delivery-source-provenance"
-		sx={{
-			display: "flex",
-			flexDirection: "column",
-			gap: 0.25,
-			borderLeft: 2,
-			borderColor: "divider",
-			pl: 1.5,
-		}}
-	>
-		<Typography
-			variant="body2"
-			color="text.secondary"
-			data-testid="provenance-name"
-		>
-			{`${deliveryTerm} name: taken from the ${sourceLabel} "${deliveryName}"`}
-		</Typography>
-		<Typography
-			variant="body2"
-			color="text.secondary"
-			data-testid="provenance-date"
-		>
-			{`${deliveryTerm} date: the date that ${sourceLabel} carries`}
-		</Typography>
-		<Typography
-			variant="body2"
-			color="text.secondary"
-			data-testid="provenance-features"
-		>
-			{`${featuresTerm}: the ones tagged against that ${sourceLabel}`}
-		</Typography>
-		<Typography
-			variant="caption"
-			color="text.secondary"
-			data-testid="provenance-capture-notice"
-		>
-			{`All three were read when this ${deliveryTerm.toLowerCase()} was bound. It does not follow the ${sourceLabel} yet, so anything changed there since is not shown here.`}
-		</Typography>
-		{canUnbind && (
-			<Box>
-				<Button
-					size="small"
-					startIcon={<LinkOffIcon />}
-					onClick={(event) => {
-						event.stopPropagation();
-						onUnbindRequested();
-					}}
-				>
-					Stop following
-				</Button>
-			</Box>
-		)}
-	</Box>
-);
 
 interface UnbindConfirmationDialogProps {
 	open: boolean;
