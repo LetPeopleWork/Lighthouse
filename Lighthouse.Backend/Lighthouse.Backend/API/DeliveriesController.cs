@@ -176,16 +176,6 @@ namespace Lighthouse.Backend.API
             int deliveryId,
             [FromBody] UpdateDeliveryRequest request)
         {
-            if (string.IsNullOrEmpty(request.Name))
-            {
-                return BadRequest("Name is required");
-            }
-
-            if (DateOnly.FromDateTime(request.Date) <= clock.Today)
-            {
-                return BadRequest("Delivery date must be in the future");
-            }
-
             var existingDelivery = deliveryRepository.GetByIdForUpdate(deliveryId);
             if (existingDelivery == null)
             {
@@ -201,23 +191,22 @@ namespace Lighthouse.Backend.API
                 return Forbid();
             }
 
-            if (request.SelectionMode == DeliverySelectionMode.RuleBased)
+            var releasingFromASource = existingDelivery.SelectionMode == DeliverySelectionMode.SourceBound
+                && request.SelectionMode != DeliverySelectionMode.SourceBound;
+
+            var requestError = VerifyUpdateRequest(request, releasingFromASource);
+            if (requestError != null)
             {
-                var errorStatus = CheckRuleBasedDeliveryPrerequisites(request);
-                if (errorStatus != null)
-                {
-                    return errorStatus;
-                }
+                return requestError;
             }
 
-            var utcDate = request.Date.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
-                : request.Date.ToUniversalTime();
+            var (sourceError, sourcePreview) = await ResolveSourceForUpdate(existingDelivery, request);
+            if (sourceError != null)
+            {
+                return sourceError;
+            }
 
-            existingDelivery.Rename(request.Name);
-            existingDelivery.Reschedule(utcDate);
-
-            var selectionError = ApplyFeatureSelection(request, existingDelivery, null);
+            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource);
             if (selectionError != null)
             {
                 return selectionError;
@@ -231,6 +220,74 @@ namespace Lighthouse.Backend.API
             await deliveryRepository.Save();
 
             return Ok();
+        }
+
+        /// <summary>
+        /// Which Release a Delivery follows is decided before anything the Delivery says is touched. A
+        /// bound Delivery refuses every rename, reschedule and Feature write, so an update that edited
+        /// first - including the one asking to stop following the Release - would be refused before the
+        /// mode was ever read. Moving the release below back down under the edits breaks that silently:
+        /// the tests that catch it are the ones that start from a bound Delivery.
+        /// </summary>
+        private IActionResult? ApplyModeTransition(
+            UpdateDeliveryRequest request,
+            Delivery delivery,
+            PortfolioSourcePreview? sourcePreview,
+            bool releasingFromASource)
+        {
+            if (delivery.SelectionMode == DeliverySelectionMode.SourceBound)
+            {
+                delivery.Unbind();
+            }
+
+            // Released from its Release, a Delivery keeps the name, the date and the Features the
+            // Release last gave it. They are why somebody stops following one rather than deleting the
+            // Delivery, and the payload carrying them is a rendering of what is already there.
+            if (releasingFromASource && request.SelectionMode == DeliverySelectionMode.Manual)
+            {
+                return null;
+            }
+
+            if (!releasingFromASource && request.SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                delivery.Rename(request.Name);
+                delivery.Reschedule(UtcDateOf(request));
+            }
+
+            return ApplyFeatureSelection(request, delivery, sourcePreview);
+        }
+
+        /// <summary>
+        /// A Delivery on its way out of a Release has neither its name nor its date read from the
+        /// payload, so neither is checked either. One released from a Release that shipped last quarter
+        /// carries that past date on screen, and checking it would demand a future date before the
+        /// Delivery could be released at all.
+        /// </summary>
+        private IActionResult? VerifyUpdateRequest(UpdateDeliveryRequest request, bool releasingFromASource)
+        {
+            if (releasingFromASource)
+            {
+                return CheckSelectionModePrerequisites(request);
+            }
+
+            return VerifyClientSuppliedFields(request) ?? CheckSelectionModePrerequisites(request);
+        }
+
+        private async Task<(IActionResult? Error, PortfolioSourcePreview? Preview)> ResolveSourceForUpdate(
+            Delivery existingDelivery, UpdateDeliveryRequest request)
+        {
+            if (request.SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                return (null, null);
+            }
+
+            var portfolio = portfolioRepository.GetById(existingDelivery.PortfolioId);
+            if (portfolio == null)
+            {
+                return (NotFound($"Portfolio with ID {existingDelivery.PortfolioId} not found"), null);
+            }
+
+            return await ResolveBoundSource(portfolio, request);
         }
 
         [HttpDelete("{deliveryId:int}")]
@@ -381,14 +438,22 @@ namespace Lighthouse.Backend.API
             };
         }
 
+        /// <summary>
+        /// Everything the Delivery says now comes from the Release, so a rule it was choosing its
+        /// Features by is dropped rather than carried along: left behind, it would be written into the
+        /// Delivery's closure record as though it were still what picked the Features.
+        /// </summary>
         private BadRequestObjectResult? BindDeliveryToSource(
             UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview)
         {
-            if (sourcePreview?.Resolution is not DeliverySourceResolution.Resolved)
+            if (sourcePreview?.Resolution is not DeliverySourceResolution.Resolved resolved)
             {
                 return BadRequest("A delivery can only follow a source that resolved");
             }
 
+            delivery.SelectFeaturesByHand();
+            delivery.Rename(resolved.Snapshot.Name);
+            delivery.Reschedule(resolved.Snapshot.Date);
             delivery.ReplaceFeatures(sourcePreview.TrackedFeatures);
             delivery.BindToSource(request.SourceKey!, request.SourceReference!);
             return null;
@@ -499,14 +564,9 @@ namespace Lighthouse.Backend.API
                 return CheckRuleBasedDeliveryPrerequisites(request);
             }
 
-            // Following a Release is premium in its own right rather than by counting Deliveries: the
-            // free-tier cap below only bites once a Portfolio already holds one, so a mode falling
-            // through to it would hand every free-tier user their first bound Delivery for nothing.
             if (request.SelectionMode == DeliverySelectionMode.SourceBound)
             {
-                return licenseService.CanUsePremiumFeatures()
-                    ? null
-                    : StatusCode(StatusCodes.Status403Forbidden, "Following a delivery source requires a premium license");
+                return CheckSourceBoundDeliveryPrerequisites();
             }
 
             if (licenseService.CanUsePremiumFeatures())
@@ -521,6 +581,31 @@ namespace Lighthouse.Backend.API
             }
 
             return null;
+        }
+
+        private IActionResult? CheckSelectionModePrerequisites(UpdateDeliveryRequest request)
+        {
+            if (request.SelectionMode == DeliverySelectionMode.RuleBased)
+            {
+                return CheckRuleBasedDeliveryPrerequisites(request);
+            }
+
+            return request.SelectionMode == DeliverySelectionMode.SourceBound
+                ? CheckSourceBoundDeliveryPrerequisites()
+                : null;
+        }
+
+        /// <summary>
+        /// Following a Release is premium in its own right rather than by counting Deliveries: the
+        /// free-tier cap counts what a Portfolio already holds, so it only bites on the second one and
+        /// would hand every free-tier user their first bound Delivery for nothing. An update creates no
+        /// Delivery at all, so on that path the cap would never have been consulted.
+        /// </summary>
+        private ObjectResult? CheckSourceBoundDeliveryPrerequisites()
+        {
+            return licenseService.CanUsePremiumFeatures()
+                ? null
+                : StatusCode(StatusCodes.Status403Forbidden, "Following a delivery source requires a premium license");
         }
 
         private IActionResult? CheckRuleBasedDeliveryPrerequisites(UpdateDeliveryRequest request)
@@ -551,11 +636,18 @@ namespace Lighthouse.Backend.API
                 return new Delivery(resolved.Snapshot.Name, resolved.Snapshot.Date, portfolioId, clock.Today);
             }
 
-            var utcDate = request.Date.Kind == DateTimeKind.Unspecified
+            return new Delivery(request.Name, UtcDateOf(request), portfolioId, clock.Today);
+        }
+
+        /// <summary>
+        /// A date the browser left without a zone is taken as UTC rather than as the server's local
+        /// day, which is the same reading the rest of the API gives one.
+        /// </summary>
+        private static DateTime UtcDateOf(UpdateDeliveryRequest request)
+        {
+            return request.Date.Kind == DateTimeKind.Unspecified
                 ? DateTime.SpecifyKind(request.Date, DateTimeKind.Utc)
                 : request.Date.ToUniversalTime();
-
-            return new Delivery(request.Name, utcDate, portfolioId, clock.Today);
         }
 
         private const string SourceCouldNotBeAsked = "The system holding the source could not be reached";

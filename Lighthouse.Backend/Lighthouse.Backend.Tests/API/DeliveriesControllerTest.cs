@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IDeliveryMetricSnapshotRepository> deliveryMetricSnapshotRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IDeliverySourceResolver> deliverySourceResolverMock;
+        private Dictionary<string, PortfolioSourcePreview> releasesTheResolverAnswersFor;
         private Delivery? persistedDelivery;
 
         [SetUp]
@@ -46,6 +47,7 @@ namespace Lighthouse.Backend.Tests.API
             deliveryMetricSnapshotRepositoryMock = new Mock<IDeliveryMetricSnapshotRepository>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             deliverySourceResolverMock = new Mock<IDeliverySourceResolver>();
+            releasesTheResolverAnswersFor = [];
             persistedDelivery = null;
             deliveryRepositoryMock.Setup(x => x.Add(It.IsAny<Delivery>())).Callback<Delivery>(delivery => persistedDelivery = delivery);
 
@@ -674,6 +676,8 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureIds = [1]
             };
 
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(GetTestDelivery());
+
             var controller = CreateSubject();
 
             // Act
@@ -696,6 +700,8 @@ namespace Lighthouse.Backend.Tests.API
                 Date = DateTime.UtcNow.AddDays(10),
                 FeatureIds = [1]
             };
+
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(GetTestDelivery());
 
             var controller = CreateSubject();
 
@@ -1215,7 +1221,7 @@ namespace Lighthouse.Backend.Tests.API
         public async Task Creating_a_Delivery_from_a_Release_persists_Jiras_name_date_and_Features_and_ignores_whatever_the_client_sent()
         {
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
-            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
 
             var result = await CreateSubject().CreateDelivery(1, ADeliveryFollowingTheRelease());
 
@@ -1244,7 +1250,7 @@ namespace Lighthouse.Backend.Tests.API
             UpdateDeliveryRequest request, PersistedDelivery expected)
         {
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
-            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
 
             var result = await CreateSubject().CreateDelivery(1, request);
 
@@ -1295,7 +1301,7 @@ namespace Lighthouse.Backend.Tests.API
             DeliverySourceResolution resolution, int expectedStatusCode, bool expectedToPersist)
         {
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
-            GivenTheReleaseResolvesTo(resolution, AFeature(1, "Checkout"));
+            GivenTheReleaseResolvesTo(resolution, AFeature(1));
 
             var result = await CreateSubject().CreateDelivery(1, ADeliveryFollowingTheRelease());
 
@@ -1331,7 +1337,7 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasPremiumLicense);
             deliveryRepositoryMock.Setup(x => x.GetByPortfolioAsync(1))
                 .Returns(Enumerable.Range(0, deliveriesAlreadyInThePortfolio).Select(_ => GetTestDelivery()).ToList());
-            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
 
             var result = await CreateSubject().CreateDelivery(1, ADeliveryFollowingTheRelease());
 
@@ -1350,7 +1356,7 @@ namespace Lighthouse.Backend.Tests.API
             string? sourceKey, string? sourceReference)
         {
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
-            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1, "Checkout"));
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
 
             var request = ADeliveryFollowingTheRelease();
             request.SourceKey = sourceKey;
@@ -1384,36 +1390,379 @@ namespace Lighthouse.Backend.Tests.API
                 new DeliverySourceSnapshot(TheNameJiraHolds, TheDayTheReleaseShipped, TheWorkTaggedAgainstTheRelease));
         }
 
-        private static Feature AFeature(int id, string name)
+        private static Feature AFeature(int id)
         {
-            return new Feature { Id = id, Name = name, ReferenceId = $"LGH-{id}", Order = "1000", Type = "Epic", State = "New" };
+            return new Feature { Id = id, Name = $"Feature {id}", ReferenceId = $"LGH-{id}", Order = "1000", Type = "Epic", State = "New" };
         }
 
         private void GivenTheReleaseResolvesTo(DeliverySourceResolution resolution, params Feature[] trackedFeatures)
         {
+            GivenTheReleaseResolvesTo(TheReleaseJiraHolds, resolution, trackedFeatures);
+        }
+
+        /// <summary>
+        /// The answers accumulate rather than replace one another, so a test that needs two Releases -
+        /// the one a Delivery follows and the one it is pointed at instead - can arrange both.
+        /// </summary>
+        private void GivenTheReleaseResolvesTo(
+            string sourceReference, DeliverySourceResolution resolution, params Feature[] trackedFeatures)
+        {
+            releasesTheResolverAnswersFor[sourceReference] = new PortfolioSourcePreview(
+                resolution, trackedFeatures, trackedFeatures.Length);
+
             deliverySourceResolverMock
                 .Setup(x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
-                .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>
-                {
-                    [TheReleaseJiraHolds] = new(resolution, trackedFeatures, trackedFeatures.Length),
-                });
+                .ReturnsAsync(releasesTheResolverAnswersFor);
         }
 
         private PersistedDelivery? WhatWasPersisted()
         {
-            if (persistedDelivery == null)
+            return persistedDelivery == null ? null : StateOf(persistedDelivery);
+        }
+
+        private const int TheDeliveryBeingEdited = 77;
+        private const int ThePortfolioItLivesIn = 3;
+        private const string TheOtherReleaseJiraHolds = "10999";
+        private const string TheNameTheOtherReleaseHolds = "Winter Release";
+        private const string TheNameSomebodyTypedIn = "Renamed By Hand";
+        private const string TheNameOnFile = "What It Was Called";
+        private const string ARuleThatMatchesNothing = "{\"Version\":1,\"Conditions\":[]}";
+
+        private static readonly DateTime TheDayTheOtherReleaseShips = new(2027, 1, 15, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime TheDayOnFile = new(2026, 11, 4, 0, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>
+        /// Keeping the name, the date and the Features is why somebody stops following a Release
+        /// instead of deleting the Delivery. Nothing in the payload is read on the way out either: a
+        /// Release that shipped last quarter leaves a past date on screen, and reading that back would
+        /// be refused as a past date on any other update.
+        /// </summary>
+        [Test]
+        public async Task Releasing_a_Delivery_from_its_Release_keeps_what_the_Release_last_gave_it_and_hands_it_back_editable()
+        {
+            var boundToAReleaseThatShippedLastQuarter = ADeliveryFollowingTheReleaseInJira();
+            GivenTheDeliveryBeingEditedIs(boundToAReleaseThatShippedLastQuarter);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var stopFollowingIt = AnUpdateChoosingByHand(TheDayTheBrowserSent);
+
+            var result = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, stopFollowingIt);
+
+            using (Assert.EnterMultipleScope())
             {
-                return null;
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(StateOf(boundToAReleaseThatShippedLastQuarter), Is.EqualTo(new PersistedDelivery(
+                    TheNameJiraHolds,
+                    TheDayTheReleaseShipped,
+                    DeliverySelectionMode.Manual,
+                    null,
+                    null,
+                    false,
+                    2)));
+                deliveryRepositoryMock.Verify(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()), Times.Never,
+                    "the Feature ids the browser sent are not read on the way out - what the Release last put there is what stays.");
+                deliveryRepositoryMock.Verify(x => x.Save(), Times.Once);
             }
 
+            deliveryRepositoryMock
+                .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
+                .Returns(new List<Feature> { AFeature(1) });
+
+            var renameItNow = AnUpdateChoosingByHand(TestToday.AFutureDate);
+            var secondResult = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, renameItNow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(secondResult, Is.TypeOf<OkResult>());
+                Assert.That(StateOf(boundToAReleaseThatShippedLastQuarter), Is.EqualTo(new PersistedDelivery(
+                    TheNameSomebodyTypedIn,
+                    TestToday.AFutureDate,
+                    DeliverySelectionMode.Manual,
+                    null,
+                    null,
+                    false,
+                    1)));
+            }
+        }
+
+        /// <summary>
+        /// Every way a Delivery can be told to choose its Features, crossed with every way it was
+        /// choosing them already. The four rows that start by hand or by rule are the regression proof.
+        /// The rows that start bound are the ones a Delivery could not leave at all while the name was
+        /// written before the mode was read.
+        /// </summary>
+        [TestCaseSource(nameof(EveryModeADeliveryCanBeMovedBetween))]
+        public async Task What_a_Delivery_holds_after_an_update_is_settled_by_the_mode_it_moves_into(
+            Delivery before, UpdateDeliveryRequest request, PersistedDelivery expected)
+        {
+            GivenTheDeliveryBeingEditedIs(before);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            deliveryRepositoryMock
+                .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
+                .Returns(new List<Feature> { AFeature(1) });
+            GivenTheReleaseResolvesTo(TheReleaseJiraHolds, AResolvedRelease(), AFeature(1));
+            GivenTheReleaseResolvesTo(TheOtherReleaseJiraHolds, TheOtherReleaseAsItResolves(), AFeature(2));
+
+            var result = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<OkResult>());
+                Assert.That(StateOf(before), Is.EqualTo(expected));
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryModeADeliveryCanBeMovedBetween()
+        {
+            yield return new TestCaseData(
+                ADeliveryChosenByHand(),
+                AnUpdateChoosingByHand(TestToday.AFutureDate),
+                new PersistedDelivery(TheNameSomebodyTypedIn, TestToday.AFutureDate, DeliverySelectionMode.Manual, null, null, false, 1))
+                .SetName("By hand stays by hand");
+
+            yield return new TestCaseData(
+                ADeliveryChosenByHand(),
+                AnUpdateChoosingByRule(),
+                new PersistedDelivery(TheNameSomebodyTypedIn, TestToday.AFutureDate, DeliverySelectionMode.RuleBased, null, null, true, 0))
+                .SetName("By hand becomes by rule");
+
+            yield return new TestCaseData(
+                ADeliveryChosenByHand(),
+                AnUpdateFollowingTheRelease(TheReleaseJiraHolds),
+                new PersistedDelivery(
+                    TheNameJiraHolds, TheDayTheReleaseShipped, DeliverySelectionMode.SourceBound,
+                    JiraReleaseSourceKey, TheReleaseJiraHolds, false, 1))
+                .SetName("By hand starts following a Release");
+
+            yield return new TestCaseData(
+                ADeliveryChosenByRule(),
+                AnUpdateChoosingByHand(TestToday.AFutureDate),
+                new PersistedDelivery(TheNameSomebodyTypedIn, TestToday.AFutureDate, DeliverySelectionMode.Manual, null, null, false, 1))
+                .SetName("By rule becomes by hand");
+
+            yield return new TestCaseData(
+                ADeliveryChosenByRule(),
+                AnUpdateChoosingByRule(),
+                new PersistedDelivery(TheNameSomebodyTypedIn, TestToday.AFutureDate, DeliverySelectionMode.RuleBased, null, null, true, 0))
+                .SetName("By rule stays by rule");
+
+            yield return new TestCaseData(
+                ADeliveryChosenByRule(),
+                AnUpdateFollowingTheRelease(TheReleaseJiraHolds),
+                new PersistedDelivery(
+                    TheNameJiraHolds, TheDayTheReleaseShipped, DeliverySelectionMode.SourceBound,
+                    JiraReleaseSourceKey, TheReleaseJiraHolds, false, 1))
+                .SetName("By rule starts following a Release and stops holding the rule");
+
+            yield return new TestCaseData(
+                ADeliveryFollowingTheReleaseInJira(),
+                AnUpdateChoosingByHand(TheDayTheBrowserSent),
+                new PersistedDelivery(TheNameJiraHolds, TheDayTheReleaseShipped, DeliverySelectionMode.Manual, null, null, false, 2))
+                .SetName("Following a Release that already shipped, released by hand and dated in the past");
+
+            yield return new TestCaseData(
+                ADeliveryFollowingTheReleaseInJira(),
+                AnUpdateChoosingByHand(TestToday.AFutureDate),
+                new PersistedDelivery(TheNameJiraHolds, TheDayTheReleaseShipped, DeliverySelectionMode.Manual, null, null, false, 2))
+                .SetName("Following a Release, released by hand and dated ahead");
+
+            yield return new TestCaseData(
+                ADeliveryFollowingTheReleaseInJira(),
+                AnUpdateChoosingByRule(),
+                new PersistedDelivery(TheNameJiraHolds, TheDayTheReleaseShipped, DeliverySelectionMode.RuleBased, null, null, true, 0))
+                .SetName("Following a Release, released and left choosing by rule");
+
+            yield return new TestCaseData(
+                ADeliveryFollowingTheReleaseInJira(),
+                AnUpdateFollowingTheRelease(TheOtherReleaseJiraHolds),
+                new PersistedDelivery(
+                    TheNameTheOtherReleaseHolds, TheDayTheOtherReleaseShips, DeliverySelectionMode.SourceBound,
+                    JiraReleaseSourceKey, TheOtherReleaseJiraHolds, false, 1))
+                .SetName("Following a Release, pointed at a different one");
+        }
+
+        /// <summary>
+        /// The free-tier cap counts Deliveries and an update creates none, so nothing on this path had
+        /// been asking about the licence at all.
+        /// </summary>
+        [TestCase(true, StatusCodes.Status200OK, DeliverySelectionMode.SourceBound)]
+        [TestCase(false, StatusCodes.Status403Forbidden, DeliverySelectionMode.Manual)]
+        public async Task Pointing_an_existing_Delivery_at_a_Release_is_premium_just_as_creating_one_that_follows_it_is(
+            bool hasPremiumLicense, int expectedStatusCode, DeliverySelectionMode expectedMode)
+        {
+            var chosenByHand = ADeliveryChosenByHand();
+            GivenTheDeliveryBeingEditedIs(chosenByHand);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasPremiumLicense);
+            GivenTheReleaseResolvesTo(TheReleaseJiraHolds, AResolvedRelease(), AFeature(1));
+
+            var result = await CreateSubject().UpdateDelivery(
+                TheDeliveryBeingEdited, AnUpdateFollowingTheRelease(TheReleaseJiraHolds));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(StatusCodeOf(result), Is.EqualTo(expectedStatusCode));
+                Assert.That(chosenByHand.SelectionMode, Is.EqualTo(expectedMode));
+            }
+        }
+
+        /// <summary>
+        /// A payload that says it follows a Release but names none is somebody's mistake, not somebody
+        /// asking to stop following one - and reading it as the latter would quietly hand back a
+        /// Delivery that was meant to keep syncing.
+        /// </summary>
+        [TestCase(null)]
+        [TestCase("")]
+        public async Task An_update_that_says_it_follows_a_Release_but_names_none_is_refused_rather_than_read_as_letting_go(
+            string? sourceReference)
+        {
+            var bound = ADeliveryFollowingTheReleaseInJira();
+            GivenTheDeliveryBeingEditedIs(bound);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+
+            var request = AnUpdateFollowingTheRelease(TheReleaseJiraHolds);
+            request.SourceReference = sourceReference;
+
+            var result = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+                Assert.That(bound.SelectionMode, Is.EqualTo(DeliverySelectionMode.SourceBound));
+                Assert.That(bound.SourceReference, Is.EqualTo(TheReleaseJiraHolds));
+                deliveryRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        /// <summary>
+        /// The version an open browser is holding is pinned against the row exactly once per accepted
+        /// update, whichever mode the update leaves the Delivery in. Pinning it twice would discard the
+        /// version the browser actually had and turn a conflict into a silent last-one-wins.
+        /// </summary>
+        [TestCaseSource(nameof(EveryModeAnUpdateCanLeaveADeliveryIn))]
+        public async Task An_accepted_update_pins_the_version_the_browser_was_holding_exactly_once(
+            Delivery before, UpdateDeliveryRequest request)
+        {
+            GivenTheDeliveryBeingEditedIs(before);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            deliveryRepositoryMock
+                .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
+                .Returns(new List<Feature> { AFeature(1) });
+            GivenTheReleaseResolvesTo(TheReleaseJiraHolds, AResolvedRelease(), AFeature(1));
+
+            var tokenTheBrowserWasHolding = Guid.NewGuid();
+            request.ConcurrencyToken = tokenTheBrowserWasHolding;
+
+            var result = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, request);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<OkResult>());
+                deliveryRepositoryMock.Verify(
+                    x => x.ApplyConcurrencyTokenForEdit(before, tokenTheBrowserWasHolding), Times.Once);
+            }
+        }
+
+        private static IEnumerable<TestCaseData> EveryModeAnUpdateCanLeaveADeliveryIn()
+        {
+            yield return new TestCaseData(ADeliveryChosenByHand(), AnUpdateChoosingByHand(TestToday.AFutureDate))
+                .SetName("Pinned once when the Features are chosen by hand");
+            yield return new TestCaseData(ADeliveryChosenByHand(), AnUpdateChoosingByRule())
+                .SetName("Pinned once when the Features are chosen by rule");
+            yield return new TestCaseData(ADeliveryChosenByHand(), AnUpdateFollowingTheRelease(TheReleaseJiraHolds))
+                .SetName("Pinned once when the Delivery starts following a Release");
+            yield return new TestCaseData(ADeliveryFollowingTheReleaseInJira(), AnUpdateChoosingByHand(TheDayTheBrowserSent))
+                .SetName("Pinned once when the Delivery is released from its Release");
+        }
+
+        private void GivenTheDeliveryBeingEditedIs(Delivery delivery)
+        {
+            deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(TheDeliveryBeingEdited)).Returns(delivery);
+        }
+
+        private static Delivery ADeliveryChosenByHand()
+        {
+            var delivery = new Delivery(TheNameOnFile, TheDayOnFile, ThePortfolioItLivesIn, TestToday.Ambient)
+            {
+                Id = TheDeliveryBeingEdited,
+            };
+            delivery.ReplaceFeatures([AFeature(4)]);
+            return delivery;
+        }
+
+        private static Delivery ADeliveryChosenByRule()
+        {
+            var delivery = new Delivery(TheNameOnFile, TheDayOnFile, ThePortfolioItLivesIn, TestToday.Ambient)
+            {
+                Id = TheDeliveryBeingEdited,
+            };
+            delivery.SelectFeaturesByRule(ARuleThatMatchesNothing, WorkItemRuleSet.SchemaVersion);
+            return delivery;
+        }
+
+        private static Delivery ADeliveryFollowingTheReleaseInJira()
+        {
+            var delivery = new Delivery(TheNameJiraHolds, TheDayTheReleaseShipped, ThePortfolioItLivesIn, TestToday.Ambient)
+            {
+                Id = TheDeliveryBeingEdited,
+            };
+            delivery.ReplaceFeatures([AFeature(1), AFeature(2)]);
+            delivery.BindToSource(JiraReleaseSourceKey, TheReleaseJiraHolds);
+            return delivery;
+        }
+
+        private static UpdateDeliveryRequest AnUpdateChoosingByHand(DateTime date)
+        {
+            return new UpdateDeliveryRequest
+            {
+                Name = TheNameSomebodyTypedIn,
+                Date = date,
+                FeatureIds = [1],
+                SelectionMode = DeliverySelectionMode.Manual,
+            };
+        }
+
+        private static UpdateDeliveryRequest AnUpdateChoosingByRule()
+        {
+            return new UpdateDeliveryRequest
+            {
+                Name = TheNameSomebodyTypedIn,
+                Date = TestToday.AFutureDate,
+                FeatureIds = [1],
+                SelectionMode = DeliverySelectionMode.RuleBased,
+                Rules = [new WorkItemRuleCondition { FieldKey = "state", Operator = "equals", Value = "Doing" }],
+            };
+        }
+
+        private static UpdateDeliveryRequest AnUpdateFollowingTheRelease(string sourceReference)
+        {
+            return new UpdateDeliveryRequest
+            {
+                Name = TheNameTheBrowserSent,
+                Date = TheDayTheBrowserSent,
+                FeatureIds = FeatureIdsThatWouldNotResolve,
+                SelectionMode = DeliverySelectionMode.SourceBound,
+                SourceKey = JiraReleaseSourceKey,
+                SourceReference = sourceReference,
+            };
+        }
+
+        private static DeliverySourceResolution.Resolved TheOtherReleaseAsItResolves()
+        {
+            return new DeliverySourceResolution.Resolved(
+                new DeliverySourceSnapshot(TheNameTheOtherReleaseHolds, TheDayTheOtherReleaseShips, TheWorkTaggedAgainstTheRelease));
+        }
+
+        private static PersistedDelivery StateOf(Delivery delivery)
+        {
             return new PersistedDelivery(
-                persistedDelivery.Name,
-                persistedDelivery.Date,
-                persistedDelivery.SelectionMode,
-                persistedDelivery.SourceKey,
-                persistedDelivery.SourceReference,
-                persistedDelivery.RuleDefinitionJson != null,
-                persistedDelivery.Features.Count);
+                delivery.Name,
+                delivery.Date,
+                delivery.SelectionMode,
+                delivery.SourceKey,
+                delivery.SourceReference,
+                delivery.RuleDefinitionJson != null,
+                delivery.Features.Count);
         }
 
         private static int StatusCodeOf(IActionResult result)
