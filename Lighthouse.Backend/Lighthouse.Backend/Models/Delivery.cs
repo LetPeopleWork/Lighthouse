@@ -8,8 +8,6 @@ namespace Lighthouse.Backend.Models
 {
     public class Delivery : IConcurrencyTokenEntity
     {
-        private const string SourceBindingScaffold = "Following a source is not implemented yet.";
-
         private readonly List<Feature> features = [];
 
         private string name;
@@ -27,11 +25,6 @@ namespace Lighthouse.Backend.Models
             if (string.IsNullOrEmpty(name))
             {
                 throw new ArgumentException("Name cannot be null or empty");
-            }
-
-            if (DateOnly.FromDateTime(date) <= today)
-            {
-                throw new ArgumentException("Delivery date must be in the future");
             }
 
             Name = name;
@@ -140,12 +133,33 @@ namespace Lighthouse.Backend.Models
 
         public void BindToSource(string sourceKey, string sourceReference)
         {
-            throw new NotImplementedException($"Delivery {Id} cannot yet be made to follow {sourceKey}/{sourceReference}. {SourceBindingScaffold}");
+            if (SelectionMode == DeliverySelectionMode.SourceBound)
+            {
+                throw DeliverySourceBoundException.AlreadyBound(Id);
+            }
+
+            selectionMode = DeliverySelectionMode.SourceBound;
+            this.sourceKey = sourceKey;
+            this.sourceReference = sourceReference;
+            MarkAsChanged();
         }
 
+        /// <summary>
+        /// The name, the date and the Features are left exactly as the source last set them. They are
+        /// the reason somebody stops following a Release rather than deleting the Delivery, so they
+        /// stay and become editable again; only the trail back to the Release goes.
+        /// </summary>
         public void Unbind()
         {
-            throw new NotImplementedException($"Delivery {Id} cannot yet be released from the source it follows. {SourceBindingScaffold}");
+            if (SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                throw DeliverySourceBoundException.NotBound(Id);
+            }
+
+            selectionMode = DeliverySelectionMode.Manual;
+            sourceKey = null;
+            sourceReference = null;
+            MarkAsChanged();
         }
 
         public void Archive(DateTime archivedOn)
@@ -217,14 +231,16 @@ namespace Lighthouse.Backend.Models
             }
         }
 
-        // The refusal a Delivery owes its caller once it follows a source arrives together with the
-        // binding that can put one in that state. Until then nothing can reach the branch below, and
-        // this is here so the mutators already name the rule rather than gain it later one by one.
+        // Choosing the Features by hand is refused along with the rest rather than taken as a request
+        // to stop following the Release. Were it allowed, it would set the mode back to Manual while
+        // the Delivery still named a Release, and the next refresh would go on overwriting a Delivery
+        // that now claims to be somebody's to edit. Unbind is the way off, and it keeps the name, the
+        // date and the Features, so nothing is lost by having to ask for it.
         private void RefuseWhenSourceBound()
         {
             if (SelectionMode == DeliverySelectionMode.SourceBound)
             {
-                throw new NotImplementedException($"Delivery {Id} follows a source. {SourceBindingScaffold}");
+                throw DeliverySourceBoundException.CannotBeChanged(Id);
             }
         }
 

@@ -39,38 +39,22 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        /// <summary>
+        /// A Delivery that follows a Release elsewhere takes whatever date the Release carries, and a
+        /// Release that shipped last month is a perfectly ordinary thing to point one at. Refusing a
+        /// past date is a rule about what somebody may type in, not about what a Delivery can be, so
+        /// it is asked at the API and no longer here.
+        /// </summary>
         [Test]
-        public void Constructor_WithPastDate_ThrowsArgumentException()
+        public void Constructor_WithPastDate_CreatesDelivery()
         {
-            // Arrange
-            const string name = "Past Release";
             var pastDate = DateTime.UtcNow.AddDays(-1);
-            const int portfolioId = 1;
 
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => new Delivery(name, pastDate, portfolioId, TestToday.Ambient));
-            Assert.That(exception.Message, Is.EqualTo("Delivery date must be in the future"));
+            var delivery = new Delivery("Past Release", pastDate, 1, TestToday.Ambient);
+
+            Assert.That(delivery.Date, Is.EqualTo(pastDate));
         }
 
-        /// <summary>
-        /// Bug #5567, decision 2: the guard compares calendar days, so a date whose only claim to
-        /// being "in the future" is a later time-of-day today is rejected.
-        /// </summary>
-        [Test]
-        public void Constructor_WithLaterTimeOnTheSameInstanceDay_ThrowsArgumentException()
-        {
-            var laterToday = Clock.TodayAsUtcMidnight.AddHours(23);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => new Delivery("Q1 Release", laterToday, 1, Clock.Today));
-
-            Assert.That(exception.Message, Is.EqualTo("Delivery date must be in the future"));
-        }
-
-        /// <summary>
-        /// The mirror case: the instance's own next day is accepted, and the entity takes that day
-        /// as a parameter rather than reading an ambient clock (it is EF-materialised).
-        /// </summary>
         [Test]
         public void Constructor_WithTheInstanceNextDay_CreatesDelivery()
         {
