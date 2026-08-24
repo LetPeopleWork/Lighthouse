@@ -95,6 +95,26 @@ export class DeliveryItem {
 			.locator('[role="columnheader"][data-field="likelihood"]');
 	}
 
+	/**
+	 * Where a bound delivery says its name, its date and its features came from. Rendered on the
+	 * collapsed row, so nothing has to be opened to read it.
+	 */
+	get provenance(): Locator {
+		return this.container.getByTestId("delivery-source-provenance");
+	}
+
+	get provenanceName(): Locator {
+		return this.container.getByTestId("provenance-name");
+	}
+
+	get provenanceDate(): Locator {
+		return this.container.getByTestId("provenance-date");
+	}
+
+	get provenanceFeatures(): Locator {
+		return this.container.getByTestId("provenance-features");
+	}
+
 	async getProgress(): Promise<string | null> {
 		const text = await this.container.textContent();
 		const match = text?.match(/(\d+%\s*\(\d+\/\d+\))/);

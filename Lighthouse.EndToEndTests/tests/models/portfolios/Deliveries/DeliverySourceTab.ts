@@ -1,8 +1,9 @@
 import type { Locator, Page } from "@playwright/test";
 
 /**
- * The tab that previews the delivery date a work tracking system already holds. It only ever looks:
- * nothing on it writes anything, so there is no save path to model here.
+ * The tab that previews the delivery date a work tracking system already holds. Picking an entry
+ * here fills the name and the date on the surrounding dialog, which is where saving lives - so this
+ * tab has no save of its own to model.
  */
 export class DeliverySourceTab {
 	private readonly page: Page;

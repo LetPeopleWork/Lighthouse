@@ -33,6 +33,9 @@ const TAGGED_EPICS = [
 // the list takes a couple of seconds to fill on this instance.
 const RELEASES_ARRIVE_FROM_JIRA = 60_000;
 
+// Saving reads the Release's Features out of Jira again before the new row can be drawn.
+const THE_SAVED_DELIVERY_COMES_BACK = 60_000;
+
 // The date field holds a plain year-month-day; the preview prints the same day the way this browser
 // writes dates. Converting one into the other is what lets the two be compared without writing the
 // date down here, which would go stale the day somebody moves it in Jira.
@@ -40,14 +43,17 @@ const asShownToTheReader = (yearMonthDay: string): string =>
 	new Date(`${yearMonthDay}T00:00:00`).toLocaleDateString();
 
 // The walking skeleton for the whole slice: Releases a person made in Jira, the dates they did and
-// did not give them, and a forecaster reading off what binding one would mean before binding it.
+// did not give them, a forecaster reading off what binding one would mean, and then the Delivery
+// that binding leaves behind.
 //
 // Everything else sits a layer down and is covered there:
 //   - which Releases are offered, and why an archived or released one is not -> the backend
 //     delivery-source scenarios
 //   - the tab's absence on a connection with nothing to offer, the loading state and the empty
 //     preview -> DeliverySourceTab.test.tsx
-test("@walking_skeleton picking a dated Jira Release shows its date and the Features it would bring", async ({
+//   - refusing an edit that fights the binding, and letting go of one -> the backend scenarios and
+//     DeliverySection.provenance.test.tsx
+test("@walking_skeleton a dated Jira Release picked in the form becomes a Delivery carrying its date, its Features and where they came from", async ({
 	request,
 	overviewPage,
 }) => {
@@ -128,4 +134,25 @@ test("@walking_skeleton picking a dated Jira Release shows its date and the Feat
 	// membership is read at the level the Portfolio tracks rather than rolled up from children - so
 	// work this Portfolio does not track as a Feature is simply not part of the Release.
 	expect(await jiraReleases.previewedCount()).toBe(TAGGED_EPICS.length);
+
+	// Up to here nothing has left the form. Saving is where the Release has to survive the trip to the
+	// server and back: the same day Jira holds, the same four Features, and a row that says out loud
+	// that none of the three is the reader's own.
+	const savedDeliveries = await dialog.save();
+	const delivery = savedDeliveries.getDeliveryByName(THE_DATED_RELEASE);
+	await expect(delivery.container).toBeVisible({
+		timeout: THE_SAVED_DELIVERY_COMES_BACK,
+	});
+
+	expect(await delivery.getDeliveryDate()).toBe(
+		asShownToTheReader(dateJiraHolds),
+	);
+	expect(await delivery.getScope()).toBe(TAGGED_EPICS.length);
+
+	await expect(delivery.provenance).toBeVisible();
+	await expect(delivery.provenanceName).toContainText(
+		`Jira Release "${THE_DATED_RELEASE}"`,
+	);
+	await expect(delivery.provenanceDate).toContainText("Jira Release");
+	await expect(delivery.provenanceFeatures).toContainText("Jira Release");
 });
