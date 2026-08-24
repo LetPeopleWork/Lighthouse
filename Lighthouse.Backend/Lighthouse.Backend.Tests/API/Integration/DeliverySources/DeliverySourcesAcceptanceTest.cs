@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         protected const string JiraReleaseSourceDisplayName = "Jira Release";
 
         private const string DeliverySourcesSegment = "delivery-sources";
+        private const string DeliveriesSegment = "deliveries";
 
         /// <summary>
         /// Web defaults plus the string-enum reading the host writes with. Held in a field because a
@@ -155,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// A Feature this Portfolio tracks. A Feature's size is the sum of the work its Team carries, so
         /// a Team has to exist for the row to look like anything the grid would render.
         /// </summary>
-        protected void SeedTrackedFeature(int portfolioId, string referenceId, string name)
+        protected int SeedTrackedFeature(int portfolioId, string referenceId, string name)
         {
             using var scope = Factory.Services.CreateScope();
             var serviceProvider = scope.ServiceProvider;
@@ -193,6 +194,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
             featureRepository.Add(feature);
             featureRepository.Save().GetAwaiter().GetResult();
+
+            return feature.Id;
         }
 
         // --- What the faked Jira connection offers ---
@@ -234,6 +237,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         }
 
         // --- Driving port: HTTP ---
+
+        protected static string DeliveriesOfPortfolioRoute(string prefix, int portfolioId)
+            => $"/{prefix}/{DeliveriesSegment}/portfolio/{portfolioId}";
+
+        protected static string DeliveryRoute(string prefix, int deliveryId)
+            => $"/{prefix}/{DeliveriesSegment}/{deliveryId}";
+
+        protected Task<HttpResponseMessage> PostTheDelivery(string prefix, int portfolioId, UpdateDeliveryRequest request)
+            => Client.PostAsJsonAsync(DeliveriesOfPortfolioRoute(prefix, portfolioId), request);
+
+        protected Task<HttpResponseMessage> PutTheDelivery(string prefix, int deliveryId, UpdateDeliveryRequest request)
+            => Client.PutAsJsonAsync(DeliveryRoute(prefix, deliveryId), request);
+
+        protected Task<HttpResponseMessage> GetTheDeliveriesOfPortfolio(string prefix, int portfolioId)
+            => Client.GetAsync(DeliveriesOfPortfolioRoute(prefix, portfolioId));
+
+        protected static async Task<PortfolioDeliveriesBody> DeliveriesIn(HttpResponseMessage response)
+            => await ReadAs<PortfolioDeliveriesBody>(response);
 
         protected static string SourcesRoute(string prefix, int portfolioId)
             => $"/{prefix}/portfolios/{portfolioId}/{DeliverySourcesSegment}";
@@ -281,6 +302,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
             return options;
         }
+
+        protected sealed record DeliveryRow(
+            int Id,
+            string Name,
+            DateTime Date,
+            List<int> Features,
+            DeliverySelectionMode SelectionMode,
+            string? SourceKey,
+            string? SourceReference,
+            Guid ConcurrencyToken);
+
+        protected sealed record PortfolioDeliveriesBody(List<DeliveryRow> Active);
 
         protected sealed record DeliverySourceResponse(string Key, string DisplayName);
 
