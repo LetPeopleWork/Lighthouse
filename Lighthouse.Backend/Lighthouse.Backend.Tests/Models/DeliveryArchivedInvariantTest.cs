@@ -177,6 +177,18 @@ namespace Lighthouse.Backend.Tests.Models
                     (Action<Delivery>)(delivery => delivery.SetForecastPublishing(true)),
                     (Action<Delivery>)(delivery => Assert.That(delivery.PublishForecastToSource, Is.False)))
                 .SetName("SetForecastPublishing");
+
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.RecordPublishRefusal("Refused after closing", ClosingInstant)),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.LastPublishRefusalReason, Is.Null)))
+                .SetName("RecordPublishRefusal");
+
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.ClearPublishRefusal()),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.LastPublishRefusalReason, Is.Null)))
+                .SetName("ClearPublishRefusal");
         }
 
         [Test]

@@ -395,6 +395,12 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("LastPublishRefusalReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastPublishRefusedOn")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");

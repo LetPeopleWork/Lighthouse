@@ -175,6 +175,52 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(reloaded.PublishForecastToSource, Is.False);
         }
 
+        /// <summary>
+        /// What a source refused is what an administrator is asked to go and fix, so it has to survive a
+        /// restart - and it has to come back as the sentence the source said rather than as a truncated
+        /// one, because the exact words are what they will search for.
+        /// </summary>
+        [Test]
+        public async Task What_a_source_refused_survives_a_save_and_reload()
+        {
+            var whatJiraSaid = "You must have global or project administrator rights in order to modify versions.";
+            var theDayItWasRefused = new DateTime(2026, 8, 25, 0, 0, 0, DateTimeKind.Utc);
+
+            var savedId = await SaveAndForget(() =>
+            {
+                var delivery = new Delivery(DeliveryName, TestToday.AFutureDate, 1);
+                delivery.BindToSource(ReleaseSourceKey, ReleaseId);
+                delivery.SetForecastPublishing(true);
+                delivery.RecordPublishRefusal(whatJiraSaid, theDayItWasRefused);
+
+                return delivery;
+            });
+
+            using var reading = CreateContext();
+            var reloaded = await reading.Deliveries.SingleAsync(delivery => delivery.Id == savedId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reloaded.LastPublishRefusalReason, Is.EqualTo(whatJiraSaid));
+                Assert.That(reloaded.LastPublishRefusedOn, Is.EqualTo(theDayItWasRefused));
+            }
+        }
+
+        [Test]
+        public async Task A_Delivery_nothing_has_refused_reads_back_with_nothing_refused()
+        {
+            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, TestToday.AFutureDate, 1));
+
+            using var reading = CreateContext();
+            var reloaded = await reading.Deliveries.SingleAsync(delivery => delivery.Id == savedId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reloaded.LastPublishRefusalReason, Is.Null);
+                Assert.That(reloaded.LastPublishRefusedOn, Is.Null);
+            }
+        }
+
         private static IEnumerable<TestCaseData> EveryWayADeliveryChoosesItsFeatures()
         {
             yield return new TestCaseData(DeliverySelectionMode.Manual, null, null, null, null)

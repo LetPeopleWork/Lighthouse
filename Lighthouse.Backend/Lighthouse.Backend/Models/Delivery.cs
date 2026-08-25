@@ -99,6 +99,17 @@ namespace Lighthouse.Backend.Models
         /// </summary>
         public bool PublishForecastToSource { get; private set; }
 
+        /// <summary>
+        /// The day the source last refused this Delivery's forecast, and the sentence it refused with.
+        /// Kept on the Delivery rather than on the Portfolio because the permission a Release write needs
+        /// is held per project: two Deliveries of one Portfolio can be bound to Releases in two projects,
+        /// and one being refused says nothing about the other. Recorded per Portfolio, a Delivery that
+        /// publishes perfectly well would sit under a notice saying it does not.
+        /// </summary>
+        public DateTime? LastPublishRefusedOn { get; private set; }
+
+        public string? LastPublishRefusalReason { get; private set; }
+
         public void Rename(string name)
         {
             RefuseWhenArchived();
@@ -187,7 +198,76 @@ namespace Lighthouse.Backend.Models
             }
 
             PublishForecastToSource = publish;
+
+            // A Delivery nobody is broadcasting cannot be being refused. Left standing, the report would
+            // come back on screen the moment somebody switched the broadcast on again - about an attempt
+            // nobody had made yet.
+            if (!publish)
+            {
+                ForgetTheRefusal();
+            }
+
             MarkAsChanged();
+        }
+
+        /// <summary>
+        /// What the source said when it would not take the forecast, in its own words. That sentence
+        /// already names what to fix in the vocabulary the administrator will search for, so it is kept
+        /// as it was said rather than rewritten here.
+        ///
+        /// Deliberately not the broken-source state. A credential that may not write says nothing about
+        /// whether the Release still exists, and the two send somebody to fix entirely different things.
+        ///
+        /// The day rather than the instant, for the same reason the sync stamp is a day: a source that
+        /// refuses again tomorrow is not news, and writing the same values back keeps the row out of the
+        /// save instead of expiring the copy an open browser is holding on every refresh.
+        /// </summary>
+        public void RecordPublishRefusal(string reason, DateTime refusedOn)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
+            RefuseWhenArchived();
+
+            if (SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                throw DeliverySourceBoundException.NotBound(Id);
+            }
+
+            if (LastPublishRefusalReason == reason && LastPublishRefusedOn == refusedOn)
+            {
+                return;
+            }
+
+            LastPublishRefusalReason = reason;
+            LastPublishRefusedOn = refusedOn;
+            MarkAsChanged();
+        }
+
+        /// <summary>
+        /// A write that went through is the end of the report. Left standing, a Delivery publishing
+        /// perfectly well would go on telling an administrator to fix a permission that already works.
+        /// </summary>
+        public void ClearPublishRefusal()
+        {
+            RefuseWhenArchived();
+
+            if (ForgetTheRefusal())
+            {
+                MarkAsChanged();
+            }
+        }
+
+        private bool ForgetTheRefusal()
+        {
+            if (LastPublishRefusalReason is null && LastPublishRefusedOn is null)
+            {
+                return false;
+            }
+
+            LastPublishRefusalReason = null;
+            LastPublishRefusedOn = null;
+
+            return true;
         }
 
         /// <summary>
@@ -216,8 +296,10 @@ namespace Lighthouse.Backend.Models
 
             // Publishing is a statement about a Release this Delivery no longer follows. Left standing,
             // it would come back on by itself the moment somebody pointed the Delivery at a second
-            // Release, broadcasting to a Release nobody chose to broadcast to.
+            // Release, broadcasting to a Release nobody chose to broadcast to. What that Release refused
+            // goes with it, for the same reason.
             PublishForecastToSource = false;
+            ForgetTheRefusal();
 
             MarkAsChanged();
         }
