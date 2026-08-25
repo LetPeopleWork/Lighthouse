@@ -1643,3 +1643,82 @@ that consumes it and should settle the vocabulary then.
 - **The E2E date locator is unverified since the UI feedback pass.** The element it read was removed and
   the Page Object updated by construction, but Playwright has not run against it since.
 
+
+## Wave: DELIVER / [REF] Implementation summary — slice 02, shipped 2026-08-25
+
+ADO #5830. Six commits of implementation, four more closing what adversarial review found.
+
+**The pass.** `DeliverySourceSyncService` groups a Portfolio's bound Deliveries by the kind of source
+they follow and asks once per kind, so a Portfolio with fifty bound Deliveries costs the refresh what
+one does. It runs at S8's seam beside `RecomputeRuleBasedDeliveries`, per D9 — no new background
+service, no new schedule, no new setting. Its position is pinned at both ends and in the middle: after
+the Feature fetch it narrows against, before the one save that keeps what it says, and before the
+forecast that raises the event the daily snapshot records the target from.
+
+**The write.** `Delivery.SyncFromSource` is the only way in for the three things a hand is refused. It
+refuses a Delivery that follows nothing and one that has been retired, so the only caller it can serve
+is the refresh. It takes the interface's narrowed `RecordableDeliveries` rather than any list, the same
+way the rule service does, which makes AC-03.7 structural rather than remembered.
+
+**Overdue.** Decided on the backend from the instance's day and shipped on `DeliveryWithLikelihoodDto`
+as `isOverdue`. It is a fact about the date rather than about where the date came from, so a
+hand-maintained Delivery says it too once its day passes — a widening of the slice text, contradicting
+nothing in D5.
+
+### AC coverage — no silent N/A
+
+| AC | Where it is met | Where it is pinned |
+|---|---|---|
+| AC-03.1 | `DeliverySourceSyncService` + `PortfolioUpdater` | `Slice02SourceSyncTest`, `PortfolioUpdaterTest`, `DeliverySourceSyncServiceTest` |
+| AC-03.2 | `VerifyClientSuppliedFields` (hand entry, unchanged from 01b) + `Delivery.IsOverdue` | `DeliveryTest` boundary cases, `DeliverySection.overdue.test.tsx` |
+| AC-03.3 | `DeliverySourceResolver` narrowing + `SyncFromSource` | `DeliverySourceSyncInvariantTest`, including a same-size one-for-one swap |
+| AC-03.4 | Version moves only when something moved; the stamp is a day, so an unchanged re-read writes nothing at all | `DeliverySourceSyncInvariantTest`, `Slice02SourceSyncTest` |
+| AC-03.5 | **By construction** — `DeliveryMetricValuesProjector` already reads `delivery.Date`, and the sync runs before the forecast that triggers recording. No new storage. | The ordering assertion in `PortfolioUpdaterTest`; the projector's own suite covers the read |
+| AC-03.6 | Catch in the sync service; the resolver's verdicts leave the Delivery alone | `DeliverySourceSyncServiceTest` (three unrelated failure shapes), `Slice02SourceSyncTest` two-refresh scenario |
+| AC-03.7 | **Twice** — the repository filters, `RecordableDeliveries` throws, and `SyncFromSource` refuses | `DeliverySourceSyncInvariantTest`, `Slice02SourceSyncTest` |
+| AC-03.8 | Falls out of AC-03.1; the binding was never keyed on the name | `Slice02SourceSyncTest` |
+
+### Two ACs whose wording this slice corrects
+
+**AC-03.4 said "persists no write".** What is preserved, and what the AC is actually protecting, is the
+**version an open browser is holding** — moving it on a refresh that changed nothing fails that
+browser's next save for nobody's edit. The last-heard-from stamp is a note about the reading rather
+than about what was read, and slice 03 (AC-04.2) has to name when the source last answered, not when it
+last said something different. Recording the **day** rather than the instant settles both: the same
+value written back is not a change, so an unchanged re-read really does reach the database with
+nothing, and the row joins the save at most once a day. Read AC-03.4 as **"moves no version and
+produces no history entry"**.
+
+**The slice text scoped overdue to "a bound Delivery".** Implemented for every Delivery — see above.
+
+### The carried-forward item slice 01b left here, now settled
+
+`DeliverySourceUnavailableReason` had no member meaning a transient read failure, and three
+semantically different outcomes all arrived as `CapabilityWithdrawn`: a read that failed, a connection
+that no longer offers the source, and an answer that simply omitted a reference. A fourth route — the
+Jira adapter throwing for a source key it does not know — reached the sync as an indistinguishable
+exception. Slice 03's AC-04.4 and AC-04.5 are exactly the rule that a blip must never raise the
+broken-source state while a withdrawal must, so they were unimplementable on that vocabulary.
+
+`SourceReadFailed` now carries the transient case, the omitted-reference default moved onto it, and the
+connection is asked whether it still offers the source before it is asked about one — so a withdrawal
+arrives as itself. `Unbind` also clears the last-heard-from stamp and the unavailable reason, which
+would otherwise have sat on a hand-maintained Delivery describing a source it no longer has.
+
+### Known gaps, stated rather than left to be found
+
+- **The overdue chip does not re-evaluate as midnight passes on an idle tab.** The verdict arrives with
+  the payload, so a tab left open across midnight shows yesterday's answer until it refetches.
+- **A permanently unreadable source logs one warning per source key per Portfolio per refresh, with no
+  backoff and no latch.** `SourceUnavailableReason` is where the "already reported" state belongs and
+  nothing writes it until slice 03.
+- **Nothing round-trips `SourceLastSyncedOn` through the database from a sync** other than the
+  acceptance scenarios' read-back, which do exactly that over HTTP.
+- **The date beside the Overdue chip is no longer coloured.** MUI renders both theme colours to an
+  identical class under jsdom with no inline style, so nothing in this project could see which colour
+  the date was drawn in; the chip carries colour and word together and its colour is observable.
+- **Demo data is unaffected** — both seeded Deliveries are dated +14 and +60 days, so no Overdue chip
+  appears in any screenshot or Playwright run. No asset regeneration owed by this slice.
+- **No premium gate on the background sync (D10).** Binding is gated at the controller; the sync is not,
+  which matches `RecomputeRuleBasedDeliveries` in the same pass. Consistent with precedent rather than a
+  divergence, and deliberately left alone.

@@ -80,6 +80,9 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             catch (Exception exception)
 #pragma warning restore CA1031
             {
+                // Stryker disable once all: diagnostic log text is not behaviour. What this branch does
+                // is return null so the Deliveries keep their values, and that is asserted; the sentence
+                // an operator reads about it is not something a test should be pinned to.
                 logger.LogWarning(
                     exception,
                     "Source {SourceKey} of Portfolio {PortfolioName} could not be read; the {DeliveryCount} Deliveries following it keep the values they already have",
@@ -122,6 +125,9 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             // reporting success.
             catch (ArgumentException exception)
             {
+                // Stryker disable once all: diagnostic log text is not behaviour. That this Delivery is
+                // left on its values while the ones beside it still sync is the claim, and it is
+                // asserted; the wording of the line about it is not.
                 logger.LogWarning(
                     exception,
                     "Delivery {DeliveryId} refused what its source now says and keeps the values it already has",
