@@ -303,11 +303,17 @@ describe("DeliverySection states slice-03 must leave alone (Story #5587)", () =>
 	it("keeps the header chip's size and ForecastLevel colour (AC-03.7)", () => {
 		const delivery = deliveryWith({});
 
-		const { container } = renderSection(delivery);
+		renderSection(delivery);
 
-		const chip = container.querySelector(".MuiChip-sizeSmall");
+		// Found by the sentence it carries rather than by being the first small chip on the header.
+		// Other chips live there too - a target that has passed puts one right beside this one - and
+		// the first-match reading would silently start measuring whichever of them renders earliest.
+		const chip = screen
+			.getByText(`All Features by ${delivery.getFormattedDate()}: 72%`)
+			.closest(".MuiChip-root");
 
 		expect(chip).not.toBeNull();
+		expect(chip).toHaveClass("MuiChip-sizeSmall");
 		expect(chip).toHaveStyle({
 			backgroundColor: new ForecastLevel(72).color,
 		});

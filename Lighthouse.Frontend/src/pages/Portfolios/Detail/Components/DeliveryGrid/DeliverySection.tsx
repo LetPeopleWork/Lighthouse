@@ -84,6 +84,8 @@ import { isStoredAs } from "./deliverySelectionTabs";
 // so it sits below any single row's, and the heading must not invite the two to be read as one number.
 const MARGINAL_LIKELIHOOD_HEADER = "Likelihood";
 
+const OVERDUE_LABEL = "Overdue";
+
 interface DeliverySectionProps {
 	delivery: Delivery;
 	features: IFeature[];
@@ -332,6 +334,10 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		selectionModeHint = `${selectionModeHint} — click to stop following`;
 	}
 
+	// A bound Delivery takes whatever date its source now holds, past ones included, so a target that
+	// has been and gone is an ordinary state rather than something only a stale hand-entry could reach.
+	const isOverdue = delivery.isOverdue();
+
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
 
 	const teamsWithoutForecast = delivery.teamsWithoutForecast ?? [];
@@ -535,9 +541,23 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 												</Box>
 											)}
 										</Tooltip>
-										<Typography variant="body2" color="text.secondary">
+										<Typography
+											variant="body2"
+											color={isOverdue ? "error.main" : "text.secondary"}
+										>
 											{deliveryTerm} Date: {delivery.getFormattedDate()}
 										</Typography>
+										{/* The colour alone is not the signal - a target that has passed has to say so
+										    in a word, for anyone who cannot see the difference between the two greys. */}
+										{isOverdue && (
+											<Chip
+												label={OVERDUE_LABEL}
+												title="The target date has passed."
+												size="small"
+												color="error"
+												variant="outlined"
+											/>
+										)}
 										<Chip
 											title={
 												deliveryCannotBeForecast

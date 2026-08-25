@@ -102,6 +102,25 @@ export class Delivery implements IDelivery {
 		});
 	}
 
+	/**
+	 * Whether the target day has already been and gone. Compared as UTC days because that is the day
+	 * the screen shows — getFormattedDate renders the instant in UTC, so anything else would call a
+	 * Delivery overdue while the date beside the word still reads as today.
+	 *
+	 * A Delivery due today is not overdue: the day is not over.
+	 */
+	isOverdue(now: Date = new Date()): boolean {
+		const target = new Date(this.date);
+
+		return (
+			Date.UTC(
+				target.getUTCFullYear(),
+				target.getUTCMonth(),
+				target.getUTCDate(),
+			) < Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+		);
+	}
+
 	getFeatureCount(): number {
 		return this.features.length;
 	}
