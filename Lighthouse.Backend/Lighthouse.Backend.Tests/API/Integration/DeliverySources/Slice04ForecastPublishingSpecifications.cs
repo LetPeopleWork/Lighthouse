@@ -190,6 +190,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                 SelectionMode = DeliverySelectionMode.Manual,
             });
 
+        /// <summary>
+        /// The whole Delivery, sent back as it stands, by something written before the switch existed -
+        /// the shape a command-line client or a hand-built request has.
+        /// </summary>
+        private Task<HttpResponseMessage> WhenTheDeliveryIsSavedByAClientThatKnowsNothingAboutBroadcasting(
+            string prefix, int deliveryId)
+            => PutTheDelivery(prefix, deliveryId, new UpdateDeliveryRequest
+            {
+                Name = TheReleaseName,
+                Date = TheReleaseDate,
+                FeatureIds = [],
+                SelectionMode = DeliverySelectionMode.SourceBound,
+                SourceKey = JiraReleaseSourceKey,
+                SourceReference = TheRelease,
+            });
+
         // --- Then ---
 
         private static void ThenTheAnswerIs(HttpResponseMessage response, HttpStatusCode expected)

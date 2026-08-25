@@ -98,6 +98,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         }
 
         /// <summary>
+        /// The switch is the one field on this payload nobody sees being changed. Every other one shows
+        /// on the screen the moment it moves; this one only shows as a Release somewhere else that
+        /// quietly stopped being updated, with nothing anywhere saying why - so a payload that does not
+        /// mention it leaves it alone rather than reading as "switch it off".
+        /// </summary>
+        [Test]
+        public async Task A_payload_that_never_mentions_the_switch_leaves_it_where_it_was()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            var broadcasting = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            var saved = await WhenTheDeliveryIsSavedByAClientThatKnowsNothingAboutBroadcasting(
+                ApiLatestPrefix, broadcasting.Id);
+            var afterTheSave = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            ThenTheAnswerIs(saved, HttpStatusCode.OK);
+            ThenTheDeliverySaysItBroadcasts(afterTheSave);
+        }
+
+        /// <summary>
         /// A Jira that will not take the write is an exception report, not a fault: the refresh that
         /// produced the forecast carries every other number on the Portfolio.
         /// </summary>

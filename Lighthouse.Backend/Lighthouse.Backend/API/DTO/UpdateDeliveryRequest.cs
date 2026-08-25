@@ -30,8 +30,12 @@ namespace Lighthouse.Backend.API.DTO
         /// source-bound path, because it is a property of the binding and there is nowhere to broadcast
         /// to without one.
         ///
-        /// Absent means off, the same way an absent rule list means no rules: this request carries the
-        /// whole Delivery, so what it leaves out is not what the Delivery keeps.
+        /// Absent leaves it as it was, which is deliberately unlike every other field here: this request
+        /// carries the whole Delivery, so what it leaves out is normally not what the Delivery keeps. The
+        /// switch is the one field nobody sees being changed - a Delivery quietly stops broadcasting and
+        /// the only symptom is a Release in somebody else's tracker that stopped being updated, with
+        /// nothing anywhere saying why. On a Delivery being created there is nothing to leave as it was,
+        /// so absent means off.
         /// </summary>
         public bool? PublishForecastToSource { get; set; }
 

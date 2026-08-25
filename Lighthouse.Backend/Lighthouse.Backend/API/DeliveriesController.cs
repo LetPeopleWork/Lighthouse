@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.API
 
             var delivery = NewDelivery(request, portfolioId, sourcePreview);
 
-            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview);
+            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, broadcastingAlready: false);
             if (selectionError != null)
             {
                 return selectionError;
@@ -206,7 +206,12 @@ namespace Lighthouse.Backend.API
                 return sourceError;
             }
 
-            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource);
+            // Read before the transition below releases the Delivery from its source, because releasing
+            // it clears this. A payload that does not mention the switch at all - a hand-built request
+            // from outside this browser - must not read as an instruction to stop broadcasting.
+            var broadcastingAlready = existingDelivery.PublishForecastToSource;
+
+            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource, broadcastingAlready);
             if (selectionError != null)
             {
                 return selectionError;
@@ -233,7 +238,8 @@ namespace Lighthouse.Backend.API
             UpdateDeliveryRequest request,
             Delivery delivery,
             PortfolioSourcePreview? sourcePreview,
-            bool releasingFromASource)
+            bool releasingFromASource,
+            bool broadcastingAlready)
         {
             if (delivery.SelectionMode == DeliverySelectionMode.SourceBound)
             {
@@ -254,7 +260,7 @@ namespace Lighthouse.Backend.API
                 delivery.Reschedule(UtcDateOf(request));
             }
 
-            return ApplyFeatureSelection(request, delivery, sourcePreview);
+            return ApplyFeatureSelection(request, delivery, sourcePreview, broadcastingAlready);
         }
 
         /// <summary>
@@ -433,13 +439,13 @@ namespace Lighthouse.Backend.API
         /// because one payload shape serves all three modes.
         /// </summary>
         private IActionResult? ApplyFeatureSelection(
-            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview)
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, bool broadcastingAlready)
         {
             return request.SelectionMode switch
             {
                 DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
                 DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
-                DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview),
+                DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview, broadcastingAlready),
                 // The enum converter accepts any number, so a caller can name a mode that does not
                 // exist. That is a malformed request rather than something broken on our side.
                 _ => BadRequest(NoSuchSelectionMode(request.SelectionMode)),
@@ -457,7 +463,7 @@ namespace Lighthouse.Backend.API
         /// Delivery's closure record as though it were still what picked the Features.
         /// </summary>
         private BadRequestObjectResult? BindDeliveryToSource(
-            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview)
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, bool broadcastingAlready)
         {
             if (sourcePreview?.Resolution is not DeliverySourceResolution.Resolved resolved)
             {
@@ -480,9 +486,12 @@ namespace Lighthouse.Backend.API
             // Set after the binding rather than with it, because a Delivery that follows nothing refuses
             // it. Re-applied on every update for the same reason the binding is: an update to a bound
             // Delivery releases it and binds it again, and the release clears this along with everything
-            // else about the source - so a save that did not re-apply it would silently switch the
-            // broadcast off.
-            delivery.SetForecastPublishing(request.PublishForecastToSource ?? false);
+            // else about the source - so a save that did not re-apply it would switch the broadcast off.
+            //
+            // A payload that does not mention the switch leaves it as it was. Unlike every other field
+            // here, this one is invisible to whoever it is done to: they find out that Lighthouse
+            // stopped updating their Release, with nothing on any screen saying why.
+            delivery.SetForecastPublishing(request.PublishForecastToSource ?? broadcastingAlready);
 
             return null;
         }
