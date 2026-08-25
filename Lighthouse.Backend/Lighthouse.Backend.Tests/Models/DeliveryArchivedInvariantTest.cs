@@ -171,6 +171,12 @@ namespace Lighthouse.Backend.Tests.Models
                         }
                     }))
                 .SetName("Unbind");
+
+            yield return new TestCaseData(
+                    (Func<Delivery>)ArchivedDeliveryFollowingARelease,
+                    (Action<Delivery>)(delivery => delivery.SetForecastPublishing(true)),
+                    (Action<Delivery>)(delivery => Assert.That(delivery.PublishForecastToSource, Is.False)))
+                .SetName("SetForecastPublishing");
         }
 
         [Test]
@@ -205,6 +211,17 @@ namespace Lighthouse.Backend.Tests.Models
             // empty set moves nothing, and is covered on its own below.
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.ReplaceFeatures([new Feature { Id = 11, Name = "Checkout" }]))).SetName("ReplaceFeatures");
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.Archive(ClosingInstant))).SetName("Archive");
+        }
+
+        [Test]
+        public void SetForecastPublishing_OnALiveBoundDelivery_MovesTheConcurrencyToken()
+        {
+            var delivery = LiveDeliveryFollowingARelease();
+            var tokenBefore = delivery.ConcurrencyToken;
+
+            delivery.SetForecastPublishing(true);
+
+            Assert.That(delivery.ConcurrencyToken, Is.Not.EqualTo(tokenBefore));
         }
 
         /// <summary>
@@ -306,6 +323,14 @@ namespace Lighthouse.Backend.Tests.Models
             var delivery = LiveDelivery();
             delivery.ReplaceFeatures([new Feature { Name = TheFeatureItClosedWith }]);
             delivery.Archive(ClosingInstant);
+
+            return delivery;
+        }
+
+        private static Delivery LiveDeliveryFollowingARelease()
+        {
+            var delivery = LiveDelivery();
+            delivery.BindToSource(ReleaseSourceKey, TheReleaseItFollowed);
 
             return delivery;
         }

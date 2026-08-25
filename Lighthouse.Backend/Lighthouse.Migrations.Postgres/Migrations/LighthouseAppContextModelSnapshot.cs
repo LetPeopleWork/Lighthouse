@@ -428,6 +428,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("PortfolioId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("PublishForecastToSource")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RuleDefinitionJson")
                         .HasColumnType("text");
 

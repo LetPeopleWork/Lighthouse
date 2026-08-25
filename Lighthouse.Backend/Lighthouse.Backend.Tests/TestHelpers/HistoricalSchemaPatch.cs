@@ -40,6 +40,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Deliveries", "SourceReference", "TEXT", "AddDeliverySourceBinding"),
             new("Deliveries", "SourceLastSyncedOn", "timestamp with time zone", "AddDeliverySourceBinding"),
             new("Deliveries", "SourceUnavailableReason", "INTEGER", "AddDeliverySourceBinding"),
+            new("Deliveries", "PublishForecastToSource", "boolean", "AddDeliveryForecastPublishing"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

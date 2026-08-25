@@ -91,6 +91,14 @@ namespace Lighthouse.Backend.Models
 
         public DateTime? ArchivedOn { get; private set; }
 
+        /// <summary>
+        /// Whether this Delivery's forecast is broadcast back onto the source it follows. Named for
+        /// where it goes rather than for what is written there, because the anticipated second mode -
+        /// overwrite the target date instead of the description - turns this into a choice between
+        /// modes rather than a second switch beside it.
+        /// </summary>
+        public bool PublishForecastToSource { get; private set; }
+
         public void Rename(string name)
         {
             RefuseWhenArchived();
@@ -156,6 +164,33 @@ namespace Lighthouse.Backend.Models
         }
 
         /// <summary>
+        /// Whether this Delivery broadcasts its forecast back to the source it follows. Refused on a
+        /// Delivery that follows nothing, because there is nowhere for it to go: a Delivery chosen by
+        /// hand has no remote object the forecast is about, so the switch would be a setting that
+        /// silently does nothing for as long as it stays that way.
+        /// </summary>
+        public void SetForecastPublishing(bool publish)
+        {
+            RefuseWhenArchived();
+
+            if (SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                throw DeliverySourceBoundException.NotBound(Id);
+            }
+
+            // Asked for what it is already doing, the Delivery leaves the version an open browser is
+            // holding where it is - a request that changed nothing must not make somebody else's save
+            // fail with "this was changed by someone else".
+            if (PublishForecastToSource == publish)
+            {
+                return;
+            }
+
+            PublishForecastToSource = publish;
+            MarkAsChanged();
+        }
+
+        /// <summary>
         /// The name, the date and the Features are left exactly as the source last set them. They are
         /// the reason somebody stops following a Release rather than deleting the Delivery, so they
         /// stay and become editable again; only the trail back to the Release goes.
@@ -178,6 +213,11 @@ namespace Lighthouse.Backend.Models
             // now maintains by hand and describe something that is not happening to it any more.
             sourceLastSyncedOn = null;
             sourceUnavailableReason = null;
+
+            // Publishing is a statement about a Release this Delivery no longer follows. Left standing,
+            // it would come back on by itself the moment somebody pointed the Delivery at a second
+            // Release, broadcasting to a Release nobody chose to broadcast to.
+            PublishForecastToSource = false;
 
             MarkAsChanged();
         }

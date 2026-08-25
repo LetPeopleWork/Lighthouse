@@ -133,6 +133,48 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        /// <summary>
+        /// Whether a Delivery broadcasts its forecast back to the Release is a decision somebody made
+        /// once, so it has to outlive a restart. Both answers are read back, because a column that
+        /// always reads false would pass a test that only ever wrote true.
+        /// </summary>
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task Whether_a_Delivery_publishes_its_forecast_survives_a_save_and_reload(bool publishing)
+        {
+            var deliveryDate = TestToday.AFutureDate;
+
+            var savedId = await SaveAndForget(() =>
+            {
+                var delivery = new Delivery(DeliveryName, deliveryDate, 1);
+                delivery.BindToSource(ReleaseSourceKey, ReleaseId);
+                delivery.SetForecastPublishing(publishing);
+
+                return delivery;
+            });
+
+            using var reading = CreateContext();
+            var reloaded = await reading.Deliveries.SingleAsync(delivery => delivery.Id == savedId);
+
+            Assert.That(reloaded.PublishForecastToSource, Is.EqualTo(publishing));
+        }
+
+        /// <summary>
+        /// Every Delivery already saved was written before this column existed, and reading one back
+        /// has to leave it publishing nothing rather than start broadcasting to a Release nobody asked
+        /// it to broadcast to.
+        /// </summary>
+        [Test]
+        public async Task A_Delivery_saved_before_anyone_could_ask_reads_back_publishing_nothing()
+        {
+            var savedId = await SaveAndForget(() => new Delivery(DeliveryName, TestToday.AFutureDate, 1));
+
+            using var reading = CreateContext();
+            var reloaded = await reading.Deliveries.SingleAsync(delivery => delivery.Id == savedId);
+
+            Assert.That(reloaded.PublishForecastToSource, Is.False);
+        }
+
         private static IEnumerable<TestCaseData> EveryWayADeliveryChoosesItsFeatures()
         {
             yield return new TestCaseData(DeliverySelectionMode.Manual, null, null, null, null)
