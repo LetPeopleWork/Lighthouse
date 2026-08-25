@@ -87,6 +87,308 @@ const MARGINAL_LIKELIHOOD_HEADER = "Likelihood";
 
 const OVERDUE_LABEL = "Overdue";
 
+/**
+ * The marker beside a Delivery's name, and the sentence a pointer gets for it. Out here rather than
+ * inline because the component is at Sonar's cognitive-complexity limit and every branch left in it
+ * costs one — but also because this is a lookup, not part of rendering: three ways a Delivery's
+ * Features can have been chosen, and one suffix for the reader who is allowed to undo the third.
+ */
+function howTheFeaturesWereChosen({
+	isSourceBound,
+	isRuleBased,
+	canUnbind,
+	sourceLabel,
+	featuresTerm,
+}: {
+	isSourceBound: boolean;
+	isRuleBased: boolean;
+	canUnbind: boolean;
+	sourceLabel: string;
+	featuresTerm: string;
+}): { Icon: typeof TouchAppIcon; hint: string } {
+	const chosen = (() => {
+		if (isSourceBound) {
+			return { Icon: LinkIcon, hint: `Bound to ${sourceLabel}` };
+		}
+
+		if (isRuleBased) {
+			return {
+				Icon: AutoModeIcon,
+				hint: `Rule-Based: ${featuresTerm} automatically update based on rules`,
+			};
+		}
+
+		return { Icon: TouchAppIcon, hint: `Manual: ${featuresTerm} are fixed` };
+	})();
+
+	return canUnbind
+		? { ...chosen, hint: `${chosen.hint} — click to stop following` }
+		: chosen;
+}
+
+const ACTION_BUTTON_SX = {
+	bgcolor: "background.paper",
+	"&:hover": { bgcolor: "primary.light" },
+} as const;
+
+/** Archive, edit and delete, for a reader who may do them. */
+const DeliveryRowActions: React.FC<{
+	delivery: Delivery;
+	deliveryTerm: string;
+	canArchive: boolean;
+	onArchive?: (delivery: Delivery) => void;
+	onEdit: (delivery: Delivery) => void;
+	onDelete: (delivery: Delivery) => void;
+}> = ({ delivery, deliveryTerm, canArchive, onArchive, onEdit, onDelete }) => {
+	const stopAnd = (act: () => void) => (event: React.MouseEvent) => {
+		event.stopPropagation();
+		act();
+	};
+
+	return (
+		<Box
+			sx={{
+				position: "absolute",
+				top: "50%",
+				transform: "translateY(-50%)",
+				right: 8,
+				zIndex: 1,
+				display: "flex",
+				alignItems: "center",
+				gap: 0.5,
+			}}
+		>
+			<Tooltip
+				title={canArchive ? `Archive ${deliveryTerm}` : PREMIUM_UPGRADE_TOOLTIP}
+			>
+				{/* The button is disabled without a licence, and a disabled button fires no events, so
+				    the tooltip needs an enabled element of its own to sit on. */}
+				<span>
+					<IconButton
+						size="small"
+						disabled={!canArchive}
+						onClick={stopAnd(() => onArchive?.(delivery))}
+						aria-label="archive"
+						sx={ACTION_BUTTON_SX}
+					>
+						<ArchiveIcon />
+					</IconButton>
+				</span>
+			</Tooltip>
+			<IconButton
+				size="small"
+				onClick={stopAnd(() => onEdit(delivery))}
+				aria-label="edit"
+				sx={ACTION_BUTTON_SX}
+			>
+				<EditIcon />
+			</IconButton>
+			<IconButton
+				size="small"
+				onClick={stopAnd(() => onDelete(delivery))}
+				aria-label="delete"
+				sx={{
+					bgcolor: "background.paper",
+					"&:hover": { bgcolor: "error.light" },
+				}}
+			>
+				<DeleteIcon />
+			</IconButton>
+		</Box>
+	);
+};
+
+/**
+ * The badge beside a Delivery's name saying how its Features were chosen — and, for a reader who may
+ * let go of the source, the button that starts doing so.
+ *
+ * A whole link reads as a badge rather than as something to press, so the marker only breaks the
+ * moment the pointer or the keyboard arrives: that shows what pressing will do without a second glyph
+ * sitting beside every name for the rest of the time. The hover state lives here because nothing
+ * outside this badge has any use for it.
+ */
+const SelectionModeMarker: React.FC<{
+	hint: string;
+	Icon: typeof TouchAppIcon;
+	canUnbind: boolean;
+	onAskToUnbind: () => void;
+}> = ({ hint, Icon, canUnbind, onAskToUnbind }) => {
+	const [isAboutToUnbind, setIsAboutToUnbind] = useState(false);
+
+	if (!canUnbind) {
+		return (
+			<Tooltip title={hint}>
+				<Box sx={{ display: "flex", alignItems: "center" }}>
+					<Icon fontSize="small" sx={{ color: "text.secondary" }} />
+				</Box>
+			</Tooltip>
+		);
+	}
+
+	return (
+		<Tooltip title={hint}>
+			<IconButton
+				size="small"
+				aria-label={hint}
+				onClick={(e) => {
+					e.stopPropagation();
+					onAskToUnbind();
+				}}
+				onMouseEnter={() => setIsAboutToUnbind(true)}
+				onMouseLeave={() => setIsAboutToUnbind(false)}
+				onFocus={() => setIsAboutToUnbind(true)}
+				onBlur={() => setIsAboutToUnbind(false)}
+				sx={{ color: "text.secondary", p: 0 }}
+			>
+				{isAboutToUnbind ? (
+					<LinkOffIcon fontSize="small" />
+				) : (
+					<Icon fontSize="small" />
+				)}
+			</IconButton>
+		</Tooltip>
+	);
+};
+
+/** The teams carrying work on one row, or a word saying nobody is. */
+const OwningTeams: React.FC<{ row: IFeature; teams: IEntityReference[] }> = ({
+	row,
+	teams,
+}) => {
+	const teamsWithWork = teams.filter(
+		(team) => row.getTotalWorkForTeam(team.id) > 0,
+	);
+
+	if (teamsWithWork.length === 0) {
+		return (
+			<Typography variant="body2" color="text.secondary">
+				Unassigned
+			</Typography>
+		);
+	}
+
+	return (
+		<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+			{teamsWithWork.map((team) => (
+				<StyledLink key={team.id} to={`/teams/${team.id}`}>
+					<Typography variant="body2">{team.name}</Typography>
+				</StyledLink>
+			))}
+		</Box>
+	);
+};
+
+/**
+ * The grid's column definitions. They are a description of the table rather than part of this
+ * component's own logic, and each cell renderer is a small function of its own — so they live out
+ * here, where they do not count against the component that happens to mount the grid.
+ */
+function featureColumns({
+	featureTerm,
+	delivery,
+	teams,
+	onShowDetails,
+}: {
+	featureTerm: string;
+	delivery: Delivery;
+	teams: IEntityReference[];
+	onShowDetails: (feature: IFeature) => Promise<void>;
+}): DataGridColumn<IFeature & GridValidRowModel>[] {
+	return [
+		{
+			field: "name",
+			headerName: `${featureTerm} Name`,
+			hideable: false,
+			minWidth: 120,
+			flex: 1,
+			renderCell: ({ row }) => (
+				<FeatureName
+					name={getWorkItemName(row.name, row.referenceId)}
+					url={row.url ?? ""}
+				/>
+			),
+		},
+		{
+			field: "owningTeam",
+			headerName: "Team",
+			minWidth: 100,
+			flex: 0.5,
+			renderCell: ({ row }) => <OwningTeams row={row} teams={teams} />,
+		},
+		{
+			field: "progress",
+			headerName: "Progress",
+			minWidth: 200,
+			flex: 1,
+			sortable: false,
+			renderCell: ({ row }) => (
+				<FeatureProgressIndicator
+					feature={row}
+					teams={teams}
+					onShowDetails={() => onShowDetails(row)}
+				/>
+			),
+		},
+		{
+			...createForecastsColumn("Forecast"),
+			minWidth: 100,
+			flex: 0.5,
+			width: undefined,
+		},
+		{
+			field: "likelihood",
+			headerName: MARGINAL_LIKELIHOOD_HEADER,
+			minWidth: 110,
+			flex: 0.3,
+			sortable: false,
+			renderCell: ({ row }) =>
+				delivery.featureLikelihoods
+					.filter((fl) => fl.featureId === row.id)
+					.map((fl) => (
+						<FeatureLikelihoodChip
+							key={fl.featureId}
+							featureLikelihood={fl}
+							hasRemainingWork={row.getRemainingWorkForFeature() > 0}
+						/>
+					)),
+		},
+		createStateColumn(),
+	];
+}
+
+/**
+ * What the header chip says about the Delivery as a whole. The three answers are mutually exclusive
+ * and ordered: no forecast at all beats not enough history, which beats the number itself.
+ */
+function whatTheHeaderChipSays({
+	delivery,
+	featuresTerm,
+	cannotBeForecast: deliveryCannotBeForecast,
+	hasInsufficientData,
+}: {
+	delivery: Delivery;
+	featuresTerm: string;
+	cannotBeForecast: boolean;
+	hasInsufficientData: boolean;
+}): string {
+	if (deliveryCannotBeForecast || delivery.likelihoodPercentage === null) {
+		return CANNOT_FORECAST_SHORT;
+	}
+
+	if (hasInsufficientData) {
+		return INSUFFICIENT_FORECAST_DATA_SHORT;
+	}
+
+	return jointLikelihoodLabel({
+		term: featuresTerm,
+		date: delivery.getFormattedDate(),
+		value: formatLikelihood(delivery.likelihoodPercentage, {
+			hasRemainingWork: delivery.remainingWork > 0,
+			precision: "round",
+		}),
+	});
+}
+
 interface DeliverySectionProps {
 	delivery: Delivery;
 	features: IFeature[];
@@ -125,7 +427,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	const [featureWorkItems, setFeatureWorkItems] = useState<IWorkItem[]>([]);
 	const [isWorkItemsDialogOpen, setIsWorkItemsDialogOpen] = useState(false);
 	const [isUnbindDialogOpen, setIsUnbindDialogOpen] = useState(false);
-	const [isAboutToUnbind, setIsAboutToUnbind] = useState(false);
 
 	const [activeTab, setActiveTab] = useState<"workItems" | "metrics" | "notes">(
 		"workItems",
@@ -232,88 +533,13 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	};
 
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
-		() => [
-			{
-				field: "name",
-				headerName: `${featureTerm} Name`,
-				hideable: false,
-				minWidth: 120,
-				flex: 1,
-				renderCell: ({ row }) => (
-					<FeatureName
-						name={getWorkItemName(row.name, row.referenceId)}
-						url={row.url ?? ""}
-					/>
-				),
-			},
-			{
-				field: "owningTeam",
-				headerName: "Team",
-				minWidth: 100,
-				flex: 0.5,
-				renderCell: ({ row }) => {
-					const teamsWithWork = teams.filter(
-						(team) => row.getTotalWorkForTeam(team.id) > 0,
-					);
-
-					if (teamsWithWork.length === 0) {
-						return (
-							<Typography variant="body2" color="text.secondary">
-								Unassigned
-							</Typography>
-						);
-					}
-
-					return (
-						<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-							{teamsWithWork.map((team) => (
-								<StyledLink key={team.id} to={`/teams/${team.id}`}>
-									<Typography variant="body2">{team.name}</Typography>
-								</StyledLink>
-							))}
-						</Box>
-					);
-				},
-			},
-			{
-				field: "progress",
-				headerName: "Progress",
-				minWidth: 200,
-				flex: 1,
-				sortable: false,
-				renderCell: ({ row }) => (
-					<FeatureProgressIndicator
-						feature={row}
-						teams={teams}
-						onShowDetails={() => handleShowFeatureDetails(row)}
-					/>
-				),
-			},
-			{
-				...createForecastsColumn("Forecast"),
-				minWidth: 100,
-				flex: 0.5,
-				width: undefined,
-			},
-			{
-				field: "likelihood",
-				headerName: MARGINAL_LIKELIHOOD_HEADER,
-				minWidth: 110,
-				flex: 0.3,
-				sortable: false,
-				renderCell: ({ row }) =>
-					delivery.featureLikelihoods
-						.filter((fl) => fl.featureId === row.id)
-						.map((fl) => (
-							<FeatureLikelihoodChip
-								key={fl.featureId}
-								featureLikelihood={fl}
-								hasRemainingWork={row.getRemainingWorkForFeature() > 0}
-							/>
-						)),
-			},
-			createStateColumn(),
-		],
+		() =>
+			featureColumns({
+				featureTerm,
+				delivery,
+				teams,
+				onShowDetails: handleShowFeatureDetails,
+			}),
 		[featureTerm, delivery, teams, handleShowFeatureDetails],
 	);
 
@@ -322,18 +548,14 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	// someone who may only look is a promise the screen cannot keep.
 	const canUnbind = isSourceBound && canEdit && onUnbind !== undefined;
 
-	let SelectionModeIcon = TouchAppIcon;
-	let selectionModeHint = `Manual: ${featuresTerm} are fixed`;
-	if (isSourceBound) {
-		SelectionModeIcon = LinkIcon;
-		selectionModeHint = `Bound to ${sourceLabel}`;
-	} else if (isRuleBased) {
-		SelectionModeIcon = AutoModeIcon;
-		selectionModeHint = `Rule-Based: ${featuresTerm} automatically update based on rules`;
-	}
-	if (canUnbind) {
-		selectionModeHint = `${selectionModeHint} — click to stop following`;
-	}
+	const { Icon: SelectionModeIcon, hint: selectionModeHint } =
+		howTheFeaturesWereChosen({
+			isSourceBound,
+			isRuleBased,
+			canUnbind,
+			sourceLabel,
+			featuresTerm,
+		});
 
 	// A bound Delivery takes whatever date its source now holds, past ones included, so a target that
 	// has been and gone is an ordinary state rather than something only a stale hand-entry could reach.
@@ -352,21 +574,12 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 		hasRemainingWork: delivery.remainingWork > 0,
 		hasSufficientData: delivery.hasSufficientData,
 	});
-	let likelihoodLabel: string;
-	if (deliveryCannotBeForecast || deliveryLikelihood === null) {
-		likelihoodLabel = CANNOT_FORECAST_SHORT;
-	} else if (hasInsufficientData) {
-		likelihoodLabel = INSUFFICIENT_FORECAST_DATA_SHORT;
-	} else {
-		likelihoodLabel = jointLikelihoodLabel({
-			term: featuresTerm,
-			date: delivery.getFormattedDate(),
-			value: formatLikelihood(deliveryLikelihood, {
-				hasRemainingWork: delivery.remainingWork > 0,
-				precision: "round",
-			}),
-		});
-	}
+	const likelihoodLabel = whatTheHeaderChipSays({
+		delivery,
+		featuresTerm,
+		cannotBeForecast: deliveryCannotBeForecast,
+		hasInsufficientData,
+	});
 
 	return (
 		<Paper elevation={1} sx={{ mb: 2, overflow: "hidden" }}>
@@ -411,80 +624,14 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 						}}
 					>
 						{canEdit && (
-							<Box
-								sx={{
-									position: "absolute",
-									top: "50%",
-									transform: "translateY(-50%)",
-									right: 8,
-									zIndex: 1,
-									display: "flex",
-									alignItems: "center",
-									gap: 0.5,
-								}}
-							>
-								<Tooltip
-									title={
-										canArchive
-											? `Archive ${deliveryTerm}`
-											: PREMIUM_UPGRADE_TOOLTIP
-									}
-								>
-									{/* The button is disabled without a licence, and a disabled button fires no
-									    events, so the tooltip needs an enabled element of its own to sit on. */}
-									<span>
-										<IconButton
-											size="small"
-											disabled={!canArchive}
-											onClick={(e) => {
-												e.stopPropagation();
-												onArchive?.(delivery);
-											}}
-											aria-label="archive"
-											sx={{
-												bgcolor: "background.paper",
-												"&:hover": {
-													bgcolor: "primary.light",
-												},
-											}}
-										>
-											<ArchiveIcon />
-										</IconButton>
-									</span>
-								</Tooltip>
-								<IconButton
-									size="small"
-									onClick={(e) => {
-										e.stopPropagation();
-										onEdit(delivery);
-									}}
-									aria-label="edit"
-									sx={{
-										bgcolor: "background.paper",
-										"&:hover": {
-											bgcolor: "primary.light",
-										},
-									}}
-								>
-									<EditIcon />
-								</IconButton>
-								<IconButton
-									size="small"
-									onClick={(e) => {
-										e.stopPropagation();
-										onDelete(delivery);
-									}}
-									aria-label="delete"
-									sx={{
-										bgcolor: "background.paper",
-										"&:hover": {
-											bgcolor: "error.light",
-										},
-									}}
-								>
-									<DeleteIcon />
-								</IconButton>
-							</Box>
+							<DeliveryRowActions
+								delivery={delivery}
+								deliveryTerm={deliveryTerm}
+								canArchive={canArchive}
+								onArchive={onArchive}
+								onEdit={onEdit}
+								onDelete={onDelete}
+							/>
 						)}
 						<Box
 							sx={{
@@ -525,36 +672,12 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 										{/* A whole link reads as a badge, not as something to press. Breaking it the moment
 										    the pointer or the keyboard arrives shows what pressing will do, without a second
 										    glyph sitting beside every name for the rest of the time. */}
-										<Tooltip title={selectionModeHint}>
-											{canUnbind ? (
-												<IconButton
-													size="small"
-													aria-label={selectionModeHint}
-													onClick={(e) => {
-														e.stopPropagation();
-														setIsUnbindDialogOpen(true);
-													}}
-													onMouseEnter={() => setIsAboutToUnbind(true)}
-													onMouseLeave={() => setIsAboutToUnbind(false)}
-													onFocus={() => setIsAboutToUnbind(true)}
-													onBlur={() => setIsAboutToUnbind(false)}
-													sx={{ color: "text.secondary", p: 0 }}
-												>
-													{isAboutToUnbind ? (
-														<LinkOffIcon fontSize="small" />
-													) : (
-														<SelectionModeIcon fontSize="small" />
-													)}
-												</IconButton>
-											) : (
-												<Box sx={{ display: "flex", alignItems: "center" }}>
-													<SelectionModeIcon
-														fontSize="small"
-														sx={{ color: "text.secondary" }}
-													/>
-												</Box>
-											)}
-										</Tooltip>
+										<SelectionModeMarker
+											hint={selectionModeHint}
+											Icon={SelectionModeIcon}
+											canUnbind={canUnbind}
+											onAskToUnbind={() => setIsUnbindDialogOpen(true)}
+										/>
 										<Typography variant="body2" color="text.secondary">
 											{deliveryTerm} Date: {delivery.getFormattedDate()}
 										</Typography>
