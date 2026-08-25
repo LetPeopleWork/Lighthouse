@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -86,6 +87,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                         // rather than about a double written here.
                         services.RemoveAll<IJiraWorkTrackingConnector>();
                         services.AddScoped(_ => JiraConnector.Object);
+
+                        AlsoSwap(services);
                     });
                 });
 
@@ -100,6 +103,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+        }
+
+        /// <summary>
+        /// Anything a single fixture needs swapped on top of the Jira connector and the licence.
+        /// Scenarios driven over HTTP need nothing here; the ones driven through the scheduled refresh
+        /// do, because that refresh starts by fetching Features and this Epic does not own the fetch.
+        /// </summary>
+        protected virtual void AlsoSwap(IServiceCollection services)
+        {
         }
 
         [TearDown]
@@ -229,6 +241,51 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             JiraConnector
                 .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
                 .ReturnsAsync(new Dictionary<string, DeliverySourceResolution> { [sourceReference] = resolution });
+        }
+
+        protected void TheRemoteSays(Dictionary<string, DeliverySourceResolution> byReference)
+        {
+            JiraConnector
+                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .ReturnsAsync(byReference);
+        }
+
+        /// <summary>
+        /// A connection that has stopped offering the source throws out of the read rather than
+        /// answering it, which is what the Jira adapter raises when it is asked for a source key it
+        /// does not know. It is the one failure that cannot be expressed as a resolution.
+        /// </summary>
+        protected void TheRemoteCannotBeAskedAtAll()
+        {
+            JiraConnector
+                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .ThrowsAsync(new ArgumentException(
+                    $"This Jira connection does not offer a delivery source called '{JiraReleaseSourceKey}'."));
+        }
+
+        // --- Driving port: the scheduled refresh ---
+
+        /// <summary>
+        /// Triggers one Portfolio refresh and waits for the queue to go idle. Admission happens inside
+        /// the trigger call, so the key is already active before the polling starts and "not enqueued
+        /// yet" cannot be mistaken for "already finished".
+        /// </summary>
+        protected async Task ThePortfolioRefreshRuns(int portfolioId)
+        {
+            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+
+            Factory.Services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolioId);
+
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (statusStore.HasActiveWork())
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
+                }
+
+                await Task.Delay(20);
+            }
         }
 
         protected void TheInstanceIsNotLicensedForPremium()
