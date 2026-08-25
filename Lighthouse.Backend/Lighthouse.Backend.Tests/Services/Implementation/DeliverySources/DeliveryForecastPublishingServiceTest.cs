@@ -45,12 +45,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         private Mock<IDeliveryForecastBlockRenderer> rendererMock;
         private FakeLighthouseClock clock;
         private List<DeliveryForecastBlock> blocksComposed;
+        private List<DateTime> calendarWindowEnds;
         private DeliveryForecastPublishingService subject;
 
         [SetUp]
         public void SetUp()
         {
             blocksComposed = [];
+            calendarWindowEnds = [];
 
             connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             publisherMock = new Mock<IDeliveryForecastPublisher>();
@@ -60,6 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             var blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock
                 .Setup(service => service.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Callback<DateTime, DateTime>((_, end) => calendarWindowEnds.Add(end))
                 .Returns(NoBlackoutPeriods);
 
             rendererMock
@@ -132,6 +135,73 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             Assert.That(
                 blocksComposed.Single().Percentiles.Select(percentile => percentile.Percentile),
                 Is.EqualTo(ThePercentilesTheProductShows));
+        }
+
+        /// <summary>
+        /// Which non-working days a forecast lands on depends on how far ahead the calendar was asked
+        /// about: a recurring shutdown is only worked out for the window it falls inside. Asked over the
+        /// Deliveries being broadcast rather than over all of them, a Portfolio whose furthest target
+        /// belongs to a Delivery nobody broadcasts gets a shorter window here than the screen uses - and
+        /// the date written onto somebody's Release ends up days away from the date Lighthouse shows for
+        /// the same Delivery.
+        /// </summary>
+        [Test]
+        public async Task The_calendar_is_read_over_the_whole_Portfolio_the_way_the_screen_reads_it()
+        {
+            var portfolio = APortfolio();
+            var broadcasting = ABroadcastingDelivery(TheRelease, AFeatureWithAForecast());
+            var theOneNobodyBroadcasts = ADeliveryChosenByHand(AFeatureWithAForecast());
+            theOneNobodyBroadcasts.Reschedule(broadcasting.Date.AddDays(365));
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([broadcasting, theOneNobodyBroadcasts]));
+
+            Assert.That(calendarWindowEnds, Has.All.GreaterThan(theOneNobodyBroadcasts.Date),
+                "the window has to cover every Delivery of the Portfolio, or the published dates and the shown dates come off two different calendars.");
+        }
+
+        /// <summary>
+        /// A Release that currently carries no work at all reads as certain rather than as
+        /// unforecastable - the Delivery holds no Features, so there is nothing that cannot be forecast.
+        /// It still has no dates to publish, and a block with an empty forecast list would say "0%" on a
+        /// customer's Release.
+        /// </summary>
+        [Test]
+        public async Task A_Delivery_whose_Release_carries_no_work_yet_writes_nothing()
+        {
+            var portfolio = APortfolio();
+            var delivery = ABroadcastingDelivery(TheRelease);
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
+
+            publisherMock.Verify(
+                publisher => publisher.PublishAsync(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<DeliveryForecastPublication>()),
+                Times.Never);
+        }
+
+        /// <summary>
+        /// One reading of the clock for the whole round. Read per Delivery, a round that happens to cross
+        /// midnight would stamp two Deliveries of one Portfolio with two different write dates, and a
+        /// reader comparing two Releases would take the older stamp for a Release that had stopped being
+        /// updated.
+        /// </summary>
+        [Test]
+        public async Task Every_Delivery_published_in_one_round_carries_the_same_write_date()
+        {
+            var portfolio = APortfolio();
+            var first = ABroadcastingDelivery(TheRelease, AFeatureWithAForecast());
+            var second = ABroadcastingDelivery(ASecondRelease, AFeatureWithAForecast());
+            publisherMock
+                .Setup(publisher => publisher.PublishAsync(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<DeliveryForecastPublication>()))
+                .Callback(() => clock.SetInstant(TheRoundRanAt.AddDays(1)))
+                .ReturnsAsync(new DeliveryForecastPublishResult.Published());
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([first, second]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(blocksComposed, Has.Count.EqualTo(2));
+                Assert.That(blocksComposed.Select(block => block.WrittenOn).Distinct().Count(), Is.EqualTo(1));
+            }
         }
 
         [TestCaseSource(nameof(EveryDeliveryThatMustNotBeBroadcast))]

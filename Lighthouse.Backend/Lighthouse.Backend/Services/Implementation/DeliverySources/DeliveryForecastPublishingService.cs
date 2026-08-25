@@ -38,11 +38,18 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                 return;
             }
 
-            // One calendar lookup for the whole set, and one day for every Delivery in it: two
-            // Deliveries published in the same pass must not be dated from two different readings of
-            // the clock, or a run crossing midnight would stamp them differently.
+            // One day for every Delivery in the pass: two published in the same round must not be dated
+            // from two different readings of the clock, or a run crossing midnight would stamp them
+            // differently.
             var today = clock.Today;
-            var blackoutPeriods = projector.BlackoutPeriodsFor(broadcasting, today);
+
+            // The calendar is measured over every Delivery of the Portfolio rather than over the ones
+            // being broadcast. Recurring non-working days are only worked out for the window they are
+            // asked about, so a narrower window silently leaves some out - and the forecast written onto
+            // somebody's Release would then be days apart from the one the Lighthouse screen shows for
+            // the same Delivery, which is the one thing this feature may never do. The screen and the
+            // daily record both measure it over the whole set; so does this.
+            var blackoutPeriods = projector.BlackoutPeriodsFor(deliveries, today);
 
             foreach (var delivery in broadcasting)
             {
@@ -60,6 +67,10 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         {
             return delivery.PublishForecastToSource
                 && delivery.SelectionMode == DeliverySelectionMode.SourceBound
+                // Stryker disable once all: the aggregate refuses to bind a Delivery to a source without
+                // both of these, so nothing this pass can be handed fails them. They are here because the
+                // two columns are nullable in the database, where a row edited by hand is not bound by
+                // that refusal, and a null reaching the write below would take the whole round down.
                 && !string.IsNullOrEmpty(delivery.SourceKey)
                 && !string.IsNullOrEmpty(delivery.SourceReference)
                 && delivery.SourceLastSyncedOn is not null
