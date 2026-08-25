@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private const string UnreadableValue = "unreadable-stored-value";
 
-        private static readonly string[] SyncedThenSaved = ["synced", "saved"];
+        private static readonly string[] TheOrderOneRefreshGoesIn = ["fetched", "synced", "saved", "forecast asked for"];
 
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IAppSettingService> appSettingServiceMock;
@@ -301,12 +301,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         /// <summary>
-        /// The refresh saves the Deliveries once. A sync running after that save would hold the new
-        /// date in memory, write nothing, and be thrown away when the scope closes - the screen would
-        /// go on showing the old date until some later refresh happened to change something else.
+        /// Every neighbour of the source sync is load-bearing and each end of it is pinned here.
+        ///
+        /// It cannot move above the Feature fetch: it narrows what the source says to the Features this
+        /// Portfolio tracks, and the fetch is what brings those in - run first, it would narrow against
+        /// last refresh's set. It cannot move below the save: the refresh saves Deliveries once, so a
+        /// sync after it would hold the new date in memory, write nothing, and be thrown away with the
+        /// scope, leaving the screen on the old date. And it has to precede the forecast, because that
+        /// is what raises the event the daily snapshot records the target from - after it, the moved
+        /// target would not reach the Delivery's history until the following day.
         /// </summary>
         [Test]
-        public void UpdateProject_AsksTheSourcesBeforeTheOneSaveThatWouldPersistWhatTheySay()
+        public void UpdateProject_AsksTheSourcesAfterTheFetchTheyNarrowAgainstAndBeforeTheSaveThatKeepsWhatTheySay()
         {
             var team = CreateTeam();
             var project = CreateProject(team);
@@ -315,6 +321,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             deliveryRepositoryMock.Setup(x => x.GetRecordableByPortfolio(project.Id)).Returns(new RecordableDeliveries([]));
 
             var whatHappenedInWhatOrder = new List<string>();
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
+                .Callback(() => whatHappenedInWhatOrder.Add("fetched"))
+                .ReturnsAsync(SyncOutcome.None);
             deliverySourceSyncServiceMock
                 .Setup(x => x.ResyncSourceBoundDeliveries(It.IsAny<Portfolio>(), It.IsAny<RecordableDeliveries>()))
                 .Callback(() => whatHappenedInWhatOrder.Add("synced"))
@@ -323,10 +333,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Setup(x => x.TrySaveRecomputedDeliveries())
                 .Callback(() => whatHappenedInWhatOrder.Add("saved"))
                 .ReturnsAsync(true);
+            forecastUpdaterMock
+                .Setup(x => x.TriggerUpdate(It.IsAny<int>()))
+                .Callback(() => whatHappenedInWhatOrder.Add("forecast asked for"));
 
             CreateSubject().TriggerUpdate(project.Id);
 
-            Assert.That(whatHappenedInWhatOrder, Is.EqualTo(SyncedThenSaved));
+            Assert.That(whatHappenedInWhatOrder, Is.EqualTo(TheOrderOneRefreshGoesIn));
         }
 
         [Test]

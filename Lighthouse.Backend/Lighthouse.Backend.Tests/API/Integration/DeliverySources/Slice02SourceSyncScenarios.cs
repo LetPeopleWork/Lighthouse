@@ -53,6 +53,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// was. Moving it would fail that browser's next save with "somebody else changed this" on
         /// every refresh interval, for nobody's edit.
         /// </summary>
+        /// <summary>
+        /// Asserting only that nothing moved would pass just as well with the sync deleted from the
+        /// refresh, so the last-heard-from stamp carries the other half: it says the Release WAS asked
+        /// and the pass chose to write nothing, rather than that nobody asked at all.
+        /// </summary>
         [Test]
         public async Task A_refresh_that_found_the_Release_unchanged_leaves_the_Delivery_and_its_version_alone()
         {
@@ -63,23 +68,36 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
             var afterTheRefresh = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolio);
 
-            ThenNothingAboutTheDeliveryMoved(beforeTheRefresh, afterTheRefresh);
+            using (Assert.EnterMultipleScope())
+            {
+                ThenNothingAboutTheDeliveryMoved(beforeTheRefresh, afterTheRefresh);
+                ThenTheReleaseWasHeardFrom(afterTheRefresh);
+            }
         }
 
+        /// <summary>
+        /// Two refreshes, because one proves nothing. The first is a real sync, which is what makes the
+        /// second's "unchanged" mean the values survived a failed read rather than that the Release was
+        /// saying the same thing all along - and the Release is moved between them, so a sync that did
+        /// go through on the second pass would be plainly visible.
+        /// </summary>
         [Test]
         public async Task A_Release_nobody_could_read_leaves_the_Delivery_on_its_last_known_values_and_the_refresh_standing()
         {
             var portfolio = await GivenADeliveryFollowingTheRelease(ApiLatestPrefix);
-            var beforeTheRefresh = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolio);
+            await ThePortfolioRefreshRuns(portfolio);
+            var afterTheReleaseWasLastRead = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolio);
 
+            GivenTheReleaseHasBeenRenamedAndRescheduledInJira();
             GivenJiraCannotBeAskedAboutTheReleaseAtAll();
             await ThePortfolioRefreshRuns(portfolio);
 
-            var afterTheRefresh = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolio);
+            var afterTheReadFailed = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolio);
 
             using (Assert.EnterMultipleScope())
             {
-                ThenNothingAboutTheDeliveryMoved(beforeTheRefresh, afterTheRefresh);
+                ThenTheDeliverySays(afterTheReadFailed, TheReleaseName, TheReleaseDate);
+                ThenNothingAboutTheDeliveryMoved(afterTheReleaseWasLastRead, afterTheReadFailed);
                 ThenTheRefreshWasRecordedAsHavingWorked(portfolio);
             }
         }
@@ -116,7 +134,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
             var afterTheRefresh = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolio);
 
-            ThenNothingAboutTheDeliveryMoved(beforeTheRefresh, afterTheRefresh);
+            using (Assert.EnterMultipleScope())
+            {
+                ThenNothingAboutTheDeliveryMoved(beforeTheRefresh, afterTheRefresh);
+                ThenNobodyAskedAnySourceAbout(afterTheRefresh);
+            }
         }
     }
 }

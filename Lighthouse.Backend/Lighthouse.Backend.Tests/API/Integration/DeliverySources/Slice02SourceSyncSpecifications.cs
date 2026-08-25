@@ -145,6 +145,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             }
         }
 
+        /// <summary>
+        /// Read back over HTTP rather than off the aggregate, so it also says the stamp survived the
+        /// save - a value written in memory and lost on the way to the database would leave every
+        /// "nothing changed" scenario passing and slice 03 with no date to show.
+        /// </summary>
+        private static void ThenTheReleaseWasHeardFrom(DeliveryRow delivery)
+            => Assert.That(delivery.SourceLastSyncedOn, Is.Not.Null,
+                "a refresh that asked the Release and chose to write nothing still records that it asked; " +
+                "without this the scenario passes just as well with the sync pass deleted.");
+
+        private static void ThenNobodyAskedAnySourceAbout(DeliveryRow delivery)
+            => Assert.That(delivery.SourceLastSyncedOn, Is.Null);
+
         private void ThenTheRefreshWasRecordedAsHavingWorked(int portfolioId)
         {
             using var scope = Factory.Services.CreateScope();

@@ -27,6 +27,10 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static readonly string[] TheFeaturesTheReleaseNowNames = ["Checkout", "Search", "Payments"];
 
+        private static readonly string[] TheSameNumberOfDifferentFeatures = ["Checkout", "Payments"];
+
+        private static readonly string[] EveryFeatureInThisFixture = ["Checkout", "Search", "Payments"];
+
         [Test]
         public void A_Delivery_following_a_Release_takes_the_name_date_and_Features_the_Release_now_has()
         {
@@ -112,6 +116,26 @@ namespace Lighthouse.Backend.Tests.Models
             yield return new TestCaseData((Action<Delivery>)(delivery =>
                     delivery.SyncFromSource(ReleaseName, ReleaseDate, FeaturesNamed(TheFeaturesTheReleaseNowNames), HeardFromTheReleaseAt)))
                 .SetName("Only the Features moved");
+
+            yield return new TestCaseData((Action<Delivery>)(delivery =>
+                    delivery.SyncFromSource(ReleaseName, ReleaseDate, FeaturesNamed(TheSameNumberOfDifferentFeatures), HeardFromTheReleaseAt)))
+                .SetName("The Features were swapped one for one");
+        }
+
+        /// <summary>
+        /// Work moving off the Release and other work moving on between two refreshes leaves the count
+        /// where it was. Answering "has this changed?" by counting would call that no change and leave
+        /// the Delivery holding work the Release dropped - quietly, and for as long as the counts keep
+        /// matching, which is indefinitely.
+        /// </summary>
+        [Test]
+        public void A_Release_that_swapped_one_piece_of_work_for_another_hands_over_the_one_it_now_carries()
+        {
+            var delivery = ADeliveryFollowingARelease();
+
+            delivery.SyncFromSource(ReleaseName, ReleaseDate, FeaturesNamed(TheSameNumberOfDifferentFeatures), HeardFromTheReleaseAt);
+
+            Assert.That(delivery.Features.Select(feature => feature.Name), Is.EqualTo(TheSameNumberOfDifferentFeatures));
         }
 
         /// <summary>
@@ -192,9 +216,16 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(delivery.Features, Is.Empty);
         }
 
+        /// <summary>
+        /// A name always maps to the same id, because the Delivery tells one Feature set from another
+        /// by id. Numbering by position instead would give the swapped set the same ids as the one it
+        /// replaced, and the test for a one-for-one swap would be comparing a set with itself.
+        /// </summary>
         private static List<Feature> FeaturesNamed(IEnumerable<string> names)
         {
-            return names.Select((name, index) => new Feature { Id = index + 1, Name = name }).ToList();
+            return names
+                .Select(name => new Feature { Id = Array.IndexOf(EveryFeatureInThisFixture, name) + 1, Name = name })
+                .ToList();
         }
 
         private static List<Feature> TheFeaturesItAlreadyHolds(Delivery delivery)
