@@ -74,6 +74,7 @@ dotnet_diagnostic.NUnit2045.severity = warning
 dotnet_diagnostic.NUnit2056.severity = warning
 dotnet_diagnostic.NUnit4002.severity = warning
 dotnet_diagnostic.CA1865.severity = warning
+dotnet_diagnostic.CA1834.severity = warning
 
 # EF writes the migration files and we do not hand-edit them, so the same rules stay advisory
 # there rather than making a generated file unbuildable.

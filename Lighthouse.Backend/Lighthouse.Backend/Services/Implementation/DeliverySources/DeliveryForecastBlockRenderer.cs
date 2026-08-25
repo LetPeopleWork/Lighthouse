@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         // The separator a Jira description is stored with, measured rather than assumed. Writing the
         // host's separator instead would put carriage returns into the field on a Windows instance and
         // not on a Linux one, so the same Release would read differently depending on who published it.
-        private const string LineSeparator = "\n";
+        private const char LineSeparator = '\n';
 
         // A day the same reader reads the same way from anywhere. Rendered in the server's culture,
         // 09/15/2026 and 15/09/2026 are the same string for the first twelve days of every month.

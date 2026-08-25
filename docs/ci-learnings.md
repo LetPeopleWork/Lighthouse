@@ -223,6 +223,12 @@ get re-applied.
 
 ## Formatting & linting
 
+### 2026-08-25 — CA1834 is CA1865's twin for StringBuilder, and it failed the gate the same way
+- **Symptom**: `sonar-gates` failed on `LetPeopleWork_Lighthouse` with `new_violations = 3 GT 0`. All three were `external_roslyn:CA1834` on one file — "Use 'StringBuilder.Append(char)' instead of 'StringBuilder.Append(string)' when the input is a constant unit string" (`DeliveryForecastBlockRenderer.cs:65,72,80`). `dotnet build` said zero warnings, `dotnet test` was 6,245 green, and both mutation runs were over the gate.
+- **Root cause**: `private const string LineSeparator = "\n";` appended three times with `StringBuilder.Append(LineSeparator)`. CA1834 is INFO severity, so it is invisible to the build and reaches only the Sonar `new_violations = 0` gate — the same shape as CA1865 a week earlier, and it was not in the promoted block because nothing had tripped it yet.
+- **Fix**: the constant became `private const char LineSeparator = '\n';`. Everything else compiles unchanged: `Append(char)` is the overload the rule asks for, and `string + char + string` still concatenates. CA1834 added to the promoted block in `Lighthouse.Backend/.editorconfig`, and the promotion was verified by reverting the constant and watching `dotnet build` fail with three CA1834 errors.
+- **Rule going forward**: a single-character constant that is appended or compared belongs in a `char`, not a `string` — `Append('\n')`, `StartsWith('*')`, `EndsWith('/')`. Reach for the string overload only when the literal is genuinely more than one character. When one of this family does escape to the gate, promote it in `.editorconfig` **and prove the promotion bites** by re-introducing the violation; a promotion that silently does nothing is worse than none, because it reads as covered.
+
 ### 2026-08-18 — CA1865 promoted to warning; a fix written *after* the last analyzer sweep is the one that escapes
 - **Symptom**: `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes` exited 2 with one finding on new code — `DependencySingleDecisionArchUnitTest.cs(130,36): info CA1865: Use 'string.StartsWith(char)' instead of 'string.StartsWith(string)' when you have a string with a single char`. `dotnet build` reported zero warnings, and both full suites were green.
 - **Root cause**: `code.StartsWith("*", StringComparison.Ordinal)` on a single-character prefix. CA1865 is INFO severity, so it is invisible to the build and only the analyzer command or the Sonar `new_violations = 0` gate reports it.
