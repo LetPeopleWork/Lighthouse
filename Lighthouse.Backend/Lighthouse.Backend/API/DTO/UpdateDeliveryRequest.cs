@@ -25,6 +25,16 @@ namespace Lighthouse.Backend.API.DTO
 
         public string? SourceReference { get; set; }
 
+        /// <summary>
+        /// Whether the Delivery's forecast is broadcast onto the source it follows. Read only on the
+        /// source-bound path, because it is a property of the binding and there is nowhere to broadcast
+        /// to without one.
+        ///
+        /// Absent means off, the same way an absent rule list means no rules: this request carries the
+        /// whole Delivery, so what it leaves out is not what the Delivery keeps.
+        /// </summary>
+        public bool? PublishForecastToSource { get; set; }
+
         public Guid? ConcurrencyToken { get; set; }
     }
 }

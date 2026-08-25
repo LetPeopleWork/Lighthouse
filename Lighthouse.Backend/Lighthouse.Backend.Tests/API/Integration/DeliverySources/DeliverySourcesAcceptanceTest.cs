@@ -392,6 +392,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             // never asked. Without it every "nothing changed" scenario passes with the sync pass deleted.
             DateTime? SourceLastSyncedOn,
             DeliverySourceUnavailableReason? SourceUnavailableReason,
+            bool PublishForecastToSource,
             Guid ConcurrencyToken);
 
         protected sealed record PortfolioDeliveriesBody(List<DeliveryRow> Active);

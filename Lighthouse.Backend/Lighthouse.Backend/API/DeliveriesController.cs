@@ -477,6 +477,13 @@ namespace Lighthouse.Backend.API
                 sourcePreview.TrackedFeatures,
                 clock.TodayAsUtcMidnight);
 
+            // Set after the binding rather than with it, because a Delivery that follows nothing refuses
+            // it. Re-applied on every update for the same reason the binding is: an update to a bound
+            // Delivery releases it and binds it again, and the release clears this along with everything
+            // else about the source - so a save that did not re-apply it would silently switch the
+            // broadcast off.
+            delivery.SetForecastPublishing(request.PublishForecastToSource ?? false);
+
             return null;
         }
 
