@@ -46,6 +46,12 @@ export type DeliverySourcePreviewEmptyReason = z.infer<
 /**
  * Why a Delivery that follows a source has stopped being able to read it. Absent while the binding
  * is healthy, which is the ordinary case.
+ *
+ * The backend enum has a fourth member, `SourceReadFailed`, and its absence here is deliberate rather
+ * than drift. That one means the remote could not be asked today, which says nothing about whether
+ * the source still exists — the aggregate refuses to store it, so no Delivery can ever arrive
+ * carrying it. Adding it here would describe a state the product does not have and invite a screen to
+ * be written for it.
  */
 export type DeliverySourceUnavailableReason =
 	| "SourceNotFound"

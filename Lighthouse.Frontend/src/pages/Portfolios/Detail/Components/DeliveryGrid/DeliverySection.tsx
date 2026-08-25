@@ -77,6 +77,7 @@ import DeliveryMetricsTab, {
 	useLazyMetricsHistory,
 } from "./DeliveryMetricsTab";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
+import DeliverySourceUnavailableNotice from "./DeliverySourceUnavailableNotice";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
 import { isStoredAs } from "./deliverySelectionTabs";
 
@@ -370,6 +371,17 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 	return (
 		<Paper elevation={1} sx={{ mb: 2, overflow: "hidden" }}>
 			<Box sx={{ position: "relative" }}>
+				{/* Above the row rather than inside it: the values below are real values that were true
+				    when they were last read, so what has to arrive first is that nothing is maintaining
+				    them now. Outside the Accordion so reading it never collapses the Delivery. */}
+				{isSourceBound && delivery.sourceUnavailableReason !== null && (
+					<DeliverySourceUnavailableNotice
+						reason={delivery.sourceUnavailableReason}
+						sourceLabel={sourceLabel}
+						lastSyncedOn={delivery.sourceLastSyncedOn}
+						onUnbind={canUnbind ? () => setIsUnbindDialogOpen(true) : undefined}
+					/>
+				)}
 				<Accordion
 					expanded={isExpanded}
 					onChange={() => onToggleExpanded(delivery.id)}
