@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
@@ -437,7 +438,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private async Task RefreshThePortfolioHolding(int deliveryId)
         {
             using var scope = factory.Services.CreateScope();
-            var handler = scope.ServiceProvider.GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>();
+            // Asked for by name. More than one handler listens for a finished forecast now, and asking
+            // for "the" handler hands back whichever was registered last - so this fixture would quietly
+            // start exercising a different one and report that nothing was recorded.
+            var handler = scope.ServiceProvider
+                .GetServices<IDomainEventHandler<PortfolioForecastsUpdated>>()
+                .OfType<DeliveryMetricSnapshotRecordingHandler>()
+                .Single();
 
             await handler.HandleAsync(new PortfolioForecastsUpdated(await PortfolioIdFor(deliveryId)), CancellationToken.None);
         }

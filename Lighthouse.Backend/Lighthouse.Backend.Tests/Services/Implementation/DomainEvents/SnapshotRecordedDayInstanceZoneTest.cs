@@ -382,7 +382,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             var portfolioId = await SeedPortfolioWithDelivery(writeScope);
 
-            var handler = writeScope.ServiceProvider.GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>();
+            // Asked for by name. More than one handler listens for a finished forecast now, and asking
+            // for "the" handler hands back whichever was registered last - so this fixture would quietly
+            // start exercising a different one and report that nothing was recorded.
+            var handler = writeScope.ServiceProvider
+                .GetServices<IDomainEventHandler<PortfolioForecastsUpdated>>()
+                .OfType<DeliveryMetricSnapshotRecordingHandler>()
+                .Single();
             await handler.HandleAsync(new PortfolioForecastsUpdated(portfolioId), CancellationToken.None);
 
             using var readScope = clockedFactory.Services.CreateScope();

@@ -12,6 +12,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -841,6 +842,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             services.AddSingleton(Mock.Of<ILogger<JiraWorkTrackingConnector>>());
             services.AddSingleton(AnAuthStrategyFactoryThatSignsNothing());
             services.AddSingleton<Cache<string, object>>();
+            services.AddScoped<IDeliveryForecastBlockRenderer, DeliveryForecastBlockRenderer>();
             services.AddScoped<JiraWorkTrackingConnector>();
 
             return services.BuildServiceProvider();

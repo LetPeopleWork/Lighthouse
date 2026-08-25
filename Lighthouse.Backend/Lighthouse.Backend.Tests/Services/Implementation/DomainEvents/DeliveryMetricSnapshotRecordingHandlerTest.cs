@@ -770,7 +770,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private async Task HandlePortfolioForecastsUpdated(RecorderFixture fixture)
         {
-            var handler = scope.ServiceProvider.GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>();
+            // Asked for by name. More than one handler listens for a finished forecast now, and asking
+            // for "the" handler hands back whichever was registered last - so this fixture would quietly
+            // start exercising a different one and report that nothing was recorded.
+            var handler = scope.ServiceProvider
+                .GetServices<IDomainEventHandler<PortfolioForecastsUpdated>>()
+                .OfType<DeliveryMetricSnapshotRecordingHandler>()
+                .Single();
             await handler.HandleAsync(new PortfolioForecastsUpdated(fixture.PortfolioId), CancellationToken.None);
         }
 
