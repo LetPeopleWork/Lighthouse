@@ -27,8 +27,11 @@ never open Lighthouse can see it.
   instance.
 - Only Deliveries bound to a **live** Release publish. Manual and Rule-based ones have no Release;
   **archived** ones would push a frozen closure forecast into a live Jira Release forever; **broken-source**
-  ones (D6) point at a Version id that no longer resolves. The archived exclusion is HELD until #5698
-  archiving ships (S15) — there is no field to test yet.
+  ones (D6) point at a Version id that no longer resolves. The archived exclusion is **live, not held**:
+  the claim that #5698 archiving had not shipped was stale by the time this slice started. `ArchivedOn`,
+  `Archive`/`Unarchive` and `IDeliveryRepository.GetRecordableByPortfolio` are all present, and the
+  exclusion is inherited rather than re-implemented — the publishing pass is handed `RecordableDeliveries`,
+  the set a background pass may write to, which refuses to be built around a retired Delivery at all.
 - A write that 404s raises the broken-source state (D6), not a refusal. A missing target and a denied one
   send the admin to fix different things.
 - Runs on the same refresh cycle that produced the forecast, alongside the existing write-back staging in

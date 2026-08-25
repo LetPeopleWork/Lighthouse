@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/DeliverySources/DeliveryForecastBlockRenderer.cs",
+      "**/Services/Implementation/DeliverySources/DeliveryForecastPublishingService.cs",
+      "**/Services/Implementation/DomainEvents/DeliveryForecastPublishingHandler.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "off",
+    "test-case-filter": "FullyQualifiedName~DeliveryForecastBlockRendererTest|FullyQualifiedName~DeliveryForecastPublishingServiceTest|FullyQualifiedName~DeliveryForecastPublishingHandlerTest|FullyQualifiedName~Slice04ForecastPublishingTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 1,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
