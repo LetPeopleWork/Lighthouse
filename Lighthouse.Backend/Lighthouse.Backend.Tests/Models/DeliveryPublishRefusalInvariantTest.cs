@@ -214,10 +214,16 @@ namespace Lighthouse.Backend.Tests.Models
             var delivery = ADeliveryChosenByHand();
             delivery.BindToSource(ReleaseSourceKey, ReleaseId);
             delivery.RecordPublishRefusal(WhatJiraSaid, TheDayItWasRefused);
+            var versionBefore = delivery.ConcurrencyToken;
 
             delivery.SetForecastPublishing(false);
 
-            Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+                Assert.That(delivery.ConcurrencyToken, Is.Not.EqualTo(versionBefore),
+                    "the report came off, so something a reader can see did move - and a save must be told.");
+            }
         }
 
         /// <summary>
@@ -232,7 +238,27 @@ namespace Lighthouse.Backend.Tests.Models
 
             delivery.RecordPublishRefusal(new string('x', 5_000), TheDayItWasRefused);
 
-            Assert.That(delivery.LastPublishRefusalReason, Has.Length.LessThan(1_000));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.LastPublishRefusalReason, Has.Length.LessThan(1_000));
+                Assert.That(delivery.LastPublishRefusalReason, Does.StartWith("xxxx"),
+                    "what is kept is the beginning of what was said, not nothing at all.");
+            }
+        }
+
+        /// <summary>
+        /// A sentence exactly as long as the limit is a sentence that fits. Cut here, the reader is shown
+        /// an ellipsis promising more where there is none.
+        /// </summary>
+        [Test]
+        public void A_reason_exactly_as_long_as_the_limit_is_kept_whole()
+        {
+            var delivery = ABroadcastingDelivery();
+            var exactlyTheLimit = new string('x', 500);
+
+            delivery.RecordPublishRefusal(exactlyTheLimit, TheDayItWasRefused);
+
+            Assert.That(delivery.LastPublishRefusalReason, Is.EqualTo(exactlyTheLimit));
         }
 
         [Test]

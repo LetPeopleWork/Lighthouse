@@ -175,6 +175,67 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(result, Is.EqualTo(new DeliveryForecastPublishResult.Refused("Blocked by the API gateway policy.")));
         }
 
+        /// <summary>
+        /// A refusal about the request as a whole says more than one about a field, and a gateway's
+        /// blanket sentence says least of all - so where two halves both carry something, the more
+        /// specific one has to win rather than whichever the code happens to read first.
+        /// </summary>
+        [Test]
+        public async Task A_body_that_says_two_things_is_read_in_the_order_that_says_most()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.RefuseWritesWith(
+                HttpStatusCode.BadRequest,
+                "{\"errorMessages\":[\"About the whole request.\"],\"errors\":{\"description\":\"About one field.\"},\"message\":\"From the gateway.\"}");
+
+            var result = await Publish(jira, TheBlock);
+
+            Assert.That(result, Is.EqualTo(new DeliveryForecastPublishResult.Refused("About the whole request.")));
+        }
+
+        [Test]
+        public async Task A_field_refusal_is_preferred_over_a_gateways_blanket_sentence()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.RefuseWritesWith(
+                HttpStatusCode.BadRequest,
+                "{\"errors\":{\"description\":\"About one field.\"},\"message\":\"From the gateway.\"}");
+
+            var result = await Publish(jira, TheBlock);
+
+            Assert.That(result, Is.EqualTo(new DeliveryForecastPublishResult.Refused("About one field.")));
+        }
+
+        // A sentence of nothing but spaces is not a sentence, and showing it would tell the reader their
+        // source refused for no reason it was willing to name.
+        [Test]
+        public void A_message_that_is_only_whitespace_is_no_reason_at_all()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.RefuseWritesWith(HttpStatusCode.BadRequest, "{\"message\":\"   \"}");
+
+            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+        }
+
+        /// <summary>
+        /// A description that came back as something other than text is not a description to merge into.
+        /// Asking for it as text anyway throws from inside a getter, which reaches the caller as a failed
+        /// write rather than as the Release having nothing worth keeping.
+        /// </summary>
+        [Test]
+        public async Task A_Release_whose_description_came_back_as_something_other_than_text_is_written_as_if_it_had_none()
+        {
+            var jira = AJiraWhoseVersionSays("{\"id\":\"10412\",\"name\":\"2026 Q4\",\"description\":42}");
+
+            var result = await Publish(jira, TheBlock);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Published>());
+                Assert.That(jira.Description, Is.EqualTo(TheBlock));
+            }
+        }
+
         [Test]
         public async Task A_refusal_about_one_field_is_read_out_of_the_half_of_the_body_it_arrives_in()
         {
@@ -301,6 +362,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static FakeJira AJiraHoldingAReleaseDescribedAs(string description) => new(description);
 
+        private static FakeJira AJiraWhoseVersionSays(string versionBody)
+        {
+            var jira = new FakeJira(null);
+            jira.AnswerReadsWith(versionBody);
+
+            return jira;
+        }
+
         private static FakeJira AJiraThatAnswers(HttpStatusCode status, string body)
         {
             var jira = new FakeJira(null);
@@ -317,6 +386,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         private sealed class FakeJira
         {
+            private string? versionBodyToAnswerWith;
             private HttpStatusCode readStatus = HttpStatusCode.OK;
             private string readBody = string.Empty;
             private HttpStatusCode writeStatus = HttpStatusCode.OK;
@@ -351,6 +421,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
 
             public void ForgetWhatWasWritten() => Writes.Clear();
+
+            /// <summary>A version body of the fixture's choosing, for shapes the happy path never makes.</summary>
+            public void AnswerReadsWith(string versionBody) => versionBodyToAnswerWith = versionBody;
 
             public void RefuseWritesWith(HttpStatusCode status, string body)
             {
@@ -393,6 +466,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             /// </summary>
             private string VersionJson()
             {
+                if (versionBodyToAnswerWith is not null)
+                {
+                    return versionBodyToAnswerWith;
+                }
+
                 return Description is null
                     ? $"{{\"id\":\"{TheRelease}\",\"name\":\"2026 Q4\"}}"
                     : $"{{\"id\":\"{TheRelease}\",\"name\":\"2026 Q4\",\"description\":{JsonSerializer.Serialize(Description)}}}";
