@@ -59,7 +59,7 @@ Established by reading the code before writing requirements. Every decision belo
 | S12 | `DeliveryMetricSnapshot` already records `TargetDateAtSnapshot` per day. A date that moves because Jira moved it is **already historically visible for free** — no new history store. | `Models/DeliveryMetricSnapshot.cs`, `docs/feature/delivery-target-date-tracking/` |
 | S13 | `WorkTrackingSystems` is an append-only int-persisted enum: `AzureDevOps, Jira, Linear, Csv, ServiceNow`. Four of the five have no Release concept. | `WorkTrackingConnectors/WorkTrackingSystems.cs` |
 | S14 | "Delivery"/"Deliveries" and "Feature"/"Features" are **configurable Terminology keys**. Every UI string and doc line below renders the tenant's word. Jira's "Release" is a literal remote value and stays as written. | `Seeding/TerminologySeeder.cs` |
-| S15 | **Archiving does not exist yet.** `Delivery` has no archive field of any kind (`grep -ric "archiv" Models/Delivery.cs` = 0), and no backend file references `IsArchived`. #5698 puts archiving in its slices 04-05, which have **not shipped**. AC-03.7 and AC-05.5 assume it, on the user's stated sequencing that archiving ships first — see Pre-requisites. | `Models/Delivery.cs`, `docs/feature/epic-5698-deliveries-as-durable-records/slices/` |
+| S15 | ~~**Archiving does not exist yet.**~~ **STALE — corrected 2026-08-25.** It was true when this row was written and had stopped being true well before slices 04-05 started: `ArchivedOn`, `Archive`/`Unarchive` and `IDeliveryRepository.GetRecordableByPortfolio` are all present. AC-03.7 and AC-05.5 no longer assume anything — AC-05.5's archived exclusion is *inherited* rather than re-implemented, because the publishing pass is handed `RecordableDeliveries`, which refuses to be built around a retired Delivery at all. | `Models/Delivery.cs`, `docs/feature/epic-5698-deliveries-as-durable-records/slices/` |
 
 ∴ **S1 + S2 are the gap** — a Delivery has no remote identity and cannot even hold a past date.
 **S8 + S9 are the answer** — both directions plug into one existing method, and outbound reuses a shipped,
@@ -506,7 +506,8 @@ I can judge whether the plan is credible without opening a tool I do not use.
 
 Before: the forecast exists only in Lighthouse; everyone who plans in Jira either asks someone or plans
 against the target date as if it were a forecast.
-After: switch **Publish forecast to Jira** on for the Portfolio → open Release *"2026 Q4"* → its
+After: switch **Publish forecast to the Jira Release** on for that one Delivery (D8a) → open Release
+*"2026 Q4"* → its
 description reads:
 ```
 --- Lighthouse forecast · updated 22 Aug 2026 ---
@@ -567,11 +568,18 @@ so I fix the permission instead of assuming the feature is broken.
 
 Before: a 403 on a Version write would be invisible — the switch is on, nothing appears in Jira, and
 there is nothing anywhere that says why.
-After: open the work tracking connection → sees **Cannot publish to Releases — the credential lacks
+After: open the Delivery whose broadcast was switched on → sees **Forecast not published — the credential lacks
 Administer Projects on PROJ. Last refused 2026-08-22 14:02.**
 Decision enabled: grant the permission, or switch publishing off and stop expecting it to work.
 
-**AC-06.1** — A refused Version write is surfaced against the connection, naming the project and the time.
+**AC-06.1** — A refused Version write is surfaced **on the Delivery whose forecast was refused**, quoting
+the remote verbatim and saying which day it was last tried (revised 2026-08-25 with D8a — see the slice 05
+summary). Two departures from the original wording, both deliberate and both recorded rather than skipped:
+*against the connection* became *on the Delivery*, because the permission is per project and one Delivery
+is exactly one Release in exactly one project; and *the time* became **the day**, because a refusal that
+recurs on every refresh must not move the Delivery's version and expire the copy an open browser is
+holding. **Naming the project is NOT met** — Lighthouse does not persist the project a bound Release
+belongs to, and the report identifies the Delivery and its Release instead. Recorded as a known gap.
 **AC-06.2** — A refusal does not disable publishing, does not fail the Portfolio refresh, and does not
 retry in a tight loop.
 **AC-06.3** — A subsequent successful write clears the state.
@@ -586,8 +594,8 @@ separate capabilities (D2, and the Epic's own "an adapter may read without being
 2. - [ ] A Delivery can be created from a Release with date and membership from Jira, both read-only.
 3. - [ ] Date, name and membership re-sync on the Portfolio refresh cycle; past dates accepted; archived Deliveries skipped.
 4. - [ ] A deleted Release freezes the Delivery and says so; unbind returns it to Manual intact.
-5. - [ ] Forecast publishes to the bound Release's description behind a per-Portfolio switch.
-6. - [ ] A refused write is reported against the connection and does not break inbound or the refresh.
+5. - [ ] Forecast publishes to the bound Release's description behind a per-Delivery switch (D8a).
+6. - [ ] A refused write is reported on the Delivery and does not break inbound or the refresh.
 7. - [ ] Backend `dotnet build` zero warnings, `dotnet test` green; frontend `pnpm test`, `pnpm build`, Biome clean.
 8. - [ ] Mutation testing at or above 80% on the new backend and frontend surfaces.
 9. - [ ] Docs updated per-feature with screenshots, using the configurable Terminology defaults (S14).
@@ -658,8 +666,8 @@ Port additions on `IWorkTrackingConnector` (shape follows S7):
 - a publish for the forecast, which is **not** a `WriteBackFieldUpdate` (D7).
 
 UI surfaces: `DeliveryCreateModal` (tab list becomes data-driven), `DeliverySection` / `DeliveryHeader`
-(read-only + provenance + broken-source states), the Portfolio settings surface (outbound switch), the
-work tracking connection surface (refusal report).
+(read-only + provenance + broken-source states), the Delivery source tab (outbound switch, D8a), and the
+Delivery row itself (refusal report).
 
 ---
 
@@ -714,7 +722,7 @@ cleanly and inbound still ships whole.
 | 02 | `slice-02-keep-the-date-in-step` | Refresh-cycle re-sync, past dates | Disproves D9's "no new scheduler" if refresh-interval latency is too slow to be trusted |
 | 03 | `slice-03-say-so-when-the-release-is-gone` | Broken-source state + unbind | Disproves D6 if freezing reads as "working" and users prefer an auto-unbind |
 | 04 | `slice-04-publish-the-forecast-to-the-release` | Outbound to the Version description | Disproves D7/D8 if the description is unusable as a surface or the permission bar is prohibitive |
-| 05 | `slice-05-say-so-when-jira-refuses` | Connection-level refusal report | Disproves that refusal reporting is needed at all if slice 04's permission bar turns out to be low |
+| 05 | `slice-05-say-so-when-jira-refuses` | Delivery-level refusal report (revised from connection-level) | Disproves that refusal reporting is needed at all if slice 04's permission bar turns out to be low |
 
 Briefs: `docs/feature/epic-5565-delivery-date-sync/slices/`.
 
@@ -1390,14 +1398,14 @@ newlines the detail view honours.
 
 | # | Decision | Rejected alternative (and why) | ADR |
 |---|---|---|---|
-| DES-15 | Publishing is `IDeliveryForecastPublisher`, a **second capability** on `IJiraWorkTrackingConnector`, invoked by its own service at the `PortfolioUpdater` seam | A second staged type in `WriteBackCollector` — the collector's dedup key, `WriteBackFieldUpdate`'s two required issue-shaped fields and `WriteBackItemResult.NotificationSuppression` would all have to be lied to; and `WriteFieldsToWorkItems` would stop meaning what it says for three connectors | 178 |
+| DES-15 | Publishing is `IDeliveryForecastPublisher`, a **second capability** on `IJiraWorkTrackingConnector`, invoked by its own service. **The seam is a `PortfolioForecastsUpdated` handler, not `PortfolioUpdater`** — ADR-178's invalidation note reopened this and slice 04 answered it, because Epic #5792 had moved forecasting out of `PortfolioUpdater` entirely | A second staged type in `WriteBackCollector` — the collector's dedup key, `WriteBackFieldUpdate`'s two required issue-shaped fields and `WriteBackItemResult.NotificationSuppression` would all have to be lied to; and `WriteFieldsToWorkItems` would stop meaning what it says for three connectors | 178 |
 | DES-16 | Read and write are **two capability flags** (`SupportsDeliverySources`, `SupportsDeliveryForecastPublishing`) | One combined flag — makes "reads Releases, refused the write" unrepresentable, which is the exact state slice 05 exists to report and slice 00 measured as real | 178 |
 | DES-17 | The block stays **four elements over multiple lines**, attribution first | Flattening to one line for the Releases list column — the detail view *does* render the lines, and dropping a required element is a failed slice rather than a trim | 179 |
 | DES-18 | Delimiters are **emoji**, detection anchored on the whole opening line `^🔮 Lighthouse forecast` | Bracketed keywords (machine junk in a field humans write in); a bare paired emoji (identical open and close cannot tell which half a user deleted, so the replace range becomes a guess) | 179 |
 | DES-19 | Unbalanced or missing markers ⇒ **append a fresh block, never infer a deletion range** | Best-effort range guessing — lets a user's own prose be deleted by a feature they opted into. A visible duplicate is recoverable; eaten text is not | 179 |
-| DES-20 | Refusal state is recorded **per Portfolio** (`LastPublishRefusedOn`, `LastPublishRefusalReason`) | Per connection, as slice 05's brief specified — slice 00 measured the permission as per project, so connection-level state would be false for most of what a connection touches | 180 |
+| DES-20 | ~~Refusal state is recorded **per Portfolio**~~ **SUPERSEDED 2026-08-25 — recorded per Delivery** (`Delivery.LastPublishRefusedOn`, `Delivery.LastPublishRefusalReason`). D8a moved the publishing switch to the Delivery after this row was written, and DES-20's own argument moved with it: the permission is per project, and one Delivery is exactly one Release in one project. Decisive on top of that, per-Portfolio state cannot represent a mixed outcome — ADR-180's "clears on the next successful publish" would have one Delivery's success wipe another's standing refusal | 180 |
 | DES-21 | Refusal is **HTTP 400 carrying `errorMessages`**, and the message is surfaced verbatim | Keying on 403 (the assumed shape — would never fire); paraphrasing the message (loses the exact words an admin can search for) | 180 |
-| DES-22 | The publishing switch is `Portfolio.PublishForecastToSource`, a flat bool defaulting to **false** | `OptionalFeatures` — its premium gate returns 200 with the entity unchanged, so a rejected write is indistinguishable from an accepted one at the call site. `Portfolio.IgnoreDependencies` is the house precedent for a flat per-Portfolio bool | — |
+| DES-22 | ~~`Portfolio.PublishForecastToSource`~~ **SUPERSEDED by D8a — `Delivery.PublishForecastToSource`**, a flat bool defaulting to **false** | `OptionalFeatures` — its premium gate returns 200 with the entity unchanged, so a rejected write is indistinguishable from an accepted one at the call site. `Portfolio.IgnoreDependencies` is the house precedent for a flat per-Portfolio bool | — |
 | DES-23 | Notification suppression is **vacuously satisfied** and recorded as such | Wiring ADR-142's mechanism through — `notifyUsers` is a parameter of the issue-edit endpoint; `PUT /rest/api/3/version/{id}` has no equivalent because a version edit does not mail issue watchers | 179 |
 | DES-24 | Eligibility is `SourceBound` **and** not archived **and** not broken-source | Publishing archived Deliveries (pushes a frozen closure forecast into a live Release forever) or broken-source ones (the Version id no longer resolves) | 178 |
 
@@ -1408,7 +1416,7 @@ newlines the detail view honours.
 | Component | Location | Purpose |
 |---|---|---|
 | `IDeliveryForecastPublisher` | `Services/Interfaces/WorkTrackingConnectors/` | `PublishAsync(connection, DeliveryForecastPublication)`. Composed into `IJiraWorkTrackingConnector` beside `IDeliverySourceProvider` |
-| `DeliveryForecastPublication` | `Models/DeliverySources/` | `sealed record (string SourceReference, string BlockText)` — the adapter is handed rendered text, not a Delivery, so block composition stays testable without a connector |
+| `DeliveryForecastPublication` | `Models/DeliverySources/` | `sealed record (string SourceKey, string SourceReference, string BlockText)` — the adapter is handed rendered text, not a Delivery, so block composition stays testable without a connector |
 | `DeliveryForecastPublishResult` | `Models/DeliverySources/` | Closed set: `Published` / `Refused(string reason)` / `TargetMissing`. Total, like ADR-170's resolution — no throwing for expected outcomes |
 | `IDeliveryForecastBlockRenderer` + impl | `Services/{Interfaces,Implementation}/DeliverySources/` | Renders the four-element block, and performs the marker-anchored replace-or-append against an existing description. **Pure** — no I/O, so every ADR-179 rule is a unit test |
 | `IDeliveryForecastPublishingService` + impl | `Services/{Interfaces,Implementation}/DeliverySources/` | Selects eligible Deliveries, calls the renderer then the publisher, records or clears the refusal state |
@@ -1417,11 +1425,11 @@ newlines the detail view honours.
 
 | Component | Change |
 |---|---|
-| `Portfolio` | `PublishForecastToSource` (bool, default false); `LastPublishRefusedOn`, `LastPublishRefusalReason` (both nullable) |
+| `Delivery` (**not** `Portfolio` — D8a for the switch, and the slice 05 summary for the other two) | `PublishForecastToSource` (bool, default false); `LastPublishRefusedOn`, `LastPublishRefusalReason` (both nullable) |
 | `JiraWorkTrackingConnector` | Implements the publisher: `GET` the version to read the current description, `PUT` it back with the rendered block. Reuses `GetOrCreateClient` |
 | Forecast seam (`ForecastUpdater`, or a `PortfolioForecastsUpdated` handler) | One call after the forecast completes. **Seam reopened** by Epic #5792 decoupling the forecast out of `PortfolioUpdater` — see ADR-178's invalidation note |
-| `LighthouseAppContext` + migrations | Three columns, expand-only, same migration as the inbound four |
-| `PortfolioSettingsDto` / portfolio settings UI | The opt-in switch, and the refusal report |
+| `LighthouseAppContext` + migrations | Three columns on `Delivery`, expand-only. **Two migrations, not one**, because the switch and the refusal shipped as separate slices: `AddDeliveryForecastPublishing` then `AddDeliveryPublishRefusal` |
+| `DeliveryWithLikelihoodDto` / the Delivery source tab and the Delivery row | The opt-in switch, and the refusal report. **Neither the Portfolio settings DTO nor its screen is touched** |
 
 **Backend — UNCHANGED, deliberately**
 
@@ -1449,8 +1457,9 @@ degrade to silence, which is the one failure this slice cannot self-report.
   `DeliveryArchivedException` and `IDeliveryRepository.GetRecordableByPortfolio` are all **present in
   the backend today** — `PortfolioUpdater.cs:94` already calls `GetRecordableByPortfolio`. DES-24's
   archived exclusion is therefore designed as live, not deferred.
-- **AC-06.1 (refusal names the project and the time)** — met by the two Portfolio columns, which is a
-  deliberate departure from the brief's "against the connection". Reasoning in ADR-180.
+- **AC-06.1** — **superseded twice**. ADR-180 moved it from the connection to the Portfolio; D8a then moved
+  the switch to the Delivery and the state followed. Naming the project is not met at all. The current
+  wording of the AC and the reasoning are above, at AC-06.1.
 
 ### Open questions (slices 04-05)
 
@@ -1505,7 +1514,8 @@ adding a table column for one number. Owned by whichever slice first makes a rea
 ## Wave: DISTILL / [REF] Scope — distilled now, and what waits (2026-08-22)
 
 **Reconciliation: passed, 0 blocking contradictions.** Two prior commitments were superseded rather than
-left ambiguous, both with an ADR: slice 05's per-connection refusal became per-Portfolio (ADR-180), and
+left ambiguous, both with an ADR: slice 05's per-connection refusal became per-Portfolio (ADR-180) and then
+per-Delivery once D8a moved the switch there, and
 slice 04's archived exclusion was released once #5698 archiving was confirmed shipped (DES-24).
 
 **Deliberate stop, maintainer decision.** Only the slices whose rules are *pure* are distilled here.
@@ -1552,7 +1562,7 @@ boundary while the sync and publishing services stay real.
 | 2 | Create-and-bind, the four hand-mutation refusals, unbind | 01b |
 | 3 | Re-sync **through the scheduled refresh** — the driving port, not the service in isolation. This is the one wiring scenario nothing else can substitute for | 02 |
 | 4 | Broken-source verdicts, including AC-04.5: a transient read failure must never raise the state | 03 |
-| 5 | Refusal recorded per Portfolio, cleared on success, and inbound still syncing throughout | 05 |
+| 5 | Refusal recorded per Delivery, cleared on success, and inbound still syncing throughout | 05 |
 | 6 | Frontend tab-list unit tests, and one Playwright walking skeleton driven from demo data | 01a/01b |
 | 7 | One confirming observation for OQ-7 — whether a version edit notifies anyone | 04 |
 

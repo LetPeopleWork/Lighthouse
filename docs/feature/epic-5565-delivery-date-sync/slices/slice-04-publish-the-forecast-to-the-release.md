@@ -34,8 +34,9 @@ never open Lighthouse can see it.
   the set a background pass may write to, which refuses to be built around a retired Delivery at all.
 - A write that 404s raises the broken-source state (D6), not a refusal. A missing target and a denied one
   send the admin to fix different things.
-- Runs on the same refresh cycle that produced the forecast, alongside the existing write-back staging in
-  `PortfolioUpdater`.
+- Runs on the same refresh cycle that produced the forecast. **Not in `PortfolioUpdater`** — Epic #5792
+  moved forecasting out of it, so this hangs off the `PortfolioForecastsUpdated` event the forecast now
+  raises.
 - `bool SupportsDeliveryForecastPublishing(connection)` — a **separate** capability from the inbound one.
 
 ## OUT of scope

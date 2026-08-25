@@ -7,8 +7,12 @@ nothing.
 
 ## IN scope
 
-- Surface a refused Version write against the work tracking connection, naming the project and the time
-  it was last refused.
+- Surface a refused Version write **on the Delivery whose forecast was refused** (revised 2026-08-25 —
+  ADR-180 moved this off the connection, and D8a then moved it off the Portfolio too, because one Delivery
+  is exactly one Release in exactly one project). Quote the remote verbatim and say **which day** it was
+  last tried — a day rather than a time, so a refusal recurring on every refresh does not expire the copy
+  an open browser is holding. **Naming the project is dropped**: Lighthouse does not persist which project
+  a bound Release belongs to.
 - Clear the state on a subsequent successful write.
 - Do not disable publishing, do not fail the Portfolio refresh, do not retry in a tight loop.
 - Inbound keeps working throughout — reading Releases and writing them are separate capabilities (D2),

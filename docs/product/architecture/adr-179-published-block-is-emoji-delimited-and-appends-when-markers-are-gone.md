@@ -1,6 +1,7 @@
 # ADR-179: The published block is emoji-delimited, anchored on its opening line, and appends rather than guessing when the markers are gone
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Accepted, hardened in DELIVER** (2026-08-25). Points 2 and 4 are narrower than written
+  here after adversarial review demonstrated two ways to delete a user's own prose — see the closing note.
 - **Date**: 2026-08-22
 - **Feature**: epic-5565-delivery-date-sync (ADO Epic #5565, slice 04 / ADO #4463)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -96,3 +97,30 @@ deleting characters they cannot see produces exactly the unbalanced state point 
   deliberate, visible, and user-fixable - and it is the failure mode chosen over data loss.
 - The 16 KB ceiling is far away but not infinite, so the appending path is a degradation to notice, not
   a steady state to design around.
+
+## Hardened after adversarial review (2026-08-25, DELIVER slice 04)
+
+The design held. Two of its rules were too loose to deliver it, and both were **demonstrated** rather than
+argued.
+
+**Point 2's anchor is the whole invariant part of the line, not the phrase.** `^🔮 Lighthouse forecast`
+also matches a sentence that merely *begins* with it — and quoting the line Lighthouse wrote and typing
+underneath it is the obvious way for somebody to argue with a forecast. Everything they typed was then
+inside the span the next write replaced. The implemented anchor is `🔮 Lighthouse forecast - updated `,
+trailing separator included.
+
+**Point 4 needs a pairing rule, not just a balance check.** "Unbalanced ⇒ append" is not enough when the
+description holds *more than one* opening line — which point 4 itself produces, since appending is what it
+prescribes. An orphaned opening line paired with the **next block's** closing marker, and everything
+between them went: in the repro, a line reading "DO NOT SHIP BEFORE LEGAL SIGN-OFF". Each opening line is
+now matched only against a closing marker that appears **before the next opening line**.
+
+**A closing marker is only believed when the line above it is the target line.** Not in the ADR, and
+needed: a crystal ball typed *inside* the block closed it early, so the replace cut the block in half and
+left the tail of an old forecast standing outside every marker — dates a reader takes for current, that no
+later write could ever reach. Appending instead costs a visible duplicate, which is the failure this ADR
+already chose.
+
+**Leading whitespace is ignored on both markers.** It was ignored on the closing one and not the opening
+one, so a block that picked up an indent stopped being findable while still being written: every publish
+appended, and the indented block stayed for good.

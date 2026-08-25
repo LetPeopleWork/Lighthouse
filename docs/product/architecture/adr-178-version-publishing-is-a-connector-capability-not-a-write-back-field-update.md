@@ -1,6 +1,7 @@
 # ADR-178: Publishing a forecast to a Jira Release is a connector capability of its own, not a second staged type in the write-back collector
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Accepted, point 4 answered in DELIVER** (2026-08-25). The publish runs in a
+  `PortfolioForecastsUpdated` handler — see the closing note.
 - **Date**: 2026-08-22
 - **Feature**: epic-5565-delivery-date-sync (ADO Epic #5565, slices 04-05 / ADO #4463, #5832)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)
@@ -61,15 +62,17 @@ sometimes a project version" would make the name a lie in a seam that three conn
 **One combined capability flag.** Rejected as above: it makes the read-yes-write-no state
 unrepresentable, and that state is measured and common (slice 00 Q3).
 
-**A domain-event handler on `PortfolioForecastsUpdated`.** The publish must run after the forecast and
+**A domain-event handler on `PortfolioForecastsUpdated`.** ~~The publish must run after the forecast and
 before the refresh log closes, and ADR-168 already rejected an event for the inbound sibling on the
-grounds that an event moves the ordering contract into `Program.cs`. The same reasoning holds; it is not
-re-litigated here.
+grounds that an event moves the ordering contract into `Program.cs`.~~ **This rejection did not survive.**
+It rested on there being no event at the right point; the invalidation note below records that there now
+is one, and slice 04 chose it. Read the closing note before acting on this paragraph.
 
 ## Consequences
 
-- One new interface, one new service, one new call line in `PortfolioUpdater`. The write-back seam,
-  its ArchUnit test (`QuietWriteBackSeamArchUnitTest`) and its three connectors are untouched.
+- One new interface, one new service, and **one new handler plus two `Program.cs` registrations** -
+  `PortfolioUpdater` is not touched at all, because the forecast no longer runs there. The write-back
+  seam, its ArchUnit test (`QuietWriteBackSeamArchUnitTest`) and its three connectors are untouched.
 - The two capabilities can disagree per connection, which is what slice 05 reports on.
 - Registering the publisher in `Program.cs` pulls in the full backend Integration suite, the cost
   already recorded for the inbound provider. It is the same edit, not a second one.
@@ -97,3 +100,32 @@ domain-event handler, which was argued on the grounds that no event sits at the 
 inbound re-sync sets the target date, and the forecast now runs in a different execution, so
 whether a published forecast is measured against a freshly synced date is no longer obvious. That
 ordering claim is the one this Epic must not get wrong.
+
+## Point 4 answered (2026-08-25, DELIVER slice 04)
+
+**The publish is a `DeliveryForecastPublishingHandler` on `PortfolioForecastsUpdated`**, registered beside
+`DeliveryMetricSnapshotRecordingHandler`.
+
+The invalidation note above reopened the choice between a direct call in `ForecastUpdater` and a handler.
+The handler wins on the reason the note itself gives: there is no forecast run left in `PortfolioUpdater`
+to sit after, the event now exists at exactly the right point, and a sibling already consumes it. It also
+buys the posture the feature needs - publishing is the last thing a round does and the least important, so
+a Jira that will not take today's numbers must not cost the refresh that produced them. A handler is
+best-effort by construction; a call line inside the forecast is not.
+
+**The ordering claim this ADR said the Epic must not get wrong holds.** The fetch pass re-syncs every bound
+Delivery from its source *before* it asks for the forecast, so the target date a published likelihood is
+measured against is the freshest there is.
+
+**One trap, recorded because it cost a debugging pass.** With two handlers registered for one event,
+`GetRequiredService<IDomainEventHandler<PortfolioForecastsUpdated>>` returns whichever was registered
+*last*. Three fixtures resolved the handler that way, silently began exercising the new one, and reported
+that no snapshot had been recorded - a failure naming the recorder and pointing nowhere near the cause.
+Resolve by type (`GetServices<...>().OfType<...>().Single()`) when more than one handler can listen.
+
+**A second capability flag is real but unrealised in production** (point 2). `SupportsDeliveryForecastPublishing`
+returns `true` for every Jira connection, because the permission it would report is per project and no
+site-wide answer could be true of everything a connection touches. The "reads Releases but is refused the
+write" state the flag was justified by is therefore carried by `Delivery.LastPublishRefusalReason`, not by
+the flag. The flag stays - it is how a *future* connector says it cannot write at all - but the
+justification in point 2 should be read as forward-looking rather than as describing today.
