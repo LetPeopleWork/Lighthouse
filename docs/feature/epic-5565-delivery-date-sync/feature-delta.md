@@ -1822,3 +1822,108 @@ of claiming it never has.
   guessing a cause, so the failure is mild — but the schema is the right place to fix it.
 - **AC-04.3's "editable" is proved only by the mode returning to Manual**, not by a rename or reschedule
   succeeding afterwards.
+
+## Wave: DELIVER / [REF] Implementation summary — slice 04, shipped 2026-08-25
+
+ADO #4463. The forecast of a Delivery somebody switched on is written onto the Jira Release it follows,
+on the run that produced it.
+
+**The switch is a property of the binding.** `Delivery.PublishForecastToSource`, set through
+`SetForecastPublishing`, refused on a Delivery that follows nothing and cleared by `Unbind` — the same
+pattern slice 03 established for `SourceLastSyncedOn` and `SourceUnavailableReason`. Without the
+clearing, pointing a released Delivery at a second Release would silently resume broadcasting to a
+Release nobody chose. The column is named for where the forecast goes rather than for what is written
+there, so D8a's anticipated second mode becomes a choice of mode on this field rather than a second
+switch beside it.
+
+**Where it hangs.** ADR-178 left the seam open after Epic #5792 decoupled forecasting out of
+`PortfolioUpdater`. It is a handler on `PortfolioForecastsUpdated`, beside
+`DeliveryMetricSnapshotRecordingHandler` — the numbers being broadcast are the forecast's, and a handler
+rather than a line inside the forecast is what keeps a Jira that would not take today's numbers from
+costing the refresh that produced them. The ordering claim ADR-178 said this Epic must not get wrong
+holds: the fetch pass re-syncs every bound Delivery from its source **before** it asks for the forecast,
+so the target date the likelihood is measured against is the freshest there is.
+
+**Liveness is asked for explicitly.** `SourceUnavailableReason == null` is not a sufficient test — it is
+also null on a binding nothing has ever resolved, and the transient reason is deliberately never
+persisted. Eligibility is therefore `SourceLastSyncedOn is not null && SourceUnavailableReason is null`,
+on top of switched-on and source-bound.
+
+**The archived exclusion is inherited rather than re-implemented.** The pass is handed
+`RecordableDeliveries`, the set a background pass may write to, which refuses to be built around a
+retired Delivery at all. The slice brief's claim that this was HELD on #5698 was stale and is corrected
+in place.
+
+### AC coverage — no silent N/A
+
+| AC | Where it is met | Where it is pinned |
+|---|---|---|
+| AC-05.1 | `Delivery.PublishForecastToSource`, default false, set only through the binding | `DeliveryForecastPublishingInvariantTest`, `DeliverySourceBindingPersistenceTest`, `Slice04ForecastPublishingTest` |
+| AC-05.2 | `DeliveryForecastPublishingHandler` on `PortfolioForecastsUpdated` | `DeliveryForecastPublishingHandlerTest`, `Slice04ForecastPublishingTest` (driven through the scheduled refresh) |
+| AC-05.3 | `JiraWorkTrackingConnector.PublishAsync` writes `description` and nothing else | `JiraDeliveryForecastPublisherTest` |
+| AC-05.3b | `DeliveryForecastBlockRenderer.Render`, fed from `CalculateMetrics(today, blackouts, 70, 85, 95)` | `DeliveryForecastBlockRendererTest`; and `DeliveryForecastPublishingServiceTest` pins the block against `DeliveryWithLikelihoodDto`'s own projection, so the Release and the screen cannot come to disagree |
+| AC-05.3c | attribution and the write date are the opening line | renderer specs assert the first line verbatim |
+| AC-05.4 | `MergeInto`, anchored on the opening line, replace-in-place, append when unbalanced | seven renderer specs (the three ADR-179 ones un-ignored), plus a real round trip in `JiraDeliveryForecastPublisherTest` |
+| AC-05.4b | a Release with no `description` key gets one that is only the block | renderer spec + adapter spec |
+| AC-05.4c | a hand-edited block is replaced wholesale | renderer spec |
+| AC-05.5 | switched-on + source-bound + heard-from + not broken; retired excluded by `RecordableDeliveries` | `DeliveryForecastPublishingServiceTest` table, `Slice04ForecastPublishingTest` |
+| AC-05.6 | `TargetMissing` → `MarkSourceUnavailable(SourceNotFound)`; a refusal deliberately does not | service specs and the acceptance scenario |
+| AC-05.7 | **satisfied vacuously and stated rather than skipped.** `notifyUsers` is a parameter of the issue-edit endpoint because editing an issue mails its watchers; `PUT rest/api/3/version/{id}` has no equivalent because a version edit mails nobody. There is no notification to suppress. **OQ-7 remains owed**: this is still an argument from API shape, and the confirming observation needs a real Release write. |
+
+### Known gaps, stated rather than left to be found
+
+- **OQ-7 is not closed.** Whether a version edit generates any Jira notification at all was to be
+  observed the first time a real Release was written. Nothing in this slice reaches a real Jira, so the
+  observation is still owed and belongs with the first live use.
+- **A Delivery with no forecast publishes nothing rather than a block of blanks.** Whatever was
+  published last stays where it is, carrying the write date that says how old it is. The alternative —
+  a block whose three date lines and likelihood are empty — says less than no block at all, and a fifth
+  block shape is not in the spec. Deliberate, and worth revisiting if a Delivery is routinely
+  un-forecastable for long stretches.
+- **No guard on Jira's 16,384-byte description ceiling.** A description already near it plus an
+  appended block would be refused by Jira, and that refusal is surfaced verbatim rather than silently
+  dropped — so the failure self-reports. A pre-flight guard would report it better.
+- **Read-then-write is not atomic.** Somebody editing the description between the `GET` and the `PUT`
+  loses that edit. Jira offers no conditional write on a version, so the alternative is not available
+  rather than not chosen.
+- **The Jira adapter contract test is still owed**, now over three responses rather than two: the
+  `versions` read, the `fixVersion` search, and the version write's refusal body that ADR-180 keys on.
+  It has been deferred three times and remains the direct cause of the AC-04.4 gap slice 03 recorded.
+- **The two debt items slice 03 recorded are untouched and still true**: `WalkCloudSearchPages` cannot
+  tell an exhausted walk from a truncated one, and the delivery wire is parsed with `z.custom<IDelivery>()`
+  which validates nothing. Both are pre-existing and both want a bug of their own rather than a slice.
+- **Publishing is not separately licence-gated in the background pass.** Creating or updating a
+  source-bound Delivery already requires premium at the controller, so the flag can only be set with one;
+  a licence that lapses afterwards leaves an already-bound Delivery publishing, exactly as it leaves it
+  syncing. Consistent with the inbound half rather than an oversight.
+
+### What adversarial review found, and what it cost
+
+Three independent lenses. Every one of them found something real, and two of the findings were
+demonstrated rather than argued - which is the second slice running where running an experiment beat
+reasoning about the code.
+
+- **The merge could delete text Lighthouse never wrote, twice over.** A block whose closing marker
+  somebody had deleted was paired with the *next* block's closing marker, taking everything between
+  them - in the repro, a line reading "DO NOT SHIP BEFORE LEGAL SIGN-OFF". And the opening line was
+  matched on a prefix, so a sentence that merely began with the phrase opened a span; quoting the line
+  Lighthouse wrote and typing underneath it is the obvious way to argue with a forecast. Both are the
+  exact failure ADR-179 exists to prevent, and neither was visible to the seven specifications that
+  slice had.
+- **The published forecast could differ from the one on screen by a month.** Recurring non-working days
+  are only worked out for the window they are asked about; publishing measured that window over the
+  Deliveries being broadcast while every other reader measures it over all of them. The test that
+  claimed this could not happen stubbed the calendar to a constant, so it could not see it.
+- **Everything Jira answered other than 404 and 5xx was recorded as a refusal about the credential** -
+  a throttling 429 included, on a pass that writes one Delivery after another.
+- **Registering a second listener on `PortfolioForecastsUpdated` silently hijacked three fixtures** that
+  asked for "the" handler with `GetRequiredService`. They reported that no snapshot was recorded, which
+  names the recorder and points nowhere near the cause. Worth remembering the next time a handler is
+  added to an event that already has one.
+
+### Quality gates
+
+Backend `dotnet build` zero warnings; `dotnet test` with the live-connector filter 6,240 green.
+Frontend `pnpm test` 4,618 green, `pnpm build` zero warnings, and
+`biome lint --only=complexity/noExcessiveCognitiveComplexity` clean on both components that gained a
+conditional.
