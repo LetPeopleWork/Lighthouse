@@ -175,6 +175,63 @@ namespace Lighthouse.Backend.Models
             MarkAsChanged();
         }
 
+        /// <summary>
+        /// The one write a Delivery accepts on the three things a hand is refused, because it is the
+        /// source itself speaking. It runs on a refresh nobody is watching, so it moves the version an
+        /// open browser is holding only when something actually moved - a refresh that found nothing
+        /// new must not expire an editor's version, or saving would fail with "somebody else changed
+        /// this" when nobody had.
+        ///
+        /// When the source was last heard from is recorded either way. It is a note about the reading
+        /// rather than about what was read, and a Delivery whose source later disappears has to be able
+        /// to say how stale the values it is still showing are.
+        /// </summary>
+        public void SyncFromSource(string name, DateTime date, IEnumerable<Feature> members, DateTime syncedOn)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            ArgumentNullException.ThrowIfNull(members);
+
+            RefuseWhenArchived();
+
+            if (SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                throw DeliverySourceBoundException.NotBound(Id);
+            }
+
+            if (ApplyWhatTheSourceNowSays(name, date, [.. members]))
+            {
+                MarkAsChanged();
+            }
+
+            sourceLastSyncedOn = syncedOn;
+        }
+
+        private bool ApplyWhatTheSourceNowSays(string newName, DateTime newDate, List<Feature> members)
+        {
+            var somethingMoved = false;
+
+            if (name != newName)
+            {
+                name = newName;
+                somethingMoved = true;
+            }
+
+            if (date != newDate)
+            {
+                date = newDate;
+                somethingMoved = true;
+            }
+
+            if (!AlreadyHolds(members))
+            {
+                features.Clear();
+                features.AddRange(members);
+                somethingMoved = true;
+            }
+
+            return somethingMoved;
+        }
+
         public void Archive(DateTime archivedOn)
         {
             if (ArchivedOn is not null)
