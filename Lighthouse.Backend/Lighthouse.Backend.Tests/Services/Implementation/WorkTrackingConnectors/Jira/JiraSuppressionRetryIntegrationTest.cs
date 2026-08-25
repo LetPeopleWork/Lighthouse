@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -170,7 +171,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             => new(new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService()),
-                new Lighthouse.Backend.Cache.Cache<string, object>());
+                new Lighthouse.Backend.Cache.Cache<string, object>(),
+                new DeliveryForecastBlockRenderer());
 
         private WorkTrackingSystemConnection CreateRestrictedConnection()
         {

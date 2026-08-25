@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Factories;
+﻿using Lighthouse.Backend.Services.Implementation.DeliverySources;
+using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
@@ -881,7 +882,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var authStrategyFactory = TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService());
             return new JiraWorkTrackingConnector(
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), authStrategyFactory,
-                new Lighthouse.Backend.Cache.Cache<string, object>());
+                new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer());
         }
     }
 }

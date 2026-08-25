@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
@@ -52,6 +53,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 logger,
                 factoryMock.Object,
                 processWideCache,
+                new DeliveryForecastBlockRenderer(),
                 handler);
         }
 

@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -68,7 +69,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 factory,
-                new Lighthouse.Backend.Cache.Cache<string, object>());
+                new Lighthouse.Backend.Cache.Cache<string, object>(),
+                new DeliveryForecastBlockRenderer());
         }
     }
 }

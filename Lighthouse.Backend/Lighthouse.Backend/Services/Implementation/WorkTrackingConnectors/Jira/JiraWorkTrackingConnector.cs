@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
@@ -23,6 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         ILogger<JiraWorkTrackingConnector> logger,
         IWorkTrackingAuthStrategyFactory authStrategyFactory,
         Backend.Cache.Cache<string, object> processWideCache,
+        IDeliveryForecastBlockRenderer forecastBlockRenderer,
         HttpMessageHandler? httpMessageHandlerForTesting = null)
         : IJiraWorkTrackingConnector
     {
@@ -1952,8 +1954,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         // Implemented on the connector rather than beside it: the authenticated HTTP path and the JQL
         // encoding that guards it are private to this class, so a sibling could never reach them.
 
-        private const string DeliverySourceNotImplementedYet = "Not yet implemented - DISTILL scaffold";
-
         private const string FixVersionsFieldName = "fixVersions";
 
         // The membership search reads identity and which Releases carry it, and nothing else. It is a query of
@@ -2350,15 +2350,87 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return Task.CompletedTask;
         }
 
-        public bool SupportsDeliveryForecastPublishing(WorkTrackingSystemConnection connection)
-        {
-            throw new NotImplementedException(DeliverySourceNotImplementedYet);
-        }
+        /// <summary>
+        /// Yes for every Jira connection, and the answer is not a claim about permission. The permission a
+        /// Version write needs is held per project rather than per site, so no answer given here could be
+        /// true of everything a connection touches - the credential may edit the Releases of one project
+        /// and not of the one next to it. Refusing up front would take the feature away from the projects
+        /// where it works; the refusal is an exception report on the write that was actually attempted.
+        /// </summary>
+        public bool SupportsDeliveryForecastPublishing(WorkTrackingSystemConnection connection) => true;
 
-        public Task<DeliveryForecastPublishResult> PublishAsync(
+        /// <summary>
+        /// Read the Release, merge the block into the description it already carries, and write the whole
+        /// description back. Reading first is what makes the write idempotent: the merge replaces the block
+        /// Lighthouse wrote last time and leaves every other word where its author put it.
+        ///
+        /// Nothing is suppressed here and nothing needs to be. Notification suppression is a parameter of
+        /// the issue-edit endpoint because editing an issue mails its watchers; editing a version mails
+        /// nobody, so there is no equivalent to pass and no noise to reintroduce.
+        /// </summary>
+        public async Task<DeliveryForecastPublishResult> PublishAsync(
             WorkTrackingSystemConnection connection, DeliveryForecastPublication publication)
         {
-            throw new NotImplementedException(DeliverySourceNotImplementedYet);
+            ArgumentNullException.ThrowIfNull(publication);
+            RejectSourceTheConnectionDoesNotOffer(publication.SourceKey);
+
+            var client = await GetJiraRestClientAsync(connection);
+            var versionUrl = $"rest/api/3/version/{Uri.EscapeDataString(publication.SourceReference)}";
+
+            var read = await client.GetAsync(versionUrl);
+
+            if (await PublishVerdictFor(read) is { } refusedRead)
+            {
+                return refusedRead;
+            }
+
+            var merged = forecastBlockRenderer.MergeInto(
+                JiraReleaseVersionReader.ReadVersionDescription(await read.Content.ReadAsStringAsync()),
+                publication.BlockText);
+
+            var payload = JsonSerializer.Serialize(new { description = merged });
+            var write = await client.PutAsync(versionUrl, new StringContent(payload, Encoding.UTF8, "application/json"));
+
+            return await PublishVerdictFor(write) ?? new DeliveryForecastPublishResult.Published();
+        }
+
+        /// <summary>
+        /// What a Jira answer means for a publish, or nothing when it means the write went through.
+        ///
+        /// A Release that is not there is told apart from every other refusal because the two send an
+        /// administrator to fix completely different things - one to look at what happened to the Release,
+        /// the other to look at a permission. Every other rejection is a refusal carrying Jira's own words,
+        /// which already name what to fix in the reader's vocabulary. Slice 00 measured the refusal as a
+        /// 400 rather than the 403 the API documents, so keying on either one alone would miss half of
+        /// them.
+        ///
+        /// A server that failed rather than refused is deliberately not a verdict at all: it is thrown, so
+        /// the caller treats it the way it treats a source it could not reach - as an attempt that told us
+        /// nothing, rather than as an answer.
+        /// </summary>
+        private static async Task<DeliveryForecastPublishResult?> PublishVerdictFor(HttpResponseMessage response)
+        {
+            if (response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                return new DeliveryForecastPublishResult.TargetMissing();
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+
+            if ((int)response.StatusCode >= 500)
+            {
+                throw new HttpRequestException(
+                    $"Jira could not be asked to publish a forecast: {(int)response.StatusCode} {response.ReasonPhrase}");
+            }
+
+            return new DeliveryForecastPublishResult.Refused(
+                JiraReleaseVersionReader.ReadRefusalMessage(body)
+                    ?? $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}");
         }
     }
 }

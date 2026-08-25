@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -646,7 +647,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var authStrategyFactory = TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService());
             return new JiraWorkTrackingConnector(
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), authStrategyFactory,
-                new Lighthouse.Backend.Cache.Cache<string, object>());
+                new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer());
         }
     }
 }

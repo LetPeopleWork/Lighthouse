@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -335,6 +336,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 factoryMock.Object,
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
+                new DeliveryForecastBlockRenderer(),
                 handlerMock.Object);
         }
 

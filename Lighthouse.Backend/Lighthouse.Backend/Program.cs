@@ -1265,6 +1265,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliverySourceResolver, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliverySourceResolver>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliverySourceSyncService, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliverySourceSyncService>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastBlockRenderer, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliveryForecastBlockRenderer>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.DeliverySources.IDeliveryForecastPublishingService, Lighthouse.Backend.Services.Implementation.DeliverySources.DeliveryForecastPublishingService>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleEvaluator<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.RuleEvaluator<WorkItem>>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.WorkItemRules.IRuleFieldProvider<WorkItem>, Lighthouse.Backend.Services.Implementation.WorkItemRules.WorkItemFieldProvider>();
             builder.Services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();

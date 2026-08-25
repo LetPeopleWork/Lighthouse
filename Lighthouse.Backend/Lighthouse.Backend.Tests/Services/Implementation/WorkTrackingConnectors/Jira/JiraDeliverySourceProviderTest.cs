@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -1140,7 +1141,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<IIssueFactory>(),
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 Mock.Of<IWorkTrackingAuthStrategyFactory>(),
-                new Lighthouse.Backend.Cache.Cache<string, object>());
+                new Lighthouse.Backend.Cache.Cache<string, object>(),
+                new DeliveryForecastBlockRenderer());
         }
     }
 }

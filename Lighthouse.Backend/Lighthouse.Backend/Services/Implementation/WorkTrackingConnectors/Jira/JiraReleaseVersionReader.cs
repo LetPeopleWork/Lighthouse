@@ -25,6 +25,48 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => ReadPage(versionPagePayload, version => ToOption(version, project));
 
         /// <summary>
+        /// The text a Release already carries, or nothing when it carries none. A Release with no
+        /// description at all is the ordinary case - every Release on the demo instance was like that - so
+        /// the key simply not being there is an answer rather than a payload that could not be read.
+        /// </summary>
+        public static string? ReadVersionDescription(string versionPayload)
+        {
+            using var payload = JsonDocument.Parse(versionPayload);
+
+            return payload.RootElement.TryGetProperty("description", out var description)
+                ? description.GetString()
+                : null;
+        }
+
+        /// <summary>
+        /// What Jira said when it would not take a write, in its own words - which already name what to
+        /// fix in the vocabulary the administrator will search for. Nothing when the body is not a refusal
+        /// Jira wrote, because inventing a sentence here would put words in its mouth that nobody can look
+        /// up.
+        /// </summary>
+        public static string? ReadRefusalMessage(string refusalPayload)
+        {
+            try
+            {
+                using var payload = JsonDocument.Parse(refusalPayload);
+
+                if (!payload.RootElement.TryGetProperty("errorMessages", out var messages)
+                    || messages.ValueKind != JsonValueKind.Array)
+                {
+                    return null;
+                }
+
+                return messages.EnumerateArray()
+                    .Select(message => message.GetString())
+                    .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Jira answers these one page at a time and says on every page whether it was the last, so a caller
         /// following that flag is handed the whole set rather than a first page that quietly looks complete.
         /// </summary>

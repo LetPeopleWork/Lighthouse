@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Factories;
+﻿using Lighthouse.Backend.Services.Implementation.DeliverySources;
+using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
@@ -24,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Factories
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(IJiraWorkTrackingConnector)))
-            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), Mock.Of<IWorkTrackingAuthStrategyFactory>(), new Lighthouse.Backend.Cache.Cache<string, object>()));
+            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), Mock.Of<IWorkTrackingAuthStrategyFactory>(), new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer()));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(CsvWorkTrackingConnector)))
