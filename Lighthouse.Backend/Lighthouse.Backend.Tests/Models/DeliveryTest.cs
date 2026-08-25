@@ -166,5 +166,39 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         #endregion
+
+        #region Overdue
+
+        /// <summary>
+        /// The day of the target itself is not overdue - the day is not over, and saying otherwise on
+        /// the morning of the target date tells a forecaster they have missed something they have not.
+        /// It is deliberately not the same comparison as the hand-entry guard, which refuses a date
+        /// that is not in the FUTURE and so refuses today as well.
+        /// </summary>
+        [TestCase(-1, true)]
+        [TestCase(0, false)]
+        [TestCase(1, false)]
+        public void A_target_is_overdue_only_once_its_day_has_been_and_gone(int daysFromToday, bool expected)
+        {
+            var today = new DateOnly(2026, 8, 25);
+            var delivery = new Delivery("Release 3.0", new DateTime(2026, 8, 25, 0, 0, 0, DateTimeKind.Utc).AddDays(daysFromToday), 1);
+
+            Assert.That(delivery.IsOverdue(today), Is.EqualTo(expected));
+        }
+
+        /// <summary>
+        /// A target is a day, not a moment, so a Delivery dated late on the day it is due is no more
+        /// overdue than one dated at midnight. Reading the instant instead would make the answer depend
+        /// on a time nobody ever entered.
+        /// </summary>
+        [Test]
+        public void A_target_carrying_a_time_of_day_is_still_judged_on_its_day()
+        {
+            var delivery = new Delivery("Release 3.0", new DateTime(2026, 8, 25, 23, 30, 0, DateTimeKind.Utc), 1);
+
+            Assert.That(delivery.IsOverdue(new DateOnly(2026, 8, 25)), Is.False);
+        }
+
+        #endregion
     }
 }

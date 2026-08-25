@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
 import type { IEntityReference } from "../../../../../models/EntityReference";
 import { Feature } from "../../../../../models/Feature";
@@ -10,9 +10,12 @@ import DeliverySection from "./DeliverySection";
 
 /**
  * A source-bound Delivery takes whatever date its Release now holds, and a Release that slipped past
- * its own date is an ordinary state - so a target in the past arrives on this screen without anyone
- * having typed it. The word, not only the colour, is what says so: a reader who cannot tell the two
- * greys apart would otherwise see a date and no indication it has been and gone.
+ * its own date is an ordinary state - so a target already behind us arrives on this screen without
+ * anyone having typed it.
+ *
+ * Whether it has passed is the backend's answer, not this component's: "today" is the instance's day
+ * and the browser may be on the other side of midnight from it. So these render the flag as it comes
+ * off the wire and say nothing about how it was decided.
  */
 
 vi.mock("../../../../../services/TerminologyContext", () => ({
@@ -48,15 +51,18 @@ vi.mock(
 	}),
 );
 
-const TODAY = new Date("2026-08-25T09:00:00.000Z");
+const THE_DATE_ON_SCREEN = "2026-08-24T00:00:00.000Z";
 
 const teams: IEntityReference[] = [{ id: 1, name: "Team Alpha" }];
 
-function deliveryDated(date: string, mode = DeliverySelectionMode.Manual) {
+function deliveryThatIs(
+	overdue: boolean,
+	mode = DeliverySelectionMode.Manual,
+): Delivery {
 	const delivery = new Delivery();
 	delivery.id = 1;
 	delivery.name = "Release 3.0";
-	delivery.date = date;
+	delivery.date = THE_DATE_ON_SCREEN;
 	delivery.features = [1];
 	delivery.likelihoodPercentage = 72;
 	delivery.teamsWithoutForecast = [];
@@ -69,6 +75,7 @@ function deliveryDated(date: string, mode = DeliverySelectionMode.Manual) {
 		{ featureId: 1, likelihoodPercentage: 72, hasSufficientData: true },
 	];
 	delivery.selectionMode = mode;
+	delivery.isOverdue = overdue;
 
 	return delivery;
 }
@@ -96,65 +103,58 @@ function renderSection(delivery: Delivery) {
 				onDelete={vi.fn()}
 				onEdit={vi.fn()}
 				teams={teams}
+				deliverySources={[{ key: "jira-release", displayName: "Jira Release" }]}
 			/>
 		</MemoryRouter>,
 	);
 }
 
-beforeEach(() => {
-	vi.useFakeTimers();
-	vi.setSystemTime(TODAY);
-});
-
-afterEach(() => {
-	vi.useRealTimers();
-});
+function theDateLine() {
+	return screen.getByText(
+		`delivery Date: ${new Date(THE_DATE_ON_SCREEN).toLocaleDateString(undefined, { timeZone: "UTC" })}`,
+	);
+}
 
 describe("DeliverySection overdue rendering (AC-03.2)", () => {
 	it("says a target that has been and gone is overdue", () => {
-		renderSection(deliveryDated("2026-08-24T00:00:00.000Z"));
+		renderSection(deliveryThatIs(true));
 
 		expect(screen.getByText("Overdue")).toBeInTheDocument();
 	});
 
-	it("says the same about a Delivery that took the past date from its source", () => {
-		renderSection(
-			deliveryDated(
-				"2026-08-24T00:00:00.000Z",
-				DeliverySelectionMode.SourceBound,
-			),
-		);
-
-		expect(screen.getByText("Overdue")).toBeInTheDocument();
-	});
-
-	// The day is not over. Saying otherwise on the morning of the target date tells a forecaster they
-	// have missed something they have not.
-	it("says nothing about a target due today", () => {
-		renderSection(deliveryDated("2026-08-25T00:00:00.000Z"));
+	it("says nothing about a target that has not", () => {
+		renderSection(deliveryThatIs(false));
 
 		expect(screen.queryByText("Overdue")).not.toBeInTheDocument();
 	});
 
-	it("says nothing about a target still ahead", () => {
-		renderSection(deliveryDated("2026-12-19T00:00:00.000Z"));
+	// The date also turns red, and nothing here pins that: jsdom neither resolves the theme palette
+	// into a computed colour nor gives the two states different generated class names, so every shade
+	// reads identically. The word is what these tests hold, which is the half that a reader who cannot
+	// tell the two colours apart depends on anyway. The colour is left to the eye.
 
-		expect(screen.queryByText("Overdue")).not.toBeInTheDocument();
-	});
-
-	// The word replaces nothing. A reader who is told a target has passed and not which one has to go
-	// and look it up.
+	// The word replaces nothing. A reader told a target has passed and not which one has to go and
+	// look it up.
 	it("still shows the date it is overdue against", () => {
-		const theTargetThatPassed = "2026-08-24T00:00:00.000Z";
-		renderSection(deliveryDated(theTargetThatPassed));
+		renderSection(deliveryThatIs(true));
 
-		const asItIsPrinted = new Date(theTargetThatPassed).toLocaleDateString(
-			undefined,
-			{ timeZone: "UTC" },
-		);
+		expect(theDateLine()).toBeInTheDocument();
+	});
+
+	it("explains the word to a pointer", () => {
+		renderSection(deliveryThatIs(true));
 
 		expect(
-			screen.getByText(`delivery Date: ${asItIsPrinted}`),
-		).toBeInTheDocument();
+			screen.getByText("Overdue").closest(".MuiChip-root"),
+		).toHaveAttribute("title", "The target date has passed.");
+	});
+
+	// The Delivery that reaches this state without anyone typing the date is the bound one, and it
+	// already carries a marker saying it follows a Release. Both have to be readable at once.
+	it("says it alongside the marker on a Delivery that follows a Release", () => {
+		renderSection(deliveryThatIs(true, DeliverySelectionMode.SourceBound));
+
+		expect(screen.getByText("Overdue")).toBeInTheDocument();
+		expect(screen.getByLabelText(/Bound to|Jira Release/i)).toBeInTheDocument();
 	});
 });

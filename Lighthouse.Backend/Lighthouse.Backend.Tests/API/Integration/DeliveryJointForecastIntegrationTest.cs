@@ -37,6 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "featureLikelihoods", "hasSufficientData", "metricSnapshotCount", "selectionMode",
             "rules", "mode", "concurrencyToken",
             "sourceKey", "sourceReference", "sourceLastSyncedOn", "sourceUnavailableReason",
+            "isOverdue",
         ];
 
         private static readonly JsonSerializerOptions JsonOptions = new()

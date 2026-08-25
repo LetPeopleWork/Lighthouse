@@ -58,6 +58,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public DeliverySourceUnavailableReason? SourceUnavailableReason { get; set; }
 
+        public bool IsOverdue { get; set; }
+
         public List<WorkItemRuleCondition> Rules { get; set; } = [];
 
         public string Mode { get; set; } = WorkItemRuleSet.ModeAnd;
@@ -93,6 +95,7 @@ namespace Lighthouse.Backend.API.DTO
                 SourceReference = delivery.SourceReference,
                 SourceLastSyncedOn = delivery.SourceLastSyncedOn,
                 SourceUnavailableReason = delivery.SourceUnavailableReason,
+                IsOverdue = delivery.IsOverdue(today),
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,
                 ConcurrencyToken = delivery.ConcurrencyToken,

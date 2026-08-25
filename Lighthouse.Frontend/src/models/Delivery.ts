@@ -37,6 +37,8 @@ export interface IDelivery {
 	concurrencyToken?: string;
 	hasSufficientData?: boolean;
 	metricSnapshotCount: number;
+	/** Decided by the backend on the instance time zone: the browser's day is not the product's day. */
+	isOverdue?: boolean;
 }
 
 export class Delivery implements IDelivery {
@@ -62,6 +64,7 @@ export class Delivery implements IDelivery {
 	concurrencyToken?: string;
 	hasSufficientData!: boolean;
 	metricSnapshotCount!: number;
+	isOverdue!: boolean;
 
 	static fromBackend(data: IDelivery): Delivery {
 		const delivery = new Delivery();
@@ -78,6 +81,7 @@ export class Delivery implements IDelivery {
 		delivery.featureLikelihoods = data.featureLikelihoods || [];
 		delivery.hasSufficientData = data.hasSufficientData ?? true;
 		delivery.metricSnapshotCount = data.metricSnapshotCount ?? 0;
+		delivery.isOverdue = data.isOverdue ?? false;
 		delivery.selectionMode = data.selectionMode ?? DeliverySelectionMode.Manual;
 		delivery.sourceKey = data.sourceKey ?? null;
 		delivery.sourceReference = data.sourceReference ?? null;
@@ -100,25 +104,6 @@ export class Delivery implements IDelivery {
 		return new Date(this.date).toLocaleDateString(undefined, {
 			timeZone: "UTC",
 		});
-	}
-
-	/**
-	 * Whether the target day has already been and gone. Compared as UTC days because that is the day
-	 * the screen shows — getFormattedDate renders the instant in UTC, so anything else would call a
-	 * Delivery overdue while the date beside the word still reads as today.
-	 *
-	 * A Delivery due today is not overdue: the day is not over.
-	 */
-	isOverdue(now: Date = new Date()): boolean {
-		const target = new Date(this.date);
-
-		return (
-			Date.UTC(
-				target.getUTCFullYear(),
-				target.getUTCMonth(),
-				target.getUTCDate(),
-			) < Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-		);
 	}
 
 	getFeatureCount(): number {

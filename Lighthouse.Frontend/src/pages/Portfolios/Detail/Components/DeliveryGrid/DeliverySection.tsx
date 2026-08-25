@@ -336,7 +336,9 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 
 	// A bound Delivery takes whatever date its source now holds, past ones included, so a target that
 	// has been and gone is an ordinary state rather than something only a stale hand-entry could reach.
-	const isOverdue = delivery.isOverdue();
+	// Whether it has is the backend's answer, because "today" is the instance's day and this browser
+	// may well be on the other side of midnight from it.
+	const isOverdue = delivery.isOverdue;
 
 	const forecastLevel = new ForecastLevel(delivery.likelihoodPercentage);
 

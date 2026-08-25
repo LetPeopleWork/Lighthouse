@@ -18,6 +18,7 @@ const buildBackendDelivery = (
 	completionDates: [],
 	selectionMode: DeliverySelectionMode.Manual,
 	metricSnapshotCount: 0,
+	isOverdue: false,
 	...overrides,
 });
 
@@ -41,36 +42,21 @@ describe("Delivery.getFormattedDate", () => {
 });
 
 describe("Delivery.isOverdue", () => {
-	const theDayTheScreenIsBeingRead = new Date("2026-08-25T09:00:00.000Z");
+	// Decided on the instance time zone, which the browser has no way to know, so the flag crosses the
+	// wire rather than being recomputed here. A viewer on the other side of midnight from the instance
+	// must not see a different verdict from the one the instance would give.
+	it.each([true, false])("carries the backend's verdict of %s", (verdict) => {
+		const delivery = Delivery.fromBackend(
+			buildBackendDelivery({ isOverdue: verdict }),
+		);
 
-	it.each([
-		["2026-08-24T00:00:00.000Z", true, "the day before"],
-		["2026-08-25T00:00:00.000Z", false, "today"],
-		["2026-08-26T00:00:00.000Z", false, "the day after"],
-	])("treats %s as overdue=%s (%s)", (date, expected) => {
-		const delivery = Delivery.fromBackend(buildBackendDelivery({ date }));
-
-		expect(delivery.isOverdue(theDayTheScreenIsBeingRead)).toBe(expected);
+		expect(delivery.isOverdue).toBe(verdict);
 	});
 
-	// A target arriving from Jira can land anywhere in the day, and the screen shows the UTC day it
-	// falls on. Reading the day off the local clock instead would call a Delivery overdue while the
-	// date printed beside the word still says today.
-	it("compares the day the screen shows, not the instant", () => {
-		const delivery = Delivery.fromBackend(
-			buildBackendDelivery({ date: "2026-08-25T23:30:00.000Z" }),
-		);
+	it("says nothing is overdue when the backend said nothing at all", () => {
+		const withoutTheField = buildBackendDelivery({});
+		delete (withoutTheField as Partial<IDelivery>).isOverdue;
 
-		expect(delivery.isOverdue(new Date("2026-08-25T23:59:00.000Z"))).toBe(
-			false,
-		);
-	});
-
-	it("says nothing is overdue when the target is still ahead of an unspecified now", () => {
-		const delivery = Delivery.fromBackend(
-			buildBackendDelivery({ date: "2999-01-01T00:00:00.000Z" }),
-		);
-
-		expect(delivery.isOverdue()).toBe(false);
+		expect(Delivery.fromBackend(withoutTheField).isOverdue).toBe(false);
 	});
 });
