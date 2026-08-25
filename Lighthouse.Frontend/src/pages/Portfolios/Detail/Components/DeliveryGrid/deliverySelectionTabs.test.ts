@@ -53,6 +53,7 @@ const formState = (
 	rules: [],
 	mode: "and",
 	sourceReference: null,
+	publishForecastToSource: false,
 	rulesValidated: false,
 	matchedFeaturesLength: 0,
 	...overrides,
@@ -90,6 +91,7 @@ describe("a selection nobody has made yet", () => {
 			rules: [],
 			mode: "and",
 			sourceReference: null,
+			publishForecastToSource: false,
 		});
 	});
 });
@@ -387,6 +389,7 @@ describe("a tab that reads a date out of the work tracking system", () => {
 			rules: [],
 			mode: "and",
 			sourceReference: "10144",
+			publishForecastToSource: false,
 		});
 	});
 
@@ -427,7 +430,45 @@ describe("a tab that reads a date out of the work tracking system", () => {
 			featureIds: [],
 			sourceKey: "jira-release",
 			sourceReference: "10144",
+			publishForecastToSource: false,
 		});
+	});
+
+	// The switch belongs to the binding, so it travels with it rather than being read off the delivery
+	// somewhere else. A payload that left it out would read as "switch it off" at the server, which is
+	// what every other field this request omits means.
+	it("carries whether the forecast is broadcast, both ways", () => {
+		expect(
+			jiraReleaseTab().hydrate(
+				storedDelivery({
+					sourceReference: "10144",
+					publishForecastToSource: true,
+				}),
+			).publishForecastToSource,
+		).toBe(true);
+
+		expect(
+			jiraReleaseTab().toPayload(
+				formState({ sourceReference: "10144", publishForecastToSource: true }),
+			).publishForecastToSource,
+		).toBe(true);
+	});
+
+	// The three descriptor shapes are shared, so the slot exists on the tabs that have nothing to
+	// broadcast to. None of it may reach what they write down.
+	it("is the only tab that writes down whether the forecast is broadcast", () => {
+		const state = formState({
+			selectedFeatureIds: [3],
+			rules: [filledInRule()],
+			publishForecastToSource: true,
+		});
+
+		expect(
+			manualTab().toPayload(state).publishForecastToSource,
+		).toBeUndefined();
+		expect(
+			ruleBasedTab().toPayload(state).publishForecastToSource,
+		).toBeUndefined();
 	});
 
 	it("is offered by no connection that reports no source, whatever a delivery claims to follow", () => {

@@ -14,6 +14,8 @@ export interface DeliverySelectionValues {
 	mode: DeliveryRuleMode;
 	/** Which entry of a source the delivery follows, or null when it follows none. */
 	sourceReference: string | null;
+	/** Whether the forecast is broadcast onto that entry. Meaningless without one. */
+	publishForecastToSource: boolean;
 }
 
 export interface DeliverySelectionState extends DeliverySelectionValues {
@@ -33,6 +35,7 @@ export interface DeliverySelectionPayload {
 	mode?: DeliveryRuleMode;
 	sourceKey?: string;
 	sourceReference?: string;
+	publishForecastToSource?: boolean;
 }
 
 export interface DeliverySelectionFieldErrors {
@@ -84,6 +87,7 @@ export const emptySelectionValues = (): DeliverySelectionValues => ({
 	rules: [],
 	mode: "and",
 	sourceReference: null,
+	publishForecastToSource: false,
 });
 
 const valuesFromDelivery = (delivery: IDelivery): DeliverySelectionValues => ({
@@ -96,6 +100,7 @@ const valuesFromDelivery = (delivery: IDelivery): DeliverySelectionValues => ({
 		})) ?? [],
 	mode: delivery.mode === "or" ? "or" : "and",
 	sourceReference: delivery.sourceReference ?? null,
+	publishForecastToSource: delivery.publishForecastToSource ?? false,
 });
 
 /**
@@ -221,6 +226,7 @@ const sourceSelectionTab = (
 	hydrate: (delivery) => ({
 		...emptySelectionValues(),
 		sourceReference: delivery.sourceReference ?? null,
+		publishForecastToSource: delivery.publishForecastToSource ?? false,
 	}),
 	firstBlockingError: (state) =>
 		state.sourceReference === null
@@ -231,6 +237,7 @@ const sourceSelectionTab = (
 		featureIds: [],
 		sourceKey: source.key,
 		sourceReference: state.sourceReference ?? undefined,
+		publishForecastToSource: state.publishForecastToSource,
 	}),
 });
 

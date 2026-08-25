@@ -3,6 +3,8 @@ import {
 	Autocomplete,
 	Box,
 	CircularProgress,
+	FormControlLabel,
+	Switch,
 	TextField,
 	Typography,
 } from "@mui/material";
@@ -38,6 +40,9 @@ export interface DeliverySourceTabProps {
 	currentSelection: DeliverySourceCurrentSelection | null;
 	/** Told which entry is on screen, so the form can show the name and date it would take. */
 	onOptionPicked: (option: IDeliverySourceOption) => void;
+	/** Whether the Lighthouse forecast is written back onto the entry this Delivery follows. */
+	publishForecast: boolean;
+	onPublishForecastChange: (publish: boolean) => void;
 }
 
 const optionCache = new Map<string, IDeliverySourceOption[]>();
@@ -260,6 +265,41 @@ const SourcePreview: React.FC<{
 );
 
 /**
+ * Off unless somebody asks for it, and asked for per Delivery rather than once for the whole
+ * connection. Whether Lighthouse may write to this tracker at all is a credential question that
+ * belongs to whoever owns the connection; whether a particular forecast should be broadcast is an
+ * editorial one, and a Portfolio routinely holds entries shared with a customer beside entries
+ * nobody outside the team should read.
+ *
+ * Disabled until an entry is picked, because there is nowhere for the forecast to go until then.
+ */
+const PublishForecastSwitch: React.FC<{
+	sourceName: string;
+	hasPickedAnEntry: boolean;
+	publishForecast: boolean;
+	onChange: (publish: boolean) => void;
+}> = ({ sourceName, hasPickedAnEntry, publishForecast, onChange }) => (
+	<Box sx={{ mt: 2 }}>
+		<FormControlLabel
+			control={
+				<Switch
+					checked={publishForecast}
+					disabled={!hasPickedAnEntry}
+					onChange={(event) => onChange(event.target.checked)}
+					slotProps={{
+						input: { "aria-label": `Publish forecast to the ${sourceName}` },
+					}}
+				/>
+			}
+			label={`Publish forecast to the ${sourceName}`}
+		/>
+		<Typography variant="caption" color="text.secondary" component="p">
+			{`Lighthouse writes its own block into the ${sourceName} description and keeps it up to date, so people who never open Lighthouse can see the forecast. Nothing else in the description is touched.`}
+		</Typography>
+	</Box>
+);
+
+/**
  * Shows which entry of the work tracking system this Delivery takes its date from, and what that
  * means for it: the date it would land on and the work that would come along with it.
  */
@@ -271,6 +311,8 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	portfolioTerm,
 	currentSelection,
 	onOptionPicked,
+	publishForecast,
+	onPublishForecastChange,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
 	const { options: offered, failed } = useSourceOptions(portfolioId, sourceKey);
@@ -337,6 +379,12 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 				options={options}
 				selectedId={selectedId}
 				onSelect={handleSelect}
+			/>
+			<PublishForecastSwitch
+				sourceName={sourceName}
+				hasPickedAnEntry={selectedId !== ""}
+				publishForecast={publishForecast}
+				onChange={onPublishForecastChange}
 			/>
 			{previewFailed && (
 				<Alert severity="error" sx={{ mt: 2 }}>

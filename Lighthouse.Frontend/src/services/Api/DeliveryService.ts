@@ -36,6 +36,7 @@ export interface IDeliveryCreateOptions {
 	selectionMode?: DeliverySelectionMode;
 	sourceKey?: string;
 	sourceReference?: string;
+	publishForecastToSource?: boolean;
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 }
@@ -52,6 +53,7 @@ export interface IDeliveryUpdateOptions {
 	selectionMode?: DeliverySelectionMode;
 	sourceKey?: string;
 	sourceReference?: string;
+	publishForecastToSource?: boolean;
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
@@ -147,6 +149,7 @@ export class DeliveryService
 		selectionMode = DeliverySelectionMode.Manual,
 		sourceKey,
 		sourceReference,
+		publishForecastToSource,
 		rules,
 		mode,
 	}: IDeliveryCreateOptions): Promise<void> {
@@ -158,6 +161,7 @@ export class DeliveryService
 				selectionMode,
 				sourceKey,
 				sourceReference,
+				publishForecastToSource,
 				rules,
 				mode,
 			});
@@ -172,6 +176,7 @@ export class DeliveryService
 		selectionMode = DeliverySelectionMode.Manual,
 		sourceKey,
 		sourceReference,
+		publishForecastToSource,
 		rules,
 		mode,
 		concurrencyToken,
@@ -184,6 +189,7 @@ export class DeliveryService
 				selectionMode,
 				sourceKey,
 				sourceReference,
+				publishForecastToSource,
 				rules,
 				mode,
 				concurrencyToken,

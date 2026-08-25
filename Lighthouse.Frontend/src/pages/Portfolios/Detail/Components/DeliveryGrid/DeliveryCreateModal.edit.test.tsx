@@ -305,6 +305,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 				selectionMode: DeliverySelectionMode.SourceBound,
 				sourceKey: "jira-release",
 				sourceReference: "10144",
+				publishForecastToSource: false,
 				rules: undefined,
 			});
 		});

@@ -5,6 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
 import type {
@@ -181,6 +182,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		selectionMode: DeliverySelectionMode.SourceBound,
 		sourceKey: JIRA_RELEASE_SOURCE.key,
 		sourceReference: datedInProject.id,
+		publishForecastToSource: false,
 		rules: undefined,
 		mode: undefined,
 		concurrencyToken: "v1",
@@ -358,6 +360,59 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 
 	// The list is kept between openings of one form, and the entry a Launch follows is not part of
 	// what the server said, so a cached answer must not be able to swallow it.
+	/**
+	 * The switch belongs to the binding, so reopening a Launch that broadcasts has to show it doing
+	 * so. Shown off, the reader is told a broadcast is not happening while it is - and the next save
+	 * would then make that true.
+	 */
+	it("reopens with the switch on when the Launch broadcasts its forecast", async () => {
+		renderEditModal(serviceOffering(allOptions), {
+			...followingARelease(),
+			publishForecastToSource: true,
+		} as unknown as IDelivery);
+
+		await screen.findByRole("button", { name: "Jira Release" });
+
+		await waitFor(() => {
+			expect(
+				screen.getByRole("switch", {
+					name: "Publish forecast to the Jira Release",
+				}),
+			).toBeChecked();
+		});
+	});
+
+	it("saves the switch as the reader left it", async () => {
+		const user = userEvent.setup();
+		const { onUpdate } = renderEditModal(
+			serviceOffering(allOptions),
+			followingARelease(),
+		);
+
+		await screen.findByRole("button", { name: "Jira Release" });
+		await waitFor(() => {
+			expect(
+				screen.getByRole("switch", {
+					name: "Publish forecast to the Jira Release",
+				}),
+			).toBeEnabled();
+		});
+
+		await user.click(
+			screen.getByRole("switch", {
+				name: "Publish forecast to the Jira Release",
+			}),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Update" }));
+
+		await waitFor(() => {
+			expect(onUpdate).toHaveBeenCalledWith({
+				...boundPayload,
+				publishForecastToSource: true,
+			});
+		});
+	});
+
 	it("shows the Release it follows even when the list came out of the cache", async () => {
 		const deliveryService = serviceOffering([datedInJustATest]);
 
@@ -376,6 +431,8 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 					portfolioTerm="Value Stream"
 					currentSelection={null}
 					onOptionPicked={vi.fn()}
+					publishForecast={false}
+					onPublishForecastChange={vi.fn()}
 				/>
 			</ApiServiceContext.Provider>,
 		);

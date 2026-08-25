@@ -149,8 +149,15 @@ export const THE_DATELESS_RELEASE = /^Release 45 \(Project X\)/;
 
 type MockDeliveryService = ReturnType<typeof createMockDeliveryService>;
 
+/** What a suite about the publishing switch has to be able to set and watch. */
+export interface TabOverrides {
+	publishForecast?: boolean;
+	onPublishForecastChange?: (publish: boolean) => void;
+}
+
 export const renderTab = (
 	deliveryService: MockDeliveryService = createMockDeliveryService(),
+	overrides: TabOverrides = {},
 ): RenderResult & { deliveryService: MockDeliveryService } => {
 	const context = createMockApiServiceContext({ deliveryService });
 
@@ -164,12 +171,17 @@ export const renderTab = (
 				portfolioTerm="Value Stream"
 				currentSelection={null}
 				onOptionPicked={vi.fn()}
+				publishForecast={overrides.publishForecast ?? false}
+				onPublishForecastChange={overrides.onPublishForecastChange ?? vi.fn()}
 			/>
 		</ApiServiceContext.Provider>,
 	);
 
 	return { ...result, deliveryService };
 };
+
+export const publishSwitch = () =>
+	screen.getByRole("switch", { name: "Publish forecast to the Jira Release" });
 
 export const renderModal = (
 	deliveryService: MockDeliveryService = createMockDeliveryService(),

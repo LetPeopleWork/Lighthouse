@@ -321,6 +321,7 @@ describe("DeliveryCreateModal and the one thing it asks for next", () => {
 			selectionMode: DeliverySelectionMode.SourceBound,
 			sourceKey: JIRA_RELEASE_SOURCE.key,
 			sourceReference: datedInProject.id,
+			publishForecastToSource: false,
 		});
 		expect(screen.queryByText(/must be in the future/i)).toBeNull();
 	});

@@ -73,6 +73,7 @@ interface DeliveryCreateModalProps {
 		mode?: DeliveryRuleMode;
 		sourceKey?: string;
 		sourceReference?: string;
+		publishForecastToSource?: boolean;
 	}) => void;
 	onUpdate?: (deliveryData: {
 		id: number;
@@ -84,6 +85,7 @@ interface DeliveryCreateModalProps {
 		mode?: DeliveryRuleMode;
 		sourceKey?: string;
 		sourceReference?: string;
+		publishForecastToSource?: boolean;
 		concurrencyToken?: string;
 	}) => void;
 }
@@ -285,6 +287,8 @@ const SelectionModeContent: React.FC<
 		portfolioTerm: string;
 		currentSelection: DeliverySourceCurrentSelection | null;
 		onSourceOptionPicked: (option: IDeliverySourceOption) => void;
+		publishForecastToSource: boolean;
+		onPublishForecastChange: (publish: boolean) => void;
 	}
 > = ({
 	tab,
@@ -292,6 +296,8 @@ const SelectionModeContent: React.FC<
 	portfolioTerm,
 	currentSelection,
 	onSourceOptionPicked,
+	publishForecastToSource,
+	onPublishForecastChange,
 	...contentProps
 }) => {
 	const gate = tab.premiumGate;
@@ -309,6 +315,8 @@ const SelectionModeContent: React.FC<
 				portfolioTerm={portfolioTerm}
 				currentSelection={currentSelection}
 				onOptionPicked={onSourceOptionPicked}
+				publishForecast={publishForecastToSource}
+				onPublishForecastChange={onPublishForecastChange}
 			/>
 		);
 	}
@@ -495,6 +503,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [validatingRules, setValidatingRules] = useState(false);
 	const [rulesValidated, setRulesValidated] = useState(false);
 	const [sourceReference, setSourceReference] = useState<string | null>(null);
+	const [publishForecastToSource, setPublishForecastToSource] = useState(false);
 	const [matchedFeatures, setMatchedFeatures] = useState<IFeature[]>([]);
 	const hydratedDeliveryId = useRef<number | null>(null);
 	const [errors, setErrors] = useState<{
@@ -529,6 +538,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		rules,
 		mode,
 		sourceReference,
+		publishForecastToSource,
 		rulesValidated,
 		matchedFeaturesLength: matchedFeatures.length,
 	};
@@ -661,6 +671,9 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		// The picker starts empty again when the tab is next opened, so what it was showing before is
 		// forgotten here too; the name and the date it filled in stay, which is the point of them.
 		setSourceReference(null);
+		// Broadcasting is a decision about one entry of one tracker. Carried across a tab change it
+		// would arrive switched on for an entry nobody has chosen yet.
+		setPublishForecastToSource(false);
 	};
 
 	const handleSourceOptionPicked = useCallback(
@@ -709,6 +722,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setRulesValidated(false);
 		setMatchedFeatures([]);
 		setSourceReference(values.sourceReference);
+		setPublishForecastToSource(values.publishForecastToSource);
 		hydratedDeliveryId.current = null;
 		setErrors({});
 		clearDeliverySourceOptionsCache();
@@ -743,6 +757,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setRules(values.rules);
 		setMode(values.mode);
 		setSourceReference(values.sourceReference);
+		setPublishForecastToSource(values.publishForecastToSource);
 		// Whatever the rules matched before is not trustworthy once the form reopens, so
 		// the user has to ask for them to be matched again before saving.
 		setRulesValidated(false);
@@ -861,6 +876,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						}}
 						onValidateRules={handleValidateRules}
 						onSourceOptionPicked={handleSourceOptionPicked}
+						publishForecastToSource={publishForecastToSource}
+						onPublishForecastChange={setPublishForecastToSource}
 					/>
 				</Box>
 			</DialogContent>

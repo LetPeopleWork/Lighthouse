@@ -266,6 +266,7 @@ export const useDeliveryManagement = ({
 		mode?: "and" | "or";
 		sourceKey?: string;
 		sourceReference?: string;
+		publishForecastToSource?: boolean;
 	}) => {
 		try {
 			await deliveryService.create({
@@ -278,6 +279,7 @@ export const useDeliveryManagement = ({
 				mode: deliveryData.mode,
 				sourceKey: deliveryData.sourceKey,
 				sourceReference: deliveryData.sourceReference,
+				publishForecastToSource: deliveryData.publishForecastToSource,
 			});
 			setShowCreateModal(false);
 			await fetchDeliveries();
@@ -297,6 +299,7 @@ export const useDeliveryManagement = ({
 		mode?: "and" | "or";
 		sourceKey?: string;
 		sourceReference?: string;
+		publishForecastToSource?: boolean;
 		concurrencyToken?: string;
 	}) => {
 		try {
@@ -312,6 +315,7 @@ export const useDeliveryManagement = ({
 				mode: deliveryData.mode,
 				sourceKey: deliveryData.sourceKey,
 				sourceReference: deliveryData.sourceReference,
+				publishForecastToSource: deliveryData.publishForecastToSource,
 				concurrencyToken: deliveryData.concurrencyToken,
 			});
 			setSelectedDelivery(null);
