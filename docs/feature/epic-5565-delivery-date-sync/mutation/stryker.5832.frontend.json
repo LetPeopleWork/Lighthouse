@@ -1,0 +1,39 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.5832.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryPublishRefusedNotice.tsx:29-35",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryPublishRefusedNotice.tsx:56-66"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-5832-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-5832"
+}
