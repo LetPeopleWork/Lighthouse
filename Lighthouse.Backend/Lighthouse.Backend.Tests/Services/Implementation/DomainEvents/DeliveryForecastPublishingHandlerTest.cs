@@ -22,6 +22,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     {
         private const int ThePortfolio = 1;
 
+        // Hoisted rather than inline: CA1861 fires on a constant array inside an assertion, and the
+        // Sonar gate is zero new issues of any severity.
+        private static readonly string[] PublishedThenSaved = ["published", "saved"];
+
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IDeliveryForecastPublishingService> publishingServiceMock;
@@ -58,17 +62,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         /// <summary>
         /// The only thing publishing writes to a Delivery is that its Release turned out not to be there,
-        /// and that finding is worth nothing unless it survives the round.
+        /// and that finding is worth nothing unless it survives the round. Asserted as an order rather
+        /// than as a count, because a save that runs before the publishing would satisfy a count while
+        /// dropping every finding the publishing made.
         /// </summary>
         [Test]
-        public async Task What_publishing_found_out_about_a_Release_is_written_down()
+        public async Task What_publishing_found_out_about_a_Release_is_written_down_afterwards()
         {
             GivenAPortfolio();
             GivenTheRecordableDeliveries();
+            var whatHappenedInWhichOrder = new List<string>();
+            publishingServiceMock
+                .Setup(service => service.PublishForPortfolio(It.IsAny<Portfolio>(), It.IsAny<RecordableDeliveries>()))
+                .Callback(() => whatHappenedInWhichOrder.Add("published"))
+                .Returns(Task.CompletedTask);
+            deliveryRepositoryMock
+                .Setup(repository => repository.TrySaveRecomputedDeliveries())
+                .Callback(() => whatHappenedInWhichOrder.Add("saved"))
+                .ReturnsAsync(true);
 
             await subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None);
 
-            deliveryRepositoryMock.Verify(repository => repository.TrySaveRecomputedDeliveries(), Times.Once);
+            Assert.That(whatHappenedInWhichOrder, Is.EqualTo(PublishedThenSaved));
+        }
+
+        /// <summary>
+        /// Somebody editing a Delivery while the round was running wins, and the round has to survive
+        /// that: the save is refused whole, and everything else the Portfolio produced this round is
+        /// already written. The next round asks the Release again.
+        /// </summary>
+        [Test]
+        public void A_save_refused_because_somebody_was_editing_does_not_take_the_round_down()
+        {
+            GivenAPortfolio();
+            GivenTheRecordableDeliveries();
+            deliveryRepositoryMock
+                .Setup(repository => repository.TrySaveRecomputedDeliveries())
+                .ReturnsAsync(false);
+
+            Assert.DoesNotThrowAsync(() => subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None));
         }
 
         /// <summary>

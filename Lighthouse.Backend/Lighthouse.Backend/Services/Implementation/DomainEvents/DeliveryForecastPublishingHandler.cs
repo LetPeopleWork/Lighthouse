@@ -45,7 +45,14 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 // be there. Somebody editing that Delivery while this ran wins, exactly as they do on the
                 // refresh: this pass is holding a copy read before that happened, and the next round
                 // finds out about the Release again anyway.
-                await deliveryRepository.TrySaveRecomputedDeliveries();
+                if (!await deliveryRepository.TrySaveRecomputedDeliveries())
+                {
+                    // Stryker disable once all: diagnostic log text is not behaviour. That the round
+                    // survives a refused save is, and that is asserted.
+                    logger.LogInformation(
+                        "A Delivery of Portfolio {PortfolioId} was changed while its forecast was being published; what this round found out about its Release is picked up next time",
+                        domainEvent.PortfolioId);
+                }
             }
 #pragma warning disable CA1031 // publishing is best-effort; a remote that would not take today's numbers must not cost the refresh that produced them
             catch (Exception exception)

@@ -33,7 +33,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             using var payload = JsonDocument.Parse(versionPayload);
 
+            // Read as text only when it is text. A description that came back as anything else is not a
+            // description Lighthouse can merge into, and asking for the string would throw where the
+            // honest answer is that there is nothing here to keep.
             return payload.RootElement.TryGetProperty("description", out var description)
+                && description.ValueKind == JsonValueKind.String
                 ? description.GetString()
                 : null;
         }
@@ -43,6 +47,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// fix in the vocabulary the administrator will search for. Nothing when the body is not a refusal
         /// Jira wrote, because inventing a sentence here would put words in its mouth that nobody can look
         /// up.
+        ///
+        /// Both halves of Jira's error envelope are read. A refusal about the request as a whole arrives
+        /// in <c>errorMessages</c>; one about a particular field arrives in <c>errors</c> with
+        /// <c>errorMessages</c> empty, and that is the shape of the refusal this write can actually
+        /// provoke - a description that would go over Jira's size ceiling. Reading only the first half
+        /// would leave the one refusal an administrator can act on reported as a bare status line.
         /// </summary>
         public static string? ReadRefusalMessage(string refusalPayload)
         {
@@ -50,20 +60,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 using var payload = JsonDocument.Parse(refusalPayload);
 
-                if (!payload.RootElement.TryGetProperty("errorMessages", out var messages)
-                    || messages.ValueKind != JsonValueKind.Array)
-                {
-                    return null;
-                }
-
-                return messages.EnumerateArray()
-                    .Select(message => message.GetString())
-                    .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+                return AboutTheRequest(payload.RootElement) ?? AboutAField(payload.RootElement);
             }
             catch (JsonException)
             {
                 return null;
             }
+        }
+
+        private static string? AboutTheRequest(JsonElement refusal)
+        {
+            if (!refusal.TryGetProperty("errorMessages", out var messages) || messages.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return messages.EnumerateArray()
+                .Where(message => message.ValueKind == JsonValueKind.String)
+                .Select(message => message.GetString())
+                .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+        }
+
+        private static string? AboutAField(JsonElement refusal)
+        {
+            if (!refusal.TryGetProperty("errors", out var errors) || errors.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            return errors.EnumerateObject()
+                .Where(field => field.Value.ValueKind == JsonValueKind.String)
+                .Select(field => field.Value.GetString())
+                .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
         }
 
         /// <summary>

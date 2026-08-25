@@ -2351,6 +2351,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// Measured on a live instance: a version description of 32,768 refuses with a named error and
+        /// this one is accepted. Checked before the write rather than after, because Jira reports going
+        /// over it as one more refusal, and an administrator sent to look at a permission for what is a
+        /// length problem looks in the wrong place for as long as it takes them to give up.
+        /// </summary>
+        private const int MaxVersionDescriptionBytes = 16384;
+
+        /// <summary>
         /// Yes for every Jira connection, and the answer is not a claim about permission. The permission a
         /// Version write needs is held per project rather than per site, so no answer given here could be
         /// true of everything a connection touches - the credential may edit the Releases of one project
@@ -2384,9 +2392,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return refusedRead;
             }
 
-            var merged = forecastBlockRenderer.MergeInto(
-                JiraReleaseVersionReader.ReadVersionDescription(await read.Content.ReadAsStringAsync()),
-                publication.BlockText);
+            var described = JiraReleaseVersionReader.ReadVersionDescription(await read.Content.ReadAsStringAsync());
+            var merged = forecastBlockRenderer.MergeInto(described, publication.BlockText);
+
+            // A forecast that has not moved since the last round is already on the Release, so writing it
+            // again would spend a request per Delivery per round to change nothing at all - on somebody
+            // else's Jira, whose rate limit is the thing this feature can least afford to spend.
+            if (string.Equals(merged, described, StringComparison.Ordinal))
+            {
+                return new DeliveryForecastPublishResult.Published();
+            }
+
+            if (Encoding.UTF8.GetByteCount(merged) > MaxVersionDescriptionBytes)
+            {
+                return new DeliveryForecastPublishResult.Refused(
+                    $"The description of this Release would be over Jira's {MaxVersionDescriptionBytes:N0}-character limit once the Lighthouse forecast is added. Shorten the description, or switch publishing off for this delivery.");
+            }
 
             var payload = JsonSerializer.Serialize(new { description = merged });
             var write = await client.PutAsync(versionUrl, new StringContent(payload, Encoding.UTF8, "application/json"));
@@ -2408,6 +2429,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// the caller treats it the way it treats a source it could not reach - as an attempt that told us
         /// nothing, rather than as an answer.
         /// </summary>
+        /// <summary>
+        /// The answers that mean "ask again later" rather than "no". A throttled or timed-out request has
+        /// refused nothing, and this pass publishes every broadcasting Delivery of a Portfolio one after
+        /// another, so a Portfolio large enough to be throttled partway through would otherwise write
+        /// down a standing permission problem for every Delivery after the first - and send an
+        /// administrator to audit a permission that was never wrong.
+        /// </summary>
+        private static bool JiraIsNotAnsweringRightNow(HttpStatusCode status)
+            => (int)status >= 500 || status is HttpStatusCode.TooManyRequests or HttpStatusCode.RequestTimeout;
+
         private static async Task<DeliveryForecastPublishResult?> PublishVerdictFor(HttpResponseMessage response)
         {
             if (response.IsSuccessStatusCode)
@@ -2422,7 +2453,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var body = await response.Content.ReadAsStringAsync();
 
-            if ((int)response.StatusCode >= 500)
+            if (JiraIsNotAnsweringRightNow(response.StatusCode))
             {
                 throw new HttpRequestException(
                     $"Jira could not be asked to publish a forecast: {(int)response.StatusCode} {response.ReasonPhrase}");
