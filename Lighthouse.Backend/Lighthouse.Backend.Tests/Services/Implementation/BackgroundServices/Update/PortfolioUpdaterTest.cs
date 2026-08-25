@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -27,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private const string UnreadableValue = "unreadable-stored-value";
 
+        private static readonly string[] SyncedThenSaved = ["synced", "saved"];
+
         private Mock<IRepository<Portfolio>> projectRepoMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IWorkItemService> workItemServiceMock;
@@ -35,6 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IDeliveryRepository> deliveryRepositoryMock;
         private Mock<IDeliveryRuleService> deliveryRuleServiceMock;
+        private Mock<IDeliverySourceSyncService> deliverySourceSyncServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IOrphanedFeatureCleanupService> cleanupServiceMock;
@@ -70,6 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             licenseServiceMock = new Mock<ILicenseService>();
             deliveryRepositoryMock = new Mock<IDeliveryRepository>();
             deliveryRuleServiceMock = new Mock<IDeliveryRuleService>();
+            deliverySourceSyncServiceMock = new Mock<IDeliverySourceSyncService>();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             refreshLogServiceMock = new Mock<IRefreshLogService>();
             cleanupServiceMock = new Mock<IOrphanedFeatureCleanupService>();
@@ -103,6 +108,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(licenseServiceMock.Object);
             SetupServiceProviderMock(deliveryRepositoryMock.Object);
             SetupServiceProviderMock(deliveryRuleServiceMock.Object);
+            SetupServiceProviderMock(deliverySourceSyncServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
 
@@ -276,6 +282,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(project.Id);
 
             deliveryRuleServiceMock.Verify(x => x.RecomputeRuleBasedDeliveries(project, expectedDeliveries), Times.Once);
+        }
+
+        [Test]
+        public void UpdateProject_AsksEveryBoundDeliveryWhatItsSourceNowSays()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            var theDeliveriesTheRefreshMayWriteTo = new RecordableDeliveries([]);
+            deliveryRepositoryMock.Setup(x => x.GetRecordableByPortfolio(project.Id)).Returns(theDeliveriesTheRefreshMayWriteTo);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            deliverySourceSyncServiceMock.Verify(
+                x => x.ResyncSourceBoundDeliveries(project, theDeliveriesTheRefreshMayWriteTo), Times.Once);
+        }
+
+        /// <summary>
+        /// The refresh saves the Deliveries once. A sync running after that save would hold the new
+        /// date in memory, write nothing, and be thrown away when the scope closes - the screen would
+        /// go on showing the old date until some later refresh happened to change something else.
+        /// </summary>
+        [Test]
+        public void UpdateProject_AsksTheSourcesBeforeTheOneSaveThatWouldPersistWhatTheySay()
+        {
+            var team = CreateTeam();
+            var project = CreateProject(team);
+            SetupProjects(project);
+
+            deliveryRepositoryMock.Setup(x => x.GetRecordableByPortfolio(project.Id)).Returns(new RecordableDeliveries([]));
+
+            var whatHappenedInWhatOrder = new List<string>();
+            deliverySourceSyncServiceMock
+                .Setup(x => x.ResyncSourceBoundDeliveries(It.IsAny<Portfolio>(), It.IsAny<RecordableDeliveries>()))
+                .Callback(() => whatHappenedInWhatOrder.Add("synced"))
+                .Returns(Task.CompletedTask);
+            deliveryRepositoryMock
+                .Setup(x => x.TrySaveRecomputedDeliveries())
+                .Callback(() => whatHappenedInWhatOrder.Add("saved"))
+                .ReturnsAsync(true);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(whatHappenedInWhatOrder, Is.EqualTo(SyncedThenSaved));
         }
 
         [Test]

@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -91,8 +92,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     outcome = await workItemService.UpdateFeaturesForPortfolio(project);
                     await domainEventDispatcher.PublishAsync(new PortfolioFeaturesRefreshed(project.Id));
 
+                    var deliverySourceSyncService = serviceProvider.GetRequiredService<IDeliverySourceSyncService>();
+
                     var deliveries = deliveryRepository.GetRecordableByPortfolio(project.Id);
                     deliveryRuleService.RecomputeRuleBasedDeliveries(project, deliveries);
+
+                    // Both passes decide what a Delivery holds, and both run before the one save, so a
+                    // Delivery is written once per refresh however it was chosen. The source pass reads
+                    // the Features the fetch above has just brought in, so it cannot move above it.
+                    await deliverySourceSyncService.ResyncSourceBoundDeliveries(project, deliveries);
+
                     await SaveRecomputedDeliveries(deliveryRepository, project);
 
                     // What this pass resolves and what the forecast below resolves belong to the same
