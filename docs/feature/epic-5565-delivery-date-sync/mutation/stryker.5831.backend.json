@@ -15,7 +15,7 @@
       "break": 0
     },
     "coverage-analysis": "off",
-    "test-case-filter": "FullyQualifiedName~DeliverySourceSyncServiceTest|FullyQualifiedName~DeliverySourceUnavailableInvariantTest|FullyQualifiedName~DeliverySourceBindingInvariantTest|FullyQualifiedName~DeliverySourceBindingPersistenceTest|FullyQualifiedName~DeliveryArchivedInvariantTest|FullyQualifiedName~DeliveryTest|FullyQualifiedName~DeliveryJointForecastTest|FullyQualifiedName~DeliveryFeatureSizeTest|FullyQualifiedName~DeliverySelectionModePersistedValueTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~Slice02SourceSyncTest|FullyQualifiedName~Slice03BrokenSourceTest",
+    "test-case-filter": "FullyQualifiedName~DeliverySourceSync|FullyQualifiedName~DeliverySourceUnavailableInvariantTest|FullyQualifiedName~DeliverySourceBindingInvariantTest|FullyQualifiedName~DeliverySourceBindingPersistenceTest|FullyQualifiedName~DeliveryArchivedInvariantTest|FullyQualifiedName~DeliveryTest|FullyQualifiedName~DeliveryJointForecastTest|FullyQualifiedName~DeliveryFeatureSizeTest|FullyQualifiedName~DeliverySelectionModePersistedValueTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~Slice02SourceSyncTest|FullyQualifiedName~Slice03BrokenSourceTest",
     "reporters": [
       "progress",
       "json",

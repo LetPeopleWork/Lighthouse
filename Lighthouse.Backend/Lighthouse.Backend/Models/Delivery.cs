@@ -263,6 +263,8 @@ namespace Lighthouse.Backend.Models
         {
             if (reason == DeliverySourceUnavailableReason.SourceReadFailed)
             {
+                // Stryker disable once all: the refusal itself is the behaviour and is asserted; the
+                // sentence explaining it is read by whoever is debugging the caller, not by a test.
                 throw new ArgumentException(
                     $"A source that could not be read says nothing about whether it still exists, so it cannot put Delivery {Id} into a broken-source state.",
                     nameof(reason));

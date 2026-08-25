@@ -121,9 +121,7 @@ describe("DeliverySourceUnavailableNotice (US-04)", () => {
 			reason: "SomethingThisBuildPredates" as DeliverySourceUnavailableReason,
 		});
 
-		expect(
-			screen.getByText(/is no longer available/),
-		).toBeInTheDocument();
+		expect(screen.getByText(/is no longer available/)).toBeInTheDocument();
 	});
 
 	// AC-04.3. The way out is offered where the problem is reported.
