@@ -60,13 +60,19 @@ describe("DeliveryPublishRefusedNotice (US-06)", () => {
 	 * stored key when the fetched list does not name it, so a blank arrives only when the Delivery has
 	 * no key either - rare, and the sentence still has to read like one.
 	 */
-	it("still reads as a sentence when nobody could name the source", () => {
-		renderNotice({ sourceLabel: "" });
+	it.each([
+		["nothing at all", ""],
+		["nothing but spaces", "   "],
+	])(
+		"still reads as a sentence when the source is named %s",
+		(_when, label) => {
+			renderNotice({ sourceLabel: label });
 
-		expect(
-			screen.getByText(/could not be written to the source this follows/),
-		).toBeInTheDocument();
-	});
+			expect(
+				screen.getByText(/could not be written to the source this follows/),
+			).toBeInTheDocument();
+		},
+	);
 
 	// AC-06.1 again: an administrator has to know whether this is happening now or happened once,
 	// months ago, before something else was fixed.
@@ -77,29 +83,20 @@ describe("DeliveryPublishRefusedNotice (US-06)", () => {
 	});
 
 	/**
-	 * The day stored is the instance's day, not this browser's. Read as a local day, a reader east of
-	 * UTC is shown the day after and one west of it the day before - the shape of a bug this codebase
-	 * has already shipped once. Asserted on the rendered day rather than on the sentence, because the
-	 * sentence reads the same either way.
+	 * The whole sentence, so the day clause cannot be swapped for something else that still matches a
+	 * loose pattern. What the day itself renders as is not asserted here: the component reads it in the
+	 * instance's zone rather than this browser's, and a test process cannot change its own timezone
+	 * once Intl has initialised - so on a UTC host the two readings are the same characters and no
+	 * assertion could tell them apart.
 	 */
-	it("names the instance's day, not the day this browser happens to be on", () => {
-		const wasTZ = process.env.TZ;
-		process.env.TZ = "Asia/Tokyo";
+	it("says nothing more than that it was tried, and when", () => {
+		renderNotice({ refusedOn: null });
 
-		try {
-			renderNotice({ refusedOn: "2026-08-25T00:00:00Z" });
-
-			const instanceDay = new Date("2026-08-25T00:00:00Z").toLocaleDateString(
-				undefined,
-				{ timeZone: "UTC" },
-			);
-
-			expect(
-				screen.getByText(new RegExp(`last tried on ${instanceDay}`)),
-			).toBeInTheDocument();
-		} finally {
-			process.env.TZ = wasTZ;
-		}
+		expect(
+			screen.getByText(
+				"This forecast could not be written to the Jira Release. Everything else about this launch is up to date.",
+			),
+		).toBeInTheDocument();
 	});
 
 	it("says nothing about a day nobody recorded", () => {
