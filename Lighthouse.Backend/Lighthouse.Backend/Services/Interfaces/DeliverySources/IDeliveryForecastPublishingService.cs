@@ -1,17 +1,19 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
 {
     /// <summary>
-    /// Publishes the forecast of every eligible source-bound Delivery back onto its remote source, and
-    /// records or clears the refusal state on the Portfolio.
+    /// Publishes the forecast of every eligible source-bound Delivery back onto its remote source.
     ///
-    /// Eligibility is deliberately narrow: bound, not archived, and not broken. An archived Delivery
-    /// would push a frozen closure forecast into a live source forever, and a broken one points at a
-    /// reference that no longer resolves.
+    /// Eligibility is deliberately narrow: switched on, bound, not retired, and heard from. A retired
+    /// Delivery would push a frozen closure forecast into a live source forever - which is why the
+    /// Deliveries arrive as the set a background pass may write to rather than as a plain list - and a
+    /// Delivery whose source is finished, or which nothing has ever resolved, points at a reference that
+    /// may not be there.
     /// </summary>
     public interface IDeliveryForecastPublishingService
     {
-        Task PublishForPortfolio(Portfolio portfolio, IReadOnlyList<Delivery> deliveries);
+        Task PublishForPortfolio(Portfolio portfolio, RecordableDeliveries deliveries);
     }
 }
