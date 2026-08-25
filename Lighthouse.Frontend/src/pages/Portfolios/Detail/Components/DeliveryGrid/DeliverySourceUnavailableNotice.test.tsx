@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { DeliverySourceUnavailableReason } from "../../../../../models/Delivery/DeliverySource";
 import DeliverySourceUnavailableNotice from "./DeliverySourceUnavailableNotice";
 
 /**
@@ -101,6 +102,27 @@ describe("DeliverySourceUnavailableNotice (US-04)", () => {
 
 		expect(
 			screen.getByText(/not been read successfully since it was set up/),
+		).toBeInTheDocument();
+	});
+
+	// A label that is only whitespace prints as a gap in the middle of the sentence — "The  this
+	// follows no longer exists." — which reads as a bug rather than as a missing name.
+	it("treats a label that is only whitespace as no label at all", () => {
+		renderNotice({ sourceLabel: "   " });
+
+		expect(screen.getByText(/the source this follows/i)).toBeInTheDocument();
+	});
+
+	// The delivery payload is not schema-validated on the way in, and the backend's reason enum is
+	// append-only — so a reason this build has never heard of is a real thing that can arrive, not a
+	// hypothetical. It must still say the half that matters: the values below are frozen.
+	it("still says the source is unavailable for a reason it has never heard of", () => {
+		renderNotice({
+			reason: "SomethingThisBuildPredates" as DeliverySourceUnavailableReason,
+		});
+
+		expect(
+			screen.getByText(/is no longer available/),
 		).toBeInTheDocument();
 	});
 
