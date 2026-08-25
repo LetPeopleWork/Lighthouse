@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Models.DeliverySources;
+
 namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
 {
     /// <summary>
@@ -6,6 +8,13 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
     /// </summary>
     public interface IDeliveryForecastBlockRenderer
     {
+        /// <summary>
+        /// The block as it is written into the remote description. Composing it and finding it again
+        /// live together on purpose: matched apart, the two can drift into a state where every write
+        /// appends and the description fills up with forecasts.
+        /// </summary>
+        string Render(DeliveryForecastBlock block);
+
         /// <summary>
         /// Returns the description as it should be written back: the existing text with the block
         /// replaced in place when its markers are found intact, and the block appended otherwise.
