@@ -28,8 +28,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         private const string JiraReleaseSourceKey = "jira-release";
         private const string TheRelease = "10412";
-        private const string TheBlock = "\U0001F52E Lighthouse forecast - updated 2026-08-25\n70%: 2026-09-15\n\U0001F52E";
-        private const string ASecondBlock = "\U0001F52E Lighthouse forecast - updated 2026-08-26\n70%: 2026-09-16\n\U0001F52E";
+        // Written out rather than rendered, so this fixture pins what the adapter does with a block
+        // rather than agreeing with the renderer about what one looks like. It is still the real shape:
+        // the merge finds its own previous write by that shape, and a stand-in that only resembled one
+        // would have every scenario here quietly appending.
+        private const string TheBlock =
+            "\U0001F52E Lighthouse forecast - updated 2026-08-25\n70%: 2026-09-15\nTarget 2026-10-01: 88% likely\n\U0001F52E";
+
+        private const string ASecondBlock =
+            "\U0001F52E Lighthouse forecast - updated 2026-08-26\n70%: 2026-09-16\nTarget 2026-10-01: 91% likely\n\U0001F52E";
         private const string WhatTheTeamWrote = "Ships with the autumn campaign. Ask Dana before moving this.";
 
         [Test]
@@ -145,6 +152,83 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(result, Is.EqualTo(new DeliveryForecastPublishResult.Refused("You do not have permission to edit this version.")));
         }
 
+        /// <summary>
+        /// The refusal this write can actually provoke. A description near Jira's size ceiling is refused
+        /// with the sentence in the per-field half of the error body rather than the whole-request half,
+        /// and reading only the first half would report the one thing an administrator can act on as a
+        /// bare status line.
+        /// </summary>
+        [Test]
+        public async Task A_refusal_about_one_field_is_read_out_of_the_half_of_the_body_it_arrives_in()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.RefuseWritesWith(
+                HttpStatusCode.BadRequest,
+                "{\"errorMessages\":[],\"errors\":{\"description\":\"The description is over 16384 characters.\"}}");
+
+            var result = await Publish(jira, TheBlock);
+
+            Assert.That(result, Is.EqualTo(new DeliveryForecastPublishResult.Refused("The description is over 16384 characters.")));
+        }
+
+        /// <summary>
+        /// A throttled Jira has refused nothing - it has asked to be left alone for a moment. Recorded as
+        /// a refusal it would be written down as a standing permission problem, and a Portfolio big
+        /// enough to be throttled partway through publishing would report one for every Delivery after
+        /// the first, sending an administrator to audit a permission that was never wrong.
+        /// </summary>
+        [TestCase(HttpStatusCode.TooManyRequests, TestName = "Jira asking to be asked again later")]
+        [TestCase(HttpStatusCode.RequestTimeout, TestName = "A request Jira ran out of time on")]
+        public void A_Jira_asking_for_a_moment_is_not_an_answer_about_the_credential(HttpStatusCode status)
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.RefuseWritesWith(status, "{}");
+
+            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
+        }
+
+        /// <summary>
+        /// The block that is already on the Release is the block that would be written. Writing it again
+        /// spends a request per Delivery per round to change nothing, on somebody else's Jira, whose rate
+        /// limit is the thing this feature can least afford to spend.
+        /// </summary>
+        [Test]
+        public async Task Publishing_a_forecast_that_has_not_moved_writes_nothing_at_all()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            await Publish(jira, TheBlock);
+            jira.ForgetWhatWasWritten();
+
+            var result = await Publish(jira, TheBlock);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Published>());
+                Assert.That(jira.Writes, Is.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Jira refuses a description over its ceiling, and it refuses it the same way it refuses a
+        /// credential that may not write. Told apart before the request rather than after, so an
+        /// administrator reads a sentence about length instead of going to look at a permission that was
+        /// never the problem.
+        /// </summary>
+        [Test]
+        public async Task A_description_that_would_go_over_Jiras_limit_is_refused_here_and_says_why()
+        {
+            var jira = AJiraHoldingAReleaseDescribedAs(new string('x', 16_380));
+
+            var result = await Publish(jira, TheBlock);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Refused>()
+                    .And.Property(nameof(DeliveryForecastPublishResult.Refused.Reason)).Contains("16,384"));
+                Assert.That(jira.Writes, Is.Empty, "a request that is certain to be refused is not worth making.");
+            }
+        }
+
         [Test]
         public async Task A_refusal_Jira_gave_no_words_for_still_says_what_it_answered()
         {
@@ -242,6 +326,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 readStatus = status;
                 readBody = body;
             }
+
+            public void ForgetWhatWasWritten() => Writes.Clear();
 
             public void RefuseWritesWith(HttpStatusCode status, string body)
             {

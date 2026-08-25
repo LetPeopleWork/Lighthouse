@@ -14,7 +14,21 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         /// </summary>
         public static readonly string Marker = char.ConvertFromUtf32(0x1F52E);
 
-        public static readonly string OpeningLinePrefix = Marker + " Lighthouse forecast";
+        /// <summary>
+        /// Everything of the opening line that never varies, the trailing separator included. Matching
+        /// the shorter phrase alone would also match a sentence that merely begins with it - somebody
+        /// quoting the line to comment on it, which is the obvious way to argue with a forecast - and
+        /// everything they then typed would be inside the span Lighthouse rewrites.
+        /// </summary>
+        public static readonly string OpeningLinePrefix = Marker + " Lighthouse forecast - updated ";
+
+        /// <summary>
+        /// The last thing the block says before it closes. Written and looked for in one place, because
+        /// the closing marker on its own cannot say which lone crystal ball belongs to Lighthouse: a
+        /// stray one typed inside the block would otherwise end the span early and leave the rest of an
+        /// old forecast standing outside the markers, reading as current and never cleaned up again.
+        /// </summary>
+        private const string TargetLinePrefix = "Target ";
 
         // The separator a Jira description is stored with, measured rather than assumed. Writing the
         // host's separator instead would put carriage returns into the field on a Windows instance and
@@ -31,13 +45,22 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         {
             ArgumentNullException.ThrowIfNull(block);
 
+            // The three forecasts are one of the four things the block is required to carry, so a block
+            // with none of them is a failure rather than a shorter block. Unreachable from the only
+            // caller, which skips a Delivery that has no forecast - it is here so the next caller
+            // written finds out loudly instead of publishing a statement with a hole in it.
+            if (block.Percentiles is not { Count: > 0 })
+            {
+                throw new ArgumentException(
+                    "A published forecast has to carry at least one percentile.", nameof(block));
+            }
+
             var text = new StringBuilder();
 
             // Attribution first, and the forecasts before the target line, because the Releases list
             // shows this field as a column that truncates. What survives the truncation has to read as
             // something true and attributable rather than as a dangling fragment.
             text.Append(OpeningLinePrefix)
-                .Append(" - updated ")
                 .Append(Day(block.WrittenOn))
                 .Append(LineSeparator);
 
@@ -49,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                     .Append(LineSeparator);
             }
 
-            text.Append("Target ")
+            text.Append(TargetLinePrefix)
                 .Append(Day(block.TargetDate))
                 .Append(": ")
                 .Append(Math.Round(block.LikelihoodPercentage, MidpointRounding.AwayFromZero).ToString("0", CultureInfo.InvariantCulture))
@@ -81,35 +104,83 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         private static string Day(DateOnly day) => day.ToString(DayFormat, CultureInfo.InvariantCulture);
 
         /// <summary>
-        /// Where a block Lighthouse wrote begins and ends, or nothing when the pair cannot be found
-        /// whole. Nothing is what a lost delimiter has to produce: a range inferred from half a pair is
-        /// a guess, and the text it would delete belongs to whoever typed it. A duplicate block is
-        /// something a person can see and remove; prose that has been eaten is not.
+        /// Where a block Lighthouse wrote begins and ends, or nothing when no whole one can be found.
+        ///
+        /// Every opening line is tried in turn and each is matched only against a closing marker that
+        /// comes before the NEXT opening line, so an opening whose own closer was deleted is passed over
+        /// rather than paired with a later block's - pairing across two blocks would delete everything
+        /// between them, which is a person's own prose in the one case ADR-179 exists to survive.
+        ///
+        /// Nothing at all is what a description with no whole block has to produce: a range inferred
+        /// from half a pair is a guess, and the text it would delete belongs to whoever typed it. A
+        /// duplicate block is something a person can see and remove; prose that has been eaten is not.
         /// </summary>
         private static Line? FindPreviousBlock(string description)
         {
             var lines = LinesOf(description);
+            var openings = OpeningLinesIn(description, lines);
 
-            var opening = lines.FindIndex(line => StartsTheBlock(description, line));
-            if (opening < 0)
+            for (var index = 0; index < openings.Count; index++)
             {
-                return null;
+                var opening = openings[index];
+                var nextOpening = index + 1 < openings.Count ? openings[index + 1] : lines.Count;
+
+                if (ClosingLineFor(description, lines, opening, nextOpening) is not { } closing)
+                {
+                    continue;
+                }
+
+                var start = lines[opening].Start;
+
+                return new Line(start, lines[closing].Start + lines[closing].Length - start);
             }
 
-            var closing = lines.FindIndex(opening + 1, line => EndsTheBlock(description, line));
-            if (closing < 0)
-            {
-                return null;
-            }
-
-            var start = lines[opening].Start;
-
-            return new Line(start, lines[closing].Start + lines[closing].Length - start);
+            return null;
         }
 
+        private static List<int> OpeningLinesIn(string description, List<Line> lines)
+        {
+            var openings = new List<int>();
+
+            for (var index = 0; index < lines.Count; index++)
+            {
+                if (StartsTheBlock(description, lines[index]))
+                {
+                    openings.Add(index);
+                }
+            }
+
+            return openings;
+        }
+
+        /// <summary>
+        /// The line that closes this block, or nothing when what stands between reads as anything other
+        /// than a forecast. The check is the line just above the marker: Lighthouse always writes the
+        /// target line last, so a marker sitting anywhere else was typed by somebody, and honouring it
+        /// would end the span early and leave the tail of an old forecast outside the markers where no
+        /// later write can ever reach it.
+        /// </summary>
+        private static int? ClosingLineFor(string description, List<Line> lines, int opening, int nextOpening)
+        {
+            for (var index = opening + 1; index < nextOpening; index++)
+            {
+                if (!EndsTheBlock(description, lines[index]))
+                {
+                    continue;
+                }
+
+                return IsTheLastThingTheBlockSays(description, lines[index - 1]) ? index : null;
+            }
+
+            return null;
+        }
+
+        // Leading whitespace is ignored on both markers. Ignored on one and not the other, a block that
+        // picks up a single space - an indent, a paste - stops being findable while still being written,
+        // so every later publish appends and the indented one lingers for good.
         private static bool StartsTheBlock(string description, Line line)
         {
-            return description.AsSpan(line.Start, line.Length).StartsWith(OpeningLinePrefix, StringComparison.Ordinal);
+            return description.AsSpan(line.Start, line.Length).TrimStart().StartsWith(OpeningLinePrefix, StringComparison.Ordinal);
         }
 
         // The closing marker is a line carrying nothing else, so the emoji inside somebody's own
@@ -117,6 +188,11 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         private static bool EndsTheBlock(string description, Line line)
         {
             return description.AsSpan(line.Start, line.Length).Trim().SequenceEqual(Marker);
+        }
+
+        private static bool IsTheLastThingTheBlockSays(string description, Line line)
+        {
+            return description.AsSpan(line.Start, line.Length).TrimStart().StartsWith(TargetLinePrefix, StringComparison.Ordinal);
         }
 
         /// <summary>

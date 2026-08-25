@@ -245,6 +245,106 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
+        /// <summary>
+        /// The failure adversarial review found, and the one ADR-179 exists to prevent. A user deletes
+        /// the closing marker of a block, types a note where it stood, and the next write appends a
+        /// fresh block below - so the description now holds an orphaned opening line, a person's own
+        /// words, and one whole block. Pairing that first opening line with the whole block's closing
+        /// marker deletes everything between them, which is the note.
+        /// </summary>
+        [Test]
+        public void An_unclosed_block_never_pairs_with_a_later_blocks_closing_marker()
+        {
+            var subject = CreateSubject();
+            var theirNote = "DO NOT SHIP BEFORE LEGAL SIGN-OFF. Ask Dana. Ticket LEG-4412.";
+            var orphaned = ABlock("2026-08-22").Replace(Environment.NewLine + Ball, string.Empty);
+            var existing = string.Join(Environment.NewLine, orphaned, theirNote, ABlock("2026-08-23"));
+
+            var result = subject.MergeInto(existing, ABlock("2026-08-24"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Does.Contain(theirNote));
+                Assert.That(result, Does.Contain("2026-08-24"));
+                Assert.That(result, Does.Not.Contain("2026-08-23"), "the whole block is the one that gets replaced.");
+            }
+        }
+
+        /// <summary>
+        /// Quoting the line Lighthouse wrote and typing underneath it is the obvious way to argue with
+        /// a forecast. Matched on the phrase alone, that sentence opens a span that runs to the real
+        /// block's closing marker and takes everything the person wrote with it.
+        /// </summary>
+        [Test]
+        public void A_sentence_that_merely_starts_like_the_block_does_not_open_one()
+        {
+            var subject = CreateSubject();
+            var theirArgument = Ball + " Lighthouse forecasts look wrong to me - checking with the team.";
+            var theirNote = "Owner: Dana. Budget code 88123. Do not delete.";
+            var existing = string.Join(Environment.NewLine, theirArgument, theirNote, ABlock("2026-08-22"));
+
+            var result = subject.MergeInto(existing, ABlock("2026-08-23"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Does.Contain(theirArgument));
+                Assert.That(result, Does.Contain(theirNote));
+                Assert.That(result, Does.Not.Contain("2026-08-22"));
+            }
+        }
+
+        /// <summary>
+        /// A crystal ball typed inside the block would otherwise close it early, and the replace would
+        /// cut the block in half: the lines below the stray marker would be left standing outside every
+        /// marker, showing dates a reader takes for current, where no later write could ever reach them.
+        /// Appending instead costs the reader a visible duplicate, which they can delete.
+        /// </summary>
+        [Test]
+        public void A_stray_marker_inside_the_block_costs_the_reader_nothing_and_still_settles()
+        {
+            var subject = CreateSubject();
+            var tampered = ABlock("2026-08-22").Replace(
+                "70%: 2026-09-15", "70%: 2026-09-15" + Environment.NewLine + Ball);
+
+            var once = subject.MergeInto(tampered, ABlock("2026-08-23"));
+            var twice = subject.MergeInto(once, ABlock("2026-08-24"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(once, Does.Contain(tampered), "nothing a hand left behind is cut out.");
+                Assert.That(twice, Does.Contain("2026-08-24"));
+                Assert.That(twice, Does.Not.Contain("2026-08-23"), "the block Lighthouse does own is still replaced in place.");
+                Assert.That(CountOpeningLines(twice), Is.EqualTo(CountOpeningLines(once)),
+                    "so a description with a broken block in it settles rather than gaining one on every refresh.");
+            }
+        }
+
+        /// <summary>
+        /// A block that picks up a single space - an indent, a paste through an editor - has to stay
+        /// findable. Left unfindable while still being written, every publish appends and the indented
+        /// one lingers for good.
+        /// </summary>
+        [Test]
+        public void A_block_that_picked_up_an_indent_is_still_the_block_it_was()
+        {
+            var subject = CreateSubject();
+            var indented = "  " + ABlock("2026-08-22").Replace(Environment.NewLine, Environment.NewLine + "  ");
+
+            var result = subject.MergeInto(indented, ABlock("2026-08-23"));
+
+            Assert.That(CountOpeningLines(result), Is.EqualTo(1));
+        }
+
+        // A forecast has to carry all three percentiles, so no percentiles at all is a failure rather
+        // than a shorter block.
+        [Test]
+        public void A_forecast_with_nothing_to_forecast_is_refused_rather_than_written_short()
+        {
+            var subject = CreateSubject();
+
+            Assert.Throws<ArgumentException>(() => subject.Render(AForecast() with { Percentiles = [] }));
+        }
+
         private static DeliveryForecastBlock AForecast() => new(
             new DateOnly(2026, 8, 22),
             [
