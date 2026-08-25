@@ -319,7 +319,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         }
 
         [TestCaseSource(nameof(EveryAnswerThatIsNotALiveRelease))]
-        public async Task A_Release_that_did_not_come_back_as_a_live_one_leaves_the_Delivery_exactly_as_it_was(
+        public async Task A_Release_that_did_not_come_back_as_a_live_one_leaves_every_value_it_gave_the_Delivery(
             DeliverySourceResolution whatCameBack)
         {
             var (portfolio, delivery) = APortfolioWithADeliveryFollowingTheRelease();
@@ -346,6 +346,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             yield return new TestCaseData(new DeliverySourceResolution.NoDate("2026 Q4")).SetName("The Release lost its date");
             yield return new TestCaseData(
                     new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.CapabilityWithdrawn))
+                .SetName("The connection stopped offering the source");
+            yield return new TestCaseData(
+                    new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.SourceReadFailed))
                 .SetName("The Release could not be read");
         }
 

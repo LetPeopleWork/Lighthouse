@@ -21,17 +21,36 @@ interface DeliverySourceUnavailableNoticeProps {
  */
 export const NOTICE_TITLE = "Source unavailable";
 
+/**
+ * The label is what the connection calls this kind of source, e.g. "Jira Release". It is not always
+ * there: the list it comes from is fetched, and an empty list is exactly what a connection that has
+ * stopped offering the source produces - so the one cause guaranteed to have no label is the one
+ * whose sentence would otherwise print a raw key like "jira-release" at the reader. Every sentence
+ * therefore has a form that works without it.
+ */
 function whatWentWrong(
 	reason: DeliverySourceUnavailableReason,
 	sourceLabel: string,
 ): string {
+	const named = sourceLabel.trim();
+
 	switch (reason) {
 		case "SourceNotFound":
-			return `The ${sourceLabel} this follows no longer exists.`;
+			return named
+				? `The ${named} this follows no longer exists.`
+				: "The source this follows no longer exists.";
 		case "SourceHasNoDate":
-			return `The ${sourceLabel} this follows no longer has a date.`;
+			return named
+				? `The ${named} this follows no longer has a date.`
+				: "The source this follows no longer has a date.";
+		case "CapabilityWithdrawn":
+			return named
+				? `This connection no longer offers the ${named}.`
+				: "This connection no longer offers the source this follows.";
 		default:
-			return `This connection no longer offers the ${sourceLabel}.`;
+			// A reason nobody has written a sentence for still says the half that matters: the values
+			// below are frozen. Guessing at a cause would be worse than naming none.
+			return "The source this follows is no longer available.";
 	}
 }
 

@@ -37,7 +37,27 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         /// </summary>
         private async Task ResyncEverythingOnOneSource(Portfolio portfolio, string sourceKey, IReadOnlyList<Delivery> deliveries)
         {
-            if (!resolver.OffersSource(portfolio, sourceKey))
+            bool stillOffered;
+            try
+            {
+                stillOffered = resolver.OffersSource(portfolio, sourceKey);
+            }
+#pragma warning disable CA1031 // asking what a connection offers reaches the same connector resolution the read does, and must cost no more than the read does
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                // Stryker disable once all: diagnostic log text is not behaviour; leaving the Deliveries
+                // untouched is, and that is asserted.
+                logger.LogWarning(
+                    exception,
+                    "Could not establish whether the connection behind Portfolio {PortfolioName} still offers {SourceKey}; the Deliveries following it keep the values they already have",
+                    portfolio.Name,
+                    sourceKey);
+
+                return;
+            }
+
+            if (!stillOffered)
             {
                 // Stryker disable once all: diagnostic log text is not behaviour. What this branch does
                 // is flag every Delivery below and ask the remote nothing, and both are asserted.
@@ -167,28 +187,37 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             {
                 DeliverySourceResolution.NotFound => DeliverySourceUnavailableReason.SourceNotFound,
                 DeliverySourceResolution.NoDate => DeliverySourceUnavailableReason.SourceHasNoDate,
-                DeliverySourceResolution.Unavailable unavailable
-                    when unavailable.Reason != DeliverySourceUnavailableReason.SourceReadFailed
+                DeliverySourceResolution.Unavailable unavailable when IsPermanent(unavailable.Reason)
                     => unavailable.Reason,
                 _ => null,
             };
         }
 
-        private void SayTheSourceIsFinished(Delivery delivery, DeliverySourceUnavailableReason reason)
+        /// <summary>
+        /// Named as what is permanent rather than as what is transient, so the default for a reason
+        /// nobody has classified yet is to say nothing. The enum is append-only and the next member
+        /// added to it is as likely to be transient as not; listing the transient ones instead would
+        /// have an unclassified reason silently freeze and flag every Delivery on the source, which is
+        /// the expensive direction to be wrong in and the one nothing would complain about.
+        /// </summary>
+        private static bool IsPermanent(DeliverySourceUnavailableReason reason)
         {
-            try
-            {
-                delivery.MarkSourceUnavailable(reason);
-            }
-            catch (ArgumentException exception)
-            {
-                // Stryker disable once all: diagnostic log text is not behaviour. The claim is that one
-                // Delivery refusing a verdict costs no other Delivery its refresh, which is asserted.
-                logger.LogWarning(
-                    exception,
-                    "Delivery {DeliveryId} refused the verdict its source came back with and keeps the values it already has",
-                    delivery.Id);
-            }
+            return reason
+                is DeliverySourceUnavailableReason.SourceNotFound
+                or DeliverySourceUnavailableReason.SourceHasNoDate
+                or DeliverySourceUnavailableReason.CapabilityWithdrawn;
+        }
+
+        /// <summary>
+        /// Deliberately unguarded. Every refusal the aggregate can raise here means something that was
+        /// true when this pass chose its Deliveries has stopped being true - the transient reason is
+        /// filtered above, and the Deliveries reaching this were already narrowed to ones that follow a
+        /// source and that nobody has retired. Catching that would leave the pass doing nothing at all
+        /// while the refresh went on reporting success, which is the shape of bug that survives longest.
+        /// </summary>
+        private static void SayTheSourceIsFinished(Delivery delivery, DeliverySourceUnavailableReason reason)
+        {
+            delivery.MarkSourceUnavailable(reason);
         }
     }
 }

@@ -128,10 +128,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         private static void ThenNobodyAskedAnySourceAbout(DeliveryRow delivery)
             => Assert.That(delivery.SourceLastSyncedOn, Is.Null);
 
-        private void ThenTheRetiredDeliveryStillSays(int deliveryId, string expectedName, DateTime expectedDate)
+        /// <summary>
+        /// The version is what says nothing wrote to it, and it is the only thing that can say so here.
+        /// The last-heard-from stamp cannot: binding reads the source successfully and stamps it, and a
+        /// refresh on the same day would write the very same day back, so the two are indistinguishable
+        /// by that field alone.
+        /// </summary>
+        private void ThenTheRetiredDeliveryStillSays(DeliveryRow asItWasBeforeRetiring, string expectedName, DateTime expectedDate)
         {
             using var scope = Factory.Services.CreateScope();
-            var delivery = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>().GetById(deliveryId);
+            var delivery = scope.ServiceProvider.GetRequiredService<IDeliveryRepository>().GetById(asItWasBeforeRetiring.Id);
 
             using (Assert.EnterMultipleScope())
             {
@@ -139,8 +145,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                 Assert.That(delivery!.ArchivedOn, Is.Not.Null);
                 Assert.That(delivery.Name, Is.EqualTo(expectedName));
                 Assert.That(delivery.Date, Is.EqualTo(expectedDate));
-                Assert.That(delivery.SourceLastSyncedOn, Is.Null,
-                    "a retired Delivery was never asked, so it cannot have heard from the Release either.");
+                Assert.That(delivery.SourceLastSyncedOn, Is.EqualTo(asItWasBeforeRetiring.SourceLastSyncedOn),
+                    "a retired Delivery is never asked, so nothing about when it last heard from its source may move.");
             }
         }
     }

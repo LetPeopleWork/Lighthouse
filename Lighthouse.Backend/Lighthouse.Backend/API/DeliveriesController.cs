@@ -465,10 +465,18 @@ namespace Lighthouse.Backend.API
             }
 
             delivery.SelectFeaturesByHand();
-            delivery.Rename(resolved.Snapshot.Name);
-            delivery.Reschedule(resolved.Snapshot.Date);
-            delivery.ReplaceFeatures(sourcePreview.TrackedFeatures);
             delivery.BindToSource(request.SourceKey!, request.SourceReference!);
+
+            // The same write the refresh makes, rather than three hand-writes that happen to set the
+            // same fields. Binding read the source successfully, so the Delivery has heard from it -
+            // recorded here, a Delivery bound today and not yet refreshed can say when it last heard
+            // rather than claiming it never has.
+            delivery.SyncFromSource(
+                resolved.Snapshot.Name,
+                resolved.Snapshot.Date,
+                sourcePreview.TrackedFeatures,
+                clock.TodayAsUtcMidnight);
+
             return null;
         }
 

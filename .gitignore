@@ -402,9 +402,11 @@ FodyWeavers.xsd
 *.db-shm
 *.db-wal
 /Lighthouse.Backend/Lighthouse.Backend/wwwroot/assets/*
-Lighthouse.Frontend/sonar-report.xml
+# Written wherever vitest is invoked from, not only the frontend root - a run started inside a
+# component directory drops them there, where a path-pinned rule never sees them.
+**/sonar-report.xml
 Lighthouse.Frontend/coverage/*
-Lighthouse.Frontend/test-results.json
+**/test-results.json
 test-timings-backend.csv
 test-timings-frontend.csv
 /Lighthouse.Backend/Lighthouse.Backend/wwwroot/index.html

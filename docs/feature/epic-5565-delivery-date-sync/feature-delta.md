@@ -288,6 +288,14 @@ indistinguishable from a live one. That is the quiet wrongness the Epic exists t
 **Why not freeze membership too**: the Features are still perfectly syncable. Only the date is missing, so
 only the date is stale.
 
+> **Superseded at DELIVER, slice 03 (2026-08-25). Membership freezes too.** The paragraph above assumed
+> a dateless Release still reports its members. It does not: `JiraWorkTrackingConnector.ResolveMany`
+> only fetches the work carrying a Release for entries that have a date, so a `NoDate` verdict arrives
+> carrying no membership at all. Keeping membership live would therefore mean a second fetch on the one
+> path where the Delivery is already degraded, to keep half of a binding alive that the reader has
+> already been told is broken. A frozen Delivery freezes whole, which is also the simpler sentence to
+> put on screen. Nothing else in D12 changes: the state is raised, the date is kept, Unbind is offered.
+
 
 ### D13 — Jira's `archived` / `released` flags never drive Lighthouse's own archiving
 
@@ -1722,3 +1730,58 @@ would otherwise have sat on a hand-maintained Delivery describing a source it no
 - **No premium gate on the background sync (D10).** Binding is gated at the controller; the sync is not,
   which matches `RecomputeRuleBasedDeliveries` in the same pass. Consistent with precedent rather than a
   divergence, and deliberately left alone.
+
+## Wave: DELIVER / [REF] Implementation summary — slice 03, shipped 2026-08-25
+
+ADO #5831. A Delivery whose source has stopped answering for good keeps everything the source gave it,
+says which way it is finished, and offers the way out where the problem is reported.
+
+**The state.** `Delivery.MarkSourceUnavailable` writes only the reason. Nothing is cleared, nothing is
+deleted, nothing unbinds on its own (D6). Saying the same thing twice is not a change — a Release still
+gone on the next refresh is not news, and this is the Delivery somebody is likeliest to have open,
+precisely because it is the one telling them something is wrong.
+
+**The distinction the slice rests on.** The transient reason is refused by the aggregate outright and
+filtered by the service before it is ever offered, so AC-04.5 holds at two layers and no future caller
+can reintroduce "a bad minute at Jira looks like a deleted Release". The service classifies by naming
+the **permanent** reasons rather than the transient one, so a reason appended to the enum later defaults
+to saying nothing rather than to freezing and flagging every Delivery on the source.
+
+**Binding now records that it read the source.** It goes through `SyncFromSource` rather than three
+hand-writes that happened to set the same fields — one place knows how a source writes to a Delivery.
+A Delivery bound this morning and not yet refreshed can say when it last heard from its source instead
+of claiming it never has.
+
+### AC coverage — no silent N/A
+
+| AC | Where it is met | Where it is pinned |
+|---|---|---|
+| AC-04.1 | `MarkSourceUnavailable` writes only the reason | `DeliverySourceUnavailableInvariantTest`, `Slice03BrokenSourceTest` |
+| AC-04.2 | `SourceLastSyncedOn`, now stamped at bind as well as at refresh | notice specs, `Slice03BrokenSourceTest` (including the never-refreshed case) |
+| AC-04.3 | `Unbind` clears the binding and both bookkeeping fields | aggregate specs + the acceptance round trip |
+| AC-04.4 | capability check flags every Delivery on the key | `DeliverySourceSyncServiceTest`, `Slice03BrokenSourceTest` — **but see the gap below** |
+| AC-04.5 | refused in the aggregate, filtered in the service | both layers, plus the transient acceptance scenario |
+| AC-04.6 | per-cause sentences | notice specs against literals, `Slice03BrokenSourceTest` |
+
+### Known gaps, stated rather than left to be found
+
+- **AC-04.4 is met against the port, not against Jira.** `JiraWorkTrackingConnector.AvailableSources`
+  returns a static list and ignores the connection, so `OffersSource` cannot currently go false for a
+  Jira connection — the `CapabilityWithdrawn` state is reachable in production only for a connection
+  that genuinely offers no sources. A real Jira credential downgrade instead makes the release sweep
+  report that it did not see everything, which resolves to the transient reason and deliberately raises
+  nothing. That is the **safe** direction to be wrong in, and it is the concrete cost of the Jira
+  adapter contract test that DISTILL still lists as owed. Making the capability genuinely per-connection
+  is the fix, and it belongs with that contract test rather than here.
+- **A truncated Jira release-membership walk reads as a complete one.** `WalkCloudSearchPages` returns
+  the same value whether it exhausted the pages or hit `MaxCloudSearchPages`, so a Portfolio with enough
+  bound Deliveries could have Features silently dropped from a Delivery while the source reports
+  healthy. Pre-existing (slice 02 code, untouched here) and outside this slice, but it makes AC-04.1's
+  "nothing cleared" false through an arm nobody guards. Worth a bug of its own.
+- **The delivery wire is unvalidated.** `DeliveryService` parses the payload with `z.custom<IDelivery>()`,
+  which validates nothing, and `DeliverySourceUnavailableReason` is a bare TS union rather than a
+  `z.enum` like its two neighbours. A reason appended to the backend enum would reach the notice and
+  fall to its fallback sentence. The fallback now says only that the source is unavailable rather than
+  guessing a cause, so the failure is mild — but the schema is the right place to fix it.
+- **AC-04.3's "editable" is proved only by the mode returning to Manual**, not by a rename or reschedule
+  succeeding afterwards.

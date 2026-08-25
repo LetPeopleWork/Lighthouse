@@ -32,6 +32,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// holding when its source goes away are values the source actually gave it — which is what
         /// makes "it kept them" mean anything.
         /// </summary>
+        private async Task<int> GivenADeliveryJustBoundToItsRelease(string prefix)
+        {
+            var portfolioId = SeedPortfolioOn(WorkTrackingSystems.Jira);
+
+            TheJiraConnectionOffersItsReleases();
+            SeedTrackedFeature(portfolioId, TheWorkTheReleaseCarries, "Ship the thing");
+            GivenTheReleaseIsAliveAndDated(TheReleaseDate);
+
+            var created = await PostTheDelivery(prefix, portfolioId, ARequestToFollowTheRelease());
+            Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            return portfolioId;
+        }
+
         private async Task<int> GivenADeliveryThatHasHeardFromItsRelease(string prefix)
         {
             var portfolioId = SeedPortfolioOn(WorkTrackingSystems.Jira);
@@ -40,7 +54,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             SeedTrackedFeature(portfolioId, TheWorkTheReleaseCarries, "Ship the thing");
             GivenTheReleaseIsAliveAndDated(TheReleaseDate);
 
-            var created = await PostTheDelivery(prefix, portfolioId, new UpdateDeliveryRequest
+            var created = await PostTheDelivery(prefix, portfolioId, ARequestToFollowTheRelease());
+            Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            await ThePortfolioRefreshRuns(portfolioId);
+
+            return portfolioId;
+        }
+
+        private static UpdateDeliveryRequest ARequestToFollowTheRelease()
+            => new()
             {
                 Name = TheReleaseName,
                 Date = TheReleaseDate,
@@ -48,14 +71,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                 SelectionMode = DeliverySelectionMode.SourceBound,
                 SourceKey = JiraReleaseSourceKey,
                 SourceReference = TheRelease,
-            });
-
-            Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-
-            await ThePortfolioRefreshRuns(portfolioId);
-
-            return portfolioId;
-        }
+            };
 
         private void GivenTheReleaseIsAliveAndDated(DateTime date)
             => TheRemoteSays(TheRelease, new DeliverySourceResolution.Resolved(

@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             GivenTheReleaseHasBeenRenamedAndRescheduledInJira();
             await ThePortfolioRefreshRuns(portfolio);
 
-            ThenTheRetiredDeliveryStillSays(beforeItWasRetired.Id, TheReleaseName, TheReleaseDate);
+            ThenTheRetiredDeliveryStillSays(beforeItWasRetired, TheReleaseName, TheReleaseDate);
         }
 
         /// <summary>

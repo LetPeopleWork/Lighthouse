@@ -148,12 +148,45 @@ describe("DeliverySection broken-source notice (US-04)", () => {
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
 	});
 
-	it("offers nothing to press to somebody who may only look", () => {
+	// Two different reasons the way out is not on offer, and they are not the same test. A missing
+	// handler is the screen not wiring one up; a reader who may not edit is the product refusing them.
+	// Only the second says anything about permissions, and it is the one that was missing.
+	it("offers nothing to press when the screen wired up no way out", () => {
 		renderSection(
 			deliveryWith(DeliverySelectionMode.SourceBound, "SourceNotFound"),
 			undefined,
 		);
 
+		expect(
+			screen.queryByRole("button", { name: "Stop following" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("still says what is wrong to a reader who may not edit, and offers them nothing to press", () => {
+		render(
+			<MemoryRouter>
+				<DeliverySection
+					delivery={deliveryWith(
+						DeliverySelectionMode.SourceBound,
+						"SourceNotFound",
+					)}
+					features={[featureNamed(1, "Checkout")]}
+					isExpanded={false}
+					isLoadingFeatures={false}
+					onToggleExpanded={vi.fn()}
+					onDelete={vi.fn()}
+					onEdit={vi.fn()}
+					teams={teams}
+					deliverySources={[
+						{ key: "jira-release", displayName: "Jira Release" },
+					]}
+					onUnbind={vi.fn()}
+					canEdit={false}
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(screen.getByText("Source unavailable")).toBeInTheDocument();
 		expect(
 			screen.queryByRole("button", { name: "Stop following" }),
 		).not.toBeInTheDocument();
