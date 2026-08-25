@@ -112,10 +112,11 @@ To add a delivery to a portfolio, open the portfolio and click the *Add Delivery
 
 ![Add Delivery](../assets/features/delivery_add.png)
 
-Lighthouse offers two ways to select features for a delivery:
+Lighthouse offers three ways to select features for a delivery:
 
 - **Manual Selection**: Manually pick specific features to include in the delivery. Features remain fixed unless you manually update them.
 - **Rule-Based Selection**: Define rules that automatically match features based on criteria from your work tracking system (Premium feature only).
+- **Follow a Jira Release**: Point the delivery at a Release that already exists in Jira. Its name, its date and the work tagged against it all come from Jira from then on (Premium feature only).
 
 ### Manual Delivery Creation
 
@@ -174,7 +175,74 @@ Rule-based deliveries are automatically updated every time the portfolio is refr
 This ensures your delivery always reflects the current state of your work tracking system without manual maintenance.
 
 {: .important}
-It's a binary choice — each delivery uses either Manual or Rule-Based selection. You cannot mix both approaches for a single delivery, though you can switch between modes when editing a delivery.
+Each delivery uses one selection mode at a time — Manual, Rule-Based, or following a Jira Release. You cannot mix them for a single delivery, though you can switch between modes when editing one.
+
+### Following a Jira Release
+
+If your teams already plan against Releases in Jira, the date you would type into Lighthouse is a date somebody has already entered. Pointing a delivery at that Release stops you keeping the same number in two places.
+
+{: .note}
+Following a Jira Release is a **Premium feature** and requires a Premium license. It is offered only on portfolios whose connection is a Jira one.
+
+#### Creating one
+
+- Click **Add Delivery** to open the form.
+- Switch to the **Jira Release** tab.
+- Pick a Release from the list. Every Release the credential can see is offered, across every project — a customer's releases often live in a project of their own, away from the work itself.
+- Lighthouse shows the date the Release would set and the features that would come along with it, so you can see what you are about to get before you save it.
+- Click **Save**.
+
+The name field and the date field are filled in for you and cannot be typed into. That is the point: from here on Jira owns them.
+
+{: .note}
+A Release that has no date cannot be followed — there is nothing for the delivery to take. Give it a date in Jira and it becomes selectable.
+
+#### What Jira maintains from then on
+
+Every portfolio refresh asks Jira what the Release says now, and applies it:
+
+- The **name** and the **date**, including a date that moves later or earlier.
+- The **features**, from the work tagged with that Release — narrowed to the ones this portfolio tracks.
+
+A date in the past is applied like any other. A Release that shipped last quarter shows its real date, marked overdue, rather than being refused for not being in the future.
+
+Because Jira maintains all three, the delivery refuses to let you rename it, move its date, or change its features by hand. To take it back, use **Stop following** on the link icon beside the delivery name — it keeps the name, the date and the features it has at that moment, and they become yours to edit again.
+
+#### When the Release goes away
+
+If the Release is deleted, loses its date, or the connection stops offering Releases at all, the delivery says so on screen and keeps everything the Release last gave it, along with the day it last heard from it. Nothing unbinds on its own and nothing is deleted — the numbers are still worth reading, and what has changed is that nobody is maintaining them any more.
+
+A Jira that is briefly unreachable is **not** treated this way. A failed request says nothing about whether the Release still exists, so the delivery simply keeps its values and the next refresh asks again.
+
+## Publishing a forecast back to Jira
+
+A delivery that follows a Jira Release can also send its forecast the other way, so people who plan in Jira and never open Lighthouse can see it on the Release they already read.
+
+Switch **Publish forecast to the Jira Release** on in the delivery form, under the Release picker. It is off unless you ask for it, and it is set per delivery — a portfolio often holds some Releases that are shared with a customer and some that are not.
+
+Lighthouse then writes a block into the Release's **description**, and keeps it up to date on every refresh:
+
+```
+🔮 Lighthouse forecast - updated 2026-08-22
+70%: 2026-09-15
+85%: 2026-09-29
+95%: 2026-10-13
+Target 2026-10-01: 88% likely
+🔮
+```
+
+- Anything else in the description is left exactly as it is, and re-writing replaces the block rather than adding a second one.
+- The three percentiles are the same ones Lighthouse shows on its own screen, so the two can never disagree.
+- The **release date in Jira is never touched.** Lighthouse writes its forecast into the description and leaves the target date to you — otherwise the forecast would become the target it is measured against.
+
+{: .note}
+Editing a Release description does not notify anyone, so this does not add to whatever notification volume your Jira already produces.
+
+#### If Jira will not take the write
+
+Editing a Release needs project administrator rights on the project that Release belongs to. Most credentials have them; some do not, and it is per project rather than per site — the same login can be allowed on one project and refused on the next.
+
+When a write is refused, the delivery says so, quotes Jira's own words, and names the day it last tried. Nothing is disabled: the next refresh tries again, and the report disappears once a write goes through. Reading the Release carries on working throughout — reading and writing are separate permissions, so a refused write never stops the date syncing.
 
 ## After it's added
 
@@ -182,9 +250,10 @@ After creating a delivery it appears in the Deliveries view with its name, targe
 
 ![Delivery Details](../assets/features/delivery_detail.png)
 
-The delivery row shows the delivery name and date, along with a visual indicator showing whether it's a manual or rule-based delivery:
+The delivery row shows the delivery name and date, along with a visual indicator showing how its features were chosen:
 - **Manual deliveries** show a touch icon, indicating features are fixed
 - **Rule-based deliveries** show an automatic mode icon, indicating features update automatically based on rules
+- **Deliveries following a Jira Release** show a link icon. Clicking it is how you stop following the Release
 
 The row also includes an expand control to reveal included features and their statuses, and action buttons to archive, edit or delete the delivery. Expanding a delivery displays each feature and its forecasted completion so you can assess delivery risk and progress at a glance.
 
