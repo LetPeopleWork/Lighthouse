@@ -220,12 +220,110 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             yield return new TestCaseData(byRule).SetName("Chosen by rule");
         }
 
+        /// <summary>
+        /// The transition table, read from the outside. A source that resolved to nothing is finished
+        /// and says which way; a source that could not be reached says nothing at all, because a
+        /// network blip must never read as a Release somebody deleted.
+        /// </summary>
+        [TestCaseSource(nameof(EveryVerdictAndWhatTheDeliveryEndsUpSaying))]
+        public async Task What_a_Delivery_ends_up_saying_about_its_source_follows_from_the_verdict(
+            DeliverySourceResolution whatCameBack, DeliverySourceUnavailableReason? expected)
+        {
+            var (portfolio, delivery) = APortfolioWithADeliveryFollowingTheRelease();
+            GivenTheResolverAnswers(ReleaseSourceKey, new Dictionary<string, PortfolioSourcePreview>
+            {
+                [TheRelease] = new(whatCameBack, [], 0),
+            });
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.SourceUnavailableReason, Is.EqualTo(expected));
+        }
+
+        private static IEnumerable<TestCaseData> EveryVerdictAndWhatTheDeliveryEndsUpSaying()
+        {
+            yield return new TestCaseData(
+                    new DeliverySourceResolution.NotFound(),
+                    DeliverySourceUnavailableReason.SourceNotFound)
+                .SetName("A Release that is gone says it is gone");
+
+            yield return new TestCaseData(
+                    new DeliverySourceResolution.NoDate("2026 Q4"),
+                    DeliverySourceUnavailableReason.SourceHasNoDate)
+                .SetName("A Release that lost its date says that instead");
+
+            yield return new TestCaseData(
+                    new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.CapabilityWithdrawn),
+                    DeliverySourceUnavailableReason.CapabilityWithdrawn)
+                .SetName("A connection that no longer offers Releases says so");
+
+            yield return new TestCaseData(
+                    new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.SourceReadFailed),
+                    null)
+                .SetName("A Release that could not be read says nothing at all");
+        }
+
+        /// <summary>
+        /// A connection that stopped offering the source is not asked about one, and every Delivery
+        /// following it has to be told - otherwise the one permanent failure that is about the
+        /// connection rather than about a Release would be the only one that stays silent.
+        /// </summary>
+        [Test]
+        public async Task A_connection_that_no_longer_offers_the_source_tells_every_Delivery_that_followed_one()
+        {
+            var portfolio = APortfolio();
+            var first = ADeliveryFollowing(ReleaseSourceKey, TheRelease);
+            var second = ADeliveryFollowing(ReleaseSourceKey, ASecondRelease);
+            resolverMock.Setup(resolver => resolver.OffersSource(portfolio, ReleaseSourceKey)).Returns(false);
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([first, second]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(first.SourceUnavailableReason, Is.EqualTo(DeliverySourceUnavailableReason.CapabilityWithdrawn));
+                Assert.That(second.SourceUnavailableReason, Is.EqualTo(DeliverySourceUnavailableReason.CapabilityWithdrawn));
+            }
+        }
+
+        /// <summary>
+        /// Asking throwing is not the same as the connection having withdrawn the source: a credential
+        /// that cannot be decrypted and a socket that went away throw too. Flagging on a throw would put
+        /// every Delivery into a broken-source state the first time Jira had a bad minute.
+        /// </summary>
+        [Test]
+        public async Task A_source_that_threw_when_asked_leaves_the_Delivery_saying_nothing_about_it()
+        {
+            var portfolio = APortfolio();
+            var delivery = ADeliveryFollowing(ReleaseSourceKey, TheRelease);
+            GivenTheSourceCannotBeAskedAtAll(ReleaseSourceKey, new HttpRequestException("the remote closed the connection"));
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.SourceUnavailableReason, Is.Null);
+        }
+
+        [Test]
+        public async Task A_Release_that_answers_again_takes_the_notice_off_the_Delivery()
+        {
+            var (portfolio, delivery) = APortfolioWithADeliveryFollowingTheRelease();
+            delivery.MarkSourceUnavailable(DeliverySourceUnavailableReason.SourceNotFound);
+            GivenTheReleaseResolvesTo(TheRelease, ARelease(TheNameItHasNow, TheDateItHasNow));
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.SourceUnavailableReason, Is.Null);
+                Assert.That(delivery.Name, Is.EqualTo(TheNameItHasNow));
+            }
+        }
+
         [TestCaseSource(nameof(EveryAnswerThatIsNotALiveRelease))]
         public async Task A_Release_that_did_not_come_back_as_a_live_one_leaves_the_Delivery_exactly_as_it_was(
             DeliverySourceResolution whatCameBack)
         {
             var (portfolio, delivery) = APortfolioWithADeliveryFollowingTheRelease();
-            var whatItSaidBefore = (delivery.Name, delivery.Date, delivery.ConcurrencyToken);
+            var whatItSaidBefore = (delivery.Name, delivery.Date);
             GivenTheResolverAnswers(ReleaseSourceKey, new Dictionary<string, PortfolioSourcePreview>
             {
                 [TheRelease] = new(whatCameBack, [], 0),
@@ -235,7 +333,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That((delivery.Name, delivery.Date, delivery.ConcurrencyToken), Is.EqualTo(whatItSaidBefore));
+                Assert.That((delivery.Name, delivery.Date), Is.EqualTo(whatItSaidBefore),
+                    "the values are frozen whatever went wrong - they are why the Delivery is still worth reading.");
                 Assert.That(delivery.SourceLastSyncedOn, Is.Null,
                     "an answer that resolved to nothing is not the Release having been heard from.");
             }

@@ -39,11 +39,18 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         {
             if (!resolver.OffersSource(portfolio, sourceKey))
             {
+                // Stryker disable once all: diagnostic log text is not behaviour. What this branch does
+                // is flag every Delivery below and ask the remote nothing, and both are asserted.
                 logger.LogWarning(
                     "The connection behind Portfolio {PortfolioName} no longer offers a source called {SourceKey}; the {DeliveryCount} Deliveries following one keep the values they already have",
                     portfolio.Name,
                     sourceKey,
                     deliveries.Count);
+
+                foreach (var delivery in deliveries)
+                {
+                    SayTheSourceIsFinished(delivery, DeliverySourceUnavailableReason.CapabilityWithdrawn);
+                }
 
                 return;
             }
@@ -95,15 +102,28 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         }
 
         /// <summary>
-        /// Only a source that resolved to a live object writes anything. A read that failed and a
-        /// source that resolved to nothing both leave the Delivery exactly as it stands - telling the
-        /// two apart, and saying so on screen, is what slice 03 adds on top of this.
+        /// The transition table. A source that came back alive writes its values and takes any standing
+        /// notice off; a source that resolved to nothing keeps the values and says which way it is
+        /// finished; a source that could not be read says nothing at all, because a bad minute at the
+        /// remote must never read as a Release somebody deleted.
+        ///
+        /// A reference the answer did not mention arrives as a read failure and is left alone for the
+        /// same reason: an answer that omits something has said nothing about whether it exists.
         /// </summary>
         private void ApplyWhatCameBack(Delivery delivery, IReadOnlyDictionary<string, PortfolioSourcePreview> previews)
         {
-            if (!previews.TryGetValue(delivery.SourceReference!, out var preview)
-                || preview.Resolution is not DeliverySourceResolution.Resolved resolved)
+            if (!previews.TryGetValue(delivery.SourceReference!, out var preview))
             {
+                return;
+            }
+
+            if (preview.Resolution is not DeliverySourceResolution.Resolved resolved)
+            {
+                if (WhatItIsFinishedBy(preview.Resolution) is { } reason)
+                {
+                    SayTheSourceIsFinished(delivery, reason);
+                }
+
                 return;
             }
 
@@ -131,6 +151,42 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                 logger.LogWarning(
                     exception,
                     "Delivery {DeliveryId} refused what its source now says and keeps the values it already has",
+                    delivery.Id);
+            }
+        }
+
+        /// <summary>
+        /// Which verdicts mean the binding is finished, and which mean only that today's attempt told us
+        /// nothing. The read-failure reason is the one that maps to nothing at all - the aggregate
+        /// refuses it outright, so this returning it would be a crash rather than a wrong flag, but it
+        /// is filtered here because leaving the Delivery alone is the behaviour, not an error.
+        /// </summary>
+        private static DeliverySourceUnavailableReason? WhatItIsFinishedBy(DeliverySourceResolution resolution)
+        {
+            return resolution switch
+            {
+                DeliverySourceResolution.NotFound => DeliverySourceUnavailableReason.SourceNotFound,
+                DeliverySourceResolution.NoDate => DeliverySourceUnavailableReason.SourceHasNoDate,
+                DeliverySourceResolution.Unavailable unavailable
+                    when unavailable.Reason != DeliverySourceUnavailableReason.SourceReadFailed
+                    => unavailable.Reason,
+                _ => null,
+            };
+        }
+
+        private void SayTheSourceIsFinished(Delivery delivery, DeliverySourceUnavailableReason reason)
+        {
+            try
+            {
+                delivery.MarkSourceUnavailable(reason);
+            }
+            catch (ArgumentException exception)
+            {
+                // Stryker disable once all: diagnostic log text is not behaviour. The claim is that one
+                // Delivery refusing a verdict costs no other Delivery its refresh, which is asserted.
+                logger.LogWarning(
+                    exception,
+                    "Delivery {DeliveryId} refused the verdict its source came back with and keeps the values it already has",
                     delivery.Id);
             }
         }
