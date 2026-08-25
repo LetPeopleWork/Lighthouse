@@ -101,12 +101,13 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             catch (Exception exception)
 #pragma warning restore CA1031
             {
-                // Stryker disable once all: diagnostic log text is not behaviour. Publishing nothing at
-                // all is, and that is asserted.
+                // Stryker disable all: what this branch does is publish nothing at all, and that is
+                // asserted. Everything else in it is a sentence for an operator.
                 logger.LogWarning(
                     exception,
                     "Could not establish whether the connection behind Portfolio {PortfolioName} may publish a forecast; nothing is published this round",
                     portfolio.Name);
+                // Stryker restore all
 
                 return null;
             }
@@ -186,13 +187,14 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             catch (Exception exception)
 #pragma warning restore CA1031
             {
-                // Stryker disable once all: diagnostic log text is not behaviour. That this Delivery is
-                // left as it stands while the ones beside it are still published is the claim, and it is
-                // asserted.
+                // Stryker disable all: what this branch does is leave this Delivery as it stands while
+                // the ones beside it are still published, and that is asserted. Everything else in it is
+                // a sentence for an operator.
                 logger.LogWarning(
                     exception,
                     "The forecast of Delivery {DeliveryId} could not be written to the source it follows; it keeps everything it has and the next round asks again",
                     delivery.Id);
+                // Stryker restore all
 
                 return null;
             }

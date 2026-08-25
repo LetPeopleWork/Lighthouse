@@ -147,6 +147,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             Assert.DoesNotThrowAsync(() => subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None));
         }
 
+        [Test]
+        public void An_event_that_is_nothing_at_all_is_refused()
+        {
+            Assert.ThrowsAsync<ArgumentNullException>(() => subject.HandleAsync(null!, CancellationToken.None));
+        }
+
         private Portfolio GivenAPortfolio()
         {
             var portfolio = new Portfolio { Id = ThePortfolio, Name = "Zenith" };

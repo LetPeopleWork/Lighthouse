@@ -345,6 +345,75 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             Assert.Throws<ArgumentException>(() => subject.Render(AForecast() with { Percentiles = [] }));
         }
 
+        /// <summary>
+        /// A description written on Windows, or pasted out of one, separates its lines with a carriage
+        /// return and a line feed. Read as two separators rather than one, every line of it lands one
+        /// apart from where it is, and a block Lighthouse wrote stops being findable in its own text -
+        /// so every publish appends and the Release fills up with forecasts. Nothing on a Linux build
+        /// exercises this by accident: the test fixtures' own separator is a bare line feed.
+        /// </summary>
+        [Test]
+        public void A_description_written_with_carriage_returns_is_read_the_same_way()
+        {
+            var subject = CreateSubject();
+            var before = "Ships with the autumn campaign.";
+            var after = "Owner: Dana.";
+            var existing = string.Join("\r\n", before, ABlock("2026-08-22").Replace(Environment.NewLine, "\r\n"), after);
+
+            var result = subject.MergeInto(existing, ABlock("2026-08-23"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CountOpeningLines(result), Is.EqualTo(1));
+                Assert.That(result, Does.StartWith(before));
+                Assert.That(result, Does.EndWith(after));
+                Assert.That(result, Does.Not.Contain("2026-08-22"));
+            }
+        }
+
+        /// <summary>
+        /// An empty line is one separator followed by another, not one long one. Read as a single
+        /// separator, everything after the first blank line in a description shifts and the block stops
+        /// being found - and a person leaving a blank line above their notes is the ordinary case.
+        /// </summary>
+        [Test]
+        public void A_blank_line_in_the_description_does_not_hide_the_block_below_it()
+        {
+            var subject = CreateSubject();
+            var theirs = "Ships with the autumn campaign.";
+            var existing = theirs + Environment.NewLine + Environment.NewLine + ABlock("2026-08-22");
+
+            var result = subject.MergeInto(existing, ABlock("2026-08-23"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(CountOpeningLines(result), Is.EqualTo(1));
+                Assert.That(result, Does.StartWith(theirs));
+                Assert.That(result, Does.Not.Contain("2026-08-22"));
+            }
+        }
+
+        // A carriage return with nothing after it is the last character of the description. Looking past
+        // it for the line feed that usually follows reads off the end of the text.
+        [Test]
+        public void A_description_ending_in_a_bare_carriage_return_is_read_without_running_off_the_end()
+        {
+            var subject = CreateSubject();
+            var theirs = "Ask Dana before moving this.\r";
+
+            var result = subject.MergeInto(theirs, ABlock("2026-08-22"));
+
+            Assert.That(result, Does.StartWith(theirs));
+        }
+
+        [Test]
+        public void A_forecast_that_is_nothing_at_all_is_refused()
+        {
+            var subject = CreateSubject();
+
+            Assert.Throws<ArgumentNullException>(() => subject.Render(null!));
+        }
+
         private static DeliveryForecastBlock AForecast() => new(
             new DateOnly(2026, 8, 22),
             [

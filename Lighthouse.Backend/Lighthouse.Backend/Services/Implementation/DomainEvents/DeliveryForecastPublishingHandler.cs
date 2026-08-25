@@ -45,25 +45,29 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 // be there. Somebody editing that Delivery while this ran wins, exactly as they do on the
                 // refresh: this pass is holding a copy read before that happened, and the next round
                 // finds out about the Release again anyway.
+                // Stryker disable all: the whole statement exists to put a line in front of an operator.
+                // Which way its condition reads, and whether the line is written at all, are unobservable
+                // to anything but a log reader - the save itself has already happened either way, and
+                // that the round survives a refused save is asserted.
                 if (!await deliveryRepository.TrySaveRecomputedDeliveries())
                 {
-                    // Stryker disable once all: diagnostic log text is not behaviour. That the round
-                    // survives a refused save is, and that is asserted.
                     logger.LogInformation(
                         "A Delivery of Portfolio {PortfolioId} was changed while its forecast was being published; what this round found out about its Release is picked up next time",
                         domainEvent.PortfolioId);
                 }
+                // Stryker restore all
             }
 #pragma warning disable CA1031 // publishing is best-effort; a remote that would not take today's numbers must not cost the refresh that produced them
             catch (Exception exception)
 #pragma warning restore CA1031
             {
-                // Stryker disable once all: diagnostic log text is not behaviour. That the refresh
-                // survives is, and that is asserted.
+                // Stryker disable all: what this branch does is let the round finish, and that is
+                // asserted. Everything inside it is a sentence for an operator.
                 logger.LogError(
                     exception,
                     "Could not publish the forecasts of Portfolio {PortfolioId} to the sources its Deliveries follow; the next forecast asks again",
                     domainEvent.PortfolioId);
+                // Stryker restore all
             }
         }
     }
