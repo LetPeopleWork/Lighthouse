@@ -543,14 +543,14 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 												</Box>
 											)}
 										</Tooltip>
-										<Typography
-											variant="body2"
-											color={isOverdue ? "error.main" : "text.secondary"}
-										>
+										<Typography variant="body2" color="text.secondary">
 											{deliveryTerm} Date: {delivery.getFormattedDate()}
 										</Typography>
-										{/* The colour alone is not the signal - a target that has passed has to say so
-										    in a word, for anyone who cannot see the difference between the two greys. */}
+										{/* The chip carries both halves of the signal: red for whoever reads colour
+										    fastest, and the word for whoever cannot see the difference. Colouring the
+										    date as well was redundant emphasis on the one part of this that no test
+										    in this project can see - MUI renders both theme colours to an identical
+										    class under jsdom, so it could break and stay broken. */}
 										{isOverdue && (
 											<Chip
 												label={OVERDUE_LABEL}

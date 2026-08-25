@@ -128,10 +128,16 @@ describe("DeliverySection overdue rendering (AC-03.2)", () => {
 		expect(screen.queryByText("Overdue")).not.toBeInTheDocument();
 	});
 
-	// The date also turns red, and nothing here pins that: jsdom neither resolves the theme palette
-	// into a computed colour nor gives the two states different generated class names, so every shade
-	// reads identically. The word is what these tests hold, which is the half that a reader who cannot
-	// tell the two colours apart depends on anyway. The colour is left to the eye.
+	// Red as well as worded, so it is not the word alone doing the work for a reader scanning a long
+	// list. Asserted on the chip because the chip's colour lands as a class this environment can see -
+	// the same colour set on the text beside it does not, which is why the text is left alone.
+	it("draws the word in the colour trouble is drawn in", () => {
+		renderSection(deliveryThatIs(true));
+
+		expect(screen.getByText("Overdue").closest(".MuiChip-root")).toHaveClass(
+			"MuiChip-colorError",
+		);
+	});
 
 	// The word replaces nothing. A reader told a target has passed and not which one has to go and
 	// look it up.
