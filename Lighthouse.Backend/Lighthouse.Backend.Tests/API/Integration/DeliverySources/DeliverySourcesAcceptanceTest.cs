@@ -391,6 +391,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             // The one field that tells a refresh which chose to write nothing apart from a refresh that
             // never asked. Without it every "nothing changed" scenario passes with the sync pass deleted.
             DateTime? SourceLastSyncedOn,
+            DeliverySourceUnavailableReason? SourceUnavailableReason,
             Guid ConcurrencyToken);
 
         protected sealed record PortfolioDeliveriesBody(List<DeliveryRow> Active);
