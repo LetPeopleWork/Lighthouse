@@ -1937,3 +1937,84 @@ Backend `dotnet build` zero warnings; `dotnet test` with the live-connector filt
 Frontend `pnpm test` 4,618 green, `pnpm build` zero warnings, and
 `biome lint --only=complexity/noExcessiveCognitiveComplexity` clean on both components that gained a
 conditional.
+
+## Wave: DELIVER / [REF] Implementation summary — slice 05, shipped 2026-08-25
+
+ADO #5832. An administrator who switched the broadcast on and saw nothing appear in Jira is told why,
+on the Delivery they switched on, in the words the remote used.
+
+**Where the state lives, and why it moved twice.** The brief said the connection; ADR-180 moved it to the
+Portfolio on slice 00's evidence that `ADMINISTER_PROJECTS` is per project; D8a then moved the switch to
+the Delivery and the report followed. The same argument carried it each step: a connection is not one
+project, and neither is a Portfolio. **The decisive part was ADR-180's own point 5** — *the state clears
+on the next successful publish* — which cannot be made correct while the state is shared. With Deliveries
+bound to Releases in two projects, one Delivery's success would clear the other's standing refusal and
+tell an administrator the problem had gone away while it was still there. Not a reporting inaccuracy: the
+report actively lying. **Decided by the maintainer**, presented with both options.
+
+**A day, not an instant.** A refusal recurs on every refresh, and writing a fresh timestamp each time
+would move the Delivery's version and expire the copy an open browser is holding. The same reasoning that
+made `SourceLastSyncedOn` a day. The boundary takes a `DateOnly` rather than a `DateTime`, because a
+local-kind midnight becomes the evening before on the way to the database — the shape of Bug #5567, and
+no reason to leave that door open a second time.
+
+**Three things that are deliberately not refusals**, because each would send the reader somewhere other
+than the problem: a remote that could not be reached, a Release that is gone, and a rejection carrying no
+sentence at all. The last is thrown rather than recorded — what the report shows is the remote's own
+words, and a rejection with none is far likelier to be a request Lighthouse built wrong than a permission
+anybody can grant.
+
+### AC coverage — no silent N/A
+
+| AC | Where it is met | Where it is pinned |
+|---|---|---|
+| AC-06.1 | `Delivery.RecordPublishRefusal` + `DeliveryPublishRefusedNotice` | `DeliveryPublishRefusalInvariantTest`, the notice specs, `Slice04ForecastPublishingTest.A_refused_write_is_reported_on_the_Delivery_in_the_words_Jira_used`. **Partially met — see below.** |
+| AC-06.2 | one attempt per Delivery per forecast round, inside the handler's catch | `A_Jira_that_refuses_the_write_does_not_cost_the_refresh_anything` (does not fail the refresh), `ThenTheDeliveryStillFollowsALiveRelease` (does not disable), `ThenItWasTriedExactlyOnce` (no tight loop) |
+| AC-06.3 | `ClearPublishRefusal` on a `Published` result | `A_write_that_goes_through_takes_a_standing_refusal_off`, `A_write_that_goes_through_afterwards_takes_the_report_off` |
+| AC-06.4 | reading and writing are separate capabilities throughout | `A_refused_write_leaves_the_Release_date_syncing` — the Release is rescheduled in Jira while the write is refused, and the Delivery takes the new date anyway |
+
+**AC-06.1 is met in two clauses of three, and the third is not met.** The report names the Delivery and
+the day, and quotes the remote verbatim. **It does not name the project.** Lighthouse does not persist
+which Jira project a bound Release belongs to — the picker shows it at bind time and nothing keeps it —
+so naming it is a schema change rather than a wording change. Recorded rather than reinterpreted: the
+clause was written when the report was to sit on the connection, where naming the project was the only
+way to say *which* of the many things a connection touches had been refused. On the Delivery, the
+Delivery is that answer. Whether the project is still worth adding is a question for whoever next reads
+a report and cannot find the right permission screen.
+
+### What adversarial review found
+
+Three lenses again, and the two that mattered were both the slice's own promise failing in disguise.
+
+- **A save retracted the report.** Every update to a bound Delivery releases and re-binds it, clearing
+  everything about the binding. Somebody editing a Delivery has almost certainly just been to grant the
+  permission the report names, so the notice vanishing on save reads as confirmation the fix worked.
+- **A Release turning out to be gone left the report standing over it for good.** A Delivery whose source
+  is finished is not published at all and only a successful publish clears a refusal, so the two notices
+  would contradict each other on one row permanently — one saying the Release does not exist, the other
+  saying to go and fix a permission on it.
+
+Three more states could strand a report where nothing could reach it (retiring the Delivery, switching
+off a broadcast already off, and any other way a source ends), and the wire mapping for both new fields
+was pinned by nothing at all — droppable with the suite green, which is exactly the invisible failure
+this slice exists to remove.
+
+### Known gaps, stated rather than left to be found
+
+- **The project is not named** (above).
+- **The Jira adapter contract test is owed for a fourth time**, and the exposure grew again: the refusal
+  report's only input is Jira's error body, so if Atlassian changes that shape the report degrades to
+  silence rather than to a log line. It now needs to cover four response shapes — the `versions` read, the
+  `fixVersion` search, and both halves of the error envelope.
+- **`SupportsDeliveryForecastPublishing` cannot return false in production.** The only implementer
+  answers `true` for every connection, because the permission it would report is per project. The
+  "reads Releases but is refused the write" state that ADR-178 justified a second capability flag with is
+  carried by the refusal report instead. The flag is how a *future* connector says it cannot write at
+  all; read point 2 of that ADR as forward-looking.
+- **`Delivery.LastPublishRefusalReason` is a remote string rendered on screen.** It is a React text
+  child, so markup is escaped and there is no injection path, but it is clamped in the aggregate and
+  allowed to wrap in the notice — without either, one long unbroken token would be clipped by the
+  container, and the clipped part is the part naming what to fix.
+- **The delivery wire is still unvalidated** (`z.custom<IDelivery>()`), and slice 05 pushed two more
+  fields through it. `Delivery.fromBackend` now has a test of its own, which is what stops the mapping
+  being dropped silently, but the schema is the right place.
