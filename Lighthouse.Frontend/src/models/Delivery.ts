@@ -34,6 +34,9 @@ export interface IDelivery {
 	sourceUnavailableReason?: DeliverySourceUnavailableReason | null;
 	/** Whether this Delivery's forecast is broadcast onto the source it follows. */
 	publishForecastToSource?: boolean;
+	/** What the source said when it would not take the forecast, and the day it said it. */
+	lastPublishRefusedOn?: string | null;
+	lastPublishRefusalReason?: string | null;
 	rules?: IWorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
@@ -62,6 +65,8 @@ export class Delivery implements IDelivery {
 	sourceLastSyncedOn!: string | null;
 	sourceUnavailableReason!: DeliverySourceUnavailableReason | null;
 	publishForecastToSource!: boolean;
+	lastPublishRefusedOn!: string | null;
+	lastPublishRefusalReason!: string | null;
 	rules?: WorkItemRuleCondition[];
 	mode?: "and" | "or";
 	concurrencyToken?: string;
@@ -91,6 +96,8 @@ export class Delivery implements IDelivery {
 		delivery.sourceLastSyncedOn = data.sourceLastSyncedOn ?? null;
 		delivery.sourceUnavailableReason = data.sourceUnavailableReason ?? null;
 		delivery.publishForecastToSource = data.publishForecastToSource ?? false;
+		delivery.lastPublishRefusedOn = data.lastPublishRefusedOn ?? null;
+		delivery.lastPublishRefusalReason = data.lastPublishRefusalReason ?? null;
 		delivery.rules = data.rules?.map((r) =>
 			WorkItemRuleCondition.fromBackend(r),
 		);

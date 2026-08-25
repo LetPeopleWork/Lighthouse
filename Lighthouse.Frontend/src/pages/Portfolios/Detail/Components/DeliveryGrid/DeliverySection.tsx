@@ -77,6 +77,7 @@ import DeliveryMetricsTab, {
 	useLazyMetricsHistory,
 } from "./DeliveryMetricsTab";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
+import DeliveryPublishRefusedNotice from "./DeliveryPublishRefusedNotice";
 import DeliverySourceUnavailableNotice from "./DeliverySourceUnavailableNotice";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
 import { isStoredAs } from "./deliverySelectionTabs";
@@ -125,6 +126,41 @@ function howTheFeaturesWereChosen({
 		? { ...chosen, hint: `${chosen.hint} — click to stop following` }
 		: chosen;
 }
+
+/**
+ * Everything a Delivery has to say about the source it follows before the row itself is read. Both
+ * notices can stand at once and each sends the reader somewhere different: one says the values below
+ * are frozen because nothing is maintaining them, the other says the Delivery is perfectly healthy and
+ * one optional thing it does elsewhere did not happen.
+ *
+ * Out here rather than inline because the component below is at Sonar's cognitive-complexity limit and
+ * every branch left in it costs one - but also because this is a statement about the binding, not part
+ * of rendering the Delivery.
+ */
+const WhatIsWrongWithTheSource: React.FC<{
+	delivery: Delivery;
+	isSourceBound: boolean;
+	sourceLabel: string;
+	onUnbind?: () => void;
+}> = ({ delivery, isSourceBound, sourceLabel, onUnbind }) => (
+	<>
+		{isSourceBound && delivery.sourceUnavailableReason !== null && (
+			<DeliverySourceUnavailableNotice
+				reason={delivery.sourceUnavailableReason}
+				sourceLabel={sourceLabel}
+				lastSyncedOn={delivery.sourceLastSyncedOn}
+				onUnbind={onUnbind}
+			/>
+		)}
+		{delivery.lastPublishRefusalReason !== null && (
+			<DeliveryPublishRefusedNotice
+				reason={delivery.lastPublishRefusalReason}
+				sourceLabel={sourceLabel}
+				refusedOn={delivery.lastPublishRefusedOn}
+			/>
+		)}
+	</>
+);
 
 const ACTION_BUTTON_SX = {
 	bgcolor: "background.paper",
@@ -587,14 +623,12 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				{/* Above the row rather than inside it: the values below are real values that were true
 				    when they were last read, so what has to arrive first is that nothing is maintaining
 				    them now. Outside the Accordion so reading it never collapses the Delivery. */}
-				{isSourceBound && delivery.sourceUnavailableReason !== null && (
-					<DeliverySourceUnavailableNotice
-						reason={delivery.sourceUnavailableReason}
-						sourceLabel={sourceLabel}
-						lastSyncedOn={delivery.sourceLastSyncedOn}
-						onUnbind={canUnbind ? () => setIsUnbindDialogOpen(true) : undefined}
-					/>
-				)}
+				<WhatIsWrongWithTheSource
+					delivery={delivery}
+					isSourceBound={isSourceBound}
+					sourceLabel={sourceLabel}
+					onUnbind={canUnbind ? () => setIsUnbindDialogOpen(true) : undefined}
+				/>
 				<Accordion
 					expanded={isExpanded}
 					onChange={() => onToggleExpanded(delivery.id)}

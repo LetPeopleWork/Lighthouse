@@ -29,6 +29,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
         private static readonly DateTime TheReleaseDate = new(2027, 3, 18, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime ADateSomebodyPicked = new(2027, 9, 30, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime TheDateTheReleaseHasNow = new(2027, 6, 24, 0, 0, 0, DateTimeKind.Utc);
+
+        private const string WhatJiraSaid = "You must have global or project administrator rights in order to modify versions.";
 
         private readonly List<DeliveryForecastPublication> published = [];
 
@@ -159,10 +162,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
         private void GivenJiraRefusesToBeWrittenTo()
         {
+            // Still recorded as having reached the port. A refusal is Jira answering, so the attempt was
+            // made - which is what lets a scenario say the next round tried again rather than giving up.
             JiraConnector
                 .Setup(connector => connector.PublishAsync(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<DeliveryForecastPublication>()))
-                .ReturnsAsync(new DeliveryForecastPublishResult.Refused("You do not have permission to edit this version."));
+                .Callback<WorkTrackingSystemConnection, DeliveryForecastPublication>((_, publication) => published.Add(publication))
+                .ReturnsAsync(new DeliveryForecastPublishResult.Refused(WhatJiraSaid));
         }
+
+        private void GivenTheReleaseHasBeenRescheduledInJira()
+        {
+            TheRemoteSays(TheRelease, new DeliverySourceResolution.Resolved(
+                new DeliverySourceSnapshot(TheReleaseName, TheDateTheReleaseHasNow, [TheWorkTheReleaseCarries])));
+        }
+
+        private void GivenNothingHasReachedJiraYet() => published.Clear();
 
         private void GivenTheReleaseIsNoLongerThereToBeWrittenTo()
         {
@@ -225,6 +239,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                     "a credential that may not write says nothing about whether the Release is still there.");
                 Assert.That(delivery.PublishForecastToSource, Is.True,
                     "a refused write does not switch the broadcast off - the administrator grants the permission and the next round goes through.");
+            }
+        }
+
+        private static void ThenTheDeliveryReportsTheRefusal(DeliveryRow delivery)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.LastPublishRefusalReason, Is.EqualTo(WhatJiraSaid),
+                    "Jira's own sentence names what to fix in the words the administrator will search for.");
+                Assert.That(delivery.LastPublishRefusedOn, Is.Not.Null);
+            }
+        }
+
+        private static void ThenTheDeliveryReportsNoRefusal(DeliveryRow delivery)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+                Assert.That(delivery.LastPublishRefusedOn, Is.Null);
+            }
+        }
+
+        private static void ThenTheDeliveryTookTheNewDateAnyway(DeliveryRow delivery)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.Date, Is.EqualTo(TheDateTheReleaseHasNow),
+                    "reading a Release and writing to it are separate capabilities; a refused write may not stop the date sync.");
+                Assert.That(delivery.SourceUnavailableReason, Is.Null);
             }
         }
 

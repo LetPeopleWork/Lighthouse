@@ -135,6 +135,74 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         }
 
         /// <summary>
+        /// The report the slice exists for. An administrator who switched the broadcast on and saw
+        /// nothing appear in Jira reads why, in Jira's own words, on the Delivery they switched on.
+        /// </summary>
+        [Test]
+        public async Task A_refused_write_is_reported_on_the_Delivery_in_the_words_Jira_used()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            GivenJiraRefusesToBeWrittenTo();
+
+            await ThePortfolioRefreshRuns(portfolioId);
+            var afterTheRefusal = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            ThenTheDeliveryReportsTheRefusal(afterTheRefusal);
+        }
+
+        /// <summary>
+        /// AC-06.4, and the criterion that carries the slice. Reading Releases and writing to them are
+        /// separate capabilities: a refused write must never stop the date sync, or an optional outbound
+        /// feature could take the inbound half of the Epic down with it.
+        /// </summary>
+        [Test]
+        public async Task A_refused_write_leaves_the_Release_date_syncing()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            GivenJiraRefusesToBeWrittenTo();
+            GivenTheReleaseHasBeenRescheduledInJira();
+
+            await ThePortfolioRefreshRuns(portfolioId);
+            var afterTheRefusal = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            ThenTheDeliveryTookTheNewDateAnyway(afterTheRefusal);
+            ThenTheDeliveryReportsTheRefusal(afterTheRefusal);
+        }
+
+        /// <summary>
+        /// The permission was granted, or the description shortened. Either way the report has to go, or
+        /// a Delivery publishing perfectly well goes on asking somebody to fix something that works.
+        /// </summary>
+        [Test]
+        public async Task A_write_that_goes_through_afterwards_takes_the_report_off()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            GivenJiraRefusesToBeWrittenTo();
+            await ThePortfolioRefreshRuns(portfolioId);
+
+            GivenJiraTakesWhateverItIsSent();
+            await ThePortfolioRefreshRuns(portfolioId);
+            var afterItWorked = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            ThenTheDeliveryReportsNoRefusal(afterItWorked);
+        }
+
+        [Test]
+        public async Task A_refused_write_does_not_switch_the_broadcast_off_or_stop_it_being_tried_again()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            GivenJiraRefusesToBeWrittenTo();
+
+            await ThePortfolioRefreshRuns(portfolioId);
+            var afterTheFirstRefusal = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+            GivenNothingHasReachedJiraYet();
+            await ThePortfolioRefreshRuns(portfolioId);
+
+            ThenTheDeliverySaysItBroadcasts(afterTheFirstRefusal);
+            ThenTheReleaseWasWrittenTo(TheRelease);
+        }
+
+        /// <summary>
         /// The Release was deleted between the read that resolved it and the write. That is the same
         /// fact about the same Release a failed read reports, so it puts the Delivery into the same
         /// state - and the reader is told on the screen rather than left with a Delivery that silently

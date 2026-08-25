@@ -60,6 +60,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public bool PublishForecastToSource { get; set; }
 
+        public DateTime? LastPublishRefusedOn { get; set; }
+
+        public string? LastPublishRefusalReason { get; set; }
+
         public bool IsOverdue { get; set; }
 
         public List<WorkItemRuleCondition> Rules { get; set; } = [];
@@ -98,6 +102,8 @@ namespace Lighthouse.Backend.API.DTO
                 SourceLastSyncedOn = delivery.SourceLastSyncedOn,
                 SourceUnavailableReason = delivery.SourceUnavailableReason,
                 PublishForecastToSource = delivery.PublishForecastToSource,
+                LastPublishRefusedOn = delivery.LastPublishRefusedOn,
+                LastPublishRefusalReason = delivery.LastPublishRefusalReason,
                 IsOverdue = delivery.IsOverdue(today),
                 Rules = GetRuleSet(delivery.RuleDefinitionJson).Conditions,
                 Mode = GetRuleSet(delivery.RuleDefinitionJson).Mode,

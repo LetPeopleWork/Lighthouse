@@ -393,6 +393,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             DateTime? SourceLastSyncedOn,
             DeliverySourceUnavailableReason? SourceUnavailableReason,
             bool PublishForecastToSource,
+            DateTime? LastPublishRefusedOn,
+            string? LastPublishRefusalReason,
             Guid ConcurrencyToken);
 
         protected sealed record PortfolioDeliveriesBody(List<DeliveryRow> Active);
