@@ -141,8 +141,9 @@ const WhatIsWrongWithTheSource: React.FC<{
 	delivery: Delivery;
 	isSourceBound: boolean;
 	sourceLabel: string;
+	deliveryTerm: string;
 	onUnbind?: () => void;
-}> = ({ delivery, isSourceBound, sourceLabel, onUnbind }) => (
+}> = ({ delivery, isSourceBound, sourceLabel, deliveryTerm, onUnbind }) => (
 	<>
 		{isSourceBound && delivery.sourceUnavailableReason !== null && (
 			<DeliverySourceUnavailableNotice
@@ -157,6 +158,7 @@ const WhatIsWrongWithTheSource: React.FC<{
 				reason={delivery.lastPublishRefusalReason}
 				sourceLabel={sourceLabel}
 				refusedOn={delivery.lastPublishRefusedOn}
+				deliveryTerm={deliveryTerm}
 			/>
 		)}
 	</>
@@ -627,6 +629,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 					delivery={delivery}
 					isSourceBound={isSourceBound}
 					sourceLabel={sourceLabel}
+					deliveryTerm={deliveryTerm}
 					onUnbind={canUnbind ? () => setIsUnbindDialogOpen(true) : undefined}
 				/>
 				<Accordion

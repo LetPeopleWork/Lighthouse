@@ -200,6 +200,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
             ThenTheDeliverySaysItBroadcasts(afterTheFirstRefusal);
             ThenTheReleaseWasWrittenTo(TheRelease);
+            ThenItWasTriedExactlyOnce();
         }
 
         /// <summary>

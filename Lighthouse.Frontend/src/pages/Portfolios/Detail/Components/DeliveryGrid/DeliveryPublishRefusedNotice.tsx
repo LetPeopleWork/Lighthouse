@@ -7,6 +7,8 @@ interface DeliveryPublishRefusedNoticeProps {
 	/** What the connection calls this kind of source, e.g. "Jira Release". */
 	sourceLabel: string;
 	refusedOn: string | null;
+	/** The tenant's own word for a Delivery - it may well be "Launch". */
+	deliveryTerm: string;
 }
 
 export const PUBLISH_REFUSED_TITLE = "Forecast not published";
@@ -23,14 +25,14 @@ export const PUBLISH_REFUSED_TITLE = "Forecast not published";
  */
 const DeliveryPublishRefusedNotice: React.FC<
 	DeliveryPublishRefusedNoticeProps
-> = ({ reason, sourceLabel, refusedOn }) => {
+> = ({ reason, sourceLabel, refusedOn, deliveryTerm }) => {
 	const named = sourceLabel.trim();
 	const target = named ? `the ${named}` : "the source this follows";
 
 	return (
 		<Alert severity="info" sx={{ borderRadius: 0 }}>
 			<AlertTitle>{PUBLISH_REFUSED_TITLE}</AlertTitle>
-			{`This forecast could not be written to ${target}${sinceWhen(refusedOn)}. Everything else about this delivery is up to date.`}
+			{`This forecast could not be written to ${target}${sinceWhen(refusedOn)}. Everything else about this ${deliveryTerm.toLowerCase()} is up to date.`}
 			{/* The remote's own sentence, quoted rather than paraphrased: it names what to fix in the
 			    words the reader will search for, and it is not ours to rewrite. */}
 			<Typography

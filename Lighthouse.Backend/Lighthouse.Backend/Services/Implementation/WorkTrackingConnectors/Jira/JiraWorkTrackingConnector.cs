@@ -2405,8 +2405,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (Encoding.UTF8.GetByteCount(merged) > MaxVersionDescriptionBytes)
             {
+                // Bytes rather than characters, and said that way: a description of emoji or of any
+                // non-Latin script reaches the ceiling well before its character count suggests, and an
+                // administrator counting characters would conclude the message was wrong.
+                //
+                // No word for what is being published, either. This sentence is stored and rendered
+                // verbatim on screen, and the connector cannot reach the Terminology table - a tenant who
+                // renamed Delivery to Launch would be shown "delivery" here and "Launch" everywhere else.
                 return new DeliveryForecastPublishResult.Refused(
-                    $"The description of this Release would be over Jira's {MaxVersionDescriptionBytes:N0}-character limit once the Lighthouse forecast is added. Shorten the description, or switch publishing off for this delivery.");
+                    $"Adding the Lighthouse forecast would take this Release's description over Jira's limit of {MaxVersionDescriptionBytes:N0} bytes. Shorten the description, or switch publishing off.");
             }
 
             var payload = JsonSerializer.Serialize(new { description = merged });
@@ -2414,6 +2421,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return await PublishVerdictFor(write) ?? new DeliveryForecastPublishResult.Published();
         }
+
+        private static bool JiraIsNotAnsweringRightNow(HttpStatusCode status)
+            => (int)status >= 500 || status is HttpStatusCode.TooManyRequests or HttpStatusCode.RequestTimeout;
 
         /// <summary>
         /// What a Jira answer means for a publish, or nothing when it means the write went through.
@@ -2427,21 +2437,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         ///
         /// A server that failed rather than refused is deliberately not a verdict at all: it is thrown, so
         /// the caller treats it the way it treats a source it could not reach - as an attempt that told us
-        /// nothing, rather than as an answer. A rejection that names no reason is thrown for the same
-        /// reason: what the refusal report puts on screen is the remote's sentence, and a rejection with
-        /// no sentence is a malformed request - our defect - rather than something an administrator can
-        /// go and fix.
+        /// nothing, rather than as an answer. So is a throttled or timed-out request, which has refused
+        /// nothing: this pass publishes every broadcasting Delivery of a Portfolio one after another, so a
+        /// Portfolio large enough to be throttled partway through would otherwise record a standing
+        /// permission problem for every Delivery after the first and send an administrator to audit a
+        /// permission that was never wrong.
+        ///
+        /// A rejection that names no reason is thrown for the same family of reasons: what the refusal
+        /// report puts on screen is the remote's own sentence, and a rejection with no sentence is a
+        /// malformed request - our defect - rather than something an administrator can go and fix.
         /// </summary>
-        /// <summary>
-        /// The answers that mean "ask again later" rather than "no". A throttled or timed-out request has
-        /// refused nothing, and this pass publishes every broadcasting Delivery of a Portfolio one after
-        /// another, so a Portfolio large enough to be throttled partway through would otherwise write
-        /// down a standing permission problem for every Delivery after the first - and send an
-        /// administrator to audit a permission that was never wrong.
-        /// </summary>
-        private static bool JiraIsNotAnsweringRightNow(HttpStatusCode status)
-            => (int)status >= 500 || status is HttpStatusCode.TooManyRequests or HttpStatusCode.RequestTimeout;
-
         private static async Task<DeliveryForecastPublishResult?> PublishVerdictFor(HttpResponseMessage response)
         {
             if (response.IsSuccessStatusCode)

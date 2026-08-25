@@ -287,6 +287,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             => Assert.That(published, Is.Empty);
 
         /// <summary>
+        /// AC-06.2's third clause. A refusal is answered by trying again on the next round and not
+        /// before: a Portfolio whose credential cannot write must not turn into a Jira client hammering
+        /// somebody else's rate limit for as long as nobody notices the switch.
+        /// </summary>
+        private void ThenItWasTriedExactlyOnce()
+            => Assert.That(published, Has.Count.EqualTo(1));
+
+        /// <summary>
         /// The four things the block has to carry, asserted on the text that actually crossed the port
         /// rather than on the record it was rendered from. Anything less would pass with the rendering
         /// step wired to nothing.

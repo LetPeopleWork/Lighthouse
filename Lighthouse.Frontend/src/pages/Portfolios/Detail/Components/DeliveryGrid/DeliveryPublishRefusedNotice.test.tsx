@@ -26,6 +26,7 @@ function renderNotice(
 			reason={WHAT_JIRA_SAID}
 			sourceLabel={A_JIRA_RELEASE}
 			refusedOn={REFUSED_ON}
+			deliveryTerm="Launch"
 			{...overrides}
 		/>,
 	);
@@ -84,11 +85,16 @@ describe("DeliveryPublishRefusedNotice (US-06)", () => {
 	 * The half that stops this reading as a broken Delivery. Everything on the row beside it was read
 	 * from the source in the ordinary way and is current; the refusal is about a write, not a read.
 	 */
-	it("says the rest of the delivery is fine", () => {
+	/**
+	 * A tenant who renamed Delivery to Launch must never be shown the word "delivery". The sibling
+	 * notice sidesteps the problem by never using the word at all; this sentence needs it, so the term
+	 * is passed in.
+	 */
+	it("says the rest of it is fine, in the tenant's own word", () => {
 		renderNotice();
 
 		expect(
-			screen.getByText(/Everything else about this delivery is up to date/),
+			screen.getByText(/Everything else about this launch is up to date/),
 		).toBeInTheDocument();
 	});
 });
