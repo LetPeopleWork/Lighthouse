@@ -187,10 +187,18 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        /// <summary>
+        /// Started from a Delivery that HAS heard from its Release, so this says the release clears the
+        /// note rather than that there was never one to clear. A Delivery released while its source was
+        /// unreachable is the case that bites: it would go back to being somebody's to edit while still
+        /// carrying a reason it had stopped answering, and every screen reading that reason would say
+        /// a hand-maintained Delivery has a broken source.
+        /// </summary>
         [Test]
-        public void A_released_Delivery_still_claims_nothing_about_having_heard_from_the_Release()
+        public void A_released_Delivery_claims_nothing_about_the_Release_it_used_to_hear_from()
         {
             var delivery = ADeliveryFollowingARelease();
+            delivery.SyncFromSource(ReleaseName, ReleaseDate, delivery.Features.ToList(), TestToday.AmbientAsUtcMidnight);
 
             delivery.Unbind();
 

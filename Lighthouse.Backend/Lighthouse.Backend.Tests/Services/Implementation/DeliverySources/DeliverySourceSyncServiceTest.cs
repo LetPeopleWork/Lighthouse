@@ -42,8 +42,56 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             resolverMock = new Mock<IDeliverySourceResolver>();
             clock = new FakeLighthouseClock(TheRefreshRanAt);
 
+            resolverMock
+                .Setup(resolver => resolver.OffersSource(It.IsAny<Portfolio>(), It.IsAny<string>()))
+                .Returns(true);
+
             subject = new DeliverySourceSyncService(
                 resolverMock.Object, clock, Mock.Of<ILogger<DeliverySourceSyncService>>());
+        }
+
+        /// <summary>
+        /// A connection that has stopped offering the source answers a read by throwing, and a throw
+        /// says nothing about whether the source is finished or the remote merely unreachable. Asking
+        /// first is what keeps those two apart, which is the distinction slice 03's broken-source state
+        /// rests on.
+        /// </summary>
+        [Test]
+        public async Task A_connection_that_no_longer_offers_the_source_is_not_asked_about_one()
+        {
+            var portfolio = APortfolio();
+            var delivery = ADeliveryFollowing(ReleaseSourceKey, TheRelease);
+            resolverMock
+                .Setup(resolver => resolver.OffersSource(portfolio, ReleaseSourceKey))
+                .Returns(false);
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                resolverMock.Verify(
+                    resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    Times.Never);
+                Assert.That(delivery.SourceLastSyncedOn, Is.Null);
+            }
+        }
+
+        [Test]
+        public async Task A_connection_that_stopped_offering_one_source_still_syncs_the_Deliveries_on_another()
+        {
+            var portfolio = APortfolio();
+            var onTheSourceThatWent = ADeliveryFollowing(ASecondSourceKey, ASecondRelease);
+            var onTheSourceThatStayed = ADeliveryFollowing(ReleaseSourceKey, TheRelease);
+            resolverMock.Setup(resolver => resolver.OffersSource(portfolio, ASecondSourceKey)).Returns(false);
+            GivenTheReleaseResolvesTo(TheRelease, ARelease(TheNameItHasNow, TheDateItHasNow));
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([onTheSourceThatWent, onTheSourceThatStayed]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(onTheSourceThatWent.SourceLastSyncedOn, Is.Null);
+                Assert.That(onTheSourceThatStayed.Name, Is.EqualTo(TheNameItHasNow));
+            }
         }
 
         [Test]
@@ -71,7 +119,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
             await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
 
-            Assert.That(delivery.SourceLastSyncedOn, Is.EqualTo(TheRefreshRanAt.UtcDateTime));
+            Assert.That(delivery.SourceLastSyncedOn, Is.EqualTo(clock.TodayAsUtcMidnight));
+        }
+
+        /// <summary>
+        /// The day the source was heard from, not the minute. Every bound Delivery of a Portfolio is
+        /// saved in one transaction that is dropped whole if any row's version has moved, so a row that
+        /// joins that save on every refresh for a value nobody reads to the minute is a row that can
+        /// cost every other Delivery its refresh. Writing the same day back is not a change at all.
+        /// </summary>
+        [Test]
+        public async Task Hearing_from_a_Release_twice_in_one_day_records_the_same_thing_both_times()
+        {
+            var (portfolio, delivery) = APortfolioWithADeliveryFollowingTheRelease();
+            GivenTheReleaseResolvesTo(TheRelease, ARelease(TheNameItHasNow, TheDateItHasNow));
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+            var afterTheFirstRefresh = delivery.SourceLastSyncedOn;
+
+            clock.SetInstant(TheRefreshRanAt.AddHours(6));
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.SourceLastSyncedOn, Is.EqualTo(afterTheFirstRefresh));
+        }
+
+        [Test]
+        public async Task Hearing_from_a_Release_on_a_new_day_records_the_new_day()
+        {
+            var (portfolio, delivery) = APortfolioWithADeliveryFollowingTheRelease();
+            GivenTheReleaseResolvesTo(TheRelease, ARelease(TheNameItHasNow, TheDateItHasNow));
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+            var afterTheFirstRefresh = delivery.SourceLastSyncedOn;
+
+            clock.SetInstant(TheRefreshRanAt.AddDays(1));
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.SourceLastSyncedOn, Is.Not.EqualTo(afterTheFirstRefresh));
         }
 
         /// <summary>
@@ -187,13 +271,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         /// refresh this pass runs inside carries every other number on the Portfolio. Letting that
         /// reach the refresh would lose all of them over one Delivery nobody can currently read.
         /// </summary>
-        [Test]
-        public async Task A_source_that_throws_instead_of_answering_leaves_the_rest_of_the_refresh_standing()
+        [TestCaseSource(nameof(EveryWayAskingCanFailOutright))]
+        public async Task A_source_that_throws_instead_of_answering_leaves_the_rest_of_the_refresh_standing(
+            Exception howItFailed)
         {
             var portfolio = APortfolio();
             var onASourceThatThrows = ADeliveryFollowing(ASecondSourceKey, ASecondRelease);
             var onASourceThatAnswers = ADeliveryFollowing(ReleaseSourceKey, TheRelease);
-            GivenTheSourceCannotBeAskedAtAll(ASecondSourceKey);
+            GivenTheSourceCannotBeAskedAtAll(ASecondSourceKey, howItFailed);
             GivenTheReleaseResolvesTo(TheRelease, ARelease(TheNameItHasNow, TheDateItHasNow));
 
             await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([onASourceThatThrows, onASourceThatAnswers]));
@@ -230,6 +315,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
                 Assert.That(theOneWithTheBadAnswer.SourceLastSyncedOn, Is.Null);
                 Assert.That(theOneBesideIt.Name, Is.EqualTo(TheNameItHasNow));
             }
+        }
+
+        /// <summary>
+        /// A row can come back from the database saying it follows a source while naming none of it.
+        /// The aggregate refuses to be put into that state today, but nothing stops a row already in it
+        /// - an interrupted write, a hand-edited database, a column added by a later migration - and
+        /// asking about it would key the whole batch on a source nobody named.
+        /// </summary>
+        [TestCaseSource(nameof(EveryHalfWrittenBinding))]
+        public async Task A_Delivery_that_says_it_follows_a_source_while_naming_none_is_never_asked_about(
+            string? sourceKey, string? sourceReference)
+        {
+            var portfolio = APortfolio();
+            var halfWritten = new Delivery
+            {
+                SelectionMode = DeliverySelectionMode.SourceBound,
+                SourceKey = sourceKey,
+                SourceReference = sourceReference,
+            };
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([halfWritten]));
+
+            resolverMock.Verify(
+                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                Times.Never);
+        }
+
+        private static IEnumerable<TestCaseData> EveryHalfWrittenBinding()
+        {
+            yield return new TestCaseData(null, TheRelease).SetName("No source key");
+            yield return new TestCaseData(string.Empty, TheRelease).SetName("An empty source key");
+            yield return new TestCaseData(ReleaseSourceKey, null).SetName("No reference");
+            yield return new TestCaseData(ReleaseSourceKey, string.Empty).SetName("An empty reference");
         }
 
         [Test]
@@ -301,11 +419,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
                 .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>());
         }
 
-        private void GivenTheSourceCannotBeAskedAtAll(string sourceKey)
+        private void GivenTheSourceCannotBeAskedAtAll(string sourceKey, Exception howItFailed)
         {
             resolverMock
                 .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), sourceKey, It.IsAny<IReadOnlyList<string>>()))
-                .ThrowsAsync(new ArgumentException($"This connection does not offer a delivery source called '{sourceKey}'."));
+                .ThrowsAsync(howItFailed);
+        }
+
+        /// <summary>
+        /// Three unrelated failures, because the guard exists to catch whatever asking can raise rather
+        /// than the one shape a Jira connection happens to throw today. Narrowed to that one shape, a
+        /// credential that can no longer be decrypted and a socket that went away would each take a
+        /// whole Portfolio's refresh down with them.
+        /// </summary>
+        private static IEnumerable<TestCaseData> EveryWayAskingCanFailOutright()
+        {
+            yield return new TestCaseData(new ArgumentException("this connection does not offer that source"))
+                .SetName("The connection no longer offers the source");
+            yield return new TestCaseData(new HttpRequestException("the remote closed the connection"))
+                .SetName("The remote could not be reached");
+            yield return new TestCaseData(new InvalidOperationException("the stored credential could not be read"))
+                .SetName("The credential could not be read");
         }
 
         private static Portfolio APortfolio()

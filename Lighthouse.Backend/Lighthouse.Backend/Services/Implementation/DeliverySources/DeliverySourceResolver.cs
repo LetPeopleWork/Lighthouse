@@ -49,14 +49,16 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
 
         /// <summary>
         /// An answer that simply leaves a reference out says nothing about whether it still exists, so it
-        /// must never read as a deletion - only a remote that answered may retire a binding.
+        /// must never read as a deletion - only a remote that answered may retire a binding. It says
+        /// nothing about the connection either, which is why it is the transient reason rather than the
+        /// one meaning this connection has stopped offering the source.
         /// </summary>
         private static DeliverySourceResolution ResolutionOf(
             IReadOnlyDictionary<string, DeliverySourceResolution> resolutions, string sourceReference)
         {
             return resolutions.TryGetValue(sourceReference, out var resolution)
                 ? resolution
-                : new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.CapabilityWithdrawn);
+                : new DeliverySourceResolution.Unavailable(DeliverySourceUnavailableReason.SourceReadFailed);
         }
 
         private static PortfolioSourcePreview NarrowToPortfolio(

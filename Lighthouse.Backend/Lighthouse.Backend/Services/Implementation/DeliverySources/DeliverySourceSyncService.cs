@@ -28,8 +28,26 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             }
         }
 
+        /// <summary>
+        /// Asked whether the connection still offers this kind of source before it is asked anything
+        /// about one. A connection that has stopped offering it answers a read by throwing, and a throw
+        /// is indistinguishable from the remote being briefly unreachable - so without this the one
+        /// permanent failure that is about the connection would arrive looking exactly like a blip, and
+        /// slice 03 could never tell a Delivery whose source is finished from one whose source is down.
+        /// </summary>
         private async Task ResyncEverythingOnOneSource(Portfolio portfolio, string sourceKey, IReadOnlyList<Delivery> deliveries)
         {
+            if (!resolver.OffersSource(portfolio, sourceKey))
+            {
+                logger.LogWarning(
+                    "The connection behind Portfolio {PortfolioName} no longer offers a source called {SourceKey}; the {DeliveryCount} Deliveries following one keep the values they already have",
+                    portfolio.Name,
+                    sourceKey,
+                    deliveries.Count);
+
+                return;
+            }
+
             var previews = await AskTheSourceWithoutTakingTheRefreshDown(portfolio, sourceKey, deliveries);
 
             if (previews is null)
@@ -88,10 +106,21 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
 
             try
             {
+                // The day rather than the instant, and that is what keeps a refresh that found nothing
+                // new out of the database entirely: writing the same value back is not a change, so the
+                // row joins the save at most once a day instead of on every refresh. It matters because
+                // the save is one transaction over every Delivery of the Portfolio and it is dropped
+                // whole if any row's version has moved - a Delivery in the write set for no reason is a
+                // Delivery that can cost every other one its refresh.
                 delivery.SyncFromSource(
-                    resolved.Snapshot.Name, resolved.Snapshot.Date, preview.TrackedFeatures, clock.Now.UtcDateTime);
+                    resolved.Snapshot.Name, resolved.Snapshot.Date, preview.TrackedFeatures, clock.TodayAsUtcMidnight);
             }
-            catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+            // Only what a remote answer can be wrong about. The aggregate's own refusals are not caught:
+            // this pass hands it only Deliveries that follow a source and that nobody has retired, so a
+            // refusal means that stopped being true - and swallowing it would leave the sync silently
+            // doing nothing at all, one log line per Delivery per refresh, with the refresh still
+            // reporting success.
+            catch (ArgumentException exception)
             {
                 logger.LogWarning(
                     exception,

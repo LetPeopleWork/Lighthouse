@@ -172,6 +172,13 @@ namespace Lighthouse.Backend.Models
             selectionMode = DeliverySelectionMode.Manual;
             sourceKey = null;
             sourceReference = null;
+
+            // When a source was last heard from, and why it stopped answering, are statements about a
+            // source this Delivery no longer has. Left behind, they would sit on a Delivery somebody
+            // now maintains by hand and describe something that is not happening to it any more.
+            sourceLastSyncedOn = null;
+            sourceUnavailableReason = null;
+
             MarkAsChanged();
         }
 
@@ -182,9 +189,12 @@ namespace Lighthouse.Backend.Models
         /// new must not expire an editor's version, or saving would fail with "somebody else changed
         /// this" when nobody had.
         ///
-        /// When the source was last heard from is recorded either way. It is a note about the reading
-        /// rather than about what was read, and a Delivery whose source later disappears has to be able
-        /// to say how stale the values it is still showing are.
+        /// When the source was last heard from is recorded either way, because it is a note about the
+        /// reading rather than about what was read: a Delivery whose source later disappears has to say
+        /// how stale the values it is still showing are, and a stamp moved only when something changed
+        /// would name the last change instead. Callers pass the day, not the instant, so re-reading an
+        /// unchanged source on the same day writes the same value back and the row stays out of the
+        /// save altogether.
         /// </summary>
         public void SyncFromSource(string name, DateTime date, IEnumerable<Feature> members, DateTime syncedOn)
         {
@@ -230,6 +240,20 @@ namespace Lighthouse.Backend.Models
             }
 
             return somethingMoved;
+        }
+
+        /// <summary>
+        /// Whether the target day has been and gone. Strictly before today, because a Delivery due
+        /// today has not missed anything yet - which is why this is not the same comparison as the
+        /// hand-entry guard that refuses a date which is not in the future, and the two must not be
+        /// collapsed into one.
+        ///
+        /// The day is the instance's, handed in rather than read here, so a Delivery reads the same on
+        /// every screen looking at it instead of on whichever clock the browser happens to keep.
+        /// </summary>
+        public bool IsOverdue(DateOnly today)
+        {
+            return DateOnly.FromDateTime(Date) < today;
         }
 
         public void Archive(DateTime archivedOn)

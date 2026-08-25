@@ -2253,7 +2253,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// would turn every network blip into a Delivery that quietly stopped syncing.
         /// </summary>
         private static DeliverySourceResolution.Unavailable TheReadCouldNotBeMade()
-            => new(DeliverySourceUnavailableReason.CapabilityWithdrawn);
+            => new(DeliverySourceUnavailableReason.SourceReadFailed);
 
         private static DeliverySourceResolution VerdictFor(DeliverySourceOption release)
             => release.Date is { } date
