@@ -208,7 +208,13 @@ namespace Lighthouse.Backend.Models
                 throw DeliverySourceBoundException.NotBound(Id);
             }
 
-            if (ApplyWhatTheSourceNowSays(name, date, [.. members]))
+            // A source answering again is a change even when it says exactly what it said last time,
+            // because what the screen says ABOUT those values is what changed: the notice telling a
+            // reader nothing is maintaining them has to come off.
+            var theNoticeWasStanding = sourceUnavailableReason is not null;
+            sourceUnavailableReason = null;
+
+            if (ApplyWhatTheSourceNowSays(name, date, [.. members]) || theNoticeWasStanding)
             {
                 MarkAsChanged();
             }
@@ -240,6 +246,44 @@ namespace Lighthouse.Backend.Models
             }
 
             return somethingMoved;
+        }
+
+        /// <summary>
+        /// Says the source this Delivery follows has stopped answering for good. Everything the source
+        /// last gave it is left exactly where it is - the name, the date and the Features are the reason
+        /// the Delivery is still worth reading, and freezing them is what makes it a durable record
+        /// rather than something a remote can empty. Nothing unbinds on its own: the way off is a person
+        /// asking for it.
+        ///
+        /// A source that merely could not be reached is refused. That reason means today's attempt told
+        /// us nothing, and writing it down would have the Delivery report a Release as finished on the
+        /// evidence of a network blip - the one failure this whole vocabulary exists to prevent.
+        /// </summary>
+        public void MarkSourceUnavailable(DeliverySourceUnavailableReason reason)
+        {
+            if (reason == DeliverySourceUnavailableReason.SourceReadFailed)
+            {
+                throw new ArgumentException(
+                    $"A source that could not be read says nothing about whether it still exists, so it cannot put Delivery {Id} into a broken-source state.",
+                    nameof(reason));
+            }
+
+            RefuseWhenArchived();
+
+            if (SelectionMode != DeliverySelectionMode.SourceBound)
+            {
+                throw DeliverySourceBoundException.NotBound(Id);
+            }
+
+            // A Release that is still gone on the next refresh is not news, and this is a Delivery
+            // somebody is likely to have open precisely because it is telling them something is wrong.
+            if (sourceUnavailableReason == reason)
+            {
+                return;
+            }
+
+            sourceUnavailableReason = reason;
+            MarkAsChanged();
         }
 
         /// <summary>
