@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -312,6 +313,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
         protected static async Task<PortfolioDeliveriesBody> DeliveriesIn(HttpResponseMessage response)
             => await ReadAs<PortfolioDeliveriesBody>(response);
+
+        /// <summary>
+        /// The Delivery as the grid sees it. The count is asserted here rather than left to each
+        /// scenario, so a second Delivery appearing from somewhere fails on the spot instead of
+        /// quietly becoming whichever one happens to be first.
+        /// </summary>
+        protected async Task<DeliveryRow> TheOnlyDeliveryOf(string prefix, int portfolioId)
+        {
+            var response = await GetTheDeliveriesOfPortfolio(prefix, portfolioId);
+            var body = await DeliveriesIn(response);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(body.Active, Has.Count.EqualTo(1));
+            }
+
+            return body.Active[0];
+        }
 
         protected static string SourcesRoute(string prefix, int portfolioId)
             => $"/{prefix}/portfolios/{portfolioId}/{DeliverySourcesSegment}";

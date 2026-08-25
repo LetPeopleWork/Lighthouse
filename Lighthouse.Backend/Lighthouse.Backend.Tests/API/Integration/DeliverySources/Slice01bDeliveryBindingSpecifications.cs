@@ -153,20 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                 SourceReference = TheRelease,
             };
 
-        private async Task<DeliveryRow> TheOnlyDeliveryOf(string prefix, int portfolioId)
-        {
-            var response = await GetTheDeliveriesOfPortfolio(prefix, portfolioId);
-            var body = await DeliveriesIn(response);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(body.Active, Has.Count.EqualTo(1));
-            }
-
-            return body.Active[0];
-        }
-
         private async Task<int> TheNumberOfDeliveriesShownFor(string prefix, int portfolioId)
         {
             var body = await DeliveriesIn(await GetTheDeliveriesOfPortfolio(prefix, portfolioId));

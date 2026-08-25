@@ -120,22 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             Assert.That(retired.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         }
 
-        // --- When / observing ---
-
-        private async Task<DeliveryRow> TheOnlyDeliveryOf(string prefix, int portfolioId)
-        {
-            var response = await GetTheDeliveriesOfPortfolio(prefix, portfolioId);
-            var body = await DeliveriesIn(response);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(body.Active, Has.Count.EqualTo(1));
-            }
-
-            return body.Active[0];
-        }
-
         // --- Then ---
 
         private static void ThenTheDeliverySays(DeliveryRow delivery, string expectedName, DateTime expectedDate)
