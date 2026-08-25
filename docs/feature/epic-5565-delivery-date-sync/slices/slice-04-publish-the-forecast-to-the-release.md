@@ -7,7 +7,8 @@ never open Lighthouse can see it.
 
 ## IN scope
 
-- A per-Portfolio switch, **off** by default (D8). Opt-in is the first requirement, not a refinement.
+- A **per-Delivery** switch, **off** by default (D8, granularity revised 2026-08-25 — see D8a). Opt-in is
+  the first requirement, not a refinement.
 - Write a delimited block into the Version's **description**. **Never `releaseDate`** (D8).
 - **Block content (user, 2026-08-22)** — four things, all four required:
   1. unmistakable attribution that Lighthouse wrote it,

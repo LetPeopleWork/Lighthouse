@@ -227,6 +227,43 @@ some teams want. But it is a **different mode**, not a checkbox on this one: suc
 independent target, so the likelihood reading must be suppressed or relabelled rather than left showing a
 number that means nothing. Its own feature, with that as its first decision.
 
+### D8a — Publishing is switched on per Delivery, not per Portfolio or per connection
+
+**Decision** (user, 2026-08-25), revising the granularity D8 left to slice 04. D8 itself is unchanged:
+outbound is still off until switched on, and still writes the description rather than `releaseDate`.
+
+**Why not the connection, where the existing write-back mappings live.** Two different questions were
+being conflated. *"May Lighthouse write to this Jira at all?"* is a capability and credential question,
+already answered by the connector capability and reported on by slice 05 — and it genuinely belongs to
+the connection, which is where `WriteBackMappingDefinitions` sit. *"Do I want this forecast broadcast?"*
+is an editorial choice with nothing to do with credentials. Putting the second beside the first looks
+consistent and quietly hands a product decision to whoever owns the credential.
+
+**Why not the Portfolio.** It cannot express the case that prompted this: a Portfolio routinely contains
+some Releases that are shared with a customer or another team and some that are not. All-or-nothing at
+that level forces the coarser answer on both.
+
+**Why the Delivery is the right home, despite the flag looking connector-specific.** It is a property of
+the **binding**, and the binding lives on the Delivery — which already carries `SourceKey` and
+`SourceReference`, both fully generic. The switch is *"publish the forecast to the source this follows"*;
+everything Jira-shaped stays behind `IDeliveryForecastPublisher`. The Delivery says whether, the
+connector says how — the same split the inbound side has used since slice 01b.
+
+It also makes an invariant free that is unrepresentable anywhere else: the flag is **meaningless without
+a binding**, so the aggregate refuses it on a Delivery that follows nothing, and `Unbind` clears it —
+exactly as slice 03 established for `SourceLastSyncedOn` and `SourceUnavailableReason`.
+
+**Consequence for the future mode.** The user's anticipated extension — write to the description, or
+overwrite the target Release date — turns the flag from a bool into an enum on the same field. That mode
+*must* be per-Delivery in any case: D8 records that overwriting `releaseDate` destroys the distinction
+between the target and the forecast measured against it, so it can never be an instance-wide default.
+Slice 04 ships the bool; the naming is chosen so the third value slots in without a second migration.
+
+**Accepted cost.** Off by default plus per-Delivery means poor discoverability — many users will never
+find the switch. The remedy is a Portfolio-level default with a per-Delivery override, and it is
+deliberately **not** built now: it is easy to add once adoption shows it is needed, and awkward to unpick
+once people depend on a bulk switch.
+
 ### D9 — Inbound sync runs on the existing Portfolio refresh, on the existing cadence
 
 **Decision.** Source-bound Deliveries recompute at S8's seam, immediately beside
@@ -481,7 +518,7 @@ Decision enabled: whether to cut scope or move the Release date, taken by the pe
 in the tool they already have open — and the spread across the three percentiles tells them how much
 room there is to argue about it.
 
-**AC-05.1** — Outbound is off by default and switched on per Portfolio (D8).
+**AC-05.1** — Outbound is off by default and switched on **per Delivery** (D8a, revised 2026-08-25).
 **AC-05.2** — When on, each bound Delivery's forecast is written to its Release on the same refresh
 cycle that produces the forecast.
 **AC-05.3** — The write targets a delimited block in the Release description and never `releaseDate` (D8).
