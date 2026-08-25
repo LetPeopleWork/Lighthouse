@@ -6332,24 +6332,37 @@ C4Component
 
 ### Component Decomposition
 
-Full table in `docs/feature/epic-5565-delivery-date-sync/feature-delta.md` →
-*Wave: DESIGN / [REF] Component decomposition*. Headline:
+The Epic's workspace is archived at `docs/evolution/2026-08-25-epic-5565-delivery-date-sync.md`.
+Headline, as shipped across all six slices:
 
-- **NEW (backend)**: `IDeliverySourceProvider` (capability interface); `IDeliverySourceResolver` + impl;
-  `IDeliverySourceSyncService` + impl; `DeliverySourcesController`; and six behaviourless model types —
-  `DeliverySourceDescriptor`, `DeliverySourceOption`, `SourceOptionBlockReason`,
+- **NEW (backend, inbound)**: `IDeliverySourceProvider` (capability interface); `IDeliverySourceResolver`
+  + impl; `IDeliverySourceSyncService` + impl; `DeliverySourcesController`; and six behaviourless model
+  types — `DeliverySourceDescriptor`, `DeliverySourceOption`, `SourceOptionBlockReason`,
   `DeliverySourceSnapshot`, `DeliverySourceResolution`, `DeliverySourceUnavailableReason`.
-- **EXTEND (backend)**: `Delivery` (four columns, `BindToSource`/`Unbind`/`ApplySourceSnapshot`, four
+- **NEW (backend, outbound — slices 04-05)**: `IDeliveryForecastPublisher` (a **second** capability
+  interface, deliberately separate from the read one); `IDeliveryForecastBlockRenderer` + impl (pure);
+  `IDeliveryForecastPublishingService` + impl; `DeliveryForecastPublishingHandler` on
+  `PortfolioForecastsUpdated`; and `DeliveryForecastPublication`, `DeliveryForecastPublishResult`,
+  `DeliveryForecastBlock`.
+- **EXTEND (backend)**: `Delivery` (**seven** columns — four for the binding, `PublishForecastToSource`,
+  and the two that record what a source refused; `BindToSource`/`Unbind`/`SyncFromSource`/
+  `MarkSourceUnavailable`/`SetForecastPublishing`/`RecordPublishRefusal`/`ClearPublishRefusal`; four
   mutators gaining a source-bound refusal, the constructor check deleted); `DeliverySelectionMode`
   (`SourceBound = 2`, appended); `DeliveriesController`; `UpdateDeliveryRequest`;
-  `DeliveryWithLikelihoodDto`; `PortfolioUpdater`; `LighthouseAppContext`; one additive migration per
-  provider.
+  `DeliveryWithLikelihoodDto`; `PortfolioUpdater`; `JiraWorkTrackingConnector` (the Version read and
+  write); `JiraReleaseVersionReader`; `LighthouseAppContext`; three additive migrations per provider.
 - **UNCHANGED, deliberately**: `IWorkTrackingConnector`; `IDeliveryRepository` / `DeliveryRepository`;
   `IDeliveryRuleService` / `DeliveryRuleService`; `RuleEvaluator<T>` / `FeatureFieldProvider`.
 - **NEW (frontend)**: `deliverySelectionTabs.ts`; `DeliverySourceTab.tsx`;
-  `models/Delivery/DeliverySource.ts` with hand-rolled boundary parsers.
+  `models/Delivery/DeliverySource.ts` with hand-rolled boundary parsers;
+  `DeliverySourceUnavailableNotice.tsx`; `DeliveryPublishRefusedNotice.tsx`.
 - **EXTEND (frontend)**: `DeliveryCreateModal.tsx` (the precursor list-driven refactor, then the source
-  tab); `DeliveryService.ts`; `Delivery.ts`; `DeliverySection.tsx`.
+  tab, then the publishing switch); `DeliveryService.ts`; `Delivery.ts`; `DeliverySection.tsx`.
+
+**Outbound is opt-in per Delivery and writes the Release *description*, never `releaseDate`** — writing
+the forecast into the field the target lives in would make Lighthouse overwrite the value it declares the
+tracker owns. A refused write is recorded on the Delivery it was refused for, because the permission is
+per Jira project and a Portfolio routinely spans several.
 
 ### Driving Ports (HTTP)
 
