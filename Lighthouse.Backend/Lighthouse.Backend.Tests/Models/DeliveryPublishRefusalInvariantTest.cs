@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.DeliverySources;
+using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Models
 {
@@ -21,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Models
         private const string WhatJiraSaidNext = "The description is over 16384 characters.";
 
         private static readonly DateTime ReleaseDate = TestToday.AFutureDate;
-        private static readonly DateTime TheDayItWasRefused = new(2026, 8, 25, 0, 0, 0, DateTimeKind.Utc);
+        private static readonly DateOnly TheDayItWasRefused = new(2026, 8, 25);
 
         [Test]
         public void A_Delivery_nothing_has_refused_says_nothing_about_being_refused()
@@ -49,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Models
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(delivery.LastPublishRefusalReason, Is.EqualTo(WhatJiraSaid));
-                Assert.That(delivery.LastPublishRefusedOn, Is.EqualTo(TheDayItWasRefused));
+                Assert.That(delivery.LastPublishRefusedOn, Is.EqualTo(InstanceCalendar.AsUtcMidnight(TheDayItWasRefused)));
             }
         }
 
@@ -64,7 +66,7 @@ namespace Lighthouse.Backend.Tests.Models
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(delivery.LastPublishRefusalReason, Is.EqualTo(WhatJiraSaidNext));
-                Assert.That(delivery.LastPublishRefusedOn, Is.EqualTo(TheDayItWasRefused.AddDays(1)));
+                Assert.That(delivery.LastPublishRefusedOn, Is.EqualTo(InstanceCalendar.AsUtcMidnight(TheDayItWasRefused.AddDays(1))));
             }
         }
 
@@ -161,6 +163,94 @@ namespace Lighthouse.Backend.Tests.Models
         {
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.Unbind())).SetName("Letting go of the Release");
             yield return new TestCaseData((Action<Delivery>)(delivery => delivery.SetForecastPublishing(false))).SetName("Switching the broadcast off");
+            yield return new TestCaseData((Action<Delivery>)(delivery => delivery.Archive(TestToday.AmbientAsUtcMidnight))).SetName("Retiring the Delivery");
+            yield return new TestCaseData((Action<Delivery>)(delivery => delivery.MarkSourceUnavailable(DeliverySourceUnavailableReason.SourceNotFound))).SetName("The Release turning out to be gone");
+        }
+
+        /// <summary>
+        /// The Release turning out to be gone is the one that could never be undone. A Delivery whose
+        /// source is finished is not published at all, and only a successful publish clears a refusal -
+        /// so the report would stand for good, beside a notice saying the Release does not exist, telling
+        /// the reader to go and fix a permission on it.
+        /// </summary>
+        [Test]
+        public void A_Release_that_turns_out_to_be_gone_does_not_leave_a_permission_report_standing_over_it()
+        {
+            var delivery = ABroadcastingDelivery();
+            delivery.RecordPublishRefusal(WhatJiraSaid, TheDayItWasRefused);
+
+            delivery.MarkSourceUnavailable(DeliverySourceUnavailableReason.SourceNotFound);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.SourceUnavailableReason, Is.EqualTo(DeliverySourceUnavailableReason.SourceNotFound));
+                Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// Retiring a Delivery is the third way of no longer publishing, and the state it would leave is
+        /// unreachable: every mutator that could take the report off refuses on an archived Delivery.
+        /// </summary>
+        [Test]
+        public void Retiring_a_Delivery_takes_the_report_with_it_rather_than_freezing_it()
+        {
+            var delivery = ABroadcastingDelivery();
+            delivery.RecordPublishRefusal(WhatJiraSaid, TheDayItWasRefused);
+
+            delivery.Archive(TestToday.AmbientAsUtcMidnight);
+
+            Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+        }
+
+        /// <summary>
+        /// Switching off a broadcast that was already off still has to take the report away. Guarded on
+        /// the switch having moved, it would leave a report on a Delivery nothing publishes - and nothing
+        /// left could clear it.
+        /// </summary>
+        [Test]
+        public void Switching_off_a_broadcast_that_was_already_off_still_takes_the_report_away()
+        {
+            var delivery = ADeliveryChosenByHand();
+            delivery.BindToSource(ReleaseSourceKey, ReleaseId);
+            delivery.RecordPublishRefusal(WhatJiraSaid, TheDayItWasRefused);
+
+            delivery.SetForecastPublishing(false);
+
+            Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+        }
+
+        /// <summary>
+        /// A remote may answer with anything at all - a page of HTML, a stack trace. It is stored, sent
+        /// on every read of the Portfolio's Deliveries, and rendered in a box that clips, so one bad
+        /// answer would otherwise cost every reader of that Portfolio the bandwidth and the layout.
+        /// </summary>
+        [Test]
+        public void A_remote_that_answers_with_a_wall_of_text_has_only_as_much_kept_as_anybody_will_read()
+        {
+            var delivery = ABroadcastingDelivery();
+
+            delivery.RecordPublishRefusal(new string('x', 5_000), TheDayItWasRefused);
+
+            Assert.That(delivery.LastPublishRefusalReason, Has.Length.LessThan(1_000));
+        }
+
+        [Test]
+        public void The_day_a_source_refused_is_stored_as_a_day_the_database_cannot_shift()
+        {
+            var delivery = ABroadcastingDelivery();
+
+            delivery.RecordPublishRefusal(WhatJiraSaid, TheDayItWasRefused);
+
+            var stored = delivery.LastPublishRefusedOn;
+
+            Assert.That(stored, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.Value.Kind, Is.EqualTo(DateTimeKind.Utc),
+                    "a local-kind midnight becomes the evening before on the way to the database.");
+                Assert.That(stored.Value.TimeOfDay, Is.EqualTo(TimeSpan.Zero));
+            }
         }
 
         [Test]

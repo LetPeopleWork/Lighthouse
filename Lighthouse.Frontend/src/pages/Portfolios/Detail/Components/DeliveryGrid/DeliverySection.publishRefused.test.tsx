@@ -137,10 +137,29 @@ describe("DeliverySection refused-publish notice (US-06)", () => {
 	});
 
 	/**
-	 * Both at once is a real state: a Release that was deleted after refusing a write. Each notice
-	 * sends the reader somewhere different, so neither may swallow the other.
+	 * A Delivery that follows nothing has no source to have refused it. Unreachable through the API -
+	 * both ways of letting go clear the report - but a hand-edited row would otherwise be told its
+	 * forecast could not be written to a source it does not have.
 	 */
-	it("stands beside the broken-source notice rather than replacing it", () => {
+	it("says nothing on a Delivery that follows nothing at all", () => {
+		renderSection(
+			aBroadcastingDelivery({
+				selectionMode: DeliverySelectionMode.Manual,
+				lastPublishRefusalReason: WHAT_JIRA_SAID,
+			}),
+		);
+
+		expect(
+			screen.queryByText("Forecast not published"),
+		).not.toBeInTheDocument();
+	});
+
+	/**
+	 * The backend clears the report when the Release turns out to be gone, so the two should never both
+	 * arrive. If one ever did, the component is not the place to hide it - it renders what it is given,
+	 * and each notice sends the reader somewhere different.
+	 */
+	it("renders both if it is somehow handed both", () => {
 		renderSection(
 			aBroadcastingDelivery({
 				sourceUnavailableReason: "SourceNotFound",

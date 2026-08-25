@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.API
 
             var delivery = NewDelivery(request, portfolioId, sourcePreview);
 
-            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, broadcastingAlready: false);
+            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, PublishingState.NothingYet);
             if (selectionError != null)
             {
                 return selectionError;
@@ -206,12 +206,15 @@ namespace Lighthouse.Backend.API
                 return sourceError;
             }
 
-            // Read before the transition below releases the Delivery from its source, because releasing
-            // it clears this. A payload that does not mention the switch at all - a hand-built request
-            // from outside this browser - must not read as an instruction to stop broadcasting.
-            var broadcastingAlready = existingDelivery.PublishForecastToSource;
+            // Read before the transition below releases the Delivery from its source, because releasing it
+            // clears both. A payload that does not mention the switch at all - a hand-built request from
+            // outside this browser - must not read as an instruction to stop broadcasting; and a save
+            // must not quietly retract a refusal report, which is what somebody does immediately after
+            // trying to grant the permission, so the notice vanishing would read as the fix having
+            // worked.
+            var howItWasPublishing = WhatThisDeliveryWasPublishing(existingDelivery);
 
-            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource, broadcastingAlready);
+            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource, howItWasPublishing);
             if (selectionError != null)
             {
                 return selectionError;
@@ -239,7 +242,7 @@ namespace Lighthouse.Backend.API
             Delivery delivery,
             PortfolioSourcePreview? sourcePreview,
             bool releasingFromASource,
-            bool broadcastingAlready)
+            PublishingState howItWasPublishing)
         {
             if (delivery.SelectionMode == DeliverySelectionMode.SourceBound)
             {
@@ -260,7 +263,7 @@ namespace Lighthouse.Backend.API
                 delivery.Reschedule(UtcDateOf(request));
             }
 
-            return ApplyFeatureSelection(request, delivery, sourcePreview, broadcastingAlready);
+            return ApplyFeatureSelection(request, delivery, sourcePreview, howItWasPublishing);
         }
 
         /// <summary>
@@ -439,13 +442,13 @@ namespace Lighthouse.Backend.API
         /// because one payload shape serves all three modes.
         /// </summary>
         private IActionResult? ApplyFeatureSelection(
-            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, bool broadcastingAlready)
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, PublishingState howItWasPublishing)
         {
             return request.SelectionMode switch
             {
                 DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
                 DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
-                DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview, broadcastingAlready),
+                DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview, howItWasPublishing),
                 // The enum converter accepts any number, so a caller can name a mode that does not
                 // exist. That is a malformed request rather than something broken on our side.
                 _ => BadRequest(NoSuchSelectionMode(request.SelectionMode)),
@@ -463,7 +466,7 @@ namespace Lighthouse.Backend.API
         /// Delivery's closure record as though it were still what picked the Features.
         /// </summary>
         private BadRequestObjectResult? BindDeliveryToSource(
-            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, bool broadcastingAlready)
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, PublishingState howItWasPublishing)
         {
             if (sourcePreview?.Resolution is not DeliverySourceResolution.Resolved resolved)
             {
@@ -491,9 +494,60 @@ namespace Lighthouse.Backend.API
             // A payload that does not mention the switch leaves it as it was. Unlike every other field
             // here, this one is invisible to whoever it is done to: they find out that Lighthouse
             // stopped updating their Release, with nothing on any screen saying why.
-            delivery.SetForecastPublishing(request.PublishForecastToSource ?? broadcastingAlready);
+            delivery.SetForecastPublishing(request.PublishForecastToSource ?? howItWasPublishing.Broadcasting);
+
+            RestoreWhatTheSourceRefused(delivery, howItWasPublishing);
 
             return null;
+        }
+
+        /// <summary>
+        /// What a Delivery was publishing, and what its source had refused, read before the update
+        /// releases it from that source and clears both.
+        /// </summary>
+        private sealed record PublishingState(
+            bool Broadcasting, string? RefusedWith, DateTime? RefusedOn, string? SourceKey, string? SourceReference)
+        {
+            public static readonly PublishingState NothingYet = new(false, null, null, null, null);
+        }
+
+        private static PublishingState WhatThisDeliveryWasPublishing(Delivery delivery)
+            => new(
+                delivery.PublishForecastToSource,
+                delivery.LastPublishRefusalReason,
+                delivery.LastPublishRefusedOn,
+                delivery.SourceKey,
+                delivery.SourceReference);
+
+        /// <summary>
+        /// A save is not an answer from the source, so it may not retract what the source said. Somebody
+        /// editing a Delivery has almost certainly just been to grant the permission the report names -
+        /// and the report disappearing on save would read as confirmation that it worked, when the next
+        /// refresh is what decides that.
+        ///
+        /// Only for the same Release. Pointed at a different one, the Delivery is being asked about a
+        /// Release nothing has refused yet, and carrying the old sentence over would put a refusal from
+        /// one Release on another.
+        /// </summary>
+        private static void RestoreWhatTheSourceRefused(Delivery delivery, PublishingState howItWasPublishing)
+        {
+            if (howItWasPublishing.RefusedWith is not { } refusal || howItWasPublishing.RefusedOn is not { } refusedOn)
+            {
+                return;
+            }
+
+            // Against what the Delivery followed BEFORE the update, not what it follows now - by this
+            // point it has already been bound to whatever the payload asked for, so comparing with that
+            // would always match and a refusal would follow the Delivery onto a different Release.
+            var stillTheSameRelease = howItWasPublishing.SourceKey == delivery.SourceKey
+                && howItWasPublishing.SourceReference == delivery.SourceReference;
+
+            if (!stillTheSameRelease || !delivery.PublishForecastToSource)
+            {
+                return;
+            }
+
+            delivery.RecordPublishRefusal(refusal, DateOnly.FromDateTime(refusedOn));
         }
 
         /// <summary>

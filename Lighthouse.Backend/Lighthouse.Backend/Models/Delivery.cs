@@ -192,22 +192,22 @@ namespace Lighthouse.Backend.Models
             // Asked for what it is already doing, the Delivery leaves the version an open browser is
             // holding where it is - a request that changed nothing must not make somebody else's save
             // fail with "this was changed by someone else".
-            if (PublishForecastToSource == publish)
-            {
-                return;
-            }
-
+            var somethingMoved = PublishForecastToSource != publish;
             PublishForecastToSource = publish;
 
             // A Delivery nobody is broadcasting cannot be being refused. Left standing, the report would
             // come back on screen the moment somebody switched the broadcast on again - about an attempt
-            // nobody had made yet.
-            if (!publish)
+            // nobody had made yet. Checked even when the switch itself did not move, so a Delivery that
+            // was already off does not keep a report nothing can take away.
+            if (!publish && ForgetTheRefusal())
             {
-                ForgetTheRefusal();
+                somethingMoved = true;
             }
 
-            MarkAsChanged();
+            if (somethingMoved)
+            {
+                MarkAsChanged();
+            }
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace Lighthouse.Backend.Models
         /// refuses again tomorrow is not news, and writing the same values back keeps the row out of the
         /// save instead of expiring the copy an open browser is holding on every refresh.
         /// </summary>
-        public void RecordPublishRefusal(string reason, DateTime refusedOn)
+        public void RecordPublishRefusal(string reason, DateOnly refusedOn)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(reason);
 
@@ -233,13 +233,19 @@ namespace Lighthouse.Backend.Models
                 throw DeliverySourceBoundException.NotBound(Id);
             }
 
-            if (LastPublishRefusalReason == reason && LastPublishRefusedOn == refusedOn)
+            // A day in, midnight UTC stored. Taking a DateTime here instead would let a caller hand over
+            // a local-kind midnight, which the converter on the way to the database turns into the
+            // evening before - the shape of Bug #5567, and no reason to leave that door open a second
+            // time on a field whose whole point is which day it was.
+            var theDay = InstanceCalendar.AsUtcMidnight(refusedOn);
+
+            if (LastPublishRefusalReason == reason && LastPublishRefusedOn == theDay)
             {
                 return;
             }
 
-            LastPublishRefusalReason = reason;
-            LastPublishRefusedOn = refusedOn;
+            LastPublishRefusalReason = OnlyAsMuchAsAnybodyWillRead(reason);
+            LastPublishRefusedOn = theDay;
             MarkAsChanged();
         }
 
@@ -255,6 +261,22 @@ namespace Lighthouse.Backend.Models
             {
                 MarkAsChanged();
             }
+        }
+
+        /// <summary>
+        /// A remote's refusal is a sentence, and every sentence worth acting on is far shorter than this.
+        /// What arrives is whatever the far side chose to send, though - a stack fragment or a page of
+        /// HTML is not impossible - and it is stored, sent on every read of the Portfolio's Deliveries,
+        /// and rendered in a box that clips. Kept whole, one bad answer would cost every reader of that
+        /// Portfolio the bandwidth and the layout.
+        /// </summary>
+        private static string OnlyAsMuchAsAnybodyWillRead(string reason)
+        {
+            const int longestWorthKeeping = 500;
+
+            return reason.Length <= longestWorthKeeping
+                ? reason
+                : string.Concat(reason.AsSpan(0, longestWorthKeeping), "…");
         }
 
         private bool ForgetTheRefusal()
@@ -407,6 +429,13 @@ namespace Lighthouse.Backend.Models
             }
 
             sourceUnavailableReason = reason;
+
+            // A source that is finished takes any standing refusal with it. The report is about a write
+            // to a Release that is no longer there, so the two notices would contradict each other on
+            // one row - and the refusal could never be taken off again, because a Delivery whose source
+            // is finished is not published at all and only a successful publish clears one.
+            ForgetTheRefusal();
+
             MarkAsChanged();
         }
 
@@ -432,6 +461,13 @@ namespace Lighthouse.Backend.Models
             }
 
             ArchivedOn = archivedOn;
+
+            // Retiring a Delivery stops the publishing too - a background pass is never handed one - so
+            // the report goes with it. Left standing it would be unreachable: every mutator that could
+            // take it off refuses on an archived Delivery, so it would sit there until somebody brought
+            // the Delivery back, describing a write nobody had attempted since.
+            ForgetTheRefusal();
+
             MarkAsChanged();
         }
 

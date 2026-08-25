@@ -158,6 +158,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// and reading only the first half would report the one thing an administrator can act on as a
         /// bare status line.
         /// </summary>
+        /// <summary>
+        /// The envelope a gateway in front of Jira writes, and the one older endpoints use. Read last, so
+        /// Jira's own two halves win where they exist - but read at all, because a refusal nobody could
+        /// find a sentence for is discarded into a log and the reader is left with the silence this whole
+        /// report exists to remove.
+        /// </summary>
+        [Test]
+        public async Task A_refusal_written_by_whatever_sits_in_front_of_Jira_is_still_read()
+        {
+            var jira = AJiraHoldingAReleaseWithNoDescription();
+            jira.RefuseWritesWith(HttpStatusCode.Forbidden, "{\"message\":\"Blocked by the API gateway policy.\"}");
+
+            var result = await Publish(jira, TheBlock);
+
+            Assert.That(result, Is.EqualTo(new DeliveryForecastPublishResult.Refused("Blocked by the API gateway policy.")));
+        }
+
         [Test]
         public async Task A_refusal_about_one_field_is_read_out_of_the_half_of_the_body_it_arrives_in()
         {
@@ -237,6 +254,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         [TestCase("not json at all", TestName = "A body that is not an answer Jira wrote")]
         [TestCase("{\"errorMessages\":[],\"errors\":{}}", TestName = "Jira's error shape with nothing in either half")]
+        [TestCase("[]", TestName = "A body that parses but is a list rather than an answer")]
+        [TestCase("\"nope\"", TestName = "A body that parses but is a bare string")]
         public void A_rejection_Jira_gave_no_reason_for_is_not_a_permission_report(string body)
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();

@@ -135,6 +135,48 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         }
 
         /// <summary>
+        /// The failure adversarial review found, and the nastiest shape it could have taken. Saving a
+        /// Delivery releases it from its Release and binds it again, which clears everything about the
+        /// binding - so a save retracted the refusal report. Somebody editing a Delivery has almost
+        /// certainly just been to grant the permission the report names, so the notice disappearing on
+        /// save reads as confirmation the fix worked, when only the next refresh decides that.
+        /// </summary>
+        [Test]
+        public async Task Saving_a_Delivery_does_not_retract_what_its_source_refused()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            GivenJiraRefusesToBeWrittenTo();
+            await ThePortfolioRefreshRuns(portfolioId);
+            var refused = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            var saved = await WhenTheDeliveryIsSavedByAClientThatKnowsNothingAboutBroadcasting(ApiLatestPrefix, refused.Id);
+            var afterTheSave = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            ThenTheAnswerIs(saved, HttpStatusCode.OK);
+            ThenTheDeliveryReportsTheRefusal(afterTheSave);
+        }
+
+        /// <summary>
+        /// Pointed at a different Release, though, the Delivery is being asked about one nothing has
+        /// refused yet. Carrying the sentence over would put one Release's refusal on another.
+        /// </summary>
+        [Test]
+        public async Task Pointing_a_Delivery_at_a_different_Release_leaves_the_old_refusal_behind()
+        {
+            var portfolioId = await GivenADeliveryBroadcastingToTheRelease(ApiLatestPrefix);
+            GivenJiraRefusesToBeWrittenTo();
+            await ThePortfolioRefreshRuns(portfolioId);
+            var refused = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            GivenTheConnectionAlsoOffersASecondRelease();
+            var repointed = await WhenTheDeliveryIsPointedAtTheSecondRelease(ApiLatestPrefix, refused.Id);
+            var afterBeingRepointed = await TheOnlyDeliveryOf(ApiLatestPrefix, portfolioId);
+
+            ThenTheAnswerIs(repointed, HttpStatusCode.OK);
+            ThenTheDeliveryReportsNoRefusal(afterBeingRepointed);
+        }
+
+        /// <summary>
         /// The report the slice exists for. An administrator who switched the broadcast on and saw
         /// nothing appear in Jira reads why, in Jira's own words, on the Delivery they switched on.
         /// </summary>

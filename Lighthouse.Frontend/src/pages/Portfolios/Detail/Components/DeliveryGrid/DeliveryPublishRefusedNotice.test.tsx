@@ -56,8 +56,9 @@ describe("DeliveryPublishRefusedNotice (US-06)", () => {
 	});
 
 	/**
-	 * The label comes from a fetched list and is not always there. Falling back to the stored key
-	 * would print "the jira-release" at somebody who never types keys.
+	 * The label is what the connection calls this kind of source. The row above falls back to the
+	 * stored key when the fetched list does not name it, so a blank arrives only when the Delivery has
+	 * no key either - rare, and the sentence still has to read like one.
 	 */
 	it("still reads as a sentence when nobody could name the source", () => {
 		renderNotice({ sourceLabel: "" });
@@ -75,6 +76,32 @@ describe("DeliveryPublishRefusedNotice (US-06)", () => {
 		expect(screen.getByText(/last tried on/)).toBeInTheDocument();
 	});
 
+	/**
+	 * The day stored is the instance's day, not this browser's. Read as a local day, a reader east of
+	 * UTC is shown the day after and one west of it the day before - the shape of a bug this codebase
+	 * has already shipped once. Asserted on the rendered day rather than on the sentence, because the
+	 * sentence reads the same either way.
+	 */
+	it("names the instance's day, not the day this browser happens to be on", () => {
+		const wasTZ = process.env.TZ;
+		process.env.TZ = "Asia/Tokyo";
+
+		try {
+			renderNotice({ refusedOn: "2026-08-25T00:00:00Z" });
+
+			const instanceDay = new Date("2026-08-25T00:00:00Z").toLocaleDateString(
+				undefined,
+				{ timeZone: "UTC" },
+			);
+
+			expect(
+				screen.getByText(new RegExp(`last tried on ${instanceDay}`)),
+			).toBeInTheDocument();
+		} finally {
+			process.env.TZ = wasTZ;
+		}
+	});
+
 	it("says nothing about a day nobody recorded", () => {
 		renderNotice({ refusedOn: null });
 
@@ -82,10 +109,9 @@ describe("DeliveryPublishRefusedNotice (US-06)", () => {
 	});
 
 	/**
-	 * The half that stops this reading as a broken Delivery. Everything on the row beside it was read
-	 * from the source in the ordinary way and is current; the refusal is about a write, not a read.
-	 */
-	/**
+	 * The half that stops this reading as a broken Delivery: everything on the row beside it was read
+	 * from the source in the ordinary way and is current, because the refusal is about a write.
+	 *
 	 * A tenant who renamed Delivery to Launch must never be shown the word "delivery". The sibling
 	 * notice sidesteps the problem by never using the word at all; this sentence needs it, so the term
 	 * is passed in.

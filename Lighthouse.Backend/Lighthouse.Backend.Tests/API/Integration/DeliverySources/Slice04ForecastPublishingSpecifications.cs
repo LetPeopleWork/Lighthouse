@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         private static readonly DateTime TheDateTheReleaseHasNow = new(2027, 6, 24, 0, 0, 0, DateTimeKind.Utc);
 
         private const string WhatJiraSaid = "You must have global or project administrator rights in order to modify versions.";
+        private const string ASecondRelease = "10008";
+        private const string TheSecondReleaseName = "Release 4.0";
 
         private readonly List<DeliveryForecastPublication> published = [];
 
@@ -177,6 +179,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         }
 
         private void GivenNothingHasReachedJiraYet() => published.Clear();
+
+        private void GivenTheConnectionAlsoOffersASecondRelease()
+        {
+            TheRemoteSays(new Dictionary<string, DeliverySourceResolution>
+            {
+                [TheRelease] = new DeliverySourceResolution.Resolved(
+                    new DeliverySourceSnapshot(TheReleaseName, TheReleaseDate, [TheWorkTheReleaseCarries])),
+                [ASecondRelease] = new DeliverySourceResolution.Resolved(
+                    new DeliverySourceSnapshot(TheSecondReleaseName, TheReleaseDate, [TheWorkTheReleaseCarries])),
+            });
+        }
+
+        private Task<HttpResponseMessage> WhenTheDeliveryIsPointedAtTheSecondRelease(string prefix, int deliveryId)
+            => PutTheDelivery(prefix, deliveryId, new UpdateDeliveryRequest
+            {
+                Name = TheSecondReleaseName,
+                Date = TheReleaseDate,
+                FeatureIds = [],
+                SelectionMode = DeliverySelectionMode.SourceBound,
+                SourceKey = JiraReleaseSourceKey,
+                SourceReference = ASecondRelease,
+                PublishForecastToSource = true,
+            });
 
         private void GivenTheReleaseIsNoLongerThereToBeWrittenTo()
         {

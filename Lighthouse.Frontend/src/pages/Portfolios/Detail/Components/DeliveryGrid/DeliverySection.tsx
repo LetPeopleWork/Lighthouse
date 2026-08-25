@@ -153,7 +153,7 @@ const WhatIsWrongWithTheSource: React.FC<{
 				onUnbind={onUnbind}
 			/>
 		)}
-		{delivery.lastPublishRefusalReason !== null && (
+		{isSourceBound && delivery.lastPublishRefusalReason !== null && (
 			<DeliveryPublishRefusedNotice
 				reason={delivery.lastPublishRefusalReason}
 				sourceLabel={sourceLabel}

@@ -2351,10 +2351,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Measured on a live instance: a version description of 32,768 refuses with a named error and
-        /// this one is accepted. Checked before the write rather than after, because Jira reports going
-        /// over it as one more refusal, and an administrator sent to look at a permission for what is a
-        /// length problem looks in the wrong place for as long as it takes them to give up.
+        /// Lighthouse's own floor, not Jira's ceiling: a live instance refused 32,768 with a named error
+        /// and accepted this. Said in the message as ours for that reason - telling a reader Jira refused
+        /// a description Jira would have taken sends them to argue with the wrong system.
+        ///
+        /// Checked before the write rather than after, because Jira reports going over its own limit as
+        /// one more refusal, and an administrator sent to look at a permission for what is a length
+        /// problem looks in the wrong place for as long as it takes them to give up. Counted in bytes and
+        /// said in bytes: a description of emoji reaches this at half the characters, and a reader
+        /// counting characters would conclude the message was wrong.
         /// </summary>
         private const int MaxVersionDescriptionBytes = 16384;
 
@@ -2413,7 +2418,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 // verbatim on screen, and the connector cannot reach the Terminology table - a tenant who
                 // renamed Delivery to Launch would be shown "delivery" here and "Launch" everywhere else.
                 return new DeliveryForecastPublishResult.Refused(
-                    $"Adding the Lighthouse forecast would take this Release's description over Jira's limit of {MaxVersionDescriptionBytes:N0} bytes. Shorten the description, or switch publishing off.");
+                    $"Lighthouse will not write a Release description over {MaxVersionDescriptionBytes:N0} bytes, and adding the forecast would take this one past it. Shorten the description, or switch publishing off.");
             }
 
             var payload = JsonSerializer.Serialize(new { description = merged });

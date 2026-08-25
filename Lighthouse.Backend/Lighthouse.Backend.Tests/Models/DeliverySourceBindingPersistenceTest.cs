@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -184,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Models
         public async Task What_a_source_refused_survives_a_save_and_reload()
         {
             var whatJiraSaid = "You must have global or project administrator rights in order to modify versions.";
-            var theDayItWasRefused = new DateTime(2026, 8, 25, 0, 0, 0, DateTimeKind.Utc);
+            var theDayItWasRefused = new DateOnly(2026, 8, 25);
 
             var savedId = await SaveAndForget(() =>
             {
@@ -202,7 +203,9 @@ namespace Lighthouse.Backend.Tests.Models
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(reloaded.LastPublishRefusalReason, Is.EqualTo(whatJiraSaid));
-                Assert.That(reloaded.LastPublishRefusedOn, Is.EqualTo(theDayItWasRefused));
+                Assert.That(reloaded.LastPublishRefusedOn, Is.EqualTo(InstanceCalendar.AsUtcMidnight(theDayItWasRefused)));
+                Assert.That(reloaded.LastPublishRefusedOn!.Value.Kind, Is.EqualTo(DateTimeKind.Utc),
+                    "NUnit compares ticks and ignores Kind, so without this a leaked local kind of the same ticks reads as equal.");
             }
         }
 

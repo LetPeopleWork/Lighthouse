@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                     break;
 
                 case DeliveryForecastPublishResult.Refused refused:
-                    delivery.RecordPublishRefusal(refused.Reason, InstanceCalendar.AsUtcMidnight(today));
+                    delivery.RecordPublishRefusal(refused.Reason, today);
                     break;
 
                 default:

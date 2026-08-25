@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             yield return new TestCaseData(
                     (Func<Delivery>)ArchivedDeliveryFollowingARelease,
-                    (Action<Delivery>)(delivery => delivery.RecordPublishRefusal("Refused after closing", ClosingInstant)),
+                    (Action<Delivery>)(delivery => delivery.RecordPublishRefusal("Refused after closing", DateOnly.FromDateTime(ClosingInstant))),
                     (Action<Delivery>)(delivery => Assert.That(delivery.LastPublishRefusalReason, Is.Null)))
                 .SetName("RecordPublishRefusal");
 

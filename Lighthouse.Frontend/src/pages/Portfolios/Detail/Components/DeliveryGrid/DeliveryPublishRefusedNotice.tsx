@@ -38,7 +38,10 @@ const DeliveryPublishRefusedNotice: React.FC<
 			<Typography
 				variant="body2"
 				component="p"
-				sx={{ mt: 1, fontStyle: "italic" }}
+				// The remote chose these words, so they can contain anything - a url, an id, a stack
+				// fragment with no space in it. The box around this clips rather than scrolls, and the
+				// part that gets cut off is exactly the part naming what to fix.
+				sx={{ mt: 1, fontStyle: "italic", overflowWrap: "anywhere" }}
 			>
 				{reason}
 			</Typography>

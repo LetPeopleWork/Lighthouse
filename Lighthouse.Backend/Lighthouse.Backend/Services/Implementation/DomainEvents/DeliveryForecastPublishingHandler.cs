@@ -41,10 +41,10 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
                 await publishingService.PublishForPortfolio(portfolio, deliveries);
 
-                // The only thing publishing can write to a Delivery is that its Release turned out not to
-                // be there. Somebody editing that Delivery while this ran wins, exactly as they do on the
-                // refresh: this pass is holding a copy read before that happened, and the next round
-                // finds out about the Release again anyway.
+                // What publishing writes to a Delivery is what its source answered - that the Release is
+                // not there, or the sentence it refused with. Somebody editing that Delivery while this
+                // ran wins, exactly as they do on the refresh: this pass is holding a copy read before
+                // that happened, and the next round asks the source again anyway.
                 // Stryker disable all: the whole statement exists to put a line in front of an operator.
                 // Which way its condition reads, and whether the line is written at all, are unobservable
                 // to anything but a log reader - the save itself has already happened either way, and

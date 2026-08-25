@@ -345,7 +345,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         public async Task A_write_that_goes_through_takes_a_standing_refusal_off()
         {
             var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
-            delivery.RecordPublishRefusal(WhatJiraSaid, clock.TodayAsUtcMidnight.AddDays(-3));
+            delivery.RecordPublishRefusal(WhatJiraSaid, clock.Today.AddDays(-3));
 
             await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
 
@@ -401,18 +401,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         }
 
         /// <summary>
-        /// A Release that is gone is not a permission problem either. Both states would otherwise stand
-        /// on the same Delivery at once, telling the reader two different things to go and fix.
+        /// A Release that is gone is not a permission problem either, and a refusal recorded before it
+        /// went has to go with it. Left standing the two would contradict each other on one row - and the
+        /// refusal could never be taken off, because a Delivery whose source is finished is not published
+        /// at all and only a successful publish clears one.
         /// </summary>
         [Test]
-        public async Task A_Release_that_is_gone_is_not_also_written_down_as_a_refusal()
+        public async Task A_Release_that_turns_out_to_be_gone_takes_any_standing_refusal_with_it()
         {
             var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
+            delivery.RecordPublishRefusal(WhatJiraSaid, clock.Today.AddDays(-1));
             GivenTheRemoteAnswers(new DeliveryForecastPublishResult.TargetMissing());
 
             await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
 
-            Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.SourceUnavailableReason, Is.EqualTo(DeliverySourceUnavailableReason.SourceNotFound));
+                Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+            }
         }
 
         [Test]

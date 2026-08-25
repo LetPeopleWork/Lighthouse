@@ -60,7 +60,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 using var payload = JsonDocument.Parse(refusalPayload);
 
-                return AboutTheRequest(payload.RootElement) ?? AboutAField(payload.RootElement);
+                // A body that parses but is not an object - a bare array, a quoted string - has no
+                // properties to ask about, and asking anyway throws rather than answering. It is not a
+                // refusal Jira wrote, which is what this returns nothing for.
+                if (payload.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    return null;
+                }
+
+                return AboutTheRequest(payload.RootElement)
+                    ?? AboutAField(payload.RootElement)
+                    ?? AboutTheWholeThing(payload.RootElement);
             }
             catch (JsonException)
             {
@@ -80,6 +90,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .Select(message => message.GetString())
                 .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
         }
+
+        /// <summary>
+        /// The envelope a gateway in front of Jira writes, and the one older endpoints use. Read last,
+        /// because Jira's own two halves say more when they are there - but read at all, because a
+        /// refusal nobody could find a sentence for is discarded into a log, and the reader is left with
+        /// the silence this whole report exists to remove.
+        /// </summary>
+        private static string? AboutTheWholeThing(JsonElement refusal)
+        {
+            return refusal.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String
+                ? NothingIfBlank(message.GetString())
+                : null;
+        }
+
+        private static string? NothingIfBlank(string? message)
+            => string.IsNullOrWhiteSpace(message) ? null : message;
 
         private static string? AboutAField(JsonElement refusal)
         {
