@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
     /// Step definitions for a Delivery whose source stops answering. Everything after the Delivery is
     /// created is the scheduled refresh, and everything observed is the read the grid makes.
     /// </summary>
-    public partial class Slice03BrokenSourceTest : DeliverySourcesAcceptanceTest
+    public partial class Slice03BrokenSourceTest : DeliverySourceRefreshAcceptanceTest
     {
         private const string TheRelease = "10007";
         private const string TheReleaseName = "Release 3.0";
@@ -24,22 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
         private static readonly DateTime TheReleaseDate = new(2027, 3, 18, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime TheDateTheReleaseHasNow = new(2027, 6, 24, 0, 0, 0, DateTimeKind.Utc);
-
-        /// <summary>
-        /// The refresh fetches Features before it syncs the sources, and that fetch is not this Epic's.
-        /// Faked whole, the Portfolio keeps exactly the Feature the scenario seeded, so what the
-        /// Delivery ends up saying is the source pass's doing and nothing else's.
-        /// </summary>
-        protected override void AlsoSwap(IServiceCollection services)
-        {
-            var featureFetch = new Mock<IWorkItemService>();
-            featureFetch
-                .Setup(fetch => fetch.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
-                .ReturnsAsync(SyncOutcome.None);
-
-            services.RemoveAll<IWorkItemService>();
-            services.AddScoped(_ => featureFetch.Object);
-        }
 
         // --- Given ---
 
@@ -129,34 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             {
                 Assert.That(delivery.Name, Is.EqualTo(expectedName));
                 Assert.That(delivery.Date, Is.EqualTo(expectedDate));
-            }
-        }
-
-        private static void ThenNothingAboutTheDeliveryMoved(DeliveryRow before, DeliveryRow after)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(after.Name, Is.EqualTo(before.Name));
-                Assert.That(after.Date, Is.EqualTo(before.Date));
-                Assert.That(after.ConcurrencyToken, Is.EqualTo(before.ConcurrencyToken),
-                    "a refresh that learned nothing must not expire the version an open browser is holding.");
-            }
-        }
-
-        private void ThenTheRefreshWasRecordedAsHavingWorked(int portfolioId)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var logs = scope.ServiceProvider
-                .GetRequiredService<Lighthouse.Backend.Services.Interfaces.IRefreshLogService>()
-                .GetRefreshLogs()
-                .Where(entry => entry.Type == RefreshType.Portfolio && entry.EntityId == portfolioId)
-                .ToList();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(logs, Is.Not.Empty);
-                Assert.That(logs.TrueForAll(entry => entry.Success), Is.True,
-                    "a source that has gone away is a state to report, not a refresh that failed.");
             }
         }
 

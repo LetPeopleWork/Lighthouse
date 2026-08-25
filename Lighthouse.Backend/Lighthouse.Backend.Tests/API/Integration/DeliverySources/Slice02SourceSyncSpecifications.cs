@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
     /// the way a person creates one - over HTTP - and then nobody touches it again: everything after
     /// that is the scheduled refresh, and every observation is the read the grid makes.
     /// </summary>
-    public partial class Slice02SourceSyncTest : DeliverySourcesAcceptanceTest
+    public partial class Slice02SourceSyncTest : DeliverySourceRefreshAcceptanceTest
     {
         private const string TheRelease = "10007";
         private const string TheReleaseName = "Release 3.0";
@@ -33,24 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         private static readonly DateTime TheDateTheReleaseHasNow = new(2027, 6, 24, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime ADateThatHasBeenAndGone = new(2024, 2, 6, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime ADateSomebodyPicked = new(2027, 9, 30, 0, 0, 0, DateTimeKind.Utc);
-
-        /// <summary>
-        /// The refresh fetches Features before it syncs the sources, and that fetch is not this
-        /// Epic's. Faked whole, it leaves the Portfolio tracking exactly the Feature the scenario
-        /// seeded, so what the Delivery ends up holding is the source pass's doing and nothing else's.
-        /// Everything after the fetch - the resolver, the sync, the aggregate, EF and the read the
-        /// grid makes - is the shipped code.
-        /// </summary>
-        protected override void AlsoSwap(IServiceCollection services)
-        {
-            var featureFetch = new Mock<IWorkItemService>();
-            featureFetch
-                .Setup(fetch => fetch.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
-                .ReturnsAsync(SyncOutcome.None);
-
-            services.RemoveAll<IWorkItemService>();
-            services.AddScoped(_ => featureFetch.Object);
-        }
 
         // --- Given ---
 
@@ -133,18 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             }
         }
 
-        private static void ThenNothingAboutTheDeliveryMoved(DeliveryRow before, DeliveryRow after)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(after.Name, Is.EqualTo(before.Name));
-                Assert.That(after.Date, Is.EqualTo(before.Date));
-                Assert.That(after.Features, Is.EqualTo(before.Features));
-                Assert.That(after.ConcurrencyToken, Is.EqualTo(before.ConcurrencyToken),
-                    "moving the version on a refresh that changed nothing fails an open browser's next save for nobody's edit.");
-            }
-        }
-
         /// <summary>
         /// Read back over HTTP rather than off the aggregate, so it also says the stamp survived the
         /// save - a value written in memory and lost on the way to the database would leave every
@@ -157,22 +127,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
 
         private static void ThenNobodyAskedAnySourceAbout(DeliveryRow delivery)
             => Assert.That(delivery.SourceLastSyncedOn, Is.Null);
-
-        private void ThenTheRefreshWasRecordedAsHavingWorked(int portfolioId)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var logs = scope.ServiceProvider.GetRequiredService<IRefreshLogService>()
-                .GetRefreshLogs()
-                .Where(entry => entry.Type == RefreshType.Portfolio && entry.EntityId == portfolioId)
-                .ToList();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(logs, Is.Not.Empty, "the refresh has to have run for its outcome to mean anything.");
-                Assert.That(logs.TrueForAll(entry => entry.Success), Is.True,
-                    "one source nobody can read must not be reported as the whole Portfolio refresh having failed.");
-            }
-        }
 
         private void ThenTheRetiredDeliveryStillSays(int deliveryId, string expectedName, DateTime expectedDate)
         {
