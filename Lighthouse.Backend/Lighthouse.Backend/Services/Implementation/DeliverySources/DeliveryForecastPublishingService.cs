@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                 return;
             }
 
-            Record(delivery, result);
+            Record(delivery, result, today);
         }
 
         /// <summary>
@@ -204,10 +204,13 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         /// What each answer means for the Delivery. A source that is not there is the same finding a
         /// failed read makes and raises the same state, because it is the same fact about the same
         /// Release. A refusal is deliberately not that: it says the credential may not write, which is
-        /// about the connection rather than about the Release, and treating it as a deleted Release
+        /// about the permission rather than about the Release, and treating it as a deleted Release
         /// would send an administrator to re-create something that never moved.
+        ///
+        /// A write that went through takes any standing refusal off, so a Delivery publishing perfectly
+        /// well stops telling somebody to fix a permission that already works.
         /// </summary>
-        private void Record(Delivery delivery, DeliveryForecastPublishResult result)
+        private static void Record(Delivery delivery, DeliveryForecastPublishResult result, DateOnly today)
         {
             switch (result)
             {
@@ -216,17 +219,11 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                     break;
 
                 case DeliveryForecastPublishResult.Refused refused:
-                    // Stryker disable once all: diagnostic log text is not behaviour, and where the
-                    // refusal is written down is slice 05's subject rather than this one's.
-                    logger.LogWarning(
-                        "The source Delivery {DeliveryId} follows refused the forecast: {Reason}",
-                        delivery.Id,
-                        refused.Reason);
+                    delivery.RecordPublishRefusal(refused.Reason, InstanceCalendar.AsUtcMidnight(today));
                     break;
 
                 default:
-                    // Stryker disable once all: diagnostic log text is not behaviour.
-                    logger.LogDebug("Published the forecast of Delivery {DeliveryId} to the source it follows", delivery.Id);
+                    delivery.ClearPublishRefusal();
                     break;
             }
         }

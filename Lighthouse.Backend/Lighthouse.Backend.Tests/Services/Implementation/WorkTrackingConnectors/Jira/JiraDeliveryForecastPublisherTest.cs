@@ -229,16 +229,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        [Test]
-        public async Task A_refusal_Jira_gave_no_words_for_still_says_what_it_answered()
+        /// <summary>
+        /// What the refusal report puts on screen is the remote's own sentence. A rejection carrying no
+        /// sentence has nothing an administrator could act on, and it is far likelier to be a request
+        /// Lighthouse built wrong than a permission somebody can grant - so it is not written down as a
+        /// permission problem at all.
+        /// </summary>
+        [TestCase("not json at all", TestName = "A body that is not an answer Jira wrote")]
+        [TestCase("{\"errorMessages\":[],\"errors\":{}}", TestName = "Jira's error shape with nothing in either half")]
+        public void A_rejection_Jira_gave_no_reason_for_is_not_a_permission_report(string body)
         {
             var jira = AJiraHoldingAReleaseWithNoDescription();
-            jira.RefuseWritesWith(HttpStatusCode.BadRequest, "not json at all");
+            jira.RefuseWritesWith(HttpStatusCode.BadRequest, body);
 
-            var result = await Publish(jira, TheBlock);
-
-            Assert.That(result, Is.TypeOf<DeliveryForecastPublishResult.Refused>()
-                .And.Property(nameof(DeliveryForecastPublishResult.Refused.Reason)).Contains("400"));
+            Assert.ThrowsAsync<HttpRequestException>(() => Publish(jira, TheBlock));
         }
 
         /// <summary>

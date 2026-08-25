@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         private const string TheRelease = "10412";
         private const string ASecondRelease = "10999";
         private const string TheRenderedBlock = "rendered block";
+        private const string WhatJiraSaid = "You must have global or project administrator rights in order to modify versions.";
 
         private static readonly DateTimeOffset TheRoundRanAt = new(2026, 8, 25, 7, 30, 0, TimeSpan.Zero);
         private static readonly BlackoutPeriod[] NoBlackoutPeriods = [];
@@ -314,11 +315,104 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         public async Task A_refused_write_is_about_the_credential_and_says_nothing_about_the_Release()
         {
             var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
-            GivenTheRemoteAnswers(new DeliveryForecastPublishResult.Refused("You do not have permission to edit this version."));
+            GivenTheRemoteAnswers(new DeliveryForecastPublishResult.Refused(WhatJiraSaid));
 
             await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
 
             Assert.That(delivery.SourceUnavailableReason, Is.Null);
+        }
+
+        /// <summary>
+        /// The whole point of the report: an administrator who switched the broadcast on and saw nothing
+        /// appear in Jira is told why, in the remote's own words, without reading a server log.
+        /// </summary>
+        [Test]
+        public async Task A_refused_write_is_written_down_in_the_words_the_source_used()
+        {
+            var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
+            GivenTheRemoteAnswers(new DeliveryForecastPublishResult.Refused(WhatJiraSaid));
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.LastPublishRefusalReason, Is.EqualTo(WhatJiraSaid));
+                Assert.That(delivery.LastPublishRefusedOn, Is.EqualTo(clock.TodayAsUtcMidnight));
+            }
+        }
+
+        [Test]
+        public async Task A_write_that_goes_through_takes_a_standing_refusal_off()
+        {
+            var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
+            delivery.RecordPublishRefusal(WhatJiraSaid, clock.TodayAsUtcMidnight.AddDays(-3));
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+                Assert.That(delivery.LastPublishRefusedOn, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// The permission a Release write needs is held per project, so one Delivery being refused says
+        /// nothing about the one beside it. Recorded any higher up, a Delivery that publishes perfectly
+        /// well would sit under a notice saying it does not.
+        /// </summary>
+        [Test]
+        public async Task One_Delivery_being_refused_says_nothing_about_the_one_beside_it()
+        {
+            var portfolio = APortfolio();
+            var refused = ABroadcastingDelivery(TheRelease, AFeatureWithAForecast());
+            var accepted = ABroadcastingDelivery(ASecondRelease, AFeatureWithAForecast());
+            publisherMock
+                .Setup(publisher => publisher.PublishAsync(
+                    It.IsAny<WorkTrackingSystemConnection>(),
+                    It.Is<DeliveryForecastPublication>(publication => publication.SourceReference == TheRelease)))
+                .ReturnsAsync(new DeliveryForecastPublishResult.Refused(WhatJiraSaid));
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([refused, accepted]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.LastPublishRefusalReason, Is.EqualTo(WhatJiraSaid));
+                Assert.That(accepted.LastPublishRefusalReason, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// A remote that could not be reached has refused nothing. Written down as a refusal it would
+        /// stand on the screen as a permission problem nobody can fix, and an administrator would go
+        /// looking for one that was never there.
+        /// </summary>
+        [Test]
+        public async Task A_remote_that_could_not_be_written_to_is_not_written_down_as_a_refusal()
+        {
+            var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
+            publisherMock
+                .Setup(publisher => publisher.PublishAsync(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<DeliveryForecastPublication>()))
+                .ThrowsAsync(new HttpRequestException("Jira was briefly unreachable"));
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.LastPublishRefusalReason, Is.Null);
+        }
+
+        /// <summary>
+        /// A Release that is gone is not a permission problem either. Both states would otherwise stand
+        /// on the same Delivery at once, telling the reader two different things to go and fix.
+        /// </summary>
+        [Test]
+        public async Task A_Release_that_is_gone_is_not_also_written_down_as_a_refusal()
+        {
+            var (portfolio, delivery) = APortfolioBroadcastingOneDelivery();
+            GivenTheRemoteAnswers(new DeliveryForecastPublishResult.TargetMissing());
+
+            await subject.PublishForPortfolio(portfolio, new RecordableDeliveries([delivery]));
+
+            Assert.That(delivery.LastPublishRefusalReason, Is.Null);
         }
 
         [Test]

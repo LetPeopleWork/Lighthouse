@@ -2427,7 +2427,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         ///
         /// A server that failed rather than refused is deliberately not a verdict at all: it is thrown, so
         /// the caller treats it the way it treats a source it could not reach - as an attempt that told us
-        /// nothing, rather than as an answer.
+        /// nothing, rather than as an answer. A rejection that names no reason is thrown for the same
+        /// reason: what the refusal report puts on screen is the remote's sentence, and a rejection with
+        /// no sentence is a malformed request - our defect - rather than something an administrator can
+        /// go and fix.
         /// </summary>
         /// <summary>
         /// The answers that mean "ask again later" rather than "no". A throttled or timed-out request has
@@ -2459,9 +2462,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     $"Jira could not be asked to publish a forecast: {(int)response.StatusCode} {response.ReasonPhrase}");
             }
 
-            return new DeliveryForecastPublishResult.Refused(
-                JiraReleaseVersionReader.ReadRefusalMessage(body)
-                    ?? $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}");
+            if (JiraReleaseVersionReader.ReadRefusalMessage(body) is not { } whatJiraSaid)
+            {
+                throw new HttpRequestException(
+                    $"Jira rejected the forecast without saying why: {(int)response.StatusCode} {response.ReasonPhrase}");
+            }
+
+            return new DeliveryForecastPublishResult.Refused(whatJiraSaid);
         }
     }
 }
