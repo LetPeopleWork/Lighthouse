@@ -174,7 +174,7 @@ function addItemsWithoutDuplicates(
 	}
 }
 
-function buildWorkItemLookup(
+export function buildWorkItemLookup(
 	throughputData: RunChartData | null,
 	wipOverTimeData: RunChartData | null,
 	cycleTimeData: IWorkItem[],
@@ -183,16 +183,19 @@ function buildWorkItemLookup(
 ): Map<number, IWorkItem> {
 	const lookup = new Map<number, IWorkItem>();
 
-	for (const item of extractWorkItems(throughputData?.workItemsPerUnitOfTime)) {
-		lookup.set(item.id, item);
-	}
-
+	// Several sources can describe the same work item, and they do not all carry the same
+	// fields. The cycle time and in-progress endpoints return the richest record, so they seed
+	// the lookup and the run charts only fill in items no other source mentions.
+	addItemsWithoutDuplicates(lookup, cycleTimeData);
+	addItemsWithoutDuplicates(lookup, inProgressItems);
+	addItemsWithoutDuplicates(
+		lookup,
+		extractWorkItems(throughputData?.workItemsPerUnitOfTime),
+	);
 	addItemsWithoutDuplicates(
 		lookup,
 		extractWorkItems(wipOverTimeData?.workItemsPerUnitOfTime),
 	);
-	addItemsWithoutDuplicates(lookup, cycleTimeData);
-	addItemsWithoutDuplicates(lookup, inProgressItems);
 
 	for (const item of allFeaturesForSizeChart) {
 		lookup.set(item.id, item as unknown as IWorkItem);

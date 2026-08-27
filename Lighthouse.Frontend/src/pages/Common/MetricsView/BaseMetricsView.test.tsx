@@ -38,7 +38,7 @@ import {
 	createMockBlackoutPeriodService,
 } from "../../../tests/MockApiServiceProvider";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
-import { BaseMetricsView } from "./BaseMetricsView";
+import { BaseMetricsView, buildWorkItemLookup } from "./BaseMetricsView";
 import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
 // Mock the components used in BaseMetricsView
@@ -6172,5 +6172,76 @@ describe("BaseMetricsView component", () => {
 			expect(svc.getCycleTimeData).toHaveBeenCalledTimes(2);
 			expect(svc.getWipPbc).not.toHaveBeenCalled();
 		});
+	});
+});
+
+describe("buildWorkItemLookup", () => {
+	const aWorkItem = (overrides: Partial<IWorkItem>): IWorkItem => ({
+		id: 1,
+		name: "Item",
+		referenceId: "REF-1",
+		url: null,
+		state: "Done",
+		stateCategory: "Done" as StateCategory,
+		type: "User Story",
+		startedDate: new Date("2026-08-01"),
+		closedDate: new Date("2026-08-05"),
+		cycleTime: 0,
+		workItemAge: 0,
+		parentWorkItemReference: "",
+		isBlocked: false,
+		...overrides,
+	});
+
+	const runChart = (items: IWorkItem[]): RunChartData =>
+		new RunChartData({ 0: items }, 1, items.length);
+
+	it("keeps the cycle time when the same item also appears in the throughput run chart", () => {
+		const id = 42;
+		const runChartRecord = aWorkItem({ id, cycleTime: 0 });
+		const cycleTimeRecord = aWorkItem({ id, cycleTime: 12 });
+
+		const lookup = buildWorkItemLookup(
+			runChart([runChartRecord]),
+			null,
+			[cycleTimeRecord],
+			[],
+			[],
+		);
+
+		expect(lookup.get(id)?.cycleTime).toBe(12);
+	});
+
+	it("keeps the work item age when the same item also appears in the wip run chart", () => {
+		const id = 43;
+		const runChartRecord = aWorkItem({ id, workItemAge: 0, isBlocked: false });
+		const inProgressRecord = aWorkItem({ id, workItemAge: 7, isBlocked: true });
+
+		const lookup = buildWorkItemLookup(
+			null,
+			runChart([runChartRecord]),
+			[],
+			[inProgressRecord],
+			[],
+		);
+
+		expect(lookup.get(id)?.workItemAge).toBe(7);
+		expect(lookup.get(id)?.isBlocked).toBe(true);
+	});
+
+	it("still includes items that only the run charts know about", () => {
+		const throughputOnly = aWorkItem({ id: 44 });
+		const wipOnly = aWorkItem({ id: 45 });
+
+		const lookup = buildWorkItemLookup(
+			runChart([throughputOnly]),
+			runChart([wipOnly]),
+			[],
+			[],
+			[],
+		);
+
+		expect(lookup.get(44)).toBe(throughputOnly);
+		expect(lookup.get(45)).toBe(wipOnly);
 	});
 });
