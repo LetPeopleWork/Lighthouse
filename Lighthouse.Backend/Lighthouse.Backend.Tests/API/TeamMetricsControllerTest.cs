@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
 
-                var payload = result.Value as RunChartDataDto;
+                var payload = result.Value as RunChartDataDto<RunChartWorkItemDto>;
                 Assert.That(payload, Is.Not.Null);
                 Assert.That(payload.History, Is.EqualTo(expectedThroughput.History));
                 Assert.That(payload.Total, Is.EqualTo(expectedThroughput.Total));
@@ -221,7 +221,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
 
-                var payload = result.Value as RunChartDataDto;
+                var payload = result.Value as RunChartDataDto<RunChartWorkItemDto>;
                 Assert.That(payload, Is.Not.Null);
                 Assert.That(payload.History, Is.EqualTo(expectedArrivals.History));
                 Assert.That(payload.Total, Is.EqualTo(expectedArrivals.Total));
@@ -760,7 +760,7 @@ namespace Lighthouse.Backend.Tests.API
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
 
-                var payload = result.Value as RunChartDataDto;
+                var payload = result.Value as RunChartDataDto<RunChartWorkItemDto>;
                 Assert.That(payload, Is.Not.Null);
                 Assert.That(payload.History, Is.EqualTo(expectedData.History));
                 Assert.That(payload.Total, Is.EqualTo(expectedData.Total));
@@ -1209,7 +1209,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
-                var result = (response.Result as OkObjectResult)?.Value as RunChartDataDto;
+                var result = (response.Result as OkObjectResult)?.Value as RunChartDataDto<RunChartWorkItemDto>;
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.BlackoutDayIndices, Is.EqualTo([2, 3, 4]));
             }
@@ -1234,7 +1234,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(response.Result, Is.InstanceOf<OkObjectResult>());
 
-                var result = (response.Result as OkObjectResult)?.Value as RunChartDataDto;
+                var result = (response.Result as OkObjectResult)?.Value as RunChartDataDto<RunChartWorkItemDto>;
                 Assert.That(result, Is.Not.Null);
                 Assert.That(result.BlackoutDayIndices, Is.Empty);
             }

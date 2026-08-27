@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.API
         private const string UnsupportedProcessBehaviorMetricTypeErrorMessage = "Unsupported process behavior metric type.";
 
         [HttpGet("throughput")]
-        public ActionResult<RunChartData> GetThroughput(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartDataDto<PortfolioRunChartWorkItemDto>> GetThroughput(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -47,12 +47,12 @@ namespace Lighthouse.Backend.API
             {
                 var data = portfolioMetricsService.GetThroughputForPortfolio(portfolio, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+                return ToRunChartDataDto(data, portfolio);
             });
         }
 
         [HttpGet("started")]
-        public ActionResult<RunChartData> GetStartedItems(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartDataDto<PortfolioRunChartWorkItemDto>> GetStartedItems(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -63,12 +63,12 @@ namespace Lighthouse.Backend.API
             {
                 var data = portfolioMetricsService.GetStartedItemsForPortfolio(portfolio, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+                return ToRunChartDataDto(data, portfolio);
             });
         }
 
         [HttpGet("arrivals")]
-        public ActionResult<RunChartData> GetArrivals(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartDataDto<PortfolioRunChartWorkItemDto>> GetArrivals(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -79,12 +79,12 @@ namespace Lighthouse.Backend.API
             {
                 var data = portfolioMetricsService.GetArrivalsForPortfolio(portfolio, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+                return ToRunChartDataDto(data, portfolio);
             });
         }
 
         [HttpGet("wipOverTime")]
-        public ActionResult<RunChartData> GetFeaturesInProgressOverTime(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartDataDto<PortfolioRunChartWorkItemDto>> GetFeaturesInProgressOverTime(int portfolioId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -95,8 +95,21 @@ namespace Lighthouse.Backend.API
             {
                 var data = portfolioMetricsService.GetFeaturesInProgressOverTimeForPortfolio(portfolio, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+
+                // Every Feature in this chart is in progress across the range, so its age belongs to the
+                // end of the range the caller asked about — the same anchor /wip and the aging chart use.
+                return ToRunChartDataDto(data, portfolio, endDate);
             });
+        }
+
+        private RunChartDataDto<PortfolioRunChartWorkItemDto> ToRunChartDataDto(RunChartData data, Portfolio portfolio, DateTime? asOf = null)
+        {
+            // The run chart is typed to the base entity, but a blocked rule set belongs to a portfolio
+            // and is evaluated against that portfolio's own Features.
+            return RunChartDataDto<PortfolioRunChartWorkItemDto>.From(
+                data,
+                item => item is Feature feature && blockedItemService.IsBlocked(feature, portfolio),
+                (item, isBlocked) => new PortfolioRunChartWorkItemDto(item, clock, isBlocked, asOf));
         }
 
         [HttpGet("wip")]

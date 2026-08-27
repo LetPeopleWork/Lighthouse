@@ -106,7 +106,11 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult?.Value, Is.EqualTo(expectedResult));
+
+                var payload = okResult?.Value as RunChartDataDto<PortfolioRunChartWorkItemDto>;
+                Assert.That(payload, Is.Not.Null);
+                Assert.That(payload.History, Is.EqualTo(expectedResult.History));
+                Assert.That(payload.Total, Is.EqualTo(expectedResult.Total));
             }
         }
 
@@ -177,7 +181,11 @@ namespace Lighthouse.Backend.Tests.API
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
-                Assert.That(result.Value, Is.EqualTo(expectedStartedItems));
+
+                var payload = result.Value as RunChartDataDto<PortfolioRunChartWorkItemDto>;
+                Assert.That(payload, Is.Not.Null);
+                Assert.That(payload.History, Is.EqualTo(expectedStartedItems.History));
+                Assert.That(payload.Total, Is.EqualTo(expectedStartedItems.Total));
             }
         }
 
@@ -226,7 +234,11 @@ namespace Lighthouse.Backend.Tests.API
 
                 var result = response.Result as OkObjectResult;
                 Assert.That(result.StatusCode, Is.EqualTo(200));
-                Assert.That(result.Value, Is.EqualTo(expectedArrivals));
+
+                var payload = result.Value as RunChartDataDto<PortfolioRunChartWorkItemDto>;
+                Assert.That(payload, Is.Not.Null);
+                Assert.That(payload.History, Is.EqualTo(expectedArrivals.History));
+                Assert.That(payload.Total, Is.EqualTo(expectedArrivals.Total));
             }
         }
 
@@ -303,7 +315,11 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
                 var okResult = result.Result as OkObjectResult;
-                Assert.That(okResult?.Value, Is.EqualTo(expectedResult));
+
+                var payload = okResult?.Value as RunChartDataDto<PortfolioRunChartWorkItemDto>;
+                Assert.That(payload, Is.Not.Null);
+                Assert.That(payload.History, Is.EqualTo(expectedResult.History));
+                Assert.That(payload.Total, Is.EqualTo(expectedResult.Total));
             }
         }
 
