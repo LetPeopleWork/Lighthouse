@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("throughput")]
-        public ActionResult<RunChartData> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? view = null)
+        public ActionResult<RunChartDataDto> GetThroughput(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string? view = null)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.API
             {
                 var data = GetThroughputForView(team, startDate, endDate, view);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+                return ToRunChartDataDto(data, team);
             });
         }
 
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpGet("arrivals")]
-        public ActionResult<RunChartData> GetArrivals(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartDataDto> GetArrivals(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -88,12 +88,12 @@ namespace Lighthouse.Backend.API
             {
                 var data = teamMetricsService.GetStartedItemsForTeam(team, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+                return ToRunChartDataDto(data, team);
             });
         }
 
         [HttpGet("wipOverTime")]
-        public ActionResult<RunChartData> GetWorkInProgressOverTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public ActionResult<RunChartDataDto> GetWorkInProgressOverTime(int teamId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
             if (startDate.Date > endDate.Date)
             {
@@ -104,8 +104,18 @@ namespace Lighthouse.Backend.API
             {
                 var data = teamMetricsService.GetWorkInProgressOverTimeForTeam(team, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
-                return data;
+
+                // Every item in this chart is in progress across the range, so its age belongs to the
+                // end of the range the caller asked about — the same anchor /wip and the aging chart use.
+                return ToRunChartDataDto(data, team, endDate);
             });
+        }
+
+        private RunChartDataDto ToRunChartDataDto(RunChartData data, Team team, DateTime? asOf = null)
+        {
+            // The run chart is typed to the base entity, but a blocked rule set belongs to a team and
+            // is evaluated against that team's own work items.
+            return RunChartDataDto.From(data, clock, item => item is WorkItem workItem && blockedItemService.IsBlocked(workItem, team), asOf);
         }
 
         [HttpGet("featuresInProgress")]
