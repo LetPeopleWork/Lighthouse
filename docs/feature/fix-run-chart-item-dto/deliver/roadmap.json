@@ -1,0 +1,79 @@
+{
+  "roadmap": {
+    "project_id": "fix-run-chart-item-dto",
+    "created_at": "2026-08-27",
+    "total_steps": 3,
+    "total_phases": 1,
+    "validation": {
+      "status": "approved",
+      "reviewer": "orchestrator",
+      "note": "Bugfix roadmap per nw-bugfix minimal flow; RCA approved by maintainer 2026-08-27."
+    }
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Restore run-chart work item contract",
+      "description": "Map the seven run-chart endpoints to a DTO so cycle time, work item age and blocked state reach the Work Item dialog again.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Team run-chart endpoints return a DTO",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A failing NUnit integration test asserts cycleTime, workItemAge and isBlocked are present on every item in the team throughput, arrivals and wipOverTime responses.",
+            "The same test asserts values are correct, not merely present: the closed item's cycleTime equals the inclusive day span in the instance time zone.",
+            "The test asserts an item appearing in both throughput and cycleTimeData reports the same cycleTime.",
+            "The test asserts tags and additionalFieldValues are still present on every item.",
+            "All three team endpoints return RunChartDataDto and the existing forecast filter integration test stays green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RunChartPayloadContractIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/RunChartDataDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamMetricsController.cs"
+          ],
+          "implementation_notes": "RunChartWorkItemDto derives from WorkItemDto and adds Tags plus AdditionalFieldValues; those two are the rule-evaluable surface the premium throughput filter depends on and must not be dropped. RunChartDataDto holds Dictionary<int, List<RunChartWorkItemDto>> alongside History, Total and BlackoutDayIndices. clock and blockedItemService are already injected at each action, so isBlocked comes back for free. wipOverTime passes asOf = endDate to match /wip; throughput and arrivals stay today-anchored."
+        },
+        {
+          "id": "01-02",
+          "name": "Portfolio run-chart endpoints return a DTO",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "The integration test is extended over the four portfolio endpoints with the same presence, correctness and agreement assertions.",
+            "The test asserts size and owningTeam are present on portfolio run-chart items, guarding the declared-type flattening.",
+            "All four portfolio endpoints return RunChartDataDto."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RunChartPayloadContractIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/RunChartDataDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioMetricsController.cs"
+          ],
+          "implementation_notes": "List<WorkItemBase> serialises by declared type, so a Feature inside a portfolio run chart is flattened to its base and loses size and owningTeam. The portfolio variant of the item DTO must carry both, mirroring FeatureDto. The /started endpoint has no frontend consumer but is fixed with the rest rather than left leaking the entity."
+        },
+        {
+          "id": "01-03",
+          "name": "Work item lookup prefers the richer record",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-02"
+          ],
+          "criteria": [
+            "A failing Vitest test asserts that when the same work item id appears in both throughput data and cycle time data, buildWorkItemLookup returns the record carrying cycleTime.",
+            "buildWorkItemLookup seeds from cycle time and in-progress sources first and adds run-chart items only as fill-ins.",
+            "The frontend suite, build and Biome check stay clean."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "implementation_notes": "Defence in depth: inert once the DTO change lands, because both sources then carry the same fields. It removes an accidental precedence where one unconditional set beat three guarded ones, which is what silently broke the process behaviour charts and the estimation chart drill-through."
+        }
+      ]
+    }
+  ]
+}
