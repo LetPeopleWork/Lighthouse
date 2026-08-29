@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -27,11 +28,21 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string WipOverTimeEndpoint = "wipOverTime";
         private const string CycleTimeDataEndpoint = "cycleTimeData";
 
+        private const string CycleTimeField = "cycleTime";
+        private const string WorkItemAgeField = "workItemAge";
+        private const string IsBlockedField = "isBlocked";
+        private const string TagsField = "tags";
+        private const string AdditionalFieldValuesField = "additionalFieldValues";
+        private const string SizeField = "size";
+        private const string OwningTeamField = "owningTeam";
+        private const string ParentWorkItemReferenceField = "parentWorkItemReference";
+
         private const string ClosedItemReferenceId = "C-1";
         private const string InProgressItemReferenceId = "P-1";
         private const string ClosedFeatureReferenceId = "FC-1";
         private const string InProgressFeatureReferenceId = "FP-1";
         private const string RegressionGuardTag = "regression-guard";
+        private const string BlockedGuardTag = "blocked-guard";
         private const string OwningTeamName = "Platform Group";
         private const int ClosedItemStartOffset = 3;
         private const int ClosedItemCloseOffset = 7;
@@ -42,13 +53,19 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const int ExpectedClosedItemCycleTime = ClosedItemCloseOffset - ClosedItemStartOffset + 1;
         private const int ExpectedInProgressItemAgeAtWindowEnd = WindowLengthInDays - InProgressItemStartOffset + 1;
 
+        /// <summary>
+        /// parentWorkItemReference earns its place here: the premium throughput filter names it as one
+        /// of the fields its rules evaluate, and a rule on a field the payload stopped carrying matches
+        /// nothing rather than failing, so no test that only reads charts would ever notice.
+        /// </summary>
         private static readonly string[] RequiredItemFields =
         [
-            "cycleTime",
-            "workItemAge",
-            "isBlocked",
-            "tags",
-            "additionalFieldValues",
+            CycleTimeField,
+            WorkItemAgeField,
+            IsBlockedField,
+            TagsField,
+            AdditionalFieldValuesField,
+            ParentWorkItemReferenceField,
         ];
 
         /// <summary>
@@ -58,13 +75,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
         /// </summary>
         private static readonly string[] RequiredFeatureFields =
         [
-            "cycleTime",
-            "workItemAge",
-            "isBlocked",
-            "tags",
-            "additionalFieldValues",
-            "size",
-            "owningTeam",
+            CycleTimeField,
+            WorkItemAgeField,
+            IsBlockedField,
+            TagsField,
+            AdditionalFieldValuesField,
+            SizeField,
+            OwningTeamField,
+            ParentWorkItemReferenceField,
         ];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
@@ -137,7 +155,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             using var document = JsonDocument.Parse(body);
 
-            AssertEveryItemCarries(ReadItems(document), RequiredItemFields, endpoint, body);
+            AssertEveryItemCarries(ReadRunChartItems(document), RequiredItemFields, endpoint, body);
         }
 
         [TestCase(ThroughputEndpoint)]
@@ -152,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             using var document = JsonDocument.Parse(body);
 
-            AssertEveryItemCarries(ReadItems(document), RequiredFeatureFields, endpoint, body);
+            AssertEveryItemCarries(ReadRunChartItems(document), RequiredFeatureFields, endpoint, body);
         }
 
         [Test]
@@ -163,9 +181,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetTeamRunChartBody(ThroughputEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var closedItem = FindItem(ReadItems(document), ClosedItemReferenceId);
+            var closedItem = FindItem(ReadRunChartItems(document), ClosedItemReferenceId);
 
-            Assert.That(closedItem.GetProperty("cycleTime").GetInt32(), Is.EqualTo(ExpectedClosedItemCycleTime), $"Body: {body}");
+            Assert.That(closedItem.GetProperty(CycleTimeField).GetInt32(), Is.EqualTo(ExpectedClosedItemCycleTime), $"Body: {body}");
         }
 
         [Test]
@@ -176,9 +194,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetPortfolioRunChartBody(ThroughputEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var closedFeature = FindItem(ReadItems(document), ClosedFeatureReferenceId);
+            var closedFeature = FindItem(ReadRunChartItems(document), ClosedFeatureReferenceId);
 
-            Assert.That(closedFeature.GetProperty("cycleTime").GetInt32(), Is.EqualTo(ExpectedClosedItemCycleTime), $"Body: {body}");
+            Assert.That(closedFeature.GetProperty(CycleTimeField).GetInt32(), Is.EqualTo(ExpectedClosedItemCycleTime), $"Body: {body}");
         }
 
         [Test]
@@ -189,9 +207,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetTeamRunChartBody(WipOverTimeEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var inProgressItem = FindItem(ReadItems(document), InProgressItemReferenceId);
+            var inProgressItem = FindItem(ReadRunChartItems(document), InProgressItemReferenceId);
 
-            Assert.That(inProgressItem.GetProperty("workItemAge").GetInt32(), Is.EqualTo(ExpectedInProgressItemAgeAtWindowEnd), $"Body: {body}");
+            Assert.That(inProgressItem.GetProperty(WorkItemAgeField).GetInt32(), Is.EqualTo(ExpectedInProgressItemAgeAtWindowEnd), $"Body: {body}");
         }
 
         [Test]
@@ -202,9 +220,78 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetPortfolioRunChartBody(WipOverTimeEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var inProgressFeature = FindItem(ReadItems(document), InProgressFeatureReferenceId);
+            var inProgressFeature = FindItem(ReadRunChartItems(document), InProgressFeatureReferenceId);
 
-            Assert.That(inProgressFeature.GetProperty("workItemAge").GetInt32(), Is.EqualTo(ExpectedInProgressItemAgeAtWindowEnd), $"Body: {body}");
+            Assert.That(inProgressFeature.GetProperty(WorkItemAgeField).GetInt32(), Is.EqualTo(ExpectedInProgressItemAgeAtWindowEnd), $"Body: {body}");
+        }
+
+        /// <summary>
+        /// Work in progress over time holds every item that was open on any day of the range, which
+        /// includes the ones that closed inside it. Anchoring age on the last day of the range asks how
+        /// old a finished item is today, and answers with a number counting the days since it closed.
+        /// </summary>
+        [Test]
+        public async Task GetWorkInProgressOverTime_ItemClosedInsideTheRange_ReportsNoWorkItemAge()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var body = await GetTeamRunChartBody(WipOverTimeEndpoint);
+
+            using var document = JsonDocument.Parse(body);
+            var closedItem = FindItem(ReadRunChartItems(document), ClosedItemReferenceId);
+
+            Assert.That(closedItem.GetProperty(WorkItemAgeField).GetInt32(), Is.Zero, $"Body: {body}");
+        }
+
+        [Test]
+        public async Task GetFeaturesInProgressOverTime_FeatureClosedInsideTheRange_ReportsNoWorkItemAge()
+        {
+            client.AsPortfolioAdmin(seededPortfolioId);
+
+            var body = await GetPortfolioRunChartBody(WipOverTimeEndpoint);
+
+            using var document = JsonDocument.Parse(body);
+            var closedFeature = FindItem(ReadRunChartItems(document), ClosedFeatureReferenceId);
+
+            Assert.That(closedFeature.GetProperty(WorkItemAgeField).GetInt32(), Is.Zero, $"Body: {body}");
+        }
+
+        /// <summary>
+        /// Asserting the field is present says nothing about a mapper that always answers false, and
+        /// isBlocked is one of the three fields this bug removed from the wire.
+        /// </summary>
+        [Test]
+        public async Task GetWorkInProgressOverTime_SeededTeam_TellsABlockedItemFromAnUnblockedOne()
+        {
+            client.AsTeamAdmin(seededTeamId);
+
+            var body = await GetTeamRunChartBody(WipOverTimeEndpoint);
+
+            using var document = JsonDocument.Parse(body);
+            var items = ReadRunChartItems(document);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(FindItem(items, InProgressItemReferenceId).GetProperty(IsBlockedField).GetBoolean(), Is.True, $"Body: {body}");
+                Assert.That(FindItem(items, ClosedItemReferenceId).GetProperty(IsBlockedField).GetBoolean(), Is.False, $"Body: {body}");
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesInProgressOverTime_SeededPortfolio_TellsABlockedFeatureFromAnUnblockedOne()
+        {
+            client.AsPortfolioAdmin(seededPortfolioId);
+
+            var body = await GetPortfolioRunChartBody(WipOverTimeEndpoint);
+
+            using var document = JsonDocument.Parse(body);
+            var items = ReadRunChartItems(document);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(FindItem(items, InProgressFeatureReferenceId).GetProperty(IsBlockedField).GetBoolean(), Is.True, $"Body: {body}");
+                Assert.That(FindItem(items, ClosedFeatureReferenceId).GetProperty(IsBlockedField).GetBoolean(), Is.False, $"Body: {body}");
+            }
         }
 
         [Test]
@@ -218,8 +305,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using var throughputDocument = JsonDocument.Parse(throughputBody);
             using var cycleTimeDocument = JsonDocument.Parse(cycleTimeBody);
 
-            var fromRunChart = FindItem(ReadItems(throughputDocument), ClosedItemReferenceId).GetProperty("cycleTime").GetInt32();
-            var fromScatterPlot = FindItem([.. cycleTimeDocument.RootElement.EnumerateArray()], ClosedItemReferenceId).GetProperty("cycleTime").GetInt32();
+            var fromRunChart = FindItem(ReadRunChartItems(throughputDocument), ClosedItemReferenceId).GetProperty(CycleTimeField).GetInt32();
+            var fromScatterPlot = FindItem(ReadScatterPlotItems(cycleTimeDocument), ClosedItemReferenceId).GetProperty(CycleTimeField).GetInt32();
 
             Assert.That(fromRunChart, Is.EqualTo(fromScatterPlot), $"Run chart body: {throughputBody}; Cycle time body: {cycleTimeBody}");
         }
@@ -235,8 +322,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using var throughputDocument = JsonDocument.Parse(throughputBody);
             using var cycleTimeDocument = JsonDocument.Parse(cycleTimeBody);
 
-            var fromRunChart = FindItem(ReadItems(throughputDocument), ClosedFeatureReferenceId).GetProperty("cycleTime").GetInt32();
-            var fromScatterPlot = FindItem([.. cycleTimeDocument.RootElement.EnumerateArray()], ClosedFeatureReferenceId).GetProperty("cycleTime").GetInt32();
+            var fromRunChart = FindItem(ReadRunChartItems(throughputDocument), ClosedFeatureReferenceId).GetProperty(CycleTimeField).GetInt32();
+            var fromScatterPlot = FindItem(ReadScatterPlotItems(cycleTimeDocument), ClosedFeatureReferenceId).GetProperty(CycleTimeField).GetInt32();
 
             Assert.That(fromRunChart, Is.EqualTo(fromScatterPlot), $"Run chart body: {throughputBody}; Cycle time body: {cycleTimeBody}");
         }
@@ -278,7 +365,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetTeamRunChartBody(ThroughputEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var tags = FindItem(ReadItems(document), ClosedItemReferenceId).GetProperty("tags").EnumerateArray().Select(tag => tag.GetString()).ToList();
+            var tags = FindItem(ReadRunChartItems(document), ClosedItemReferenceId).GetProperty(TagsField).EnumerateArray().Select(tag => tag.GetString()).ToList();
 
             Assert.That(tags, Does.Contain(RegressionGuardTag), $"Body: {body}");
         }
@@ -291,12 +378,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetPortfolioRunChartBody(ThroughputEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var closedFeature = FindItem(ReadItems(document), ClosedFeatureReferenceId);
+            var closedFeature = FindItem(ReadRunChartItems(document), ClosedFeatureReferenceId);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(closedFeature.GetProperty("size").GetInt32(), Is.EqualTo(ClosedFeatureSize), $"Body: {body}");
-                Assert.That(closedFeature.GetProperty("owningTeam").GetString(), Is.EqualTo(OwningTeamName), $"Body: {body}");
+                Assert.That(closedFeature.GetProperty(SizeField).GetInt32(), Is.EqualTo(ClosedFeatureSize), $"Body: {body}");
+                Assert.That(closedFeature.GetProperty(OwningTeamField).GetString(), Is.EqualTo(OwningTeamName), $"Body: {body}");
             }
         }
 
@@ -308,12 +395,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var body = await GetPortfolioRunChartBody(WipOverTimeEndpoint);
 
             using var document = JsonDocument.Parse(body);
-            var items = ReadItems(document);
+            var items = ReadRunChartItems(document);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(FindItem(items, ClosedFeatureReferenceId).GetProperty("size").GetInt32(), Is.EqualTo(ClosedFeatureSize), $"Body: {body}");
-                Assert.That(FindItem(items, InProgressFeatureReferenceId).GetProperty("size").GetInt32(), Is.EqualTo(InProgressFeatureSize), $"Body: {body}");
+                Assert.That(FindItem(items, ClosedFeatureReferenceId).GetProperty(SizeField).GetInt32(), Is.EqualTo(ClosedFeatureSize), $"Body: {body}");
+                Assert.That(FindItem(items, InProgressFeatureReferenceId).GetProperty(SizeField).GetInt32(), Is.EqualTo(InProgressFeatureSize), $"Body: {body}");
             }
         }
 
@@ -363,7 +450,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        private static List<JsonElement> ReadItems(JsonDocument document)
+        private static List<JsonElement> ReadRunChartItems(JsonDocument document)
         {
             var items = new List<JsonElement>();
 
@@ -373,6 +460,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
 
             return items;
+        }
+
+        private static List<JsonElement> ReadScatterPlotItems(JsonDocument document)
+        {
+            return [.. document.RootElement.EnumerateArray()];
         }
 
         private static JsonElement FindItem(List<JsonElement> items, string referenceId)
@@ -387,6 +479,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private static string? ReferenceIdOf(JsonElement item)
         {
             return item.TryGetProperty("referenceId", out var referenceId) ? referenceId.GetString() : null;
+        }
+
+        private static string BlockedRuleSetMatching(string tagsFieldKey)
+        {
+            return WorkItemRuleSetJson.Serialize(new WorkItemRuleSet
+            {
+                Mode = WorkItemRuleSet.ModeOr,
+                Conditions =
+                [
+                    new WorkItemRuleCondition
+                    {
+                        FieldKey = tagsFieldKey,
+                        Operator = RuleOperators.Contains,
+                        Value = BlockedGuardTag,
+                    },
+                ],
+            });
         }
 
         private void SeedTeamWithOneClosedAndOneInProgressItem()
@@ -405,6 +514,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Name = $"Team {Guid.NewGuid():N}",
                 WorkTrackingSystemConnection = connection,
                 DoneItemsCutoffDays = 0,
+                BlockedRuleSetJson = BlockedRuleSetMatching("workitem.tags"),
             };
 
             var teamRepository = serviceProvider.GetRequiredService<IRepository<Team>>();
@@ -442,7 +552,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 StateCategory = StateCategories.Doing,
                 CreatedDate = windowStart,
                 StartedDate = windowStart.AddDays(InProgressItemStartOffset),
-                Tags = [RegressionGuardTag],
+                Tags = [RegressionGuardTag, BlockedGuardTag],
                 Order = InProgressItemReferenceId,
             });
 
@@ -464,6 +574,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Name = $"Portfolio {Guid.NewGuid():N}",
                 WorkTrackingSystemConnection = connection,
+                BlockedRuleSetJson = BlockedRuleSetMatching("feature.tags"),
             };
 
             var portfolioRepository = serviceProvider.GetRequiredService<IRepository<Portfolio>>();
@@ -502,7 +613,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 StateCategory = StateCategories.Doing,
                 CreatedDate = windowStart,
                 StartedDate = windowStart.AddDays(InProgressItemStartOffset),
-                Tags = [RegressionGuardTag],
+                Tags = [RegressionGuardTag, BlockedGuardTag],
                 Order = InProgressFeatureReferenceId,
                 OwningTeam = OwningTeamName,
             };

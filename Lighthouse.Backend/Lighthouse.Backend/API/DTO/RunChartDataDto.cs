@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.API.DTO
 {
     /// <summary>
     /// Bug #5857: the run chart endpoints used to serialise the persistence entity straight onto the
-    /// wire, so the day Cycle Time and Work Item Age became methods taking a time zone, both fields
+    /// wire. So when Cycle Time and Work Item Age became methods taking a time zone, both fields
     /// silently disappeared from every response and the Work Item dialog rendered blank cells. This
     /// is the boundary type; its shape mirrors <see cref="RunChartData"/> so the frontend keeps
     /// deserialising it unchanged.
@@ -71,10 +71,21 @@ namespace Lighthouse.Backend.API.DTO
         /// omit it and stay anchored on today.
         /// </param>
         public RunChartWorkItemDto(WorkItemBase workItem, ILighthouseClock clock, bool isBlocked, DateTime? asOf = null)
-            : base(workItem, clock, isBlocked, [], null, asOf)
+            : base(workItem, clock, isBlocked, [], null, AgeAnchorFor(workItem, asOf))
         {
             Tags = workItem.Tags;
             AdditionalFieldValues = workItem.AdditionalFieldValues;
+        }
+
+        /// <summary>
+        /// Work in progress over time also holds the items that closed inside the range, on the days
+        /// they were still open. Asking how old one of those is on the last day of the range counts
+        /// days after it finished, so only an item that is still open gets anchored to a day; a closed
+        /// one falls back to the age every other endpoint reports for it, which is none.
+        /// </summary>
+        private static DateTime? AgeAnchorFor(WorkItemBase workItem, DateTime? asOf)
+        {
+            return workItem.StateCategory == StateCategories.Doing ? asOf : null;
         }
 
         public IReadOnlyList<string> Tags { get; }

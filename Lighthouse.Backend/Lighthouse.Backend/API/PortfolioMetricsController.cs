@@ -96,8 +96,9 @@ namespace Lighthouse.Backend.API
                 var data = portfolioMetricsService.GetFeaturesInProgressOverTimeForPortfolio(portfolio, startDate, endDate);
                 data.BlackoutDayIndices = GetBlackoutDayIndicesArray(startDate, endDate);
 
-                // Every Feature in this chart is in progress across the range, so its age belongs to the
-                // end of the range the caller asked about — the same anchor /wip and the aging chart use.
+                // A Feature still open at the end of the range is aged to that day rather than to today,
+                // the same anchor /wip and the aging chart use. Features that closed inside the range are
+                // also in this chart, on the days they were open, and age does not apply to them.
                 return ToRunChartDataDto(data, portfolio, endDate);
             });
         }
