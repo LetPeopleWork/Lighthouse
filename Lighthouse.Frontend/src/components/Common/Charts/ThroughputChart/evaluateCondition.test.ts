@@ -10,7 +10,7 @@ const baseItem: EvaluableWorkItem = {
 	state: "Active",
 	name: "Authentication Module",
 	referenceId: "AB-12",
-	parentReferenceId: "AB-1",
+	parentWorkItemReference: "AB-1",
 	tags: ["Priority", "Q1"],
 	additionalFieldValues: { 42: "alpha", 7: "beta" },
 };

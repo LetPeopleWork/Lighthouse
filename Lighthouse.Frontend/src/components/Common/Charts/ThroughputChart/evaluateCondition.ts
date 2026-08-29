@@ -5,7 +5,7 @@ export type EvaluableWorkItem = {
 	state: string;
 	name: string;
 	referenceId: string;
-	parentReferenceId: string;
+	parentWorkItemReference: string;
 	tags: readonly string[];
 	additionalFieldValues: Readonly<Record<number, string | null | undefined>>;
 };
@@ -24,7 +24,7 @@ const FIXED_FIELDS: Record<string, (item: EvaluableWorkItem) => string> = {
 	"workitem.state": (item) => item.state,
 	"workitem.name": (item) => item.name,
 	"workitem.referenceid": (item) => item.referenceId,
-	"workitem.parentreferenceid": (item) => item.parentReferenceId,
+	"workitem.parentreferenceid": (item) => item.parentWorkItemReference,
 };
 
 const resolveAdditionalField = (
@@ -101,7 +101,9 @@ export const evaluateCondition = (
 		return evaluateTags(item.tags, operator, condition.value);
 	}
 	const fieldValue = resolveFieldValue(item, fieldKey);
-	if (fieldValue === null) {
+	// A payload that stops carrying a field must make every rule on it stop matching, not throw:
+	// the field names here are a contract with the backend, and it has already been broken once.
+	if (fieldValue == null) {
 		return false;
 	}
 	return evaluateScalar(fieldValue, operator, condition.value);
