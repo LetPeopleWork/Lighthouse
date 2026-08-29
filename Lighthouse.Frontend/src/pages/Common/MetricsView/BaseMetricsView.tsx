@@ -183,19 +183,19 @@ export function buildWorkItemLookup(
 ): Map<number, IWorkItem> {
 	const lookup = new Map<number, IWorkItem>();
 
-	// Several sources can describe the same work item, and they do not all carry the same
-	// fields. The cycle time and in-progress endpoints return the richest record, so they seed
-	// the lookup and the run charts only fill in items no other source mentions.
-	addItemsWithoutDuplicates(lookup, cycleTimeData);
-	addItemsWithoutDuplicates(lookup, inProgressItems);
-	addItemsWithoutDuplicates(
-		lookup,
+	// Several sources can describe the same work item, and they do not all carry the same fields.
+	// The cycle time and in-progress endpoints return the richest record, so whoever comes first
+	// here wins and the run charts only fill in items no other source mentions.
+	const sourcesRichestFirst = [
+		cycleTimeData,
+		inProgressItems,
 		extractWorkItems(throughputData?.workItemsPerUnitOfTime),
-	);
-	addItemsWithoutDuplicates(
-		lookup,
 		extractWorkItems(wipOverTimeData?.workItemsPerUnitOfTime),
-	);
+	];
+
+	for (const source of sourcesRichestFirst) {
+		addItemsWithoutDuplicates(lookup, source);
+	}
 
 	for (const item of allFeaturesForSizeChart) {
 		lookup.set(item.id, item as unknown as IWorkItem);
