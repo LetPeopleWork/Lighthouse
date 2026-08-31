@@ -63,6 +63,17 @@ Two standing principles worth keeping visible here because they're easy to skip 
 
 - Use the existing `CreateMigration` PowerShell script to generate EF migrations across all supported database providers — do not invoke `dotnet ef migrations add` directly.
 
+## Running Lighthouse Locally
+
+Start the backend with `Lighthouse.Backend/Start-DevServer.ps1`. It keeps the dev key ring outside the
+repository, where `git clean -xfd` and worktrees cannot throw it away — and a lost ring is what leaves
+stored credentials unreadable. A bare `dotnet run` is fine too; it keeps its ring in `dev-keys/` inside
+the project directory, which those destroy. Never point a key store at `data-protection-keys`: that name
+is the legacy store the app carries over and compares against, and a ring there collides with the one the
+test suite mints in `keys/`. `/run-dev` (`.claude/commands/run-dev.md`) carries the mechanism and the
+recovery paths, including the `FATAL: Two key rings were found` signature a pre-2026-08-31 checkout still
+triggers.
+
 ## Quality Gates (CI parity)
 
 A change is **not done** until every gate below passes locally. CI enforces them; failing them wastes a CI cycle.

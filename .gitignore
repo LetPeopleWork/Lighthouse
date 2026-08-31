@@ -465,6 +465,12 @@ social-posts/*
 # Everything in it is private key material.
 **/keys/
 
+# The Development profile keeps its key store here. It is deliberately not named
+# `data-protection-keys`: the app reads a directory of that name as a legacy store to
+# carry over, and refuses to start when it and the resolved store hold different keys —
+# which is what a dev run and a test run in the same directory used to produce.
+**/dev-keys/
+
 # Playwright artifacts (per-run, never committed)
 test-results/
 
