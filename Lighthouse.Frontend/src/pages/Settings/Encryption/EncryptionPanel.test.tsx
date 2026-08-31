@@ -1,7 +1,11 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { EncryptionKeyState } from "../../../models/Encryption/EncryptionKeyState";
+import {
+	type EncryptionKeyState,
+	KEY_CUSTODY_VALUES,
+	type KeyCustody,
+} from "../../../models/Encryption/EncryptionKeyState";
 import type { SecretReadabilityReport } from "../../../models/Encryption/SecretReadabilityReport";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
@@ -85,6 +89,18 @@ const readFromTheRetiredSetting: EncryptionKeyState = {
 	canMint: false,
 	keySuppliedThrough: "EncryptionSettings__EncryptionKey",
 };
+
+// Spelled out here rather than read from the wording the panel uses, so that changing a phrasing has to
+// be a decision taken twice.
+const CUSTODY_ON_SCREEN: ReadonlyArray<[KeyCustody, string]> = [
+	["NoDurableStore", "the key published with the product"],
+	["GeneratedForThisInstance", "generated for this instance"],
+	["SuppliedByConfiguration", "supplied by configuration"],
+	["SuppliedByExternalSecret", "supplied by a mounted secret file"],
+];
+
+const stateFor = (custody: KeyCustody): EncryptionKeyState =>
+	custody === "GeneratedForThisInstance" ? ownKey : operatorOwned[custody];
 
 const aReportNamingWhatCouldNotBeRead: SecretReadabilityReport = {
 	activeKeyId: "k-2026-08-16-02",
@@ -178,6 +194,28 @@ describe("EncryptionPanel", () => {
 		expect(screen.getByTestId("encryption-active-key-id")).toHaveTextContent(
 			"k-2026-08-16-01",
 		);
+	});
+
+	it.each(CUSTODY_ON_SCREEN)(
+		"should describe custody %s in words rather than as an enum name",
+		async (custody, wording) => {
+			renderPanelOn(stateFor(custody));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("encryption-custody")).toHaveTextContent(
+					wording,
+				);
+			});
+			expect(
+				screen.queryByText(custody, { exact: false }),
+			).not.toBeInTheDocument();
+		},
+	);
+
+	it("should have words on screen for every custody the API can return", () => {
+		expect(CUSTODY_ON_SCREEN.map(([custody]) => custody)).toEqual([
+			...KEY_CUSTODY_VALUES,
+		]);
 	});
 
 	it("names each secret that could not be read by its Connection and field", async () => {

@@ -14,11 +14,6 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
-import { useRbac } from "../../../hooks/useRbac";
-import {
-	type EncryptionKeyState,
-	KEY_CUSTODY_WORDING,
-} from "../../../models/Encryption/EncryptionKeyState";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -27,31 +22,6 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BlackoutSettings from "./BlackoutSettings";
 import FeatureOrderingSettings from "./FeatureOrderingSettings";
-
-const EncryptionKeySection: React.FC<{ keyState: EncryptionKeyState }> = ({
-	keyState,
-}) => (
-	<InputGroup title="Secret Encryption Key" initiallyExpanded={true}>
-		<TableContainer>
-			<Table data-testid="encryption-key-state">
-				<TableBody>
-					<TableRow>
-						<TableCell>Key source</TableCell>
-						<TableCell data-testid="encryption-key-custody">
-							{KEY_CUSTODY_WORDING[keyState.custody]}
-						</TableCell>
-					</TableRow>
-					<TableRow>
-						<TableCell>Active key</TableCell>
-						<TableCell data-testid="encryption-active-key-id">
-							{keyState.activeKeyId}
-						</TableCell>
-					</TableRow>
-				</TableBody>
-			</Table>
-		</TableContainer>
-	</InputGroup>
-);
 
 const SystemSettingsTab: React.FC = () => {
 	const [optionalFeatures, setOptionalFeatures] = useState<IOptionalFeature[]>(
@@ -62,15 +32,8 @@ const SystemSettingsTab: React.FC = () => {
 		null,
 	);
 
-	// Where the key came from and what it is called is instance security posture, so it is read from
-	// the surface only a System Administrator can reach, never from the system information response
-	// that any signed-in viewer - including one inside an embedded frame - can already see.
-	const [keyState, setKeyState] = useState<EncryptionKeyState | null>(null);
-
-	const { optionalFeatureService, licensingService, encryptionService } =
+	const { optionalFeatureService, licensingService } =
 		useContext(ApiServiceContext);
-
-	const { isSystemAdmin } = useRbac();
 
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -93,19 +56,6 @@ const SystemSettingsTab: React.FC = () => {
 		}
 	}, [licensingService]);
 
-	const fetchKeyState = useCallback(async () => {
-		if (!isSystemAdmin) {
-			setKeyState(null);
-			return;
-		}
-
-		try {
-			setKeyState(await encryptionService.getKeyState());
-		} catch {
-			setKeyState(null);
-		}
-	}, [encryptionService, isSystemAdmin]);
-
 	const onToggleOptionalFeature = async (toggledFeature: IOptionalFeature) => {
 		const updatedFeatures = optionalFeatures.map((feature) =>
 			feature.id === toggledFeature.id
@@ -127,8 +77,7 @@ const SystemSettingsTab: React.FC = () => {
 	useEffect(() => {
 		fetchOptionalFeatures();
 		fetchLicenseStatus();
-		fetchKeyState();
-	}, [fetchOptionalFeatures, fetchLicenseStatus, fetchKeyState]);
+	}, [fetchOptionalFeatures, fetchLicenseStatus]);
 
 	return (
 		<Box sx={{ mb: 4 }}>
@@ -205,8 +154,6 @@ const SystemSettingsTab: React.FC = () => {
 					</TableContainer>
 				</InputGroup>
 			)}
-
-			{keyState !== null && <EncryptionKeySection keyState={keyState} />}
 
 			<InputGroup title={`${featureTerm} Order`} initiallyExpanded={true}>
 				<FeatureOrderingSettings

@@ -2,10 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
-import {
-	KEY_CUSTODY_VALUES,
-	type KeyCustody,
-} from "../../../models/Encryption/EncryptionKeyState";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IEncryptionService } from "../../../services/Api/EncryptionService";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
@@ -83,24 +79,6 @@ const mockGetSystemInfo = vi.fn();
 const mockSystemInfoService: ISystemInfoService = createMockSystemInfoService();
 mockSystemInfoService.getSystemInfo = mockGetSystemInfo;
 
-// Spelled out here rather than read from the wording the component uses, so that changing a phrasing
-// has to be a decision taken twice.
-const CUSTODY_ON_SCREEN: ReadonlyArray<[KeyCustody, string]> = [
-	["NoDurableStore", "the key published with the product"],
-	["GeneratedForThisInstance", "generated for this instance"],
-	["SuppliedByConfiguration", "supplied by configuration"],
-	["SuppliedByExternalSecret", "supplied by a mounted secret file"],
-];
-
-const keyStateFor = (custody: KeyCustody) => ({
-	custody,
-	canMint: custody === "GeneratedForThisInstance",
-	activeKeyId: "instance-2026-08-15",
-	keyIds: ["instance-2026-08-15"],
-	keyStorePath: "/app/data/keys",
-	legacyDefaultPresent: false,
-});
-
 const MockApiServiceProvider = ({
 	children,
 }: {
@@ -145,7 +123,6 @@ describe("SystemSettingsTab Component", () => {
 		vi.resetAllMocks();
 
 		rbac.isSystemAdmin = true;
-		mockGetKeyState.mockResolvedValue(keyStateFor("GeneratedForThisInstance"));
 
 		mockGetAllBlackoutPeriods.mockResolvedValue([]);
 
@@ -316,55 +293,11 @@ describe("SystemSettingsTab Component", () => {
 		});
 	});
 
+	// The key source and the key in force are the Encryption tab's to state. This tab used to repeat
+	// them, which let two screens disagree about one fact with no rule for which one won. These pin the
+	// absence: without them the frame can come back and nothing turns red, which is how it arrived.
 	describe("secret encryption key", () => {
-		it("should show where the key came from", async () => {
-			renderWithMockApiProvider();
-
-			await waitFor(() => {
-				expect(screen.getByTestId("encryption-key-custody")).toHaveTextContent(
-					"generated for this instance",
-				);
-			});
-		});
-
-		it("should show the name of the active key", async () => {
-			renderWithMockApiProvider();
-
-			await waitFor(() => {
-				expect(
-					screen.getByTestId("encryption-active-key-id"),
-				).toHaveTextContent("instance-2026-08-15");
-			});
-		});
-
-		it("should read key state from the encryption surface", async () => {
-			renderWithMockApiProvider();
-
-			await waitFor(() => {
-				expect(mockGetKeyState).toHaveBeenCalledTimes(1);
-			});
-		});
-
-		it("should never read key state from the system information surface", async () => {
-			renderWithMockApiProvider();
-
-			await waitFor(() => {
-				expect(mockGetKeyState).toHaveBeenCalled();
-			});
-			expect(mockGetSystemInfo).not.toHaveBeenCalled();
-		});
-
-		it("should render the key section for a System Administrator", async () => {
-			renderWithMockApiProvider();
-
-			await waitFor(() => {
-				expect(screen.getByTestId("encryption-key-state")).toBeVisible();
-			});
-		});
-
-		it("should neither render the key section nor request key state without System Administrator rights", async () => {
-			rbac.isSystemAdmin = false;
-
+		it("should not repeat the key source or the key in force", async () => {
 			renderWithMockApiProvider();
 
 			await waitFor(() => {
@@ -373,44 +306,22 @@ describe("SystemSettingsTab Component", () => {
 			expect(
 				screen.queryByTestId("encryption-key-state"),
 			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("encryption-active-key-id"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByText("Secret Encryption Key"),
+			).not.toBeInTheDocument();
+		});
+
+		it("should ask neither surface for the key state", async () => {
+			renderWithMockApiProvider();
+
+			await waitFor(() => {
+				expect(screen.getByText("Feature 1")).toBeVisible();
+			});
 			expect(mockGetKeyState).not.toHaveBeenCalled();
-		});
-
-		it.each(CUSTODY_ON_SCREEN)(
-			"should describe custody %s in words rather than as an enum name",
-			async (custody, wording) => {
-				mockGetKeyState.mockResolvedValue(keyStateFor(custody));
-
-				renderWithMockApiProvider();
-
-				await waitFor(() => {
-					expect(
-						screen.getByTestId("encryption-key-custody"),
-					).toHaveTextContent(wording);
-				});
-				expect(
-					screen.queryByText(custody, { exact: false }),
-				).not.toBeInTheDocument();
-			},
-		);
-
-		it("should have words on screen for every custody the API can return", () => {
-			expect(CUSTODY_ON_SCREEN.map(([custody]) => custody)).toEqual([
-				...KEY_CUSTODY_VALUES,
-			]);
-		});
-
-		it("should leave the rest of the page working when the key state fetch fails", async () => {
-			mockGetKeyState.mockRejectedValue(new Error("forbidden"));
-
-			renderWithMockApiProvider();
-
-			await waitFor(() => {
-				expect(screen.getByText("Feature 1")).toBeVisible();
-			});
-			expect(
-				screen.queryByTestId("encryption-key-state"),
-			).not.toBeInTheDocument();
+			expect(mockGetSystemInfo).not.toHaveBeenCalled();
 		});
 	});
 });
