@@ -158,6 +158,7 @@ describe("Settings Component", () => {
 			expect(screen.queryByTestId("demo-data-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("database-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("encryption-tab")).not.toBeInTheDocument();
 			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 		});
@@ -181,6 +182,7 @@ describe("Settings Component", () => {
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("encryption-tab")).not.toBeInTheDocument();
 		});
 	});
 
@@ -221,6 +223,7 @@ describe("Settings Component", () => {
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
 			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+			expect(screen.queryByTestId("encryption-tab")).not.toBeInTheDocument();
 		});
 	});
 
@@ -260,6 +263,7 @@ describe("Settings Component", () => {
 			expect(screen.getByTestId("configuration-tab")).toBeInTheDocument();
 		});
 		expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
+		expect(screen.getByTestId("encryption-tab")).toBeInTheDocument();
 		expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 		expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 	});
@@ -280,6 +284,7 @@ describe("Settings Component", () => {
 			expect(screen.getByTestId("demo-data-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("database-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("rbac-tab")).toBeInTheDocument();
+			expect(screen.getByTestId("encryption-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 		});
