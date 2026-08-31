@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-08-22
+updated: 2026-08-31
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -46,6 +46,7 @@ feature_context:
   - epic-5565-delivery-date-sync
   - epic-5733-opt-in-usage-data
   - epic-5511-task-manager
+  - remove-encryption-frame-from-config
 
 jobs:
   - id: job-rbac-bootstrap
