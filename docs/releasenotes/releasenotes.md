@@ -89,6 +89,7 @@ Archiving, following a Release and publishing back to it need a premium licence.
 Special thanks to everyone who contributed feedback for this release:
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 - [Anoop A Parapurath](https://www.linkedin.com/in/anoop-a-parapurath-137a3b4/)
+- [Liz Rettig](https://www.linkedin.com/in/lizrettig-agilecoach/)
 
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.8.14.1...v26.8.31.7)
 
