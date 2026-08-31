@@ -290,7 +290,8 @@ the render site, the `useRbac` / `EncryptionKeyState` / `KEY_CUSTODY_WORDING` im
 | AC | Verdict | Evidence |
 |---|---|---|
 | AC-1 | PASS | No `encryption-key-state`, `encryption-key-custody` or "Secret Encryption Key" anywhere under `pages/Settings/` except the absence assertion. |
-| AC-2 | PASS | `EncryptionPanel.test.tsx` green, 59 tests. |
+| AC-2 | PASS | `EncryptionPanel.test.tsx` green, 59 tests (58 after the refactor dropped the language-guarantee test). |
+| AC-2b | PASS | The System-Admin gate on the Encryption tab is now itself tested — see *Review findings* below. |
 | AC-3 | PASS | `grep -rn 'data-testid="encryption-active-key-id"' src` → exactly one hit, `EncryptionPanel.tsx:114`. |
 | AC-4 | PASS | New test asserts `getKeyState` and `getSystemInfo` are both never called on this tab. |
 | AC-5 | PASS | Remaining `SystemSettingsTab` tests (8) green, unchanged. |
@@ -316,7 +317,38 @@ non-vacuous: mutating one expected wording turned exactly that case red, then re
 
 - `docs/settings/configuration.md` — **N/A, because the page never documented the frame** (zero
   encryption mentions before or after).
-- The `useRbac` mock in `SystemSettingsTab.test.tsx` — the component no longer reads it, but deeper
-  children may; unwiring it is outside this slice.
+- ~~The `useRbac` mock in `SystemSettingsTab.test.tsx` — the component no longer reads it, but deeper
+  children may; unwiring it is outside this slice.~~ **Withdrawn.** "Deeper children may" was a guess,
+  and it was wrong. Replacing the mock factory with a thrower left all 8 tests passing: nothing in the
+  subtree calls `useRbac`. The mock is deleted.
 - `models/Encryption/EncryptionKeyState.ts` — still consumed by `EncryptionPanel` and
   `EncryptionService`. Not dead.
+
+### Review findings, and what changed because of them
+
+An adversarial review ran against the full diff. Six findings; two mattered.
+
+**The one that mattered most — the System-Admin gate had lost its only test.** The deleted
+`SystemSettingsTab` block contained the sole frontend assertion that a non-System-Admin sees no key
+custody and triggers no key-state request. `EncryptionPanel` carries no RBAC check of its own — the gate
+is `Settings.tsx:89`'s `systemAdminTabValues` — and `Settings.test.tsx` enumerated every System-Admin tab
+*except* `encryption-tab`, which arrived later with Epic #5775 and was never added to those lists. So
+removing `"45"` from that set exposed key source, active key id, the whole key ring and the resolved key
+store path to every signed-in viewer — including, per ADR-137, an embedded-frame viewer — with the entire
+suite still green. That mutant survived on `origin/main` too; what this story did was remove the last
+test standing near it.
+
+Reproduced, then fixed: `encryption-tab` added to all five tab-visibility cases in `Settings.test.tsx`
+(four non-admin, one admin). Re-running the same mutation now fails 4 tests. Net coverage of the
+invariant went 1 → 0 → 4.
+
+**Two ADRs still asserted the deleted surface.** `adr-150:88` and `adr-152:58,65` each stated that the
+Settings → System page renders key state. The journey YAML was back-propagated; these were missed. Both
+corrected in the same dated style.
+
+Also fixed: a call-count assertion on `getKeyState` (its loss left an unbounded-refetch regression
+invisible if the context value were ever rebuilt per render); `encryption-key-custody` added to the
+absence assertion, and its heading check loosened to a case-insensitive regex; the dead `useRbac` mock
+deleted. The type refactor was attacked specifically and survived — the compile-time exhaustiveness
+argument was judged sound, and deriving the cases from `KEY_CUSTODY_VALUES` a net improvement over the
+hand-maintained list it replaced.

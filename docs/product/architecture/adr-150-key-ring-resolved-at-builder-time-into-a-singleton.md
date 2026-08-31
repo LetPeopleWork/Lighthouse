@@ -85,10 +85,15 @@ have used the wrong one.
 **`ISystemInfoService` does not carry key state.** `SystemInfoController.GetSystemInfo` is `[Authorize]`
 only, and after ADR-137 that includes any viewer who reaches an embedded frame. Key source, active key
 id and the resolved key store path are **instance security posture** and belong behind
-`[RbacGuard(SystemAdmin)]` on the encryption endpoint (ADR-152). The Settings → System page renders them
-by calling that endpoint. This is a correction to AC-2.8 as written, which named System Info as the
+`[RbacGuard(SystemAdmin)]` on the encryption endpoint (ADR-152). The Settings → Encryption panel renders
+them by calling that endpoint. This is a correction to AC-2.8 as written, which named System Info as the
 surface; the *user-visible* outcome is unchanged and the audience is narrowed to the people the AC
 actually meant.
+
+2026-08-31 (story #5875): the Settings → System page rendered them too, from the same guarded endpoint.
+Two panels stating one custody fact can disagree with no rule for which one wins, so that second reading
+was removed. The Encryption panel is now the only place in Settings that states key source and active
+key id.
 
 **The startup line carries source, active key id and resolved path, and never material** — one line in
 `PrintSystemInfo`, e.g. `Encryption   : generated for this instance (k-2026-08-14-01) · /app/Data/keys`.

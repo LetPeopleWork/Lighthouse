@@ -55,16 +55,20 @@ endpoint cannot disagree about it.
 
 | Method | Route | Purpose | Slice |
 |---|---|---|---|
-| GET | `/encryption` | `{ custody, canMint, activeKeyId, keyIds[], keyStorePath, legacyDefaultPresent }` — the panel's state, and the Settings → System key line | 02 |
+| GET | `/encryption` | `{ custody, canMint, activeKeyId, keyIds[], keyStorePath, legacyDefaultPresent }` — the panel's state | 02 |
 | GET | `/encryption/secrets` | The readability report: per secret, the owning Connection, the field, the key id, and one of the four states | 04 |
 | POST | `/encryption/rotate` | Mint, activate, re-encrypt, retire — one action. **409 when `canMint` is false**, so the refusal is a contract, not a hidden button | 03 |
 | POST | `/encryption/reencrypt` | Re-encrypt onto the already-active key. Available in every custody mode | 03 |
 
 **Key state is not on `GET /systeminfo`.** That endpoint is `[Authorize]` only, which after ADR-137
 includes any viewer who reaches an embedded Jira frame. Which key an instance is on, and where its key
-store lives, is instance security posture. The Settings → System page reads it from
+store lives, is instance security posture. The Settings → Encryption panel reads it from
 `GET /encryption` — the operator sees the same thing AC-2.8 described, and an embed viewer sees nothing.
 This is a correction to AC-2.8's wording, not to its intent.
+
+2026-08-31 (story #5875): the Settings → System page carried a second read of the same two fields from
+this same guarded endpoint. It was removed — one fact, one panel — leaving the Encryption panel as the
+sole Settings consumer. The gate and the reasoning above are unchanged.
 
 **A separate route rather than widening `WorkTrackingSystemConnectionDto`** for the report, per ADR-006's
 one-route-one-shape precedent and because that DTO is a Lighthouse-Clients contract. The *per-field*
