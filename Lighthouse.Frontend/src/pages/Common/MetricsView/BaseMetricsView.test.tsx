@@ -6229,6 +6229,25 @@ describe("buildWorkItemLookup", () => {
 		expect(lookup.get(id)?.isBlocked).toBe(true);
 	});
 
+	it("lets the size chart features win over every other source", () => {
+		const id = 46;
+		const cycleTimeRecord = aWorkItem({ id, cycleTime: 12 });
+		const sizeChartFeature = aWorkItem({
+			id,
+			cycleTime: 99,
+		}) as unknown as IFeature;
+
+		const lookup = buildWorkItemLookup(
+			null,
+			null,
+			[cycleTimeRecord],
+			[],
+			[sizeChartFeature],
+		);
+
+		expect(lookup.get(id)?.cycleTime).toBe(99);
+	});
+
 	it("still includes items that only the run charts know about", () => {
 		const throughputOnly = aWorkItem({ id: 44 });
 		const wipOnly = aWorkItem({ id: 45 });

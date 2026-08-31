@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DTO/RunChartDataDto.cs",
+      "**/API/TeamMetricsController.cs",
+      "**/API/PortfolioMetricsController.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~RunChartPayloadContract|FullyQualifiedName~TeamMetricsController|FullyQualifiedName~PortfolioMetricsController|FullyQualifiedName~ForecastFilterThroughputChart)",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 6,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

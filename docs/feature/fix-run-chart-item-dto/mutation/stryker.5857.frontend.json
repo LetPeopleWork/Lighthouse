@@ -1,0 +1,40 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.mutation.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:166-205",
+    "src/components/Common/Charts/ThroughputChart/evaluateCondition.ts:22-28",
+    "src/components/Common/Charts/ThroughputChart/evaluateCondition.ts:98-116"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-5857-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-5857"
+}
