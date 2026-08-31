@@ -6,183 +6,89 @@ nav_order: 95
 
 # Lighthouse v26.8.31.7
 
-## The key to your credentials now belongs to your instance
+## Improved Encryption Options
 
-Lighthouse was built for one person forecasting one team, and its handling of stored secrets was sized for exactly that: one encryption key, shipped inside the product, the same in every copy ever downloaded. That was a fine answer for a tool on somebody's laptop. It stopped being the right one somewhere between the first team putting Lighthouse on a shared server and the first company running it in a cluster behind their SSO — not because anything went wrong, but because *who holds the key to our Jira token* is a question people are entitled to a real answer to, in writing, before they connect anything.
+Lighthouse has always let you supply your own encryption key for stored credentials — but almost nobody ever did, so almost every instance was protecting its Jira and Azure DevOps tokens with the key that ships inside every copy of the product.
 
-This release is that answer, and it is a proper overhaul rather than a patch. Every instance now makes and keeps a key of its own on first start, or takes one you supply and keeps none of its own. The key that ships with Lighthouse is no longer accepted as an active key by anything. Stored values describe themselves, so Lighthouse can tell you exactly which credentials are protected by what — and move them, on demand, without asking you to re-enter a single token.
+Every instance now makes and keeps a key of its own on first start, or takes one you supply. The published key is no longer accepted as an active key. **Settings → Encryption** shows where your key came from, where it is kept, how many credentials sit under it, and lets you *Rotate*, *Move stored secrets* and *Check secrets*.
 
-**Settings → Encryption** is the new home for all of it: where the key came from, where it is kept, how many credentials sit under it, and the actions that are actually available in the state you are in — *Rotate*, *Move stored secrets*, *Check secrets*. Rotation is one click and re-encrypts everything in place. Checking is a read-only report you can run before and after and compare.
+![Secret Encryption Key](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/encryption.png)
 
-### Upgrading does not re-encrypt anything — this is the one thing to know
+**Upgrading does not re-encrypt anything.** New credentials use the new key immediately, but everything stored before the upgrade stays under the published key until you press **Move stored secrets**. It moves them and asks you to re-enter nothing.
 
-New credentials are written under the new key from the moment you upgrade. **Everything you stored before the upgrade stays exactly where it is**, under the key published with every copy of Lighthouse, until you run one action.
-
-Open **Settings → Encryption** and press **Move stored secrets**. It tells you how many credentials are still on the old key, moves them, and asks you to re-enter nothing. Until you do, anyone holding a copy of Lighthouse can still read those values out of a copy of your database.
-
-If the screen offers you no button, the next section is you.
-
-{: .warning}
-> **⚠️ Action required if Lighthouse stores your data in Postgres, or in a container without a mounted data volume**
+> **⚠️ Action required on Postgres, or in a container without a mounted data volume**
 >
-> **Open Settings → Encryption after upgrading and read the first row.**
+> If **Key source** reads *the key published with the product*, this instance has nowhere durable to keep a key, so there is no *Move* or *Rotate* button. Set either `Encryption__KeyStorePath` to a directory that outlives the container (on the official image `/app/data/keys`, with `/app/data` on a **named volume**, not a bind mount) or `Encryption__Key` to your own 32-byte base64 key — then restart and press **Move stored secrets**.
 >
-> If **Key source** says *the key published with the product*, this instance has nowhere durable to keep a key of its own — so it is protecting your stored credentials with the key that ships inside every copy of Lighthouse, and it will keep doing that for credentials you enter from now on. The screen offers you no *Move* or *Rotate* button in this state, and that is not a bug: a move needs a destination key, and this instance has none. **Nothing is broken and nothing is lost — but nothing is protected either.**
->
-> Two settings fix it. Pick one and restart:
->
-> | If you want | Set |
-> |---|---|
-> | Lighthouse to make and keep the key for you (recommended for Docker) | `Encryption__KeyStorePath` to a directory on a volume that outlives the container — on the official image, `/app/data/keys`, with `/app/data` on a **named volume** |
-> | To own the key yourself | `Encryption__Key` to a 32-byte base64 key you keep somewhere safe |
->
-> For a Compose file that is one line in the `environment:` block, plus a named volume:
->
-> ```yaml
->     environment:
->       Encryption__KeyStorePath: /app/data/keys
->     volumes:
->       - data:/app/data          # a named volume, not a host path
-> ```
->
-> Then restart, confirm **Key source** no longer says *published with the product*, and press **Move stored secrets**. Your credentials move across and nothing has to be re-entered.
->
-> **Use a named volume, not a bind mount.** The container runs as a non-root user and cannot write into a host directory your own account owns. Our own documented Docker commands and the shipped Postgres example have been corrected accordingly — if you copied them before, they are worth re-copying.
+> On **Kubernetes**, the chart now refuses to install without `encryption.key` or `encryption.existingSecret`.
 
-### Kubernetes
+Full detail: [Secret Encryption Key](https://docs.lighthouse.letpeople.work/settings/encryption.html), [Configuration](https://docs.lighthouse.letpeople.work/Installation/configuration.html#encryption-key), [Kubernetes](https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#the-encryption-key-the-cluster-owns). And [docs.lighthouse.letpeople.work/security](https://docs.lighthouse.letpeople.work/security.html) now answers *how do you look after the credentials I give you?* on one page, written to be forwarded to whoever is asking you.
 
-The chart now **refuses to install without an encryption key** — `encryption.key`, or `encryption.existingSecret` if a secret store already owns it. In a cluster the application cannot own its key: it has no durable place to keep one, and every replica would make a different one. Rotating is a sequence you drive, and Lighthouse never writes to your Secret. See [Kubernetes](https://docs.lighthouse.letpeople.work/Installation/kubernetes.html#the-encryption-key-the-cluster-owns).
+## Dependencies
 
-### One address for the question
+Your teams already record dependencies — a Predecessor link in Azure DevOps, an *is blocked by* link in Jira, a relation between two Linear Projects. Lighthouse never read any of it, so a Feature's blockers were invisible until the meeting where the date slipped.
 
-[docs.lighthouse.letpeople.work/security](https://docs.lighthouse.letpeople.work/security.html) now answers *how do you look after the credentials I give you?* on one page: the plain answer first, then what is encrypted and how, what is hashed instead, who owns the key for each deployment shape — and what none of it protects against. It is written to be forwarded to whoever is asking you.
+Every Feature list now has a **Dependencies** column, one blocker per line, each linking into your tracker. Nothing to configure: if the link is in your tracker, it is on the row. Where a dependency cannot be taken at face value — no shared Portfolio, a cycle, no measured delivery to forecast from — one warning icon per Feature says why.
 
-The operator reference lives on the [configuration page](https://docs.lighthouse.letpeople.work/Installation/configuration.html#encryption-key), including [what happens if the key changes](https://docs.lighthouse.letpeople.work/Installation/configuration.html#what-happens-if-the-key-changes) and [changing the key without re-entering a single credential](https://docs.lighthouse.letpeople.work/Installation/configuration.html#changing-the-key-without-re-entering-a-single-credential).
+![Dependencies on the Features page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/featuresview.png)
 
-### Two things an independent review found on the way
+Lighthouse does not let you author a dependency, and never will. If your teams keep them in a custom field rather than the tracker's own link, or you want a Portfolio's dependencies read but not counted, both live under *Dependency Settings* on your [Portfolio's settings page](https://docs.lighthouse.letpeople.work/portfolios/edit.html).
 
-This work was reviewed from the outside, and two of its findings were worth fixing well beyond the scope of key custody:
+Available on **every** instance, community edition included. ServiceNow is the exception — it has no Features for a dependency to run between. See [Dependencies](https://docs.lighthouse.letpeople.work/concepts/howlighthouseforecasts.html#dependencies) for what each connector reads.
 
-- **Installing an update now requires a System Administrator.** On an instance with authentication enabled, the endpoint that installs a Lighthouse update was reachable by a caller who was not signed in — which means restarting the instance and replacing its binaries. It is now behind the System Administrator check, and a signed-in caller who is not an administrator is told so rather than quietly treated as one.
-- **The system information page no longer reports part of your database password.** It reported the database connection string in a form that could carry credentials. It now says where the database is, not how to log into it.
+### Forecasts take Dependencies into account (Premium)
 
-## See what each Feature is waiting on — and forecast as if it matters
+If a Feature depends on another Feature, the forecast now takes that into account. A Feature is not worked on until the Feature it waits on is forecast to be finished — even if it sits higher up in your order. This works across Teams too: a Feature your platform Team delivers can wait on one your product Team has not finished.
 
-Your teams already record dependencies — a Predecessor link in Azure DevOps, an *is blocked by* link in Jira, a relation between two Linear Projects. Lighthouse never read any of it. So the one place your whole delivery is laid out in order was also the one place a Feature's blockers were invisible, and you found out about them in the meeting where the date slipped.
+Without a premium licence, the Dependencies column and its warnings work exactly the same, and the dates read as if no dependency had been recorded.
 
-Lighthouse now reads those links, names them, **and forecasts with them**.
+One side effect worth calling out: *Refresh everything* used to forecast a Portfolio once per Team delivering into it, writing back each time. It is now **one forecast and one write per Portfolio per round** — faster refreshes and a fraction of the tracker traffic.
 
-Every Feature list — the [Features page](https://docs.lighthouse.letpeople.work/features/features.html), your Portfolios and your Teams — has a **Dependencies** column listing what that Feature waits on, one per line, each linking straight into your work tracking system. Nothing to configure and nothing to declare: if the link is in your tracker, it is on the row.
+## Improved Deliveries
 
-Lighthouse does not let you author a dependency, and it never will. What it shows you is what your tracker already says.
+Deliveries got a round of improvements. They can now be kept after they are done, annotated while they run, and — on Jira — take their date straight from a Release and send the forecast back to it.
 
-Where a dependency cannot be taken at face value, the row says so rather than staying quiet. One warning icon per Feature, with the reasons in its tooltip:
+### Archive a Delivery instead of deleting it
 
-- the Feature it waits on sits in no Portfolio they share
-- the two are waiting on each other, so neither can go first
-- the Feature it waits on has no measured delivery to forecast from
-- it waits on something below it in the order — not a problem, but worth knowing before you re-plan
+A finished Delivery used to quietly rewrite itself as its Features moved on, got re-estimated, or were closed — so asking in October what you were forecasting in August left nothing to look at. [Archive it](https://docs.lighthouse.letpeople.work/portfolios/detail.html#archiving-a-delivery) and what it showed at that moment is written down: the likelihood, the forecast dates, and every Feature that was in it. Refresh, rename, remove — it reads exactly as it did on the day it closed. Bring it back at any time.
 
-Reading and showing dependencies is available on **every** Lighthouse instance, community edition included.
+![An archived Delivery](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/delivery_archived.png)
 
-### When the links are not where Lighthouse looks
+Any Delivery, archived or not, also exports as a CSV or a paste — the headline numbers and the whole Feature grid.
 
-Two settings live under *Dependency Settings* on your [Portfolio's settings page](https://docs.lighthouse.letpeople.work/portfolios/edit.html).
+> Archiving is not a backup. Deleting an archived Delivery still deletes it permanently, along with its written-down numbers and metric history.
 
-**Dependency Field** (Azure DevOps and Jira) — if your teams keep dependencies in a custom field rather than the tracker's own link, name that field once and Lighthouse reads it instead, splitting on commas or semicolons. It must be defined as an Additional Field on the connection first. Entries that resolve to nothing are passed over; the rest still count. Linear exposes no fields of its own to point at, so a Linear Portfolio goes on reading its Project relations whatever is typed there; a CSV upload names its column on the connection instead.
+### Write down what happened
 
-**Ignore Dependencies** — set a Portfolio's dependencies aside without hiding or deleting one. They keep being read and keep being listed; they simply stop counting. It takes effect on the next read, so there is nothing to re-download, and flipping it back restores exactly the picture you had.
+Deliveries now carry notes, so the reason a date moved lives next to the date instead of in somebody's memory or a chat thread nobody can find. Notes stay readable on an archived Delivery; they just stop changing.
 
-### What reads what
+### Bind a Delivery to a Jira Release
 
-| | Where dependencies come from |
-|---|---|
-| Azure DevOps | the *Predecessor* link, or a field of your own (see above) |
-| Jira Cloud & Data Center | the *is blocked by* end of a **Blocks** link, or a field of your own (see above) — if your administrator renamed the link, Lighthouse tells you what it looked for and what it found instead |
-| Linear | a relation between two Projects |
-| CSV | a column naming what each row waits on, set on the connection |
-| ServiceNow | not available — it has no Features for a dependency to run between |
+Your teams already keep the date in Jira, on a Release, and somebody was retyping it into Lighthouse every time it moved. A Delivery can now [follow that Release](https://docs.lighthouse.letpeople.work/portfolios/detail.html#following-a-jira-release) instead.
 
-### The date now waits too
+**Creating one.** Pick the Release when you create the Delivery, and it owns the name, the date and the Features in it.
 
-Seeing the dependency was half of it. The date sitting next to it still pretended otherwise — it was built from your Team's throughput alone, as though the work could start tomorrow. So the number everybody actually plans with was the one number that ignored the thing everybody was worried about.
+**Keeping it current.** All three stay in step on the refresh that already runs — nothing is maintained by hand. If the Release is deleted, the values freeze as they last were and the Delivery says the source is gone; a network blip or an expired credential is told apart from a deletion.
 
-That is fixed. A Feature is no longer forecast to be worked on until everything it waits on has finished. Not adjusted afterwards, not flagged for you to correct by hand — the wait happens inside every one of the ten thousand simulated runs the forecast is built from.
+**Writing the forecast back.** Switch [publishing](https://docs.lighthouse.letpeople.work/portfolios/detail.html#publishing-a-forecast-back-to-jira) on and Lighthouse writes the 70/85/95 dates and the likelihood onto the Jira Release description, for the people who never open Lighthouse. It is off by default and set per Delivery. Lighthouse never writes the release date field itself, never deletes prose it did not write, and tells you on the Delivery if Jira refuses the write.
 
-**Across Teams, too.** Every Team now advances on one shared clock inside a run, so a Feature your platform Team delivers can sit behind a Feature your product Team has not finished yet. That was the hard part, and it is the case that actually hurts.
-
-### Two Features move, not one
-
-The Feature that is waiting moves out. That much you would expect. The one you would not expect:
-
-> Three Features, one Team, Feature WIP of 2. Nothing waiting: **17, 13, 22** working days. Record that the second waits on the first: **16, 22, 20**.
-
-The Feature *below* the waiting one came in by two days. Your Team works on the top *Feature WIP* Features in parallel; a Feature that cannot be started yet stops occupying one of those places, and the next Feature that *can* be started moves up into it. Waiting is not only a cost — knowing about it frees capacity that was being modelled as spent.
-
-### What it does not do
-
-**A shared clock shares time, never capacity.** Each Team still draws its own throughput from its own history. Sitting on the same clock as a faster Team has never made a Team faster and does not now.
-
-**Some waits are still left out**, and every one of them says so on the Feature rather than going quiet: the Feature it waits on sits in no Portfolio they share, the two are waiting on each other, the Feature it waits on has no measured delivery to forecast from, or the Portfolio is set to ignore dependencies. That last one is now a genuinely useful question to ask — flip it and the dates read as they would if none of those links existed, which is the closest a forecast gets to *what would this plan look like if we broke the dependencies*.
-
-Dependency-aware dates need a **premium licence**. Reading dependencies and showing them stays on every instance, community edition included. Without a licence the column and its warnings behave exactly as they do with one, and the dates are the ones you would get if no dependency had been recorded. Where a wait would have moved a date and only the licence is in the way, the Feature says so — and only there. A wait a licensed instance would leave out anyway is never dressed up as one a licence would buy you.
-
-### One forecast per Portfolio per refresh
-
-Forecasting a whole Portfolio on one clock had a side effect worth calling out. A round of *Refresh everything* used to forecast a Portfolio once for every Team that delivers into it, then write the result back to your tracker each time. On a Portfolio with six Teams that is six forecasts and six writes to land on one delivery date.
-
-It is now one forecast and one write per Portfolio per round, and the delivery date is announced once. Refreshes finish sooner, your tracker sees a fraction of the traffic, and a Portfolio refresh that overlaps a Team refresh settles on a single date instead of racing to the last one written.
-
-See [How Lighthouse Forecasts](https://docs.lighthouse.letpeople.work/concepts/howlighthouseforecasts.html#dependencies) for the full picture.
-
-## Deliveries stop being a snapshot
-
-A Delivery has always answered *where do we stand today*. That is the right answer while it is running, and the wrong one the moment it ships. It was also a date somebody typed by hand, and typed again every time it moved. Both are addressed in this release: a Delivery can now take its date from your tracker, send its forecast back there, and be kept afterwards as a record of what you actually said.
-
-### Take the date from the tracker instead of typing it
-
-Your teams already keep the date in Jira, on a Release. Lighthouse can now **follow that Release**: pick it when you create the Delivery, and the Release owns the name, the date and the Features in it. All three stay in step on the refresh that already runs — nothing about a bound Delivery is maintained by hand, and Lighthouse refuses a hand-edit to those three fields rather than letting your change be silently overwritten on the next sync.
-
-A Release that goes away does not quietly take the Delivery with it. The values freeze exactly as they last were, and the Delivery says the source is gone. Nothing unbinds on its own — the name, the date and the Features are the reason you kept it. A network blip or an expired credential is told apart from a deletion, so a bad minute never gets reported as a finished Release.
-
-See [Following a Jira Release](https://docs.lighthouse.letpeople.work/portfolios/detail.html#following-a-jira-release).
-
-### Send the forecast back to the people who never open Lighthouse
-
-Switch **publishing** on for a Delivery and Lighthouse writes its forecast onto the Jira Release description, on the run that produced it: that Lighthouse wrote it, when, the 70/85/95 dates, and the likelihood of hitting the target with the target named. The numbers come from the same call the Lighthouse screen makes, so the two can never disagree.
-
-It is off by default, and it is **per Delivery** rather than per Portfolio — because a Portfolio routinely holds some Releases you share with a customer and some you do not.
-
-Two promises about somebody else's Jira. **Lighthouse never writes the release date field itself** — that is the value it declares your tracker owns, and overwriting it would make the likelihood converge on the chosen percentile by construction. And **Lighthouse never deletes prose it did not write**: the block it manages is delimited, and a merge it cannot make safely appends rather than guesses.
-
-If Jira refuses the write — the permission is granted per project, so this is a normal thing to hit — the Delivery that was refused says so, on itself. It clears the moment a publish succeeds.
-
-See [Publishing a forecast back to Jira](https://docs.lighthouse.letpeople.work/portfolios/detail.html#publishing-a-forecast-back-to-jira).
-
-### Keep the Delivery after it ships
-
-The Features move on, get re-estimated, get closed or removed, and a finished Delivery quietly rewrites itself behind them. Ask in October what you were forecasting in August and there is nothing left to look at — which makes the one review worth having, *what did we say and what actually happened*, impossible.
-
-**Archive it when it is done.** It leaves the active list, and what it was showing at that moment is written down: the likelihood, the forecast dates, and every Feature that was in it. Refresh the Portfolio afterwards, rename Features, remove them entirely — the archived Delivery reads exactly as it did on the day it closed. Bring it back at any time and it picks up where it left off.
-
-**Take it with you.** Any Delivery's headline numbers and its Feature grid leave Lighthouse as one CSV or one paste — the Delivery itself as the first row, its Features beneath it, in the columns you would expect. That works on an archived Delivery too, and gives you the numbers as they were pinned.
-
-**Write down what happened.** Deliveries carry notes, so the reason a date moved lives next to the date rather than in somebody's memory or a chat thread nobody can find. Notes stay readable on an archived Delivery; they just stop changing.
-
-Archiving needs a premium licence, and so do following a Release and publishing back to it. Bringing a Delivery back does not — if your licence lapses you can still un-archive anything you archived. Notes are not gated at all.
-
-{: .important}
-> Archiving is not a backup. Deleting an archived Delivery still deletes it permanently, and takes the written-down numbers and its metric history with it.
-
-See [Archiving a Delivery](https://docs.lighthouse.letpeople.work/portfolios/detail.html#archiving-a-delivery) for the full picture.
+Archiving, following a Release and publishing back to it need a premium licence. Un-archiving does not, and notes are not gated at all.
 
 ## Bugfixes and Improvements
 
+- **Installing an update now requires a System Administrator** — on an instance with authentication enabled, the endpoint that installs an update was reachable by a caller who was not signed in.
+- **The system information page no longer reports part of your database password** — it says where the database is, not how to log into it.
 - **Work Item Age and Cycle Time are back in the Work Item dialog** — opening an item from a run chart showed the dialog with those fields empty, and with no owning team on items that are not Features.
-- **A Delivery is overdue on your instance's day, not your browser's** — a Delivery could read as overdue or not depending on which time zone the person looking at it was in.
-- **Refreshes are far quieter in the log** — a refresh that removed items wrote a line per item, which buried everything an operator was actually looking for.
-- **The documented Docker install and the shipped Postgres Compose example were corrected** — both used host directories the container is not permitted to write, so the install failed on every Linux host, and the Postgres example crash-looped on its second start.
+- **A Delivery is overdue on your instance's day, not your browser's** — a Delivery could read as overdue or not depending on the time zone of the person looking at it.
+- **Refreshes are far quieter in the log** — a refresh that removed items wrote a line per item, burying everything an operator was looking for.
+- **The documented Docker install and the shipped Postgres Compose example were corrected** — both used host directories the container is not permitted to write, so the install failed on every Linux host and the Postgres example crash-looped on its second start.
 - Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- [Anoop A Parapurath](https://www.linkedin.com/in/anoop-a-parapurath-137a3b4/)
 
 [**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.8.14.1...v26.8.31.7)
 
