@@ -300,7 +300,7 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 **Build / run locally**
 - Backend: `dotnet build` (zero warnings — `TreatWarningsAsErrors`), `dotnet test`.
 - Frontend: `pnpm test`, `pnpm build` (`tsc -b` + Vite → `Lighthouse.Backend/Lighthouse.Backend/wwwroot`; Biome runs as the `prebuild` hook).
-- Run the full app from source: `pnpm build` (FE → wwwroot) → `dotnet run` (serves API + SPA, SQLite by default). E2E: Playwright (Page Object Model) against the running app.
+- Run the full app from source: `pnpm build` (FE → wwwroot) → `Lighthouse.Backend/Start-DevServer.ps1` (serves API + SPA on :5169, SQLite by default). It keeps the dev key ring outside the repo, where a `git clean` or a fresh worktree cannot destroy it — losing a ring is what leaves stored credentials unreadable. E2E: Playwright (Page Object Model) against the running app.
 - EF migrations: `Create-Migration.ps1` (both providers).
 
 **Test stack** — Backend: NUnit + Moq + `Microsoft.EntityFrameworkCore.InMemory` + `WebApplicationFactory`; net10.0. Frontend: Vitest + React Testing Library. E2E: Playwright. Architecture: TngTech.ArchUnitNET (+ a few reflection contract-pins).
