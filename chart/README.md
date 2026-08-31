@@ -5,7 +5,7 @@ brings the whole stack up — API (SPA served in-process), bundled or external P
 workload and OIDC — with one command.
 
 - **Chart version:** `0.1.13`
-- **App image (appVersion):** `26.8.14.1`
+- **App image (appVersion):** `26.8.31.7`
 
 > This README's **Values** section is generated from `values.yaml` by [`helm-docs`](https://github.com/norwoodj/helm-docs).
 > Edit the `# --` comments in `values.yaml`, then regenerate (`helm-docs --chart-search-root chart --skip-version-footer -s file --ignore-non-descriptions`).
@@ -16,7 +16,7 @@ workload and OIDC — with one command.
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # shows CHART 0.1.13 / APP 26.8.14.1
+helm search repo lighthouse          # shows CHART 0.1.13 / APP 26.8.31.7
 helm install l8e letpeoplework/lighthouse --version 0.1.13 -f values-enterprise.yaml \
   --set encryption.key=$(openssl rand -base64 32)
 ```
