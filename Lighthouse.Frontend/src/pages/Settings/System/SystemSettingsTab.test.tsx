@@ -22,28 +22,6 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import SystemSettingsTab from "./SystemSettingsTab";
 
-const rbac = vi.hoisted(() => ({ isSystemAdmin: true }));
-
-vi.mock("../../../hooks/useRbac", () => ({
-	useRbac: () => ({
-		isLoading: false,
-		isRbacEnabled: true,
-		isSystemAdmin: rbac.isSystemAdmin,
-		canCreateTeam: true,
-		canCreatePortfolio: true,
-		isTeamAdmin: () => true,
-		isPortfolioAdmin: () => true,
-		summary: {
-			isRbacEnabled: true,
-			isSystemAdmin: rbac.isSystemAdmin,
-			canCreateTeam: true,
-			canCreatePortfolio: true,
-			adminTeamIds: [],
-			adminPortfolioIds: [],
-		},
-	}),
-}));
-
 const mockOptionalFeatureService: IOptionalFeatureService =
 	createMockOptionalFeatureService();
 
@@ -121,8 +99,6 @@ const renderWithMockApiProvider = () => {
 describe("SystemSettingsTab Component", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-
-		rbac.isSystemAdmin = true;
 
 		mockGetAllBlackoutPeriods.mockResolvedValue([]);
 
@@ -296,7 +272,7 @@ describe("SystemSettingsTab Component", () => {
 	// The key source and the key in force are the Encryption tab's to state. This tab used to repeat
 	// them, which let two screens disagree about one fact with no rule for which one won. These pin the
 	// absence: without them the frame can come back and nothing turns red, which is how it arrived.
-	describe("secret encryption key", () => {
+	describe("secret encryption key, which belongs to the Encryption tab", () => {
 		it("should not repeat the key source or the key in force", async () => {
 			renderWithMockApiProvider();
 
@@ -307,11 +283,12 @@ describe("SystemSettingsTab Component", () => {
 				screen.queryByTestId("encryption-key-state"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByTestId("encryption-active-key-id"),
+				screen.queryByTestId("encryption-key-custody"),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByText("Secret Encryption Key"),
+				screen.queryByTestId("encryption-active-key-id"),
 			).not.toBeInTheDocument();
+			expect(screen.queryByText(/encryption key/i)).not.toBeInTheDocument();
 		});
 
 		it("should ask neither surface for the key state", async () => {

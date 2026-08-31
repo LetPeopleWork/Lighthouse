@@ -58,7 +58,9 @@ const justUpgraded: EncryptionKeyState = {
 	readableSecretsNotOnTheActiveKey: 12,
 };
 
-const operatorOwned: Record<string, EncryptionKeyState> = {
+type OperatorOwnedCustody = Exclude<KeyCustody, "GeneratedForThisInstance">;
+
+const operatorOwned: Record<OperatorOwnedCustody, EncryptionKeyState> = {
 	SuppliedByConfiguration: {
 		...ownKey,
 		custody: "SuppliedByConfiguration",
@@ -91,16 +93,21 @@ const readFromTheRetiredSetting: EncryptionKeyState = {
 };
 
 // Spelled out here rather than read from the wording the panel uses, so that changing a phrasing has to
-// be a decision taken twice.
-const CUSTODY_ON_SCREEN: ReadonlyArray<[KeyCustody, string]> = [
-	["NoDurableStore", "the key published with the product"],
-	["GeneratedForThisInstance", "generated for this instance"],
-	["SuppliedByConfiguration", "supplied by configuration"],
-	["SuppliedByExternalSecret", "supplied by a mounted secret file"],
-];
+// be a decision taken twice. Both maps are keyed by custody, so a custody added to the model without a
+// phrasing or a state to render it from is a compile error rather than a case that quietly goes untested.
+const CUSTODY_ON_SCREEN: Record<KeyCustody, string> = {
+	NoDurableStore: "the key published with the product",
+	GeneratedForThisInstance: "generated for this instance",
+	SuppliedByConfiguration: "supplied by configuration",
+	SuppliedByExternalSecret: "supplied by a mounted secret file",
+};
 
-const stateFor = (custody: KeyCustody): EncryptionKeyState =>
-	custody === "GeneratedForThisInstance" ? ownKey : operatorOwned[custody];
+const STATE_FOR_CUSTODY: Record<KeyCustody, EncryptionKeyState> = {
+	NoDurableStore: operatorOwned.NoDurableStore,
+	GeneratedForThisInstance: ownKey,
+	SuppliedByConfiguration: operatorOwned.SuppliedByConfiguration,
+	SuppliedByExternalSecret: operatorOwned.SuppliedByExternalSecret,
+};
 
 const aReportNamingWhatCouldNotBeRead: SecretReadabilityReport = {
 	activeKeyId: "k-2026-08-16-02",
@@ -166,7 +173,7 @@ describe("EncryptionPanel", () => {
 		expect(screen.getByTestId("reencrypt-button")).toBeInTheDocument();
 	});
 
-	it.each(Object.keys(operatorOwned))(
+	it.each(Object.keys(operatorOwned) as OperatorOwnedCustody[])(
 		"draws no rotate control at all where the key is %s",
 		async (custody) => {
 			renderPanelOn(operatorOwned[custody]);
@@ -183,11 +190,16 @@ describe("EncryptionPanel", () => {
 	);
 
 	it("lists the keys the instance holds, by name", async () => {
-		renderPanelOn(ownKey);
+		const encryptionService = renderPanelOn(ownKey);
 
 		expect(
 			await screen.findByTestId("encryption-key-k-2026-08-16-01"),
 		).toBeInTheDocument();
+
+		// One read per mount. The effect depends on the service from context, so a context value rebuilt
+		// per render would turn this screen into an unbounded fetch loop against a System-Admin-guarded
+		// endpoint, and every other assertion here would still pass.
+		expect(encryptionService.getKeyState).toHaveBeenCalledTimes(1);
 		expect(
 			screen.getByTestId("encryption-key-k-2025-11-02-01"),
 		).toBeInTheDocument();
@@ -196,14 +208,14 @@ describe("EncryptionPanel", () => {
 		);
 	});
 
-	it.each(CUSTODY_ON_SCREEN)(
+	it.each([...KEY_CUSTODY_VALUES])(
 		"should describe custody %s in words rather than as an enum name",
-		async (custody, wording) => {
-			renderPanelOn(stateFor(custody));
+		async (custody) => {
+			renderPanelOn(STATE_FOR_CUSTODY[custody]);
 
 			await waitFor(() => {
 				expect(screen.getByTestId("encryption-custody")).toHaveTextContent(
-					wording,
+					CUSTODY_ON_SCREEN[custody],
 				);
 			});
 			expect(
@@ -211,12 +223,6 @@ describe("EncryptionPanel", () => {
 			).not.toBeInTheDocument();
 		},
 	);
-
-	it("should have words on screen for every custody the API can return", () => {
-		expect(CUSTODY_ON_SCREEN.map(([custody]) => custody)).toEqual([
-			...KEY_CUSTODY_VALUES,
-		]);
-	});
 
 	it("names each secret that could not be read by its Connection and field", async () => {
 		renderPanelOn(ownKey, aReportNamingWhatCouldNotBeRead);
@@ -950,7 +956,7 @@ describe("EncryptionPanel", () => {
 	it.each([
 		["SuppliedByConfiguration", "Encryption__Key"],
 		["SuppliedByExternalSecret", "Encryption__KeysFile"],
-	])(
+	] as Array<[OperatorOwnedCustody, string]>)(
 		"names the setting rather than a directory where the key is %s",
 		async (custody, setting) => {
 			renderPanelOn(operatorOwned[custody]);
