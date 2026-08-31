@@ -99,7 +99,7 @@ jobs:
           /d:sonar.language="cs" \
           /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
           /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" \
-          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,**/.github/**,**/.vscode/**,**/docs/**" \
+          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,tools/**,**/.github/**,**/.vscode/**,**/docs/**" \
           /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**"
     
     - name: Build Backend (composite)
