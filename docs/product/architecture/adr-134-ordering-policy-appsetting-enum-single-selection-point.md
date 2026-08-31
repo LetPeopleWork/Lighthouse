@@ -1,6 +1,6 @@
 # ADR-134: The Ordering Policy is an AppSetting enum, read at exactly one ordering port
 
-**Status**: Accepted
+**Status**: **PARTIALLY SUPERSEDED (2026-08-31) by [ADR-187](./adr-187-ordering-policy-optional-feature-with-per-key-applier.md)** — §1 (storage) and §A (the rejection of `OptionalFeature`) no longer hold. §2 (the single ordering seam), §3 (INV-A3) and §4 (the sync path never writes `ManualRank`) are **retained in full**, as is every enforcement rule. Originally Accepted 2026-08-06 (Morgan, interaction mode PROPOSE)
 **Date**: 2026-08-06
 **Feature**: `epic-5375-manual-sorting` (ADO Epic #5375 "Manual Sorting")
 **Decider**: Morgan (Solution Architect), DESIGN application layer, interaction mode = PROPOSE
@@ -101,6 +101,14 @@ reach without someone adding a line.
 ## Alternatives Considered
 
 ### A. Store the policy as an `OptionalFeature` row with `IsPremium = true` — rejected
+
+> **Overtaken by [ADR-187](./adr-187-ordering-policy-optional-feature-with-per-key-applier.md)
+> (2026-08-31).** Two of the three grounds below have since been fixed or expired: the silent no-op is
+> a consequence of `ApiHelpers.GetEntityByIdAnExecuteAction` always wrapping in `Ok(...)` and is
+> repaired, and the dormant-section point died when `DeltaSync` shipped. The terminology objection
+> (§A.3) was correct and is answered by making the description cell terminology-aware for every row
+> rather than for one. The `bool` objection survives, narrowed: the enum stays the domain type and
+> only the storage is boolean. Kept unedited below as the reasoning of its time.
 
 Genuinely attractive, and the option DISCUSS's framing pointed away from for the wrong reason. DISCUSS
 called `OptionalFeature` "preview capability, not licensed setting"; the entity carries `IsPremium`

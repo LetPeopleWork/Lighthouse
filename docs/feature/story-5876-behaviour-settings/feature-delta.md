@@ -142,6 +142,31 @@ to point.** Recorded rather than silently skipped.
 It is not premium and must not become premium, gated, renamed or reordered by any of this. The only
 thing that changes for it is the heading above the table.
 
+### D9 — Seeded descriptions carry terminology tokens, resolved when the cell renders
+
+*Added during DESIGN, 2026-08-31, after reading ADR-134 §A.3. See Changed Assumptions CA-1.*
+
+ADR-134 rejected this store partly because the table renders a server-seeded `Description` and
+Epic #5375 AC-5.5 requires the help text in the instance's own terminology, resolved client-side
+through `getTerm`. A seeded string cannot be.
+
+The answer is not to render this row specially — ADR-134 was right that doing so spends the whole
+reuse benefit. The answer is that the description cell resolves terminology tokens for **every** row.
+It is a capability the table was missing, applies to `DeltaSync` and to every future setting, and is
+the smaller change of the two.
+
+### D10 — The gate fix ships first, and answers 403 specifically
+
+*Added during DESIGN, 2026-08-31, after reading ADR-134. See Changed Assumptions CA-2.*
+
+Epic #5375 AC-2.5 promises **403** on the enable endpoint, delivered today by
+`[LicenseGuard(RequirePremium = true)]`. Moving the setting onto an endpoint that answers 200 with the
+unchanged entity would regress it. So the refusal is pinned to 403 rather than to "an explicit
+refusal", and it ships before the move rather than after.
+
+This reverses the DISCUSS prioritization, which put the move first on learning-leverage grounds.
+Sequencing wins: the alternative order ships a knowing regression of a shipped criterion.
+
 ---
 
 ## Wave: DISCUSS / [REF] Scope Assessment
@@ -198,7 +223,7 @@ a mechanism nobody has run.
 
 ### US-01 — Find every instance switch in one list
 
-`job_id: job-admin-find-every-instance-switch-in-one-place` · Slice 01
+`job_id: job-admin-find-every-instance-switch-in-one-place` · Slice 02
 
 As a system administrator, I want the setting that decides who owns my forecast order to sit with the
 other instance-wide switches, so that finding it does not depend on remembering that it shipped as its
@@ -239,10 +264,13 @@ of scanning a page for sections that happen to contain a switch.
 - **AC-01.9** `DeltaSync` is unchanged in name, description, preview badge, premium status and stored
   `Enabled` value (D8).
 - **AC-01.10** The upgrade does not delete the `AppSetting` row (D1).
+- **AC-01.11** On an instance that renamed *Feature* under Settings → Terminology, the row's
+  description renders that instance's word, not the seeded default. This is Epic #5375 AC-5.5, and
+  meeting it is what makes this store viable at all (D9).
 
 ### US-02 — Be refused out loud, not in silence
 
-`job_id: job-admin-find-every-instance-switch-in-one-place` · Slice 02
+`job_id: job-admin-find-every-instance-switch-in-one-place` · Slice 01
 
 As a system administrator on a Community instance, I want a toggle my licence does not cover to say so,
 so that I do not believe I have changed something that is still running as before.
@@ -255,8 +283,9 @@ an explicit refusal status, not a success carrying stale state.
 Decision enabled: whether the setting shown on screen is the setting actually in force.
 
 #### Acceptance Criteria
-- **AC-02.1** A premium optional feature toggled without a premium licence returns an explicit refusal
-  and does not persist the change.
+- **AC-02.1** A premium optional feature toggled without a premium licence returns **403** and does
+  not persist the change. 403 specifically, not merely "a refusal" — Epic #5375 AC-2.5 already
+  promises 403 on the setting that is about to move onto this endpoint (D10).
 - **AC-02.2** A premium optional feature toggled **with** a premium licence persists and returns the
   updated entity.
 - **AC-02.3** A non-premium optional feature — `DeltaSync` — is unaffected on licensed and unlicensed
@@ -275,11 +304,11 @@ Decision enabled: whether the setting shown on screen is the setting actually in
 
 | Slice | Stories | Ships |
 |---|---|---|
-| 01 — *One list of switches* | US-01 | The whole move: key, seeded migration, provider re-backing, pre-write apply path, alias delegation, table row, section removal, rename, docs. |
-| 02 — *A refused toggle says so* | US-02 | The premium gate returns a refusal; #5733 back-propagation. |
+| 01 — *A refused toggle says so* | US-02 | The premium gate answers 403; #5733 precondition satisfied. |
+| 02 — *One list of switches* | US-01 | The whole move: key, seeded migration, provider re-backing, pre-write apply path, alias delegation, terminology token substitution, table row, section removal, rename, docs. |
 
-Slice 01 is the story. Slice 02 is independent of it in code and dependent on it in meaning — before
-slice 01 no premium optional feature exists, so slice 02 alone would fix a branch nothing reaches.
+Slice 02 is the story. Slice 01 runs first because slice 02 moves a setting whose 403 is a shipped
+promise onto an endpoint that answers 200 — fixing that afterwards means shipping a regression (D10).
 
 ---
 
@@ -287,9 +316,9 @@ slice 01 no premium optional feature exists, so slice 02 alone would fix a branc
 
 | Test | Verdict |
 |---|---|
-| Ships 4+ new components? | No. Slice 01 ships **zero** new components — it moves one and deletes one. |
+| Ships 4+ new components? | No. Slice 02 ships **zero** new components — it moves one and deletes one. |
 | Every slice depends on a new abstraction? | No new abstraction. D2 deliberately reuses the existing seam. |
-| Does any slice disprove a pre-commitment? | Yes, both. Slice 01 disproves "an optional-feature toggle can carry a side-effecting setting". Slice 02 disproves "no caller depends on the 200-unchanged shape". |
+| Does any slice disprove a pre-commitment? | Yes, both. Slice 02 disproves "an optional-feature toggle can carry a side-effecting setting". Slice 01 disproves "no caller depends on the 200-unchanged shape". |
 | Synthetic data only? | No. Both slices are accepted on the vendor's own instance with real Features and a real licence, then again with the licence removed. |
 | Two slices identical but for scale? | No. Different surfaces, different failure modes. |
 
@@ -299,12 +328,14 @@ All pass.
 
 ## Wave: DISCUSS / [REF] Prioritization
 
-1. **Slice 01 first — highest learning leverage.** D4 is the one decision that can be wrong in a way
-   users see. If the pre-write apply path is wrong, the first administrator to flip the switch watches
-   their list scramble, and that is cheapest to discover before anything else is built on it.
-2. **Slice 02 second — no urgency, low uncertainty.** The broken branch is unreachable through the UI
-   (S6), so shipping slice 01 without it exposes only direct API callers. It is also the slice that
-   touches another feature's documents, which is better done once slice 01's shape is settled.
+1. **Slice 01 first — sequencing, not learning leverage.** It carries the least uncertainty of the
+   two, and it still goes first: slice 02 moves a setting that promises 403 onto an endpoint that
+   answers 200, so any other order ships a knowing regression of Epic #5375 AC-2.5 (D10). It also
+   satisfies Epic #5733 slice 03's precondition earlier than that Epic could have.
+2. **Slice 02 second — where all the uncertainty is.** D4 is the one decision that can be wrong in a
+   way users see. If the pre-write apply path is wrong, the first administrator to flip the switch
+   watches their list scramble. Nothing is built on top of this slice, so discovering it here costs
+   only this slice.
 
 ---
 
@@ -342,7 +373,7 @@ All pass.
 | 2 | Job traceability | Both stories carry a real `job_id`; no `infrastructure-only` escape used. |
 | 3 | Acceptance criteria testable | 15 ACs, each asserting an observable response, rendered element or stored value. |
 | 4 | Dependencies known | None blocking. One coordination item with Epic #5733 (D6), which is itself blocked and therefore cannot race this. |
-| 5 | Sized | Two slices, ~6h and ~2h of crafter dispatch. |
+| 5 | Sized | Two slices, ~2h and ~7h of crafter dispatch. |
 | 6 | Technical feasibility | Every mechanism already runs in production (S2, S5, S6, S10). The one novel decision is D4, and S4 shows exactly what it must avoid. |
 | 7 | Non-functional constraints | No new endpoint, no new query, no schema change. The seeder gains one predicate at startup. |
 | 8 | UX defined | The target is the existing `SystemSettingsTab` table plus a heading string; the section being removed is a whole component. |
@@ -404,3 +435,245 @@ The one question DESIGN must answer: **the mechanism for D4.** A per-key apply s
 path, or `SeedMissingRanks` reading source order explicitly instead of through the policy. Both
 satisfy the constraint; they differ in whether `OptionalFeaturesController` learns that one key is
 special, which is the kind of `if` ADR-134 exists to prevent.
+
+---
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+Two DISCUSS decisions were made without ADR-134 in front of them. Reading it during DESIGN surfaced
+two live conflicts. Both are resolved; neither reverses D1.
+
+### CA-1 — ADR-134 rejected this exact store, and one of its three reasons was still live
+
+> **ADR-134 §A.3, quoted verbatim:** *"The free UI cannot satisfy AC-5.5, and this is decisive. The
+> Optional Features section renders a generic Name / Description / Enabled table over a `Description`
+> string persisted by a server-side seeder. AC-5.5 requires the switch's help text to state, in the
+> instance's own terminology, what turning it off does and that the manual order is retained.
+> Terminology is resolved client-side through `getTerm` (D16); a seeded database string cannot be. So
+> the row would ship copy saying "Feature" to an instance that calls them "Deliverables" — a direct
+> D16 violation. Rendering that one row specially to fix it spends the entire reuse benefit."*
+
+`epic-5375-manual-sorting/feature-delta.md:937` names it the single most tempting reuse in that
+feature and says it loses on precisely this.
+
+**New assumption (D9).** The objection is real and is answered by making the table's description cell
+terminology-aware in general, rather than by rendering one row specially. ADR-134's other two
+objections have since expired: the `bool` concern is answered by D3 (the enum stays the domain type),
+and the silent-no-op concern is fixed by slice 01. What remains true from §A.3 is only that a *raw*
+seeded string cannot carry terminology — which is a missing capability of the table, not a property of
+the store.
+
+### CA-2 — AC-2.5 promises 403, and that reverses the slice order
+
+> **`epic-5375-manual-sorting/feature-delta.md:248`, quoted verbatim:** *"AC-2.5 A non-premium
+> instance receives 403 on the enable endpoint and the switch renders disabled"*
+
+`[LicenseGuard(RequirePremium = true)]` on `AppSettingsController` delivers that today.
+`OptionalFeaturesController` returns 200 with the unchanged entity.
+
+**New assumption (D10).** The gate fix ships **first**, and is pinned to 403 rather than to "an
+explicit refusal". DISCUSS had the move first on learning-leverage grounds; sequencing beats learning
+leverage here, because the other order ships a knowing regression of a shipped criterion.
+
+---
+
+## Wave: DESIGN / [REF] Decisions
+
+| # | Decision | One-line rationale |
+|---|---|---|
+| DDD-1 | Per-key **applier** on the toggle path; the controller keeps no `if` | A generic toggle must be able to carry a specific consequence; a key `switch` in the controller is the five-`if` failure ADR-134 exists to prevent |
+| DDD-2 | The applier owns the **whole write**, not a before/after pair | One method cannot be called in the wrong order; a two-phase hook can |
+| DDD-3 | `IFeatureOrdering` gains a **policy-independent source order**, and the rank seeder uses it | ADR-134 §3 already says the seed is "in current source order" — reading it through the policy-dependent path was incidental, and is the temporal coupling that makes D4 dangerous |
+| DDD-4 | The ordering consequence stays **synchronous, inside the request** | `IDomainEventDispatcher` swallows handler exceptions by design; a dropped seed leaves the instance in `ManualOrder` with every rank null, ordered by `Id`, permanently |
+| DDD-5 | `FeatureOrderingPolicyChanged` **stays** a published domain event | It genuinely belongs after the write, and the shipped forecast trigger handler already consumes it |
+| DDD-6 | The premium check moves **out of** `ApiHelpers.GetEntityByIdAnExecuteAction` | The helper always wraps in `Ok(...)`, so 403 is physically unreachable inside it — this is the mechanical cause of the silent no-op, not a careless `return` |
+| DDD-7 | The helper is **not widened**; this one action stops using it | 83 call sites across 8 controllers; widening a shared helper to fix one branch is the wrong trade |
+| DDD-8 | Descriptions carry **terminology tokens**, resolved at render | Answers ADR-134 §A.3 as a general capability; every row gets it, so the next terminology-bearing setting costs nothing |
+| DDD-9 | Token resolution is **frontend-only**; the seeder stores the token | Terminology is resolved client-side through `getTerm`; a server-side resolution would need the term map on a path that has no principal |
+| DDD-10 | `IFeatureOrderingPolicyProvider` **keeps its interface**; only its backing store changes | Three production consumers and one ArchUnit rule stay untouched |
+| DDD-11 | Alias endpoints delegate to the **same applier**, not to a parallel write | One store behind two doors cannot diverge; a second write path can |
+| DDD-12 | The alias keeps `[LicenseGuard(RequirePremium = true)]` | AC-2.5's 403 is then delivered on both doors, by two independent mechanisms |
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Component | Path | Change |
+|---|---|---|
+| `OptionalFeatureKeys` | `Models/OptionalFeatures/` | EXTEND — `FeatureOrderingKey` |
+| `OptionalFeatureSeeder` | `Services/Implementation/Seeding/` | EXTEND — new entry + first-add value migration |
+| `IOptionalFeatureApplier` | `Services/Interfaces/OptionalFeatures/` | CREATE NEW — `Key`, `ApplyAsync(OptionalFeature, bool)` |
+| `DefaultOptionalFeatureApplier` | `Services/Implementation/OptionalFeatures/` | CREATE NEW — set `Enabled`, save. The behaviour every current row has |
+| `FeatureOrderingApplier` | `Services/Implementation/OptionalFeatures/` | CREATE NEW — seed, set, save, publish, in that order and in one place |
+| `OptionalFeaturesController` | `API/` | EXTEND — resolve applier by key; 403 before the write; stops using the `Ok`-wrapping helper |
+| `FeatureOrderingPolicyProvider` | `Services/Implementation/` | EXTEND — backing store swaps to `IRepository<OptionalFeature>` |
+| `IFeatureOrdering` / `FeatureOrdering` | `Services/Implementation/` | EXTEND — a source-order method that does not consult the policy |
+| `FeatureRankSeeder` | `Services/Implementation/` | EXTEND — call the source-order method |
+| `AppSettingService` | `Services/Implementation/` | EXTEND — `SetFeatureOrderingPolicy` delegates to the applier |
+| `AppSettingsController` | `API/` | EXTEND — both actions delegate; `[LicenseGuard]` retained |
+| `SystemSettingsTab.tsx` | `pages/Settings/System/` | EXTEND — heading, token-resolved description cell |
+| `resolveTerms` | `services/Terminology/` | CREATE NEW — one small pure function |
+| `FeatureOrderingSettings.tsx` | `pages/Settings/System/` | **DELETE** |
+| `useFeatureOrdering.ts` | `hooks/` | EXTEND — reads the optional feature |
+| `AppSetting` row `FeatureOrdering:Policy` | database | **RETAINED, unread** — expand-only |
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `OptionalFeature` + seeder + controller + UI | `Models/OptionalFeatures/`, `API/`, `SystemSettingsTab.tsx` | The entire destination | **EXTEND** | Every part already runs. Adding a key and a seeded row is the whole backend cost |
+| `IFeatureOrderingPolicyProvider` | `Services/Implementation/FeatureOrderingPolicyProvider.cs` | Reads the policy | **EXTEND** | Swapping the store behind an unchanged interface keeps three consumers and one ArchUnit rule untouched. A new provider would fork the seam ADR-134 exists to keep single |
+| `IFeatureOrdering` | `Services/Implementation/FeatureOrdering.cs` | Selects a comparison | **EXTEND** | The seeder needs source order specifically. Going direct to `FeatureComparer` breaks `FeatureOrderingSingleSourceArchUnitTest`; the seam is where that answer belongs |
+| `FeatureRankSeeder` | `Services/Implementation/FeatureRankSeeder.cs` | Seeds ranks on enable | **EXTEND** | One call site changes. Its INV-A3 semantics are unchanged — ADR-134 §3 already specified source order |
+| `ApiHelpers.GetEntityByIdAnExecuteAction` | `API/APIHelpers.cs` | Fetch-or-404 then act | **UNCHANGED — this action stops using it** | It always wraps in `Ok(...)`, so 403 is unreachable inside it. 83 call sites across 8 controllers; widening it to fix one branch is a shared-contract change with no other beneficiary |
+| `LicenseGuardAttribute` | `Services/Implementation/Licensing/` | Premium 403 | **UNCHANGED — retained on the alias, not reused on the new path** | Premium-ness here is per-row data, not per-endpoint. The attribute cannot see which row is being written. Its 403 body shape is matched by hand |
+| `AppSettingService` / `AppSettingsController` | `Services/`, `API/` | The old write path | **EXTEND (delegate)** | Delegating is what makes the alias incapable of divergence |
+| `useTerminology` / `getTerm` | `services/TerminologyContext` | Client-side term resolution | **EXTEND (compose)** | The resolver calls it; nothing about terminology itself changes |
+| `FeatureOrderingSettings.tsx` | `pages/Settings/System/` | The control being moved | **DELETE** | Its only remaining job is the help text, which becomes the row's description |
+| `IDomainEventDispatcher` | `Services/Implementation/DomainEvents/` | Post-write fan-out | **EXTEND (unchanged use)** | Correct for the forecast trigger. Rejected for the seed — it swallows handler exceptions by design, and a dropped seed is unrecoverable |
+
+Zero unjustified CREATE NEW. The three new backend types are one interface and two implementations of
+it, together smaller than the `switch` they replace.
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Guard | Serves |
+|---|---|---|
+| `POST /api/{v1,latest}/OptionalFeatures/{id}` | `RbacGuard(SystemAdmin)` + per-row premium check returning 403 | AC-01.1, AC-02.1, AC-02.2, AC-02.3 |
+| `GET /api/{v1,latest}/OptionalFeatures` | none, deliberately | AC-01.1, AC-01.3, AC-01.4 |
+| `PUT /api/{v1,latest}/AppSettings/FeatureOrdering` | `RbacGuard` + `LicenseGuard(RequirePremium)` | AC-01.8, and AC-2.5 of Epic #5375 |
+| `GET /api/{v1,latest}/AppSettings/FeatureOrdering` | none, deliberately | AC-01.8 |
+| Settings → System → *Behaviour Settings* | disabled control + `LicenseTooltip` | AC-01.1, AC-01.2, AC-01.11, AC-02.4 |
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | Effect |
+|---|---|---|
+| `IRepository<OptionalFeature>` | EF Core | The one store for the ordering choice |
+| `IRepository<AppSetting>` | EF Core | Read once at first add, then never again |
+| `LighthouseAppContext.Features` | EF Core | The rank seed's narrow projection and batched write |
+| `IDomainEventDispatcher` | in-process | `FeatureOrderingPolicyChanged` → forecast re-queue |
+| `ILicenseService` | in-process | The premium verdict, read on the server and mirrored to the client |
+
+---
+
+## Wave: DESIGN / [REF] Technology Choices
+
+Nothing new is introduced. .NET 10 / ASP.NET Core, EF Core with the four shipped providers, React 18 +
+TypeScript with MUI, NUnit + Moq + EF InMemory, Vitest + React Testing Library. No package is added on
+either stack, and no EF migration is generated — the value move is a seeder step between two tables
+that both already exist.
+
+---
+
+## Wave: DESIGN / [REF] C4 — System Context
+
+```mermaid
+graph TB
+    admin["System Administrator<br/>(config-admin)"]
+    viewer["Everyone else<br/>reads the consequence"]
+    lh["Lighthouse<br/>flow metrics and forecasting"]
+    tracker["Work tracking system<br/>ADO / Jira / Linear / ServiceNow / CSV"]
+
+    admin -->|"turns instance behaviours on and off<br/>in Behaviour Settings"| lh
+    viewer -->|"reads the Features list and its<br/>position column heading"| lh
+    lh -->|"reads work items and their rank"| tracker
+
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef system fill:#1168bd,stroke:#0b4884,color:#fff
+    classDef external fill:#999,stroke:#6b6b6b,color:#fff
+    class admin,viewer person
+    class lh system
+    class tracker external
+```
+
+The story changes nothing about who talks to what. It changes where one of the administrator's
+controls lives.
+
+## Wave: DESIGN / [REF] C4 — Container
+
+```mermaid
+graph TB
+    admin["System Administrator"]
+
+    subgraph lighthouse["Lighthouse"]
+        spa["Single-page application<br/>React 18 + TypeScript + MUI"]
+        api["Backend API<br/>ASP.NET Core, ports and adapters"]
+        db[("Relational store<br/>SQLite / Postgres / MySQL / SQL Server")]
+    end
+
+    admin -->|HTTPS| spa
+    spa -->|"GET /OptionalFeatures<br/>POST /OptionalFeatures/{id}"| api
+    spa -->|"GET /AppSettings/FeatureOrdering<br/>(deprecated alias)"| api
+    api -->|"OptionalFeature.Enabled — the one store"| db
+    api -->|"Feature.ManualRank — seeded on enable"| db
+    api -->|"AppSetting FeatureOrdering:Policy — read once, then dormant"| db
+
+    classDef person fill:#08427b,stroke:#052e56,color:#fff
+    classDef container fill:#438dd5,stroke:#2e6295,color:#fff
+    classDef store fill:#438dd5,stroke:#2e6295,color:#fff
+    class admin person
+    class spa,api container
+    class db store
+```
+
+## Wave: DESIGN / [REF] C4 — Component (the toggle path)
+
+The one subsystem complex enough to earn a diagram, because the ordering of these calls is the whole
+design.
+
+```mermaid
+graph TB
+    ctrl["OptionalFeaturesController"]
+    reg["Applier registry<br/>keyed by OptionalFeature.Key"]
+    def["DefaultOptionalFeatureApplier<br/>set Enabled, save"]
+    ord["FeatureOrderingApplier"]
+    seeder["FeatureRankSeeder"]
+    ordering["FeatureOrdering<br/>the single ordering seam"]
+    repo["IRepository&lt;OptionalFeature&gt;"]
+    bus["IDomainEventDispatcher"]
+    fc["Forecast trigger handler"]
+
+    ctrl -->|"1. premium? -> 403 before any write"| ctrl
+    ctrl -->|2. resolve by key| reg
+    reg --> def
+    reg --> ord
+    ord -->|"3. seed missing ranks FIRST"| seeder
+    seeder -->|"source order, policy not consulted"| ordering
+    ord -->|4. set Enabled and save| repo
+    ord -->|5. publish| bus
+    bus --> fc
+    def --> repo
+
+    classDef comp fill:#85bbf0,stroke:#5d82a8,color:#000
+    classDef store fill:#438dd5,stroke:#2e6295,color:#fff
+    class ctrl,reg,def,ord,seeder,ordering,fc comp
+    class repo,bus store
+```
+
+Steps 3, 4 and 5 live inside one method on one type. That is the entire answer to D4: the sequence
+cannot be got wrong from outside, because there is no outside.
+
+DDD-3 is the belt to that braces — with the seeder reading source order directly, step 3 would still
+be correct if it ran after step 4. The design does not rely on that, but it no longer depends on a
+statement order that a future refactor cannot see.
+
+---
+
+## Wave: DESIGN / [REF] Open Questions
+
+| # | Question | Deferred to |
+|---|---|---|
+| OQ-1 | Token syntax for terminology in seeded descriptions, and what an unknown token renders as. Recommendation: render the raw token rather than empty, so a typo is visible in review instead of silently deleting a word | DISTILL |
+| OQ-2 | Whether the applier registry is a keyed DI registration or a small dictionary built from the registered appliers. Both are ~10 lines; the choice is house-style | DELIVER |
+| OQ-3 | Whether Epic #5733's `UsageData` becomes the second applier when it unblocks. Likely, and the interface is shaped for it, but that Epic decides | Epic #5733 DESIGN |
+| OQ-4 | When the deprecated `AppSettings/FeatureOrdering` alias and the dormant `AppSetting` row are removed. Both are inert; the next contract drop is the natural moment | A later release |
+
+**Accepted residual.** ADR-134 warned that a boolean store closes the door on a third ordering policy.
+D3 keeps the enum as the domain type, so a third value would need a new store rather than a new enum
+member — a real cost, accepted, and recorded in ADR-187 rather than solved. No third policy is on the
+board.

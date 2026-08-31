@@ -6950,3 +6950,78 @@ when Redis is configured. Chart unchanged.
 | Every new admin route carries `RbacGuard(SystemAdmin)` | Integration test enumerating the new routes |
 
 ---
+
+---
+
+## Application Architecture — story-5876-behaviour-settings (ADO User Story #5876)
+
+**ADR**: [ADR-187](./adr-187-ordering-policy-optional-feature-with-per-key-applier.md). Partially
+supersedes [ADR-134](./adr-134-ordering-policy-appsetting-enum-single-selection-point.md) §1 and §A;
+its §2, §3 and §4 are retained.
+
+### What changes
+
+The Ordering Policy stops being an `AppSetting` enum row and becomes an `OptionalFeature` keyed
+`FeatureOrdering` with `IsPremium = true`. Settings → System renders one group, **Behaviour Settings**,
+containing every instance-wide switch; the standalone *Feature Order* section is deleted. The premium
+gate on `OptionalFeaturesController` stops returning 200 with the unchanged entity and answers 403.
+
+`IFeatureOrderingPolicyProvider` keeps its interface and swaps its backing store, so the ordering seam,
+its three production consumers and `FeatureOrderingSingleSourceArchUnitTest` are untouched.
+`FeatureOrderingPolicy` remains the type every consumer sees — only the storage is boolean.
+
+### The seam this adds
+
+`IOptionalFeatureApplier` — resolved by `OptionalFeature.Key`, owns the **whole** write for that key:
+pre-write work, the `Enabled` change, the save, and any post-write publication, in one method.
+`DefaultOptionalFeatureApplier` sets and saves. `FeatureOrderingApplier` seeds missing ranks, sets,
+saves, then publishes `FeatureOrderingPolicyChanged`.
+
+The controller resolves an applier and calls it; it holds no `switch` on key. A key `switch` in a
+controller is the five-`if` failure mode ADR-134 §2 exists to prevent, relocated one layer up.
+
+### Two silent failures this removes
+
+**The order-dependent seed.** `FeatureRankSeeder` obtained "current source order" through
+`IFeatureOrdering.Order(...)`, which consults the policy — so it produced source order only because the
+seed ran before the flip. Seed after the flip and it sorts an all-null `ManualRank`, renumbering every
+Feature in `Id` order at the exact moment the product promises nothing will move. `IFeatureOrdering`
+gains a policy-independent source-order method and the seeder uses it, so the seed is correct
+regardless of when it runs. The applier still runs it first; the design no longer depends on that.
+
+**The dropped premium write.** `ApiHelpers.GetEntityByIdAnExecuteAction` always wraps its lambda's
+return in `Ok(...)` (`APIHelpers.cs:30`), so an `ActionResult` could not escape from inside it — the
+mechanical cause of the silent no-op. The check moves out and runs before any write. The helper is
+**not** widened: 83 call sites across 8 controllers, no other beneficiary.
+
+### Why the ordering consequence is not a domain event
+
+`IDomainEventDispatcher` swallows handler exceptions by design — right for metrics fan-out, wrong
+here, because a dropped seed leaves the instance in `ManualOrder` with every rank null and no signal.
+Seeding is synchronous, inside the request. `FeatureOrderingPolicyChanged` remains an event: it
+genuinely belongs after the write, and losing one costs a stale forecast rather than a scrambled order.
+
+### Terminology-aware descriptions
+
+Seeded `Description` strings may carry placeholder tokens, resolved through `getTerm` when the table
+cell renders. This is what lets a server-seeded string satisfy Epic #5375 AC-5.5, and it is a
+capability of the table rather than a special case for one row — `DeltaSync` and every future setting
+get it. Resolution is frontend-only; the seeder stores the token.
+
+### Migration and compatibility
+
+The value moves on the seeder's **first-add path only**: `AppSetting` `FeatureOrdering:Policy ==
+ManualOrder` seeds `Enabled = true`. `OptionalFeatureSeeder` never overwrites `Enabled` on an existing
+key, so there is exactly one opportunity and no later seed can repair a wrong one. No EF migration —
+both tables already exist. The `AppSetting` row is retained and unread.
+
+`GET`/`PUT api/{v1,latest}/AppSettings/FeatureOrdering` remain as deprecated aliases delegating to the
+same applier, so one store sits behind two doors. The `PUT` keeps
+`[LicenseGuard(RequirePremium = true)]`, so Epic #5375 AC-2.5's 403 is delivered on both doors by two
+independent mechanisms. No CLI or MCP client calls either endpoint.
+
+### Accepted residual
+
+A boolean store closes the door on a third ordering policy: the enum survives as the domain type, but
+a third value would need a new store rather than a new enum member. ADR-134's first objection,
+narrowed and accepted. No third policy is on the board.

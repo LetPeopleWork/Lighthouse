@@ -1,4 +1,4 @@
-# Slice 01 — One list of switches
+# Slice 02 — One list of switches
 
 ## Goal
 
@@ -19,13 +19,19 @@ who owns the forecast order, and turning it on still moves nothing.
 - Frontend: the `FeatureOrdering` row appears in the table; `FeatureOrderingSettings.tsx` and its
   `InputGroup` are deleted; `useFeatureOrdering` reads the policy from the optional feature; the group
   heading becomes **Behaviour Settings**.
+- **Terminology token substitution in the description cell.** Seeded descriptions may carry
+  placeholder tokens, resolved through `getTerm` when the cell renders. This is what makes the seeded
+  string satisfy Epic #5375 AC-5.5, and it is a general capability of the table — every row gets it,
+  including `DeltaSync` and every future one. Without it the row says "Feature" on an instance that
+  renamed it, which is the objection ADR-134 §A.3 rejected this whole store on.
 - Docs: `docs/settings/configuration.md` heading rename, *Feature Order (Premium)* folded in as the
   row's description, `settings/optionalfeatures.png` regenerated (delete the PNG first).
 - ADR-134 amended; ADR-132's enum reasoning explicitly preserved.
 
 ## OUT of scope
 
-- The premium gate silent-drop. Slice 02.
+- The premium gate silent-drop. Slice 01, which runs first precisely so this slice inherits a gate
+  that already answers 403.
 - Deleting the `AppSetting` row or the alias endpoints.
 - Any change to what manual ordering does — move actions, the position column, shared Features,
   ADO #5691.
@@ -51,6 +57,8 @@ Per US-01 (AC-01.1…01.10) in `feature-delta.md`. The three that carry it:
 - **AC-01.5** — first enable moves nothing. The regression test for the ordering constraint.
 - **AC-01.3** — an instance already on `ManualOrder` stays on it across the upgrade, with every place
   intact. The seeder gets exactly one chance at this.
+- **AC-01.11** — an instance that renamed *Feature* reads its own word in the row's description. The
+  criterion ADR-134 said this store could not meet.
 - **AC-01.6** — both transitions still re-queue the forecasts.
 
 ## Production-data acceptance
@@ -68,12 +76,17 @@ forecasts re-queue.
 
 ## Dependencies
 
-None. Epic #5375 shipped; this moves its switch.
+Slice 01 — the gate must already answer 403 before a setting that promises 403 moves onto it
+(Epic #5375 AC-2.5).
+
+Epic #5375 shipped; this moves its switch.
 
 ## Effort estimate
 
-~6h of crafter dispatch. Backend ~3h (key, seeder migration, provider re-backing, apply path, aliases,
-tests), frontend ~2h (row, component deletion, hook rewire, tests), docs and screenshot ~1h.
+~7h of crafter dispatch. Backend ~3h (key, seeder migration, provider re-backing, apply path, aliases,
+tests), frontend ~3h (row, token substitution, component deletion, hook rewire, tests), docs and
+screenshot ~1h. Over the ideal one-day line by an hour; splitting it further would produce a slice
+with no user-visible value, which the composition gate forbids.
 
 ## Reference class
 
