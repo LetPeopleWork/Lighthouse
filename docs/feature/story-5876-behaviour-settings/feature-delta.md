@@ -371,7 +371,7 @@ All pass.
 |---|---|---|
 | 1 | Business value stated | US-01 and US-02 elevator pitches; `job-admin-find-every-instance-switch-in-one-place`. |
 | 2 | Job traceability | Both stories carry a real `job_id`; no `infrastructure-only` escape used. |
-| 3 | Acceptance criteria testable | 15 ACs, each asserting an observable response, rendered element or stored value. |
+| 3 | Acceptance criteria testable | 16 ACs, each asserting an observable response, rendered element or stored value. |
 | 4 | Dependencies known | None blocking. One coordination item with Epic #5733 (D6), which is itself blocked and therefore cannot race this. |
 | 5 | Sized | Two slices, ~2h and ~7h of crafter dispatch. |
 | 6 | Technical feasibility | Every mechanism already runs in production (S2, S5, S6, S10). The one novel decision is D4, and S4 shows exactly what it must avoid. |
@@ -677,3 +677,335 @@ statement order that a future refactor cannot see.
 D3 keeps the enum as the domain type, so a third value would need a new store rather than a new enum
 member — a real cost, accepted, and recorded in ADR-187 rather than solved. No third policy is on the
 board.
+
+---
+
+## Wave: DISTILL / [REF] Inherited commitments
+
+| Origin | Commitment | DDR | Impact |
+|--------|------------|-----|--------|
+| DESIGN#DDD-6 | The refusal is 403 and cannot be returned from inside the `Ok`-wrapping helper | DDD-6 | Two scenarios pin it: one on the status, one on the body, because a 403 with a different body makes the two doors onto this setting answer a client differently |
+| DESIGN#DDD-7 | The shared helper is not widened; this one action stops using it | DDD-7 | No scenario asserts the helper's shape. `A_setting_that_does_not_exist_is_still_reported_as_not_found` pins the one behaviour leaving it must not lose |
+| DESIGN#DDD-2 | The applier owns the whole write, so the sequence cannot be got wrong from outside | DDD-2 | `Turning_the_ordering_setting_on_for_the_first_time_moves_nobody` fails if the seed ever runs after the write. Its fixture is ranked backwards on purpose — a fixture in row-id order would pass either way |
+| DESIGN#DDD-3 | `IFeatureOrdering` gains a policy-independent source order and the rank seeder uses it | DDD-3 | Not port-observable on its own. The acceptance scenario above covers the consequence; the unit test ADR-187 names under Architectural Enforcement stays a DELIVER obligation and is listed under Pre-requisites below |
+| DESIGN#DDD-5 | `FeatureOrderingPolicyChanged` stays a published domain event | DDD-5 | `Handing_the_order_over_and_giving_it_back_both_re_queue_the_forecasts` asserts both transitions through the shipped handler, not through a spy on the bus |
+| DESIGN#DDD-8 / DDD-9 | Descriptions carry terminology tokens, resolved at render, frontend-only | DDD-8 | Two frontend scenarios: the instance's own word, and an undefined token left standing. Widened by one cell — see UI-3 |
+| DESIGN#DDD-11 / DDD-12 | The alias delegates to the same applier and keeps its licence guard | DDD-11 | `A_write_through_the_deprecated_door_is_visible_through_the_new_one` and `..._moves_nobody_either` — one store behind two doors, asserted from both sides |
+| DISCUSS#D1 | The app setting row is retained and unread | D1 | `The_upgrade_leaves_the_setting_it_migrated_from_in_place`. Green today, so it guards the deletion from this moment rather than from the end of DELIVER |
+| DISCUSS#D8 | `DeltaSync` is not premium and must never become gated | D8 | Asserted explicitly on both licence states and on its stored premium flag, rather than implied by the premium cases. An inverted check refuses everybody and would pass every premium scenario |
+| DISCUSS#D10 | The gate fix ships first | D10 | The two fixtures are independent: slice 01 runs against a premium row of its own making, so nothing in it waits on slice 02 |
+
+---
+
+## Wave: DISTILL / [REF] Scenario list with tags
+
+Test placement follows the shipped precedent for this kind of work: `API/Integration/<Feature>/` with a
+`<Feature>AcceptanceTest` harness and a `Slice0N…Scenarios` / `Slice0N…Specifications` partial-class
+pair, exactly as `API/Integration/ManualSorting/` does. The C# row of the polyglot matrix governs —
+`[Ignore]` is the skip marker, and there is no `.feature` file, no Python state-delta port and no
+`__SCAFFOLD__` stub in this project.
+
+### Slice 01 — `Slice01PremiumRefusalTest` (US-02)
+
+| Scenario | Tags | State |
+|---|---|---|
+| `A_toggle_the_licence_does_not_cover_is_refused_out_loud` | `@driving_port @real-io @AC-02.1` | RED, ignored |
+| `The_refusal_reads_the_same_as_the_one_the_other_door_already_gives` | `@driving_port @real-io @AC-02.1` | RED, ignored |
+| `Both_doors_refuse_an_unlicensed_administrator_in_the_same_words` | `@driving_port @real-io @AC-02.1` | RED, ignored |
+| `The_door_this_setting_has_today_already_refuses_an_unlicensed_administrator` | `@driving_port @real-io @AC-02.1` | green |
+| `A_refused_toggle_leaves_the_setting_exactly_as_it_was` | `@driving_port @real-io @AC-02.1` | green |
+| `A_toggle_the_licence_covers_is_taken_and_reported_back` | `@driving_port @real-io @AC-02.2` | green |
+| `The_setting_the_licence_has_nothing_to_say_about_is_taken_either_way(True/False)` | `@driving_port @real-io @AC-02.3` | green |
+| `The_setting_the_licence_has_nothing_to_say_about_is_still_not_premium` | `@AC-02.3` | green |
+| `A_setting_that_does_not_exist_is_still_reported_as_not_found` | `@driving_port @real-io @AC-02.1` | green |
+
+### Slice 02 — `Slice02OneListOfSwitchesTest` (US-01)
+
+Six of these are marked **blocked on UI-1**: every scenario that toggles the ordering row through the
+behaviour-settings port is blocked, because that port cannot address either row once both are seeded.
+`red-classification.md` states the full blast radius and what it costs DELIVER to discover it late.
+
+| Scenario | Tags | State |
+|---|---|---|
+| `Turning_the_ordering_setting_on_for_the_first_time_moves_nobody` | `@driving_port @real-io @AC-01.5` | RED, ignored, blocked on UI-1 |
+| `The_places_are_seeded_in_the_order_the_admin_was_looking_at` | `@AC-01.5` | RED, ignored, blocked on UI-1 |
+| `Giving_the_order_back_writes_no_places` | `@driving_port @real-io @AC-01.7` | RED, ignored, blocked on UI-1 |
+| `Handing_the_order_over_and_giving_it_back_both_re_queue_the_forecasts` | `@driving_port @real-io @AC-01.6` | RED, ignored, blocked on UI-1 |
+| `Taking_the_order_over_again_restores_the_places_this_instance_already_chose` | `@driving_port @real-io @AC-01.7` | RED, ignored, blocked on UI-1 |
+| `Each_setting_in_the_list_is_switched_on_its_own` | `@driving_port @real-io @AC-01.1` | RED, ignored, blocked on UI-1 |
+| `An_instance_that_already_owned_its_order_still_owns_it_after_the_upgrade` | `@driving_port @real-io @AC-01.3` | RED, ignored |
+| `An_instance_that_never_took_its_order_over_does_not_acquire_it_in_the_upgrade("SourceOrder" / null / "Nonsense")` | `@driving_port @real-io @AC-01.4` | RED, ignored |
+| `A_write_through_the_deprecated_door_is_visible_through_the_new_one` | `@driving_port @real-io @AC-01.8` | RED, ignored |
+| `A_write_through_the_deprecated_door_moves_nobody_either` | `@driving_port @real-io @AC-01.8` | green |
+| `An_instance_whose_licence_lapsed_keeps_the_order_it_already_owns` | `@driving_port @real-io @AC-01.3` | green |
+| `The_setting_that_was_already_in_the_list_is_carried_across_untouched` | `@AC-01.9` | green |
+| `The_upgrade_leaves_the_setting_it_migrated_from_in_place` | `@AC-01.10` | green |
+
+### Rendered — `SystemSettingsTab.behaviourSettings.test.tsx`
+
+| Test | Tags | State |
+|---|---|---|
+| `puts every instance-wide switch under one heading` | `@AC-01.1` | RED, skipped |
+| `leaves no separate section behind` | `@AC-01.1` | RED, skipped |
+| `reads the row in the instance's own word for a Feature` | `@AC-01.11` | RED, skipped |
+| `switches one setting without touching the other` | `@AC-01.1` | RED, skipped, UI-1's frontend twin |
+| `shows the ordering switch as unavailable on an instance without the licence` | `@AC-01.2` | green |
+| `leaves a token nobody defined exactly where it is` | `@AC-01.11` | green (vacuous until the resolver ships) |
+| `changes nothing about the setting that was already in the list` | `@AC-01.9` | green (mock-driven) |
+| `never lets an unlicensed administrator reach the refusal` | `@AC-02.4` | green |
+| `puts the switch back when the write is refused` | `@AC-02.4` | green |
+
+Four of these nine are mock-driven and exercise rendering that shipped long ago, so they could not fail
+if this feature were never built. `red-classification.md` names all four rather than the two the first
+draft admitted to — the frontend suite is thinner than its size suggests, and reading it as evidence
+rather than as a guard would overstate what DISTILL has pinned.
+
+**AC-02.5 is not a test.** It is a check that Epic #5733's documents still read true — US-07 marked
+TRANSFERRED, slice 03 asserting rather than writing the refusal, AC-07.3 kept as #5733's invariant.
+It belongs to finalization, and is listed there rather than skipped.
+
+---
+
+## Wave: DISTILL / [REF] WS strategy
+
+**C — no walking skeleton**, inherited from DISCUSS unchanged. Brownfield: the entity, the seeder, the
+toggle endpoint, the premium rendering and the ordering seam all run in production today. Nothing here
+is a mechanism nobody has run, so there is no end-to-end path to prove for the first time.
+
+What survives the absence of a skeleton is the demand that the scenarios reach the system the way a
+user does. Every backend scenario tagged `@driving_port` goes through the real ASP.NET host over real
+EF and real SQLite; none of them calls a service directly.
+
+---
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `IRepository<OptionalFeature>` (EF Core) | YES | Every slice-01 and slice-02 scenario; the store is read back directly on top of the read port |
+| `IRepository<AppSetting>` (EF Core) | YES | `An_instance_that_already_owned_its_order_still_owns_it_after_the_upgrade`, `The_upgrade_leaves_the_setting_it_migrated_from_in_place` |
+| `LighthouseAppContext.Features` (EF Core) | YES | `The_places_are_seeded_in_the_order_the_admin_was_looking_at` — the rank seed's narrow projection and batched write, run for real |
+| `IDomainEventDispatcher` (in-process) | YES | `Handing_the_order_over_and_giving_it_back_both_re_queue_the_forecasts`, through the shipped `FeatureOrderingPolicyChangedForecastTriggerHandler` |
+| `ILicenseService` | fake, by policy | `Mock<ILicenseService>` — external, non-deterministic, and the verdict slice 01 is entirely about. The one port that has to be controllable for the scenarios to say anything |
+| `IForecastUpdater` | fake, by policy | `Mock<IForecastUpdater>` — a background queue. A scenario that waited on it would be timing against a thread rather than asserting a promise. It is the observable the event assertion reads |
+| `IWorkTrackingConnector` | fake, by policy | Not exercised. Stubbed to return nothing so a Portfolio can exist without a tracker being reachable |
+
+Zero rows missing.
+
+---
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+Every surface DESIGN names is reached through its own protocol, over HTTP, by at least one scenario.
+
+| Surface | Reached by |
+|---|---|
+| `POST /api/latest/OptionalFeatures/{id}` | `ToggleOptionalFeature` — real HTTP POST with the whole row as raw JSON |
+| `GET /api/latest/OptionalFeatures` | `GetOptionalFeatures` — real HTTP GET, parsed as wire JSON |
+| `PUT /api/latest/AppSettings/FeatureOrdering` | `SetOrderingPolicyThroughTheAlias` — real HTTP PUT |
+| `GET /api/latest/AppSettings/FeatureOrdering` | `GetOrderingPolicy` — real HTTP GET |
+| `GET /api/latest/features` | `GetAllFeatures` — the read port AC-01.5 is judged against |
+| Settings → System → *Behaviour Settings* | The rendered suite, through the real component and the real terminology provider |
+
+The bodies are written as raw JSON rather than built from the shipped types on purpose: a rename on
+the server side cannot keep these scenarios green, and none of them can pass by compiling against a
+type somebody added.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+No production scaffolds were written. Every type the scenarios touch already exists — this is a
+brownfield move, and the RED scenarios fail on *behaviour*, not on a missing symbol.
+
+The one place a scaffold would ordinarily go is `OptionalFeatureKeys.FeatureOrderingKey`, which does
+not exist yet. Rather than add a constant to production code so a test can compile, the harness names
+the key as a local constant with the reason recorded inline. A scaffold there would have been a
+production edit made by DISTILL for a test's convenience, and would have shipped if DELIVER stalled.
+
+Files added:
+
+- `Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs`
+- `Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalScenarios.cs`
+- `Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalSpecifications.cs`
+- `Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice02OneListOfSwitchesScenarios.cs`
+- `Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice02OneListOfSwitchesSpecifications.cs`
+- `Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.behaviourSettings.test.tsx`
+
+---
+
+## Wave: DISTILL / [REF] Closed Open Questions
+
+### OQ-1 — Token syntax, and what an unknown token renders as. **CLOSED**
+
+**Syntax: `{{key}}`, where `key` is a value from `TERMINOLOGY_KEYS`** — camelCase, so `{{features}}`
+and `{{feature}}`. Double braces because no seeded description contains one today and none plausibly
+will; single braces collide with ordinary prose.
+
+**An unknown token is left standing, braces and all.** `{{fetaure}}` renders as `{{fetaure}}`.
+
+The two alternatives both fail quietly. Resolving through `getTerm` alone would render the bare key —
+`getTerm` already falls back to its argument (`TerminologyContext.tsx:55-57`) — so a typo would read as
+ordinary lowercase prose and survive review. Dropping the token would delete a word from a sentence,
+which reads as a bug in the copy rather than a bug in the copy's key. Leaving it visible is the only
+outcome a reviewer cannot miss. The resolver therefore checks membership of `TERMINOLOGY_KEYS`, which
+is a closed set on the client, before substituting.
+
+Asserted by `leaves a token nobody defined exactly where it is`.
+
+### OQ-2 — Keyed DI registration or a dictionary. **Still DELIVER's.** No scenario constrains it.
+
+### OQ-3 — Whether `UsageData` becomes the second applier. **Still Epic #5733's.**
+
+### OQ-4 — When the alias and the dormant row are removed. **Still a later release's.**
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites and DELIVER obligations
+
+Things DELIVER owes that no acceptance scenario can carry. Nine, after the review gate.
+
+1. **UI-1 must be answered before slice 02 starts, and answered on both sides.** Two rows in the table
+   cannot both be addressed by the identity the toggle route uses, and the frontend keys its rows and
+   matches its optimistic update on that same identity (UI-5). Routing the backend write by key does
+   not fix the browser. This is a DESIGN decision, not an implementation detail; six backend scenarios
+   and one frontend scenario stay RED until it is made.
+2. **`SetPolicy` must be disposed of** — deleted or delegated (UI-6). Left as it is, it is a second
+   writer of the same row that skips the seed and the event.
+3. **The applier seeds only on the way out** (UI-7). `Giving_the_order_back_writes_no_places` pins it.
+4. **The unit test ADR-187 §4 names**, calling `SeedMissingRanks` with the policy already `ManualOrder`
+   and every rank null, asserting source order. It is a statement about a seam, not about a port, so it
+   belongs to DELIVER's unit work. The acceptance suite covers the consequence; this covers the cause.
+5. **`FeatureOrderingSingleSourceArchUnitTest` stays green.** Unchanged by design and already in the
+   suite; named here so a crafter reaching past the seam finds out immediately.
+6. **The Features list column heading is not asserted anywhere.** AC-01.3 and AC-01.4 each name a
+   rendered outcome — the *Manual* heading and the `#` heading. The backend scenarios cover the stored
+   policy those headings derive from; the heading itself lives in a Features-list component this story
+   does not otherwise touch, so no scenario reaches it. Recorded rather than skipped: DELIVER either
+   adds one rendered assertion per policy state or states why it does not.
+7. **The comments in the files this story edits** (UI-9). One of them — `"0 lets EF assign the key"` —
+   is false and is why UI-1 survived a release; it should be deleted, not corrected.
+8. **Mutation testing**, both stacks, ≥80%, recorded under `docs/feature/story-5876-behaviour-settings/mutation/`.
+9. **AC-02.5** — re-read Epic #5733's delta and slice 03 at finalization and confirm neither claims the
+   refusal. A document check, done by reading, not by running.
+
+Two open product questions the reviewers surfaced, for the maintainer rather than for DELIVER:
+
+- **Whether a lapsed licence should strand an administrator on a setting they can neither use nor turn
+  off** (UI-8). The behaviour is pre-existing and preserved, and the preservation is now pinned by a
+  green test — but slice 01 rewrites exactly the branch that refuses the write, so it is the cheap
+  moment to decide otherwise.
+- **Whether the terminology resolver runs on the row's name as well as its description** (UI-3). The
+  seeded name carries the same configurable term, so without it the row says "Features" on an instance
+  that renamed them — the objection this whole store was once rejected over. The scenarios assert both
+  cells; DESIGN has not yet widened the decision to match.
+
+---
+
+## Wave: DISTILL / [REF] Outcomes registry
+
+**Not registered, deliberately.** `IOptionalFeatureApplier` is a new typed contract and would be one
+`OUT-N` row. `docs/product/outcomes/registry.yaml` is empty — no feature in this repository has ever
+registered an outcome — so a single row would be an index nothing consults rather than a source of
+truth. Recorded here rather than skipped silently; adopting the registry is a project decision, not
+this story's to make.
+
+---
+
+## Wave: DISTILL / [REF] Wave-decision reconciliation
+
+**Passed — zero unresolved contradictions.**
+
+This project keeps one `feature-delta.md` rather than per-wave `wave-decisions.md` files, so
+reconciliation reads the DISCUSS and DESIGN sections of this document against each other.
+
+DESIGN found two contradictions against DISCUSS and resolved both before DISTILL began: CA-1 (ADR-134
+§A.3 rejected this store on terminology, answered by D9/DDD-8) and CA-2 (Epic #5375 AC-2.5 promises
+403, which reversed the slice order into D10). Both are recorded with the superseded reasoning intact.
+Nothing is left for DISTILL to pick a side on.
+
+DISTILL adds no contradiction of its own. UI-1 and UI-3 are gaps rather than conflicts — facts neither
+wave had, not decisions the two waves disagree about.
+
+---
+
+## Wave: DISTILL / [REF] Expansion catalog
+
+**No trigger fired. Strict lean output.** No AC ambiguity — the sixteen criteria each name an observable
+response, rendered element or stored value. Two contexts, not many. One persona. No compliance surface.
+WS strategy is C, not D. The expansions this wave can offer — fixture-design discussion, edge-case
+enumeration, PBT strategy notes — describe decisions the shipped ManualSorting precedent already made
+for this project, so rendering them would restate house style as if it were a choice.
+
+
+---
+
+## Wave: DISTILL / [REF] Final wave review gate
+
+Run 2026-08-31 over the whole four-wave chain. Three reviewers, one per wave that produced sections in
+this document.
+
+| Wave | Verdict | Blockers | High | Low |
+|---|---|---|---|---|
+| DISCUSS | `needs_revision` | 1 | 8 | 6 |
+| DESIGN | `needs_revision` | 2 | 5 | 7 |
+| DISTILL | `conditionally_approved` | 0 | 5 | 10 |
+
+**DEVOPS: N/A, and not silently.** No DEVOPS wave ran for this story and this document has no DEVOPS
+sections. There is no infrastructure surface — no new endpoint at the platform level, no schema change,
+no deployment or chart change; the seeder gains one predicate at startup. A fourth reviewer would have
+been dispatched at an empty section.
+
+**The reviewers ran as `general-purpose` agents, not as the named nWave reviewers.** Every nWave agent
+declares `tools: Read, Glob, Grep`, all three of which this environment denies, and the frontmatter
+patch that grants them the `ctx_*` equivalents had reverted. Two dispatches were spent discovering
+that. The patch was re-applied and verified, but agent definitions are cached per session, so the gate
+ran on agents that can actually read files, carrying the same briefs and the same criteria skills.
+Recorded because a gate that reports "blocked" is not a gate that passed.
+
+### What the gate changed
+
+Both DISCUSS and DESIGN verdicts are `needs_revision` on findings that belong to those waves. DISTILL
+is `conditionally_approved`, and every one of its conditions has been met in this pass:
+
+- **A frontend assertion that could never fail.** `leaves no separate section behind` asserted the
+  absence of a testid that has never existed in this codebase. It now names the two the standalone
+  section really renders. This is the finding worth the whole gate: a removal guard that had quietly
+  stopped guarding removal.
+- **The toggle helper addressed rows by the ambiguous identity.** It now takes the setting's key, looks
+  the row up by it, and asserts exactly one row carries the resulting number — quoting UI-1 when more
+  than one does. Without that, slice 02 would have built its request from whichever row the store
+  happened to return first.
+- **The UI-1 blast radius was understated at one scenario.** It is six, plus a currently-green guard
+  that would have flipped red for a harness reason mid-slice.
+- **The preview badge was untested on both sides.** The backend probe now carries it, so all five
+  clauses of AC-01.9 are asserted where the value actually lives.
+- **The position assertion could not fail.** The whole table is numbered from one in the order it is
+  returned, so both sides always read 1..N. Name and place are now compared as one sequence.
+- **The 404 scenario let one hoist through.** Its request now claims to be premium, so a check hoisted
+  above the lookup fires whether it reads the request or the store.
+- **A `Given` that stated nothing** now sets the licence it names, rather than resting on a harness default.
+
+Five scenarios were added from findings, four of which pin something nothing pinned before:
+
+| Added | Why |
+|---|---|
+| `The_door_this_setting_has_today_already_refuses_an_unlicensed_administrator` | Epic #5375 AC-2.5 is the criterion the 403-first slice order exists to protect, and nothing asserted it on the door that delivers it |
+| `Both_doors_refuse_an_unlicensed_administrator_in_the_same_words` | The design says the two refusals are "matched by hand"; that is only true while something compares them |
+| `Giving_the_order_back_writes_no_places` | The shipped write path seeds only on the way out; nothing in the design carries that condition forward (UI-7) |
+| `An_instance_whose_licence_lapsed_keeps_the_order_it_already_owns` | Green today, and the guard against a licence-aware provider silently reordering every lapsed customer's list |
+| `switches one setting without touching the other` | Reproduces UI-1 in the browser and survives any backend-only fix (UI-5) |
+
+A third migration case — a stored value that is neither `ManualOrder` nor `SourceOrder` — was added to
+the upgrade scenario. The seeder gets one chance at each instance, and an unparseable row is one of the
+three shapes it can meet.
+
+### What the gate did not change
+
+The DISCUSS findings on story sizing, the missing journey YAML, KPI-5's unmeasurability, US-02 borrowing
+US-01's `job_id`, and AC-02.5 being a document check rather than a criterion are all real and all belong
+to DISCUSS. They are not DISTILL's to rewrite and are left for the maintainer.
+
+Both reviewers independently read the lapsed-licence case as a new hole opened by this story. It is not
+— the behaviour predates it and is preserved — and the disagreement is recorded in UI-8 with the
+evidence rather than resolved by adopting the finding.

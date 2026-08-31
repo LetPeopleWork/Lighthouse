@@ -68,7 +68,7 @@ Also satisfies the precondition Epic #5733 slice 03 depends on, earlier than tha
 
 ## Effort estimate
 
-~2h of crafter dispatch. One branch, four test cases, two document edits in another feature's folder.
+~2h of crafter dispatch. One branch, four test cases, and one re-check of another feature's folder — the back-propagation itself landed in DISCUSS, so no edit is expected there.
 
 ## Reference class
 

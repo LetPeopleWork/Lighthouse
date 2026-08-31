@@ -52,7 +52,7 @@ which is what makes it a place to consolidate rather than a place for flags.
 
 ## Acceptance criteria
 
-Per US-01 (AC-01.1…01.10) in `feature-delta.md`. The three that carry it:
+Per US-01 (AC-01.1…01.11) in `feature-delta.md`. The four that carry it:
 
 - **AC-01.5** — first enable moves nothing. The regression test for the ordering constraint.
 - **AC-01.3** — an instance already on `ManualOrder` stays on it across the upgrade, with every place
