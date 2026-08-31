@@ -352,6 +352,13 @@ get re-applied.
 
 ## Tests
 
+### 2026-08-31 — a Settings tab added to `systemAdminTabValues` but not to `Settings.test.tsx` ships an untested RBAC gate
+
+- **Symptom**: no CI failure — the opposite. Deleting `"45"` (the Encryption tab) from `systemAdminTabValues` in `Lighthouse.Frontend/src/pages/Settings/Settings.tsx:89` left the whole frontend suite green at 345 files / 4634 tests. The mutation exposes key custody, active key id, the full key ring and the resolved key-store path to every signed-in viewer, including an embedded-frame viewer per ADR-137.
+- **Root cause**: the tab-visibility tests in `Settings.test.tsx` assert on a hand-maintained list of test ids (`configuration-tab`, `demo-data-tab`, `database-tab`, `rbac-tab`, `api-keys-tab`, `system-info-tab`). `encryption-tab` was added to the product in Epic #5775 and never added to those lists, so its gate had no test at all. Panel components generally carry no RBAC check of their own — `EncryptionPanel` fetches unconditionally on mount — so `systemAdminTabValues` is the entire gate. Found by adversarial review of story #5875, not by CI.
+- **Fix**: `encryption-tab` added to all five tab-visibility cases in `Settings.test.tsx` (four non-admin asserting absence, one admin asserting presence). The same mutation now fails 3 tests. Note the fifth case, "hides System Admins tab when isRbacEnabled is false", is `isSystemAdmin: true` — the Encryption tab *is* expected there, so a blanket absence assertion is wrong.
+- **Rule going forward**: when you add a Settings tab to `systemAdminTabValues` (or any other visibility set) in `Settings.tsx`, add its `testId` to every tab-visibility case in `Settings.test.tsx` in the same change — absence in the non-admin cases, presence in the admin case — because the tab component itself has no RBAC check and the set is the only gate. Verify by deleting the tab's value from the set: if the suite stays green, the gate is untested.
+
 ### 2026-08-23 — a test sitting at 92s was not slow, it was failing slowly against a poll deadline
 
 - **Symptom**: `Slice00OneForecastPerBatchScenarios.A_forecast_write_back_that_failed_leaves_nothing_half_written` sat at **92.2s** in the top-20 slowest table while its six siblings in the same fixture summed to 20s. Two runs later, on run `32647715626`, three tests in that fixture went red at 1m17s–1m24s each with `The update queue never settled within 60s, so nothing can be concluded about how often the portfolio was forecast.`
