@@ -1,0 +1,133 @@
+schema_version: 1
+feature_id: story-5876-behaviour-settings
+updated: 2026-08-31
+note: >
+  ADO User Story #5876, "Move Feature Ordering to Optional Features". The ADO description is three
+  lines and one of them is already true. This journey is the result of the DISCUSS dive-in on
+  2026-08-31, grounded in a pre-DISCUSS code reality check (OptionalFeature.cs, OptionalFeatureKeys.cs,
+  OptionalFeatureSeeder.cs, OptionalFeaturesController.cs, FeatureOrderingPolicy.cs,
+  FeatureOrderingPolicyProvider.cs, AppSettingKeys.cs, AppSettingService.cs, AppSettingsController.cs,
+  FeatureRankSeeder.cs, FeatureOrdering.cs, RbacGuardAttribute.cs, SystemSettingsTab.tsx,
+  FeatureOrderingSettings.tsx, useFeatureOrdering.ts, SettingsService.ts, plus the lighthouse-clients
+  endpoint inventory).
+
+  Three load-bearing finds the sketch did not carry:
+
+  (1) The premium plumbing already exists. OptionalFeature carries IsPremium, the seeder refreshes it
+  on every upgrade, and SystemSettingsTab already renders a premium row as a disabled Switch inside a
+  LicenseTooltip. What is missing is not support for the flag - it is a feature that uses it. DeltaSync
+  is the only live optional feature and it is preview, not premium, so the premium branch has never
+  run in production.
+
+  (2) The flip is not a stored boolean. AppSettingService.SetFeatureOrderingPolicy runs
+  FeatureRankSeeder.SeedMissingRanks() BEFORE persisting, then publishes FeatureOrderingPolicyChanged.
+  The pre-write ordering is load-bearing: SeedMissingRanks reads the sequence through IFeatureOrdering,
+  which itself reads the policy, so seeding after the flip sorts an all-null ManualRank and renumbers
+  the whole list in Id order. "Nothing moves when you turn it on" is the promise the control was built
+  on. A post-commit domain-event handler breaks it, which is why the standing preference for the event
+  bus does not decide this one.
+
+  (3) OptionalFeatureSeeder never overwrites Enabled on an existing key. A new key therefore gets
+  exactly one opportunity to carry the old value across - at first add - and a shipped release with a
+  wrong migration cannot be corrected by a later seed.
+
+  Two decisions the user made in DISCUSS that the sketch left open. The group is renamed Behaviour
+  Settings, not Feature Toggles: Feature is a Terminology-configurable term, so an instance that
+  renamed it would read "Epic Toggles". And the premium silent-drop fix moves here from Epic #5733
+  slice 03, because this story creates the first premium optional feature and so is the first change
+  that makes the broken branch reachable at all.
+
+persona: config-admin
+
+jobs:
+  - job-admin-find-every-instance-switch-in-one-place
+
+mental_model: >
+  An administrator believes a settings page is a list of things they can change, and that a thing they
+  can change is either in the list or is not a thing they can change. They do not hold a model of which
+  release introduced which control. So a page with a table of switches AND a separate section
+  containing one switch reads as two different kinds of thing - and the reader's guess at what makes
+  them different will be wrong, because the actual answer is that one of them arrived with its own
+  Epic.
+
+  Their vocabulary is "turn on", "turn off", "is it on", "does our licence cover it". Not "policy",
+  not "optional", not "preview flag".
+
+happy_path:
+  - step: Open Settings - System
+    output: >
+      A group headed Behaviour Settings containing every instance-wide switch, each with its name, what
+      it does, whether it is on, and - where the licence does not cover it - a disabled control with
+      the premium tooltip.
+    emotion: oriented
+  - step: Read the row for feature ordering
+    output: >
+      The description says what turning it on does and what turning it off gives back, in the same
+      column as every other row's description.
+    emotion: informed
+  - step: Turn it on
+    output: >
+      The switch reads on. The Features list is IDENTICAL - same sequence, same items - and its
+      position column heading has changed to Manual.
+    emotion: reassured
+  - step: Watch a refresh go by
+    output: The order does not re-sequence. The forecast dates reflect the order that was already there.
+    emotion: confident
+  - step: Turn it off again
+    output: >
+      The order returns to the work tracking system immediately. The chosen places are kept, so turning
+      it back on restores them rather than re-reading from the tracker.
+    emotion: in control
+
+emotional_arc: >
+  Starts at mild disorientation - two kinds of control on one page with no rule saying which is which -
+  and resolves at "this list is complete". The one place the arc can break is the third step: if
+  turning the switch on moves anything, the reader concludes the product reordered their work without
+  asking, and no later step recovers that. Confidence in this journey is bought entirely by nothing
+  happening at the moment the user most expects something to.
+
+shared_artifacts:
+  - name: the ordering choice
+    source: OptionalFeature row keyed FeatureOrdering (Enabled)
+    note: >
+      Single source after this story. Migrated once, at first add, from AppSetting FeatureOrdering:Policy.
+      The AppSetting row is left in place and stops being read - additive only. Read everywhere through
+      IFeatureOrderingPolicyProvider, which keeps its shape and only swaps its backing store, so the
+      ArchUnit guard on the ordering seam stays green.
+  - name: the chosen places
+    source: Feature.ManualRank
+    note: >
+      Untouched by this story. Seeded on first enable by FeatureRankSeeder, which must observe the
+      PRE-flip order. Kept when the switch goes off, which is what makes the off-switch a revert rather
+      than a re-import.
+  - name: the licence verdict
+    source: ILicenseService.CanUsePremiumFeatures
+    note: >
+      Read on the server for the gate and surfaced to the client through LicenseStatusDto so the row
+      can render disabled. Two readers, one answer.
+
+error_paths:
+  - situation: An instance that was on ManualOrder is upgraded
+    failure: The new key seeds Enabled = false and the instance silently reverts to tracker order.
+    recovery: >
+      None after the fact - the seeder never overwrites Enabled on an existing key, so there is no
+      second chance. Prevented by migrating on the first-add path, and asserted before release against
+      the Postgres dev restore by comparing Features.ManualRank before and after.
+  - situation: The switch is turned on for the first time
+    failure: >
+      The seed runs after the flip, reads an all-null ManualRank, and renumbers every Feature in Id
+      order. The user's list visibly scrambles.
+    recovery: >
+      None the user can perform; the previous sequence came from the tracker and is not recorded
+      anywhere. Prevented by keeping the seed strictly before the write.
+  - situation: A Community administrator toggles the row through the API
+    failure: HTTP 200 carrying the unchanged entity - the write is dropped and the response says it worked.
+    recovery: >
+      Fixed in slice 02: an explicit refusal. Not reachable through the UI, which already disables the
+      control, so the exposure is direct API callers only.
+  - situation: A caller still uses PUT /AppSettings/FeatureOrdering
+    failure: Two stores for one setting, diverging silently.
+    recovery: >
+      Prevented rather than recovered - the alias delegates to the same provider, so there is one store
+      behind two doors. No client calls it today; the alias exists for a caller nobody has found and is
+      removed at the next contract drop.

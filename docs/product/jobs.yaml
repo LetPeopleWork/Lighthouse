@@ -47,6 +47,7 @@ feature_context:
   - epic-5733-opt-in-usage-data
   - epic-5511-task-manager
   - remove-encryption-frame-from-config
+  - story-5876-behaviour-settings
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6437,3 +6438,70 @@ jobs:
         serves the operator after the task list has already got their attention. Current satisfaction 1 -
         the log viewer exists and works, it just requires intent. Gap 2, the smallest in the Epic, which
         is why it ships last.
+
+  - id: job-admin-find-every-instance-switch-in-one-place
+    title: Find every instance-wide switch in one place
+    persona: config-admin
+    feature_context: story-5876-behaviour-settings
+    created: 2026-08-31
+    note: >
+      NEW in story-5876-behaviour-settings. Grounded in a code reality check on 2026-08-31 that
+      contradicted the ADO description in one respect and sharpened it in another. The description
+      says "the optional features must support Premium only flags" - they already do: OptionalFeature
+      carries IsPremium and IsPreview, OptionalFeatureSeeder refreshes both on every upgrade, and
+      SystemSettingsTab already renders a premium row as a disabled Switch inside a LicenseTooltip.
+      Nothing has ever exercised that branch, because DeltaSync is the only live optional feature and
+      it is preview, not premium.
+
+      What the description does not carry is the reason the move is not a move. Ordering ownership is
+      an enum in AppSetting, and flipping it runs FeatureRankSeeder.SeedMissingRanks() BEFORE the
+      value is persisted. That ordering is load-bearing: SeedMissingRanks reads the sequence through
+      IFeatureOrdering, which reads the policy, so seeding after the flip sorts by an all-null
+      ManualRank and renumbers the whole list in Id order. "Nothing moves when you turn it on" is the
+      promise the control was built on, and a post-commit domain-event handler breaks it.
+
+      Two further finds: OptionalFeatureSeeder never overwrites Enabled on an existing key, so a new
+      key gets exactly one chance to carry the old value across, at first add. And the premium gate at
+      OptionalFeaturesController:41 returns 200 with the unchanged entity, so this story - which
+      creates the first premium optional feature - is the first change that makes that branch
+      reachable at all.
+    job_story: >
+      When I want to change how my Lighthouse instance behaves,
+      I want every instance-wide switch to be in the same list,
+      so I can find the one I need without already knowing which release introduced it.
+    dimensions:
+      functional: >
+        One table under Settings - System listing every instance-wide behaviour switch, each with its
+        name, what it does, whether it is on, and whether the licence covers it.
+      emotional: >
+        Move from scanning a settings page for sections that happen to contain a switch, to reading
+        one list and knowing it is complete.
+      social: >
+        Be able to answer "what is turned on in our instance" from one screenshot rather than from
+        memory of the release notes.
+    forces:
+      push: >
+        Which switches live in the Optional Features table and which live in their own section is a
+        fact about release history, not about what they do. Manual ordering shipped as its own section
+        because it arrived with its own Epic.
+      pull: >
+        The table already exists, already renders premium and preview rows correctly, and already has
+        the guard the ordering setting needs. Nothing has to be built for the destination.
+      anxiety: >
+        That the move loses the setting on upgrade, or that turning it on for the first time
+        re-sequences the list. Both are real failure modes with named mechanisms, not vague risk -
+        the seeder gets one shot at the value, and the seed must observe the pre-flip order.
+      habit: >
+        Administrators look for a setting where they last saw it. A move is only worth it if the new
+        place is the one they would look first - which is why the group is renamed to say what its
+        rows decide rather than that they are optional.
+    opportunity_score:
+      importance: 2
+      current_satisfaction: 1
+      gap: 1
+      rationale: >
+        Importance 2 - the setting is findable today, just not where a reader would look, so this is
+        coherence rather than capability. Current satisfaction 1 - there are two places to look and no
+        rule saying which. Gap 1, the smallest of any job on the board, which is honest: the value
+        here is that every future instance-wide switch has an obvious home, not that this one switch
+        was hard to find.

@@ -128,6 +128,12 @@ Premium is the product owner's commercial call, made with the trade named (see D
 be fixed first: a silently-dropped write is tolerable on a performance flag and is not tolerable on a
 privacy control.
 
+**S8 is no longer fixed here.** Story #5876 makes ordering ownership the first premium optional
+feature and so reaches the broken branch before this Epic does; the fix moved there on 2026-08-31 and
+is a **precondition** of this slice, not part of it. See
+`docs/feature/story-5876-behaviour-settings/feature-delta.md` D6. If #5876 has not shipped when this
+Epic unblocks, the fix comes back here — it may not simply be skipped.
+
 ### D5 — Community is re-asked every three months and cannot switch the asking off
 
 Falls directly out of D4. A Community admin has no way to stop the prompt; a Premium admin does. A
@@ -275,9 +281,10 @@ role, and on an auth-off instance there is no role to check (S11).
 ## Wave: DISCUSS / [REF] Out of Scope
 
 - **The OptionalFeatures rework the Epic muses about** — making the premium gate a first-class
-  concept, migrating "manual ordering" out of `FeatureOrderingSettings` into an OptionalFeature.
-  Separate board item. Only the S8 silent-no-op defect is pulled in, because a privacy control cannot
-  ship on a broken gate.
+  concept, migrating "manual ordering" out of `FeatureOrderingSettings` into an OptionalFeature. That
+  board item became story **#5876**, and on 2026-08-31 it also took the **S8 silent-no-op fix**, which
+  this Epic had pulled in. #5876 creates the first premium optional feature, so it reaches the broken
+  branch first. S8 is now a precondition of slice 03 rather than work inside it.
 - **Changing the GitHub release check** (S2). Documented (D11), not altered.
 - **Per-user-account consent.** Provably impossible on the auth-off installed base (S11).
 - **Customer-visible usage analytics.** This Epic sends data to the vendor. An in-app dashboard where
@@ -486,7 +493,13 @@ Decision enabled: whether the organisation's policy is actually enforced, answer
 
 ### US-07 — Be told the switch is unavailable rather than have my change silently dropped
 
-`job_id: job-admin-stop-lighthouse-asking-my-people` · Slice 03
+> **TRANSFERRED to story #5876 on 2026-08-31 — not implemented by this Epic.** #5876 creates the
+> first premium optional feature and so reaches this branch first; it carries the fix as its US-02.
+> Kept here in full because slice 03 depends on it: a privacy control may not ship on a gate that
+> drops writes. Verify it holds before slice 03 starts. AC-07.3 (`DeltaSync` stays ungated) remains
+> this Epic's invariant to check, wherever the fix was written.
+
+`job_id: job-admin-stop-lighthouse-asking-my-people` · Precondition of Slice 03 · owned by story #5876
 
 As a Community system administrator, I want a refused toggle to say it was refused, so that I do not
 believe I have disabled something that is still running.
@@ -557,7 +570,7 @@ Decision enabled: whether to invest further in a shipped feature, fix it, or ret
 | Find out what it sends | US-01 indicator, US-02 dialog + docs page | — | — | US-08 docs widened |
 | Decide | US-02 (on click) | US-05 (asked unprompted, honest cadence) | — | — |
 | Change my mind | US-03 | — | — | — |
-| Govern it | — | — | US-06 switch, US-07 honest refusal | — |
+| Govern it | — | — | US-06 switch (US-07 honest refusal → story #5876) | — |
 | Learn from it | US-04 heartbeat + census | — | — | US-08 product events |
 
 **Walking skeleton = slice 01.** One browser consents, one heartbeat leaves, the maintainer sees it,
@@ -587,7 +600,7 @@ be released as one.
 | 1 | SPIKE-00 collector probe | Highest uncertainty, blocks everything, and the wrong answer is expensive in both money (plan tier) and architecture (D10). Failing here costs a day. |
 | 2 | Slice 01 walking skeleton | The only slice that can fail for structural reasons. Also the slice that makes the product stop contradicting itself (S3, S4), so nothing else may ship before it. |
 | 3 | Slice 02 the ask | Highest learning leverage per hour: uptake is the number the whole Epic rests on, and until people are actually asked it is unmeasured. Deliberately before the admin switch, because a switch governing a prompt nobody sees proves nothing. |
-| 4 | Slice 03 admin veto | Dependency-driven: needs something to veto. Carries the S8 defect fix, so it is also the slice that must not be skipped. |
+| 4 | Slice 03 admin veto | Dependency-driven: needs something to veto. The S8 defect fix it used to carry moved to story #5876 on 2026-08-31 and is now a precondition — confirm it before starting, and bring it back here if #5876 has not shipped. |
 | 5 | Slice 04 product events | Last on purpose. The event vocabulary should be chosen once there is a real consenting population to spend it on, and after slice 02 tells us how big that population is. |
 
 Dogfood cadence: every slice is dogfooded on the vendor's own instance the day it ships. Slice 01's
@@ -679,7 +692,7 @@ ship until DoR-9 closes.
   table, not merely inconvenient.
 - Nothing may be read from or written to the browser before the consent click (D2).
 - No event may carry customer content, enforced as a CI invariant.
-- The premium gate must stop silently dropping writes before a privacy control rides on it (S8).
+- The premium gate must stop silently dropping writes before a privacy control rides on it (S8). Fixed by story #5876, not here — a precondition to verify, not an assumption to hold.
 - Two shipped surfaces and one compliance document currently promise the opposite of this Epic and
   must change with slice 01 (S3, S4).
 
@@ -846,7 +859,7 @@ alone; where it means "assessed and rejected", the reason is stated.
 | `AppSetting` entity | **EXTEND (index only)** | Needs a unique index on `Key` to arbitrate concurrent get-or-create; service is `AddScoped`, so two grants run two `DbContext`s |
 | `OptionalFeature` + `OptionalFeatureKeys` | **EXTEND** | One key. `IsPremium` already exists on the entity |
 | `OptionalFeatureSeeder` | **EXTEND** | `AddOrUpdateCurrentFeatures` seeds a new key with its declared `Enabled` and never overwrites it afterwards — exactly the upgrade semantics required, for free |
-| `OptionalFeaturesController` | **EXTEND (defect fix)** | Line 41 returns the unchanged feature on a premium miss: HTTP 200, write dropped, caller cannot tell. Must be an explicit refusal before a privacy control rides on it. **Shared contract** — grep callers and extend the test factory first |
+| `OptionalFeaturesController` | **UNCHANGED HERE — defect fixed by story #5876** | Line 41 returns the unchanged feature on a premium miss: HTTP 200, write dropped, caller cannot tell. Story #5876 fixes it, because it creates the first premium optional feature and reaches the branch first. This Epic verifies the refusal holds and that `DeltaSync` stayed ungated. If #5876 has not shipped, the fix returns here and the **shared contract** caution applies — grep callers and extend the test factory first |
 | `UpdateServiceBase<TEntity>` + `TeamUpdater`/`PortfolioUpdater`/`ForecastUpdater` | **UNCHANGED — rejected as base class** | `where TEntity : class, IEntity`; iterates `repository.GetAll()`, asks `ShouldUpdateEntity` per row, enqueues per-entity work under an `UpdateType` feeding the SignalR status hub. The heartbeat is instance-scoped with no entity to iterate. Riding it needs a fake entity and two `NotSupportedException` overrides. House precedent for instance-scoped background work is plain `AddHostedService` (`GracefulShutdownService`, `KeyRingFileWatcher`) |
 | `UpdateQueueService` / `IUpdateExecutionLock` | **UNCHANGED** | Cluster-wide single execution is not needed; the identifier is per instance, not per replica |
 | `IDomainEventDispatcher` | **UNCHANGED — rejected as invalidation channel** | Swallows handler exceptions by design (`CA1031` suppressed: *"one failing handler must not abort the others"*). Correct for metrics; for a consent gate a dropped invalidation means sending after a revoke, silently |

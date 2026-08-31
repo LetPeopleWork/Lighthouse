@@ -15,15 +15,19 @@ trust that the control on screen is the control in force.
 - The footer indicator distinguishes "the administrator disabled this" from "you declined"
   (AC-06.7).
 - Settings copy stating the suspend/resume behaviour in plain words (AC-06.6).
-- **Fix `OptionalFeaturesController:41`** (US-07): a premium toggle without a premium licence returns
-  an explicit refusal, not a 200 carrying the unchanged entity.
+- Verifying the premium gate refuses out loud — the fix itself is story #5876's (US-07 transferred
+  there on 2026-08-31). This slice asserts the behaviour it depends on; it does not write it.
 
 ## OUT of scope
 
 - The wider OptionalFeatures rework the Epic muses about — making the premium gate a first-class
-  concept, migrating manual ordering out of `FeatureOrderingSettings`. Board item, not this Epic.
+  concept, migrating manual ordering out of `FeatureOrderingSettings`. That is story **#5876**, which
+  as of 2026-08-31 also carries the S8 gate fix this slice used to own.
+- **Writing** the S8 fix. Story #5876 does that. If it has not shipped when this slice starts, the fix
+  comes back into scope here — it may not be skipped, because a privacy control cannot ship on a gate
+  that drops writes.
 - Any change to `DeltaSync`'s behaviour. It is not premium and must not become gated by the S8 fix
-  (AC-07.3).
+  (AC-07.3) — this Epic's invariant to check wherever the fix was written.
 - A grace period or timed wipe on suspension. D6 is suspend-and-resume, full stop.
 
 ## Learning hypothesis
@@ -38,12 +42,13 @@ Epic's most contestable decision.
 
 ## Acceptance criteria
 
-Per US-06 (AC-06.1…6.7) and US-07 (AC-07.1…7.4) in `feature-delta.md`. The three that carry it:
+Per US-06 (AC-06.1…6.7) in `feature-delta.md`, plus US-07 (AC-07.1…7.4) as an inherited precondition
+now satisfied by story #5876. The three that carry it:
 
 - **AC-06.3** — OFF stops emission from a browser that already consented, asserted at the emit path.
   A stale tab must not be able to keep sending.
 - **AC-06.5** — ON resumes without re-asking.
-- **AC-07.1** — a refused toggle is refused visibly. This is the precondition for the whole slice: a
+- **AC-07.1** — a refused toggle is refused visibly. Written by story #5876; asserted here, because a
   privacy control whose write can be silently dropped is worse than no control.
 
 ## Production-data acceptance
@@ -65,8 +70,8 @@ collector, switch it back on, confirm the following one does — without anyone 
 
 ## Effort
 
-≤ 1 day. The OptionalFeature scaffolding, the RBAC guard and the premium field all exist (S8–S10).
-The new work is the emit-path consultation and the refusal semantics.
+≤ 1 day, and smaller since the S8 fix moved to story #5876. The OptionalFeature scaffolding, the RBAC
+guard and the premium field all exist (S8–S10). The new work is the emit-path consultation.
 
 ## Reference class
 
@@ -77,6 +82,7 @@ per-emit database read.
 
 ## Watch
 
-The S8 fix changes the contract of an endpoint that already has callers. Grep for them and extend
-the test factory before touching it — a controller that used to always return 200 is a shared
-contract, whatever its behaviour was.
+The S8 fix changes the contract of an endpoint that already has callers — a controller that used to
+always return 200 is a shared contract, whatever its behaviour was. Story #5876 carries that risk now.
+Confirm it landed, and confirm `DeltaSync` stayed ungated, before assuming this slice inherited a
+working gate.
