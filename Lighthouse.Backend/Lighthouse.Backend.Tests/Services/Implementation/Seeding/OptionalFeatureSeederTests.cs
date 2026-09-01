@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -52,11 +54,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             // Assert
             var features = DatabaseContext.OptionalFeatures.ToList();
 
-            using (Assert.EnterMultipleScope())
+            Assert.That(features.Select(feature => feature.Key), Is.EquivalentTo(new[]
             {
-                Assert.That(features, Has.Count.EqualTo(1));
-                Assert.That(features[0].Key, Is.EqualTo(OptionalFeatureKeys.DeltaSyncKey));
-            }
+                OptionalFeatureKeys.DeltaSyncKey,
+                OptionalFeatureKeys.FeatureOrderingKey,
+            }));
         }
 
         [Test]
@@ -160,6 +162,78 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
                 Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
                 Assert.That(deltaSync.Description, Does.Not.Contain("older description"));
                 Assert.That(deltaSync.Enabled, Is.True, "An upgrade must not switch off something the operator turned on.");
+            }
+        }
+
+        [Test]
+        [TestCase("ManualOrder", true)]
+        [TestCase("SourceOrder", false)]
+        [TestCase(null, false)]
+        [TestCase("", false)]
+        [TestCase("Nonsense", false)]
+        public async Task SeedAsync_AddsFeatureOrdering_CarryingAcrossWhatTheInstanceHadAlreadyChosen(string? storedPolicy, bool expectedToBeOn)
+        {
+            // Arrange - the instance as it stood before the setting joined the table: the choice lived in
+            // an app setting, and only the one word meant this instance had taken the order over.
+            if (storedPolicy != null)
+            {
+                DatabaseContext.AppSettings.Add(new AppSetting { Key = AppSettingKeys.FeatureOrderingPolicy, Value = storedPolicy });
+                await DatabaseContext.SaveChangesAsync();
+            }
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var featureOrdering = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.FeatureOrderingKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featureOrdering.Enabled, Is.EqualTo(expectedToBeOn));
+                Assert.That(featureOrdering.IsPremium, Is.True);
+                Assert.That(featureOrdering.IsPreview, Is.False);
+            }
+        }
+
+        [Test]
+        public async Task SeedAsync_FeatureOrderingSwitchedOnSinceTheUpgrade_KeepsTheInstancesOwnAnswer()
+        {
+            DatabaseContext.AppSettings.Add(new AppSetting { Key = AppSettingKeys.FeatureOrderingPolicy, Value = nameof(FeatureOrderingPolicy.SourceOrder) });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+            await subject.Seed();
+
+            DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.FeatureOrderingKey).Enabled = true;
+            await DatabaseContext.SaveChangesAsync();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var featureOrdering = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.FeatureOrderingKey);
+            Assert.That(featureOrdering.Enabled, Is.True, "The carry-across happens once, when the row is added. After that the switch belongs to whoever flipped it.");
+        }
+
+        [Test]
+        public async Task SeedAsync_FeatureOrdering_ReadsTheWayAnAdministratorSeesIt()
+        {
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert - spelled out rather than read off the seeder, because a test that compares a value
+            // to the constant it came from passes even when the words are blanked. These are the words an
+            // administrator reads, and the docs fold the same help text in.
+            var featureOrdering = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.FeatureOrderingKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featureOrdering.Name, Is.EqualTo("Let Lighthouse own the order of your {{features}}"));
+                Assert.That(featureOrdering.Description, Is.EqualTo("While this is on, Lighthouse forecasts your {{features}} in the order you gave them, and a refresh from your work tracking system no longer re-sequences it. Turning it off hands the order straight back to your work tracking system — the places you chose are kept, so turning it on again restores them."));
             }
         }
 

@@ -11,9 +11,16 @@
         public const string LinearIntegrationKey = "LinearIntegration";
 
         /// <summary>
-        /// Epic #5687 A1: delta ships dark. Off by default, preview, read per update in the update's own
-        /// scope so a toggle takes effect on the next cycle without a restart. Removed once KPI-3 holds.
+        /// Fetching only what changed since the last update. Ships dark - off by default and flagged as a
+        /// preview - and is read per update inside that update's own scope, so switching it takes effect on
+        /// the next cycle rather than on the next restart.
         /// </summary>
         public const string DeltaSyncKey = "DeltaSync";
+
+        /// <summary>
+        /// Who decides the order Features are forecast in: on means this instance keeps the order an
+        /// administrator arranged, off means the work tracking system's own ranking wins on every refresh.
+        /// </summary>
+        public const string FeatureOrderingKey = "FeatureOrdering";
     }
 }

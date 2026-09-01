@@ -53,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @AC-01.3 - the migration. It has exactly one chance to run, at first add,
         // and a shipped release that gets it wrong cannot be repaired by a later seed.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented. The seeder does not carry the stored policy across yet.")]
         public async Task An_instance_that_already_owned_its_order_still_owns_it_after_the_upgrade()
         {
             var platform = GivenAPortfolio("Platform");
@@ -77,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         [TestCase(OrderOwnedByTheTracker)]
         [TestCase(null)]
         [TestCase("Nonsense")]
-        [Ignore("RED scaffold - slice 02 not implemented.")]
         public async Task An_instance_that_never_took_its_order_over_does_not_acquire_it_in_the_upgrade(string? storedPolicyBeforeTheUpgrade)
         {
             GivenTheCallerAdministersTheInstance();
@@ -178,7 +176,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // has hit it because there has only ever been one row; this slice adds the second. See
         // distill/upstream-issues.md - UI-1.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented. Blocked on UI-1: both settings would be addressed by the same identity.")]
         public async Task Each_setting_in_the_list_is_switched_on_its_own()
         {
             var platform = GivenAPortfolio("Platform");
