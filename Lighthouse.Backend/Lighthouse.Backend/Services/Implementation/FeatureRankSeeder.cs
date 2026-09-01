@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         public async Task SeedMissingRanks()
         {
-            // The same narrow projection the position map reads (ADR-135). Going through the Feature
+            // The same narrow projection the position map reads. Going through the Feature
             // repository instead would load the whole Include graph - Portfolios, work, Teams, forecasts -
             // and writing a place back over it re-inserts the join rows between a Portfolio and its Teams.
             var orderKeys = await context.Features
