@@ -83,6 +83,17 @@ about.
 Anyone reaching for `bool` in `FeatureOrdering`, `FeaturesController` or `AppSettingService` is
 undoing ADR-132 and should be stopped in review.
 
+`IFeatureOrderingPolicyProvider.SetPolicy` is **deleted, not made to delegate.** Its only caller moves
+to the applier, and a `SetPolicy` that forwarded to the applier would be a second name for a write the
+applier owns whole — which re-opens exactly the two-entry-point shape §3 exists to close. Deleting it
+also leaves the port read-only, which is the honest shape: a port that only reads must not carry a
+method that writes, or the next caller finds it and uses it.
+
+The provider is **not** licence-aware, and must not become one. The row it reads is marked premium, so
+checking the licence there is the tempting tidy-up; it would hand every lapsed customer's list back to
+their tracker and reorder every Feature they had placed, silently, on their renewal date. The premium
+gate belongs on the write, where a refusal is something a caller can see.
+
 ### 3. A per-key applier, because a generic toggle must carry a specific consequence
 
 > **INV-A4.** Every optional-feature toggle is applied by exactly one `IOptionalFeatureApplier`,

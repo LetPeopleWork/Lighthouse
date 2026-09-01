@@ -106,9 +106,11 @@ reach without someone adding a line.
 > (2026-08-31).** Two of the three grounds below have since been fixed or expired: the silent no-op is
 > a consequence of `ApiHelpers.GetEntityByIdAnExecuteAction` always wrapping in `Ok(...)` and is
 > repaired, and the dormant-section point died when `DeltaSync` shipped. The terminology objection
-> (§A.3) was correct and is answered by making the description cell terminology-aware for every row
-> rather than for one. The `bool` objection survives, narrowed: the enum stays the domain type and
-> only the storage is boolean. Kept unedited below as the reasoning of its time.
+> (§A.3) was correct and is answered by resolving terminology tokens in a row's **name as well as its
+> description**, for every row rather than for one. The `bool` objection survives, narrowed: the enum
+> stays the domain type and only the storage is boolean, and `FeatureOrderingPolicyProvider` is the
+> single place that knows the two are the same choice said two ways. Kept unedited below as the
+> reasoning of its time.
 
 Genuinely attractive, and the option DISCUSS's framing pointed away from for the wrong reason. DISCUSS
 called `OptionalFeature` "preview capability, not licensed setting"; the entity carries `IsPremium`
