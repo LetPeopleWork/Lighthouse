@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -11,6 +12,10 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class OptionalFeaturesControllerTest
     {
+        // Spelled out here rather than shared with the controller on purpose: the test is what proves the
+        // wording a refused administrator actually reads, so it must fail if the controller changes it.
+        private const string PremiumRefusal = "Access Denied: Premium Features Required";
+
         private Mock<IRepository<OptionalFeature>> repositoryMock;
 
         private Mock<ILicenseService> licenseServiceMock;
@@ -124,11 +129,11 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [TestCase(false, false, true)]
-        [TestCase(false, true, true)]
-        [TestCase(true, false, false)]
-        [TestCase(true, true, true)]
-        public async Task UpdateOptionalFeature_IsPremium_OnlyEnablesIfUserHasLicense(bool isPremiumFeature, bool hasLicense, bool executeUpdate)
+        [TestCase(false, false, true, StatusCodes.Status200OK)]
+        [TestCase(false, true, true, StatusCodes.Status200OK)]
+        [TestCase(true, false, false, StatusCodes.Status403Forbidden)]
+        [TestCase(true, true, true, StatusCodes.Status200OK)]
+        public async Task UpdateOptionalFeature_IsPremium_OnlyEnablesIfUserHasLicense(bool isPremiumFeature, bool hasLicense, bool executeUpdate, int expectedStatusCode)
         {
             var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false, IsPremium = isPremiumFeature };
             repositoryMock.Setup(x => x.GetById(0)).Returns(feature);
@@ -136,7 +141,18 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            _ = await subject.UpdateOptionalFeature(0, feature);
+            var response = await subject.UpdateOptionalFeature(0, feature);
+
+            var result = response.Result as ObjectResult;
+            Assert.That(result, Is.Not.Null);
+
+            var expectedBody = expectedStatusCode == StatusCodes.Status403Forbidden ? PremiumRefusal : (object)feature;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.StatusCode, Is.EqualTo(expectedStatusCode));
+                Assert.That(result.Value, Is.EqualTo(expectedBody));
+            }
 
             var expectedExecutionTimes = executeUpdate ? Times.Once() : Times.Never();
             repositoryMock.Verify(x => x.Update(feature), expectedExecutionTimes);
