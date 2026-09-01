@@ -244,9 +244,9 @@ describe("Behaviour Settings", () => {
 
 	// @AC-01.1 - the two rows are switched one at a time. The mock gives both the identity the seeder
 	// really writes: the store keys these rows by their key, nothing generates the number, so every
-	// seeded row carries zero. The table matches its optimistic update on that number, so today one
-	// click moves both switches. This is UI-1's frontend twin and it survives any backend-only fix.
-	it.skip("switches one setting without touching the other", async () => {
+	// seeded row carries zero. A table that matches its optimistic update on that number moves every
+	// switch on the page at once, and no amount of fixing the server changes that.
+	it("switches one setting without touching the other", async () => {
 		mockGetAllFeatures.mockResolvedValue([
 			{ ...theShippedNonPremiumSetting, id: 0 },
 			{ ...theOrderingSettingAsSeeded, id: 0 },

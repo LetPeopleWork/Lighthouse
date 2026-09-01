@@ -80,6 +80,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         private void WhenTheInstanceUpgradesFrom(string? storedPolicyBeforeTheUpgrade)
             => SeedInstanceAsItWasBeforeTheUpgrade(storedPolicyBeforeTheUpgrade);
 
+        private Task<(HttpStatusCode Status, string Body)> WhenAnyoneReadsTheSettingCalled(string key)
+            => GetOptionalFeature(key);
+
         // --- Then ---
 
         private static void ThenTheListIsUnchanged((HttpStatusCode Status, string Body) before, (HttpStatusCode Status, string Body) after)
@@ -168,6 +171,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             Assert.That(ReadStoredOptionalFeature(ShippedNonPremiumKey), Is.EqualTo(asShipped),
                 "Faster Updates is not premium, and the only thing this story changes for it is the heading above the table.");
+        }
+
+        private void ThenTheSettingReadBackIsTheOneThatWasNamed((HttpStatusCode Status, string Body) response, string namedKey)
+        {
+#pragma warning disable NUnit2045 // Guard-then-parse: the JSON read below would throw over the clear message under Assert.Multiple.
+            Assert.That(response.Status, Is.EqualTo(HttpStatusCode.OK),
+                $"A caller naming a stored setting has to be answered. Body: {Excerpt(response.Body)}");
+#pragma warning restore NUnit2045
+
+            using var document = JsonDocument.Parse(response.Body);
+            var asStored = ReadStoredOptionalFeature(namedKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(document.RootElement.GetProperty("key").GetString(), Is.EqualTo(namedKey),
+                    "The row that comes back is the row that was named. Any other row means the comparison picking it is not comparing the key the caller sent.");
+                Assert.That(document.RootElement.GetProperty("name").GetString(), Is.EqualTo(asStored.Name),
+                    "And it is that row's own content, read from the store rather than assembled from the request.");
+                Assert.That(document.RootElement.GetProperty("isPremium").GetBoolean(), Is.EqualTo(asStored.IsPremium),
+                    "Including whether a licence is needed for it, which is what the switch in front of an administrator is drawn from.");
+            }
+        }
+
+        private static void ThenNoSettingWasFound((HttpStatusCode Status, string Body) response)
+        {
+            Assert.That(response.Status, Is.EqualTo(HttpStatusCode.NotFound),
+                $"A key nobody seeded names nothing, and a read that answered anything else would be handing back a row the caller did not ask for. Body: {Excerpt(response.Body)}");
         }
 
         private void ThenTheSettingItMigratedFromIsStillStored(string expectedValue)

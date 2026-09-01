@@ -234,6 +234,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenThisInstanceStillOwnsTheOrder();
         }
 
+        // @driving_port @real-io @AC-01.1 - the read port hands back the setting a caller names, not
+        // merely some setting. Every unit test around this endpoint mocks the lookup, so the comparison
+        // that picks the row has never once been executed; the toggle now runs through the same shape, and
+        // an inverted comparison there would switch whichever row the store happened to return first.
+        [Test]
+        public async Task The_setting_a_caller_names_is_the_setting_it_gets_back()
+        {
+            GivenTheCallerAdministersTheInstance();
+
+            var named = await WhenAnyoneReadsTheSettingCalled(ShippedNonPremiumKey);
+            var unnamed = await WhenAnyoneReadsTheSettingCalled(KeyNobodySeeded);
+
+            ThenTheSettingReadBackIsTheOneThatWasNamed(named, ShippedNonPremiumKey);
+            ThenNoSettingWasFound(unnamed);
+        }
+
         // @AC-01.10 - the old row is left where it is. Additive only: an upgrade that deletes it has no way
         // back if the migration turns out to have been wrong.
         [Test]

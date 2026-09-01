@@ -94,7 +94,7 @@ describe("OptionalFeatureService", () => {
 		await optionalFeatureService.updateFeature(feature);
 
 		expect(mockedAxios.post).toHaveBeenCalledWith(
-			`/optionalfeatures/${feature.id}`,
+			`/optionalfeatures/${feature.key}`,
 			feature,
 		);
 	});
@@ -117,7 +117,7 @@ describe("OptionalFeatureService", () => {
 		);
 
 		expect(mockedAxios.post).toHaveBeenCalledWith(
-			`/optionalfeatures/${feature.id}`,
+			`/optionalfeatures/${feature.key}`,
 			feature,
 		);
 	});

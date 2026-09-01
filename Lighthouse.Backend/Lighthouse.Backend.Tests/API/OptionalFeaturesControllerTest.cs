@@ -89,14 +89,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateOptionalFeature_FeatureWithIdDoesNotExist_ReturnsNotFound()
+        public async Task UpdateOptionalFeature_SettingWithKeyDoesNotExist_ReturnsNotFound()
         {
             var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
-            repositoryMock.Setup(x => x.GetById(1)).Returns((OptionalFeature)null);
+            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns((OptionalFeature)null);
 
             var subject = CreateSubject();
 
-            var response = await subject.UpdateOptionalFeature(1, feature);
+            var response = await subject.UpdateOptionalFeature("InexistingKey", feature);
 
             using (Assert.EnterMultipleScope())
             {
@@ -106,14 +106,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public async Task UpdateOptionalFeature_FeatureWithIdExists_Updates()
+        public async Task UpdateOptionalFeature_SettingWithKeyExists_Updates()
         {
             var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
-            repositoryMock.Setup(x => x.GetById(0)).Returns(feature);
+            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(feature);
 
             var subject = CreateSubject();
 
-            var response = await subject.UpdateOptionalFeature(0, feature);
+            var response = await subject.UpdateOptionalFeature("Key1", feature);
 
             using (Assert.EnterMultipleScope())
             {
@@ -136,12 +136,12 @@ namespace Lighthouse.Backend.Tests.API
         public async Task UpdateOptionalFeature_IsPremium_OnlyEnablesIfUserHasLicense(bool isPremiumFeature, bool hasLicense, bool executeUpdate, int expectedStatusCode)
         {
             var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false, IsPremium = isPremiumFeature };
-            repositoryMock.Setup(x => x.GetById(0)).Returns(feature);
+            repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(feature);
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(hasLicense);
 
             var subject = CreateSubject();
 
-            var response = await subject.UpdateOptionalFeature(0, feature);
+            var response = await subject.UpdateOptionalFeature("Key1", feature);
 
             var result = response.Result as ObjectResult;
             Assert.That(result, Is.Not.Null);

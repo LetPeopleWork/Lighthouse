@@ -48,6 +48,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         /// </summary>
         protected const string PremiumFixtureKey = "PremiumFixture";
 
+        /// <summary>
+        /// What the product writes into <c>OptionalFeature.Id</c>: the store keys these rows by their key,
+        /// so nothing generates the number and every row holds zero.
+        /// </summary>
+        protected const int IdentityEverySeededSettingCarries = 0;
+
+        /// <summary>
+        /// A key no seeder writes, so neither port has anything to find behind it.
+        /// </summary>
+        protected const string KeyNobodySeeded = "no-such-setting";
+
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;
         protected HttpClient Client = null!;
@@ -189,18 +200,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             return feature.Id;
         }
 
+        protected void SeedPremiumOptionalFeature(string key, string name, string description)
+            => SeedOptionalFeature(key, name, description, isPremium: true);
+
         /// <summary>
-        /// The identity the toggle route addresses a row by. It is carried explicitly because the store
-        /// keys optional features by their key, not by this number, so nothing generates it and every
-        /// seeded row would otherwise carry zero. See docs/feature/story-5876-behaviour-settings/distill/
-        /// upstream-issues.md - UI-1.
+        /// A behaviour setting added by a scenario, carrying the same identity every seeded row carries.
+        /// The store keys these rows by their key and nothing generates the number, so the product writes
+        /// zero into every one of them; a fixture that invented a unique number here would be the only
+        /// place in the system where a behaviour setting can be told apart by it.
         /// </summary>
-        protected const int PremiumFixtureId = 9001;
-
-        protected int SeedPremiumOptionalFeature(string key, string name, string description)
-            => SeedOptionalFeature(PremiumFixtureId, key, name, description, isPremium: true);
-
-        protected int SeedOptionalFeature(int id, string key, string name, string description, bool isPremium)
+        protected void SeedOptionalFeature(string key, string name, string description, bool isPremium)
         {
             using var scope = Factory.Services.CreateScope();
 
@@ -208,7 +217,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
             var feature = new OptionalFeature
             {
-                Id = id,
+                Id = IdentityEverySeededSettingCarries,
                 Key = key,
                 Name = name,
                 Description = description,
@@ -218,8 +227,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
             repository.Add(feature);
             repository.Save().GetAwaiter().GetResult();
-
-            return feature.Id;
         }
 
         /// <summary>
@@ -265,9 +272,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         }
 
         /// <summary>
-        /// The key the ordering row is seeded under. Named here rather than read off
-        /// <c>OptionalFeatureKeys</c> so slice 02's scenarios compile and run RED against today's code:
-        /// the constant does not exist yet, and a test that cannot compile reports BROKEN, not RED.
+        /// The key the ordering row is seeded under, spelled out rather than read off the production
+        /// constant. This literal is the wire identity a browser addresses the row by, and the frontend
+        /// suite names the same string; repointing this at a constant would let a rename pass both suites
+        /// and still break the settings page.
         /// </summary>
         protected const string FeatureOrderingOptionalFeatureKey = "FeatureOrdering";
 
@@ -299,10 +307,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         /// sends it - a partial body is rejected by model validation before the endpoint is reached, which
         /// would answer a question no scenario asked.
         /// <para>
-        /// The scenario names the setting by its key, never by the number in the route, and the number is
-        /// looked up here. The store keys these rows by their key; the number is an ordinary column nothing
-        /// generates, so choosing a row by it is ambiguous the moment a second row exists - which is the
-        /// defect recorded as UI-1, and the reason for the guard below.
+        /// The scenario names the setting by its key, and so does the route. The number in the body is
+        /// along for the ride: the store keys these rows by their key, so choosing a row by the number
+        /// would be ambiguous the moment a second row exists.
         /// </para>
         /// </summary>
         protected async Task<(HttpStatusCode Status, string Body)> ToggleOptionalFeature(string key, bool enabled)
@@ -312,16 +319,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             Assert.That(stored.Found, Is.True,
                 $"No behaviour setting is stored under '{key}', so there is nothing to switch.");
 
-            var id = IdOfStoredSetting(key);
-
-            Assert.That(CountOfSettingsCarryingIdentity(id), Is.EqualTo(1),
-                $"More than one behaviour setting carries the identity {id}, so the toggle route cannot name '{key}'. "
-                + "This is UI-1: the store keys these rows by their key and nothing generates the number the route uses. "
-                + "It is a defect in the product, not in this scenario - see distill/upstream-issues.md.");
-
             var payload = JsonSerializer.Serialize(new
             {
-                id,
+                id = IdentityEverySeededSettingCarries,
                 key,
                 name = stored.Name,
                 description = stored.Description,
@@ -331,7 +331,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             });
 
             using var body = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await Client.PostAsync($"/api/latest/optionalfeatures/{id}", body);
+            var response = await Client.PostAsync($"/api/latest/optionalfeatures/{key}", body);
 
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
@@ -345,8 +345,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             var payload = JsonSerializer.Serialize(new
             {
-                id = 987654,
-                key = "no-such-setting",
+                id = IdentityEverySeededSettingCarries,
+                key = KeyNobodySeeded,
                 name = "No such setting",
                 description = string.Empty,
                 enabled = true,
@@ -355,8 +355,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             });
 
             using var body = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await Client.PostAsync("/api/latest/optionalfeatures/987654", body);
+            var response = await Client.PostAsync($"/api/latest/optionalfeatures/{KeyNobodySeeded}", body);
 
+            return (response.StatusCode, await response.Content.ReadAsStringAsync());
+        }
+
+        /// <summary>
+        /// The read port aimed at one setting rather than at the whole list, which is how a caller asks
+        /// for the setting it names.
+        /// </summary>
+        protected async Task<(HttpStatusCode Status, string Body)> GetOptionalFeature(string key)
+        {
+            var response = await Client.GetAsync($"/api/latest/optionalfeatures/{key}");
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
@@ -397,22 +407,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             return stored == null
                 ? (false, false, false, false, string.Empty, string.Empty)
                 : (true, stored.Enabled, stored.IsPremium, stored.IsPreview, stored.Name, stored.Description);
-        }
-
-        protected int IdOfStoredSetting(string key)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-
-            return context.OptionalFeatures.AsNoTracking().Single(f => f.Key == key).Id;
-        }
-
-        protected int CountOfSettingsCarryingIdentity(int id)
-        {
-            using var scope = Factory.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-
-            return context.OptionalFeatures.AsNoTracking().Count(f => f.Id == id);
         }
 
         protected string? ReadStoredAppSetting(string key)
