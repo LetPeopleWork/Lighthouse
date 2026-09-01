@@ -103,9 +103,9 @@ test("Take @screenshot of the system configuration page", async ({
 		"settings/featurerefreshsettings.png",
 	);
 
-	if (await systemSettings.optionalFeatures.isVisible()) {
+	if (await systemSettings.behaviourSettings.isVisible()) {
 		await takeElementScreenshot(
-			systemSettings.optionalFeatures,
+			systemSettings.behaviourSettings,
 			"settings/optionalfeatures.png",
 		);
 	}

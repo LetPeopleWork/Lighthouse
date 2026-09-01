@@ -157,7 +157,7 @@ describe("Behaviour Settings", () => {
 
 	// @AC-01.1 - which switches live where is a fact about release history until this ships. One
 	// heading, one table, both rows under it.
-	it.skip("puts every instance-wide switch under one heading", async () => {
+	it("puts every instance-wide switch under one heading", async () => {
 		renderTheSystemSettings();
 
 		await waitFor(() => {
@@ -170,7 +170,7 @@ describe("Behaviour Settings", () => {
 
 	// @AC-01.1 - and the two places it used to live are gone. Without this the move is an addition and
 	// the page has three answers to the same question instead of one.
-	it.skip("leaves no separate section behind", async () => {
+	it("leaves no separate section behind", async () => {
 		renderTheSystemSettings();
 
 		await waitFor(() => {

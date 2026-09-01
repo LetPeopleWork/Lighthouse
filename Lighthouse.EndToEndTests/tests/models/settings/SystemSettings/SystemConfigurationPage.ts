@@ -49,27 +49,11 @@ export class SystemConfigurationPage {
 	}
 
 	/**
-	 * Epic 5375 slice 02 — hands ordering ownership to this instance and waits for the switch to be
-	 * taken, so a caller never navigates away on a stale "saved".
+	 * Hands ordering ownership to this instance and waits for the switch to be taken, so a caller never
+	 * navigates away on a stale "saved". It is a row in the settings table like any other now.
 	 */
 	async handOrderingOverToThisInstance(): Promise<void> {
-		const toggle = this.page
-			.getByTestId("feature-ordering-toggle")
-			.getByRole("switch");
-
-		if (await toggle.isChecked()) {
-			return;
-		}
-
-		const switchTaken = this.page.waitForResponse(
-			(response) =>
-				response.url().includes("/api/latest/appsettings/FeatureOrdering") &&
-				response.request().method() === "PUT" &&
-				response.status() === 200,
-		);
-
-		await toggle.click();
-		await switchTaken;
+		await this.enableFeature("FeatureOrdering");
 	}
 
 	async setInterval(
@@ -179,8 +163,8 @@ export class SystemConfigurationPage {
 		return this.page.getByText("Feature RefreshInterval (");
 	}
 
-	get optionalFeatures(): Locator {
-		return this.page.getByText("Optional FeaturesNameDescriptionEnabled", {
+	get behaviourSettings(): Locator {
+		return this.page.getByText("Behaviour SettingsNameDescriptionEnabled", {
 			exact: false,
 		});
 	}

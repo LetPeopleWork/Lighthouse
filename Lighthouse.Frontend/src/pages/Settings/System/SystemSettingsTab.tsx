@@ -21,7 +21,6 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BlackoutSettings from "./BlackoutSettings";
-import FeatureOrderingSettings from "./FeatureOrderingSettings";
 
 const SystemSettingsTab: React.FC = () => {
 	const [optionalFeatures, setOptionalFeatures] = useState<IOptionalFeature[]>(
@@ -93,7 +92,7 @@ const SystemSettingsTab: React.FC = () => {
 			</InputGroup>
 
 			{optionalFeatures.length > 0 && (
-				<InputGroup title="Optional Features" initiallyExpanded={true}>
+				<InputGroup title="Behaviour Settings" initiallyExpanded={true}>
 					<TableContainer>
 						<Table data-testid="optional-features-table">
 							<TableHead>
@@ -156,12 +155,6 @@ const SystemSettingsTab: React.FC = () => {
 					</TableContainer>
 				</InputGroup>
 			)}
-
-			<InputGroup title={`${featureTerm} Order`} initiallyExpanded={true}>
-				<FeatureOrderingSettings
-					isPremium={licenseStatus?.canUsePremiumFeatures ?? false}
-				/>
-			</InputGroup>
 
 			<InputGroup title="Terminology Configuration" initiallyExpanded={true}>
 				<TerminologyConfiguration />

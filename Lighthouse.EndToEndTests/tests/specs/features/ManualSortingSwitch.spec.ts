@@ -11,7 +11,7 @@ const testWithFeatures = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 //   - the five connector Order shapes, the five refreshes, the two ways in agreeing, giving the order
 //     back and taking it over again, the licence and the role -> Slice02ManualRankScenarios.cs
 //   - the switch, its premium affordance, its help text and the column's heading ->
-//     FeatureOrderingSettings.test.tsx and useFeatureOrdering.test.tsx
+//     SystemSettingsTab.behaviourSettings.test.tsx and useFeatureOrdering.test.tsx
 testWithFeatures(
 	"@premium @walking_skeleton a config admin hands the order to this instance and nothing moves",
 	async ({ testData, overviewPage }) => {
