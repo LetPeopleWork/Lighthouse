@@ -30,6 +30,11 @@ namespace Lighthouse.Backend.Services.Implementation
             return orderKeys.OrderBy(orderKey => orderKey, comparer).ThenBy(orderKey => orderKey.Id);
         }
 
+        public IEnumerable<FeatureOrderKey> OrderBySourceOrder(IEnumerable<FeatureOrderKey> orderKeys)
+        {
+            return orderKeys.OrderBy(orderKey => orderKey, BySourceOrder).ThenBy(orderKey => orderKey.Id);
+        }
+
         private bool ThisInstanceOwnsTheOrder() => policyProvider.GetPolicy() == FeatureOrderingPolicy.ManualOrder;
     }
 }

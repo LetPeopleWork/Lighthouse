@@ -17,7 +17,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Select(feature => new FeatureOrderKey(feature.Id, feature.Order, feature.ManualRank))
                 .ToListAsync();
 
-            var unplaced = featureOrdering.Order(orderKeys)
+            // Deliberately the sequence the tracker gave rather than the one this instance reads by. The
+            // places being handed out here are the first places there have ever been, so asking who owns
+            // the order would sort by a column that is still empty and renumber everything in row order.
+            var unplaced = featureOrdering.OrderBySourceOrder(orderKeys)
                 .Where(orderKey => orderKey.ManualRank is null)
                 .Select(orderKey => orderKey.Id)
                 .ToList();
