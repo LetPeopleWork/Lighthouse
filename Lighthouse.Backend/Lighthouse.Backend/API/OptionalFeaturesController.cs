@@ -36,19 +36,29 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<OptionalFeature>> UpdateOptionalFeature(int id, [FromBody] OptionalFeature updatedFeature)
         {
-            return await this.GetEntityByIdAnExecuteAction(repository, id, async feature =>
-            {
-                if (feature.IsPremium && !licenseService.CanUsePremiumFeatures())
-                {
-                    return feature;
-                }
-                
-                feature.Enabled = updatedFeature.Enabled;
-                repository.Update(feature);
-                await repository.Save();
+            var feature = repository.GetById(id);
 
-                return feature;
-            });
+            if (feature == null)
+            {
+                return NotFound();
+            }
+
+            if (feature.IsPremium && !licenseService.CanUsePremiumFeatures())
+            {
+                // Deliberately the same words the licence attribute answers with. This check needs the row
+                // being written, which an attribute cannot see, and a caller must not meet two different
+                // refusals for the one setting.
+                return new ObjectResult("Access Denied: Premium Features Required")
+                {
+                    StatusCode = StatusCodes.Status403Forbidden,
+                };
+            }
+
+            feature.Enabled = updatedFeature.Enabled;
+            repository.Update(feature);
+            await repository.Save();
+
+            return Ok(feature);
         }
     }
 }

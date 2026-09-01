@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @AC-02.1 - the promise of the slice. A refusal that returns 200 carrying
         // the old value is worse than an error: the caller is told the write landed.
         [Test]
-        [Ignore("RED scaffold - slice 01 not implemented. The premium branch returns 200 with the unchanged row.")]
         public async Task A_toggle_the_licence_does_not_cover_is_refused_out_loud()
         {
             var premiumSetting = GivenAPremiumBehaviourSetting();
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @AC-02.1 - the refusal has to look like the one the other door already
         // gives, or the two doors onto the same setting answer a client differently.
         [Test]
-        [Ignore("RED scaffold - slice 01 not implemented. No refusal body is produced today.")]
         public async Task The_refusal_reads_the_same_as_the_one_the_other_door_already_gives()
         {
             var premiumSetting = GivenAPremiumBehaviourSetting();
@@ -127,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // The design says the new path's refusal is "matched by hand" against the attribute's; that is a
         // claim about two strings in two files, and it is only true for as long as something compares them.
         [Test]
-        [Ignore("RED scaffold - slice 01 not implemented. The new door answers 200, so there is nothing to compare yet.")]
         public async Task Both_doors_refuse_an_unlicensed_administrator_in_the_same_words()
         {
             var premiumSetting = GivenAPremiumBehaviourSetting();
