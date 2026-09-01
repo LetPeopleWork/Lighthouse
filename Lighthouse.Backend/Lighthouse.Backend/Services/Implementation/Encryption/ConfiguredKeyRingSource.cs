@@ -37,7 +37,25 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
         {
             return string.IsNullOrWhiteSpace(suppliedRing)
                 && string.IsNullOrWhiteSpace(suppliedKey)
-                && !string.IsNullOrWhiteSpace(suppliedUnderTheRetiredName);
+                && !string.IsNullOrWhiteSpace(suppliedUnderTheRetiredName)
+                && !ThePublishedKeyUnderTheRetiredName(suppliedUnderTheRetiredName);
+        }
+
+        // Whether the value under the retired name is nothing but the key published with the product. That
+        // is not a key anybody chose: every Lighthouse before this release shipped exactly this value in
+        // appsettings.json, and the in-app updater keeps an operator settings file across an upgrade on
+        // purpose, so an instance carrying it made no decision at all. It is therefore read as no key
+        // rather than refused over, which sends the resolution on to the key this instance keeps for
+        // itself - and the published key is appended behind whatever that turns out to be, so nothing
+        // already stored becomes unreadable and nothing new is written under it.
+        //
+        // Only a value that is this key on its own. Anything longer is a ring somebody built by hand, and
+        // putting the published key at the front of one is a choice worth stopping for.
+        public static bool ThePublishedKeyUnderTheRetiredName(string? suppliedUnderTheRetiredName)
+        {
+            return KeyRingSerializer.TryParse(suppliedUnderTheRetiredName, out var parsed, out _)
+                && parsed.RetiredKeys.Count == 0
+                && LegacyDefaultEncryptionKey.Matches(parsed.ActiveKey.Material.Span);
         }
 
         // Which setting an operator would have to go and edit. Where Lighthouse keeps the key itself the
@@ -89,6 +107,11 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
 
             if (!string.IsNullOrWhiteSpace(suppliedUnderTheRetiredName))
             {
+                if (ThePublishedKeyUnderTheRetiredName(suppliedUnderTheRetiredName))
+                {
+                    return null;
+                }
+
                 return SuppliedKeyRing.ParsedFrom(
                     suppliedUnderTheRetiredName,
                     KeyCustody.SuppliedByConfiguration,

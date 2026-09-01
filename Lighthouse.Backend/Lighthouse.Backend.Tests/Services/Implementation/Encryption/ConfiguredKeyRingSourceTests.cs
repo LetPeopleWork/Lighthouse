@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
@@ -46,6 +47,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 () => ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(null!),
                 Throws.ArgumentNullException,
                 "a refusal or a panel quoting an empty setting name teaches an operator nothing and looks like a bug in the product");
+        }
+
+        // The published key under the retired name is not an answer, so resolution carries on to the key
+        // this instance keeps for itself. Saying no here is what lets an upgraded instance start at all:
+        // the value is one the product shipped in appsettings.json, not one an operator chose.
+        [Test]
+        public void Resolve_ThePublishedKeyUnderTheRetiredName_HasNoAnswerSoResolutionCarriesOn()
+        {
+            Assert.That(new ConfiguredKeyRingSource(null, null, ThePublishedKeyEncoded()).Resolve(), Is.Null);
+        }
+
+        // An operator on a key of their own that happens to sit under the retired name is still asked to
+        // move; one whose retired setting held the published key never was on it, and copying that value
+        // to the new name is the one move that would stop their instance starting.
+        [Test]
+        public void AnsweredByTheRetiredName_ThePublishedKeyUnderThatName_IsNotAnAnswer()
+        {
+            Assert.That(
+                ConfiguredKeyRingSource.AnsweredByTheRetiredName(null, null, ThePublishedKeyEncoded()),
+                Is.False);
+        }
+
+        // The published key has no accessor of its own, so the only way to hold it is the way production
+        // does: append it to a ring and take it back off the end.
+        private static string ThePublishedKeyEncoded()
+        {
+            var scaffold = new EncryptionKeyRing(
+                new EncryptionKey("k-not-the-published-one", new byte[EncryptionKey.MaterialLength]));
+
+            return Convert.ToBase64String(scaffold.WithLegacyDefault().RetiredKeys[0].Material.Span);
         }
 
         [Test]

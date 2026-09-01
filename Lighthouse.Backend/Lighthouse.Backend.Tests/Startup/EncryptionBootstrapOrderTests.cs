@@ -383,6 +383,33 @@ namespace Lighthouse.Backend.Tests.Startup
             }
         }
 
+        // The state the in-app updater leaves behind on every install made before the published key came out
+        // of appsettings.json. That file is kept across an upgrade on purpose, so the value is still sitting
+        // under the name the code used to read - and nobody put it there, the product shipped it. An
+        // instance in that position has to come up, on a key of its own, still reading everything it had.
+        [Test]
+        public void AnInstanceCarryingThePublishedKeyUnderTheSettingTheCodeUsedToRead_StartsOnAKeyOfItsOwn()
+        {
+            var published = Convert.ToBase64String(
+                RingResolvedWithNothingSupplied(ADurableKeyStore()).RetiredKeys[^1].Material.Span);
+
+            var ring = RingResolvedWith(
+                configuration => configuration.AddCommandLine([$"--{SettingTheCodeUsedToRead}={published}"]),
+                ADurableKeyStore());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.GeneratedForThisInstance),
+                    "An instance that only ever carried the value Lighthouse shipped refused to start, which " +
+                    "is every binary install that has taken an in-app update.");
+                Assert.That(ring.ActiveKey.Id, Is.Not.EqualTo(LegacyDefaultEncryptionKey.Id),
+                    "The instance came up writing under the key that ships in every copy of the product.");
+                Assert.That(EveryKeyOn(ring), Does.Contain(published),
+                    "The published key left the ring, so every credential stored before the upgrade is now " +
+                    "unreadable - which is the one thing this start was supposed to preserve.");
+            }
+        }
+
         // The reason the old name was not made an alias in the first place: two accepted spellings is how an
         // operator came to believe they had overridden a key they had not. Reading it last is what keeps
         // that from coming back - whatever the documentation tells someone to set always wins.

@@ -1527,7 +1527,8 @@ namespace Lighthouse.Backend
                     suppliedRing, suppliedKey, suppliedUnderTheRetiredName),
                 builder.Configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey),
                 WhereTheKeyCameFrom.Resolve(
-                    ringInForce.Custody, suppliedRing, suppliedKey, suppliedUnderTheRetiredName, keysFilePath)));
+                    ringInForce.Custody, suppliedRing, suppliedKey, suppliedUnderTheRetiredName, keysFilePath),
+                ConfiguredKeyRingSource.ThePublishedKeyUnderTheRetiredName(suppliedUnderTheRetiredName)));
 
             var startupBannerBuilder = new StringBuilder();
 

@@ -139,6 +139,72 @@ namespace Lighthouse.Backend.Tests
             }
         }
 
+        // The instance every pre-release install becomes after an in-app update: the settings file it kept
+        // still holds the value Lighthouse used to ship, so the instance ignored it and made its own key.
+        // It has to be told, or the dead setting sits there forever and the next operator to read it
+        // copies it to the name that does refuse.
+        [Test]
+        public void ThePublishedKeyLeftInTheSettingsFile_IsSaidSoAndNamesTheFileAndTheBlockToDelete()
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(KeyCustody.GeneratedForThisInstance),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: false,
+                keySupply: null,
+                thePublishedKeyWasLeftInTheSettingsFile: true);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(lines, Has.Count.EqualTo(2));
+                Assert.That(lines[1], Does.Contain(TheSettingBeingIgnored));
+                Assert.That(lines[1], Does.Contain("appsettings.json"),
+                    "an operator told to remove a setting and not told which file holds it has been sent looking");
+                Assert.That(lines[1], Does.Contain("stays readable"),
+                    "the first thing this reads like is that something was lost, and nothing was");
+                Assert.That(lines[1], Does.Contain("Do not copy its value to Encryption__Key"),
+                    "it is the one move that turns a started instance back into one that refuses to start");
+            }
+        }
+
+        // The flag only says the shipped value was found, not that it decided anything. An instance whose
+        // key came from somewhere else is still on that key, and telling it that it made one of its own
+        // contradicts the custody line directly above and the more-than-one-place line below it.
+        [TestCase(KeyCustody.SuppliedByConfiguration)]
+        [TestCase(KeyCustody.SuppliedByExternalSecret)]
+        [TestCase(KeyCustody.NoDurableStore)]
+        public void ThePublishedKeyLeftInTheSettingsFile_OnAnInstanceThatIsNotOnAKeyOfItsOwn_IsNotClaimed(
+            KeyCustody custody)
+        {
+            var lines = StartupBanner.BuildEncryptionCustodyLines(
+                RingUnder(custody),
+                KeptIn(),
+                keyCameFromTheRetiredSetting: false,
+                allowsStartWithUnreadableSecrets: false,
+                keySupply: null,
+                thePublishedKeyWasLeftInTheSettingsFile: true);
+
+            Assert.That(lines, Has.None.Contains("a key of its own"));
+        }
+
+        // An instance that ignored the shipped value is not on the retired name, so it must not also be
+        // told to move off it - that nudge says to copy the value across, which is what would stop it.
+        [Test]
+        public void ThePublishedKeyLeftInTheSettingsFile_IsNotAlsoAskedToMoveOntoTheNewName()
+        {
+            Assert.That(
+                ConfiguredKeyRingSource.AnsweredByTheRetiredName(null, null, ThePublishedKeyEncoded()),
+                Is.False);
+        }
+
+        private static string ThePublishedKeyEncoded()
+        {
+            var scaffold = new EncryptionKeyRing(
+                new EncryptionKey("k-not-the-published-one", new byte[EncryptionKey.MaterialLength]));
+
+            return Convert.ToBase64String(scaffold.WithLegacyDefault().RetiredKeys[0].Material.Span);
+        }
+
         [Test]
         public void AKeySetUnderTheNameInUse_IsNotAskedToMoveAnywhere()
         {

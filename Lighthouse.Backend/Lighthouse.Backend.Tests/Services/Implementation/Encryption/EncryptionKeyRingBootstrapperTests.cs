@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Encryption;
+using Lighthouse.Backend.Startup;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -788,18 +789,76 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        // Every Lighthouse before this release shipped the published key in appsettings.json under this
+        // name, and the updater keeps an operator settings file across an upgrade on purpose. An instance
+        // arriving here has therefore chosen nothing - it is carrying a value the product itself put there
+        // and never took away. Refusing to start strands it on a machine whose only way out is editing
+        // JSON by hand, and protects nothing: the key it would refuse over is the one it is already
+        // reading every stored credential with.
         [Test]
-        public void Resolve_ThePublishedKeyUnderTheNameThisReleaseRetired_RefusesAndNamesThatName()
+        public void Resolve_ThePublishedKeyUnderTheNameThisReleaseRetired_MintsItsOwnKeyRatherThanRefusingToStart()
         {
-            var refusal = Assert.Throws<InvalidOperationException>(
-                () => BootstrapperFor(
-                    new StagedKeyStoreFileSystem(),
+            var ring = BootstrapperFor(
+                new PhysicalKeyStoreFileSystem(),
+                suppliedUnderTheRetiredName: ThePublishedKeyEncoded()).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.GeneratedForThisInstance));
+                Assert.That(
+                    LegacyDefaultEncryptionKey.Matches(ring.ActiveKey.Material.Span),
+                    Is.False,
+                    "anything written after this start would be protected by bytes that ship in every copy of the product");
+                Assert.That(
+                    ring.RetiredKeys.Any(key => LegacyDefaultEncryptionKey.Matches(key.Material.Span)),
+                    Is.True,
+                    "the published key has to stay on the ring for reading, or the upgrade takes every stored credential with it");
+            }
+        }
+
+        // Reading the shipped value as no key sends an instance with nowhere to keep one down to the branch
+        // that runs on the published key, where before it was stopped. That is not a step backwards: the
+        // refusal told such an instance to remove the setting and let Lighthouse make a key, which is the
+        // one thing it cannot do, and removing it landed here anyway. What it needs to hear is that it has
+        // nowhere to keep a key - which is what it is told here, and is the only thing it can act on.
+        [Test]
+        public void Resolve_ThePublishedKeyUnderTheRetiredNameWithNowhereToKeepAKey_StartsAndIsToldWhatIsActuallyWrong()
+        {
+            var ring = BootstrapperFor(
+                new StagedKeyStoreFileSystem(),
+                suppliedUnderTheRetiredName: ThePublishedKeyEncoded(),
+                keyStoreCase: KeyStoreCase.DefaultLocationNoDurableStore,
+                storedSecrets: new StagedSecretPresenceProbe(StoredSecretPresence.HoldsAtLeastOne)).Resolve();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ring.Custody, Is.EqualTo(KeyCustody.NoDurableStore));
+                Assert.That(
+                    StartupBanner.BuildEncryptionCustodyLines(
+                        ring, new KeyStoreLocation("/app/keys", KeyStoreCase.DefaultLocationNoDurableStore),
+                        keyCameFromTheRetiredSetting: false,
+                        allowsStartWithUnreadableSecrets: false,
+                        keySupply: null,
+                        thePublishedKeyWasLeftInTheSettingsFile: true),
+                    Has.None.Contains("a key of its own"),
+                    "An instance running on the published key was told it uses a key of its own, directly " +
+                    "under the warning saying it does not - so one of the two adjacent lines is lying.");
+            }
+        }
+
+        [Test]
+        public void Resolve_ThePublishedKeyUnderTheNameThisReleaseRetired_StillReadsWhatWasStoredBeforeTheUpgrade()
+        {
+            var writtenBeforeTheUpgrade = EncryptedUnderThePublishedKey();
+
+            var upgraded = CryptoServiceHolding(
+                BootstrapperFor(
+                    new PhysicalKeyStoreFileSystem(),
                     suppliedUnderTheRetiredName: ThePublishedKeyEncoded()).Resolve());
 
             Assert.That(
-                refusal.Message,
-                Does.Contain(ConfiguredKeyRingSource.AsAnOperatorWouldWriteIt(ConfiguredKeyRingSource.RetiredSingleKeySettingKey)),
-                "this is the file an operator kept across the upgrade, and the setting they have to go and find is the old one");
+                writtenBeforeTheUpgrade.ConvertAll(upgraded.Decrypt),
+                Is.EqualTo(CredentialsStoredBeforeTheUpgrade));
         }
 
         [Test]

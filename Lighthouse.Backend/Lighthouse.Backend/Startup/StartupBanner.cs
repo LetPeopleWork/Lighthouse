@@ -17,7 +17,8 @@ namespace Lighthouse.Backend.Startup
         KeyStoreLocation KeyStore,
         bool KeyCameFromTheRetiredSetting,
         bool AllowsStartWithUnreadableSecrets = false,
-        KeySupply? KeySupply = null);
+        KeySupply? KeySupply = null,
+        bool ThePublishedKeyWasLeftInTheSettingsFile = false);
 
     // Said on every start for as long as the old name keeps working, because the only thing that makes it
     // safe to eventually stop reading that name is everyone having moved off it first.
@@ -27,6 +28,21 @@ namespace Lighthouse.Backend.Startup
             "The encryption key is being read from EncryptionSettings__EncryptionKey, which this release " +
             "retired. It still works today and will stop being read in a future release. Set the same value " +
             "as Encryption__Key and remove the old one.";
+    }
+
+    // Said to an instance that came up on a key of its own because what it found under the retired name
+    // was the value Lighthouse itself used to ship there. Nothing is wrong with such an instance, so this
+    // is not a refusal - but the dead setting is worth removing, and the one thing an operator must not do
+    // is carry that value over to the new name, which is exactly what the retirement nudge would tell them
+    // to do. This line is said in its place.
+    public static class ThePublishedKeyLeftBehindInTheSettingsFile
+    {
+        public const string Notice =
+            "EncryptionSettings__EncryptionKey holds the key that ships inside every copy of Lighthouse, so " +
+            "it was ignored and this instance uses a key of its own instead. Everything already stored " +
+            "stays readable and nothing has to be re-entered. Remove that setting to stop seeing this - on " +
+            "an install that has never been edited it is the EncryptionSettings block in appsettings.json. " +
+            "Do not copy its value to Encryption__Key: an instance will not start on it.";
     }
 
     // Said once, however many places were named. An operator moving their key from a setting into a file
@@ -135,7 +151,8 @@ namespace Lighthouse.Backend.Startup
                 facts.KeyStore,
                 facts.KeyCameFromTheRetiredSetting,
                 facts.AllowsStartWithUnreadableSecrets,
-                facts.KeySupply));
+                facts.KeySupply,
+                facts.ThePublishedKeyWasLeftInTheSettingsFile));
 
             // Stryker disable once all: the gap that separates the banner from whatever logs next.
             info.Add("");
@@ -159,7 +176,8 @@ namespace Lighthouse.Backend.Startup
             KeyStoreLocation keyStore,
             bool keyCameFromTheRetiredSetting,
             bool allowsStartWithUnreadableSecrets = false,
-            KeySupply? keySupply = null)
+            KeySupply? keySupply = null,
+            bool thePublishedKeyWasLeftInTheSettingsFile = false)
         {
             ArgumentNullException.ThrowIfNull(keyRing);
             ArgumentNullException.ThrowIfNull(keyStore);
@@ -177,6 +195,15 @@ namespace Lighthouse.Backend.Startup
             if (keyCameFromTheRetiredSetting)
             {
                 lines.Add(Line("⚠️", "Warning", RetiredKeySettingName.Nudge));
+            }
+
+            // Only where the instance really did end up on a key of its own. Finding the shipped value is
+            // not the same as it having decided anything: a key supplied anywhere else still wins, and an
+            // instance with nowhere to keep a key is left on the published one. Said there too, this line
+            // would contradict the custody line printed directly above it.
+            if (thePublishedKeyWasLeftInTheSettingsFile && keyRing.Custody == KeyCustody.GeneratedForThisInstance)
+            {
+                lines.Add(Line("⚠️", "Warning", ThePublishedKeyLeftBehindInTheSettingsFile.Notice));
             }
 
             if (AKeySuppliedInMoreThanOnePlace.Notice(keySupply) is { } suppliedTwice)
