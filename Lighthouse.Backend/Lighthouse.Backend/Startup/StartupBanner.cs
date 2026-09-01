@@ -189,12 +189,12 @@ namespace Lighthouse.Backend.Startup
 
             if (keyRing.Custody == KeyCustody.NoDurableStore)
             {
-                lines.Add(Line("⚠️", "Warning", NoDurableKeyStore.Warning));
+                lines.Add(WarningLine(NoDurableKeyStore.Warning));
             }
 
             if (keyCameFromTheRetiredSetting)
             {
-                lines.Add(Line("⚠️", "Warning", RetiredKeySettingName.Nudge));
+                lines.Add(WarningLine(RetiredKeySettingName.Nudge));
             }
 
             // Only where the instance really did end up on a key of its own. Finding the shipped value is
@@ -203,12 +203,12 @@ namespace Lighthouse.Backend.Startup
             // would contradict the custody line printed directly above it.
             if (thePublishedKeyWasLeftInTheSettingsFile && keyRing.Custody == KeyCustody.GeneratedForThisInstance)
             {
-                lines.Add(Line("⚠️", "Warning", ThePublishedKeyLeftBehindInTheSettingsFile.Notice));
+                lines.Add(WarningLine(ThePublishedKeyLeftBehindInTheSettingsFile.Notice));
             }
 
             if (AKeySuppliedInMoreThanOnePlace.Notice(keySupply) is { } suppliedTwice)
             {
-                lines.Add(Line("⚠️", "Warning", suppliedTwice));
+                lines.Add(WarningLine(suppliedTwice));
             }
 
             if (allowsStartWithUnreadableSecrets)
@@ -217,6 +217,11 @@ namespace Lighthouse.Backend.Startup
             }
 
             return lines;
+        }
+
+        private static string WarningLine(string value)
+        {
+            return Line("⚠️", "Warning", value);
         }
 
         private static string Line(string emoji, string label, string value)
