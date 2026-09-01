@@ -48,10 +48,7 @@ namespace Lighthouse.Backend.API
                 // Deliberately the same words the licence attribute answers with. This check needs the row
                 // being written, which an attribute cannot see, and a caller must not meet two different
                 // refusals for the one setting.
-                return new ObjectResult("Access Denied: Premium Features Required")
-                {
-                    StatusCode = StatusCodes.Status403Forbidden,
-                };
+                return StatusCode(StatusCodes.Status403Forbidden, "Access Denied: Premium Features Required");
             }
 
             feature.Enabled = updatedFeature.Enabled;

@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetOptionalFeautreByKey_KeyDoesNotExist_ReturnsNotFound()
+        public void GetOptionalFeatureByKey_KeyDoesNotExist_ReturnsNotFound()
         {
             repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns((OptionalFeature)null);
 
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetOptionalFeautreByKey_KeyExists_ReturnsFeature()
+        public void GetOptionalFeatureByKey_KeyExists_ReturnsFeature()
         {
             var feature = new OptionalFeature { Id = 0, Key = "Key1", Name = "Feature 1", Description = "Foo", Enabled = false };
             repositoryMock.Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>())).Returns(feature);
@@ -159,11 +159,6 @@ namespace Lighthouse.Backend.Tests.API
             repositoryMock.Verify(x => x.Save(), expectedExecutionTimes);
         }
 
-        private OptionalFeaturesController CreateSubject()
-        {
-            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object);
-        }
-
         [Test]
         public void UpdateOptionalFeature_HasSystemAdminRbacGuardAttribute()
         {
@@ -174,6 +169,11 @@ namespace Lighthouse.Backend.Tests.API
 
             Assert.That(attribute, Is.Not.Null);
             Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
+        }
+
+        private OptionalFeaturesController CreateSubject()
+        {
+            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object);
         }
     }
 }
