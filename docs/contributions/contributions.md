@@ -98,6 +98,8 @@ Our project wouldn’t be where it is today without the support of the following
 
 [![Focusrite](https://cdn11.bigcommerce.com/s-7exlzlf13h/images/stencil/250x100/focusrite-logo_1670497975__72107.original.png)](https://focusrite.com/)
 
+[![Thrivve Partners](../assets/contributions/Thrivve_Logo_dark.svg)](https://thrivve.partners/)
+
 ---
 
 Thank you all for your support!
