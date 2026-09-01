@@ -142,18 +142,26 @@ to point.** Recorded rather than silently skipped.
 It is not premium and must not become premium, gated, renamed or reordered by any of this. The only
 thing that changes for it is the heading above the table.
 
-### D9 — Seeded descriptions carry terminology tokens, resolved when the cell renders
+### D9 — Seeded names and descriptions carry terminology tokens, resolved when the cell renders
 
-*Added during DESIGN, 2026-08-31, after reading ADR-134 §A.3. See Changed Assumptions CA-1.*
+*Added during DESIGN, 2026-08-31, after reading ADR-134 §A.3. See Changed Assumptions CA-1. Widened to
+the **name** cell in the DESIGN amendment pass, 2026-09-01, after DISTILL found the seeded name carries
+the same configurable term — see CA-3.*
 
 ADR-134 rejected this store partly because the table renders a server-seeded `Description` and
 Epic #5375 AC-5.5 requires the help text in the instance's own terminology, resolved client-side
 through `getTerm`. A seeded string cannot be.
 
 The answer is not to render this row specially — ADR-134 was right that doing so spends the whole
-reuse benefit. The answer is that the description cell resolves terminology tokens for **every** row.
-It is a capability the table was missing, applies to `DeltaSync` and to every future setting, and is
-the smaller change of the two.
+reuse benefit. The answer is that the name and description cells resolve terminology tokens for
+**every** row. It is a capability the table was missing, applies to `DeltaSync` and to every future
+setting, and is the smaller change of the two.
+
+The name cell is in scope for the same reason the description is. `FeatureOrderingSettings.tsx:60`
+already composes its label from `getTerm`, so the control's *name* is terminology-aware in shipped
+code, while the table's name cell is a plain `{feature.name}` over a seeded string. Resolving only the
+description would regress something that ships today rather than decline to widen something new. The
+resolver exists for the description regardless, so the second call site is one line.
 
 ### D10 — The gate fix ships first, and answers 403 specifically
 
@@ -189,7 +197,7 @@ a mechanism nobody has run.
 
 | Surface | Change |
 |---|---|
-| `POST /api/{v1,latest}/OptionalFeatures/{id}` | Gains a per-key apply path (D4) and an honest refusal on the premium branch (D6). |
+| `POST /api/{v1,latest}/OptionalFeatures/{featureKey}` | Addressed by key rather than by `Id`; the numeric route is retired with no alias (ADR-187 §8). Gains a per-key apply path (D4) and an honest refusal on the premium branch (D6). |
 | `GET /api/{v1,latest}/OptionalFeatures` | Unchanged shape. Returns one more row. Still unguarded (S11). |
 | `PUT /api/{v1,latest}/AppSettings/FeatureOrdering` | Deprecated alias, delegates (D7). |
 | `GET /api/{v1,latest}/AppSettings/FeatureOrdering` | Deprecated alias, delegates. Still unguarded. |
@@ -264,8 +272,8 @@ of scanning a page for sections that happen to contain a switch.
 - **AC-01.9** `DeltaSync` is unchanged in name, description, preview badge, premium status and stored
   `Enabled` value (D8).
 - **AC-01.10** The upgrade does not delete the `AppSetting` row (D1).
-- **AC-01.11** On an instance that renamed *Feature* under Settings → Terminology, the row's
-  description renders that instance's word, not the seeded default. This is Epic #5375 AC-5.5, and
+- **AC-01.11** On an instance that renamed *Feature* under Settings → Terminology, the row's name and
+  its description render that instance's word, not the seeded default. This is Epic #5375 AC-5.5, and
   meeting it is what makes this store viable at all (D9).
 
 ### US-02 — Be refused out loud, not in silence
@@ -278,8 +286,9 @@ so that I do not believe I have changed something that is still running as befor
 #### Elevator Pitch
 Before: `POST /api/latest/OptionalFeatures/{id}` on a premium feature without a premium licence returns
 **200 OK carrying the unchanged entity** (S8). The write vanished and the response says it worked.
-After: `POST /api/latest/OptionalFeatures/{id}` for a premium feature without a premium licence → sees
-an explicit refusal status, not a success carrying stale state.
+After: the same toggle for a premium feature without a premium licence → sees an explicit refusal
+status, not a success carrying stale state — and it refuses a disable on the same terms as an enable
+(ADR-187 §6).
 Decision enabled: whether the setting shown on screen is the setting actually in force.
 
 #### Acceptance Criteria
@@ -456,12 +465,12 @@ two live conflicts. Both are resolved; neither reverses D1.
 `epic-5375-manual-sorting/feature-delta.md:937` names it the single most tempting reuse in that
 feature and says it loses on precisely this.
 
-**New assumption (D9).** The objection is real and is answered by making the table's description cell
-terminology-aware in general, rather than by rendering one row specially. ADR-134's other two
-objections have since expired: the `bool` concern is answered by D3 (the enum stays the domain type),
-and the silent-no-op concern is fixed by slice 01. What remains true from §A.3 is only that a *raw*
-seeded string cannot carry terminology — which is a missing capability of the table, not a property of
-the store.
+**New assumption (D9).** The objection is real and is answered by making the table's name and
+description cells terminology-aware in general, rather than by rendering one row specially. ADR-134's
+other two objections have since expired: the `bool` concern is answered by D3 (the enum stays the
+domain type), and the silent-no-op concern is fixed by slice 01. What remains true from §A.3 is only
+that a *raw* seeded string cannot carry terminology — which is a missing capability of the table, not a
+property of the store.
 
 ### CA-2 — AC-2.5 promises 403, and that reverses the slice order
 
@@ -474,6 +483,36 @@ the store.
 **New assumption (D10).** The gate fix ships **first**, and is pinned to 403 rather than to "an
 explicit refusal". DISCUSS had the move first on learning-leverage grounds; sequencing beats learning
 leverage here, because the other order ships a knowing regression of a shipped criterion.
+
+### CA-3 — The write route names a row by something the store does not key it by
+
+*Added in the DESIGN amendment pass, 2026-09-01, on evidence from `distill/upstream-issues.md`
+(UI-1, UI-3, UI-5, UI-8). Three things DESIGN left open are closed here; nothing DESIGN decided is
+reversed.*
+
+**The toggle route addresses rows by `Id`, and `Id` names nothing.** `LighthouseAppContext.cs:102` keys
+`OptionalFeature` by `Key`, so `Id` has no value generation behind it and the seeder writes every row
+`0`. The design's own store was already keyed by the string; only the route was not. Seeding the second
+row makes `GetById(0)` throw for *both* settings, `DeltaSync` included. The write is now addressed by
+key and the numeric route is retired outright, with no compatibility alias — ADR-187 §8 carries the
+reasoning and the three rejected alternatives. The strongest argument there is not the exception but
+the neighbour: `AppSettingsController` addresses every one of its settings by name in the route, and
+that is where this very setting lives today.
+
+The frontend half is not implied by the backend fix (UI-5). `SystemSettingsTab.tsx` keys its rows and
+matches its optimistic update on the same ambiguous number, and `OptionalFeatureService.updateFeature`
+posts it. All of it moves to `feature.key`.
+
+**The seeded name carries the same configurable term as the description** (UI-3), so D9 / DDD-8 widen
+to both cells. This is not a new capability being granted — `FeatureOrderingSettings.tsx:60` already
+resolves the term in the label of the control being moved, so a description-only resolver would regress
+shipped behaviour rather than merely fail to extend it.
+
+**The premium refusal stays symmetric** (UI-8). Both wave reviewers read the lapsed-licence case as a
+hole this story opens. It is not, and the house pattern settles it: `BlackoutPeriodsController` and
+`RecurringBlackoutRulesController` both carry `[LicenseGuard(RequirePremium = true)]` on `Delete` as
+well as on `Create` and `Update`. Slice 01 is unchanged in shape — the branch returns 403 instead of a
+200 carrying the unchanged entity, in both directions.
 
 ---
 
@@ -488,11 +527,16 @@ leverage here, because the other order ships a knowing regression of a shipped c
 | DDD-5 | `FeatureOrderingPolicyChanged` **stays** a published domain event | It genuinely belongs after the write, and the shipped forecast trigger handler already consumes it |
 | DDD-6 | The premium check moves **out of** `ApiHelpers.GetEntityByIdAnExecuteAction` | The helper always wraps in `Ok(...)`, so 403 is physically unreachable inside it — this is the mechanical cause of the silent no-op, not a careless `return` |
 | DDD-7 | The helper is **not widened**; this one action stops using it | 83 call sites across 8 controllers; widening a shared helper to fix one branch is the wrong trade |
-| DDD-8 | Descriptions carry **terminology tokens**, resolved at render | Answers ADR-134 §A.3 as a general capability; every row gets it, so the next terminology-bearing setting costs nothing |
+| DDD-8 | **Names and descriptions** carry **terminology tokens**, resolved at render | Answers ADR-134 §A.3 as a general capability; every row and both cells get it, so the next terminology-bearing setting costs nothing. The name of the control being moved is already terminology-aware, so leaving that cell out would regress shipped behaviour |
 | DDD-9 | Token resolution is **frontend-only**; the seeder stores the token | Terminology is resolved client-side through `getTerm`; a server-side resolution would need the term map on a path that has no principal |
 | DDD-10 | `IFeatureOrderingPolicyProvider` **keeps its interface**; only its backing store changes | Three production consumers and one ArchUnit rule stay untouched |
 | DDD-11 | Alias endpoints delegate to the **same applier**, not to a parallel write | One store behind two doors cannot diverge; a second write path can |
 | DDD-12 | The alias keeps `[LicenseGuard(RequirePremium = true)]` | AC-2.5's 403 is then delivered on both doors, by two independent mechanisms |
+| DDD-13 | The toggle is addressed **by key**; `POST /OptionalFeatures/{id}` is retired with no alias | The store keys the row by its string, the read path already names it that way, and `AppSettingsController` addresses this very setting by name today. An alias would only keep alive the lookup that throws |
+| DDD-14 | The premium refusal is **symmetric** — a disable is refused on the same terms as an enable | The house pattern: blackout periods and recurring rules gate `Delete` as well as `Create` and `Update`. Gating only the enable would make ordering the one downgradable premium setting in the product, and the branch is generic, so it decides for every premium row that follows |
+
+DDD-13 and DDD-14 were added in the amendment pass of 2026-09-01 (CA-3). Their full reasoning and their
+rejected alternatives are in ADR-187 §8 and §6 respectively.
 
 ---
 
@@ -505,13 +549,14 @@ leverage here, because the other order ships a knowing regression of a shipped c
 | `IOptionalFeatureApplier` | `Services/Interfaces/OptionalFeatures/` | CREATE NEW — `Key`, `ApplyAsync(OptionalFeature, bool)` |
 | `DefaultOptionalFeatureApplier` | `Services/Implementation/OptionalFeatures/` | CREATE NEW — set `Enabled`, save. The behaviour every current row has |
 | `FeatureOrderingApplier` | `Services/Implementation/OptionalFeatures/` | CREATE NEW — seed, set, save, publish, in that order and in one place |
-| `OptionalFeaturesController` | `API/` | EXTEND — resolve applier by key; 403 before the write; stops using the `Ok`-wrapping helper |
+| `OptionalFeaturesController` | `API/` | EXTEND — route the write as `{featureKey}` and resolve the row with `GetByPredicate(f => f.Key == featureKey)`; resolve applier by key; 403 before the write, in both directions; stops using the `Ok`-wrapping helper, and the numeric route goes with it |
 | `FeatureOrderingPolicyProvider` | `Services/Implementation/` | EXTEND — backing store swaps to `IRepository<OptionalFeature>` |
 | `IFeatureOrdering` / `FeatureOrdering` | `Services/Implementation/` | EXTEND — a source-order method that does not consult the policy |
 | `FeatureRankSeeder` | `Services/Implementation/` | EXTEND — call the source-order method |
 | `AppSettingService` | `Services/Implementation/` | EXTEND — `SetFeatureOrderingPolicy` delegates to the applier |
 | `AppSettingsController` | `API/` | EXTEND — both actions delegate; `[LicenseGuard]` retained |
-| `SystemSettingsTab.tsx` | `pages/Settings/System/` | EXTEND — heading, token-resolved description cell |
+| `SystemSettingsTab.tsx` | `pages/Settings/System/` | EXTEND — heading; token-resolved **name and** description cells; rows keyed on `feature.key` in both places that key them (the `LicenseTooltip` wrapper and the `TableRow` inside it), and the optimistic update matched on `feature.key` rather than `feature.id` |
+| `OptionalFeatureService.ts` | `services/Api/` | EXTEND — `updateFeature` posts to `/optionalfeatures/${feature.key}`. `getFeatureByKey` already addresses by key and is the shape to follow |
 | `resolveTerms` | `services/Terminology/` | CREATE NEW — one small pure function |
 | `FeatureOrderingSettings.tsx` | `pages/Settings/System/` | **DELETE** |
 | `useFeatureOrdering.ts` | `hooks/` | EXTEND — reads the optional feature |
@@ -543,7 +588,7 @@ it, together smaller than the `switch` they replace.
 
 | Port | Guard | Serves |
 |---|---|---|
-| `POST /api/{v1,latest}/OptionalFeatures/{id}` | `RbacGuard(SystemAdmin)` + per-row premium check returning 403 | AC-01.1, AC-02.1, AC-02.2, AC-02.3 |
+| `POST /api/{v1,latest}/OptionalFeatures/{featureKey}` | `RbacGuard(SystemAdmin)` + per-row premium check returning 403 on enable and on disable alike | AC-01.1, AC-02.1, AC-02.2, AC-02.3 |
 | `GET /api/{v1,latest}/OptionalFeatures` | none, deliberately | AC-01.1, AC-01.3, AC-01.4 |
 | `PUT /api/{v1,latest}/AppSettings/FeatureOrdering` | `RbacGuard` + `LicenseGuard(RequirePremium)` | AC-01.8, and AC-2.5 of Epic #5375 |
 | `GET /api/{v1,latest}/AppSettings/FeatureOrdering` | none, deliberately | AC-01.8 |
@@ -607,7 +652,7 @@ graph TB
     end
 
     admin -->|HTTPS| spa
-    spa -->|"GET /OptionalFeatures<br/>POST /OptionalFeatures/{id}"| api
+    spa -->|"GET /OptionalFeatures<br/>POST /OptionalFeatures/{featureKey}"| api
     spa -->|"GET /AppSettings/FeatureOrdering<br/>(deprecated alias)"| api
     api -->|"OptionalFeature.Enabled — the one store"| db
     api -->|"Feature.ManualRank — seeded on enable"| db
@@ -638,7 +683,7 @@ graph TB
     bus["IDomainEventDispatcher"]
     fc["Forecast trigger handler"]
 
-    ctrl -->|"1. premium? -> 403 before any write"| ctrl
+    ctrl -->|"1. premium? -> 403 before any write,<br/>on enable and on disable alike"| ctrl
     ctrl -->|2. resolve by key| reg
     reg --> def
     reg --> ord
@@ -689,7 +734,7 @@ board.
 | DESIGN#DDD-2 | The applier owns the whole write, so the sequence cannot be got wrong from outside | DDD-2 | `Turning_the_ordering_setting_on_for_the_first_time_moves_nobody` fails if the seed ever runs after the write. Its fixture is ranked backwards on purpose — a fixture in row-id order would pass either way |
 | DESIGN#DDD-3 | `IFeatureOrdering` gains a policy-independent source order and the rank seeder uses it | DDD-3 | Not port-observable on its own. The acceptance scenario above covers the consequence; the unit test ADR-187 names under Architectural Enforcement stays a DELIVER obligation and is listed under Pre-requisites below |
 | DESIGN#DDD-5 | `FeatureOrderingPolicyChanged` stays a published domain event | DDD-5 | `Handing_the_order_over_and_giving_it_back_both_re_queue_the_forecasts` asserts both transitions through the shipped handler, not through a spy on the bus |
-| DESIGN#DDD-8 / DDD-9 | Descriptions carry terminology tokens, resolved at render, frontend-only | DDD-8 | Two frontend scenarios: the instance's own word, and an undefined token left standing. Widened by one cell — see UI-3 |
+| DESIGN#DDD-8 / DDD-9 | Names and descriptions carry terminology tokens, resolved at render, frontend-only | DDD-8 | Two frontend scenarios: the instance's own word, and an undefined token left standing. Both assert the name cell and the description cell, which is what DDD-8 now decides (UI-3, CA-3) — so the widening costs no test change |
 | DESIGN#DDD-11 / DDD-12 | The alias delegates to the same applier and keeps its licence guard | DDD-11 | `A_write_through_the_deprecated_door_is_visible_through_the_new_one` and `..._moves_nobody_either` — one store behind two doors, asserted from both sides |
 | DISCUSS#D1 | The app setting row is retained and unread | D1 | `The_upgrade_leaves_the_setting_it_migrated_from_in_place`. Green today, so it guards the deletion from this moment rather than from the end of DELIVER |
 | DISCUSS#D8 | `DeltaSync` is not premium and must never become gated | D8 | Asserted explicitly on both licence states and on its stored premium flag, rather than implied by the premium cases. An inverted check refuses everybody and would pass every premium scenario |
@@ -800,7 +845,7 @@ Every surface DESIGN names is reached through its own protocol, over HTTP, by at
 
 | Surface | Reached by |
 |---|---|
-| `POST /api/latest/OptionalFeatures/{id}` | `ToggleOptionalFeature` — real HTTP POST with the whole row as raw JSON |
+| `POST /api/latest/OptionalFeatures/{featureKey}` | `ToggleOptionalFeature` — real HTTP POST with the whole row as raw JSON. Under DDD-13 the helper posts the key directly instead of resolving an id from it first; no scenario's Given/When/Then changes |
 | `GET /api/latest/OptionalFeatures` | `GetOptionalFeatures` — real HTTP GET, parsed as wire JSON |
 | `PUT /api/latest/AppSettings/FeatureOrdering` | `SetOrderingPolicyThroughTheAlias` — real HTTP PUT |
 | `GET /api/latest/AppSettings/FeatureOrdering` | `GetOrderingPolicy` — real HTTP GET |
@@ -863,13 +908,37 @@ Asserted by `leaves a token nobody defined exactly where it is`.
 
 ## Wave: DISTILL / [REF] Pre-requisites and DELIVER obligations
 
-Things DELIVER owes that no acceptance scenario can carry. Nine, after the review gate.
+Things DELIVER owes that no acceptance scenario can carry. Nine, after the review gate; the first of
+them now carries a decision rather than a question.
 
-1. **UI-1 must be answered before slice 02 starts, and answered on both sides.** Two rows in the table
-   cannot both be addressed by the identity the toggle route uses, and the frontend keys its rows and
-   matches its optimistic update on that same identity (UI-5). Routing the backend write by key does
-   not fix the browser. This is a DESIGN decision, not an implementation detail; six backend scenarios
-   and one frontend scenario stay RED until it is made.
+1. **UI-1 and UI-5 are decided — the write is addressed by key, on both stacks.**
+   `POST api/{v1,latest}/OptionalFeatures/{featureKey}`, resolved through
+   `GetByPredicate(f => f.Key == featureKey)` exactly as the shipped `GET /OptionalFeatures/{featureKey}`
+   already does. The numeric route is retired outright, with no compatibility alias (DDD-13, ADR-187
+   §8). On the client, `OptionalFeatureService.updateFeature` posts by key, and `SystemSettingsTab.tsx`
+   keys its rows on `feature.key` in both places that key them — the `LicenseTooltip` wrapper and the
+   `TableRow` inside it — and matches its optimistic update on `feature.key` rather than `feature.id`.
+   Routing the server by key does not fix the browser, so both halves are owed. Six backend scenarios
+   and one frontend scenario turn green on them. Both must be in place before the second row is seeded,
+   which makes them slice 02's to land. The backend half touches the same controller action slice 01
+   already rewrites for its 403, so DELIVER may find it cheaper to do the two together — the obligation
+   does not move either way, and slice 01's own fixture works around the ambiguity by carrying an
+   explicit identity.
+
+   **The harness follows the port, and that is a stated consequence rather than a quiet edit.**
+   `BehaviourSettingsAcceptanceTest.ToggleOptionalFeature` resolves an id from the key and posts
+   `/api/latest/optionalfeatures/{id}`. It now posts the key directly; `IdOfStoredSetting` and
+   `CountOfSettingsCarryingIdentity` become dead scaffolding; and `ToggleASettingThatDoesNotExist` aims
+   at a key nobody can name rather than at `987654`. **No scenario's Given/When/Then changes** — this is
+   a driving adapter following a change in the shape of its port.
+
+   Two more things move with the signature, both found while checking the blast radius.
+   `OptionalFeaturesControllerTest` calls `UpdateOptionalFeature(1, …)` and `UpdateOptionalFeature(0, …)`
+   directly, so it stops compiling until it passes a key; two of its method names say `FeatureWithId`
+   and name an identity that will no longer exist. Slice 01 already extends that class, so this is a
+   rename in work DELIVER is doing anyway. The E2E page object is unaffected: `enableFeature` waits on
+   a response whose URL merely *contains* `/api/latest/optionalfeatures`, which a keyed route still
+   satisfies.
 2. **`SetPolicy` must be disposed of** — deleted or delegated (UI-6). Left as it is, it is a second
    writer of the same row that skips the seed and the event.
 3. **The applier seeds only on the way out** (UI-7). `Giving_the_order_back_writes_no_places` pins it.
@@ -889,16 +958,35 @@ Things DELIVER owes that no acceptance scenario can carry. Nine, after the revie
 9. **AC-02.5** — re-read Epic #5733's delta and slice 03 at finalization and confirm neither claims the
    refusal. A document check, done by reading, not by running.
 
-Two open product questions the reviewers surfaced, for the maintainer rather than for DELIVER:
+The two product questions the reviewers surfaced were put to the maintainer and **decided on
+2026-09-01**. Neither is open, and neither is DELIVER's to reopen.
 
-- **Whether a lapsed licence should strand an administrator on a setting they can neither use nor turn
-  off** (UI-8). The behaviour is pre-existing and preserved, and the preservation is now pinned by a
-  green test — but slice 01 rewrites exactly the branch that refuses the write, so it is the cheap
-  moment to decide otherwise.
-- **Whether the terminology resolver runs on the row's name as well as its description** (UI-3). The
-  seeded name carries the same configurable term, so without it the row says "Features" on an instance
-  that renamed them — the objection this whole store was once rejected over. The scenarios assert both
-  cells; DESIGN has not yet widened the decision to match.
+- **A lapsed licence still strands an administrator on a setting they can neither use nor turn off**
+  (UI-8). **Decided: keep it, symmetric, and say so.** The premium check refuses a disable on the same
+  terms as an enable. This is the house pattern rather than an oversight — `BlackoutPeriodsController`
+  gates `Delete` as well as `Create` and `Update` (`BlackoutPeriodsController.cs:61`), and
+  `RecurringBlackoutRulesController` does the same, so nowhere in Lighthouse can an instance undo
+  premium configuration once its licence lapses. Gating only the enable would make ordering the one
+  downgradable premium setting in the product, and the branch is generic, so the rule is inherited by
+  every premium row added after it. Allowing the disable would have been *data*-safe — disabling writes
+  no places and keeps the ones already chosen — so the rejection is about product coherence, not risk;
+  the coherent version is a product-wide change across ordering, blackout periods and recurring rules,
+  and belongs on the board as its own item. Slice 01 is unchanged in shape: the branch returns 403
+  instead of a 200 carrying the unchanged entity, in both directions.
+  `An_instance_whose_licence_lapsed_keeps_the_order_it_already_owns` stays green as the guard against
+  the tempting tidy-up during the re-backing — a licence-aware `FeatureOrderingPolicyProvider` would
+  hand every lapsed customer's list back to their tracker and reorder every Feature they had placed,
+  silently, on their renewal date. Recorded as DDD-14.
+- **The terminology resolver runs on the row's name as well as its description** (UI-3). **Decided:
+  widen it, for every row rather than as a special case.** `FeatureOrderingSettings.tsx:60` already
+  composes its label through `getTerm`, so the control's name is terminology-aware in shipped code
+  while the table's name cell is a plain `{feature.name}` over a seeded string — resolving only the
+  description would regress something that ships today, which is exactly what ADR-134 §A.3 rejected
+  this store over. The resolver has to exist for the description regardless, so the second call site is
+  one line. Rewording the seeded name until it carries no configurable term was the alternative; it
+  drops the label users read today and leaves the description needing tokens anyway. `DeltaSync`'s name
+  carries no token and is unaffected. The scenarios already assert both cells, so nothing in DISTILL
+  changes. Recorded as the widening of D9 / DDD-8.
 
 ---
 
@@ -925,7 +1013,10 @@ DESIGN found two contradictions against DISCUSS and resolved both before DISTILL
 Nothing is left for DISTILL to pick a side on.
 
 DISTILL adds no contradiction of its own. UI-1 and UI-3 are gaps rather than conflicts — facts neither
-wave had, not decisions the two waves disagree about.
+wave had, not decisions the two waves disagree about. Both were closed on 2026-09-01 by the DESIGN
+amendment pass, together with UI-5 and UI-8, and the reasoning is in CA-3, DDD-13, DDD-14 and
+ADR-187 §6 / §7 / §8. `distill/upstream-issues.md` is left as written: it records what DISTILL found,
+not what DESIGN then decided.
 
 ---
 
@@ -1006,6 +1097,8 @@ The DISCUSS findings on story sizing, the missing journey YAML, KPI-5's unmeasur
 US-01's `job_id`, and AC-02.5 being a document check rather than a criterion are all real and all belong
 to DISCUSS. They are not DISTILL's to rewrite and are left for the maintainer.
 
-Both reviewers independently read the lapsed-licence case as a new hole opened by this story. It is not
-— the behaviour predates it and is preserved — and the disagreement is recorded in UI-8 with the
-evidence rather than resolved by adopting the finding.
+Both reviewers independently read the lapsed-licence case as a new hole opened by this story, and both
+were wrong — the behaviour predates it and is preserved deliberately. The disagreement was recorded in
+UI-8 with the evidence rather than resolved by adopting the finding, and it has since been **decided**:
+the premium refusal stays symmetric, because that is what every other premium surface in the product
+does (DDD-14, ADR-187 §6).

@@ -4,6 +4,7 @@
 - **Date**: 2026-08-31
 - **Feature**: `story-5876-behaviour-settings` (ADO User Story #5876 "Move Feature Ordering to Optional Features")
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect), interaction mode = PROPOSE
+- **Amended**: 2026-09-01, guided amendment pass on evidence DISTILL surfaced — §6 records that the premium refusal is symmetric and why, §7 widens to the row's name, and a new §8 retires the numeric write route. Nothing decided on 2026-08-31 is reversed.
 - **Supersedes**: [ADR-134](./adr-134-ordering-policy-appsetting-enum-single-selection-point.md) §1 (storage) and §A (the rejection of `OptionalFeature`). ADR-134 §2 (the single ordering seam), §3 (INV-A3, fill-nulls-appending in source order) and §4 (the sync path never writes `ManualRank`) are **retained in full**, as are its enforcement rules.
 
 ---
@@ -42,8 +43,8 @@ domain type does not. That is a real reduction in room, and it is accepted below
 
 **The terminology point stands, and reveals a missing capability rather than a bad store.** ADR-134
 was right that rendering one row specially would spend the entire reuse benefit. What it did not
-consider is making the description cell terminology-aware for *every* row — which is a smaller change
-than the special case it rejected, and one that pays out on every future setting.
+consider is making the name and description cells terminology-aware for *every* row — which is a
+smaller change than the special case it rejected, and one that pays out on every future setting.
 
 Meanwhile the story that prompted this ADR is not about storage at all. It is about an administrator
 finding every instance-wide switch in one place, and it is the point at which "which switches are in
@@ -65,7 +66,7 @@ the rank-seeding rule and the sync-path guarantee from ADR-134 are unchanged.**
 | Migration | On the **first-add path only**, the seeder reads `AppSetting` `FeatureOrdering:Policy` and seeds `Enabled = true` where it reads `ManualOrder` |
 | Old row | **Retained and unread.** Additive only; nothing deletes it |
 | Read | `IFeatureOrderingPolicyProvider.GetPolicy()` — unchanged signature, unchanged callers |
-| Write | `POST api/{v1,latest}/OptionalFeatures/{id}`, `RbacGuard(SystemAdmin)` + per-row premium check |
+| Write | `POST api/{v1,latest}/OptionalFeatures/{featureKey}`, `RbacGuard(SystemAdmin)` + per-row premium check. Addressed by key, not by `Id` — §8 |
 
 `OptionalFeatureSeeder` never overwrites `Enabled` on an existing key, and a new key seeds with its
 declared value. So the migration has **exactly one opportunity**, at first add, and a shipped release
@@ -134,14 +135,82 @@ attribute cannot see which row is being written — but its response shape is ma
 answer alike. The deprecated `AppSettings/FeatureOrdering` alias **keeps** its
 `[LicenseGuard(RequirePremium = true)]` and delegates to the same applier.
 
-### 7. Descriptions carry terminology tokens
+**The refusal is symmetric, and that is the house pattern rather than an oversight.** The check is
+`feature.IsPremium && !CanUsePremiumFeatures()`, so it refuses a disable exactly as it refuses an
+enable: an instance whose licence lapsed keeps the setting it owns and cannot turn it off. Both wave
+reviewers read that as a hole this story opens. It is not.
+`BlackoutPeriodsController` carries `[LicenseGuard(RequirePremium = true)]` on `Delete` as well as on
+`Create` and `Update` (`BlackoutPeriodsController.cs:61`), and `RecurringBlackoutRulesController` does
+the same. Nowhere in Lighthouse can an instance undo premium configuration once its licence lapses — a
+lapsed instance's blackout periods keep shrinking its forecasts and it cannot remove them. Gating only
+the enable here would make the ordering policy the one downgradable premium setting in the product, and
+the branch is generic rather than ordering-specific, so whatever it does is inherited by every premium
+row added after it.
 
-Seeded descriptions may contain placeholder tokens, resolved through `getTerm` when the table cell
-renders. This is what makes a server-seeded string satisfy AC-5.5, and it applies to every row rather
-than to this one.
+Allowing the disable would have been *data*-safe: disabling writes no places and keeps the ones already
+chosen, so a renewal restores the exact list. The rejection is about product coherence, not risk. The
+coherent version of "let people relinquish premium configuration" is a product-wide change across
+ordering, blackout periods and recurring rules, and belongs on the board as its own item rather than in
+this story.
+
+### 7. Names and descriptions carry terminology tokens
+
+Seeded names and descriptions may contain placeholder tokens, resolved through `getTerm` when the table
+cell renders. This is what makes a server-seeded string satisfy AC-5.5, and it applies to every row and
+to both cells rather than to this one.
+
+**The name cell needs it as much as the description does.** `FeatureOrderingSettings.tsx:60` renders its
+label as ``label={`Let Lighthouse own the order of your ${featuresTerm}`}`` — the control's name is
+*already* terminology-aware in shipped code, while the table's name cell is a plain `{feature.name}`
+over a server-seeded string (`SystemSettingsTab.tsx:121`). Resolving only the description would
+therefore not be declining to widen a capability; it would regress one that ships today, which is
+precisely what ADR-134 §A.3 rejected this store over. The resolver has to exist for the description in
+any case, so the second call site costs a line. `DeltaSync`'s name carries no token and is unaffected.
+
+Rewording the seeded name until it carries no configurable term was the alternative. It drops the label
+users read today and leaves the description needing tokens regardless, so it removes nothing and loses
+something.
 
 Resolution is frontend-only. The seeder stores the token; the server never resolves it, because the
 term map is a client-side concern and the seeding path has no principal.
+
+### 8. The write is addressed by key, and the numeric route is retired
+
+`POST api/{v1,latest}/OptionalFeatures/{featureKey}` resolves the row through
+`GetByPredicate(f => f.Key == featureKey)`, exactly as the shipped `GET /OptionalFeatures/{featureKey}`
+already does. `POST /OptionalFeatures/{id}` is removed outright. There is no compatibility alias.
+
+The store has always been keyed by the string. `LighthouseAppContext.cs:102` reads
+`modelBuilder.Entity<OptionalFeature>().HasKey(a => a.Key)`, so `Id` is an ordinary mapped column with
+no value generation behind it, and `OptionalFeatureSeeder` writes every row `Id = 0`.
+`RepositoryBase.GetById` is a `SingleOrDefault(t => t.Id == id)`, so it works only while exactly one row
+exists — and §1 adds the second. From that moment the numeric route throws for **both** settings,
+including `DeltaSync`, which this story promised not to touch.
+
+The exception is not the decisive argument, though. Two entities in `LighthouseAppContext` are keyed by
+something other than `Id`: `AppSetting` (line 101) and `OptionalFeature` (line 102). `AppSettingsController`
+addresses every one of its settings by name in the route — `GET`/`PUT /AppSettings/FeatureOrdering`, with
+no integer anywhere — and that is where this very setting lives today. Routing it onto
+`OptionalFeatures/{id}` would take a setting correctly addressed by its name and re-address it by a
+number that reads `0` for every row in the table.
+
+`GetEntityByIdAnExecuteAction` has 83 call sites across 8 controllers, and every other user of it is a
+genuinely `Id`-keyed entity. `OptionalFeature` was the one entity keyed by something else that still
+went through the `Id` helper. The helper is not wrong; this one use of it was. §6 already says this
+action stops using it, so the route table was the last place the retired numeric identity survived —
+§8 finishes that sentence rather than reversing anything.
+
+`Id` **stays** on the entity and on the wire. `OptionalFeature : IEntity` declares `required int Id` and
+`RepositoryBase<T> where T : IEntity` is generic over it, so the column is part of a repository contract
+rather than of this route. It simply stops naming a row. Nothing about the schema moves, and no
+migration is generated.
+
+The browser needs the same change, and does not inherit it. `SystemSettingsTab.tsx` keys its rows
+`key={feature.id}` in two places — the `LicenseTooltip` wrapper and the `TableRow` inside it — and
+matches its optimistic update on `feature.id === toggledFeature.id`, while `OptionalFeatureService.updateFeature`
+posts to `/optionalfeatures/${feature.id}`. With both seeded rows carrying zero, one click flips both
+switches and React sees duplicate keys. All four move to `feature.key`. Routing the server by key does
+not fix the client; both halves have to be in place before the second row is seeded.
 
 ## Alternatives Considered
 
@@ -190,6 +259,34 @@ Two writes, one truth, and a divergence that surfaces only on instances that hav
 Recorded only because it is the obvious thing to reach for when a deprecated endpoint has to keep
 working, and the alias delegating to one store is the answer instead.
 
+### F. Keep `POST {id:int}` as a compatibility alias alongside the key route — rejected
+
+It routes: the `:int` constraint disambiguates the two, so both could sit on the controller at once.
+The trouble is what the alias would be compatible with. It keeps `GetById(0)` alive — the one lookup
+that throws the moment a second row exists — so what it offers a caller is a 500 on every instance this
+ADR ships to.
+
+And there is no caller to offer it to. The frontend ships in the same artifact, the backend tests move
+with the route, and the full `lighthouse-clients` endpoint inventory contains no `OptionalFeatures` path
+(checked during DISCUSS). An alias for nobody, answering 500.
+
+### G. Give `Id` a generated identity — rejected
+
+The other way to make the numeric route mean something: configure value generation and let the store
+number the rows.
+
+That is a migration across all four supported providers plus a backfill of the existing `DeltaSync` row,
+for a column nothing reads, to preserve a route that names rows by a number the store does not key them
+by. This feature generates no EF migration; this alternative is the only thing considered in it that
+would have.
+
+### H. Keep the `{id}` route and resolve the key from the request body — rejected
+
+The smallest diff of the three and the worst outcome. The body already carries the whole row, so the
+handler could read `Key` from it and ignore the route entirely. Then the route names something the
+handler does not use, and a request whose route and body disagree is accepted silently — the same class
+of failure as the premium branch §6 exists to remove, arriving through a different door.
+
 ## Consequences
 
 **Positive**
@@ -200,8 +297,12 @@ working, and the alias delegating to one store is the answer instead.
   `UsageData` is the obvious next one.
 - §4 deletes a temporal coupling rather than documenting it. The rank seed is now correct in isolation.
 - The premium branch stops lying, on an endpoint whose contract said it could not.
-- Terminology-aware descriptions are a capability every current and future row gets.
+- Terminology-aware names and descriptions are a capability every current and future row gets.
 - One store behind two doors, so the deprecated alias cannot diverge.
+- The read path and the write path name a row the same way, and it is the way the store keys it. A
+  second, third and fourth row can now be added without anything else being true.
+- The premium refusal is symmetric and generic, so every premium row added after this one inherits the
+  same answer without anybody deciding it again.
 
 **Negative / cost**
 
@@ -215,6 +316,19 @@ working, and the alias delegating to one store is the answer instead.
   seven other controllers, so it now looks slightly less like its neighbours.
 - The `AppSetting` row and both alias endpoints survive as inert surface until a contract drop. Three
   things that exist only to not break something nobody has found.
+- **`POST /OptionalFeatures/{id}` is removed without an alias, which is a breaking change to a public
+  route.** It is safe here only because the inventory says nothing outside this artifact calls it — a
+  fact that was checked rather than assumed, and that would need checking again if the endpoint ever
+  grew a client.
+- The acceptance harness posts by id today: `BehaviourSettingsAcceptanceTest.ToggleOptionalFeature`
+  resolves the id from the key and then posts `/api/latest/optionalfeatures/{id}`. Under §8 the helper
+  posts the key directly, `IdOfStoredSetting` and `CountOfSettingsCarryingIdentity` become dead
+  scaffolding, and `ToggleASettingThatDoesNotExist` aims at a key nobody can name rather than at
+  `987654`. **No scenario's Given/When/Then changes** — this is a driving adapter following a change in
+  the shape of its port — but the file is DISTILL's, so the consequence is stated here rather than
+  discovered in a DELIVER diff.
+- An instance whose licence lapsed can neither use the setting it owns nor switch it off. Pre-existing,
+  preserved deliberately, and now recorded as a decision rather than inherited as a default — §6.
 - ADR-134 §1 and §A are superseded 25 days after they were accepted. The reasoning was sound on the
   evidence available; two of its three grounds have since been fixed or expired, which is the ordinary
   way of things and is recorded here rather than smoothed over.
@@ -237,11 +351,12 @@ working, and the alias delegating to one store is the answer instead.
 | An instance on `ManualOrder` before the upgrade is on it after | Integration test over a seeded `AppSetting` + absent `OptionalFeature`, asserting `Enabled = true` and every `ManualRank` byte-identical |
 | First enable moves nothing | Integration test asserting the sequence from `GET /features` is identical before and after the flip, on an instance with every rank null |
 | The seed is correct regardless of when it runs | Unit test calling `SeedMissingRanks` with the policy already `ManualOrder` and all ranks null, asserting source order |
-| A premium toggle without a licence returns 403 and persists nothing | Endpoint test, all four cases: premium × licensed / unlicensed, non-premium × licensed / unlicensed |
+| A premium toggle without a licence returns 403 and persists nothing, in **both** directions | Endpoint test, all four cases: premium × licensed / unlicensed, non-premium × licensed / unlicensed — with the premium/unlicensed case run against an already-enabled row, so the refused *disable* is asserted and not merely implied |
 | `DeltaSync` never becomes gated | The non-premium cases above, asserted explicitly rather than implied |
 | Both doors write the same store | Integration test: write through the alias, read through `GET /OptionalFeatures` |
 | Every optional feature has exactly one applier | Startup test over the registered appliers asserting one per seeded key, no duplicates, no orphans |
-| A terminology token renders the instance's word | Frontend test with a renamed term asserting the rendered description |
+| A terminology token renders the instance's word | Frontend test with a renamed term asserting the rendered **name and** description |
+| No route addresses an `OptionalFeature` by `Id` | Endpoint test toggling by key; and the not-found case names a key nobody seeded, which is also what a leftover numeric request now resolves to |
 
 ## Cross-reference
 

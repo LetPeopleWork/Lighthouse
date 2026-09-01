@@ -19,13 +19,26 @@ who owns the forecast order, and turning it on still moves nothing.
 - Frontend: the `FeatureOrdering` row appears in the table; `FeatureOrderingSettings.tsx` and its
   `InputGroup` are deleted; `useFeatureOrdering` reads the policy from the optional feature; the group
   heading becomes **Behaviour Settings**.
-- **Terminology token substitution in the description cell.** Seeded descriptions may carry
-  placeholder tokens, resolved through `getTerm` when the cell renders. This is what makes the seeded
-  string satisfy Epic #5375 AC-5.5, and it is a general capability of the table — every row gets it,
-  including `DeltaSync` and every future one. Without it the row says "Feature" on an instance that
-  renamed it, which is the objection ADR-134 §A.3 rejected this whole store on.
+- **The row is addressed by its key, on both stacks.** `OptionalFeatureService.updateFeature` posts to
+  `/optionalfeatures/${feature.key}`, and `SystemSettingsTab.tsx` keys its rows on `feature.key` in
+  both places that key them — the `LicenseTooltip` wrapper and the `TableRow` inside it — and matches
+  its optimistic update on `feature.key` rather than `feature.id`. Every seeded row carries `Id = 0`,
+  so with two rows in the table the shipped code flips both switches on one click and React sees
+  duplicate keys. The backend half (`POST /OptionalFeatures/{featureKey}`, the numeric route retired
+  with no alias) is DDD-13 / ADR-187 §8 and lands here, because this is the slice that seeds the second
+  row. It touches the same controller action slice 01 rewrites for its 403, so the two may be done
+  together; either way it does not fix the browser on its own.
+- **Terminology token substitution in the name and description cells.** Seeded names and descriptions
+  may carry placeholder tokens, resolved through `getTerm` when the cell renders. This is what makes
+  the seeded string satisfy Epic #5375 AC-5.5, and it is a general capability of the table — every row
+  and both cells get it, including `DeltaSync` and every future one. Without it the row says "Feature"
+  on an instance that renamed it, which is the objection ADR-134 §A.3 rejected this whole store on. The
+  name cell is in scope because the control being deleted here already composes its label from
+  `getTerm` (`FeatureOrderingSettings.tsx:60`), so leaving it out would regress shipped behaviour.
 - Docs: `docs/settings/configuration.md` heading rename, *Feature Order (Premium)* folded in as the
   row's description, `settings/optionalfeatures.png` regenerated (delete the PNG first).
+- The screenshot spec names `settings/optionalfeatures.png` and reaches the page through the UI, so it
+  needs no route change of its own.
 - ADR-134 amended; ADR-132's enum reasoning explicitly preserved.
 
 ## OUT of scope
@@ -57,8 +70,8 @@ Per US-01 (AC-01.1…01.11) in `feature-delta.md`. The four that carry it:
 - **AC-01.5** — first enable moves nothing. The regression test for the ordering constraint.
 - **AC-01.3** — an instance already on `ManualOrder` stays on it across the upgrade, with every place
   intact. The seeder gets exactly one chance at this.
-- **AC-01.11** — an instance that renamed *Feature* reads its own word in the row's description. The
-  criterion ADR-134 said this store could not meet.
+- **AC-01.11** — an instance that renamed *Feature* reads its own word in the row's name and in its
+  description. The criterion ADR-134 said this store could not meet.
 - **AC-01.6** — both transitions still re-queue the forecasts.
 
 ## Production-data acceptance
