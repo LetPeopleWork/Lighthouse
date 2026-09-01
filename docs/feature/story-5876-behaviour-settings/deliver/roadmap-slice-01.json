@@ -1,0 +1,92 @@
+{
+  "roadmap": {
+    "project_id": "story-5876-behaviour-settings",
+    "created_at": "2026-09-01",
+    "total_steps": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-01-a-refused-toggle-says-so",
+    "ado": "User Story #5876",
+    "goal": "A Community administrator who toggles a premium behaviour setting is told the write was refused, instead of receiving a 200 carrying the unchanged row. The premium branch of OptionalFeaturesController.UpdateOptionalFeature answers 403 with the same body LicenseGuardAttribute already writes, so the two doors onto this setting answer a client alike - which is what slice 02 needs in place before it moves a setting whose 403 is a shipped promise (Epic #5375 AC-2.5) onto this endpoint."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-09-01",
+    "notes": "Approved with zero findings at every severity. All three [Ignore]d scenarios claimed by 01-01 with no orphans and no already-green scenario claimed; the six green scenarios carried as regression criteria, with the not-found ordering guard and both DeltaSync licence states named explicitly. Scope fences verified against the files rather than the prose: the by-key route, the frontend, LicenseGuardAttribute, the shared refusal constant and widening GetEntityByIdAnExecuteAction are all correctly declined. The 01-02 redirect is right - the four-case matrix already exists and asserts only Update/Save call counts, never the response. Both existing constraints confirmed against OptionalFeaturesControllerTest: accepted path returns OkObjectResult carrying the feature, missing row returns a plain NotFoundResult."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-5876-behaviour-settings/feature-delta.md",
+    "slice_brief": "docs/feature/story-5876-behaviour-settings/slices/slice-01-a-refused-toggle-says-so.md",
+    "scenarios": [
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalScenarios.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalSpecifications.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs",
+      "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs"
+    ]
+  },
+  "out_of_scope": [
+    "Making the premium gate a first-class concept across other controllers. One gate, one controller - LicenseGuardAttribute is read for its wording and is not edited, and no shared constant is extracted between it and the controller: that edit crosses into the product-wide change this slice is fenced off from, and it would make the one test that keeps the two strings in step tautological",
+    "Any UI change. The control is already disabled for unlicensed instances, so no user-facing flow reaches the refused branch; the frontend already rolls back and re-fetches on a throw, and two frontend tests covering that are green today",
+    "Any change to DeltaSync, which is not premium and must not become gated by this fix - it is asserted on both licence states precisely because an inverted check would pass every premium scenario",
+    "Addressing the write by key. POST /OptionalFeatures/{featureKey} and the retirement of the numeric route are decided (ADR-187 section 8, DDD-13) and belong to slice 02, where their scenarios live. Slice 01's fixture seeds an explicit identity so the ambiguity cannot bite it. DISTILL obligation 1 notes the backend half touches the same action and may be cheaper to do together - that is an observation about cost, not a licence to widen this slice, and doing it here would strand slice 02's RED scenarios in an undefined state",
+    "Widening ApiHelpers.GetEntityByIdAnExecuteAction to allow an ActionResult short-circuit. Rejected on blast radius - 83 call sites across 8 controllers, no other beneficiary (ADR-187 alternative C). This one action stops using the helper; the helper itself is not touched",
+    "Everything else in slice 02: the FeatureOrdering optional-feature row, the seeder migration, IOptionalFeatureApplier and its two implementations, the terminology resolver, and the deletion of FeatureOrderingSettings.tsx",
+    "AC-02.5 is not a step. Re-reading Epic #5733's delta and slice 03 to confirm neither still claims the refusal is a document check done by reading, and it belongs to finalization"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "A refused toggle says so",
+      "description": "The premium branch of the toggle endpoint stops answering 200 with the unchanged row and starts answering 403 in the words the other door already uses - at the port, then pinned at the seam.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A toggle the licence does not cover is refused out loud",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/Slice01PremiumRefusalScenarios.cs",
+          "scenario_name": "A_toggle_the_licence_does_not_cover_is_refused_out_loud",
+          "criteria": [
+            "A premium row toggled on an instance without a premium licence answers 403, not 200 carrying the unchanged row",
+            "The refusal body is the text LicenseGuardAttribute already writes - 'Access Denied: Premium Features Required' - so a client that learned to handle one door's refusal meets the same one at the other",
+            "Status and body are byte-for-byte identical to what PUT /AppSettings/FeatureOrdering answers the same unlicensed administrator",
+            "The check stays feature.IsPremium && !CanUsePremiumFeatures(), so a disable is refused on exactly the terms an enable is",
+            "The lookup still runs before the refusal: a row nobody can name is 404, licence or no licence",
+            "A refused write leaves the store and the read port exactly as they were, including the row it was aimed at",
+            "A premium row on a licensed instance is still taken, answers 200 with the row, and reaches the store",
+            "DeltaSync is taken on a licensed and on an unlicensed instance alike, and is still not premium",
+            "The action no longer calls ApiHelpers.GetEntityByIdAnExecuteAction; the helper itself is unchanged and its other 83 call sites are untouched"
+          ],
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs"
+          ],
+          "implementation_notes": "Un-ignore all three RED scenarios together: A_toggle_the_licence_does_not_cover_is_refused_out_loud, The_refusal_reads_the_same_as_the_one_the_other_door_already_gives, and Both_doors_refuse_an_unlicensed_administrator_in_the_same_words. They are three assertions over one returned result - the first reads its status, the second its body, the third compares both against the other door - so they turn green on one edit and splitting them invites a bare 403 followed by a body 'fix'. ADR-187 section 6 governs. WHY THE HELPER GOES: ApiHelpers.GetEntityByIdAnExecuteAction always wraps its lambda's return value in Ok(...), so an ActionResult cannot escape from inside it - that is the mechanical cause of the silent no-op, not a careless return. Hand-roll the two lines it was doing: repository.GetById(id), return NotFound() when null, then the premium check, then the write. Order matters and is asserted: hoisting the premium check above the lookup answers 403 for a row nobody can name and A_setting_that_does_not_exist_is_still_reported_as_not_found catches it - note that fixture posts a body claiming isPremium: true, so a hoist that reads the request rather than the store is caught too. SHAPE OF THE REFUSAL: match LicenseGuardAttribute by hand - an ObjectResult carrying the string with StatusCodes.Status403Forbidden. Do NOT use Forbid(), which runs the authentication challenge path and produces neither that body nor reliably that status. Do NOT extract a shared constant across the controller and the attribute: that edit is out of scope and it would make ThenBothRefusalsAreIdentical tautological, which is the only thing keeping the two strings in step. REGRESSIONS THE EXISTING GREEN TESTS PIN: the accepted path must still return Ok(feature), because OptionalFeaturesControllerTest asserts OkObjectResult with the feature as its value, and the missing-row path must still return NotFound() as a plain NotFoundResult. RbacGuard(SystemAdmin) stays on the action - a test asserts the attribute reflectively. LEARNING HYPOTHESIS: before committing, confirm nothing depends on the 200-unchanged shape - the frontend rolls back on throw and re-fetches, and no lighthouse-clients endpoint touches OptionalFeatures. If a second consumer turns up, that is the finding this slice was designed to surface, and it is reported rather than worked around. GATES: dotnet build with zero warnings (TreatWarningsAsErrors); dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"; consult docs/ci-learnings.md and pre-apply it. Conventional commit, scoped: fix(optional-features). COMMENTS: this branch needs at most one line saying why the refusal text is duplicated rather than shared, written for a stranger - never cite ADR-187, DDD-14, AC-02.1 or section 6, which name documents a cold reader cannot open."
+        },
+        {
+          "id": "01-02",
+          "name": "The refusal is pinned at the seam, not only at the door",
+          "agent": "nw-software-crafter",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs",
+          "scenario_name": "UpdateOptionalFeature_IsPremium_OnlyEnablesIfUserHasLicense",
+          "criteria": [
+            "The four-case matrix - premium x licensed, premium x unlicensed, non-premium x licensed, non-premium x unlicensed - asserts what the caller is told, not only whether the repository was written",
+            "premium x unlicensed asserts 403 and the refusal text; the other three assert 200 carrying the row",
+            "The existing Update and Save call-count verifications are kept, so the store side of the branch stays pinned as well as the wire side",
+            "GetAll, GetOptionalFeatureByKey, the missing-row NotFound case, the happy-path Updates case and the RbacGuard attribute test are all still green and unchanged",
+            "No new Sonar issue at any severity: any new private test helper returns the concrete type it builds, and asserts that must not run on a failed guard stay outside Assert.EnterMultipleScope"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/OptionalFeaturesControllerTest.cs"
+          ],
+          "implementation_notes": "The slice brief asks for 'the four cases'; read the class before assuming they are missing. UpdateOptionalFeature_IsPremium_OnlyEnablesIfUserHasLicense already carries all four as TestCases and already discards the response with an underscore discard. What is absent is any assertion about the answer - the matrix proves the write did not land and says nothing about what the administrator was told, which is the whole defect this slice fixes. So this step widens the existing parametrized test rather than adding a fifth: give it the expected status alongside executeUpdate, assert the returned ActionResult, and keep the two Verify calls. A separate single-case test for the refusal body is the fallback if threading the body through the TestCases makes the assertions unreadable - prefer the parametrized form. Sonar and the build are the same gates as 01-01, and CI has failed this repository on CA1859 and NUnit2045 in NEW TEST code seven times over - docs/ci-learnings.md is the ledger, pre-apply it rather than discovering it in CI. Conventional commit, scoped: test(optional-features), separate from 01-01's fix commit. Do not rename the two methods whose names say FeatureWithId - the identity they name still exists in this slice, and the rename belongs with the by-key route in slice 02."
+        }
+      ]
+    }
+  ]
+}
