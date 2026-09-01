@@ -50,6 +50,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         private void GivenAFeatureArrivesLater(string name, string referenceId, string sourceOrder, int portfolioId)
             => SeedFeature(name, referenceId, sourceOrder, manualRank: null, portfolioId);
 
+        /// <summary>
+        /// A Feature this instance has already moved, carrying a place the administrator chose rather than
+        /// one the tracker implied. Without it every place a first enable hands out is simply source order
+        /// again, so clearing them all on the way back out and re-reading the tracker reproduces the very
+        /// same numbers - and an assertion that the places came back cannot tell that apart from an
+        /// assertion that they were never lost. A chosen place has to disagree with the tracker to be
+        /// worth anything as evidence.
+        /// </summary>
+        private void GivenThisInstanceAlreadyMovedAFeatureToTheTop(int portfolioId)
+            => SeedFeature("Moved to the top by hand", "FTR-0", "50", manualRank: 1, portfolioId);
+
         private void GivenTheLicenceLapses() => TheInstanceIsNotLicensedForPremium();
 
         private (bool Found, bool Enabled, bool IsPremium, bool IsPreview, string Name, string Description) GivenTheShippedNonPremiumSettingAsItReadsNow()

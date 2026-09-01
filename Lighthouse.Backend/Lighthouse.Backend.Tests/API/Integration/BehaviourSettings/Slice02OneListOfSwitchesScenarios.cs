@@ -109,6 +109,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         {
             var platform = GivenAPortfolio("Platform");
             GivenFeaturesTheTrackerRankedBackwards(platform);
+            GivenThisInstanceAlreadyMovedAFeatureToTheTop(platform);
             GivenTheCallerAdministersTheInstance();
 
             await WhenTheAdminHandsTheOrderOverInBehaviourSettings();
