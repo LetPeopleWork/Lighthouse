@@ -4,6 +4,23 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.9.1.6
+
+## Fixed: updating from inside Lighthouse could leave it unable to start
+
+A **Windows or Linux server binary** updated to v26.8.31.7 from inside Lighthouse could fail to start, exiting with:
+
+```
+FATAL: The encryption key supplied by EncryptionSettings__EncryptionKey is the key
+published with Lighthouse. [...] Lighthouse will not start on it.
+```
+
+Nothing was lost — the instance stopped before changing anything, and every stored credential is still readable. Lighthouse now ignores that leftover key and keeps one of its own instead.
+
+**Already stuck?** You do not need this release to recover. Delete the `EncryptionSettings` block from the `appsettings.json` next to `Lighthouse.exe`, start Lighthouse again, then press **Move stored secrets** under **Settings → Encryption**. Do not copy that value into `Encryption__Key`.
+
+Docker, Kubernetes and macOS were never affected.
+
 # Lighthouse v26.8.31.7
 
 ## Improved Encryption Options

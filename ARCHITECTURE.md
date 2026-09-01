@@ -116,7 +116,7 @@ graph TD
 - **`Models` (kernel) ↛ `API`** — the kernel never depends upward on the driving adapter. *(`Models ↛ Services` is a known, documented gap: `IEntity` and the `WorkTrackingSystems` enum still live under `Services.*`; relocating them is a separate follow-up.)*
 - **WorkTracking-Integration is a leaf input adapter** — it must not depend on Forecasting, Portfolio/Delivery, or WorkItems/Sync.
 - **The domain-event dispatcher and its handlers must not call `IServiceProvider.GetRequiredService`** — the seam must not re-introduce the service-locator it removes (§5).
-- A handful of feature-specific seam rules (e.g. metrics read transitions only via repository ports; `WorkItemService` is the sole writer of transitions; every caller that orders Features goes through the one `FeatureOrdering` comparer rather than sorting for itself — ADR-132/134, with the policy itself stored as a premium `OptionalFeature` and toggled through a per-key applier since ADR-187) live alongside.
+- A handful of feature-specific seam rules (e.g. metrics read transitions only via repository ports; `WorkItemService` is the sole writer of transitions; every caller that orders Features goes through the one `FeatureOrdering` comparer rather than sorting for itself — ADR-132/134, with the policy itself stored as an `AppSetting`) live alongside.
 
 > **Mechanism note.** Architecture tests use `TngTech.ArchUnitNET` (adopted in #5101). Two checks that ArchUnitNET cannot express — exact public-signature pinning (`DeliveryRuleServiceApiPreservationTest`) and the `RuleEvaluator` parameterless-ctor purity pin — remain hand-rolled reflection tests by design.
 

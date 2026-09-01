@@ -225,9 +225,13 @@ The file holds exactly what the setting would hold — one key, or several in th
 
 ### The key that ships with Lighthouse is never accepted as your key
 
-Every Lighthouse before this version encrypted with a key that is written into the product, and that key can be read out of the public source by anyone. If you carry that value forward — by keeping your own `appsettings.json` across the upgrade, or by copying the old value into `Encryption__Key` — Lighthouse **stops startup** rather than writing your tokens under a key anybody already has. The message names the setting the value arrived in.
+Every Lighthouse before this version encrypted with a key that is written into the product, and that key can be read out of the public source by anyone. It is never used to write anything new. What happens when Lighthouse finds it depends on where it came from.
 
-Nothing is changed and nothing is lost: Lighthouse always keeps that key for reading, so everything you already stored is still readable. There are two ways on:
+**Left behind in `appsettings.json`** — Lighthouse shipped that value under `EncryptionSettings__EncryptionKey`, and an update from inside Lighthouse keeps your settings file on purpose so it does not throw away settings you changed. An upgraded instance therefore usually still has it, and nobody chose to put it there. Lighthouse **ignores it**, creates and keeps a key of its own, and says so on startup. Delete the `EncryptionSettings` block when you see that message — nothing depends on it any more. Do not copy its value to `Encryption__Key`.
+
+**Typed into a setting by hand** — `Encryption__Key`, `Encryption__Keys`, or a mounted key file. That is a choice, so Lighthouse **stops startup** rather than writing your tokens under a key anybody already has. The message names the setting the value arrived in.
+
+Nothing is changed and nothing is lost either way: Lighthouse always keeps that key for reading, so everything you already stored is still readable. Where startup stops, there are two ways on:
 
 - set `Encryption__Key` to a key of your own, or
 - remove the setting entirely and let Lighthouse create and keep one for you.

@@ -110,9 +110,15 @@ We recommend staying on the latest version. We continuously update Lighthouse wi
 
 On Windows and Linux, Lighthouse supports automatic updates directly from within the app.
 
+{: .note }
+An automatic update **keeps your `appsettings.json`**, so settings you changed survive it. The two update paths differ here: replacing the files by hand overwrites that file with the one from the package.
+
 ### Binary: Replace Files
 
 You can replace the files in the directory manually. Download and extract the latest version, then copy/paste into your Lighthouse folder, overriding all existing files.
+
+{: .note }
+This overwrites `appsettings.json` with the packaged one. If you changed anything in it — a port, a certificate path, a database connection string — take a copy first and put your changes back afterwards.
 
 {: .note }
 Stop Lighthouse before replacing files to avoid conflicts.
