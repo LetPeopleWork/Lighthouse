@@ -28,9 +28,12 @@ type: application
 #         fails and the sync stops (Epic 5775). Also tracks the v26.8.31.7 release — Feature
 #         dependencies read and forecast (Epics 4365, 5792) and Deliveries that follow a tracker and
 #         survive being finished (Epics 5698, 5565).
-version: 0.1.13
+# 0.1.14: track the v26.9.1.6 release — a binary install that updates from inside Lighthouse no longer
+#         refuses to start on the encryption key the product used to ship in appsettings.json (Bug 5890).
+#         Kubernetes was never affected: the chart has always required an operator-supplied key.
+version: 0.1.14
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-appVersion: "26.8.31.7"
+appVersion: "26.9.1.6"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse
