@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,10 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    public class OptionalFeaturesController(IRepository<OptionalFeature> repository, ILicenseService licenseService) : ControllerBase
+    public class OptionalFeaturesController(
+        IRepository<OptionalFeature> repository,
+        ILicenseService licenseService,
+        OptionalFeatureApplierRegistry applierRegistry) : ControllerBase
     {
         [HttpGet]
         public ActionResult<IEnumerable<OptionalFeature>> GetAll()
@@ -54,9 +58,7 @@ namespace Lighthouse.Backend.API
                 return StatusCode(StatusCodes.Status403Forbidden, "Access Denied: Premium Features Required");
             }
 
-            feature.Enabled = updatedFeature.Enabled;
-            repository.Update(feature);
-            await repository.Save();
+            await applierRegistry.ApplierFor(feature.Key).ApplyAsync(feature, updatedFeature.Enabled);
 
             return Ok(feature);
         }

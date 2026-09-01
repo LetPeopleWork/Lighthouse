@@ -1251,6 +1251,9 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IWhatTheForecastWaitsFor, Lighthouse.Backend.Services.Implementation.Dependencies.WhatTheForecastWaitsFor>();
             builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.Dependencies.IDependencyRefreshReporter, Lighthouse.Backend.Services.Implementation.Dependencies.DependencyRefreshReporter>();
             builder.Services.AddScoped<IFeatureRankSeeder, FeatureRankSeeder>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.OptionalFeatures.DefaultOptionalFeatureApplier>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Interfaces.OptionalFeatures.IOptionalFeatureApplier, Lighthouse.Backend.Services.Implementation.OptionalFeatures.FeatureOrderingApplier>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.OptionalFeatures.OptionalFeatureApplierRegistry>();
             builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();
             builder.Services.AddScoped<IFeatureMoveAuthorization, FeatureMoveAuthorization>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();

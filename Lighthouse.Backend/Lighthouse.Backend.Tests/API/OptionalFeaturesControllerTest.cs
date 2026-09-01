@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Http;
@@ -173,7 +174,12 @@ namespace Lighthouse.Backend.Tests.API
 
         private OptionalFeaturesController CreateSubject()
         {
-            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object);
+            // The real registry, holding only the applier that stores the value and does nothing else.
+            // The settings these tests use have no consequences of their own, and building the registry
+            // for real is what proves the controller reaches an applier at all rather than a stand-in.
+            var registry = new OptionalFeatureApplierRegistry([], new DefaultOptionalFeatureApplier(repositoryMock.Object));
+
+            return new OptionalFeaturesController(repositoryMock.Object, licenseServiceMock.Object, registry);
         }
     }
 }

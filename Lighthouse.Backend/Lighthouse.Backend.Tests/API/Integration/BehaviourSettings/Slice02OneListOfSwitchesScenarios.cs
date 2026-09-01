@@ -38,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // rather than the symptom: the places follow what the tracker ranked, not what the store handed
         // back first.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented.")]
         public async Task The_places_are_seeded_in_the_order_the_admin_was_looking_at()
         {
             var platform = GivenAPortfolio("Platform");
@@ -90,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // way back as well as the way out: a handler wired only to the enable path would leave an instance
         // that gave the order back with dates computed from an order it no longer uses.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented.")]
         public async Task Handing_the_order_over_and_giving_it_back_both_re_queue_the_forecasts()
         {
             var platform = GivenAPortfolio("Platform");
@@ -107,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // @driving_port @real-io @AC-01.7 - the revert guarantee the move may not lose: giving the order
         // back and taking it over again returns the places this instance chose, not a fresh reading.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented.")]
         public async Task Taking_the_order_over_again_restores_the_places_this_instance_already_chose()
         {
             var platform = GivenAPortfolio("Platform");
@@ -196,7 +193,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // the value becomes manual; an applier that seeds unconditionally loses that and nothing else
         // would notice.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented.")]
         public async Task Giving_the_order_back_writes_no_places()
         {
             var platform = GivenAPortfolio("Platform");
