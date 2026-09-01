@@ -41,7 +41,7 @@ export class OptionalFeatureService
 	updateFeature(feature: IOptionalFeature): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<IOptionalFeature>(
-				`/optionalfeatures/${feature.id}`,
+				`/optionalfeatures/${feature.key}`,
 				feature,
 			);
 		});

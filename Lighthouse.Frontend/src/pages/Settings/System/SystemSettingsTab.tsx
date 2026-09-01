@@ -57,8 +57,10 @@ const SystemSettingsTab: React.FC = () => {
 	}, [licensingService]);
 
 	const onToggleOptionalFeature = async (toggledFeature: IOptionalFeature) => {
+		// Matched on the key, because the backend keys these rows by it and hands every one of them the
+		// same id - matching on the id would move every switch on the page at once.
 		const updatedFeatures = optionalFeatures.map((feature) =>
-			feature.id === toggledFeature.id
+			feature.key === toggledFeature.key
 				? { ...feature, enabled: !feature.enabled }
 				: feature,
 		);
@@ -104,7 +106,7 @@ const SystemSettingsTab: React.FC = () => {
 							<TableBody>
 								{optionalFeatures.map((feature) => (
 									<LicenseTooltip
-										key={feature.id}
+										key={feature.key}
 										canUseFeature={
 											!feature.isPremium ||
 											(licenseStatus?.canUsePremiumFeatures ?? false)
@@ -113,7 +115,7 @@ const SystemSettingsTab: React.FC = () => {
 										defaultTooltip=""
 									>
 										<TableRow
-											key={feature.id}
+											key={feature.key}
 											data-testid={`feature-row-${feature.key}`}
 										>
 											<TableCell>

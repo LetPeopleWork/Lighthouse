@@ -32,11 +32,14 @@ namespace Lighthouse.Backend.API
             return Ok(feature);
         }
 
-        [HttpPost("{id}")]
+        [HttpPost("{featureKey}")]
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
-        public async Task<ActionResult<OptionalFeature>> UpdateOptionalFeature(int id, [FromBody] OptionalFeature updatedFeature)
+        public async Task<ActionResult<OptionalFeature>> UpdateOptionalFeature(string featureKey, [FromBody] OptionalFeature updatedFeature)
         {
-            var feature = repository.GetById(id);
+            // By key, not by Id: the store keys these rows by their key, so nothing generates the number
+            // and every row carries zero. Choosing a row by it matches all of them the moment there is
+            // more than one.
+            var feature = repository.GetByPredicate(f => f.Key == featureKey);
 
             if (feature == null)
             {
