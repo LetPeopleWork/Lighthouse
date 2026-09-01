@@ -1,8 +1,8 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
-using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Globalization;
 
@@ -10,9 +10,9 @@ namespace Lighthouse.Backend.Services.Implementation
 {
     public class AppSettingService(
         IRepository<AppSetting> repository,
+        IRepository<OptionalFeature> optionalFeatureRepository,
         IFeatureOrderingPolicyProvider featureOrderingPolicyProvider,
-        IFeatureRankSeeder featureRankSeeder,
-        IDomainEventDispatcher domainEventDispatcher,
+        OptionalFeatureApplierRegistry applierRegistry,
         TimeProvider timeProvider) : IAppSettingService
     {
         private const string RoundtripFormat = "O";
@@ -96,18 +96,18 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public FeatureOrderingPolicy GetFeatureOrderingPolicy() => featureOrderingPolicyProvider.GetPolicy();
 
+        // The older of the two doors onto the same switch. It records nothing itself: handing the work to
+        // whoever owns the setting is what keeps one choice from being written two different ways.
         public async Task SetFeatureOrderingPolicy(FeatureOrderingPolicy policy)
         {
-            // D6 - seeding runs first on purpose, because the stored policy has not changed yet and so
-            // the sequence the seed reads is still the one the user was looking at when they flipped it.
-            if (policy == FeatureOrderingPolicy.ManualOrder)
+            var setting = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.FeatureOrderingKey);
+
+            if (setting == null)
             {
-                await featureRankSeeder.SeedMissingRanks();
+                return;
             }
 
-            await featureOrderingPolicyProvider.SetPolicy(policy);
-
-            await domainEventDispatcher.PublishAsync(new FeatureOrderingPolicyChanged(policy));
+            await applierRegistry.ApplierFor(setting.Key).ApplyAsync(setting, policy == FeatureOrderingPolicy.ManualOrder);
         }
 
         public DateTimeOffset? GetSurveyNudgeNextEligibleAt()
