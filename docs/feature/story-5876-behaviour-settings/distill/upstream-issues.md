@@ -7,6 +7,12 @@ acceptance scenarios against the code on `main`. Each is stated with the evidenc
 
 ## UI-1 — A second row in the table cannot be switched. BLOCKING for slice 02
 
+> **RESOLVED 2026-09-01, after this file was written.** The write is addressed by key —
+> `POST api/{v1,latest}/OptionalFeatures/{featureKey}`, resolved the way the shipped `GET` already
+> resolves it — and the numeric route is retired outright, with no compatibility alias. The finding
+> below is left exactly as DISTILL wrote it; the decision and its reasoning are ADR-187 §8 and DDD-13,
+> and the work is obligation 1 in `feature-delta.md`. It is slice 02's to land, on both stacks.
+
 **Severity: blocking.** Slice 02 cannot ship without an answer. Slice 01 is unaffected once its
 fixture carries an explicit identity, which it now does.
 
@@ -73,6 +79,12 @@ seeded descriptions, and what an unknown token renders as) was deferred to DISTI
 
 ## UI-3 — The seeded *name* carries the same configurable term as the description
 
+> **RESOLVED 2026-09-01, after this file was written.** DESIGN confirmed it rather than finding it in a
+> diff: terminology tokens resolve in the row's name as well as its description, for every row. The
+> deciding evidence arrived later than this file — `FeatureOrderingSettings.tsx` already renders its
+> label through `getTerm`, so resolving only the description would regress behaviour that ships today
+> rather than decline to widen something new. ADR-187 §7 and DDD-8.
+
 DDD-8 makes the **description** cell terminology-aware. The row's name, as DISCUSS wrote it, is
 *"Let Lighthouse own the order of your Features"* — which names the same configurable term and would
 read "Features" on an instance that renamed it, the exact failure §A.3 of ADR-134 rejected the store
@@ -100,6 +112,11 @@ recognised as something to fix rather than something to re-run.
 ---
 
 ## UI-5 — UI-1 has a frontend twin that survives any backend fix. BLOCKING for slice 02
+
+> **RESOLVED 2026-09-01, after this file was written.** Same decision as UI-1, and the twin is
+> explicitly owed: the client posts by key, and keys both its rows and its optimistic match on
+> `feature.key`. Routing the server by key does not fix the browser, so both halves must be in place
+> before the second row is seeded. ADR-187 §8, DDD-13, obligation 1.
 
 `SystemSettingsTab.tsx` keys its rows `key={feature.id}` and matches its optimistic update on
 `feature.id === toggledFeature.id`; `OptionalFeatureService.updateFeature` posts to
@@ -145,6 +162,13 @@ enable: once every row holds a place, a second seed is a no-op and proves nothin
 ---
 
 ## UI-8 — An instance whose licence lapsed while it owned the order
+
+> **RESOLVED 2026-09-01, after this file was written.** The premium gate stays symmetric: a disable is
+> refused on exactly the terms an enable is. The evidence that settled it is not in this file — it is
+> the house pattern rather than an oversight, because `BlackoutPeriodsController` and
+> `RecurringBlackoutRulesController` gate `Delete` as well as `Create` and `Update`, so nowhere in
+> Lighthouse can an instance undo premium configuration once its licence lapses. Shipped in slice 01.
+> ADR-187 §6 and DDD-14. The coherent product-wide version belongs on the board as its own item.
 
 Both the DISCUSS and DESIGN reviews raised this independently, and both read it as a new hole. It is
 not: `FeatureOrderingSettings.tsx` already renders `checked={policy === "ManualOrder"}` with
