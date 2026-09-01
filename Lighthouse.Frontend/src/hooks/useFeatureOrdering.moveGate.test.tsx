@@ -11,26 +11,34 @@ import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
 	createMockLicensingService,
+	createMockOptionalFeatureService,
 	createMockPortfolioService,
-	createMockSettingsService,
 	createMockTeamService,
 } from "../tests/MockApiServiceProvider";
 import { useFeatureOrdering } from "./useFeatureOrdering";
 
 /**
- * Epic 5375 slice 03 — AC-3.7, AC-3.8, AC-3.9 and AC-3.10 are four reasons for one visual state, and
- * ADR-134 SA-12 puts them in one place. Four scattered `if`s over the same question is the frontend
- * twin of the backend failure this epic exists to prevent, and it is also how one of the four quietly
- * stops being checked.
+ * Four different reasons produce the same unavailable move action, and they are decided in one place.
+ * Spread across the places a move is drawn, one of the four quietly stops being checked and a move
+ * nobody is allowed to make becomes clickable — so every one of them is asked for here.
+ *
+ * The instance keeps who-owns-the-order as an on/off row in the settings store, not as a policy of its
+ * own, so the arrangement below is what the store really serves.
  */
 const renderTheGateOn = (instance: {
 	policy: FeatureOrderingPolicy;
 	premium: boolean;
 }) => {
-	const settingsService = createMockSettingsService();
-	settingsService.getFeatureOrdering = vi
-		.fn()
-		.mockResolvedValue(instance.policy);
+	const optionalFeatureService = createMockOptionalFeatureService();
+	optionalFeatureService.getFeatureByKey = vi.fn().mockResolvedValue({
+		id: 0,
+		key: "FeatureOrdering",
+		name: "Let Lighthouse own the order of your {{features}}",
+		description: "Turn this on to arrange your {{features}} yourself.",
+		enabled: instance.policy === "ManualOrder",
+		isPremium: true,
+		isPreview: false,
+	});
 
 	const licensingService = createMockLicensingService();
 	licensingService.getLicenseStatus = vi.fn().mockResolvedValue({
@@ -49,7 +57,7 @@ const renderTheGateOn = (instance: {
 	portfolioService.getPortfolios = vi.fn().mockResolvedValue([]);
 
 	const apiContext = createMockApiServiceContext({
-		settingsService,
+		optionalFeatureService,
 		licensingService,
 		teamService,
 		portfolioService,

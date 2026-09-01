@@ -10,15 +10,18 @@ import {
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { useLicenseRestrictions } from "./useLicenseRestrictions";
 
+/** The row in the instance-wide settings store that holds who owns the order. */
+const ORDERING_SETTING_KEY = "FeatureOrdering";
+
 export interface FeatureOrderingState {
 	/** Who decides the order this instance forecasts in. */
 	policy: FeatureOrderingPolicy;
 	/** What the position column calls itself under that policy. */
 	positionColumnLabel: string;
 	/**
-	 * AC-3.7, AC-3.8, AC-3.9 and AC-3.10 are four reasons for one visual state, so they resolve in one
-	 * place (ADR-134 SA-12). Four scattered `if`s over the same question is the frontend twin of the
-	 * backend failure this epic exists to prevent.
+	 * Four different reasons produce the same unavailable move action, so all four are decided here
+	 * rather than wherever a move happens to be drawn. Spread out, one of them quietly stops being
+	 * asked and a move nobody is allowed to make becomes clickable.
 	 */
 	resolveMoveGate: (
 		feature: IFeature,
@@ -33,25 +36,27 @@ const refused = (
 ): FeatureMoveGate => ({ enabled: false, reason, blockingPortfolios });
 
 /**
- * The single place the ordering policy is read on the client (ADR-134 SA-12). Four scattered `if`s over
- * the same question is the frontend twin of the five-`if` backend failure this epic exists to prevent.
+ * The single place the client reads who owns the order, and the single place the stored on/off answer
+ * is turned into that. A second copy of either would be free to drift out of step with this one.
  */
 export const useFeatureOrdering = (): FeatureOrderingState => {
 	const [policy, setPolicy] = useState<FeatureOrderingPolicy>("SourceOrder");
 
-	const { settingsService } = useContext(ApiServiceContext);
+	const { optionalFeatureService } = useContext(ApiServiceContext);
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const refresh = useCallback(async () => {
 		try {
-			setPolicy(await settingsService.getFeatureOrdering());
+			const setting =
+				await optionalFeatureService.getFeatureByKey(ORDERING_SETTING_KEY);
+			setPolicy(setting?.enabled === true ? "ManualOrder" : "SourceOrder");
 		} catch {
 			// An instance that cannot answer follows the tracker, which is what it did before anyone
-			// could choose. Failing closed here would silently re-sequence every forecast.
+			// could choose. Failing the other way would silently re-sequence every forecast.
 			setPolicy("SourceOrder");
 		}
-	}, [settingsService]);
+	}, [optionalFeatureService]);
 
 	useEffect(() => {
 		refresh();
@@ -63,7 +68,7 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 			options: { isSortActive: boolean },
 		): FeatureMoveGate => {
 			// Ordered deliberately, not left to whichever `if` came first. An instance-wide reason removes
-			// the actions entirely (AC-3.10), so it outranks one that only greys them out.
+			// the actions entirely, so it outranks one that only greys them out.
 			if (!canUsePremiumFeatures) {
 				return refused("not-premium");
 			}
@@ -77,7 +82,8 @@ export const useFeatureOrdering = (): FeatureOrderingState => {
 			}
 
 			// The server's word, carried through. Nothing here consults RBAC or looks at `projects`: both
-			// fail open, and an absent verdict is not permission (ADR-136 SA-10).
+			// of those read as permitted when they simply have no answer yet, and a missing answer is not
+			// permission.
 			if (feature.canMove !== true) {
 				return refused(
 					feature.moveBlockReason === "orphan" ? "orphan" : "no-write",
