@@ -1,7 +1,9 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Moq;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -14,27 +16,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private static readonly string[] SeedThenRecord = ["seed", "record"];
 
         private Mock<IRepository<AppSetting>> repositoryMock;
+        private Mock<IRepository<OptionalFeature>> optionalFeatureRepositoryMock;
         private Mock<IFeatureOrderingPolicyProvider> policyProviderMock;
         private Mock<IFeatureRankSeeder> rankSeederMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+        private OptionalFeature orderingSetting;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IRepository<AppSetting>>();
+            optionalFeatureRepositoryMock = new Mock<IRepository<OptionalFeature>>();
             policyProviderMock = new Mock<IFeatureOrderingPolicyProvider>();
             rankSeederMock = new Mock<IFeatureRankSeeder>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
+
+            orderingSetting = new OptionalFeature { Id = 0, Key = OptionalFeatureKeys.FeatureOrderingKey, Enabled = false, IsPremium = true };
+            optionalFeatureRepositoryMock
+                .Setup(x => x.GetByPredicate(It.Is<Func<OptionalFeature, bool>>(predicate => predicate(orderingSetting))))
+                .Returns(orderingSetting);
         }
 
-        // Epic 5375 — the order of these three steps is the whole of D6. Seeding has to happen while the
-        // stored policy still says the tracker owns the order, or it reads the order it is about to make.
+        // Epic 5375 - the order of these steps is the point. The places are read off the sequence the
+        // administrator was looking at, so they have to be taken before the choice is recorded.
         [Test]
         public async Task SetFeatureOrderingPolicy_TakingTheOrderOver_SeedsBeforeItRecordsTheChoice()
         {
             var steps = new List<string>();
             rankSeederMock.Setup(s => s.SeedMissingRanks()).Callback(() => steps.Add("seed")).Returns(Task.CompletedTask);
-            policyProviderMock.Setup(p => p.SetPolicy(It.IsAny<FeatureOrderingPolicy>())).Callback(() => steps.Add("record")).Returns(Task.CompletedTask);
+            optionalFeatureRepositoryMock.Setup(x => x.Update(It.IsAny<OptionalFeature>())).Callback(() => steps.Add("record"));
 
             await CreateService().SetFeatureOrderingPolicy(FeatureOrderingPolicy.ManualOrder);
 
@@ -49,7 +59,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             using (Assert.EnterMultipleScope())
             {
                 rankSeederMock.Verify(s => s.SeedMissingRanks(), Times.Never);
-                policyProviderMock.Verify(p => p.SetPolicy(FeatureOrderingPolicy.SourceOrder), Times.Once);
+                optionalFeatureRepositoryMock.Verify(x => x.Update(orderingSetting), Times.Once);
+                Assert.That(orderingSetting.Enabled, Is.False);
             }
         }
 
@@ -197,11 +208,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private AppSettingService CreateService()
         {
+            var orderingApplier = new FeatureOrderingApplier(
+                optionalFeatureRepositoryMock.Object,
+                rankSeederMock.Object,
+                domainEventDispatcherMock.Object);
+
+            var applierRegistry = new OptionalFeatureApplierRegistry(
+                [orderingApplier],
+                new DefaultOptionalFeatureApplier(optionalFeatureRepositoryMock.Object));
+
             return new AppSettingService(
                 repositoryMock.Object,
+                optionalFeatureRepositoryMock.Object,
                 policyProviderMock.Object,
-                rankSeederMock.Object,
-                domainEventDispatcherMock.Object,
+                applierRegistry,
                 TimeProvider.System);
         }
 

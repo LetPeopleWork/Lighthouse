@@ -1,9 +1,10 @@
 using Lighthouse.Backend.Services.Interfaces.Encryption;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -224,9 +225,9 @@ namespace Lighthouse.Backend.Tests.Services
         {
             return new AppSettingService(
                 repositoryMock.Object,
+                Mock.Of<IRepository<OptionalFeature>>(),
                 Mock.Of<IFeatureOrderingPolicyProvider>(),
-                Mock.Of<IFeatureRankSeeder>(),
-                Mock.Of<IDomainEventDispatcher>(),
+                new OptionalFeatureApplierRegistry([], new DefaultOptionalFeatureApplier(Mock.Of<IRepository<OptionalFeature>>())),
                 timeProvider);
         }
 

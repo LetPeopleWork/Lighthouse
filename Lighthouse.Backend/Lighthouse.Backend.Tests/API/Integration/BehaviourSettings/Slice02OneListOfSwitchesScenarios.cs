@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // of places and numbering them by row id - produces a visibly different list and fails here. A
         // fixture ranked in creation order would pass either way and prove nothing.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented. The ordering setting is not in the behaviour-settings table yet.")]
         public async Task Turning_the_ordering_setting_on_for_the_first_time_moves_nobody()
         {
             var platform = GivenAPortfolio("Platform");
@@ -125,7 +124,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         // new read port shows it: a second write path would let the two answers drift apart on exactly the
         // instances that use the old one.
         [Test]
-        [Ignore("RED scaffold - slice 02 not implemented.")]
         public async Task A_write_through_the_deprecated_door_is_visible_through_the_new_one()
         {
             var platform = GivenAPortfolio("Platform");
