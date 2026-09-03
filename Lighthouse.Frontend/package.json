@@ -39,7 +39,7 @@
 		"react-markdown": "^10.1.0",
 		"react-router": "^8.3.0",
 		"remark-gfm": "^4.0.1",
-		"zod": "^4.4.3"
+		"zod": "^4.5.2"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.11",
