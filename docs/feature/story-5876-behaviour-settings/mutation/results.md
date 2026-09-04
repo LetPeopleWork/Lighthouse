@@ -223,8 +223,19 @@ pnpm exec stryker run stryker-config.5876-slice-02.json
 ```
 
 Configs archived beside this file as `stryker.slice-02.backend.json`,
-`stryker.slice-02.frontend.json` and `vitest.stryker.slice-02.config.ts`, because the working copies
-are gitignored and nothing is inherited between slices.
+`stryker.slice-02.frontend.json` and `vitest.slice-02.frontend-runner.config.ts`, because the working
+copies are gitignored and nothing is inherited between slices. The archived names deliberately avoid
+the `stryker-config*.json` / `vitest.stryker*.ts` globs that ignore the working copies — copy them
+back under their working names to re-run:
+
+```
+cp docs/feature/story-5876-behaviour-settings/mutation/stryker.slice-02.backend.json \
+   Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.story-5876-slice-02.json
+cp docs/feature/story-5876-behaviour-settings/mutation/stryker.slice-02.frontend.json \
+   Lighthouse.Frontend/stryker-config.5876-slice-02.json
+cp docs/feature/story-5876-behaviour-settings/mutation/vitest.slice-02.frontend-runner.config.ts \
+   Lighthouse.Frontend/vitest.stryker.5876-slice-02.config.ts
+```
 
 **The frontend runner's include list is load-bearing.** StrykerJS runs the whole include set per
 mutant, so the list is deliberately narrow — but a spec left out of it makes every mutant in the code
