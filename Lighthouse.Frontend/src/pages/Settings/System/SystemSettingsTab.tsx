@@ -1,4 +1,5 @@
 import BiotechIcon from "@mui/icons-material/Biotech";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Switch from "@mui/material/Switch";
@@ -130,6 +131,18 @@ const SystemSettingsTab: React.FC = () => {
 																color="warning"
 																sx={{ ml: 1 }}
 																data-testid={`${feature.key}-preview-indicator`}
+															/>
+														</Tooltip>
+													)}
+													{feature.isPremium && (
+														<Tooltip title="This setting requires a premium license">
+															<Chip
+																icon={<WorkspacePremiumIcon />}
+																label="Premium"
+																size="small"
+																color="primary"
+																sx={{ ml: 1 }}
+																data-testid={`${feature.key}-premium-indicator`}
 															/>
 														</Tooltip>
 													)}

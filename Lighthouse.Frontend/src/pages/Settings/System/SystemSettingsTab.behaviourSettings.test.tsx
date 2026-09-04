@@ -332,4 +332,48 @@ describe("Behaviour Settings", () => {
 
 		expect(mockUpdateFeature).not.toHaveBeenCalled();
 	});
+
+	// A licensed instance shows a disabled switch and nothing else to explain why, so which rows cost
+	// money is only discoverable by hovering each one. The badge says it on the row.
+	it("badges a row that requires a premium licence", async () => {
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("FeatureOrdering-premium-indicator"),
+			).toBeVisible();
+		});
+
+		expect(
+			screen.getByTestId("FeatureOrdering-premium-indicator"),
+		).toHaveTextContent("Premium");
+	});
+
+	// The badge names a cost, so a row that carries none must not wear it. Without this the obvious
+	// implementation - badge every row - passes the test above and says every setting is paid for.
+	it("leaves a row that costs nothing unbadged", async () => {
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(screen.getByTestId("feature-row-DeltaSync")).toBeVisible();
+		});
+
+		expect(
+			screen.queryByTestId("DeltaSync-premium-indicator"),
+		).not.toBeInTheDocument();
+	});
+
+	// The badge is a fact about the setting, not about this instance's licence: an administrator
+	// deciding whether to buy one has to be able to see which rows a licence would unlock.
+	it("badges the premium row on an instance without a licence too", async () => {
+		givenTheInstanceHasNoPremiumLicence();
+
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("FeatureOrdering-premium-indicator"),
+			).toBeVisible();
+		});
+	});
 });
