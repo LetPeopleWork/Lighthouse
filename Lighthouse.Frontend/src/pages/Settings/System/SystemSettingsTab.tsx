@@ -1,27 +1,15 @@
-import BiotechIcon from "@mui/icons-material/Biotech";
-import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
-import Switch from "@mui/material/Switch";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Tooltip from "@mui/material/Tooltip";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { TerminologyConfiguration } from "../../../components/TerminologyConfiguration";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import { resolveTerms } from "../../../services/Terminology/resolveTerms";
 import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
+import BehaviourSettingsTable from "./BehaviourSettingsTable";
 import BlackoutSettings from "./BlackoutSettings";
 
 const SystemSettingsTab: React.FC = () => {
@@ -39,6 +27,8 @@ const SystemSettingsTab: React.FC = () => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
+
+	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const fetchOptionalFeatures = useCallback(async () => {
 		const optionalFeatureData = await optionalFeatureService.getAllFeatures();
@@ -88,87 +78,16 @@ const SystemSettingsTab: React.FC = () => {
 				title="Blackout Periods & Recurring Rules"
 				initiallyExpanded={true}
 			>
-				<BlackoutSettings
-					isPremium={licenseStatus?.canUsePremiumFeatures ?? false}
-				/>
+				<BlackoutSettings isPremium={canUsePremiumFeatures} />
 			</InputGroup>
 
 			{optionalFeatures.length > 0 && (
 				<InputGroup title="Behaviour Settings" initiallyExpanded={true}>
-					<TableContainer>
-						<Table data-testid="optional-features-table">
-							<TableHead>
-								<TableRow>
-									<TableCell>Name</TableCell>
-									<TableCell>Description</TableCell>
-									<TableCell>Enabled</TableCell>
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{optionalFeatures.map((feature) => (
-									<LicenseTooltip
-										key={feature.key}
-										canUseFeature={
-											!feature.isPremium ||
-											(licenseStatus?.canUsePremiumFeatures ?? false)
-										}
-										premiumExtraInfo=""
-										defaultTooltip=""
-									>
-										<TableRow
-											key={feature.key}
-											data-testid={`feature-row-${feature.key}`}
-										>
-											<TableCell>
-												<Box sx={{ display: "flex", alignItems: "center" }}>
-													{resolveTerms(feature.name, getTerm)}
-													{feature.isPreview && (
-														<Tooltip title="This feature is in preview and may change or be removed in future versions">
-															<Chip
-																icon={<BiotechIcon />}
-																label="Preview"
-																size="small"
-																color="warning"
-																sx={{ ml: 1 }}
-																data-testid={`${feature.key}-preview-indicator`}
-															/>
-														</Tooltip>
-													)}
-													{feature.isPremium && (
-														<Tooltip title="This setting requires a premium license">
-															<Chip
-																icon={<WorkspacePremiumIcon />}
-																label="Premium"
-																size="small"
-																color="primary"
-																sx={{ ml: 1 }}
-																data-testid={`${feature.key}-premium-indicator`}
-															/>
-														</Tooltip>
-													)}
-												</Box>
-											</TableCell>
-											<TableCell>
-												{resolveTerms(feature.description, getTerm)}
-											</TableCell>
-											<TableCell>
-												<Switch
-													checked={feature.enabled}
-													data-testid={`${feature.key}-toggle`}
-													disabled={
-														feature.isPremium &&
-														!(licenseStatus?.canUsePremiumFeatures ?? false)
-													}
-													onChange={() => onToggleOptionalFeature(feature)}
-													color="primary"
-												/>
-											</TableCell>
-										</TableRow>
-									</LicenseTooltip>
-								))}
-							</TableBody>
-						</Table>
-					</TableContainer>
+					<BehaviourSettingsTable
+						settings={optionalFeatures}
+						canUsePremiumFeatures={canUsePremiumFeatures}
+						onToggle={onToggleOptionalFeature}
+					/>
 				</InputGroup>
 			)}
 
