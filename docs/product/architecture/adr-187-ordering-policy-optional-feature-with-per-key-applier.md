@@ -317,6 +317,16 @@ of failure as the premium branch §6 exists to remove, arriving through a differ
 
 **Negative / cost**
 
+- **A frozen API version changes shape, and that break is accepted deliberately.** §8 removes
+  `POST /OptionalFeatures/{id}` from `api/v1` as well as `api/latest`, so an out-of-repo script
+  posting a numeric id gets a `404` on a version whose contract implies it would not. The maintainer
+  accepted this on 2026-09-04, after review raised it. Two things make it the cheapest option rather
+  than merely the easiest: there is no compatible alternative — Alternative F shows the alias would
+  answer `500` on every instance this ships to, because `GetById(0)` throws the moment the second row
+  exists — and the endpoint has no known caller, the full `lighthouse-clients` inventory containing no
+  `OptionalFeatures` path at all. The exposure is limited to third-party scripts written against an
+  endpoint the product never documented. It belongs in the release notes for the release that carries
+  this story.
 - **A boolean store closes the door on a third ordering policy.** ADR-134's first objection, narrowed
   but not eliminated: the enum survives as the domain type, but a third value would need a new store
   rather than a new enum member. Accepted. No third policy is on the board, and the migration back to
