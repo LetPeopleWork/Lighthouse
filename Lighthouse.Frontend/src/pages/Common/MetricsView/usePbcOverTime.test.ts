@@ -4,13 +4,13 @@ import type { IFeature } from "../../../models/Feature";
 import type { ProcessBehaviorSnapshot } from "../../../models/Metrics/ProcessBehaviorSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
-import { usePbcOverTime } from "./usePbcOverTime";
+import { cacheKey, usePbcOverTime } from "./usePbcOverTime";
 
 /**
- * The cache seam (US-06 AC4 / Scenario 22). Both the metric family and the date
- * range determine which series a request answers with, so both belong in the cache
- * key — a family-only key serves the previous range's limits after the dashboard
- * pickers move, silently and with no failing render.
+ * The cache seam. Both the metric family and the date range determine which series
+ * a request answers with, so both belong in the cache key — a family-only key
+ * serves the previous range's limits after the dashboard pickers move, silently
+ * and with no failing render.
  */
 
 const OWNER_ID = 42;
@@ -144,5 +144,50 @@ describe("usePbcOverTime", () => {
 		// The widget's empty-state branch depends on the null/[] distinction.
 		expect(result.current.series).toBeNull();
 		await waitFor(() => expect(result.current.series).toEqual([]));
+	});
+});
+
+/**
+ * The selected range names two calendar days, not two instants. Written through
+ * UTC it names the day before for every viewer at a positive offset, and it turns
+ * each clock time within one selected day into a separate entry. These cases only
+ * bite at a non-zero UTC offset — the suite pins one (see the `test` script).
+ */
+describe("usePbcOverTime cache key", () => {
+	const LOCAL_MIDNIGHT_JULY_1 = new Date(2026, 6, 1);
+	const SAME_DAY_MID_AFTERNOON = new Date(2026, 6, 1, 14, 30);
+
+	it("names the local calendar day, not the UTC day the instant falls on", () => {
+		expect(cacheKey("Throughput", LOCAL_MIDNIGHT_JULY_1, RANGE_END)).toBe(
+			"Throughput|2026-07-01|2026-07-26",
+		);
+	});
+
+	it("does not refetch when only the clock time within a selected day moves", async () => {
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockResolvedValue(FIRST_RANGE_SERIES);
+
+		const { result, rerender } = renderHook(
+			({ startDate }: { startDate: Date }) =>
+				usePbcOverTime(
+					OWNER_ID,
+					createMetricsService(getProcessBehaviorOverTime),
+					startDate,
+					RANGE_END,
+				),
+			{ initialProps: { startDate: LOCAL_MIDNIGHT_JULY_1 } },
+		);
+
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+
+		rerender({ startDate: SAME_DAY_MID_AFTERNOON });
+
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(1);
 	});
 });

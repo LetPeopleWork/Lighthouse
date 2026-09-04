@@ -6,21 +6,28 @@ import type {
 } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { formatLocalDate } from "../../../utils/date/localDate";
 
 /**
  * Keyed by selection AND date range, not by selection alone: the series a request
  * answers with depends on both, so a selection-only key would serve the previous
- * range's series after the dashboard pickers move (US-06 AC4).
+ * range's series after the dashboard pickers move.
  */
 type SelectionCache = Record<string, PercentilesOverTimeSnapshot[]>;
 
-/** Single source of the cache key, so the write and the read-back cannot disagree. */
-function cacheKey(
+/**
+ * Single source of the cache key, so the write and the read-back cannot disagree.
+ *
+ * The range names two calendar days, so the key spells them out in the viewer's
+ * local day. An instant would name the day before for everyone east of Greenwich,
+ * and would split one selected day into a fresh entry on every clock time.
+ */
+export function cacheKey(
 	selection: PercentilesSelection,
 	startDate: Date,
 	endDate: Date,
 ): string {
-	return `${selection}|${startDate.toISOString()}|${endDate.toISOString()}`;
+	return `${selection}|${formatLocalDate(startDate)}|${formatLocalDate(endDate)}`;
 }
 
 export interface PercentilesOverTimeState {
@@ -50,8 +57,8 @@ export function usePercentilesOverTime(
 
 	useEffect(() => {
 		// Already fetched for this selection AND range — re-plot from the persisted
-		// series, no recompute (AC5). A range change is a different key, so it
-		// refetches instead of replaying a stale series (US-06 AC4).
+		// series, no recompute. A range change is a different key, so it refetches
+		// instead of replaying a stale series.
 		if (cache[key] !== undefined) {
 			return;
 		}

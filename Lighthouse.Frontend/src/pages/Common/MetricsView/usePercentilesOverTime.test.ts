@@ -4,13 +4,13 @@ import type { IFeature } from "../../../models/Feature";
 import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
-import { usePercentilesOverTime } from "./usePercentilesOverTime";
+import { cacheKey, usePercentilesOverTime } from "./usePercentilesOverTime";
 
 /**
- * The cache seam (US-06 AC4 / Scenario 22). Both the selection and the date range
- * determine which series a request answers with, so both belong in the cache key —
- * a selection-only key is the slice's likeliest bug: it serves the previous range's
- * series after the dashboard pickers move, silently and with no failing render.
+ * The cache seam. Both the selection and the date range determine which series a
+ * request answers with, so both belong in the cache key — a selection-only key
+ * serves the previous range's series after the dashboard pickers move, silently
+ * and with no failing render.
  */
 
 const OWNER_ID = 42;
@@ -162,5 +162,50 @@ describe("usePercentilesOverTime", () => {
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
 		);
 		expect(getPercentilesOverTime).toHaveBeenCalledTimes(2);
+	});
+});
+
+/**
+ * The selected range names two calendar days, not two instants. Written through
+ * UTC it names the day before for every viewer at a positive offset, and it turns
+ * each clock time within one selected day into a separate entry. These cases only
+ * bite at a non-zero UTC offset — the suite pins one (see the `test` script).
+ */
+describe("usePercentilesOverTime cache key", () => {
+	const LOCAL_MIDNIGHT_JULY_1 = new Date(2026, 6, 1);
+	const SAME_DAY_MID_AFTERNOON = new Date(2026, 6, 1, 14, 30);
+
+	it("names the local calendar day, not the UTC day the instant falls on", () => {
+		expect(cacheKey(30, LOCAL_MIDNIGHT_JULY_1, RANGE_END)).toBe(
+			"30|2026-07-01|2026-07-26",
+		);
+	});
+
+	it("does not refetch when only the clock time within a selected day moves", async () => {
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockResolvedValue(FIRST_RANGE_SERIES);
+
+		const { result, rerender } = renderHook(
+			({ startDate }: { startDate: Date }) =>
+				usePercentilesOverTime(
+					OWNER_ID,
+					createMetricsService(getPercentilesOverTime),
+					startDate,
+					RANGE_END,
+				),
+			{ initialProps: { startDate: LOCAL_MIDNIGHT_JULY_1 } },
+		);
+
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+
+		rerender({ startDate: SAME_DAY_MID_AFTERNOON });
+
+		await waitFor(() =>
+			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
+		);
+		expect(getPercentilesOverTime).toHaveBeenCalledTimes(1);
 	});
 });

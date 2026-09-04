@@ -1,4 +1,5 @@
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import type { TrendDirection, TrendPayload } from "./trendTypes";
 
 const METRIC_LABEL = "Blocked Items";
@@ -63,33 +64,21 @@ const noBaselineTrend = (): TrendPayload => ({
 	hintText: NO_BASELINE_HINT,
 });
 
-const dayLabelOf = (time: number): string =>
-	new Date(time).toISOString().slice(0, 10);
-
 /**
- * B3 (slice-06): previous-period trend for the Blocked overview widget.
+ * Previous-period trend for the Blocked overview widget: the current blocked count against the
+ * count recorded on the last day of the previous period, where the period is the dashboard's
+ * selected range. Feeds the existing widget trend chrome.
  *
- * Compares the current blocked count against the BlockedCountSnapshot on the LAST DAY of the previous
- * period — where "period" is the dashboard's selected [startDate, endDate] range — and returns a
- * TrendPayload for the EXISTING WidgetShell trend chrome (no new UI).
+ * An absent baseline counts as a blocked count of zero rather than a neutral placeholder, so a
+ * day-one instance reads "+N since we started recording" instead of a dash that looks like
+ * breakage. That only holds because the fetch window reaches the boundary day; while it did not,
+ * the baseline sat outside the fetched history on every instance and this path fired everywhere,
+ * permanently hiding the true comparison.
  *
- * Story 5508 slice 02 (D2, re-decided after UPSTREAM-4): an ABSENT baseline now counts as a blocked
- * count of ZERO rather than returning the neutral no-baseline marker, so a day-one instance reads
- * "+N since we started recording" instead of a dash that looks like breakage. That substitution is
- * only defensible because the fetch window was widened first (US-03 AC0, `useMetricsData`) — before
- * that fix the baseline day sat one day outside the fetched history on every instance, so this path
- * would have fired everywhere and permanently hidden the true comparison.
+ * Because that zero is assumed rather than measured, `previousLabel` is the only thing separating
+ * the two cases — it states the boundary day, never a recording date that never existed.
  *
- * Because the zero is ASSUMED rather than measured, that case originally carried an explanatory
- * `hintText` the measured case did not (AC5b). The tooltip was removed on 2026-07-19 by user
- * decision after manual verification — bare numbers only. `previousLabel` now carries the
- * assumed/measured distinction alone: it states the boundary DAY, never a fabricated `recordedAt`.
- *
- * The one remaining no-baseline case is a history that holds nothing at or before `endDate` (AC2b):
- * records exist but the selected range predates all of them, so there is no measurement at EITHER
- * end. Assuming zero there would be fabrication rather than a day-one assumption.
- *
- * Pure selector: read-only over the already-loaded BlockedCountSnapshot history. No side effects.
+ * Pure selector: read-only over the already-loaded snapshot history. No side effects.
  */
 export function computeBlockedTrend(
 	history: BlockedCountSnapshot[] | null,
@@ -101,7 +90,9 @@ export function computeBlockedTrend(
 
 	const current = latestAtOrBefore(snapshots, endDate.getTime());
 	if (!current && snapshots.length > 0) {
-		// AC2b: recording demonstrably began after the selected range ended.
+		// Records exist but every one of them postdates the selected range, so recording
+		// demonstrably began after it ended. Nothing was measured at either end here, and
+		// assuming a zero would invent a comparison rather than stand in for a day-one one.
 		return noBaselineTrend();
 	}
 
@@ -114,10 +105,10 @@ export function computeBlockedTrend(
 	return {
 		direction: directionOf(currentCount, baselineCount),
 		metricLabel: METRIC_LABEL,
-		currentLabel: current?.recordedAt ?? dayLabelOf(endDate.getTime()),
+		currentLabel: current?.recordedAt ?? formatLocalDate(endDate),
 		currentValue: String(currentCount),
-		// Never a fabricated recordedAt: state the boundary DAY the zero stands for (AC5).
-		previousLabel: baseline?.recordedAt ?? dayLabelOf(boundary),
+		// Never a fabricated recordedAt: state the boundary day the zero stands for.
+		previousLabel: baseline?.recordedAt ?? formatLocalDate(new Date(boundary)),
 		previousValue: String(baselineCount),
 		...(percentageDelta ? { percentageDelta } : {}),
 	};

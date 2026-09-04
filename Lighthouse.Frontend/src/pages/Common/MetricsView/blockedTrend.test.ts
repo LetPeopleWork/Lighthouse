@@ -296,3 +296,33 @@ describe("computeBlockedTrend — Bug 5522 interpolated-history contract (charac
 		expect(trend?.noBaseline).toBeFalsy();
 	});
 });
+
+/**
+ * The selected range names calendar days, not instants. A label written through UTC
+ * names the day before for every viewer at a positive offset, so the trend would
+ * claim a boundary day the viewer never selected. These cases only bite at a
+ * non-zero UTC offset — the suite pins one (see the `test` script).
+ */
+describe("computeBlockedTrend — range edges are local calendar days", () => {
+	const snap = (
+		recordedAt: string,
+		blockedCount: number,
+	): BlockedCountSnapshot =>
+		({ recordedAt, blockedCount }) as BlockedCountSnapshot;
+
+	// Picked from the dashboard, so both edges sit at local midnight.
+	const start = new Date(2026, 6, 1);
+	const end = new Date(2026, 6, 20);
+
+	it("states the local boundary day the assumed zero stands for", () => {
+		const trend = computeBlockedTrend([snap("2026-07-14", 4)], start, end);
+
+		expect(trend?.previousLabel).toBe("2026-06-30");
+	});
+
+	it("falls back to the local range end when nothing was ever recorded", () => {
+		const trend = computeBlockedTrend([], start, end);
+
+		expect(trend?.currentLabel).toBe("2026-07-20");
+	});
+});
