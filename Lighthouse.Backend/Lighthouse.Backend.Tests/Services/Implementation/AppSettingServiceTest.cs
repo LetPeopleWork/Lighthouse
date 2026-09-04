@@ -76,6 +76,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Times.Once);
         }
 
+        // The row is put there by seeding, so its absence is a broken installation rather than something
+        // to repair here: writing it back would make this a second place the setting gets created, and
+        // then two writers decide what a fresh row looks like. Saying the write did not happen is what
+        // lets the caller answer honestly instead of reporting success over a table that never changed.
+        [Test]
+        public async Task SetFeatureOrderingPolicy_SettingIsNotInTheTable_ChangesNothingAndReportsIt()
+        {
+            optionalFeatureRepositoryMock
+                .Setup(x => x.GetByPredicate(It.IsAny<Func<OptionalFeature, bool>>()))
+                .Returns((OptionalFeature?)null);
+
+            var wasApplied = await CreateService().SetFeatureOrderingPolicy(FeatureOrderingPolicy.ManualOrder);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(wasApplied, Is.False);
+                optionalFeatureRepositoryMock.Verify(x => x.Update(It.IsAny<OptionalFeature>()), Times.Never);
+                rankSeederMock.Verify(s => s.SeedMissingRanks(), Times.Never);
+            }
+        }
+
+        [TestCase(FeatureOrderingPolicy.ManualOrder)]
+        [TestCase(FeatureOrderingPolicy.SourceOrder)]
+        public async Task SetFeatureOrderingPolicy_SettingIsInTheTable_ReportsThatItWasApplied(FeatureOrderingPolicy policy)
+        {
+            var wasApplied = await CreateService().SetFeatureOrderingPolicy(policy);
+
+            Assert.That(wasApplied, Is.True);
+        }
+
         [Test]
         public void GetFeatureOrderingPolicy_AsksTheOnlyReaderOfTheSetting()
         {

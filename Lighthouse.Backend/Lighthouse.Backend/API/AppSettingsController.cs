@@ -49,7 +49,13 @@ namespace Lighthouse.Backend.API
         [LicenseGuard(RequirePremium = true)]
         public async Task<ActionResult> UpdateFeatureOrdering(FeatureOrderingDto featureOrdering)
         {
-            await appSettingService.SetFeatureOrderingPolicy(featureOrdering.Policy);
+            var wasApplied = await appSettingService.SetFeatureOrderingPolicy(featureOrdering.Policy);
+
+            if (!wasApplied)
+            {
+                return NotFound();
+            }
+
             return Ok();
         }
 

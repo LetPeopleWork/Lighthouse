@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -90,6 +91,37 @@ namespace Lighthouse.Backend.Tests.API
                 appSettingServiceMock.Verify(x => x.UpdateTeamDataRefreshSettings(refreshSettings), Times.Once);
                 Assert.That(result, Is.InstanceOf<OkResult>());
             }
+        }
+
+        [Test]
+        public async Task UpdateFeatureOrdering_TheSettingWasWritten_ReturnsOk()
+        {
+            appSettingServiceMock
+                .Setup(x => x.SetFeatureOrderingPolicy(FeatureOrderingPolicy.ManualOrder))
+                .ReturnsAsync(true);
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateFeatureOrdering(new FeatureOrderingDto { Policy = FeatureOrderingPolicy.ManualOrder });
+
+            Assert.That(result, Is.InstanceOf<OkResult>());
+        }
+
+        // The same switch is also reachable per setting key, and that route answers 404 when the setting
+        // is not in the table. Answering 200 here would leave a caller told the change was stored while
+        // the next read still reports the old answer, with nothing on either side saying why.
+        [Test]
+        public async Task UpdateFeatureOrdering_TheSettingIsNotInTheTable_ReturnsNotFound()
+        {
+            appSettingServiceMock
+                .Setup(x => x.SetFeatureOrderingPolicy(It.IsAny<FeatureOrderingPolicy>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubject();
+
+            var result = await subject.UpdateFeatureOrdering(new FeatureOrderingDto { Policy = FeatureOrderingPolicy.ManualOrder });
+
+            Assert.That(result, Is.InstanceOf<NotFoundResult>());
         }
 
         private AppSettingsController CreateSubject()

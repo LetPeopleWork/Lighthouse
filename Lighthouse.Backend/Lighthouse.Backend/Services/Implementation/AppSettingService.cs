@@ -98,16 +98,18 @@ namespace Lighthouse.Backend.Services.Implementation
 
         // The older of the two doors onto the same switch. It records nothing itself: handing the work to
         // whoever owns the setting is what keeps one choice from being written two different ways.
-        public async Task SetFeatureOrderingPolicy(FeatureOrderingPolicy policy)
+        public async Task<bool> SetFeatureOrderingPolicy(FeatureOrderingPolicy policy)
         {
             var setting = optionalFeatureRepository.GetByPredicate(f => f.Key == OptionalFeatureKeys.FeatureOrderingKey);
 
             if (setting == null)
             {
-                return;
+                return false;
             }
 
             await applierRegistry.ApplierFor(setting.Key).ApplyAsync(setting, policy == FeatureOrderingPolicy.ManualOrder);
+
+            return true;
         }
 
         public DateTimeOffset? GetSurveyNudgeNextEligibleAt()
