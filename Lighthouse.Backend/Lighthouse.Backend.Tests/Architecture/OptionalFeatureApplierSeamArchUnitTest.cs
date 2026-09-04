@@ -78,20 +78,33 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "not being done. Usually a renamed or removed setting. Named but not seeded: " + string.Join(", ", orphans));
         }
 
+        // Starts from what the product seeds rather than from what is registered, which is the half the
+        // check below cannot see: a setting nobody claims must reach the applier that only stores the
+        // value, and not whichever claimed one the lookup happened to land on.
         [Test]
-        public void EverySeededSettingResolvesToExactlyOneApplier()
+        public void EverySeededSettingReachesTheApplierThatClaimsItOrTheDefaultWhenNoneDoes()
         {
             var registry = Registry();
+            var appliers = Appliers();
 
-            var unresolved = SeededKeys()
-                .Where(key => registry.ApplierFor(key) == null)
-                .OrderBy(key => key, StringComparer.Ordinal)
-                .ToList();
+            var misrouted = new List<string>();
 
-            Assert.That(unresolved, Is.Empty,
-                "Every seeded setting has to reach an applier - the one that claims it, or the default for a setting whose " +
-                "switch stores a value and does nothing else. Reaching none would leave a switch that silently does nothing. " +
-                "Unresolved: " + string.Join(", ", unresolved));
+            foreach (var key in SeededKeys().OrderBy(key => key, StringComparer.Ordinal))
+            {
+                var claimant = appliers.SingleOrDefault(applier => string.Equals(applier.Key, key, StringComparison.Ordinal));
+                var expected = claimant?.GetType() ?? typeof(DefaultOptionalFeatureApplier);
+                var reached = registry.ApplierFor(key).GetType();
+
+                if (reached != expected)
+                {
+                    misrouted.Add($"{key} -> {reached.Name}, expected {expected.Name}");
+                }
+            }
+
+            Assert.That(misrouted, Is.Empty,
+                "Every seeded setting has to reach the applier that claims it, and a setting nobody claims has to reach the " +
+                "one that stores the value and does nothing else. Either mistake means switching that setting carries " +
+                "consequences nobody asked for, or quietly carries none. Misrouted: " + string.Join(", ", misrouted));
         }
 
         [Test]
