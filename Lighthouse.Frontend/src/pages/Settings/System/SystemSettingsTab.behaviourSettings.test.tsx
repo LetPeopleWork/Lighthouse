@@ -407,4 +407,48 @@ describe("Behaviour Settings", () => {
 			).toBeVisible();
 		});
 	});
+
+	// A row that costs nothing is operable everywhere, and that is the half of the rule nothing else
+	// asks about: every other check here either holds a licence or looks at a row that needs one. Decide
+	// reachability with an "and" instead of an "or" and Faster Updates - which has never required a
+	// licence - is greyed out on every instance that does not hold one.
+	it("leaves a row that costs nothing operable on an instance without a licence", async () => {
+		givenTheInstanceHasNoPremiumLicence();
+
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("DeltaSync-toggle").querySelector("input"),
+			).not.toBeDisabled();
+		});
+	});
+
+	// The licence is the whole reason the premium row is reachable, so a paying administrator has to be
+	// able to operate it. Only this direction fails when the licence answer stops being consulted: with
+	// every premium switch greyed out, the setting is visible and permanently out of reach.
+	it("lets a licensed administrator operate the premium switch", async () => {
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("FeatureOrdering-toggle").querySelector("input"),
+			).not.toBeDisabled();
+		});
+	});
+
+	// An instance whose licence cannot be read is not a licensed one. Assuming otherwise offers every
+	// premium switch to an administrator who has bought nothing, and the write behind it is refused -
+	// so the switch moves and the setting does not.
+	it("shows the premium switch as unavailable when there is no licence to read", async () => {
+		mockGetLicenseStatus.mockResolvedValue(null);
+
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("FeatureOrdering-toggle").querySelector("input"),
+			).toBeDisabled();
+		});
+	});
 });
