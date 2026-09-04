@@ -59,15 +59,18 @@ Use a recurring rule for weekends or any regularly repeating closure, and reserv
 {: .note}
 Managing blackout periods and recurring rules requires a [Premium license](../licensing/licensing.html#licensed-features). Existing entries remain active for forecasting and metrics even if a license lapses — only the ability to add, edit, or delete them is gated.
 
-## Optional Features
-Some features might not make sense to be enabled in all situations. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. In such a case you would find a toggle in the *Optional Features* setting which you can selectively enable or disable.
+## Behaviour Settings
+Some behaviour does not make sense to have on in every situation. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. Both live in *Behaviour Settings*: one table of instance-wide switches, each with its own row, that you can selectively enable or disable.
 
-![Optional Features](../assets/settings/optionalfeatures.png)
+![Behaviour Settings](../assets/settings/optionalfeatures.png)
 
 Eventually, the Features in preview will be integrated into the regular functionality, and the preview flag will be removed. In rare cases, a preview feature might get removed.
 
 {: .recommendation}
 While preview features should be relatively stable, it can be that they will not work perfectly yet. If you enable them and encounter issues, please let us know about it. We're looking forward to your feedback!
+
+{: .note}
+The rows read in your own words. If you renamed *Feature* under [Terminology Configuration](#terminology-configuration), a row that talks about your Features says your word for them instead of ours.
 
 ### Faster Updates
 
@@ -85,9 +88,7 @@ Turn *Faster Updates* on and an update runs in two steps instead of one: it firs
 {: .note}
 Faster Updates ships as an opt-in and will eventually become the default. Please turn it on and try it out — and if something does not work the way you expect, tell us, so we can improve it before it goes live for everyone.
 
-If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
-
-## Feature Order (Premium)
+### Feature Order (Premium)
 By default, Lighthouse forecasts your Features in the order your work tracking system gives them — the rank or backlog order they already carry there. Every refresh re-reads that order, so a rank someone changes in Azure DevOps, Jira, or Linear re-sequences your forecast without anyone on your team deciding it. On connectors that have no meaningful rank at all, such as ServiceNow, the sequence was never yours to begin with.
 
 Turn *Let Lighthouse own the order of your Features* on and Lighthouse takes ownership instead.
@@ -97,7 +98,7 @@ Turn *Let Lighthouse own the order of your Features* on and Lighthouse takes own
 - **The `#` column heading changes to *Manual***, on the [Features page](../features/features.html) and on the Portfolio Feature list, so it is always visible which order you are reading.
 - **Features that arrive later go to the end** and stay there until you move them. They are not announced.
 
-### Turning it back off
+#### Turning it back off
 Turning the switch off hands the order straight back to your work tracking system, immediately and without a refresh. The places you chose are **kept** — turn it on again and they come back, rather than being re-read from the tracker. That makes the switch something you can try on a live instance instead of a decision you have to commit to.
 
 {: .note}
@@ -105,6 +106,8 @@ Owning the order requires a [Premium license](../licensing/licensing.html#licens
 
 {: .recommendation}
 Changing who owns the order changes every forecasted date, because the order is what the simulation draws from. Expect the dates on your Portfolios to be recalculated shortly after you flip the switch either way.
+
+If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
 
 ## Terminology Configuration
 Lighthouse allows you to customize the terminology used throughout the application to better align with your organization's language and workflow conventions. This feature helps eliminate confusion by ensuring consistent terminology that matches how your team and organization refers to work items and concepts.
