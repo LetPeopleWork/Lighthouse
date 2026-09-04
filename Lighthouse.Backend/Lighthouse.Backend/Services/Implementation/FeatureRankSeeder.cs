@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation
             // Re-read inside the write step and take only what is still unplaced. A rank written between
             // the projection above and here - by a move, or by a second admin flipping the switch at the
             // same moment - is somebody's chosen place and is never overwritten. Two seeds racing can
-            // still land on the same number, which INV-O2 allows: duplicates keep a total order because
+            // still land on the same number, which is harmless: duplicates keep a total order, because
             // the tie falls to Id.
             var features = await context.Features
                 .Where(feature => unplaced.Contains(feature.Id) && feature.ManualRank == null)

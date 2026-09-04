@@ -125,7 +125,6 @@ describe("useFeatureOrdering — the one place a move is allowed or refused", ()
 		expect(await theGateFor(aFeature())).toEqual({ enabled: true });
 	});
 
-	// AC-3.10, first half.
 	it("refuses on an instance without a premium licence", async () => {
 		const theGateFor = renderTheGateOn({
 			policy: "ManualOrder",
@@ -138,7 +137,7 @@ describe("useFeatureOrdering — the one place a move is allowed or refused", ()
 		});
 	});
 
-	// AC-3.10, second half. Nothing to change while the tracker owns the order.
+	// Nothing to change while the tracker owns the order.
 	it("refuses while the tracker owns the order", async () => {
 		const theGateFor = renderTheGateOn({
 			policy: "SourceOrder",
@@ -151,7 +150,7 @@ describe("useFeatureOrdering — the one place a move is allowed or refused", ()
 		});
 	});
 
-	// AC-3.9 / D14 — "up" has no predictable meaning in a list sorted by Name.
+	// "Up" has no predictable meaning in a list sorted by Name.
 	it("refuses a relative move while the grid is sorted by a column", async () => {
 		const theGateFor = renderTheGateOn(anInstanceThatOwnsItsOrder);
 
@@ -161,8 +160,8 @@ describe("useFeatureOrdering — the one place a move is allowed or refused", ()
 		});
 	});
 
-	// AC-3.7 / AC-3.8 — the server's verdict, carried through untouched. The hook does not consult RBAC
-	// and does not look at `projects`: both fail open (ADR-136 SA-10).
+	// The server's verdict, carried through untouched. The hook does not consult RBAC and does not look
+	// at `projects`: both fail open.
 	it("carries the server's refusal through, with the Portfolio it named", async () => {
 		const theGateFor = renderTheGateOn(anInstanceThatOwnsItsOrder);
 
@@ -181,10 +180,10 @@ describe("useFeatureOrdering — the one place a move is allowed or refused", ()
 		});
 	});
 
-	// DDD-9 — a Feature in no Portfolio is movable by nobody, and the row cannot tell you which one to
-	// ask, because there isn't one. The empty `projects` is in the fixture to show it is NOT what decides:
+	// A Feature in no Portfolio is movable by nobody, and the row cannot tell you which one to ask,
+	// because there isn't one. The empty `projects` is in the fixture to show it is NOT what decides:
 	// the reason comes off the server's verdict, because `projects` is read-filtered and an empty one
-	// means "none you can see", not "none" (ADR-136 SA-10).
+	// means "none you can see", not "none".
 	it("refuses a Feature that belongs to no Portfolio, naming none", async () => {
 		const theGateFor = renderTheGateOn(anInstanceThatOwnsItsOrder);
 
@@ -229,7 +228,7 @@ describe("useFeatureOrdering — the one place a move is allowed or refused", ()
 	});
 
 	// Precedence, stated rather than left to whichever `if` happens to come first: an instance-wide
-	// reason removes the actions entirely (AC-3.10), so it outranks a per-row or per-grid one.
+	// reason removes the actions entirely, so it outranks a per-row or per-grid one.
 	it("reports the instance-wide reason first when several apply at once", async () => {
 		const theGateFor = renderTheGateOn({
 			policy: "ManualOrder",

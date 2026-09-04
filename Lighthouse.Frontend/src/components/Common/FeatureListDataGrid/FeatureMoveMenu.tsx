@@ -11,19 +11,19 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 
 /**
- * The row action menu behind D18's four gestures. It renders enabled or disabled from a verdict it is
- * **given**, never one it derives: the natural client-side expression
+ * The row action menu behind the four move gestures. It renders enabled or disabled from a verdict it
+ * is **given**, never one it derives: the natural client-side expression
  * `projects.every(p => isPortfolioAdmin(p.id))` fails open twice — `projects` is already read-filtered,
- * and `every` is vacuously true on the empty array an orphan Feature produces (ADR-136 SA-10).
+ * and `every` is vacuously true on the empty array an orphan Feature produces.
  */
 export interface FeatureMoveMenuProps {
 	feature: IFeature;
-	/** Resolved once, by `useFeatureOrdering` (SA-12). This component asks no further questions. */
+	/** Resolved once, by `useFeatureOrdering`. This component asks no further questions. */
 	gate: FeatureMoveGate;
 	onMove: (target: FeatureMoveTarget) => Promise<void>;
 	/**
-	 * The rows either side of this one as the user sees them. Hidden Done Features (D15) and rows the
-	 * grid filtered out are jumped, not landed on (AC-3.3), so the neighbours are the *visible* ones.
+	 * The rows either side of this one as the user sees them. Hidden Done Features and rows the grid
+	 * filtered out are jumped, not landed on, so the neighbours are the *visible* ones.
 	 */
 	visibleNeighbours: {
 		firstId?: number;
@@ -59,8 +59,8 @@ const FeatureMoveMenu: React.FC<FeatureMoveMenuProps> = ({
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const [announcement, setAnnouncement] = useState("");
 
-	// AC-3.10: an instance that does not order its own Features has no move actions at all, rather than
-	// four greyed-out ones explaining a capability it does not have.
+	// An instance that does not order its own Features has no move actions at all, rather than four
+	// greyed-out ones explaining a capability it does not have.
 	if (
 		!gate.enabled &&
 		(gate.reason === "not-premium" || gate.reason === "policy-off")
@@ -135,7 +135,7 @@ const FeatureMoveMenu: React.FC<FeatureMoveMenuProps> = ({
 						key={gesture.label}
 						// Deliberately aria-disabled rather than `disabled`: a disabled element fires no
 						// events, so it carries no tooltip and a screen reader skips the very sentence that
-						// explains the refusal (AC-3.8, AC-3.11).
+						// explains the refusal.
 						aria-disabled={refusal !== null || gesture.target === undefined}
 						title={refusal ?? undefined}
 						sx={refusal !== null ? { opacity: 0.5 } : undefined}

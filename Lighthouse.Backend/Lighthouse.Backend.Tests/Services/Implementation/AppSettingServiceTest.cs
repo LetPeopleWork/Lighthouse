@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
-        // Without the announcement the places move and every forecast date stays where it was (ADR-133).
+        // Without the announcement the places move and every forecast date stays where it was.
         [TestCase(FeatureOrderingPolicy.ManualOrder)]
         [TestCase(FeatureOrderingPolicy.SourceOrder)]
         public async Task SetFeatureOrderingPolicy_AnnouncesTheChange(FeatureOrderingPolicy policy)

@@ -21,9 +21,8 @@ import {
 import SystemSettingsTab from "./SystemSettingsTab";
 
 /**
- * DISTILL acceptance scenarios (Story 5876) - the rendered half. US-01 AC-01.1, AC-01.2 and AC-01.11
- * are about what an administrator sees on Settings -> System, and US-02 AC-02.4 is about what they
- * cannot reach from there. The served half lives in the backend BehaviourSettings acceptance suite.
+ * What an administrator sees on Settings -> System, and what they cannot reach from there. The served
+ * half of the same scenarios lives in the backend BehaviourSettings acceptance suite.
  */
 
 const mockGetAllFeatures = vi.fn();

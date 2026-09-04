@@ -44,13 +44,12 @@ export class SystemConfigurationPage {
 
 		await featureToggle.click();
 
-		// Make sure the request is completed
 		await featureToggleRequest;
 	}
 
 	/**
 	 * Hands ordering ownership to this instance and waits for the switch to be taken, so a caller never
-	 * navigates away on a stale "saved". It is a row in the settings table like any other now.
+	 * navigates away on a stale "saved".
 	 */
 	async handOrderingOverToThisInstance(): Promise<void> {
 		await this.enableFeature("FeatureOrdering");

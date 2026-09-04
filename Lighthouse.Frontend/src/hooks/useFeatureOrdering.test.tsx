@@ -67,7 +67,7 @@ describe("useFeatureOrdering", () => {
 	});
 
 	// The header names whoever owns the order. The column factory stays policy-ignorant — it takes the
-	// label it is given (slice 01) — so this is the only place the two labels may be decided.
+	// label it is given — so this is the only place the two labels may be decided.
 	it("names the position column after whoever owns the order", async () => {
 		const { result } = renderTheHookOnAnInstanceWhere("ManualOrder");
 
