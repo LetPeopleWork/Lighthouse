@@ -205,7 +205,7 @@ describe("Behaviour Settings", () => {
 
 	// @AC-01.11 - the criterion this store was once rejected on. The seeded string names a token; the
 	// cell renders the instance's own word.
-	it.skip("reads the row in the instance's own word for a Feature", async () => {
+	it("reads the row in the instance's own word for a Feature", async () => {
 		givenTheInstanceCallsFeatures("Deliverable", "Deliverables");
 
 		renderTheSystemSettings();

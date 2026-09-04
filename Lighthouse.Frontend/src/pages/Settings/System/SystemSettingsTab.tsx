@@ -18,6 +18,7 @@ import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { resolveTerms } from "../../../services/Terminology/resolveTerms";
 import { useTerminology } from "../../../services/TerminologyContext";
 import RefreshSettingUpdater from "../Refresh/RefreshSettingUpdater";
 import BlackoutSettings from "./BlackoutSettings";
@@ -119,7 +120,7 @@ const SystemSettingsTab: React.FC = () => {
 										>
 											<TableCell>
 												<Box sx={{ display: "flex", alignItems: "center" }}>
-													{feature.name}
+													{resolveTerms(feature.name, getTerm)}
 													{feature.isPreview && (
 														<Tooltip title="This feature is in preview and may change or be removed in future versions">
 															<Chip
@@ -134,7 +135,9 @@ const SystemSettingsTab: React.FC = () => {
 													)}
 												</Box>
 											</TableCell>
-											<TableCell>{feature.description}</TableCell>
+											<TableCell>
+												{resolveTerms(feature.description, getTerm)}
+											</TableCell>
 											<TableCell>
 												<Switch
 													checked={feature.enabled}
