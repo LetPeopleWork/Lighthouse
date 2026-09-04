@@ -39,12 +39,10 @@ describe("resolveTerms", () => {
 	it("returns copy that carries no token byte for byte", () => {
 		expect(
 			resolveTerms(
-				"Fetch only the work items that changed since the last update instead of the whole query.",
+				"Turning this off restores the previous behaviour immediately.",
 				theInstance,
 			),
-		).toBe(
-			"Fetch only the work items that changed since the last update instead of the whole query.",
-		);
+		).toBe("Turning this off restores the previous behaviour immediately.");
 	});
 
 	it("returns an empty string for an empty string", () => {

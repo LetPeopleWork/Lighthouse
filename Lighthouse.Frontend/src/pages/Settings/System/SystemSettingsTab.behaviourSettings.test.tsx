@@ -60,12 +60,16 @@ const theOrderingSettingAsSeeded = {
 	isPreview: false,
 };
 
+/**
+ * The row that shipped before this table existed. Its name carries no token and is read back byte for
+ * byte below; its help text names a Work Item, which the instance may have renamed.
+ */
 const theShippedNonPremiumSetting = {
 	id: 1,
 	key: "DeltaSync",
 	name: "Faster Updates",
 	description:
-		"Fetch only the work items that changed since the last update instead of the whole query.",
+		"Fetch only the {{workItems}} that changed since the last update instead of the whole query.",
 	enabled: false,
 	isPremium: false,
 	isPreview: true,
@@ -124,6 +128,18 @@ const givenTheInstanceCallsFeatures = (word: string, plural: string) => {
 			key: "features",
 			defaultValue: "Features",
 			description: "Term used for multiple features",
+			value: plural,
+		},
+	]);
+};
+
+const givenTheInstanceCallsWorkItems = (plural: string) => {
+	mockGetAllTerminology.mockResolvedValue([
+		{
+			id: 1,
+			key: "workItems",
+			defaultValue: "Work Items",
+			description: "Term used for multiple work items",
 			value: plural,
 		},
 	]);
@@ -239,6 +255,22 @@ describe("Behaviour Settings", () => {
 				screen.getByText(/Arrange your \{\{fetaures\}\} yourself\./),
 			).toBeVisible();
 		});
+	});
+
+	// Every row on this table is read through the same resolver, so an instance that renamed Work Item
+	// to Ticket must not read one row in its own words and the row beside it in ours.
+	it("reads the row that shipped first in the instance's own word too", async () => {
+		givenTheInstanceCallsWorkItems("Tickets");
+
+		renderTheSystemSettings();
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(/Fetch only the Tickets that changed/),
+			).toBeVisible();
+		});
+
+		expect(screen.queryByText(/\{\{workItems\}\}/)).not.toBeInTheDocument();
 	});
 
 	// @AC-01.1 - the two rows are switched one at a time. The mock gives both the identity the seeder

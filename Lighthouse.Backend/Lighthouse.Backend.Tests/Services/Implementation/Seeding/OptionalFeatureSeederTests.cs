@@ -237,6 +237,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             }
         }
 
+        // An instance that renamed Work Item to Ticket reads its own word everywhere else on this page,
+        // so a row spelling ours out reads as the one place the product forgot. Spelled out rather than
+        // read off the seeder, because comparing a value to the constant it came from passes even when
+        // the words are blanked.
+        [Test]
+        public async Task SeedAsync_DeltaSync_NamesTheThingItFetchesInTheInstancesOwnWord()
+        {
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deltaSync.Name, Is.EqualTo("Faster Updates"));
+                Assert.That(deltaSync.Description, Is.EqualTo("Fetch only the {{workItems}} that changed since the last update instead of the whole query."));
+            }
+        }
+
         private OptionalFeatureSeeder CreateSubject()
         {
             return new OptionalFeatureSeeder(DatabaseContext, Mock.Of<ILogger<OptionalFeatureSeeder>>());
