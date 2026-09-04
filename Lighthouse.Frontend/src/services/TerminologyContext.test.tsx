@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { ApiServiceContext } from "./Api/ApiServiceContext";
 import type { ITerminologyService } from "./Api/TerminologyService";
@@ -19,7 +21,21 @@ const AWordFor = ({ term }: { readonly term: string }) => {
 	return <span data-testid="the-word">{getTerm(term)}</span>;
 };
 
-const renderTheWordFor = (term: string) => {
+const EveryWordFor = ({ terms }: { readonly terms: readonly string[] }) => {
+	const { getTerm } = useTerminology();
+
+	return (
+		<div>
+			{terms.map((term) => (
+				<span key={term} data-testid={`the-word-for-${term}`}>
+					{getTerm(term)}
+				</span>
+			))}
+		</div>
+	);
+};
+
+const renderInsideTheProvider = (children: React.ReactNode) => {
 	const terminologyService = {
 		getAllTerminology: mockGetAllTerminology,
 	} as unknown as ITerminologyService;
@@ -33,15 +49,50 @@ const renderTheWordFor = (term: string) => {
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({ terminologyService })}
 			>
-				<TerminologyProvider>
-					<AWordFor term={term} />
-				</TerminologyProvider>
+				<TerminologyProvider>{children}</TerminologyProvider>
 			</ApiServiceContext.Provider>
 		</QueryClientProvider>,
 	);
 };
 
+const renderTheWordFor = (term: string) =>
+	renderInsideTheProvider(<AWordFor term={term} />);
+
 const theWordOnScreen = () => screen.getByTestId("the-word").textContent;
+
+/**
+ * Every word the product has of its own, written out here rather than read back out of the map under
+ * test - a check that fetches its answer from the thing it is checking passes whatever that thing
+ * says. These are the same words the server writes into a fresh database, so the two lists are one
+ * fact kept in two places, and this is the only thing that notices when they stop agreeing.
+ */
+const theWordsAFreshInstallIsSeededWith: ReadonlyArray<
+	readonly [string, string]
+> = [
+	["workItem", "Work Item"],
+	["workItems", "Work Items"],
+	["feature", "Feature"],
+	["features", "Features"],
+	["cycleTime", "Cycle Time"],
+	["throughput", "Throughput"],
+	["workInProgress", "Work In Progress"],
+	["wip", "WIP"],
+	["workItemAge", "Work Item Age"],
+	["tag", "Tag"],
+	["workTrackingSystem", "Work Tracking System"],
+	["workTrackingSystems", "Work Tracking Systems"],
+	["blocked", "Blocked"],
+	["serviceLevelExpectation", "Service Level Expectation"],
+	["sle", "SLE"],
+	["team", "Team"],
+	["teams", "Teams"],
+	["portfolio", "Portfolio"],
+	["portfolios", "Portfolios"],
+	["delivery", "Delivery"],
+	["deliveries", "Deliveries"],
+];
+
+const theKey = ([key]: readonly [string, string]) => key;
 
 describe("TerminologyContext", () => {
 	beforeEach(() => {
@@ -96,5 +147,29 @@ describe("TerminologyContext", () => {
 		await waitFor(() => {
 			expect(theWordOnScreen()).toBe("somethingNobodyNamed");
 		});
+	});
+
+	// Every one of these words can be blanked without a single other test noticing, and a blanked one
+	// shows up as a gap in a sentence rather than as a failure. They are also the client's copy of what
+	// the server seeds a fresh database with, and two copies of one list drift.
+	it("prints the word a fresh install is seeded with, for every term the product names", () => {
+		mockGetAllTerminology.mockReturnValue(new Promise(() => undefined));
+
+		renderInsideTheProvider(
+			<EveryWordFor terms={theWordsAFreshInstallIsSeededWith.map(theKey)} />,
+		);
+
+		for (const [key, word] of theWordsAFreshInstallIsSeededWith) {
+			expect(screen.getByTestId(`the-word-for-${key}`).textContent).toBe(word);
+		}
+	});
+
+	// A term added to the product without a word of its own reaches the screen as its own lookup key -
+	// lowercase, mid-sentence, read as prose. The list above only guards that while it names every term
+	// there is, so it has to be told when a new one appears.
+	it("has a word of its own for every term the product names", () => {
+		expect(theWordsAFreshInstallIsSeededWith.map(theKey).sort()).toEqual(
+			[...Object.values(TERMINOLOGY_KEYS)].sort(),
+		);
 	});
 });
