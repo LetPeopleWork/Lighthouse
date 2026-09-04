@@ -46,10 +46,29 @@ const renderTheHookOnAnInstanceWhere = (policy: FeatureOrderingPolicy) => {
 		</QueryClientProvider>
 	);
 
-	return renderHook(() => useFeatureOrdering(), { wrapper });
+	return {
+		...renderHook(() => useFeatureOrdering(), { wrapper }),
+		optionalFeatureService,
+	};
 };
 
 describe("useFeatureOrdering", () => {
+	// The row is found by name, and asking for the wrong name gets nothing back - which is exactly what
+	// an instance where nobody has chosen looks like. So a misspelled name does not fail: every instance
+	// that owns its own order silently goes back to following the tracker, taking the move actions with
+	// it. The name is written out here rather than read off the arrangement, which would agree with
+	// whatever the code asked for.
+	it("asks the settings store for the row that holds who owns the order", async () => {
+		const { optionalFeatureService } =
+			renderTheHookOnAnInstanceWhere("ManualOrder");
+
+		await waitFor(() => {
+			expect(optionalFeatureService.getFeatureByKey).toHaveBeenCalledWith(
+				"FeatureOrdering",
+			);
+		});
+	});
+
 	it("reports the tracker owning the order before anybody has chosen", async () => {
 		const { result } = renderTheHookOnAnInstanceWhere("SourceOrder");
 
