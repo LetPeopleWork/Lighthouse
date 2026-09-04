@@ -107,6 +107,30 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "consequences nobody asked for, or quietly carries none. Misrouted: " + string.Join(", ", misrouted));
         }
 
+        // Two things keep the fallback from becoming a claimant, and neither is obvious from reading it.
+        // Its key is empty, so no setting can be named after it; and it is registered only as its own
+        // type, so it never joins the lookup the registry builds from the claiming appliers. Give it a
+        // real key, or register it as the interface, and it starts answering for a setting whose own
+        // applier was written to carry consequences it does not carry.
+        [Test]
+        public void TheApplierThatOnlyStoresTheValueClaimsNoSettingOfItsOwn()
+        {
+            using var scope = factory.Services.CreateScope();
+            var fallback = scope.ServiceProvider.GetRequiredService<DefaultOptionalFeatureApplier>();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fallback.Key, Is.Empty,
+                    "The fallback applier names a setting. A setting by that name would resolve to it rather than to whichever " +
+                    "applier was written for it, and the switch would appear to work while carrying none of its consequences.");
+
+                Assert.That(Appliers(), Has.None.InstanceOf<DefaultOptionalFeatureApplier>(),
+                    "The fallback applier is registered as IOptionalFeatureApplier, so it now sits in the registry's lookup " +
+                    "under its own key alongside the claiming appliers, rather than behind them as the answer for settings " +
+                    "nobody claimed.");
+            }
+        }
+
         [Test]
         public void ASettingIsResolvedToTheApplierThatClaimsIt()
         {
