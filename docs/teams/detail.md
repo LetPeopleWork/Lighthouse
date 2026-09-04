@@ -53,7 +53,7 @@ If you have many Features that are already completed, you may not want to show a
 The Features are listed in the order Lighthouse forecasts them — this Team's slice of an instance-wide sequence, so the Features of Portfolios this Team does not work on sit invisibly in between. The [Features page](../features/features.html) shows the whole sequence.
 
 {: .note}
-On an instance where [Lighthouse owns the order](../settings/configuration.html#feature-order-premium) rather than your Work Tracking System, each row offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom*. See [Moving a Feature](../features/features.html#moving-a-feature) — in particular, moving up here jumps the Features of other Portfolios rather than landing between them. Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
+On an instance where [Lighthouse owns the order](../settings/configuration.html#feature-order-premium) rather than your Work Tracking System, this list reflects the order you chose, but you cannot change it from here. Move a Feature from the [Features page](../features/features.html#moving-a-feature) or from the Portfolio it belongs to, and this list follows — there is one order, and a move made anywhere is the move everyone sees. Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
 
 ## Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
