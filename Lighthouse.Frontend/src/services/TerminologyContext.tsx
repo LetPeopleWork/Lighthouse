@@ -12,6 +12,39 @@ interface ITerminologyContext {
 
 const TerminologyContext = createContext<ITerminologyContext | null>(null);
 
+const defaultTerminologyMap: Record<string, string> = {
+	[TERMINOLOGY_KEYS.WORK_ITEM]: "Work Item",
+	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
+	[TERMINOLOGY_KEYS.FEATURE]: "Feature",
+	[TERMINOLOGY_KEYS.FEATURES]: "Features",
+	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
+	[TERMINOLOGY_KEYS.THROUGHPUT]: "Throughput",
+	[TERMINOLOGY_KEYS.WORK_IN_PROGRESS]: "Work In Progress",
+	[TERMINOLOGY_KEYS.WIP]: "WIP",
+	[TERMINOLOGY_KEYS.WORK_ITEM_AGE]: "Work Item Age",
+	[TERMINOLOGY_KEYS.TAG]: "Tag",
+	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM]: "Work Tracking System",
+	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS]: "Work Tracking Systems",
+	[TERMINOLOGY_KEYS.BLOCKED]: "Blocked",
+	[TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION]: "Service Level Expectation",
+	[TERMINOLOGY_KEYS.SLE]: "SLE",
+	[TERMINOLOGY_KEYS.TEAM]: "Team",
+	[TERMINOLOGY_KEYS.TEAMS]: "Teams",
+	[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
+	[TERMINOLOGY_KEYS.PORTFOLIOS]: "Portfolios",
+	[TERMINOLOGY_KEYS.DELIVERY]: "Delivery",
+	[TERMINOLOGY_KEYS.DELIVERIES]: "Deliveries",
+};
+
+// What the product calls something before this instance has said otherwise - the same words a fresh
+// install is seeded with. The list is fetched once and never retried, so between first paint and the
+// answer arriving, and forever after if the answer never does, this is what a reader sees. Handing
+// back the lookup key instead prints "the order of your features" - a lowercase key read as prose.
+// A key the product has no word for is still returned as it is: it is a caller's mistake, and
+// printing it verbatim is what makes it noticeable.
+const theProductsOwnWordFor = (key: string): string =>
+	defaultTerminologyMap[key] ?? key;
+
 export function TerminologyProvider({
 	children,
 }: {
@@ -52,11 +85,7 @@ export function TerminologyProvider({
 		(key: string): string => {
 			const term = terms.find((t) => t.key === key);
 
-			if (!term) {
-				return key;
-			}
-
-			return term.value || term.defaultValue || key;
+			return term?.value || term?.defaultValue || theProductsOwnWordFor(key);
 		},
 		[terms],
 	);
@@ -78,39 +107,12 @@ export function TerminologyProvider({
 	);
 }
 
-const defaultTerminologyMap: Record<string, string> = {
-	[TERMINOLOGY_KEYS.WORK_ITEM]: "Work Item",
-	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
-	[TERMINOLOGY_KEYS.FEATURE]: "Feature",
-	[TERMINOLOGY_KEYS.FEATURES]: "Features",
-	[TERMINOLOGY_KEYS.CYCLE_TIME]: "Cycle Time",
-	[TERMINOLOGY_KEYS.THROUGHPUT]: "Throughput",
-	[TERMINOLOGY_KEYS.WORK_IN_PROGRESS]: "Work In Progress",
-	[TERMINOLOGY_KEYS.WIP]: "WIP",
-	[TERMINOLOGY_KEYS.WORK_ITEM_AGE]: "Work Item Age",
-	[TERMINOLOGY_KEYS.TAG]: "Tag",
-	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM]: "Work Tracking System",
-	[TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS]: "Work Tracking Systems",
-	[TERMINOLOGY_KEYS.BLOCKED]: "Blocked",
-	[TERMINOLOGY_KEYS.SERVICE_LEVEL_EXPECTATION]: "Service Level Expectation",
-	[TERMINOLOGY_KEYS.SLE]: "SLE",
-	[TERMINOLOGY_KEYS.TEAM]: "Team",
-	[TERMINOLOGY_KEYS.TEAMS]: "Teams",
-	[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
-	[TERMINOLOGY_KEYS.PORTFOLIOS]: "Portfolios",
-	[TERMINOLOGY_KEYS.DELIVERY]: "Delivery",
-	[TERMINOLOGY_KEYS.DELIVERIES]: "Deliveries",
-	// Add more terminology mappings here as needed
-};
-
 export function useTerminology(): ITerminologyContext {
 	const context = useContext(TerminologyContext);
 	if (context === null || context === undefined) {
 		// Return dummy context for testing
 		return {
-			getTerm: (key: string) => {
-				return defaultTerminologyMap[key] || key;
-			},
+			getTerm: theProductsOwnWordFor,
 			isLoading: false,
 			error: null,
 			refetchTerminology: () => {},
