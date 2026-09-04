@@ -490,8 +490,14 @@ vi.mock("./DashboardHeader", () => ({
 				Toggle
 			</button>
 			<div data-testid="date-range-selector">
-				<span data-testid="start-date">{startDate.toISOString()}</span>
-				<span data-testid="end-date">{endDate.toISOString()}</span>
+				<span data-testid="start-date">
+					{Number.isNaN(startDate.getTime())
+						? "unusable"
+						: startDate.toISOString()}
+				</span>
+				<span data-testid="end-date">
+					{Number.isNaN(endDate.getTime()) ? "unusable" : endDate.toISOString()}
+				</span>
 				<button
 					type="button"
 					data-testid="change-start-date"
@@ -525,6 +531,34 @@ vi.mock("./DashboardHeader", () => ({
 					}}
 				>
 					Pick Fixed Start Date
+				</button>
+				<button
+					type="button"
+					data-testid="pick-unusable-start-date"
+					onClick={() => onStartDateChange(new Date("the fifth of Octember"))}
+				>
+					Pick Unusable Start Date
+				</button>
+				<button
+					type="button"
+					data-testid="pick-no-start-date"
+					onClick={() => onStartDateChange(null)}
+				>
+					Pick No Start Date
+				</button>
+				<button
+					type="button"
+					data-testid="pick-unusable-end-date"
+					onClick={() => onEndDateChange(new Date("the fifth of Octember"))}
+				>
+					Pick Unusable End Date
+				</button>
+				<button
+					type="button"
+					data-testid="pick-no-end-date"
+					onClick={() => onEndDateChange(null)}
+				>
+					Pick No End Date
 				</button>
 			</div>
 		</div>
@@ -5638,6 +5672,84 @@ describe("BaseMetricsView component", () => {
 			await waitFor(() => {
 				expect(lastRequestedStartDay()).toBe("2026-06-15");
 			});
+		});
+	});
+	describe("Unusable dates never reach the dashboard state", () => {
+		/**
+		 * A string the browser cannot make sense of still yields a Date object, and
+		 * an object is truthy, so a plain null check waves it straight through into
+		 * state and into the URL, where it reappears as NaN and takes the page down.
+		 * The picker in front of these handlers already refuses such a date; the
+		 * guard here is so the next caller wired to them - another picker, a deep
+		 * link, a component that does not exist yet - cannot bring the crash back.
+		 */
+		const UrlProbe = () => {
+			const [params] = useSearchParams();
+			return (
+				<>
+					<span data-testid="url-start-date">{params.get("startDate")}</span>
+					<span data-testid="url-end-date">{params.get("endDate")}</span>
+				</>
+			);
+		};
+
+		const renderDashboard = () =>
+			render(
+				<MemoryRouter
+					initialEntries={[
+						"/teams/1/metrics?startDate=2026-06-15&endDate=2026-07-15",
+					]}
+				>
+					<BaseMetricsView
+						entity={mockTeam}
+						metricsService={mockMetricsService}
+						title="Work Items"
+						defaultDateRange={30}
+						doingStates={["To Do", "In Progress", "Review"]}
+					/>
+					<UrlProbe />
+				</MemoryRouter>,
+			);
+
+		const shownWindow = () => ({
+			start: screen.getByTestId("start-date").textContent,
+			end: screen.getByTestId("end-date").textContent,
+			urlStart: screen.getByTestId("url-start-date").textContent,
+			urlEnd: screen.getByTestId("url-end-date").textContent,
+		});
+
+		it.each([
+			"pick-unusable-start-date",
+			"pick-unusable-end-date",
+			"pick-no-start-date",
+			"pick-no-end-date",
+		])(
+			"leaves the window untouched when the picker fires %s",
+			async (testId) => {
+				renderDashboard();
+				await screen.findByTestId(testId);
+				const before = shownWindow();
+
+				fireEvent.click(screen.getByTestId(testId));
+
+				expect(shownWindow()).toEqual(before);
+				expect(before.urlStart).toBe("2026-06-15");
+				expect(before.urlEnd).toBe("2026-07-15");
+			},
+		);
+
+		it("still moves the window when the picker hands over a real date", async () => {
+			renderDashboard();
+			await screen.findByTestId("pick-fixed-start-date");
+
+			fireEvent.click(screen.getByTestId("pick-fixed-start-date"));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("url-start-date").textContent).toBe(
+					"2026-06-15",
+				);
+			});
+			expect(screen.getByTestId("start-date").textContent).not.toBe("unusable");
 		});
 	});
 

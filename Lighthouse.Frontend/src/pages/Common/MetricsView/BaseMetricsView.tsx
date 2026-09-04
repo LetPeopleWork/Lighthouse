@@ -63,6 +63,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { isValidDate } from "../../../utils/date/isValidDate";
 import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
@@ -1221,14 +1222,17 @@ export const BaseMetricsView = <
 		setSearchParams(newParams, { replace: true });
 	};
 
+	// A date the browser could not parse is still a Date object, and an object is
+	// truthy, so a plain null check lets it through into state and into the URL,
+	// where it turns into NaN and takes the page down on the next render.
 	const handleStartDateChange = (date: Date | null) => {
-		if (!date) return;
+		if (!isValidDate(date)) return;
 		setStartDate(date);
 		updateDateParams(date, endDate);
 	};
 
 	const handleEndDateChange = (date: Date | null) => {
-		if (!date) return;
+		if (!isValidDate(date)) return;
 		setEndDate(date);
 		updateDateParams(startDate, date);
 	};
