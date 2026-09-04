@@ -168,12 +168,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         // @driving_port @real-io @AC-2.10 @A1 @contract-shape:unbounded-preservation
-        // Off is the default, and off means nothing is scanned - the defining claim is an absence.
+        // Switched off means nothing is scanned - the defining claim is an absence.
         [Test]
-        public async Task A_refresh_never_scans_unless_an_operator_asked_for_it()
+        public async Task A_refresh_never_scans_once_the_operator_switched_it_off()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenNobodyAskedForTheCheaperRefresh();
+            GivenTheOperatorTurnedTheCheaperRefreshOff();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -185,12 +185,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         // @driving_port @real-io @AC-2.11 @A1 @contract-shape:bounded-change
-        // A soft launch is only usable if the toggle bites today.
+        // The toggle is only usable if it bites today.
         [Test]
         public async Task Asking_for_the_cheaper_refresh_takes_effect_on_the_very_next_cycle()
         {
             var team = GivenATeamWhoseTrackerCanBeScanned();
-            GivenNobodyAskedForTheCheaperRefresh();
+            GivenTheOperatorTurnedTheCheaperRefreshOff();
             GivenTheTrackerHoldsThreeIssues();
             await GivenTheTeamHasAlreadyBeenRefreshed(team);
 
@@ -202,15 +202,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         // @AC-2.12 @A1 @contract-shape:unbounded-preservation
-        // A fresh install, and an instance upgrading into this release, both stay off.
+        // A fresh install gets it. An upgrade never overrules a choice the instance already made.
         [Test]
-        public void An_instance_that_never_asked_for_the_cheaper_refresh_does_not_get_it()
+        public void A_fresh_install_gets_the_cheaper_refresh_and_an_upgrade_leaves_a_choice_alone()
         {
-            ThenTheCheaperRefreshIsOfferedButSwitchedOff();
+            ThenTheCheaperRefreshIsOfferedAndOn();
 
+            GivenTheOperatorTurnedTheCheaperRefreshOff();
             WhenTheInstanceIsUpgradedAgain();
 
-            ThenTheCheaperRefreshIsOfferedButSwitchedOff();
+            ThenTheCheaperRefreshIsStillOff();
         }
     }
 }

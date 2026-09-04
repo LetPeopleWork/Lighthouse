@@ -72,7 +72,7 @@ const theShippedNonPremiumSetting = {
 		"Fetch only the {{workItems}} that changed since the last update instead of the whole query.",
 	enabled: false,
 	isPremium: false,
-	isPreview: true,
+	isPreview: false,
 };
 
 const MockApiServiceProvider = ({
@@ -325,16 +325,18 @@ describe("Behaviour Settings", () => {
 		});
 	});
 
-	// @AC-01.9 - Faster Updates keeps its name, its help text and its preview badge. It is not premium
-	// and the only thing this story changes for it is the heading above the table.
-	it("changes nothing about the setting that was already in the list", async () => {
+	// @AC-01.9 - Faster Updates keeps its name and its help text, and it is not premium, so the switch
+	// stays operable. It is no longer in preview, so the badge that said so must be gone.
+	it("shows the setting that was already in the list, without a preview badge", async () => {
 		renderTheSystemSettings();
 
 		await waitFor(() => {
 			expect(screen.getByText("Faster Updates")).toBeVisible();
 		});
 
-		expect(screen.getByTestId("DeltaSync-preview-indicator")).toBeVisible();
+		expect(
+			screen.queryByTestId("DeltaSync-preview-indicator"),
+		).not.toBeInTheDocument();
 		expect(
 			screen.getByTestId("DeltaSync-toggle").querySelector("input"),
 		).not.toBeDisabled();

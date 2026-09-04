@@ -74,9 +74,9 @@ The rows read in your own words. If you renamed *Feature* under [Terminology Con
 
 ### Faster Updates
 
-Every update asks your work tracking system for the full details of every Work Item it finds, including the ones nobody has touched in weeks. On a large query that is most of the time an update spends, and most of the load Lighthouse puts on your tracker.
+With *Faster Updates* off, every update asks your work tracking system for the full details of every Work Item it finds, including the ones nobody has touched in weeks. On a large query that is most of the time an update spends, and most of the load Lighthouse puts on your tracker.
 
-Turn *Faster Updates* on and an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved.
+With it on, an update runs in two steps instead of one: it first asks for nothing but the identity of each Work Item and the date the tracker says it last changed, then downloads the full details only for the ones whose date moved.
 
 - **Nothing about your data changes.** The whole query is still read on every update, so a Work Item that leaves the query still disappears from Lighthouse on the very next update, exactly as before.
 - **It applies to Jira Cloud, Jira Data Center and Azure DevOps today.** ServiceNow, Linear and CSV keep running the update they always have, whether the toggle is on or not.
@@ -86,7 +86,7 @@ Turn *Faster Updates* on and an update runs in two steps instead of one: it firs
 - **What each update did is in the log**: `Update completed | Team 'X' | mode=delta | scanned=250 | fetched=3 | …`. `scanned` is how much of the query was read, `fetched` how much was actually downloaded. Turn the toggle off and the same line reads `mode=full` with the two numbers equal — which is how you see for yourself what it is saving you.
 
 {: .note}
-Faster Updates ships as an opt-in and will eventually become the default. Please turn it on and try it out — and if something does not work the way you expect, tell us, so we can improve it before it goes live for everyone.
+Faster Updates is on by default on a new instance. An instance that upgrades keeps the answer it already gave — if you switched it off, it stays off — and you can switch it off at any time, which takes effect on the next update.
 
 ### Feature Order (Premium)
 By default, Lighthouse forecasts your Features in the order your work tracking system gives them — the rank or backlog order they already carry there. Every refresh re-reads that order, so a rank someone changes in Azure DevOps, Jira, or Linear re-sequences your forecast without anyone on your team deciding it. On connectors that have no meaningful rank at all, such as ServiceNow, the sequence was never yours to begin with.

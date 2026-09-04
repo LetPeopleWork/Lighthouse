@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        public async Task SeedAsync_AddsDeltaSync_DisabledAndInPreview()
+        public async Task SeedAsync_AddsDeltaSync_EnabledAndNoLongerInPreview()
         {
             var subject = CreateSubject();
 
@@ -74,9 +74,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(deltaSync.Enabled, Is.False);
-                Assert.That(deltaSync.IsPreview, Is.True);
+                Assert.That(deltaSync.Enabled, Is.True);
+                Assert.That(deltaSync.IsPreview, Is.False);
                 Assert.That(deltaSync.IsPremium, Is.False);
+            }
+        }
+
+        [Test]
+        public async Task SeedAsync_DeltaSyncLeftOffOnAnExistingInstance_StaysOff()
+        {
+            DatabaseContext.OptionalFeatures.Add(new OptionalFeature
+            {
+                Id = 0,
+                Key = OptionalFeatureKeys.DeltaSyncKey,
+                Name = "Faster Updates",
+                Description = "An older description.",
+                Enabled = false,
+                IsPreview = true,
+            });
+            await DatabaseContext.SaveChangesAsync();
+
+            var subject = CreateSubject();
+
+            // Act
+            await subject.Seed();
+
+            // Assert
+            var deltaSync = DatabaseContext.OptionalFeatures.Single(feature => feature.Key == OptionalFeatureKeys.DeltaSyncKey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(deltaSync.Enabled, Is.False, "Switching the feature on by default answers for instances that were never asked. An instance that already carries the row was asked, and its answer stands.");
+                Assert.That(deltaSync.IsPreview, Is.False, "How the feature presents itself is ours and is refreshed on every upgrade.");
             }
         }
 

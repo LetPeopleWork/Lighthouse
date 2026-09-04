@@ -272,10 +272,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // Slice 03 adds no second gate: the portfolio half is covered by the opt-in the team half already
         // has. The defining claim is an absence.
         [Test]
-        public async Task A_portfolio_refresh_never_scans_unless_an_operator_asked_for_it()
+        public async Task A_portfolio_refresh_never_scans_once_the_operator_switched_it_off()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenNobodyAskedForTheCheaperRefresh();
+            GivenTheOperatorTurnedTheCheaperRefreshOff();
             GivenTheTrackerHoldsThreeFeatures();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 
@@ -291,10 +291,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         // in the code: the parent path reads the opt-in for itself, and the Feature half's scenario holds
         // no parents at all, so nothing there says whether the parent query is left alone too.
         [Test]
-        public async Task A_portfolio_refresh_nobody_asked_for_never_scans_the_parent_features_either()
+        public async Task A_portfolio_refresh_switched_off_never_scans_the_parent_features_either()
         {
             var portfolio = GivenAPortfolioWhoseTrackerCanBeScanned();
-            GivenNobodyAskedForTheCheaperRefresh();
+            GivenTheOperatorTurnedTheCheaperRefreshOff();
             GivenTheTrackerHoldsTwoFeaturesUnderOneParent();
             await GivenThePortfolioHasAlreadyBeenRefreshed(portfolio);
 

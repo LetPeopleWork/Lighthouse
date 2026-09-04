@@ -158,20 +158,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
 
-        /// <summary>
-        /// The positive control the gate scenario leans on. It asserts the option is OFFERED as well as
-        /// off: "no row" and "a row that is off" answer the same to a refresh, so a null-tolerant check
-        /// would let the seeder entry disappear without a single scenario turning red.
-        /// </summary>
-        private void GivenNobodyAskedForTheCheaperRefresh()
-        {
-            var option = TheCheaperRefreshOption();
-
-            Assert.That(option, Is.Not.Null,
-                "The cheaper refresh is not offered at all, so 'nobody asked for it' is not the default being tested - it is an absent option.");
-            Assert.That(option!.Enabled, Is.False,
-                "The default has to be off, or the scenario is not testing the default.");
-        }
+        private void GivenTheOperatorTurnedTheCheaperRefreshOff() => TheOperatorTurnsOffTheCheaperRefresh();
 
         /// <summary>
         /// A Feature that has been blocked in this portfolio since before the cycle under test. A spell is

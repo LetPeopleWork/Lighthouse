@@ -164,20 +164,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         private void GivenTheOperatorAskedForTheCheaperRefresh() => TheOperatorAsksForTheCheaperRefresh();
 
-        /// <summary>
-        /// The positive control three scenarios lean on. It asserts the option is OFFERED as well as off:
-        /// "no row" and "a row that is off" answer the same to a refresh, so a null-tolerant check would
-        /// let the seeder entry disappear without a single scenario turning red.
-        /// </summary>
-        private void GivenNobodyAskedForTheCheaperRefresh()
-        {
-            var option = TheCheaperRefreshOption();
-
-            Assert.That(option, Is.Not.Null,
-                "The cheaper refresh is not offered at all, so 'nobody asked for it' is not the default being tested - it is an absent option.");
-            Assert.That(option!.Enabled, Is.False,
-                "The default has to be off, or the scenario is not testing the default.");
-        }
+        private void GivenTheOperatorTurnedTheCheaperRefreshOff() => TheOperatorTurnsOffTheCheaperRefresh();
 
         private StoredIssue GivenHowTheUntouchedIssueLooksNow(SeededTeam team, string referenceId)
             => TheStoredIssue(team, referenceId);
@@ -378,19 +365,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         // --- Then: the opt-in gate ---
 
-        private void ThenTheCheaperRefreshIsOfferedButSwitchedOff()
+        private void ThenTheCheaperRefreshIsOfferedAndOn()
         {
             var option = TheCheaperRefreshOption();
 
             Assert.That(option, Is.Not.Null,
-                "The cheaper refresh has to be offered, or nobody can volunteer for it.");
+                "The cheaper refresh has to be offered, or nobody can switch it off again.");
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(option!.Enabled, Is.False,
-                    "It ships dark: only an instance that asked for it can be hurt by a scan that loses an id.");
-                Assert.That(option.IsPreview, Is.True,
-                    "It is preview scaffolding with a defined end, and the screen has to say so.");
+                Assert.That(option!.Enabled, Is.True,
+                    "An instance that was never asked gets the cheaper refresh.");
+                Assert.That(option.IsPreview, Is.False,
+                    "It is no longer preview scaffolding, and the screen must not still say it is.");
             }
+        }
+
+        private void ThenTheCheaperRefreshIsStillOff()
+        {
+            var option = TheCheaperRefreshOption();
+
+            Assert.That(option, Is.Not.Null,
+                "The cheaper refresh has to be offered, or 'still off' is an absent option, not a kept choice.");
+            Assert.That(option!.Enabled, Is.False,
+                "An upgrade must not switch on something the operator left off.");
         }
 
         // --- Reading storage and the log ---
