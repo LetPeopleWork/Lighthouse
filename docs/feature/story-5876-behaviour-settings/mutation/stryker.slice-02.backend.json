@@ -1,0 +1,36 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/OptionalFeaturesController.cs",
+      "**/Models/OptionalFeatures/OptionalFeatureKeys.cs",
+      "**/Services/Implementation/AppSettingService.cs",
+      "**/Services/Implementation/FeatureOrdering.cs",
+      "**/Services/Implementation/FeatureOrderingPolicyProvider.cs",
+      "**/Services/Implementation/FeatureRankSeeder.cs",
+      "**/Services/Implementation/OptionalFeatures/DefaultOptionalFeatureApplier.cs",
+      "**/Services/Implementation/OptionalFeatures/FeatureOrderingApplier.cs",
+      "**/Services/Implementation/OptionalFeatures/OptionalFeatureApplierRegistry.cs",
+      "**/Services/Implementation/Seeding/OptionalFeatureSeeder.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~BehaviourSettings|FullyQualifiedName~OptionalFeature|FullyQualifiedName~FeatureOrdering|FullyQualifiedName~FeatureRankSeeder|FullyQualifiedName~AppSettingService|FullyQualifiedName~ManualSorting|FullyQualifiedName~FasterUpdates|FullyQualifiedName~AppSettingsController",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
