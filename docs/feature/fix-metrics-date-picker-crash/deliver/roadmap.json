@@ -1,0 +1,198 @@
+{
+  "roadmap": {
+    "project_id": "fix-metrics-date-picker-crash",
+    "created_at": "2026-09-04T13:00:00Z",
+    "total_steps": 8
+  },
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Frontend/src/"
+    ],
+    "test_directories": [
+      "Lighthouse.Frontend/src/"
+    ],
+    "excluded_patterns": [
+      "node_modules/**",
+      "dist/**"
+    ]
+  },
+  "validation": {
+    "status": "pending"
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "P0 validated commit boundary",
+      "description": "Stop Invalid Date reaching state, restore the last valid date, and commit once per completed edit.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Add isValidDate predicate",
+          "criteria": [
+            "isValidDate returns true only for a Date whose getTime is not NaN",
+            "Rejects null, undefined, strings, numbers and an Invalid Date",
+            "Narrows the type to Date for TypeScript callers"
+          ],
+          "test_file": "Lighthouse.Frontend/src/utils/date/isValidDate.test.ts",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/date/isValidDate.ts"
+          ],
+          "implementation_notes": "New file beside localDate.ts. One named predicate so the same check cannot be written three subtly different ways. Invalid Date is truthy, which is why every ad-hoc falsy guard in this codebase fails against it."
+        },
+        {
+          "id": "01-02",
+          "name": "DateRangeSelector becomes validated commit boundary",
+          "criteria": [
+            "Typing 0 into the day or month section never calls the parent with an invalid date",
+            "After an invalid keystroke the committed date still equals the previous prop",
+            "Typing a full date then blurring calls the parent exactly once",
+            "A completed out-of-range date is rejected and the previous value stands",
+            "A pending valid draft is flushed when the component unmounts"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.test.tsx",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.tsx",
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.test.tsx"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "implementation_notes": "Draft state seeded from props, resynced by effect on prop change. onChange updates the draft only. Commit from slotProps.textField.onBlur and from the calendar onAccept, through a guard: isValidDate AND within [minDate,maxDate] AND different from the committed prop; on failure reset the draft to the prop. Flush a pending valid draft in a useEffect cleanup, because the selector is mounted inside a Popover that unmounts on close and blur-on-unmount is not guaranteed (risk R2). The new describe block must NOT mock @mui/x-date-pickers; pin the format with the existing _testLocalDateFormat prop and address sections by aria-label Day/Month/Year (their role is spinbutton, so getAllByRole textbox finds nothing). The two existing tests at lines 91-121 encode the removed behaviour and must be rewritten against the commit-on-blur contract, never preserved by changing the component back."
+        },
+        {
+          "id": "01-03",
+          "name": "Popover close still commits a valid entry",
+          "criteria": [
+            "Entering a valid date then closing the popover calls the parent handler once",
+            "Existing DashboardHeader tests stay green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "implementation_notes": "Mount the real DateRangeSelector rather than the module stub at line 5 for this one case. Guards risk R2: a silently lost edit is worse than the bug being fixed. No production change expected here; if one proves necessary it belongs in 01-02."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "P1 defence in depth",
+      "description": "Close the remaining sinks an invalid date can reach.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "01"
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Guard the BaseMetricsView date handlers",
+          "criteria": [
+            "An invalid date passed to either handler leaves state and URL params unchanged",
+            "The Bug 5566 local-midnight cases stay green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "implementation_notes": "Replace the falsy guard with an isValidDate guard at lines 1224-1234, in both handlers. This is the last line before state, so no future caller of these handlers can reintroduce the crash."
+        },
+        {
+          "id": "02-02",
+          "name": "Cache keys stop using toISOString",
+          "criteria": [
+            "Each key names the local calendar day rather than a UTC instant",
+            "The key is stable for a viewer whose local day differs from the UTC day",
+            "Existing cache-key tests stay green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedTrend.test.ts"
+          ],
+          "deps": [
+            "02-01"
+          ],
+          "implementation_notes": "All three build a day key from a UTC instant during render and therefore throw exactly as the range label does. Switch to formatLocalDate. blockedTrend.ts was NOT in the original analysis, which named only the two hooks: step 02-01's failing test reached it at line 67 through BaseMetricsView line 1854, proving it is a live sink on the same path. Keying a local calendar window by its UTC instant is the same latent mismatch already fixed everywhere else in this dashboard. The date-typed inputs elsewhere in the app (ThroughputQuickSetting, FlowMetricsConfigurationComponent, ForecastSettingsComponent) share the UTC day-shift class but are NOT crash paths, because a native date input emits either an empty string or a complete date; leave them alone."
+        },
+        {
+          "id": "02-03",
+          "name": "formatLocalDate refuses an invalid date",
+          "criteria": [
+            "formatLocalDate throws on an invalid date instead of returning NaN-NaN-NaN",
+            "The message names the offending input",
+            "Every existing caller stays green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/utils/date/localDate.test.ts",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/date/localDate.ts",
+            "Lighthouse.Frontend/src/utils/date/localDate.test.ts"
+          ],
+          "deps": [
+            "02-02"
+          ],
+          "implementation_notes": "MUST land after 01-02 and 02-01 or it moves the crash rather than removing it. Turns silent URL and query-string corruption into a loud, test-visible failure, matching the rigour parseLocalDate already applies at lines 29-34."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "P2 belt and braces, dead code",
+      "description": "A label is never worth an application crash, and dead code carrying a live bug is worse than dead code.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "depends_on": [
+        "02"
+      ],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "DashboardHeader label never throws",
+          "criteria": [
+            "An invalid date renders a placeholder instead of unmounting the app",
+            "A valid date renders unchanged as dd MMM yyyy"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx"
+          ],
+          "deps": [
+            "02-03"
+          ],
+          "implementation_notes": "formatDate at line 50 calls the date-fns format, which throws RangeError during render and unmounts the tree into AppErrorBoundary. Nothing invalid can reach it once phases 01 and 02 land, but a label is never worth a crash."
+        },
+        {
+          "id": "03-02",
+          "name": "Delete the unused DatePickerComponent",
+          "criteria": [
+            "Component and its test are gone",
+            "No import of it remains anywhere in src",
+            "Build and full frontend suite stay green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DatePicker/DatePickerComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/DatePicker/DatePickerComponent.test.tsx"
+          ],
+          "deps": [
+            "03-01"
+          ],
+          "implementation_notes": "Nothing imports it but its own test. Its guard rejects only a falsy value and a future date, and dayjs(invalid).isAfter(dayjs()) is false, so an invalid Dayjs passes straight through: the identical defect in the dayjs dialect. Confirm the grep across src before deleting."
+        }
+      ]
+    }
+  ]
+}

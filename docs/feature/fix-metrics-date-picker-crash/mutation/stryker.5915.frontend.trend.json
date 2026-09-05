@@ -1,0 +1,21 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.trend.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 1,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/pages/Common/MetricsView/blockedTrend.ts",
+    "src/pages/Common/MetricsView/usePbcOverTime.ts",
+    "src/pages/Common/MetricsView/usePercentilesOverTime.ts"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-5915-trend.json" },
+  "tempDirName": ".stryker-tmp-5915-trend"
+}
