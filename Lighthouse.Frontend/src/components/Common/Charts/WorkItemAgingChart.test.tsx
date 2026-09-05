@@ -1880,7 +1880,7 @@ describe.skip("Work Item Age Band beside the dot the coach clicked", () => {
 	});
 });
 
-describe.skip("the dialog's band and the chart's zone name the same thing", () => {
+describe("the dialog's band and the chart's zone name the same thing", () => {
 	const identityScale = (value: number) => value;
 	const axisMin = 1;
 	const axisMax = 30;

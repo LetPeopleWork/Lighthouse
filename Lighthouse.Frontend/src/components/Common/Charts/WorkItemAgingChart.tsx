@@ -34,7 +34,11 @@ import {
 	getMaxYAxisHeight,
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
-import { PACE_BAND_COLORS_LOW_TO_HIGH } from "../../../utils/charts/paceBands";
+import {
+	PACE_BAND_COLORS_LOW_TO_HIGH,
+	paceBandColorForRank,
+	resolvePaceBandLadders,
+} from "../../../utils/charts/paceBands";
 import {
 	type BaseGroupedItem,
 	getBubbleSize,
@@ -77,12 +81,11 @@ interface PaceBandGeometryConfig {
 	axisMax: number;
 }
 
-const paceBandColorForPosition = (position: number): string => {
-	const lastIndex = PACE_BAND_COLORS_LOW_TO_HIGH.length - 1;
-	const clamped = Math.min(position, lastIndex);
-	return PACE_BAND_COLORS_LOW_TO_HIGH[clamped];
-};
-
+/**
+ * Turns each rung of a state's ladder into a rectangle in the chart's coordinates. Which rungs a
+ * state has, and what colour each one is, are decided by the shared pace-band module rather than
+ * here, so a zone can never disagree with the band the dialog names for the same item.
+ */
 export const computePaceBandRects = ({
 	perStatePercentileValues,
 	doingStates,
@@ -91,36 +94,25 @@ export const computePaceBandRects = ({
 	axisMin,
 	axisMax,
 }: PaceBandGeometryConfig): IPaceBandRect[] => {
-	const percentilesByState: Record<string, IPercentileValue[]> = {};
-	for (const perState of perStatePercentileValues) {
-		if (perState.percentiles.length > 0) {
-			percentilesByState[perState.state.toLowerCase()] = perState.percentiles;
-		}
-	}
+	const ladders = resolvePaceBandLadders({
+		perStatePercentileValues,
+		doingStates,
+	});
 
-	let carriedPercentiles: IPercentileValue[] | undefined;
 	return doingStates.flatMap((stateName, stateIndex) => {
-		const ownPercentiles = percentilesByState[stateName.toLowerCase()];
-		if (ownPercentiles) {
-			carriedPercentiles = ownPercentiles;
-		}
-
-		const percentiles = carriedPercentiles;
-		if (!percentiles) {
+		const ladder = ladders.get(stateIndex);
+		if (!ladder) {
 			return [];
 		}
-
-		const sortedPercentiles = [...percentiles].sort(
-			(a, b) => a.value - b.value,
-		);
 
 		const leftX = xScale(stateIndex - STATE_BAND_HALF_WIDTH);
 		const rightX = xScale(stateIndex + STATE_BAND_HALF_WIDTH);
 		const bandWidth = Math.abs(rightX - leftX);
 		const x = Math.min(leftX, rightX);
 
+		const boundaryCount = ladder.percentiles.length;
 		const upperBoundaries = [
-			...sortedPercentiles.map((percentile) => ({
+			...ladder.percentiles.map((percentile) => ({
 				upperValue: percentile.value,
 				key: `${stateName}-${percentile.percentile}`,
 			})),
@@ -128,10 +120,7 @@ export const computePaceBandRects = ({
 		];
 
 		let lowerValue = axisMin;
-		const topPosition = upperBoundaries.length - 1;
-		const reddest =
-			PACE_BAND_COLORS_LOW_TO_HIGH[PACE_BAND_COLORS_LOW_TO_HIGH.length - 1];
-		return upperBoundaries.flatMap((boundary, position) => {
+		return upperBoundaries.flatMap((boundary, rank) => {
 			const lowerPixel = yScale(lowerValue);
 			const upperPixel = yScale(boundary.upperValue);
 			lowerValue = boundary.upperValue;
@@ -146,10 +135,7 @@ export const computePaceBandRects = ({
 					y: Math.min(lowerPixel, upperPixel),
 					width: bandWidth,
 					height,
-					fill:
-						position === topPosition
-							? reddest
-							: paceBandColorForPosition(position),
+					fill: paceBandColorForRank(rank, boundaryCount),
 				},
 			];
 		});
