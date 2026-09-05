@@ -617,9 +617,9 @@ External integrations introduced by this feature: **NONE**. The endpoint reads o
 | Backend test framework | NUnit 4.6 + Moq + EF InMemory + `Microsoft.AspNetCore.Mvc.Testing` | per Lighthouse.Backend.Tests.csproj | MIT / Apache 2.0 | Established (project_test_stack memory); no change |
 | Backend mutation testing | Stryker.NET | current | MIT | Established per-feature gate ≥80% kill rate |
 | Backend ArchUnit | ArchUnitNET | current per existing suite | Apache 2.0 | Existing suite extended with ADR-021 rules |
-| Frontend framework | React | 18 | MIT | Established |
+| Frontend framework | React | 18 — **stale, see the story-5884-work-item-age-bands section below for the installed versions** | MIT | Established |
 | Frontend language | TypeScript (strict) | 5.x | Apache 2.0 | Established |
-| Frontend UI library | Material UI (MUI) + MUI-X-charts | 5.x / current | MIT | Established — the SVG overlay (ADR-020) uses the existing `<ChartsContainer>` coordinate system |
+| Frontend UI library | Material UI (MUI) + MUI-X-charts | 5.x / current — **stale, superseded by the story-5884-work-item-age-bands section below** | MIT | Established — the SVG overlay (ADR-020) uses the existing `<ChartsContainer>` coordinate system |
 | Frontend test framework | Vitest + React Testing Library | current | MIT | Established |
 | Frontend mutation testing | Stryker (TS) | current | Apache 2.0 | Established per-feature gate ≥80% kill rate |
 | Frontend linter | Biome | current | MIT | Established CI gate per CLAUDE.md |
@@ -7025,3 +7025,248 @@ independent mechanisms. No CLI or MCP client calls either endpoint.
 A boolean store closes the door on a third ordering policy: the enum survives as the domain type, but
 a third value would need a new store rather than a new enum member. ADR-134's first objection,
 narrowed and accepted. No third policy is on the board.
+
+---
+
+## Application Architecture — story-5884-work-item-age-bands (ADO User Story #5884)
+
+Feature: story-5884-work-item-age-bands — the pace band the Work Item Aging chart paints as a coloured
+zone, read as a sortable, filterable, exportable value on a row in the work item dialog.
+Wave: DESIGN. Date: 2026-09-05. Architect: Morgan (Solution Architect), interaction mode = PROPOSE.
+
+**ADR**: [ADR-188](./adr-188-pace-band-ladder-shared-by-chart-geometry-and-dialog-value.md). Additive
+to [ADR-020](./adr-020-per-state-bands-chart-rendering-approach.md), which it does not supersede:
+ADR-020 decides where the band overlay *renders*, ADR-188 decides where the rule it renders *lives*.
+
+This section is **additive** to the prior `## Application Architecture` deltas. The architectural
+pattern (ports-and-adapters), the paradigm (object-oriented backend, functional-leaning React
+frontend) and every core invariant are unchanged. **The backend is untouched in full**: no endpoint,
+no DTO field, no service method, no schema, no migration, no cache key, no premium gate. The feature
+is one new pure frontend module, one optional field on three existing frontend types, and one derived
+column in a shared dialog.
+
+### The decision that carries the feature
+
+The per-state band rule already exists once, inside `computePaceBandRects`
+(`WorkItemAgingChart.tsx:92-163`), where classification and pixel geometry are computed in one pass.
+The dialog needs the classification without the geometry, from two call sites, one of which is outside
+the chart's render scope. That rule is split into a pure ladder resolver plus a geometry projector in
+a new React-free module, and the dialog's classifier reads the same ladder.
+
+The point of the split is that the three things most likely to drift stop being reproducible at all.
+Carry-forward of the preceding state's percentiles into a state with none of its own, the half-open
+low-side boundary that puts an age exactly equal to a percentile in the band beneath it, and the
+top-rank colour clamp that paints the highest band reddest even on a short ladder each exist in one
+function called by both surfaces. A dialog row cannot contradict the zone under the dot it came from
+without the chart contradicting itself.
+
+### Key invariants introduced
+
+- **One ladder, two consumers.** `resolvePaceBandLadders` is the only producer of per-state band
+  boundaries. `computePaceBandRects` projects its output through the chart scales;
+  `classifyPaceBand` selects a rank from it for one age. Neither consumer takes the raw per-state
+  percentile list any more.
+- **The agreement invariant is bounded, and the bound is stated.** The geometry also takes the axis
+  minimum and maximum, which the classifier does not have. What holds is: for an age inside the axis
+  domain, the classifier's rank is the rank *named by the key of* the rect containing that age — rank
+  comes off the key, never off the array index, because zero-height rects are dropped.
+  `getMaxYAxisHeight` puts every plotted age inside the domain by construction. Outside it the
+  classifier's answer is correct and the chart's clipping is the artefact.
+- **A classification cannot land on a collapsed rank.** Rects collapse only where two consecutive
+  boundaries are equal, and the classifier always returns the lower of the two — the one that survives.
+  The higher rank is unreachable by construction, so the tied-percentile case needs no special rule.
+- **The band label is derived from the boundary's percentile number**, not indexed out of a fixed
+  five-entry array. Rank 0 reads `Below {p₀}th`, a middle rank `{pᵢ₋₁}th-{pᵢ}th`, the top rank
+  `Above {pₗₐₛₜ}th`, an absent rank `No history`. On the shipped fixed 50/70/85/95 this is exactly the
+  six locked strings. The ladder length is already variable in shipped code and already tested, and a
+  positional array would mislabel a short ladder silently.
+- **Cell colour is the chart's fill.** `paceBandColorForRank` produces both, top-rank clamp included.
+  `No history` is deliberately unpainted — muted text, no tinted background — because an absence of
+  evidence must not read as a good band.
+- **The dialog learns nothing about percentiles.** It receives an opaque optional descriptor carrying a
+  header, a description, an ordered option list and a pure `bandFor(workItem)` closure.
+  `WidgetShell` forwards it verbatim, exactly as it already forwards `highlightColumn`.
+- **The band column and the service-level-expectation colouring do not meet.** `getColumnColor` stays
+  closed over `sle` and is not called by the band renderer; the two share only the presentation
+  treatment, not the decision. Both inputs are independent and optional and neither reads the other.
+- **The sort ordering and the exported string are one decision.** The comparator is expressed as a
+  lookup into the same ordered option list that supplies the filter's `valueOptions`, so a
+  `valueGetter` returning a rank instead of a label collapses the sort as well as corrupting the file.
+  The failure is loud rather than silent, which is the whole point.
+- **`WorkItemAgingChart` and every other dialog call site are behaviourally unchanged.**
+  `computePaceBandRects` keeps its name, signature and exported status; the palette is re-exported from
+  the chart; the new dialog prop is optional and absent by default across all sixteen render sites.
+- **The declared column position governs a fresh layout; a persisted one wins.** All sixteen render
+  sites share one `work-items-dialog` storage key, and a column missing from a persisted order is
+  appended. So a returning user gets the band last rather than beside the age column. Accepted: the
+  requirement is that a stale order must not *hide* it, Reset Layout restores the declared position,
+  and the alternatives — bumping the shared key, or teaching every grid to insert at the declared
+  index — both cost more than a column the user can drag.
+- **Export means the list the reader is looking at.** The toolbar's row set moves from the sorting
+  state's list of every row to the filtered-and-sorted one, so a column filter narrows the file. This
+  is a behaviour change for every grid in the product and a defect fix on its own terms; it lands as
+  its own commit and wants confirmation before it is written.
+
+### System Context and Capabilities
+
+Adds, for all tenants, no premium gate:
+
+1. A Work Item Age Band column in the aging widget's **View Data** dialog, on team and portfolio scope.
+2. The same column in the dialog opened by clicking a dot on the aging chart, where it is constant down
+   the rows by construction — one dot group is one state at one age.
+3. Rank-based sorting on that column, with the off-scale `No history` sentinel sorting first ascending
+   and therefore last in the worst-first direction triage uses.
+4. A dropdown filter on that column through the grid's built-in column menu, offering exactly the real
+   band labels.
+5. The band label in the CSV and clipboard export, which remains premium-gated exactly as today.
+
+The column is present regardless of the chart's pace-band overlay toggle, and is omitted entirely when
+no state has a non-empty percentile list — the same predicate the chart's geometry applies, so the
+column can never appear on a chart that has no zones for it to agree with.
+
+C4 delta: System Context unchanged; Container delta is the SPA bundle alone. Both diagrams are in
+`docs/feature/story-5884-work-item-age-bands/feature-delta.md` → **Wave: DESIGN / [REF] C4 delta**. No
+component diagram — one new pure module and one column do not warrant a third level.
+
+### Component Decomposition
+
+See `docs/feature/story-5884-work-item-age-bands/feature-delta.md` → **Wave: DESIGN / [REF] Component
+decomposition** for the full table.
+
+- **NEW (frontend)**: `utils/charts/paceBands.ts` — the palette, the ladder type, the resolver, the
+  classifier, the rank-to-colour function, the label derivation and the descriptor factory. Plus
+  Vitest coverage, mostly in existing test files.
+- **EXTEND (frontend)**: `WorkItemAgingChart` (geometry consumes the resolver; dot-click dialog gains
+  the descriptor), `WorkItemsDialog` (one optional prop, one derived column), `DataGrid/types.ts` (one
+  optional `valueOptions?: string[]`), `WidgetShell` (`ViewDataPayload` gains the field and forwards
+  it), `BaseMetricsView` (`ViewDataInputs` gains the percentiles and Doing states; `buildViewData`
+  builds the descriptor for the aging payload only).
+- **REUSE AS-IS**: the `ageInStatePercentiles` endpoints and `BaseMetricsService.ComputeAgeInStatePercentiles`
+  (ADR-019, ADR-053), `IPerStatePercentileValues`, `hexToRgba`, `getColumnColor` (present but not called
+  by the band), `DataGridBase`, `useDataGridExport`, `useTerminology`, `useShowPaceBands` (deliberately
+  not read).
+- **NO backend element of any kind.**
+
+### Driving Ports (HTTP)
+
+| Method | Route | Auth | Status |
+|---|---|---|---|
+| GET | `/api/teams/{teamId}/metrics/ageInStatePercentiles?startDate&endDate` | existing class-level guard | NO CHANGE, free tier, already fetched |
+| GET | `/api/portfolios/{portfolioId}/metrics/ageInStatePercentiles?startDate&endDate` | existing class-level guard | NO CHANGE, free tier, already fetched |
+
+No new route, no contract change, no client version gate. The real driving ports for this feature are
+UI surfaces: the widget header's View Data button, the chart's dot click, the band column header's
+built-in sort and filter entries, and the existing toolbar copy and download buttons.
+
+### Driven Ports
+
+None added and none changed. The feature reads data already present in component props and writes
+nothing outside the grid's own in-memory state. Column visibility, order and widths keep persisting
+under the existing `work-items-dialog` storage key, which all sixteen render sites of the dialog share.
+A column missing from a persisted order is appended by existing `DataGridBase` behaviour, which is what
+makes the stale-order requirement pass with no new code — and also what puts the band last rather than
+beside the age column for any user who has ever reordered or resized in any of those dialogs. That
+consequence is accepted rather than engineered around; see the invariants above.
+
+**External integrations introduced: none. No contract tests recommended** at the platform-architect
+handoff — there is nothing external to verify. The one third-party contract the feature leans on is
+MUI-X's column-type behaviour, and the design verifies rather than trusts it: the tests render the real
+grid, open the real filter and read the real exported rows, so a version bump that changes any of it
+reds instead of shipping.
+
+### Technology Stack
+
+No new technology, no new dependency, no new service. Recorded here because the versions in the
+`aging-pace-percentiles` technology table above have drifted and would otherwise be carried forward:
+the frontend is React ^19.2.8, `@mui/material` ^9.4.0, `@mui/x-data-grid` ^9.12.0 and `@mui/x-charts`
+9.0.1. The drift is load-bearing for this feature — the four-member `GridColDef` union that forces the
+`DataGridColumn` widening is a property of MUI-X 9, not of the MUI 5 recorded earlier.
+
+### Reuse Analysis
+
+See `docs/feature/story-5884-work-item-age-bands/feature-delta.md` → **Wave: DESIGN / [REF] Reuse
+Analysis** for the full table: 16 rows, 7 EXTEND, 8 REUSE AS-IS, 1 CREATE NEW. The single CREATE NEW is
+the shared pace-band module; the evidence for it is that no module holds a band classification rule
+today, that a search of `src` for `valueOptions` and `singleSelect` returns nothing, and that the only
+alternative host is the chart component — which would make a shared dialog import a chart, coupling
+that reverses the moment the chart changes.
+
+### Integration Patterns
+
+Frontend-internal only. One pure module consumed by two component subtrees; one opaque optional
+descriptor forwarded through an existing generic shell. No network call is added, no existing call
+changes, and no data crosses a process boundary that did not already cross it.
+
+### Quality Attribute Strategies
+
+**Correctness** (ISO 25010: Functional Suitability). The feature's whole risk is a dialog row
+contradicting the zone under the dot it came from. It is addressed structurally by the single ladder,
+and measured by a property test that walks a fixture table — carry-forward, leading empty state, tied
+percentiles, short ladder, case-mismatched state name — asserting for every state and age that the rank
+the classifier returns is the rank of the rect the geometry produces containing that age.
+
+**Maintainability** (Modularity, Modifiability, Testability). Configurable percentiles, still deferred
+since `aging-pace-percentiles`, would now land in one resolver and reach both surfaces; the derived
+label already survives a change in ladder length. The module is pure and React-free, so it is testable
+without a render.
+
+**Performance** (Performance Efficiency). Classification is one lookup and at most five comparisons per
+row, over the in-progress item set already held in memory. No fetch, no recomputation of anything the
+chart does not already compute. One honest caveat: the descriptor is built in an unmemoized
+`buildViewData` call, so it is a fresh object each render and the dialog's column memo will miss. That
+is the existing behaviour of `highlightColumn`, which is built the same way at the same place — not a
+regression, but not free either, and memoizing the descriptor at the call site is the cheap fix if the
+column rebuild ever shows up.
+
+**Security**. No new surface. No new route, no new data, no change to any guard.
+
+**Observability**. Nothing to instrument, and nothing is promised. All three of the feature's outcome
+KPIs are measured by a named person, an issue tracker or a moderated session, because the product has
+no phone-home telemetry — DEVOPS's realistic action here is to confirm that no instrumentation is being
+promised.
+
+### Deployment Architecture
+
+No infrastructure change, no EF migration, no chart change, no client version gate. The feature ships
+with the next frontend bundle and is backwards-compatible by construction: absent the new optional
+field, every dialog call site behaves exactly as today.
+
+### ADR References (this feature)
+
+- [ADR-188](./adr-188-pace-band-ladder-shared-by-chart-geometry-and-dialog-value.md): one pace-band
+  ladder, read by both the chart's geometry and the dialog's cell value
+
+### Architectural Enforcement (this feature)
+
+| Rule | Mechanism |
+|---|---|
+| For an age inside the axis domain, a dialog cell's band is the rank named by the key of the chart rect containing that age, across a shared fixture table | Vitest property test over `classifyPaceBand` and `computePaceBandRects` under identity scales, reading rank off the rect key rather than its array index |
+| A classification never lands on a rank the geometry collapsed | Vitest over a tied-percentile fixture asserting the returned rank is the surviving lower boundary |
+| This dialog passes no `exportTable`, so the band's value getter stays the thing the file reads | Vitest asserting the prop is absent — an `exportTable` added later would silently drop the label and the sort guard would not fire |
+| The band rule is never restated: chart, dialog and descriptor factory all reach it through the shared module | The module owns the ladder type; neither consumer accepts the raw per-state percentile list |
+| The shared module stays pure, React-free and free of component imports | Vitest importing it without a render; Biome import rules on its directory |
+| The dialog's band colour equals the chart's fill for the same rank, short-ladder top clamp included | Vitest asserting cell colour against `paceBandColorForRank` and against the rect fill on a three-boundary ladder |
+| `computePaceBandRects` behaves exactly as today for every existing case | The fourteen existing unit tests and six overlay DOM tests in `WorkItemAgingChart.test.tsx`, unmodified by the refactor commit |
+| The band column's exported value is its label, never its rank | Export assertion reading the produced rows, plus the sort comparator being defined over the label list so a rank-returning value getter also collapses the sort |
+| The band column renders independently of the chart's pace-band overlay toggle | Vitest asserting the column with the toggle off |
+| No backend file changes | Review gate; the feature's commit set touches `Lighthouse.Frontend/src` and `docs/` only |
+
+### Two shipped behaviours this DESIGN found
+
+`useDataGridExport` takes its rows from `getSortedRowIds()`, which in MUI-X 9 is the sorting state's
+list of **every** row, not the filtered one — so today every grid's export includes rows the reader has
+filtered out, contrary to the toolbar's own comment and to the name of the variable holding them.
+DESIGN proposed fixing it with a one-line selector swap. The maintainer declined on 2026-09-05, on the
+grounds that a toolbar shared by every grid should not have what it writes to disk changed as a side
+effect of adding a column to one dialog. The acceptance criterion was narrowed instead: export means
+the dialog's whole row set in sort order. The misleading comment and variable name stand, and fixing
+them is its own piece of work.
+
+`PersistedGridState.filterModel` is declared but never read or written, so the filter is not persisted,
+while sort model, column visibility, order and widths all are. Recommendation is to correct the
+upstream note rather than build the persistence: no requirement depends on a filter surviving a dialog
+close, and one that silently returns next session is the worse behaviour for a dialog opened once per
+review.
+
+Neither behaviour is introduced here. Both are in
+`docs/feature/story-5884-work-item-age-bands/design/upstream-changes.md`.

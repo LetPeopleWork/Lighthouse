@@ -28,6 +28,7 @@ goals:
   - Spot work that's been sitting too long before it shows up as a missed forecast
   - Have hard data (not gut feel) when starting "what's blocking this?" conversations
   - Reduce time spent context-switching between Jira/ADO history tabs and Lighthouse
+  - Hand the review — or the client — a concrete, ordered list of the items to talk about, rather than a screenshot of a chart  # story-5884-work-item-age-bands (2026-09-05, #5884): the consulting flow coach has to leave an artifact behind
 
 frustrations:
   - Source-system history tabs are slow to navigate one item at a time
@@ -38,6 +39,7 @@ mental_model:
   - Work flows through named states (In Progress → Review → Test → Done); each state has an implicit "normal" duration
   - "Stuck" means an item is in a state much longer than that team's normal — the threshold is team-specific
   - "Stale" is a useful warning signal, similar to "blocked", that demands a conversation
+  - Some coaches read a table faster than a chart; for them the pace band IS the sort key, and total age is the misleading one  # story-5884-work-item-age-bands (2026-09-05, #5884): evidenced by ValueFlow, which drops the aging chart's colouring and shows a table of the bands instead
 
 vocabulary:
   - "stuck" — item sitting in a state longer than expected (term flow coaches use; staleness is the Lighthouse-internal term that drives the UI)

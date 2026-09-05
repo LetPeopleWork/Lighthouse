@@ -9,6 +9,7 @@ Bootstrapped during the `time-in-state-and-staleness` slice-03 DISTILL run (2026
 |---|---|---|
 | HTTP API (backend) | `WebApplicationFactory<Program>` (`TestWebApplicationFactory<Program>` + `WithTestAuthentication`) | Real ASP.NET host; `client.AsTeamAdmin` / `AsPortfolioAdmin` / `AsViewer` for RBAC. Routes are `/api/latest/...`. |
 | Production React app (E2E) | Playwright against a locally-started app, Page Object Model only | No inline `page.locator` in specs. POMs in `tests/models/`. |
+| React component tree (frontend ATs) | Vitest + React Testing Library, colocated `*.test.tsx`, rendered through the real component under test with `TerminologyContext` provided | No shallow rendering, no component mocking. Where a test needs the View Data path it renders `WidgetShell` with a `viewData` payload rather than reaching into `WorkItemsDialog` directly, so the payload contract is exercised. Appended during `story-5884-work-item-age-bands` DISTILL (2026-09-05), recording the mechanism already carried by roughly 3,200 lines of precedent in `WorkItemAgingChart.test.tsx`, `WorkItemsDialog.test.tsx` and `WidgetShell.test.tsx`. The skip marker is `it.skip` / `describe.skip`; a skipped test is still type-checked, so a component prop a pending test relies on has to exist before the suite can be green. |
 
 ## Driven internal (real)
 | Port | Mechanism | Note |

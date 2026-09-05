@@ -1,2 +1,25 @@
-schema_version: "0.1"
-outcomes: []
+schema_version: '0.1'
+outcomes:
+- id: OUT-1
+  kind: specification
+  summary: Classifies an in-flight work item's age into the pace band the aging chart
+    paints behind its dot, so the chart's coloured zone and the work item dialog's
+    cell can never disagree.
+  feature: story-5884-work-item-age-bands
+  inputs:
+  - shape: an item's age in days, the state it is in, the per-state age percentiles
+      a team's finished work produced, and the workflow order of its Doing states
+  output:
+    shape: the pace band that age falls into for that state, named in the words the
+      chart's coloured zone stands for, or an explicit no-history sentinel, plus the
+      colour the chart paints that band
+  keywords:
+  - pace-band
+  - work-item-age
+  - percentile
+  - classification
+  - carry-forward
+  - aging-chart
+  artifact: Lighthouse.Frontend/src/utils/charts/paceBands.ts
+  related: []
+  superseded_by: null

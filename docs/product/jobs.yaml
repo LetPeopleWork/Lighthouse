@@ -422,6 +422,27 @@ jobs:
     title: Spot in-flight items that are pacing slower than the team historically does in that state
     persona: flow-coach
     feature_context: aging-pace-percentiles
+    refined_by:
+      # 2026-09-05 (#5884): same job, different medium. The chart-glance reading above is
+      # joined by a LIST-TRIAGE reading — the pace band as a sortable, filterable, exportable
+      # value on a row in the Work Item Age widget's work item dialogs. Evidence: ValueFlow,
+      # Thrivve Partners' own consulting tool, DROPS the chart colouring entirely and shows a
+      # table of the bands instead (Paul Brown demo to Benjamin, 2026-08-31) — a practitioner
+      # in this persona choosing text over colour for this exact judgement.
+      #
+      # Not a new job: the situation (a flow review), the motivation (compare an item against
+      # how long its current state historically takes) and the outcome (name the bottleneck
+      # step to the right person) are all unchanged. Only the medium changes, and two
+      # solutions to one job is a refinement, not a second job.
+      #
+      # The functional dimension DOES gain something the chart could never do: carrying the band
+      # itself out of Lighthouse, into a retro doc or a client report, as a column the reader can
+      # sort and cut further wherever the file lands. That is the consulting flow coach's need,
+      # and it is why the refinement is worth recording rather than folding silently into the
+      # existing feature_context. Note the export carries the whole in-flight list, not the
+      # on-screen filter's subset — that is how every grid in the product exports today
+      # (2026-09-05 decision, see the feature's design/upstream-changes.md).
+      - story-5884-work-item-age-bands
     job_story: >
       When I open my team's Work Item Aging chart during a flow review or a standup
       and I want to know which in-flight items are dragging,

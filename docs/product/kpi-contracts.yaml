@@ -1079,3 +1079,62 @@ outcomes:
     alerting:
       - condition: "any percentile differs between the two runs"
         action: "backend build fails (red) — the epic boundary has been crossed"
+
+  - id: OUT-5884-table-view-verdict
+    feature: story-5884-work-item-age-bands
+    title: The flipside table view is either wanted or closed, and someone says which
+    target: >
+      Paul Brown uses the Age Band column in at least 3 flow reviews within 4 weeks of release and
+      records an explicit yes/no verdict on ADO #5884 as to whether the separate flipside table view is
+      still wanted, by 2026-10-31
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      A comment on ADO #5884 by Paul Brown. The absence of a verdict by the date is itself the failure
+      signal — this feature was chosen over the table view on the bet that it would answer the question,
+      so an unanswered question means the bet did not pay.
+    measurement_window: 4 weeks post-release, closing 2026-10-31
+    rationale: >
+      There is no phone-home usage data on a self-hosted product (ADO #5015), so adoption of the sort,
+      the filter and the export cannot be counted. This verdict is the proxy: if band triage were not
+      being used in reviews, the table view would still be wanted.
+    alerting: []
+
+  - id: OUT-5884-chart-dialog-agreement
+    feature: story-5884-work-item-age-bands
+    title: A row never contradicts the coloured zone under the dot it came from
+    target: "0 reports of a dialog band contradicting the chart zone under the same dot, over the first 8 weeks after release"
+    measurement_scope: per_instance + vendor_demo_only
+    measured_by: >
+      GitHub issues and community Slack for the field signal, standing on a property test that walks a
+      fixture table of awkward histories — a state inheriting the one before it, a state with nothing to
+      inherit, two boundaries on the same day count, a two-boundary history, a state spelled differently
+      upstream — and asserts, for every age inside the axis, that the band the classifier names is the
+      band the rect containing that age stands for.
+    acceptance_scenarios:
+      - file: Lighthouse.Frontend/src/components/Common/Charts/WorkItemAgingChart.test.tsx
+        scenario: "the dialog's band and the chart's zone name the same thing > agrees for every age on ..."
+        tag: "@kpi-OUT-5884-chart-dialog-agreement"
+        gate_type: hard
+    measurement_window: 8 weeks post-release
+    rationale: >
+      The one thing in this feature that can be wrong in a way users notice. A dialog that disagrees
+      with the chart beside it is worse than no column at all, so the rule lives in one module read by
+      both surfaces and the agreement is asserted rather than promised.
+    alerting:
+      - condition: "the agreement property fails for any fixture or any age"
+        action: "frontend build fails (red) — the two surfaces have been allowed to diverge"
+
+  - id: OUT-5884-time-to-shortlist
+    feature: story-5884-work-item-age-bands
+    title: A shortlist comes out of the dialog in half a minute
+    target: "<= 30 seconds from opening the aging widget's View Data dialog to naming a shortlist of items to discuss"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      One moderated, timed session with Paul Brown, recorded on ADO #5884 before the release note
+      publishes. The current-path timing — read the chart, hover dots, note IDs by hand — is captured in
+      the same session BEFORE the new column is shown, rather than assumed.
+    measurement_window: single session, pre-release-note
+    rationale: >
+      The baseline is explicitly unmeasured. Declaring a number now would be inventing the thing the
+      session exists to find out, and a target with a fabricated baseline cannot be failed.
+    alerting: []

@@ -1,0 +1,212 @@
+schema_version: 1
+feature_id: story-5884-work-item-age-bands
+updated: 2026-09-05
+
+# Companion to docs/product/journeys/aging-pace-percentiles.yaml. That journey is the
+# CHART-GLANCE reading of the same job: coloured zones per state column, read by eye.
+# This journey is the LIST-TRIAGE reading: the same band as a value on a row, sortable,
+# filterable and exportable. Same job (job-flow-coach-spot-pace-outliers), different medium.
+#
+# It also REVIVES an intent the 2026-05-26 correction block on aging-pace-percentiles.yaml
+# recorded as cut ("the colored column background carries the signal; there is no per-dot
+# text"). The cut rejected a TOOLTIP and that rejection stands — ADO #5080 stays removed.
+# What returns is the per-item pace assessment in a surface a tooltip could never be:
+# ordered, filtered, and carried out of the tool. See the Changed Assumptions section of
+# docs/feature/story-5884-work-item-age-bands/feature-delta.md for the full back-propagation.
+# Evidence for the reversal: ValueFlow (Thrivve Partners' own consulting tool) drops the
+# chart colouring entirely and shows a table of the bands instead — demoed by Paul Brown
+# to Benjamin, 2026-08-31.
+
+journeys:
+
+  - name: triage-in-flight-work-by-age-band
+    goal: >
+      Flow coach opens the work item dialog on the Work Item Age widget, reads which pace
+      band each in-flight item falls into for the state it is currently in, orders the list
+      worst-band-first, cuts it down to the outlier bands, and carries that shortlist into
+      the flow review — or out of Lighthouse entirely, into a retro doc or a client report.
+    persona: flow-coach
+    job_id: job-flow-coach-spot-pace-outliers
+
+    emotional_arc:
+      start: Impatient — "I can see some dots are in the red zone, but writing down WHICH
+        items those are means hovering each one and copying IDs by hand."
+      middle: In control — "the band is just a value on the row now; I can sort by it, and
+        the order is nothing like the order by age, which is exactly the point."
+      end: Equipped — "I am walking into the review with a named shortlist, and the client
+        gets a list rather than a screenshot of a chart."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Which dialogs carry the band column?
+        decision: >
+          BOTH — the widget-header "View Data" dialog (every in-progress item) and the
+          dot-click dialog. The dot-click dialog keeps its exact current population: one dot
+          group is one state at one age, so its band column is constant down the rows. That
+          is correct by construction, not a rendering fault.
+      - id: D2
+        question: Does the band column depend on the chart's pace-band overlay toggle?
+        decision: >
+          No. The overlay (useShowPaceBands, default OFF, localStorage key
+          workItemAgingPaceBandsEnabled) governs the chart's coloured zones only. The column
+          renders whenever per-state percentiles exist, overlay on or off.
+      - id: D7
+        question: What are the rendered band values, and what shows when there is no history?
+        decision: >
+          Five values — "Below 50th", "50th-70th", "70th-85th", "85th-95th", "Above 95th" —
+          plus a sixth off-scale sentinel "No history". Plain hyphens so the strings survive
+          CSV and clipboard round-trips. "No history" is deliberately NOT blank and NOT green:
+          an absence of evidence must not read as a good band.
+      - id: D8
+        question: How is an item classified into a band?
+        decision: >
+          By cloning computePaceBandRects (WorkItemAgingChart.tsx:92-163) exactly — half-open
+          (lower, upper] boundaries so an age equal to a percentile lands in the band BELOW
+          it; carry-forward of the preceding state's percentiles into any state with no column
+          of its own; case-insensitive state matching. The rule is not chosen, it is dictated:
+          any divergence makes the dialog contradict the coloured zone under the very dot the
+          user clicked.
+      - id: D9
+        question: How does the band column sort?
+        decision: >
+          By rank, via sortComparator. A plain string sort orders "50th-70th" < "85th-95th" <
+          "Below 50th" alphabetically, which destroys the whole point that band ordering is
+          independent of total age. "No history" ranks off-scale below the lowest band, so it
+          sorts last in the descending (worst-first) direction triage actually uses.
+      - id: D10
+        question: The last Doing state's percentiles are a clone of the cycle-time
+          percentiles. Is that honest under an "Age Band" header?
+        decision: >
+          Yes, with no caveat marker. For the last Doing state, "cumulative age at last exit
+          from this state" IS end-to-end cycle time — an item leaving it is finished. The
+          clone is the correct value by definition, not an approximation. Explained once in
+          the widget info text and the docs page; never per row.
+      - id: D11
+        question: Literal "Age Band" header, or terminology-templated?
+        decision: >
+          Templated — "${workItemAgeTerm} Band", rendering "Work Item Age Band" on seeded
+          defaults. Work Item Age is renameable under Settings -> Terminology, and a literal
+          header would contradict the column beside it. "Age Band" stays the name used in
+          prose, docs and release notes.
+      - id: D12
+        question: Does the band go into the CSV / clipboard export?
+        decision: >
+          Yes, as the label string. useDataGridExport reads apiRef.getCellValue — the column
+          VALUE, not the rendered cell — so valueGetter must return the label and
+          sortComparator must supply the ordering. A rank-returning valueGetter would put a
+          bare "3" in the file. Export remains premium-gated exactly as today.
+      - id: D13
+        question: What renders when the team has no per-state percentiles at all?
+        decision: >
+          The column is omitted entirely. Predicate: at least one entry with a NON-EMPTY
+          percentiles array — the same predicate computePaceBandRects applies — so the column
+          can never appear on a chart that has no zones for it to agree with.
+      - id: D14
+        question: How is the filter surfaced, given "no bespoke filter UI"?
+        decision: >
+          The column is typed singleSelect with the six labels as valueOptions, so the
+          built-in per-column filter offers a dropdown of exactly the real values instead of a
+          free-text contains box. That is configuration of the built-in control, not a control
+          of our own. Note the only route to it is the column header ⋮ menu — the grid toolbar
+          has no filter button. Accepted discoverability cost, not a defect.
+
+    steps:
+
+      - id: step-open-the-in-flight-list
+        action: >
+          Flow coach navigates to /teams/{teamId} (or /portfolios/{portfolioId}) during a flow
+          review and clicks "View Data" in the Work Item Age widget header — or clicks a dot
+          on the chart itself.
+        expected_output: >
+          The work item dialog opens listing in-flight items with ID, name, type, state and
+          age AS TODAY, plus a new "Work Item Age Band" column reading one of the six values
+          per row. Present whether or not the chart's pace-band overlay is switched on.
+        emotional_state: Curious — "let's see what's in flight and how it's pacing"
+        shared_artifacts:
+          - perStatePercentileValues (existing, GET /api/{scope}/metrics/ageInStatePercentiles)
+          - doingStates (existing, team/portfolio settings)
+          - item.workItemAge (existing; the same number the chart plots as the dot's Y)
+
+      - id: step-read-the-band
+        action: >
+          Flow coach reads the band value on each row instead of eyeballing which coloured
+          zone each dot sits in.
+        expected_output: >
+          Each row shows its band, coloured from PACE_BAND_COLORS_LOW_TO_HIGH at the band's
+          rank — the same array the chart's zone uses, so cell and zone cannot drift apart.
+          "No history" renders muted and unpainted, visibly outside the scale.
+        emotional_state: Reassured — "this says in words what the chart said in colour, and
+          the two agree"
+        shared_artifacts:
+          - PACE_BAND_COLORS_LOW_TO_HIGH (WorkItemAgingChart.tsx:60 — single source for both
+            the chart zone fill and the dialog cell colour)
+
+      - id: step-order-by-band
+        action: Flow coach clicks the band column header to sort worst-band-first.
+        expected_output: >
+          Rows order Above 95th, 85th-95th, 70th-85th, 50th-70th, Below 50th, No history — by
+          rank, independent of each item's age. An item at 16 days in In Progress can outrank
+          one at 25 days in Testing, which is the entire point.
+        emotional_state: Focused — "the order by band is nothing like the order by age; that
+          is what I came for"
+        shared_artifacts:
+          - band rank (derived; not persisted, not sent to the server)
+
+      - id: step-cut-to-the-outliers
+        action: >
+          Flow coach opens the band column's header ⋮ menu, chooses Filter, and picks a band
+          from the dropdown.
+        expected_output: >
+          Only rows in that band remain. The dropdown offers exactly the six band labels — no
+          free text, no typo surface.
+        emotional_state: Decisive — "these four items are the agenda"
+        shared_artifacts:
+          - DataGrid filterModel (in-memory only for the life of the dialog; PersistedGridState
+            declares a filterModel field but nothing reads or writes it)
+
+      - id: step-carry-it-out
+        action: >
+          Flow coach clicks the export button to download the list as CSV, or the copy button
+          to paste it into a retro doc or client report.
+        expected_output: >
+          A file whose band column holds the label string ("Above 95th"), not a rank number.
+          It carries the dialog's whole row set in sort order: an active column filter narrows
+          what is on screen but not what is written, which is how export behaves in every grid
+          in the product. On an instance without a premium licence both buttons render disabled
+          with the premium upgrade tooltip, while sorting and filtering still work.
+        emotional_state: Equipped — "the client gets a list, not a screenshot"
+        shared_artifacts:
+          - exported CSV / clipboard HTML (built by useDataGridExport from the visible columns
+            and the sorted row order; not narrowed by an active filter)
+
+    error_paths_summary:
+      - State with no percentile column of its own, preceded by a state that has one: the
+        preceding state's percentiles are CARRIED FORWARD, matching the chart, which paints
+        that column with the preceding state's zones. The row and the dot agree.
+      - State that precedes every state having percentiles (e.g. a first Analysis state no
+        completed item has ever exited): nothing to carry forward, so the cell reads
+        "No history", muted and unpainted. The chart draws no zone under those dots either.
+      - Item whose state is absent from doingStates: same "No history" sentinel. Cannot occur
+        in the dot-click dialog, where grouping drops such items; possible in the View Data
+        dialog, which lists inProgressItems unfiltered.
+      - Team with no completed history at all, so no state has a non-empty percentile list:
+        the band column is not rendered and the dialog is otherwise unchanged. A column
+        reading "No history" on every row would be noise.
+      - Zero in-progress items: the dialog shows its existing "No items to display" message;
+        no columns render and the question does not arise. Unchanged.
+      - Age exactly equal to a percentile value: falls in the band BELOW that boundary,
+        because the chart's bands are half-open on the low side. The single most likely place
+        for the dialog and the chart to silently disagree.
+      - Column order persisted under "work-items-dialog" from before this feature shipped:
+        must not hide the new column. Affects every existing user, so it is an explicit
+        acceptance criterion rather than an implementation detail.
+
+    success_signal:
+      - Flow coach leaves the dialog with a named shortlist of items AND the state each one is
+        slow in, without having hovered a single dot.
+      - Paul Brown records an explicit verdict on ADO #5884 as to whether the separate
+        flipside table view is still wanted (OUT-5884-table-view-verdict). That verdict is the
+        point of the whole feature: it was chosen over the table view on the bet that it would
+        make the table view unnecessary.
+      - Zero reports of a dialog band contradicting the coloured zone under the same dot
+        (OUT-5884-chart-dialog-agreement).
