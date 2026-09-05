@@ -38,6 +38,54 @@ describe("computeBlockedTrend — previous-period trend", () => {
 
 		expect(trend?.direction).toBe("flat");
 	});
+
+	it("signs a rise with a plus and names the metric", () => {
+		const history = [snap("2026-06-07", 8), snap("2026-06-14", 9)];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.percentageDelta).toBe("+12.5%");
+		expect(trend?.metricLabel).toBe("Blocked Items");
+	});
+
+	it("signs a fall with a minus", () => {
+		const history = [snap("2026-06-07", 8), snap("2026-06-14", 7)];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.percentageDelta).toBe("-12.5%");
+	});
+
+	it("leaves an unchanged count unsigned rather than calling it a rise or a fall", () => {
+		const history = [snap("2026-06-07", 8), snap("2026-06-14", 8)];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.percentageDelta).toBe("0.0%");
+	});
+
+	it("compares against the newest snapshot even when the history arrives out of order", () => {
+		const history = [snap("2026-06-14", 9), snap("2026-06-07", 3)];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.currentValue).toBe("9");
+		expect(trend?.previousValue).toBe("3");
+	});
+
+	it("takes the last of two snapshots recorded on the same day", () => {
+		// A day recorded twice is a correction, not a second measurement, so the
+		// later entry is the one that stands.
+		const history = [
+			snap("2026-06-07", 3),
+			snap("2026-06-14", 4),
+			snap("2026-06-14", 9),
+		];
+
+		const trend = computeBlockedTrend(history, start, end);
+
+		expect(trend?.currentValue).toBe("9");
+	});
 });
 
 /**

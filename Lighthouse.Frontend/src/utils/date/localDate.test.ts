@@ -67,6 +67,35 @@ describe("parseLocalDate", () => {
 	it("returns null for a malformed day", () => {
 		expect(parseLocalDate("2026-07-99")).toBeNull();
 	});
+
+	it("returns null for a day the month does not have", () => {
+		// The Date constructor answers April 31st with May 1st rather than with an
+		// error, so a day nobody wrote would travel on as if somebody had.
+		expect(parseLocalDate("2026-04-31")).toBeNull();
+	});
+
+	it("returns null for a month past December", () => {
+		expect(parseLocalDate("2026-13-15")).toBeNull();
+	});
+
+	it("returns null for a year JavaScript would move into the 1900s", () => {
+		// Years below 100 are read as offsets from 1900, so this one comes back as
+		// July 1926 — a real date, a century away from the one that was written.
+		expect(parseLocalDate("0026-07-15")).toBeNull();
+	});
+
+	it("returns null for a month or a day that is not zero-padded", () => {
+		expect(parseLocalDate("2026-7-26")).toBeNull();
+		expect(parseLocalDate("2026-07-6")).toBeNull();
+	});
+
+	it("returns null when anything surrounds the day", () => {
+		// Each of these holds a readable day, and each turns into one the moment
+		// what surrounds it stops being looked at.
+		expect(parseLocalDate(" 2026-07-26")).toBeNull();
+		expect(parseLocalDate("2026-07-26 ")).toBeNull();
+		expect(parseLocalDate("12026-07-26")).toBeNull();
+	});
 });
 
 describe("round-trip", () => {

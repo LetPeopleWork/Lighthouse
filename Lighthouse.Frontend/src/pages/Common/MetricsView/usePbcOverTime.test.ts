@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import type { ProcessBehaviorSnapshot } from "../../../models/Metrics/ProcessBehaviorSnapshot";
@@ -14,6 +14,7 @@ import { cacheKey, usePbcOverTime } from "./usePbcOverTime";
  */
 
 const OWNER_ID = 42;
+const OTHER_OWNER_ID = 43;
 const RANGE_START = new Date(2026, 6, 1);
 const RANGE_END = new Date(2026, 6, 26);
 const OTHER_RANGE_START = new Date(2026, 4, 1);
@@ -189,5 +190,73 @@ describe("usePbcOverTime cache key", () => {
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
 		);
 		expect(getProcessBehaviorOverTime).toHaveBeenCalledTimes(1);
+	});
+});
+
+/**
+ * The selected range does not move when the dashboard switches from one team to
+ * the next, so both requests are filed under the same key. The first team's answer
+ * arriving last would plot its limits under the second team's name, and nothing on
+ * screen would admit the swap.
+ */
+describe("usePbcOverTime when a response outlives the request that asked for it", () => {
+	it("keeps the series of the owner now on screen when a superseded response lands late", async () => {
+		let answerFirstRequest: (series: ProcessBehaviorSnapshot[]) => void =
+			() => {
+				// Replaced while the promise is being constructed, below.
+			};
+		const firstRequest = new Promise<ProcessBehaviorSnapshot[]>((resolve) => {
+			answerFirstRequest = resolve;
+		});
+		const getProcessBehaviorOverTime = vi
+			.fn()
+			.mockReturnValueOnce(firstRequest)
+			.mockResolvedValueOnce(SECOND_RANGE_SERIES);
+
+		const { result, rerender } = renderHook(
+			({ ownerId }: { ownerId: number }) =>
+				usePbcOverTime(
+					ownerId,
+					createMetricsService(getProcessBehaviorOverTime),
+					RANGE_START,
+					RANGE_END,
+				),
+			{ initialProps: { ownerId: OWNER_ID } },
+		);
+
+		rerender({ ownerId: OTHER_OWNER_ID });
+		await waitFor(() =>
+			expect(result.current.series).toEqual(SECOND_RANGE_SERIES),
+		);
+
+		await act(async () => {
+			answerFirstRequest(FIRST_RANGE_SERIES);
+		});
+
+		expect(result.current.series).toEqual(SECOND_RANGE_SERIES);
+	});
+
+	it("surfaces a failed request and leaves the widget with nothing to plot", async () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {
+			// Kept out of the test output; that it was called is what is asserted.
+		});
+		const failure = new Error("the metrics endpoint is down");
+		const getProcessBehaviorOverTime = vi.fn().mockRejectedValue(failure);
+
+		const { result } = renderHook(() =>
+			usePbcOverTime(
+				OWNER_ID,
+				createMetricsService(getProcessBehaviorOverTime),
+				RANGE_START,
+				RANGE_END,
+			),
+		);
+
+		await waitFor(() =>
+			expect(consoleError).toHaveBeenCalledWith(expect.any(String), failure),
+		);
+		expect(result.current.series).toBeNull();
+
+		consoleError.mockRestore();
 	});
 });

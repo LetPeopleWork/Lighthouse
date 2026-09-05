@@ -14,6 +14,7 @@ import { cacheKey, usePercentilesOverTime } from "./usePercentilesOverTime";
  */
 
 const OWNER_ID = 42;
+const OTHER_OWNER_ID = 43;
 const RANGE_START = new Date(2026, 6, 1);
 const RANGE_END = new Date(2026, 6, 26);
 const OTHER_RANGE_START = new Date(2026, 4, 1);
@@ -207,5 +208,75 @@ describe("usePercentilesOverTime cache key", () => {
 			expect(result.current.series).toEqual(FIRST_RANGE_SERIES),
 		);
 		expect(getPercentilesOverTime).toHaveBeenCalledTimes(1);
+	});
+});
+
+/**
+ * The selected range does not move when the dashboard switches from one team to
+ * the next, so both requests are filed under the same key. The first team's answer
+ * arriving last would plot its percentiles under the second team's name, and
+ * nothing on screen would admit the swap.
+ */
+describe("usePercentilesOverTime when a response outlives the request that asked for it", () => {
+	it("keeps the series of the owner now on screen when a superseded response lands late", async () => {
+		let answerFirstRequest: (series: PercentilesOverTimeSnapshot[]) => void =
+			() => {
+				// Replaced while the promise is being constructed, below.
+			};
+		const firstRequest = new Promise<PercentilesOverTimeSnapshot[]>(
+			(resolve) => {
+				answerFirstRequest = resolve;
+			},
+		);
+		const getPercentilesOverTime = vi
+			.fn()
+			.mockReturnValueOnce(firstRequest)
+			.mockResolvedValueOnce(SECOND_RANGE_SERIES);
+
+		const { result, rerender } = renderHook(
+			({ ownerId }: { ownerId: number }) =>
+				usePercentilesOverTime(
+					ownerId,
+					createMetricsService(getPercentilesOverTime),
+					RANGE_START,
+					RANGE_END,
+				),
+			{ initialProps: { ownerId: OWNER_ID } },
+		);
+
+		rerender({ ownerId: OTHER_OWNER_ID });
+		await waitFor(() =>
+			expect(result.current.series).toEqual(SECOND_RANGE_SERIES),
+		);
+
+		await act(async () => {
+			answerFirstRequest(FIRST_RANGE_SERIES);
+		});
+
+		expect(result.current.series).toEqual(SECOND_RANGE_SERIES);
+	});
+
+	it("surfaces a failed request and leaves the widget with nothing to plot", async () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {
+			// Kept out of the test output; that it was called is what is asserted.
+		});
+		const failure = new Error("the metrics endpoint is down");
+		const getPercentilesOverTime = vi.fn().mockRejectedValue(failure);
+
+		const { result } = renderHook(() =>
+			usePercentilesOverTime(
+				OWNER_ID,
+				createMetricsService(getPercentilesOverTime),
+				RANGE_START,
+				RANGE_END,
+			),
+		);
+
+		await waitFor(() =>
+			expect(consoleError).toHaveBeenCalledWith(expect.any(String), failure),
+		);
+		expect(result.current.series).toBeNull();
+
+		consoleError.mockRestore();
 	});
 });
