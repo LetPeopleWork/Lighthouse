@@ -50,48 +50,41 @@ const startSection = (label: string) =>
 const endSection = (label: string) =>
 	screen.getAllByRole("spinbutton", { name: label })[1];
 
-const committedValue = (
-	mock: ReturnType<typeof vi.fn>,
-	fallback: Date,
-): Date => {
-	const calls = mock.mock.calls;
-	return calls.length > 0 ? calls[calls.length - 1][0] : fallback;
-};
-
 const clickOutside = async (user: ReturnType<typeof userEvent.setup>) => {
 	await user.click(screen.getByRole("button", { name: "outside" }));
 };
 
 describe("DateRangeSelector keyboard entry", () => {
-	it("never reports an unparseable date when a zero is typed into the day", async () => {
+	// A zero on its own spells "00", which the field hands out as an unparseable
+	// date. Nothing at all reaching the parent is the assertion: the shipped crash
+	// was that half-date arriving as if it were a choice the user had made, so a
+	// call list that merely happens to hold valid dates would not tell them apart.
+	it("reports nothing while a zero sits half-typed in the day", async () => {
 		const { user, onStartDateChange } = renderSelector();
 
 		await user.click(startSection("Day"));
 		await user.keyboard("0");
 
-		for (const [reported] of onStartDateChange.mock.calls) {
-			expect(Number.isNaN(reported?.getTime())).toBe(false);
-		}
+		expect(onStartDateChange).not.toHaveBeenCalled();
 	});
 
-	it("never reports an unparseable date when a zero is typed into the month", async () => {
+	it("reports nothing while a zero sits half-typed in the month", async () => {
 		const { user, onStartDateChange } = renderSelector();
 
 		await user.click(startSection("Month"));
 		await user.keyboard("0");
 
-		for (const [reported] of onStartDateChange.mock.calls) {
-			expect(Number.isNaN(reported?.getTime())).toBe(false);
-		}
+		expect(onStartDateChange).not.toHaveBeenCalled();
 	});
 
-	it("keeps the previously working date after an unusable keystroke", async () => {
+	it("keeps the previously working date when an edit finishes on an unusable keystroke", async () => {
 		const { user, onStartDateChange } = renderSelector();
 
 		await user.click(startSection("Day"));
 		await user.keyboard("0");
+		await clickOutside(user);
 
-		expect(committedValue(onStartDateChange, START_DATE)).toEqual(START_DATE);
+		expect(onStartDateChange).not.toHaveBeenCalled();
 	});
 
 	it("reports a typed start date once, when the edit is finished", async () => {
@@ -123,7 +116,7 @@ describe("DateRangeSelector keyboard entry", () => {
 		await user.keyboard("01092026");
 		await clickOutside(user);
 
-		expect(committedValue(onStartDateChange, START_DATE)).toEqual(START_DATE);
+		expect(onStartDateChange).not.toHaveBeenCalled();
 	});
 
 	it("rejects a finished date before the start of the range", async () => {
@@ -133,7 +126,7 @@ describe("DateRangeSelector keyboard entry", () => {
 		await user.keyboard("01012020");
 		await clickOutside(user);
 
-		expect(committedValue(onEndDateChange, END_DATE)).toEqual(END_DATE);
+		expect(onEndDateChange).not.toHaveBeenCalled();
 	});
 
 	it("reports a finished date when the popover closes instead of blurring", async () => {

@@ -526,7 +526,6 @@ vi.mock("./DashboardHeader", () => ({
 					onClick={() => {
 						// The real picker hands out local midnight dates — the exact
 						// instant a UTC encoding pushes across the date boundary.
-						// See the Bug #5566 regression tests.
 						onStartDateChange(new Date(2026, 5, 15, 0, 0, 0, 0));
 					}}
 				>
@@ -5693,11 +5692,11 @@ describe("BaseMetricsView component", () => {
 			);
 		};
 
-		const renderDashboard = () =>
+		const renderDashboard = (startDate = "2026-06-15") =>
 			render(
 				<MemoryRouter
 					initialEntries={[
-						"/teams/1/metrics?startDate=2026-06-15&endDate=2026-07-15",
+						`/teams/1/metrics?startDate=${startDate}&endDate=2026-07-15`,
 					]}
 				>
 					<BaseMetricsView
@@ -5739,8 +5738,13 @@ describe("BaseMetricsView component", () => {
 		);
 
 		it("still moves the window when the picker hands over a real date", async () => {
-			renderDashboard();
+			// Opened on a different day from the one the picker hands over, so the
+			// assertion cannot be satisfied by a click that did nothing at all.
+			renderDashboard("2026-05-01");
 			await screen.findByTestId("pick-fixed-start-date");
+			expect(screen.getByTestId("url-start-date").textContent).toBe(
+				"2026-05-01",
+			);
 
 			fireEvent.click(screen.getByTestId("pick-fixed-start-date"));
 
