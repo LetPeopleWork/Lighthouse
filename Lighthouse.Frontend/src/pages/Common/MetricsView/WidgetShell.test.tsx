@@ -339,7 +339,7 @@ describe("WidgetShell", () => {
 		).not.toBeInTheDocument();
 	});
 
-	describe.skip("carrying a band column through to the dialog", () => {
+	describe("carrying a band column through to the dialog", () => {
 		const ageBandColumn: AgeBandColumnDescriptor = {
 			headerName: "Work Item Age Band",
 			description:

@@ -381,6 +381,7 @@ const WidgetShell: React.FC<WidgetShellProps> = ({
 					onClose={() => setViewDataOpen(false)}
 					highlightColumn={viewData.highlightColumn}
 					timeInStateColumn={viewData.timeInStateColumn}
+					ageBandColumn={viewData.ageBandColumn}
 					sle={viewData.sle}
 				/>
 			)}

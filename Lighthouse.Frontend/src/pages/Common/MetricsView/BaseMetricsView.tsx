@@ -63,6 +63,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { buildAgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import { isValidDate } from "../../../utils/date/isValidDate";
 import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
@@ -518,6 +519,8 @@ type ViewDataInputs = {
 	readonly workItemLookup: Map<number, IWorkItem>;
 	readonly stalenessThresholdDays: number | undefined;
 	readonly blockedStalenessThresholdDays: number | undefined;
+	readonly perStatePercentileValues: IPerStatePercentileValues[];
+	readonly doingStates: string[];
 	readonly terms: {
 		workItems: string;
 		features: string;
@@ -542,6 +545,13 @@ function buildViewData(
 		description: "days",
 		valueGetter: (item: IWorkItem) => item.workItemAge,
 	};
+	const ageBandColumn = buildAgeBandColumnDescriptor({
+		perStatePercentileValues: inputs.perStatePercentileValues,
+		doingStates: inputs.doingStates,
+		headerName: `${terms.workItemAge} Band`,
+		description:
+			"Where this age sits against how long finished items took to leave this state",
+	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,
 		description: "days",
@@ -686,6 +696,7 @@ function buildViewData(
 			title: `${terms.workItems} in Progress`,
 			items: inputs.inProgressItems,
 			highlightColumn: ageHighlight,
+			ageBandColumn,
 		},
 		wipOverTime: {
 			title: `${inputs.title} In Progress`,
@@ -1834,6 +1845,8 @@ export const BaseMetricsView = <
 		workItemLookup,
 		stalenessThresholdDays,
 		blockedStalenessThresholdDays,
+		perStatePercentileValues,
+		doingStates,
 		terms: {
 			workItems: ragTerms.workItems,
 			features: ragTerms.features,

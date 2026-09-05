@@ -4285,7 +4285,7 @@ describe("BaseMetricsView component", () => {
 			);
 		};
 
-		it.skip("gives the aging widget a band column that names each item's pace against its own state", async () => {
+		it("gives the aging widget a band column that names each item's pace against its own state", async () => {
 			renderAgainstZenithLadders();
 
 			await waitFor(() => {
@@ -4299,7 +4299,7 @@ describe("BaseMetricsView component", () => {
 			).toHaveTextContent("Above 95th,70th-85th,No history");
 		});
 
-		it.skip("offers no band column to a widget whose items are not in flight", async () => {
+		it("offers no band column to a widget whose items are not in flight", async () => {
 			renderAgainstZenithLadders();
 
 			await waitFor(() => {
