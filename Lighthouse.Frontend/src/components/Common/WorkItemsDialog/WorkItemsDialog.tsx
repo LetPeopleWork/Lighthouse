@@ -17,6 +17,7 @@ import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
+import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import {
 	certainColor,
@@ -40,6 +41,12 @@ export interface WorkItemsDialogProps {
 	highlightColumn?: HighlightColumnDefinition;
 	timeInStateColumn?: TimeInStateColumnDefinition;
 	sle?: number;
+	/**
+	 * Given one, the dialog draws a column naming which pace band each row's age falls into. The
+	 * descriptor already knows how to answer that for an item, so the dialog never learns what a
+	 * percentile is; without one, nothing about the dialog changes.
+	 */
+	ageBandColumn?: AgeBandColumnDescriptor;
 }
 
 export interface HighlightColumnDefinition {

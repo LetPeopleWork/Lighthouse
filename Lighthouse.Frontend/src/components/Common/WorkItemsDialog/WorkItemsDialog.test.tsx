@@ -1,13 +1,29 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { Mock } from "vitest";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
+import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import {
 	certainColor,
 	confidentColor,
+	errorColor,
 	realisticColor,
 	riskyColor,
 } from "../../../utils/theme/colors";
 import WorkItemsDialog from "./WorkItemsDialog";
+
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: vi.fn(),
+}));
+
+beforeEach(() => {
+	(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+		licenseStatus: { canUsePremiumFeatures: false },
+		isLoading: false,
+	});
+});
 
 // Mock data for testing
 const mockWorkItems: IWorkItem[] = [
@@ -955,6 +971,373 @@ describe("WorkItemsDialog Component", () => {
 
 			// Check if the team is displayed for the feature that has it
 			expect(screen.getByText("Team Alpha")).toBeInTheDocument();
+		});
+	});
+});
+
+const bandsByReference: Record<string, string> = {
+	"ZEN-388": "Above 95th",
+	"ZEN-412": "85th-95th",
+	"ZEN-470": "70th-85th",
+	"ZEN-433": "Below 50th",
+	"ZEN-455": "No history",
+	"ZEN-401": "Above 95th",
+	"ZEN-604": "85th-95th",
+};
+
+const bandOptionLabels = [
+	"No history",
+	"Below 50th",
+	"50th-70th",
+	"70th-85th",
+	"85th-95th",
+	"Above 95th",
+];
+
+const bandColors: Record<string, string> = {
+	"Below 50th": certainColor,
+	"50th-70th": confidentColor,
+	"70th-85th": "#fbc02d",
+	"85th-95th": realisticColor,
+	"Above 95th": errorColor,
+};
+
+const ageBandColumn: AgeBandColumnDescriptor = {
+	headerName: "Work Item Age Band",
+	description:
+		"Where this age sits against how long finished items took to leave this state",
+	optionLabels: bandOptionLabels,
+	bandFor: (item) => bandsByReference[item.referenceId] ?? "No history",
+	colorForBand: (label) => bandColors[label],
+};
+
+const zenithInFlightItem = (
+	referenceId: string,
+	state: string,
+	workItemAge: number,
+): IWorkItem => ({
+	id: Number(referenceId.split("-")[1]),
+	referenceId,
+	name: `Zenith work ${referenceId}`,
+	url: `https://example.com/work/${referenceId}`,
+	type: "User Story",
+	state,
+	stateCategory: "Doing" as StateCategory,
+	startedDate: new Date("2026-08-01"),
+	closedDate: new Date("2026-08-01"),
+	cycleTime: 0,
+	workItemAge,
+	parentWorkItemReference: "",
+	isBlocked: false,
+});
+
+// Zenith on a Tuesday review. ZEN-401 is younger than ZEN-604 but sits in a faster state, which is
+// the pair that makes ordering by band differ from ordering by age.
+const zenithInFlightItems: IWorkItem[] = [
+	zenithInFlightItem("ZEN-388", "Review", 26),
+	zenithInFlightItem("ZEN-412", "Review", 19),
+	zenithInFlightItem("ZEN-470", "Review", 9),
+	zenithInFlightItem("ZEN-433", "Review", 8),
+	zenithInFlightItem("ZEN-455", "Analysis", 6),
+	zenithInFlightItem("ZEN-401", "In Progress", 16),
+	zenithInFlightItem("ZEN-604", "Testing", 25),
+];
+
+const agingDialogProps = {
+	title: "Work Items in Progress",
+	items: zenithInFlightItems,
+	open: true,
+	onClose: vi.fn(),
+	highlightColumn: {
+		title: "Work Item Age",
+		description: "days",
+		valueGetter: (item: IWorkItem) => item.workItemAge,
+	},
+};
+
+const bandCellTexts = () =>
+	screen
+		.getAllByTestId("ageBandColumnContent")
+		.map((cell) => cell.textContent?.trim());
+
+const bandColumnHeader = () =>
+	screen.getByRole("columnheader", { name: /Work Item Age Band/ });
+
+describe.skip("Work Item Age Band column", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	describe("reading the band on every in-flight row", () => {
+		test("heads the column with the configured term and shows a band on every row", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			expect(bandColumnHeader()).toBeInTheDocument();
+			expect(screen.getAllByTestId("ageBandColumnContent")).toHaveLength(
+				zenithInFlightItems.length,
+			);
+		});
+
+		test("names each item's band in the words a flow coach reads out", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			expect(bandCellTexts()).toEqual(
+				expect.arrayContaining([
+					"Above 95th",
+					"85th-95th",
+					"70th-85th",
+					"Below 50th",
+					"No history",
+				]),
+			);
+		});
+
+		test("paints a band the colour the chart paints the zone it names", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			const worst = screen
+				.getAllByTestId("ageBandColumnContent")
+				.find((cell) => cell.textContent?.includes("Above 95th"));
+
+			expect(worst).toHaveStyle(`color: ${errorColor}`);
+		});
+
+		test("leaves an item with nothing to compare against muted and unpainted", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			const unknown = screen
+				.getAllByTestId("ageBandColumnContent")
+				.find((cell) => cell.textContent?.includes("No history"));
+
+			for (const bandColor of Object.values(bandColors)) {
+				expect(unknown).not.toHaveStyle(`color: ${bandColor}`);
+			}
+			expect(unknown).toHaveStyle("background-color: transparent");
+		});
+
+		test("shows the band whether or not the chart's coloured zones are switched on", () => {
+			localStorage.setItem("workItemAgingPaceBandsEnabled", "false");
+
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			expect(bandColumnHeader()).toBeInTheDocument();
+			expect(screen.getAllByTestId("ageBandColumnContent").length).toBe(
+				zenithInFlightItems.length,
+			);
+		});
+
+		test("stays visible for a coach whose saved column arrangement predates it", () => {
+			localStorage.setItem(
+				"work-items-dialog",
+				JSON.stringify({
+					columnOrder: [
+						"referenceId",
+						"name",
+						"type",
+						"state",
+						"additionalColumn",
+					],
+				}),
+			);
+
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			expect(bandColumnHeader()).toBeInTheDocument();
+		});
+
+		test("sits beside the age it qualifies when nothing has been rearranged", () => {
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			const headerNames = screen
+				.getAllByRole("columnheader")
+				.map((header) => header.textContent?.trim() ?? "");
+			const ageIndex = headerNames.findIndex((name) =>
+				name.startsWith("Work Item Age ("),
+			);
+			const bandIndex = headerNames.findIndex((name) =>
+				name.startsWith("Work Item Age Band"),
+			);
+
+			expect(bandIndex).toBe(ageIndex + 1);
+		});
+
+		test("shows no band column at all for a team with no finished history", () => {
+			render(<WorkItemsDialog {...agingDialogProps} />);
+
+			expect(
+				screen.queryByRole("columnheader", { name: /Work Item Age Band/ }),
+			).not.toBeInTheDocument();
+			expect(screen.queryAllByTestId("ageBandColumnContent")).toHaveLength(0);
+		});
+
+		test("leaves every other column exactly as it is when no band is offered", () => {
+			render(<WorkItemsDialog {...agingDialogProps} />);
+
+			expect(screen.getByText("Name")).toBeInTheDocument();
+			expect(screen.getByText("Type")).toBeInTheDocument();
+			expect(screen.getByText("State")).toBeInTheDocument();
+			expect(screen.getByText(/Work Item Age/)).toBeInTheDocument();
+		});
+	});
+
+	describe("ordering, cutting and carrying out the list", () => {
+		test("orders worst band first however old the items themselves are", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			await user.click(bandColumnHeader());
+			await user.click(bandColumnHeader());
+
+			expect(bandCellTexts()).toEqual([
+				"Above 95th",
+				"Above 95th",
+				"85th-95th",
+				"85th-95th",
+				"70th-85th",
+				"Below 50th",
+				"No history",
+			]);
+		});
+
+		test("puts the sixteen-day item above the twenty-five-day one, which ordering by age never would", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			await user.click(bandColumnHeader());
+			await user.click(bandColumnHeader());
+
+			const contendingRows = screen
+				.getAllByRole("row")
+				.map((row) => row.textContent ?? "")
+				.filter((text) => text.includes("ZEN-401") || text.includes("ZEN-604"));
+
+			expect(contendingRows[0]).toContain("ZEN-401");
+			expect(contendingRows[1]).toContain("ZEN-604");
+		});
+
+		test("never lets an item with no history head a worst-first list", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			await user.click(bandColumnHeader());
+			expect(bandCellTexts()[0]).toBe("No history");
+
+			await user.click(bandColumnHeader());
+			const worstFirst = bandCellTexts();
+			expect(worstFirst[worstFirst.length - 1]).toBe("No history");
+		});
+
+		test("offers exactly the six band names to cut the list down by", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			await user.click(within(bandColumnHeader()).getByLabelText(/menu/i));
+			await user.click(screen.getByRole("menuitem", { name: /filter/i }));
+
+			await user.click(screen.getByRole("combobox", { name: /value/i }));
+
+			expect(
+				screen.getAllByRole("option").map((option) => option.textContent),
+			).toEqual(bandOptionLabels);
+		});
+
+		test("writes the band into the exported file in words, not as a number", async () => {
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+			const exported: Blob[] = [];
+			const createObjectURL = vi
+				.spyOn(URL, "createObjectURL")
+				.mockImplementation((blob) => {
+					exported.push(blob as Blob);
+					return "blob:zenith";
+				});
+			vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+			await user.click(screen.getByTestId("export-button"));
+
+			expect(createObjectURL).toHaveBeenCalled();
+			const file = await exported[0].text();
+			expect(file).toContain("Work Item Age Band");
+			expect(file).toContain("Above 95th");
+			expect(file).toContain("No history");
+		});
+
+		test("carries every in-flight item into the file, not only what is left on screen", async () => {
+			(useLicenseRestrictions as unknown as Mock).mockReturnValue({
+				licenseStatus: { canUsePremiumFeatures: true },
+				isLoading: false,
+			});
+			const exported: Blob[] = [];
+			vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+				exported.push(blob as Blob);
+				return "blob:zenith";
+			});
+			vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+			await user.click(screen.getByTestId("export-button"));
+
+			const file = await exported[0].text();
+			for (const item of zenithInFlightItems) {
+				expect(file).toContain(item.referenceId);
+			}
+		});
+
+		test("keeps copying and exporting behind a licence while ordering stays free", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			expect(screen.getByTestId("copy-button")).toBeDisabled();
+			expect(screen.getByTestId("export-button")).toBeDisabled();
+
+			await user.click(bandColumnHeader());
+
+			expect(bandCellTexts()[0]).toBe("No history");
+		});
+
+		test("does not take over which column the dialog opens sorted by", () => {
+			render(
+				<WorkItemsDialog
+					{...agingDialogProps}
+					ageBandColumn={ageBandColumn}
+					timeInStateColumn={{ now: new Date("2026-09-05") }}
+				/>,
+			);
+
+			expect(bandColumnHeader()).not.toHaveAttribute("aria-sort");
 		});
 	});
 });

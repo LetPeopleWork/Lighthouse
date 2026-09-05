@@ -21,6 +21,7 @@ import WorkItemsDialog, {
 	type TimeInStateColumnDefinition,
 } from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { IWorkItem } from "../../../models/WorkItem";
+import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { TrendPayload } from "./trendTypes";
 import type { WidgetStatusGuidance } from "./widgetInfoMetadata";
 
@@ -43,6 +44,8 @@ export type ViewDataPayload = {
 	readonly highlightColumn?: HighlightColumnDefinition;
 	readonly timeInStateColumn?: TimeInStateColumnDefinition;
 	readonly sle?: number;
+	/** Forwarded to the dialog untouched; the shell never looks inside it. */
+	readonly ageBandColumn?: AgeBandColumnDescriptor;
 };
 
 export interface WidgetShellProps {

@@ -28,6 +28,13 @@ export interface DataGridColumn<T extends GridValidRowModel = GridValidRowModel>
 		cellParams1: unknown,
 		cellParams2: unknown,
 	) => number;
+	/**
+	 * The choices a `singleSelect` column offers in its filter dropdown. Restated here because
+	 * GridColDef is a union and this key lives only on two of its members, so `Omit` over the union
+	 * drops it. Strings only: the object form would let a column's displayed label and its stored
+	 * value differ, and every consumer here reads one string for the cell, the filter and the export.
+	 */
+	valueOptions?: string[];
 }
 
 /**

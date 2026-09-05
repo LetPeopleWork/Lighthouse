@@ -1,15 +1,22 @@
 import * as MuiCharts from "@mui/x-charts";
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { testTheme } from "../../../tests/testTheme";
 import {
+	type AgeBandColumnDescriptor,
+	classifyPaceBand,
+	resolvePaceBandLadders,
+} from "../../../utils/charts/paceBands";
+import {
 	confidentColor,
 	errorColor,
 	getColorMapForKeys,
 } from "../../../utils/theme/colors";
+import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import WorkItemAgingChart, {
 	computePaceBandRects,
 	PACE_BAND_COLORS_LOW_TO_HIGH,
@@ -1689,4 +1696,339 @@ describe("WorkItemAgingChart component", () => {
 			).not.toBeInTheDocument();
 		});
 	});
+});
+
+describe.skip("Work Item Age Band beside the dot the coach clicked", () => {
+	const cycleTimePercentiles: IPercentileValue[] = [
+		{ percentile: 50, value: 3 },
+		{ percentile: 85, value: 7 },
+		{ percentile: 95, value: 12 },
+	];
+
+	const zenithPercentiles: IPerStatePercentileValues[] = [
+		{
+			state: "In Progress",
+			percentiles: [
+				{ percentile: 50, value: 4 },
+				{ percentile: 70, value: 7 },
+				{ percentile: 85, value: 11 },
+				{ percentile: 95, value: 15 },
+			],
+		},
+		{
+			state: "Review",
+			percentiles: [
+				{ percentile: 50, value: 8 },
+				{ percentile: 70, value: 12 },
+				{ percentile: 85, value: 17 },
+				{ percentile: 95, value: 24 },
+			],
+		},
+	];
+
+	const zenithDoingStates = ["Analysis", "In Progress", "Review"];
+
+	const zenithItems: IWorkItem[] = [
+		{
+			id: 412,
+			referenceId: "ZEN-412",
+			name: "Sign-off flow",
+			url: "https://example.com/work/412",
+			cycleTime: 0,
+			startedDate: new Date(2026, 7, 10),
+			closedDate: new Date(2026, 7, 10),
+			workItemAge: 19,
+			type: "Story",
+			state: "Review",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: false,
+		},
+		{
+			id: 419,
+			referenceId: "ZEN-419",
+			name: "Contract wording",
+			url: "https://example.com/work/419",
+			cycleTime: 0,
+			startedDate: new Date(2026, 7, 10),
+			closedDate: new Date(2026, 7, 10),
+			workItemAge: 19,
+			type: "Story",
+			state: "Review",
+			stateCategory: "Doing",
+			parentWorkItemReference: "",
+			isBlocked: false,
+		},
+	];
+
+	const lastDialogProps = () => {
+		const calls = (WorkItemsDialog as unknown as Mock).mock.calls;
+		return calls[calls.length - 1]?.[0] as {
+			items?: IWorkItem[];
+			ageBandColumn?: AgeBandColumnDescriptor;
+		};
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		localStorage.clear();
+	});
+
+	it("hands the dialog behind a dot the same band column the list dialog gets", () => {
+		render(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={zenithPercentiles}
+			/>,
+		);
+
+		expect(lastDialogProps().ageBandColumn?.headerName).toMatch(/ Band$/);
+	});
+
+	it("reads a dot's items against the state that dot belongs to", () => {
+		render(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={zenithPercentiles}
+			/>,
+		);
+
+		const bandFor = lastDialogProps().ageBandColumn?.bandFor;
+		expect(bandFor?.(zenithItems[0])).toBe("85th-95th");
+	});
+
+	it("gives every item behind one dot the same band, because one dot is one state at one age", () => {
+		render(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={zenithPercentiles}
+			/>,
+		);
+
+		const bandFor = lastDialogProps().ageBandColumn?.bandFor;
+		const bands = new Set(zenithItems.map((item) => bandFor?.(item)));
+
+		expect(bands).toEqual(new Set(["85th-95th"]));
+	});
+
+	it("says no history for a dot in a state nothing finished has ever left", () => {
+		const inAnalysis: IWorkItem = {
+			...zenithItems[0],
+			id: 455,
+			referenceId: "ZEN-455",
+			state: "Analysis",
+			workItemAge: 6,
+		};
+
+		render(
+			<WorkItemAgingChart
+				inProgressItems={[inAnalysis]}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={zenithPercentiles}
+			/>,
+		);
+
+		expect(lastDialogProps().ageBandColumn?.bandFor(inAnalysis)).toBe(
+			"No history",
+		);
+	});
+
+	it("offers no band column at all when the team has no finished history", () => {
+		render(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={[{ state: "Review", percentiles: [] }]}
+			/>,
+		);
+
+		expect(lastDialogProps().ageBandColumn).toBeUndefined();
+	});
+
+	it("plots exactly the same dots it plotted before the band existed", () => {
+		const { rerender } = render(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+			/>,
+		);
+		const withoutBands = screen
+			.getByTestId("mock-chart-container")
+			.getAttribute("data-series");
+
+		rerender(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={zenithPercentiles}
+			/>,
+		);
+
+		expect(
+			screen.getByTestId("mock-chart-container").getAttribute("data-series"),
+		).toBe(withoutBands);
+	});
+});
+
+describe.skip("the dialog's band and the chart's zone name the same thing", () => {
+	const identityScale = (value: number) => value;
+	const axisMin = 1;
+	const axisMax = 30;
+
+	// Every shape that has ever been awkward for the zone geometry: a state inheriting the one before
+	// it, a state with nothing to inherit, two boundaries landing on the same value, a history with
+	// only two boundaries in it, and a state whose name is spelled differently upstream.
+	const fixtures: {
+		name: string;
+		perStatePercentileValues: IPerStatePercentileValues[];
+		doingStates: string[];
+	}[] = [
+		{
+			name: "a state with a full history of its own",
+			perStatePercentileValues: [
+				{
+					state: "In Progress",
+					percentiles: [
+						{ percentile: 50, value: 3 },
+						{ percentile: 70, value: 5 },
+						{ percentile: 85, value: 8 },
+						{ percentile: 95, value: 12 },
+					],
+				},
+			],
+			doingStates: ["In Progress"],
+		},
+		{
+			name: "a later state inheriting the history of the one before it",
+			perStatePercentileValues: [
+				{
+					state: "In Progress",
+					percentiles: [
+						{ percentile: 50, value: 3 },
+						{ percentile: 70, value: 5 },
+						{ percentile: 85, value: 8 },
+						{ percentile: 95, value: 12 },
+					],
+				},
+			],
+			doingStates: ["In Progress", "Review", "Testing"],
+		},
+		{
+			name: "a first state with nothing at all to inherit",
+			perStatePercentileValues: [
+				{
+					state: "Review",
+					percentiles: [
+						{ percentile: 50, value: 6 },
+						{ percentile: 95, value: 20 },
+					],
+				},
+			],
+			doingStates: ["Analysis", "Review"],
+		},
+		{
+			name: "two boundaries that landed on the same day count",
+			perStatePercentileValues: [
+				{
+					state: "Review",
+					percentiles: [
+						{ percentile: 50, value: 4 },
+						{ percentile: 70, value: 9 },
+						{ percentile: 85, value: 9 },
+						{ percentile: 95, value: 18 },
+					],
+				},
+			],
+			doingStates: ["Review"],
+		},
+		{
+			name: "a history with only two boundaries in it",
+			perStatePercentileValues: [
+				{
+					state: "Review",
+					percentiles: [
+						{ percentile: 50, value: 4 },
+						{ percentile: 95, value: 18 },
+					],
+				},
+			],
+			doingStates: ["Review"],
+		},
+		{
+			name: "a state spelled differently upstream than in the workflow",
+			perStatePercentileValues: [
+				{
+					state: "in progress",
+					percentiles: [
+						{ percentile: 50, value: 3 },
+						{ percentile: 70, value: 5 },
+						{ percentile: 85, value: 8 },
+						{ percentile: 95, value: 12 },
+					],
+				},
+			],
+			doingStates: ["In Progress"],
+		},
+	];
+
+	it.each(fixtures)(
+		"agrees for every age on $name",
+		({ perStatePercentileValues, doingStates }) => {
+			const ladders = resolvePaceBandLadders({
+				perStatePercentileValues,
+				doingStates,
+			});
+			const rects = computePaceBandRects({
+				perStatePercentileValues,
+				doingStates,
+				xScale: identityScale,
+				yScale: identityScale,
+				axisMin,
+				axisMax,
+			});
+
+			for (const [stateIndex, stateName] of doingStates.entries()) {
+				const ladder = ladders.get(stateIndex);
+				const stateRects = rects.filter((rect) =>
+					rect.key.startsWith(`${stateName}-`),
+				);
+
+				if (!ladder) {
+					expect(stateRects).toHaveLength(0);
+					continue;
+				}
+
+				// The rank a rect stands for is read off its key, never off its place in the list:
+				// the geometry drops any band whose two boundaries coincided.
+				const rankOfKey = new Map<string, number>(
+					ladder.percentiles.map((percentile, rank) => [
+						`${stateName}-${percentile.percentile}`,
+						rank,
+					]),
+				);
+				rankOfKey.set(`${stateName}-top`, ladder.percentiles.length);
+
+				for (let age = axisMin; age <= axisMax; age++) {
+					const containing = stateRects.find(
+						(rect) => age >= rect.y && age <= rect.y + rect.height,
+					);
+
+					expect(containing).toBeDefined();
+					expect(classifyPaceBand(age, stateName, ladders)).toBe(
+						rankOfKey.get(containing?.key ?? ""),
+					);
+				}
+			}
+		},
+	);
 });

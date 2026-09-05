@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
+import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import type { TrendPayload } from "./trendTypes";
 import WidgetShell from "./WidgetShell";
 
@@ -11,17 +12,29 @@ vi.mock("../../../components/Common/WorkItemsDialog/WorkItemsDialog", () => ({
 		items,
 		open,
 		sle,
+		ageBandColumn,
 	}: {
 		title: string;
 		items: IWorkItem[];
 		open: boolean;
 		sle?: number;
+		ageBandColumn?: AgeBandColumnDescriptor;
 	}) =>
 		open ? (
 			<div data-testid="work-items-dialog">
 				<span data-testid="dialog-title">{title}</span>
 				<span data-testid="dialog-items-count">{items.length}</span>
 				{sle !== undefined && <span data-testid="dialog-sle">{sle}</span>}
+				{ageBandColumn && (
+					<span data-testid="dialog-age-band-header">
+						{ageBandColumn.headerName}
+					</span>
+				)}
+				{ageBandColumn && (
+					<span data-testid="dialog-age-band-for-first-item">
+						{items.length > 0 ? ageBandColumn.bandFor(items[0]) : ""}
+					</span>
+				)}
 			</div>
 		) : null,
 }));
@@ -324,6 +337,71 @@ describe("WidgetShell", () => {
 		expect(
 			screen.queryByTestId("widget-view-data-test-widget"),
 		).not.toBeInTheDocument();
+	});
+
+	describe.skip("carrying a band column through to the dialog", () => {
+		const ageBandColumn: AgeBandColumnDescriptor = {
+			headerName: "Work Item Age Band",
+			description:
+				"Where this age sits against how long finished items took to leave this state",
+			optionLabels: [
+				"No history",
+				"Below 50th",
+				"50th-70th",
+				"70th-85th",
+				"85th-95th",
+				"Above 95th",
+			],
+			bandFor: () => "Above 95th",
+			colorForBand: () => "#f44336",
+		};
+
+		it("passes the band column straight through to the dialog it opens", async () => {
+			const user = userEvent.setup();
+			render(
+				<WidgetShell
+					widgetKey="test-widget"
+					viewData={{
+						title: "Work Items in Progress",
+						items: [createWorkItem()],
+						ageBandColumn,
+					}}
+				>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+
+			await user.click(screen.getByTestId("widget-view-data-test-widget"));
+
+			expect(screen.getByTestId("dialog-age-band-header")).toHaveTextContent(
+				"Work Item Age Band",
+			);
+			expect(
+				screen.getByTestId("dialog-age-band-for-first-item"),
+			).toHaveTextContent("Above 95th");
+		});
+
+		it("opens the same dialog as before when no band column is offered", async () => {
+			const user = userEvent.setup();
+			render(
+				<WidgetShell
+					widgetKey="test-widget"
+					viewData={{
+						title: "Work Items in Progress",
+						items: [createWorkItem()],
+					}}
+				>
+					<div>Content</div>
+				</WidgetShell>,
+			);
+
+			await user.click(screen.getByTestId("widget-view-data-test-widget"));
+
+			expect(screen.getByTestId("work-items-dialog")).toBeInTheDocument();
+			expect(
+				screen.queryByTestId("dialog-age-band-header"),
+			).not.toBeInTheDocument();
+		});
 	});
 
 	it("opens WorkItemsDialog with correct payload when View Data button clicked", async () => {
