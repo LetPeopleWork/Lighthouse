@@ -34,7 +34,7 @@ export function cacheKey(
 export interface PbcOverTimeState {
 	metricType: ProcessBehaviorMetricType;
 	setMetricType: (metricType: ProcessBehaviorMetricType) => void;
-	/** null while the selected family is still loading; [] once loaded-but-empty (D6). */
+	/** null while the selected family is still loading; [] once loaded-but-empty. */
 	series: ProcessBehaviorSnapshot[] | null;
 }
 
@@ -42,8 +42,8 @@ export interface PbcOverTimeState {
  * Fetches the persisted process-behaviour limits series for the selected metric
  * family through the existing metrics-service abstraction (no bespoke fetch).
  * Each family is fetched at most once and cached, so toggling re-plots the
- * already-fetched series without a second recompute — the read endpoint is
- * read-only by contract (ADR-108).
+ * already-fetched series without a second recompute — the endpoint only hands
+ * back what was already persisted, so there is nothing to gain from asking twice.
  */
 export function usePbcOverTime(
 	ownerId: number,

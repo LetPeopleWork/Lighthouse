@@ -138,12 +138,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 				<DateRangeSelector
 					startDate={startDate}
 					endDate={endDate}
-					onStartDateChange={(d) => {
-						onStartDateChange(d);
-					}}
-					onEndDateChange={(d) => {
-						onEndDateChange(d);
-					}}
+					onStartDateChange={onStartDateChange}
+					onEndDateChange={onEndDateChange}
 				/>
 			</Popover>
 		</Box>

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DashboardHeaderProps } from "./DashboardHeader";
 
-// Mock DateRangeSelector used inside the popover
 vi.mock(
 	"../../../components/Common/DateRangeSelector/DateRangeSelector",
 	() => ({
@@ -50,7 +50,7 @@ vi.mock("./CategorySelector", () => ({
 	),
 }));
 
-// Helper to control matchMedia (used by MUI's useMediaQuery)
+// MUI reads matchMedia through useMediaQuery, and jsdom does not provide it.
 function setMatchMedia(matches: boolean) {
 	Object.defineProperty(globalThis, "matchMedia", {
 		writable: true,
@@ -66,6 +66,24 @@ function setMatchMedia(matches: boolean) {
 		}),
 	});
 }
+
+const renderHeader = async (overrides: Partial<DashboardHeaderProps> = {}) => {
+	const { default: DashboardHeader } = await import("./DashboardHeader");
+
+	render(
+		<DashboardHeader
+			startDate={new Date(2025, 6, 15)}
+			endDate={new Date(2025, 7, 14)}
+			onStartDateChange={vi.fn()}
+			onEndDateChange={vi.fn()}
+			selectedCategory="flow-overview"
+			onSelectCategory={vi.fn()}
+			showTips={true}
+			onToggleTips={vi.fn()}
+			{...overrides}
+		/>,
+	);
+};
 
 describe("DashboardHeader", () => {
 	beforeEach(() => {
@@ -84,26 +102,10 @@ describe("DashboardHeader", () => {
 	}, async () => {
 		setMatchMedia(false);
 
-		const onStart = vi.fn();
-		const onEnd = vi.fn();
+		const onStartDateChange = vi.fn();
+		const onEndDateChange = vi.fn();
 
-		const { default: DashboardHeader } = await import("./DashboardHeader");
-
-		const start = new Date(2025, 6, 15);
-		const end = new Date(2025, 7, 14);
-
-		render(
-			<DashboardHeader
-				startDate={start}
-				endDate={end}
-				onStartDateChange={onStart}
-				onEndDateChange={onEnd}
-				selectedCategory="flow-overview"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={vi.fn()}
-			/>,
-		);
+		await renderHeader({ onStartDateChange, onEndDateChange });
 
 		expect(screen.getByText("Metrics shown for:")).toBeInTheDocument();
 
@@ -118,35 +120,16 @@ describe("DashboardHeader", () => {
 		).toBeInTheDocument();
 
 		fireEvent.click(screen.getByTestId("change-start-date"));
-		expect(onStart).toHaveBeenCalled();
+		expect(onStartDateChange).toHaveBeenCalled();
 
 		fireEvent.click(screen.getByTestId("change-end-date"));
-		expect(onEnd).toHaveBeenCalled();
+		expect(onEndDateChange).toHaveBeenCalled();
 	});
 
 	it("hides the label on narrow screens but keeps the toggle", async () => {
 		setMatchMedia(true);
 
-		const onStart = vi.fn();
-		const onEnd = vi.fn();
-
-		const { default: DashboardHeader } = await import("./DashboardHeader");
-
-		const start = new Date(2025, 6, 15);
-		const end = new Date(2025, 7, 14);
-
-		render(
-			<DashboardHeader
-				startDate={start}
-				endDate={end}
-				onStartDateChange={onStart}
-				onEndDateChange={onEnd}
-				selectedCategory="flow-overview"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={vi.fn()}
-			/>,
-		);
+		await renderHeader();
 
 		expect(screen.queryByText("Metrics shown for:")).toBeNull();
 
@@ -158,26 +141,7 @@ describe("DashboardHeader", () => {
 	it("does not expose edit toggle or reset layout controls", async () => {
 		setMatchMedia(false);
 
-		const onStart = vi.fn();
-		const onEnd = vi.fn();
-
-		const { default: DashboardHeader } = await import("./DashboardHeader");
-
-		const start = new Date(2025, 6, 15);
-		const end = new Date(2025, 7, 14);
-
-		render(
-			<DashboardHeader
-				startDate={start}
-				endDate={end}
-				onStartDateChange={onStart}
-				onEndDateChange={onEnd}
-				selectedCategory="flow-overview"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={vi.fn()}
-			/>,
-		);
+		await renderHeader();
 
 		expect(
 			screen.queryByTestId("dashboard-edit-toggle"),
@@ -190,20 +154,7 @@ describe("DashboardHeader", () => {
 	it("renders category selector with the selected category", async () => {
 		setMatchMedia(false);
 
-		const { default: DashboardHeader } = await import("./DashboardHeader");
-
-		render(
-			<DashboardHeader
-				startDate={new Date(2025, 6, 15)}
-				endDate={new Date(2025, 7, 14)}
-				onStartDateChange={vi.fn()}
-				onEndDateChange={vi.fn()}
-				selectedCategory="predictability"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={vi.fn()}
-			/>,
-		);
+		await renderHeader({ selectedCategory: "predictability" });
 
 		expect(screen.getByTestId("category-selector")).toBeInTheDocument();
 		expect(screen.getByTestId("selected-category")).toHaveTextContent(
@@ -214,20 +165,7 @@ describe("DashboardHeader", () => {
 	it("renders a placeholder for an unusable date and leaves the other one formatted", async () => {
 		setMatchMedia(false);
 
-		const { default: DashboardHeader } = await import("./DashboardHeader");
-
-		render(
-			<DashboardHeader
-				startDate={new Date(Number.NaN)}
-				endDate={new Date(2025, 7, 14)}
-				onStartDateChange={vi.fn()}
-				onEndDateChange={vi.fn()}
-				selectedCategory="flow-overview"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={vi.fn()}
-			/>,
-		);
+		await renderHeader({ startDate: new Date(Number.NaN) });
 
 		expect(screen.getByText(/—\s*→\s*14 Aug 2025/)).toBeInTheDocument();
 	});
@@ -235,20 +173,10 @@ describe("DashboardHeader", () => {
 	it("keeps the header mounted when both dates are unusable", async () => {
 		setMatchMedia(false);
 
-		const { default: DashboardHeader } = await import("./DashboardHeader");
-
-		render(
-			<DashboardHeader
-				startDate={new Date(Number.NaN)}
-				endDate={new Date(Number.NaN)}
-				onStartDateChange={vi.fn()}
-				onEndDateChange={vi.fn()}
-				selectedCategory="flow-overview"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={vi.fn()}
-			/>,
-		);
+		await renderHeader({
+			startDate: new Date(Number.NaN),
+			endDate: new Date(Number.NaN),
+		});
 
 		expect(screen.getByText(/—\s*→\s*—/)).toBeInTheDocument();
 		expect(
@@ -259,25 +187,13 @@ describe("DashboardHeader", () => {
 	it("renders tips toggle and calls onToggleTips when clicked", async () => {
 		setMatchMedia(false);
 
-		const onToggle = vi.fn();
-		const { default: DashboardHeader } = await import("./DashboardHeader");
+		const onToggleTips = vi.fn();
 
-		render(
-			<DashboardHeader
-				startDate={new Date(2025, 6, 15)}
-				endDate={new Date(2025, 7, 14)}
-				onStartDateChange={vi.fn()}
-				onEndDateChange={vi.fn()}
-				selectedCategory="flow-overview"
-				onSelectCategory={vi.fn()}
-				showTips={true}
-				onToggleTips={onToggle}
-			/>,
-		);
+		await renderHeader({ onToggleTips });
 
 		const toggle = screen.getByTestId("metrics-tips-toggle");
 		expect(toggle).toBeInTheDocument();
 		fireEvent.click(toggle);
-		expect(onToggle).toHaveBeenCalled();
+		expect(onToggleTips).toHaveBeenCalled();
 	});
 });

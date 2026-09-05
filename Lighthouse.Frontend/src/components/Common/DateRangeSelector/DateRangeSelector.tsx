@@ -6,32 +6,17 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { isValidDate } from "../../../utils/date/isValidDate";
 
-// Helper function to get the local date format
-const getLocaleDateFormat = (): string => {
-	const date = new Date(2000, 0, 2); // January 2, 2000
-	const formatter = new Intl.DateTimeFormat();
-	const parts = formatter.formatToParts(date);
-	let format = "";
-
-	for (const part of parts) {
-		switch (part.type) {
-			case "day":
-				format += "dd";
-				break;
-			case "month":
-				format += "MM";
-				break;
-			case "year":
-				format += "yyyy";
-				break;
-			default:
-				format += part.value;
-				break;
-		}
-	}
-
-	return format;
+const DATE_FNS_TOKENS: Record<string, string> = {
+	day: "dd",
+	month: "MM",
+	year: "yyyy",
 };
+
+const getLocaleDateFormat = (): string =>
+	new Intl.DateTimeFormat()
+		.formatToParts(new Date(2000, 0, 2))
+		.map((part) => DATE_FNS_TOKENS[part.type] ?? part.value)
+		.join("");
 
 interface BoundedDatePickerProps {
 	label: string;
@@ -73,7 +58,7 @@ const BoundedDatePicker: React.FC<BoundedDatePickerProps> = ({
 		);
 	}, [value]);
 
-	const isUsable = (candidate: Date | null): candidate is Date => {
+	const isReportableChange = (candidate: Date | null): candidate is Date => {
 		if (!isValidDate(candidate)) {
 			return false;
 		}
@@ -90,7 +75,7 @@ const BoundedDatePicker: React.FC<BoundedDatePickerProps> = ({
 	};
 
 	const finishEdit = (candidate: Date | null) => {
-		if (isUsable(candidate)) {
+		if (isReportableChange(candidate)) {
 			onValueChange(candidate);
 		} else {
 			setDraft(value);
@@ -105,7 +90,7 @@ const BoundedDatePicker: React.FC<BoundedDatePickerProps> = ({
 
 	useEffect(() => {
 		flushOnUnmount.current = () => {
-			if (isUsable(draft)) {
+			if (isReportableChange(draft)) {
 				onValueChange(draft);
 			}
 		};

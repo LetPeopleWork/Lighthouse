@@ -33,7 +33,7 @@ export function cacheKey(
 export interface PercentilesOverTimeState {
 	selection: PercentilesSelection;
 	setSelection: (selection: PercentilesSelection) => void;
-	/** null while the selected tab is still loading; [] once loaded-but-empty (D6). */
+	/** null while the selected tab is still loading; [] once loaded-but-empty. */
 	series: PercentilesOverTimeSnapshot[] | null;
 }
 
@@ -43,7 +43,7 @@ export interface PercentilesOverTimeState {
  * selection — the horizon-less work-item-age tab as well as each cycle-time
  * horizon — is fetched at most once and cached, so switching Age↔30↔60↔90
  * re-plots from the already-fetched persisted series without a second recompute
- * request (US-01 AC5 — the endpoint is read-only).
+ * request: the endpoint only hands back what was already persisted.
  */
 export function usePercentilesOverTime(
 	ownerId: number,

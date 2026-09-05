@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DateRangeSelector from "./DateRangeSelector";
 
-// Mock the Material-UI theme hook
 vi.mock("@mui/material", async () => {
 	const actual = await vi.importActual("@mui/material");
 	return {
@@ -70,10 +69,22 @@ vi.mock("@mui/x-date-pickers", async () => {
 	};
 });
 
+const START = 0;
+const END = 1;
+
+const pickerFor = (field: number) =>
+	screen.getAllByTestId("mocked-date-picker")[field];
+
+const selectDateIn = (field: number) =>
+	screen.getAllByTestId("mocked-date-select")[field];
+
+const finishEditIn = (field: number) =>
+	screen.getAllByTestId("mocked-date-finish")[field];
+
 describe("DateRangeSelector component", () => {
 	const defaultProps = {
-		startDate: new Date(2023, 0, 1), // Jan 1, 2023
-		endDate: new Date(2023, 0, 31), // Jan 31, 2023
+		startDate: new Date(2023, 0, 1),
+		endDate: new Date(2023, 0, 31),
 		onStartDateChange: vi.fn(),
 		onEndDateChange: vi.fn(),
 		_testLocalDateFormat: "MM/dd/yyyy",
@@ -97,10 +108,10 @@ describe("DateRangeSelector component", () => {
 		const user = userEvent.setup();
 		render(<DateRangeSelector {...defaultProps} />);
 
-		await user.click(screen.getAllByTestId("mocked-date-select")[0]);
+		await user.click(selectDateIn(START));
 		expect(defaultProps.onStartDateChange).not.toHaveBeenCalled();
 
-		await user.click(screen.getAllByTestId("mocked-date-finish")[0]);
+		await user.click(finishEditIn(START));
 
 		expect(defaultProps.onStartDateChange).toHaveBeenCalledTimes(1);
 		expect(defaultProps.onStartDateChange).toHaveBeenCalledWith(
@@ -112,10 +123,10 @@ describe("DateRangeSelector component", () => {
 		const user = userEvent.setup();
 		render(<DateRangeSelector {...defaultProps} />);
 
-		await user.click(screen.getAllByTestId("mocked-date-select")[1]);
+		await user.click(selectDateIn(END));
 		expect(defaultProps.onEndDateChange).not.toHaveBeenCalled();
 
-		await user.click(screen.getAllByTestId("mocked-date-finish")[1]);
+		await user.click(finishEditIn(END));
 
 		expect(defaultProps.onEndDateChange).toHaveBeenCalledTimes(1);
 		expect(defaultProps.onEndDateChange).toHaveBeenCalledWith(
@@ -126,7 +137,7 @@ describe("DateRangeSelector component", () => {
 	it("stops the start date from being pushed past the end of the range", () => {
 		render(<DateRangeSelector {...defaultProps} />);
 
-		const startPicker = screen.getAllByTestId("mocked-date-picker")[0];
+		const startPicker = pickerFor(START);
 
 		expect(startPicker).toHaveAttribute(
 			"data-max-date",
@@ -138,7 +149,7 @@ describe("DateRangeSelector component", () => {
 	it("stops the end date from being pulled before the start of the range", () => {
 		render(<DateRangeSelector {...defaultProps} />);
 
-		const endPicker = screen.getAllByTestId("mocked-date-picker")[1];
+		const endPicker = pickerFor(END);
 
 		expect(endPicker).toHaveAttribute(
 			"data-min-date",
@@ -150,9 +161,7 @@ describe("DateRangeSelector component", () => {
 	it("applies the locale format to date pickers", () => {
 		render(<DateRangeSelector {...defaultProps} />);
 
-		const datePickers = screen.getAllByTestId("mocked-date-picker");
-
-		expect(datePickers[0]).toHaveAttribute("data-format", "MM/dd/yyyy");
-		expect(datePickers[1]).toHaveAttribute("data-format", "MM/dd/yyyy");
+		expect(pickerFor(START)).toHaveAttribute("data-format", "MM/dd/yyyy");
+		expect(pickerFor(END)).toHaveAttribute("data-format", "MM/dd/yyyy");
 	});
 });

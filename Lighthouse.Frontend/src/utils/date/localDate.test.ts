@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { formatLocalDate, parseLocalDate } from "./localDate";
 
 /**
- * Regression cover for Bug #5566: the metrics dashboards used to encode the
- * startDate/endDate URL params in UTC (`toISOString().split("T")[0]`) while the
- * request layer built them from local Y/M/D parts. On any non-zero UTC offset a
- * round-trip through the URL therefore lost exactly one calendar day.
+ * The metrics dashboards used to encode the startDate/endDate URL params in UTC
+ * (`toISOString().split("T")[0]`) while the request layer built them from local
+ * Y/M/D parts. On any non-zero UTC offset a round-trip through the URL therefore
+ * lost exactly one calendar day.
  *
  * The suite runs under a pinned non-UTC timezone (see the `test` script) — under
  * UTC these assertions are all trivially satisfied by the buggy encoding, which

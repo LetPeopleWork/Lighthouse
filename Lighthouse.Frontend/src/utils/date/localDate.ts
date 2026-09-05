@@ -5,7 +5,7 @@
  * A `YYYY-MM-DD` string names a calendar day, not an instant, so it has to be
  * written from and read back into the viewer's local day. `toISOString()` and
  * `new Date("YYYY-MM-DD")` both go through UTC, which shifts the day for every
- * viewer at a non-zero offset (Bug #5566).
+ * viewer at a non-zero offset.
  */
 
 import { isValidDate } from "./isValidDate";
