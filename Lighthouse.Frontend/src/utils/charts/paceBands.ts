@@ -47,10 +47,33 @@ export interface PaceBandLadderInputs {
  * Walks the workflow in order and gives every state a ladder, letting a state with no history of its
  * own inherit the one before it. States that come before any history at all get nothing.
  */
-export const resolvePaceBandLadders = (
-	_inputs: PaceBandLadderInputs,
-): PaceBandLadders => {
-	throw new Error("resolvePaceBandLadders has no implementation yet");
+export const resolvePaceBandLadders = ({
+	perStatePercentileValues,
+	doingStates,
+}: PaceBandLadderInputs): PaceBandLadders => {
+	const percentilesByState = new Map<string, readonly IPercentileValue[]>();
+	for (const perState of perStatePercentileValues) {
+		if (perState.percentiles.length > 0) {
+			percentilesByState.set(
+				perState.state.toLowerCase(),
+				[...perState.percentiles].sort((a, b) => a.value - b.value),
+			);
+		}
+	}
+
+	const ladders = new Map<number, PaceBandLadder>();
+	let carried: readonly IPercentileValue[] | undefined;
+
+	doingStates.forEach((state, position) => {
+		carried = percentilesByState.get(state.toLowerCase()) ?? carried;
+		if (!carried) {
+			return;
+		}
+
+		ladders.set(position, { state, percentiles: carried });
+	});
+
+	return ladders;
 };
 
 /**

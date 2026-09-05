@@ -75,7 +75,7 @@ const workItem = (overrides?: Partial<IWorkItem>): IWorkItem => ({
 	...overrides,
 });
 
-describe.skip("pace band ladder", () => {
+describe("pace band ladder", () => {
 	describe("resolving the ladders across the workflow", () => {
 		it("gives a state its own percentiles in value-ascending order", () => {
 			const ladders = zenithLadders();
@@ -164,7 +164,7 @@ describe.skip("pace band ladder", () => {
 		});
 	});
 
-	describe("placing an age against a state's ladder", () => {
+	describe.skip("placing an age against a state's ladder", () => {
 		// Review's history: 8 / 12 / 17 / 24 days. An age sitting exactly on one of those belongs to
 		// the band beneath it, which is the band the chart paints at that height.
 		it.each([
@@ -236,7 +236,7 @@ describe.skip("pace band ladder", () => {
 		});
 	});
 
-	describe("naming the band", () => {
+	describe.skip("naming the band", () => {
 		it.each([
 			[0, "Below 50th"],
 			[1, "50th-70th"],
@@ -291,7 +291,7 @@ describe.skip("pace band ladder", () => {
 		});
 	});
 
-	describe("colouring the band", () => {
+	describe.skip("colouring the band", () => {
 		it("runs from the calmest colour at the floor to the alarming one at the top", () => {
 			const fills = [0, 1, 2, 3, 4].map((rank) =>
 				paceBandColorForRank(rank, 4),
@@ -310,7 +310,7 @@ describe.skip("pace band ladder", () => {
 		});
 	});
 
-	describe("the column descriptor handed to the work item dialog", () => {
+	describe.skip("the column descriptor handed to the work item dialog", () => {
 		const descriptor = () =>
 			buildAgeBandColumnDescriptor({
 				perStatePercentileValues: zenithPercentiles,
