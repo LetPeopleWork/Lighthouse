@@ -164,7 +164,7 @@ describe("pace band ladder", () => {
 		});
 	});
 
-	describe.skip("placing an age against a state's ladder", () => {
+	describe("placing an age against a state's ladder", () => {
 		// Review's history: 8 / 12 / 17 / 24 days. An age sitting exactly on one of those belongs to
 		// the band beneath it, which is the band the chart paints at that height.
 		it.each([

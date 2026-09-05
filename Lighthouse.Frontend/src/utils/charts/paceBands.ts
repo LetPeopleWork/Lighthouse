@@ -82,11 +82,23 @@ export const resolvePaceBandLadders = ({
  * beneath it, which is the band the chart paints at that height.
  */
 export const classifyPaceBand = (
-	_ageInDays: number,
-	_stateName: string,
-	_ladders: PaceBandLadders,
+	ageInDays: number,
+	stateName: string,
+	ladders: PaceBandLadders,
 ): number | undefined => {
-	throw new Error("classifyPaceBand has no implementation yet");
+	const wantedState = stateName.toLowerCase();
+
+	for (const ladder of ladders.values()) {
+		if (ladder.state.toLowerCase() === wantedState) {
+			const rank = ladder.percentiles.findIndex(
+				(percentile) => ageInDays <= percentile.value,
+			);
+
+			return rank === -1 ? ladder.percentiles.length : rank;
+		}
+	}
+
+	return undefined;
 };
 
 /**
