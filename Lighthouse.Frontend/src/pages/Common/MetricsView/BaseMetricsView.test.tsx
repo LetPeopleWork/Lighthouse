@@ -28,6 +28,7 @@ import type { IFeatureSizeEstimationResponse } from "../../../models/Metrics/Fea
 import type { ProcessBehaviourChartData } from "../../../models/Metrics/ProcessBehaviourChartData";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../../../models/PercentileValue";
+import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
@@ -38,6 +39,7 @@ import {
 	createMockBlackoutPeriodService,
 } from "../../../tests/MockApiServiceProvider";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
+import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
 import { BaseMetricsView, buildWorkItemLookup } from "./BaseMetricsView";
 import { type CategoryKey, getWidgetsForCategory } from "./categoryMetadata";
 
@@ -606,6 +608,7 @@ vi.mock("./WidgetShell", () => ({
 				valueGetter: (item: IWorkItem) => number;
 			};
 			sle?: number;
+			ageBandColumn?: AgeBandColumnDescriptor;
 		};
 		trend?: { direction: string; metricLabel: string };
 	}) => (
@@ -662,6 +665,17 @@ vi.mock("./WidgetShell", () => ({
 					</span>
 					<span data-testid={`widget-view-data-sle-${widgetKey}`}>
 						{viewData.sle ?? "none"}
+					</span>
+					<span data-testid={`widget-view-data-age-band-header-${widgetKey}`}>
+						{viewData.ageBandColumn?.headerName ?? "none"}
+					</span>
+					<span data-testid={`widget-view-data-age-bands-${widgetKey}`}>
+						{(viewData.ageBandColumn
+							? viewData.items.map((item) =>
+									viewData.ageBandColumn?.bandFor(item),
+								)
+							: []
+						).join(",")}
 					</span>
 				</div>
 			)}
@@ -4195,6 +4209,112 @@ describe("BaseMetricsView component", () => {
 				).toHaveTextContent("2");
 			});
 		});
+
+		// The same team and the same ladders as `utils/charts/paceBands.test.ts`, so the
+		// answers here and the answers there are the same answers. Analysis has never been
+		// left by a finished item and has nothing ahead of it to borrow from, which is why an
+		// item sitting in it can only read "No history"; In Progress and Review disagree about
+		// what eight days means, which is why an age is only a band once the state is known.
+		const zenithDoingStates = ["Analysis", "In Progress", "Review", "Testing"];
+
+		const zenithPerStatePercentiles: IPerStatePercentileValues[] = [
+			{
+				state: "In Progress",
+				percentiles: [
+					{ percentile: 50, value: 4 },
+					{ percentile: 70, value: 7 },
+					{ percentile: 85, value: 11 },
+					{ percentile: 95, value: 15 },
+				],
+			},
+			{
+				state: "Review",
+				percentiles: [
+					{ percentile: 50, value: 8 },
+					{ percentile: 70, value: 12 },
+					{ percentile: 85, value: 17 },
+					{ percentile: 95, value: 24 },
+				],
+			},
+		];
+
+		const zenithItem = (overrides: Partial<IWorkItem>): IWorkItem => ({
+			id: 388,
+			name: "Sign-off flow",
+			state: "Review",
+			stateCategory: "Doing" as StateCategory,
+			type: "User Story",
+			referenceId: "ZEN-388",
+			url: "https://example.com/work/388",
+			startedDate: new Date("2026-08-10"),
+			closedDate: new Date("2026-08-10"),
+			cycleTime: 0,
+			workItemAge: 26,
+			parentWorkItemReference: "",
+			isBlocked: false,
+			...overrides,
+		});
+
+		const renderAgainstZenithLadders = () => {
+			// aging is in the flow-metrics category
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"flow-metrics",
+			);
+
+			const service = createMockMetricsService<IWorkItem>();
+			service.getInProgressItems = vi
+				.fn()
+				.mockResolvedValue([
+					zenithItem({ id: 388, state: "Review", workItemAge: 26 }),
+					zenithItem({ id: 389, state: "In Progress", workItemAge: 8 }),
+					zenithItem({ id: 390, state: "Analysis", workItemAge: 6 }),
+				]);
+			service.getAgeInStatePercentiles = vi
+				.fn()
+				.mockResolvedValue(zenithPerStatePercentiles);
+
+			renderWithRouter(
+				<BaseMetricsView
+					entity={mockProject}
+					metricsService={service}
+					title="Features"
+					defaultDateRange={30}
+					doingStates={zenithDoingStates}
+				/>,
+			);
+		};
+
+		it.skip("gives the aging widget a band column that names each item's pace against its own state", async () => {
+			renderAgainstZenithLadders();
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-age-band-header-aging"),
+				).toHaveTextContent("Work Item Age Band");
+			});
+
+			expect(
+				screen.getByTestId("widget-view-data-age-bands-aging"),
+			).toHaveTextContent("Above 95th,70th-85th,No history");
+		});
+
+		it.skip("offers no band column to a widget whose items are not in flight", async () => {
+			renderAgainstZenithLadders();
+
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-cycleScatter"),
+				).toBeInTheDocument();
+			});
+
+			expect(
+				screen.getByTestId("widget-view-data-age-band-header-cycleScatter"),
+			).toHaveTextContent("none");
+			expect(
+				screen.getByTestId("widget-view-data-age-bands-cycleScatter"),
+			).toBeEmptyDOMElement();
+		});
 	});
 
 	describe("Cumulative state time item picker orchestration", () => {
@@ -5847,7 +5967,9 @@ describe("BaseMetricsView component", () => {
 		const renderedWidgetViewData = () =>
 			testIdSuffixes("widget-view-data-").filter(
 				(suffix) =>
-					!/^(title|count|highlight-title|highlight-values|sle)-/.test(suffix),
+					!/^(title|count|highlight-title|highlight-values|sle|age-band-header|age-bands)-/.test(
+						suffix,
+					),
 			);
 
 		/** The factory hands the mock back behind its interface type, which hides the

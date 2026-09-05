@@ -1120,7 +1120,9 @@ describe("Work Item Age Band column", () => {
 			for (const bandColor of Object.values(bandColors)) {
 				expect(unknown).not.toHaveStyle(`color: ${bandColor}`);
 			}
-			expect(unknown).toHaveStyle("background-color: transparent");
+			// jsdom resolves the transparent keyword to this, and toHaveStyle normalises
+			// only the value it reads back, so the keyword itself would never match.
+			expect(unknown).toHaveStyle("background-color: rgba(0, 0, 0, 0)");
 		});
 
 		test("shows the band whether or not the chart's coloured zones are switched on", () => {
