@@ -67,6 +67,27 @@ const emptyHighlightColumnDefinition: HighlightColumnDefinition = {
 	valueGetter: () => 0,
 };
 
+/**
+ * The look shared by every cell whose value carries a judgement: the text takes the colour of that
+ * judgement and the cell a tenth-strength wash of it, so a reader spots the bad ones by scanning
+ * rather than reading. `plainColor` is what the text falls back to when there is no judgement to
+ * show — leave it out to inherit the surrounding text colour.
+ */
+const judgementCell = (color: string | undefined, plainColor?: string) => ({
+	sx: {
+		color: color ?? plainColor,
+		padding: "4px 8px",
+		borderRadius: 1,
+		display: "inline-flex",
+		alignItems: "center",
+	},
+	// The wash is inline because it differs per row: a style rule per distinct colour would grow the
+	// stylesheet with every value the grid shows.
+	style: {
+		backgroundColor: color ? hexToRgba(color, 0.1) : "transparent",
+	},
+});
+
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,
 	items,
@@ -75,6 +96,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	highlightColumn = emptyHighlightColumnDefinition,
 	timeInStateColumn,
 	sle,
+	ageBandColumn,
 }) => {
 	const { getTerm } = useTerminology();
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
@@ -198,23 +220,15 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				valueGetter: (_, row) => highlightColumn.valueGetter(row),
 				renderCell: ({ row }) => {
 					const value = highlightColumn.valueGetter(row);
+					const treatment = judgementCell(getColumnColor(value));
 					return (
 						<Typography
 							variant="body2"
 							data-testid="additionalColumnContent"
+							style={treatment.style}
 							sx={{
-								color: getColumnColor(value),
+								...treatment.sx,
 								fontWeight: sle ? "bold" : "normal",
-								padding: "4px 8px",
-								borderRadius: 1,
-								display: "inline-flex",
-								alignItems: "center",
-								backgroundColor: (theme) => {
-									const timeColor = getColumnColor(value);
-									return timeColor
-										? hexToRgba(timeColor ?? theme.palette.text.primary, 0.1)
-										: "transparent";
-								},
 							}}
 						>
 							{value}
@@ -238,6 +252,35 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 									/>
 								</Tooltip>
 							)}
+						</Typography>
+					);
+				},
+			});
+		}
+
+		if (ageBandColumn) {
+			baseColumns.push({
+				field: "ageBand",
+				headerName: ageBandColumn.headerName,
+				description: ageBandColumn.description,
+				width: 200,
+				// Informational for now: sorting the labels alphabetically would order them by spelling
+				// rather than by how worrying they are, which is worse than not offering the sort.
+				sortable: false,
+				filterable: false,
+				valueGetter: (_, row) => ageBandColumn.bandFor(row),
+				renderCell: ({ row }) => {
+					const label = ageBandColumn.bandFor(row);
+					return (
+						<Typography
+							variant="body2"
+							data-testid="ageBandColumnContent"
+							{...judgementCell(
+								ageBandColumn.colorForBand(label),
+								"text.secondary",
+							)}
+						>
+							{label}
 						</Typography>
 					);
 				},
@@ -278,6 +321,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		getColumnColor,
 		highlightColumn,
 		timeInStateColumn,
+		ageBandColumn,
 	]);
 
 	return (

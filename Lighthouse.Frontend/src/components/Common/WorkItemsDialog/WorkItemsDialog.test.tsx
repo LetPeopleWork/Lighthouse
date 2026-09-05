@@ -1063,7 +1063,7 @@ const bandCellTexts = () =>
 const bandColumnHeader = () =>
 	screen.getByRole("columnheader", { name: /Work Item Age Band/ });
 
-describe.skip("Work Item Age Band column", () => {
+describe("Work Item Age Band column", () => {
 	beforeEach(() => {
 		localStorage.clear();
 	});
@@ -1194,7 +1194,7 @@ describe.skip("Work Item Age Band column", () => {
 		});
 	});
 
-	describe("ordering, cutting and carrying out the list", () => {
+	describe.skip("ordering, cutting and carrying out the list", () => {
 		test("orders worst band first however old the items themselves are", async () => {
 			const user = userEvent.setup();
 			render(
