@@ -357,7 +357,7 @@ to DESIGN. Numbering starts at DDD-1 so it cannot collide with the locked D-numb
 | DDD-5 | **The sort comparator is defined as index-into-the-option-label list.** Because the option list is also the `valueOptions` and the `valueGetter` returns a label, a `valueGetter` that returned a rank makes every lookup miss and the sort collapse — the wrong split fails the sort test, not only the CSV. The binding is structural and needs no convention about where the two lines sit. | D9, D12 |
 | DDD-6 | **`DataGridColumn` gains one optional `valueOptions?: string[]`.** Without it D14 does not compile: `DataGridColumn extends Omit<GridColDef, "renderCell">`, `GridColDef` in the installed MUI-X 9 is a four-member union, and `Omit` over a union keeps only the keys common to all four — `valueOptions` lives on the single-select and multi-select members only. `type` is common, so `type: "singleSelect"` alone compiles and produces a select filter with no options in it. The narrow `string[]` is deliberate: it forbids the object-option form whose `getOptionValue` and `getOptionLabel` D14 relies on being identity. | D14 |
 | DDD-7 | **The band column never routes through `getColumnColor`.** That function is service-level-expectation-driven and belongs to the highlight column; the band is rank-driven. The two renderers share only a small helper that turns a colour into the tinted-text-plus-tenth-alpha-background treatment, so the shared thing is the presentation and not the decision. The band descriptor and `sle` are independent optional inputs and neither reads the other, so a dialog carrying both keeps two colour policies side by side. | D4, D15 |
-| DDD-8 | **The chart-dialog agreement is a property test over both outputs, not a promise in prose.** One fixture table — carry-forward, leading empty state, tied percentiles, short ladder, case-mismatched state — is walked for every state and every age inside the axis domain, asserting that the rank the classifier returns is the rank **named by the key of** the rect containing that age, under identity scales. Rank comes off the key and never off the array index, because the geometry drops zero-height rects. **A classification can never land on a collapsed rank**: a rect collapses only when two consecutive boundaries are equal, and the classifier selects the first boundary an age does not exceed, which is always the lower and surviving one. Under identity scales zero pixel height and equal values are the same condition, so the invariant is total in the test. Under real scales two distinct boundaries can round to one pixel, and the resulting band is invisible — the classifier's rank is then the honest answer about a zone nobody can see. Under DDD-1 the two consumers already share a ladder, so what this test guards is the second code path (rect selection, collapse, top clamp) and a future re-divergence. | D8 |
+| DDD-8 | **The chart-dialog agreement is a property test over both outputs, not a promise in prose.** One fixture table — carry-forward, leading empty state, tied percentiles, short ladder, case-mismatched state — is walked for every state and every age inside the axis domain, asserting that the rank the classifier returns is the rank **named by the key of** the rect containing that age, under identity scales. Rank comes off the key and never off the array index, because the geometry drops zero-height rects. **A classification can never land on a collapsed rank**: a rect collapses only when two consecutive boundaries are equal, and the classifier selects the first boundary an age does not exceed, which is always the lower and surviving one. Under identity scales zero pixel height and equal values are the same condition, so the invariant is total in the test. Under real scales two distinct boundaries can round to one pixel, and the resulting band is invisible — the classifier's rank is then the honest answer about a zone nobody can see. Under DDD-1 the two consumers already share a ladder, so what this test guards is the second code path (rect selection, collapse, top clamp) and a future re-divergence. **CORRECTED AT DELIVER (step 01-04, 2026-09-05): this property does NOT pin the routing, and the earlier wording claiming it did was wrong.** It compares the two functions' outputs; it never asserts the geometry calls the resolver. It passed unchanged against the pre-refactor chart, where both sides implemented the rule independently — so the step's RED gate was unattainable and was logged `FAIL` rather than manufactured by editing the test. What the property does guarantee is the thing that reaches a user: any behavioural divergence between the zone and the cell reds. A re-inlining that stays correct slips past it silently, which is a maintainability regression rather than a defect. If the call itself must be gated, that needs a different instrument — an import-level or lint rule — and it is not this test. | D8 |
 | DDD-9 | **The omission decision is the caller's**, not the dialog's. `buildViewData` and the dot-click call site build the descriptor only when at least one entry has a non-empty percentile list; otherwise they pass nothing. The dialog therefore never needs to know what a percentile is in order to decide whether to render the column, and the predicate stays the same one the geometry applies. | D13 |
 | DDD-10 | **Zero backend change, confirmed at DESIGN.** No endpoint, no DTO field, no schema, no migration, no cache key, no premium gate, no new runtime dependency. The whole feature is one new pure frontend module, one optional field on three existing types, and one derived column. | WS strategy Type A |
 | DDD-11 | **ADR-018 / ADR-021 / ADR-024 do not constrain this feature.** That chain governs backend C# per-state aggregation over `WorkItemStateTransition` and rejected a shared service because its two consumers have deliberately different item-membership rules that one signature would hide. Here the two consumers are required to be identical and a disagreement is the defect. Same principle, inverted premise, opposite verdict. Recorded explicitly so the next reader does not cite ADR-018 at a frontend classifier. | — |
@@ -391,8 +391,10 @@ cannot become the dialog's dependency and the palette stops being exported from 
 *behavioural* layer: the agreement property test of DDD-8. Under fork 1's recommendation, drift in the
 classification, the carry-forward and the colour is structurally impossible — there is one function
 each. What remains representable is a future edit that stops routing the geometry through the
-resolver, and that is exactly what the behavioural layer catches. This repo has no ArchUnit for
-TypeScript; the honest enforcement set is the shared type, the module boundary and the property test.
+resolver, and the behavioural layer catches that edit **only when it also changes behaviour** — see the
+correction recorded against DDD-8, established when the property passed against the pre-refactor
+chart. This repo has no ArchUnit for TypeScript; the honest enforcement set is the shared type, the
+module boundary and the property test, and none of the three enforces the call itself.
 
 **Fork 3 — transport of the percentiles into the View Data path.** Options: (T1) widen
 `ViewDataPayload` and the dialog with the raw `perStatePercentileValues` and `doingStates` and let the
@@ -668,10 +670,12 @@ either.
 | DT-8 | **The agreement property reads a rank off the rect's key and never off its index**, and iterates every whole day in the axis, for six fixtures. The containing rect is selected as the first whose closed span holds the age, which resolves a boundary to the band beneath — the same tie-break the classifier makes, and the reason a collapsed band can never be named. | DDD-8 |
 | DT-9 | **No Playwright work in this wave.** The single E2E walking skeleton — one scenario extending `Lighthouse.EndToEndTests/tests/specs/flow/AgingPacePercentiles.spec.ts` through its `tests/models/metrics/WorkItemAgingChart.ts` page object — is specified here and written in DELIVER slice 02. Three standing repo rules collide otherwise: never commit an unrun spec or page-object locator, never push red, and `pnpm build` runs `tsc -b`, so a spec calling a page-object method nobody has written yet fails the build for everyone. A skeleton is worth writing when it can be run, and it cannot be run until the column exists. | — |
 | DT-10 | **The export criterion is asserted on the produced file, not on the column definition.** The test spies on the object URL the toolbar mints, reads the blob back as text, and looks for `Work Item Age Band` and `Above 95th` in it. Reading the column's `valueGetter` instead would pass just as happily with a rank behind it, which is the defect D12 exists to prevent. A companion test asserts the file carries every in-flight item, pinning the narrowed criterion rather than the one DESIGN withdrew. | D12, DDD-13, DDD-15 |
+| DT-11 | **The place the descriptor is actually built is tested too, and it is tested by using it.** Three things have to be true before a coach sees a band through View Data: the dialog can draw the column, the shell forwards the descriptor, and something builds one and attaches it to the aging payload. The first two were covered and the third was not, so the whole suite could stay green while no descriptor was ever built and the column never appeared. The test renders the real view against a known ladder and asks the descriptor the question the product asks it — it reads the band back for three items whose states and ages are fixed, rather than checking that a field is present. A field-presence check would pass against a descriptor built from the wrong percentiles, or one that walked the workflow in the wrong order, which is exactly the wiring this test exists to pin. Its negative twin reads the same two observables off a widget that is not the aging widget, so the column cannot leak into another View Data dialog. | D17, DDD-4 |
+| DT-12 | **A computed-style expectation is written in the form jsdom resolves it to, never as the CSS keyword.** `toHaveStyle` normalises only the side it reads back: the received value comes from `getComputedStyle`, which jsdom has already resolved, while the expected string is assigned onto a scratch element's `style`, where a keyword survives verbatim. So `toHaveStyle("background-color: transparent")` compares `transparent` against jsdom's `rgba(0, 0, 0, 0)` and can never pass — not against any implementation, not even against a bare unstyled `<div>`. The band test that asserts the `No history` cell carries no wash now expects `rgba(0, 0, 0, 0)`, which is the same assertion spelled in the language the runtime answers in. The rest of this file was already safe: every colour assertion was written `rgb(…)` with a comment naming the colour it stands for, and a hex read off the theme is converted by the CSSOM on both sides. `transparent`, `currentColor` and `inherit` are the keywords with no such conversion, and the whole wave — the dialog, the chart, the widget shell, the metrics view and the pure module — carried exactly this one occurrence. | — |
 
 ## Wave: DISTILL / [REF] Scenario list
 
-77 tests, all landing `it.skip` / `describe.skip`. There is no `.feature` file (DT-1), so the identifier
+79 tests, all landing `it.skip` / `describe.skip`. There is no `.feature` file (DT-1), so the identifier
 of a scenario is its test name. Tags are notional — this repo has no tag runner; they are here for the
 traceability the wave contract asks for.
 
@@ -751,7 +755,14 @@ traceability the wave contract asks for.
 | passes the band column straight through to the dialog it opens | `@US-01` `@driving_port` |
 | opens the same dialog as before when no band column is offered | `@US-01` `@error` |
 
-**Error and edge share**: 32 of 77 carry `@error`, `@edge` or `@boundary` — 42%, above the 40% bar.
+### `src/pages/Common/MetricsView/BaseMetricsView.test.tsx` — 2 tests appended
+
+| Scenario | Tags |
+|---|---|
+| gives the aging widget a band column that names each item's pace against its own state | `@US-01` `@driving_port` |
+| offers no band column to a widget whose items are not in flight | `@US-01` `@error` |
+
+**Error and edge share**: 33 of 79 carry `@error`, `@edge` or `@boundary` — 42%, above the 40% bar.
 
 **Story coverage**: all seventeen ACs across US-01, US-02 and US-03 have at least one scenario. The
 one AC not asserted mechanically is US-03's free-tier clause about the premium upgrade tooltip text,
@@ -800,6 +811,7 @@ DELIVER's first commit collapses the chart's duplicate palette into a re-export 
 | The band column in the dialog: presence, wording, colour, placement, omission, stale layout, sort, filter, export | `src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx`, appended | 960 lines of precedent covering this exact component through a real render. The column belongs where the grid is built, so the tests belong where the grid is tested. |
 | The dot-click dialog's descriptor, and the chart-dialog agreement | `src/components/Common/Charts/WorkItemAgingChart.test.tsx`, appended | 1,692 lines, of which the pace-band block already holds sixteen direct tests of `computePaceBandRects` plus eight over the overlay DOM. The agreement property needs both sides in one file, and this is the file that already has the geometry. |
 | The payload widening | `src/pages/Common/MetricsView/WidgetShell.test.tsx`, appended | 535 lines. The shell's only job here is to forward something it does not understand, and this is where forwarding is tested. |
+| Building the descriptor and attaching it to the aging payload | `src/pages/Common/MetricsView/BaseMetricsView.test.tsx`, appended | 6,382 lines, with a `View Data Shell Wiring` block that already reads each widget's payload off the shell it was handed to. The payload is built here, so the test that the payload carries a working descriptor belongs here. |
 
 No new test directory, no parallel file, no helper module. Every test sits in the file a reader would
 already open to ask the question it answers.
@@ -808,7 +820,7 @@ already open to ask the question it answers.
 
 | Driving port from DESIGN | Exercised by |
 |---|---|
-| Work Item Age widget header → **View Data** button → `WorkItemsDialog` (`WidgetShell.tsx:374`) | `WidgetShell.test.tsx` "passes the band column straight through to the dialog it opens" — clicks the real button and reads what the dialog received. Its negative twin pins the no-descriptor case. |
+| Work Item Age widget header → **View Data** button → `WorkItemsDialog` (`WidgetShell.tsx:374`) | `WidgetShell.test.tsx` "passes the band column straight through to the dialog it opens" — clicks the real button and reads what the dialog received. Its negative twin pins the no-descriptor case. Upstream of it, `BaseMetricsView.test.tsx` renders the real view and reads the band back off the aging payload for three items whose states and ages are fixed, so the descriptor is proven to be built and correct before anything forwards it. |
 | Work Item Age chart → dot click → `WorkItemsDialog` (`WorkItemAgingChart.tsx:750`) | `WorkItemAgingChart.test.tsx`, six tests over the descriptor the chart hands that dialog. Asserted on props rather than through a click, for the reason in DT-7. |
 | Band column header ⋮ menu → built-in Sort | `WorkItemsDialog.test.tsx`, three ordering tests that click the real header and read the resulting row order. |
 | Band column header ⋮ menu → built-in Filter | `WorkItemsDialog.test.tsx` "offers exactly the six band names to cut the list down by" — opens the real menu, chooses Filter, reads the real dropdown. |
@@ -852,7 +864,7 @@ Two places where DESIGN narrowed DISCUSS rather than contradicting it, checked a
 
 ## Wave: DISTILL / [REF] AT completeness audit
 
-The canonical 15-item checklist, computed mechanically over the 77 tests.
+The canonical 15-item checklist, computed mechanically over the 79 tests.
 
 | Item | Verdict | Evidence |
 |---|---|---|
@@ -879,7 +891,7 @@ than skipped. Zero `SPECIFICATION_AMBIGUITY` findings, so nothing routes back up
 
 Every new test was un-skipped, run, classified, and re-skipped. The suite was left green.
 
-**71 failed, 6 passed, of 77.** Every one of the 71 is `MISSING_FUNCTIONALITY` — the assertion is
+**72 failed, 7 passed, of 79.** Every one of the 72 is `MISSING_FUNCTIONALITY` — the assertion is
 reached and the behaviour is absent. There is not one `IMPORT_ERROR`, `FIXTURE_BROKEN` or
 `SETUP_FAILURE` in the set, which is what DT-4 and DT-5 exist to guarantee.
 
@@ -891,13 +903,15 @@ reached and the behaviour is absent. There is not one `IMPORT_ERROR`, `FIXTURE_B
 | `WorkItemAgingChart.test.tsx`, dot-click descriptor | 4 of 12 | `MISSING_FUNCTIONALITY` | `.toMatch() expects to receive a string, but got undefined` and `expected undefined to be '85th-95th'` — the chart hands the dialog no descriptor |
 | `WorkItemAgingChart.test.tsx`, agreement property | 6 of 12 | `MISSING_FUNCTIONALITY` | `Error: resolvePaceBandLadders has no implementation yet` on every fixture |
 | `WidgetShell.test.tsx`, forwarding | 1 of 2 | `MISSING_FUNCTIONALITY` | `Unable to find an element by: [data-testid="dialog-age-band-header"]` — the shell does not forward the field it now declares |
+| `BaseMetricsView.test.tsx`, building the descriptor | 1 of 2 | `MISSING_FUNCTIONALITY` | `Expected element to have text content: Work Item Age Band / Received: none` — the view renders, the aging payload reaches the shell, and it carries no descriptor for anything to read |
 
-**The six that pass are negative controls, green by design, and each is named so no one mistakes it for
-coverage of the feature**: two assert the dialog is entirely unchanged when no descriptor is given; one
-asserts the exported file carries every in-flight item, which is the pre-existing behaviour DDD-13
+**The seven that pass are negative controls, green by design, and each is named so no one mistakes it
+for coverage of the feature**: two assert the dialog is entirely unchanged when no descriptor is given;
+one asserts the exported file carries every in-flight item, which is the pre-existing behaviour DDD-13
 deliberately left standing; two assert the chart offers no descriptor and plots identical dots today;
-one asserts the shell opens the dialog it always did. They will still be green after DELIVER, which is
-the point of them.
+one asserts the shell opens the dialog it always did; one asserts a widget that is not the aging widget
+carries no band column, so the column cannot leak into another View Data dialog. They will still be
+green after DELIVER, which is the point of them.
 
 **One vacuous pass was found and fixed during this gate.** "gives every item behind one dot the same
 band" originally asserted the set of bands had one member, which was satisfied by a set containing only
@@ -911,7 +925,7 @@ Run on 2026-09-05 in `Lighthouse.Frontend`.
 
 | Gate | Result |
 |---|---|
-| `pnpm test` | **349 test files passed, 1 skipped; 4,709 tests passed, 77 skipped.** The 77 skipped are exactly the tests written in this wave; the file counted as skipped is `paceBands.test.ts`, whose only describe is skipped. Green. |
+| `pnpm test` | **349 test files passed, 1 skipped; 4,709 tests passed, 79 skipped.** The 79 skipped are exactly the tests written in this wave; the file counted as skipped is `paceBands.test.ts`, whose only describe is skipped. Green. |
 | `pnpm build` | **Zero errors, zero warnings.** `tsc -b` clean, `vite build` clean. |
 | `pnpm biome check ./src` | **769 files checked, no fixes applied.** Clean. The `prebuild` hook's `--write` pass reported one file fixed on its first run and nothing thereafter. |
 | `DataGridColumn` widening | **Compiles**, including a live `singleSelect` column with `valueOptions` through `DataGridBase`'s checked initializer. See DT-3. |
@@ -961,7 +975,8 @@ The file's shape took all three without strain.
 3. Re-point `computePaceBandRects` at the resolver; un-skip the agreement property.
 4. Render the column in `WorkItemsDialog` with `data-testid="ageBandColumnContent"` (DT-6), sorting and
    filtering off for this slice per the slice brief; un-skip the nine reading tests.
-5. Widen `ViewDataInputs` / `buildViewData` and forward through `WidgetShell`; un-skip its two tests.
+5. Widen `ViewDataInputs`, build the descriptor in `buildViewData`, and forward it through
+   `WidgetShell`; un-skip the two `BaseMetricsView` tests and the two `WidgetShell` ones.
 6. Build the descriptor at the dot-click call site; un-skip the six chart tests.
 
 **Slice 02** — the list can be ordered, cut and carried out.

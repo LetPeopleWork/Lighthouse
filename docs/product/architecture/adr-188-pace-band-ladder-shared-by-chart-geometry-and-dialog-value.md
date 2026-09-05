@@ -126,8 +126,16 @@ and it is kept: past five bands the palette stops carrying the distinction and t
 table of percentile sets — carry-forward, leading empty state, tied percentiles, short ladders,
 case-mismatched state names — and for each `(state, age)` inside the axis domain asserts that the rank
 `classifyPaceBand` returns is the rank named by the key of the rect `computePaceBandRects` produces
-containing that age, under identity scales. It holds even if a later change reimplements one side,
-which is the only thing prose in an ADR cannot do.
+containing that age, under identity scales.
+
+What that test proves is narrower than this ADR first claimed, and the correction is worth having in
+writing. Implementing the split (2026-09-05) showed the property passing unchanged against the chart
+as it stood *before* the extraction, when both sides still computed the rule independently. It compares
+the two functions' outputs and never asserts that the geometry calls the resolver, so it cannot fail a
+re-inlining that stays correct. What it does catch is any behavioural divergence between the zone a
+reader sees and the cell they read, which is the thing that reaches a user; duplication that keeps
+agreeing is a maintainability regression instead. Gating the call itself would need a different
+instrument, an import-level or lint rule, and this repo has none for TypeScript today.
 
 ## Alternatives Considered
 
@@ -214,7 +222,7 @@ them from there.**
 |---|---|
 | For an age inside the axis domain, a dialog cell's band is the rank named by the key of the chart rect containing that age, for every state and age in a shared fixture table | Vitest property test running `classifyPaceBand` and `computePaceBandRects` over one fixture set under identity scales, reading rank off the rect key rather than its array index |
 | A classification never lands on a rank the geometry collapsed | Vitest over a tied-percentile fixture asserting the returned rank is the surviving lower boundary, which is what the reader sees at that height |
-| The band rule is not restated anywhere: the chart, the dialog and the descriptor factory all reach it through the shared module | The module is the only definition of the ladder type; the chart and the dialog take that type, never the raw per-state percentile list |
+| The band rule is not restated anywhere: the chart, the dialog and the descriptor factory all reach it through the shared module | The module is the only definition of the ladder type; the chart and the dialog take that type, never the raw per-state percentile list. **Not enforced by a test** — the agreement property compares outputs, so a correct re-implementation passes it (established at DELIVER, 2026-09-05). The shared type and code review are the whole mechanism here |
 | The shared module stays pure and free of React and of component imports | Vitest importing it in isolation without a render; Biome import rules on the module's directory |
 | The dialog's band colour is the chart's fill for the same rank, including the short-ladder top clamp | Vitest asserting the cell colour equals `paceBandColorForRank` for each rank, and that the chart's rect fill for the top rank matches it on a three-boundary ladder |
 | `computePaceBandRects` renders exactly as today for every existing case | The sixteen existing unit tests and six overlay DOM tests in the pace-band block of `WorkItemAgingChart.test.tsx`, plus the two elsewhere in the file, all unmodified by the refactor commit |
