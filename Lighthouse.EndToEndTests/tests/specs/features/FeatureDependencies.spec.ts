@@ -1,85 +1,47 @@
-import { expect, test } from "../../fixutres/LighthouseFixture";
-import { waitForBackgroundUpdates } from "../../helpers/api/demo";
-import { createPortfolio } from "../../helpers/api/portfolios";
-import { createTeam } from "../../helpers/api/teams";
-import { createAzureDevOpsConnection } from "../../helpers/api/workTrackingSystemConnections";
-import { generateRandomName } from "../../helpers/names";
+import { expect, testWithDemoData } from "../../fixutres/LighthouseFixture";
 
-const adoStates = {
-	toDo: ["New", "Planned"],
-	doing: ["Active", "Resolved"],
-	done: ["Closed"],
-};
+const WHEN_WILL_IT_BE_DONE_SCENARIO_ID = 0;
+const testWithFeatures = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 
-// Three real Epics on the letpeoplework board, linked to each other with the tracker's own Predecessor
-// links: "Dependency-Aware Forecasting" waits on the other two. Naming them one by one, instead of
-// taking the whole project, is what keeps the number on screen a fact rather than a reading of
-// today's board - a Predecessor link pointing outside this set is passed over, so someone adding a
-// dependency tomorrow cannot make this fail somewhere far from what they changed.
-const THE_DEPENDENT_AND_BOTH_OF_ITS_BLOCKERS =
-	'[System.TeamProject] = "Lighthouse" AND [System.Id] IN (4365, 5698, 5792)';
+// The seeded Project Apollo already carries the shape this reads: "Mars Colonization" waits on the
+// other two, and "Asteroid Mining Program" waits on nothing. All three are still open, so the list's
+// "Hide Completed Features" default leaves them on screen.
+//
+// This used to name three real Epics on the letpeoplework board by id. They were released, which
+// moved two of them to Closed and the third into a state this instance does not map at all, so the
+// list came up empty and the build went red over a board someone tidied rather than over anything
+// here.
+const THE_DEPENDENT = "Mars Colonization";
+const ONE_OF_ITS_BLOCKERS = "Stellar Navigation";
+const THE_OTHER_BLOCKER = "Asteroid Mining Program";
 
-const THE_DEPENDENT = "Dependency-Aware Forecasting";
-const ONE_OF_ITS_BLOCKERS = "Show Feature Dependencies";
-const THE_OTHER_BLOCKER = "Deliveries as Durable Records";
-
-// The walking skeleton for the whole slice: a Predecessor link a person drew in Azure DevOps, the
+// The walking skeleton for the whole slice: a dependency the work tracking system reports, the
 // refresh that already runs, what that refresh stored, and a product owner reading the answer off a
 // list in Lighthouse without opening the tracker.
 //
 // Everything else sits a layer down and is covered there:
 //   - which links count, which are passed over, and what a removed link does -> the backend
 //     dependency scenarios
-//   - the blank cell, the heading's wording and the sort -> columns.dependsOn.test.tsx
-test("@walking_skeleton a product owner sees, without leaving Lighthouse, that a Feature is waiting on two others", async ({
-	request,
-	overviewPage,
-}) => {
-	const connection = await createAzureDevOpsConnection(
-		request,
-		generateRandomName(),
-	);
-	// Lighthouse refuses to create a Portfolio while the instance has no Team at all, so there has to
-	// be one. It is never refreshed: nothing this test reads comes from below the Epics.
-	await createTeam(
-		request,
-		generateRandomName(),
-		connection.id,
-		'[System.TeamProject] = "Lighthouse"',
-		["User Story"],
-		adoStates,
-	);
+//   - the blank cell, the heading's wording, the sort, and the link out to the tracker for a Feature
+//     that has a url -> columns.dependsOn.test.tsx
+testWithFeatures(
+	"@walking_skeleton a product owner sees, without leaving Lighthouse, that a Feature is waiting on two others",
+	async ({ testData, overviewPage }) => {
+		expect(testData.portfolios.length).toBeGreaterThan(0);
 
-	const portfolio = await createPortfolio(
-		request,
-		generateRandomName(),
-		connection.id,
-		THE_DEPENDENT_AND_BOTH_OF_ITS_BLOCKERS,
-		["Epic"],
-		adoStates,
-	);
+		const featuresPage =
+			await overviewPage.lighthousePage.goToFeatures("Features");
+		await expect(featuresPage.featureRows.first()).toBeVisible();
 
-	const lighthousePage = overviewPage.lighthousePage;
-	const portfolioPage = await (
-		await lighthousePage.goToOverview()
-	).goToPortfolio(portfolio.name);
-	await portfolioPage.refreshFeatures();
-	await waitForBackgroundUpdates(request);
+		// The row names them rather than counting them: "which ones" is the question a reader has
+		// next. Seeded Features have no address in a tracker to link to, so what is read here is the
+		// naming.
+		const dependencies = featuresPage.getDependenciesCell(THE_DEPENDENT);
+		await expect(dependencies).toContainText(ONE_OF_ITS_BLOCKERS);
+		await expect(dependencies).toContainText(THE_OTHER_BLOCKER);
 
-	const featuresPage = await lighthousePage.goToFeatures("Features");
-	await expect(featuresPage.featureRows.first()).toBeVisible();
-
-	// The row names them rather than counting them: "which ones" is the question a reader has next,
-	// and each answer leads into the work tracking system where something can be done about it.
-	const dependencies = featuresPage.getDependenciesCell(THE_DEPENDENT);
-	await expect(
-		dependencies.getByRole("link", { name: new RegExp(ONE_OF_ITS_BLOCKERS) }),
-	).toBeVisible();
-	await expect(
-		dependencies.getByRole("link", { name: new RegExp(THE_OTHER_BLOCKER) }),
-	).toBeVisible();
-
-	await expect(
-		featuresPage.getDependenciesCell(ONE_OF_ITS_BLOCKERS),
-	).toHaveText("");
-});
+		await expect(
+			featuresPage.getDependenciesCell(THE_OTHER_BLOCKER),
+		).toHaveText("");
+	},
+);
