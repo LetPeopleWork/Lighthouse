@@ -236,7 +236,7 @@ describe("pace band ladder", () => {
 		});
 	});
 
-	describe.skip("naming the band", () => {
+	describe("naming the band", () => {
 		it.each([
 			[0, "Below 50th"],
 			[1, "50th-70th"],
@@ -291,7 +291,7 @@ describe("pace band ladder", () => {
 		});
 	});
 
-	describe.skip("colouring the band", () => {
+	describe("colouring the band", () => {
 		it("runs from the calmest colour at the floor to the alarming one at the top", () => {
 			const fills = [0, 1, 2, 3, 4].map((rank) =>
 				paceBandColorForRank(rank, 4),
@@ -310,7 +310,7 @@ describe("pace band ladder", () => {
 		});
 	});
 
-	describe.skip("the column descriptor handed to the work item dialog", () => {
+	describe("the column descriptor handed to the work item dialog", () => {
 		const descriptor = () =>
 			buildAgeBandColumnDescriptor({
 				perStatePercentileValues: zenithPercentiles,
