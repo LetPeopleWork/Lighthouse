@@ -13,6 +13,7 @@ import {
 import { format } from "date-fns";
 import React from "react";
 import DateRangeSelector from "../../../components/Common/DateRangeSelector/DateRangeSelector";
+import { isValidDate } from "../../../utils/date/isValidDate";
 import CategorySelector from "./CategorySelector";
 import type { CategoryKey } from "./categoryMetadata";
 
@@ -47,7 +48,10 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 		setAnchorEl(e.currentTarget);
 	const handleClose = () => setAnchorEl(null);
 
-	const formatDate = (d: Date) => format(d, "dd MMM yyyy");
+	// date-fns throws on a date it cannot format, and a throw here takes the whole
+	// application down with it. A missing label is a far smaller loss than that.
+	const formatDate = (d: Date) =>
+		isValidDate(d) ? format(d, "dd MMM yyyy") : "—";
 
 	return (
 		<Box

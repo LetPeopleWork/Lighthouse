@@ -211,6 +211,51 @@ describe("DashboardHeader", () => {
 		);
 	});
 
+	it("renders a placeholder for an unusable date and leaves the other one formatted", async () => {
+		setMatchMedia(false);
+
+		const { default: DashboardHeader } = await import("./DashboardHeader");
+
+		render(
+			<DashboardHeader
+				startDate={new Date(Number.NaN)}
+				endDate={new Date(2025, 7, 14)}
+				onStartDateChange={vi.fn()}
+				onEndDateChange={vi.fn()}
+				selectedCategory="flow-overview"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText(/—\s*→\s*14 Aug 2025/)).toBeInTheDocument();
+	});
+
+	it("keeps the header mounted when both dates are unusable", async () => {
+		setMatchMedia(false);
+
+		const { default: DashboardHeader } = await import("./DashboardHeader");
+
+		render(
+			<DashboardHeader
+				startDate={new Date(Number.NaN)}
+				endDate={new Date(Number.NaN)}
+				onStartDateChange={vi.fn()}
+				onEndDateChange={vi.fn()}
+				selectedCategory="flow-overview"
+				onSelectCategory={vi.fn()}
+				showTips={true}
+				onToggleTips={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText(/—\s*→\s*—/)).toBeInTheDocument();
+		expect(
+			screen.getByTestId("dashboard-date-range-toggle"),
+		).toBeInTheDocument();
+	});
+
 	it("renders tips toggle and calls onToggleTips when clicked", async () => {
 		setMatchMedia(false);
 
