@@ -32,6 +32,17 @@ describe("formatLocalDate", () => {
 			"2026-01-05",
 		);
 	});
+
+	it("refuses a date that could not be parsed", () => {
+		// Left unchecked this returns the string "NaN-NaN-NaN", which reads as a
+		// day everywhere it is used and corrupts a URL param or a query string
+		// without anything noticing.
+		expect(() => formatLocalDate(new Date("nonsense"))).toThrow();
+	});
+
+	it("names the value it refused", () => {
+		expect(() => formatLocalDate(new Date("nonsense"))).toThrow(/Invalid Date/);
+	});
 });
 
 describe("parseLocalDate", () => {

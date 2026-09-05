@@ -8,9 +8,19 @@
  * viewer at a non-zero offset (Bug #5566).
  */
 
+import { isValidDate } from "./isValidDate";
+
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export function formatLocalDate(date: Date): string {
+	// Without this the result is the string "NaN-NaN-NaN", which travels on as a
+	// URL param or a query string and looks like a day to everything it reaches.
+	if (!isValidDate(date)) {
+		throw new TypeError(
+			`formatLocalDate cannot encode ${String(date)} as a calendar day.`,
+		);
+	}
+
 	const year = date.getFullYear();
 	const month = String(date.getMonth() + 1).padStart(2, "0");
 	const day = String(date.getDate()).padStart(2, "0");
