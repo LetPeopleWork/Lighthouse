@@ -34,6 +34,7 @@ import {
 	getMaxYAxisHeight,
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
+import { PACE_BAND_COLORS_LOW_TO_HIGH } from "../../../utils/charts/paceBands";
 import {
 	type BaseGroupedItem,
 	getBubbleSize,
@@ -43,13 +44,7 @@ import {
 } from "../../../utils/charts/scatterMarkerUtils";
 import { getWorkItemName } from "../../../utils/featureName";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
-import {
-	certainColor,
-	confidentColor,
-	errorColor,
-	getColorMapForKeys,
-	realisticColor,
-} from "../../../utils/theme/colors";
+import { getColorMapForKeys } from "../../../utils/theme/colors";
 import { ForecastLevel } from "../Forecasts/ForecastLevel";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import LegendChip from "./LegendChip";
@@ -57,13 +52,12 @@ import PercentileLegend from "./PercentileLegend";
 
 export const STATE_BAND_HALF_WIDTH = 0.5;
 
-export const PACE_BAND_COLORS_LOW_TO_HIGH = [
-	certainColor,
-	confidentColor,
-	"#fbc02d",
-	realisticColor,
-	errorColor,
-] as const;
+/**
+ * The palette itself lives in the pure pace-band module, which the work item dialog also reads, so
+ * that the two surfaces cannot drift apart. It is re-exported here because the chart is where
+ * everything else already imports it from.
+ */
+export { PACE_BAND_COLORS_LOW_TO_HIGH };
 
 export interface IPaceBandRect {
 	key: string;
