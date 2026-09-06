@@ -84,6 +84,46 @@ const unequalBoundaryPercentiles: IPerStatePercentileValues[] = [
 	},
 ];
 
+// The same shape read the other way round: it is the later state that is cut at more boundaries, so
+// the names the column offers cannot come from whichever state the workflow happens to reach first.
+const laterStateCutFiner: IPerStatePercentileValues[] = [
+	{
+		state: "Analysis",
+		percentiles: [
+			{ percentile: 50, value: 4 },
+			{ percentile: 90, value: 12 },
+		],
+	},
+	{
+		state: "Review",
+		percentiles: [
+			{ percentile: 50, value: 8 },
+			{ percentile: 70, value: 12 },
+			{ percentile: 85, value: 17 },
+			{ percentile: 95, value: 24 },
+		],
+	},
+];
+
+// Two states cut at the same number of boundaries but at different ones, which is what makes the
+// choice between them show up in the names rather than only in how many there are.
+const equallyCutStates: IPerStatePercentileValues[] = [
+	{
+		state: "Analysis",
+		percentiles: [
+			{ percentile: 50, value: 4 },
+			{ percentile: 95, value: 15 },
+		],
+	},
+	{
+		state: "Review",
+		percentiles: [
+			{ percentile: 60, value: 9 },
+			{ percentile: 90, value: 20 },
+		],
+	},
+];
+
 const workItem = (overrides?: Partial<IWorkItem>): IWorkItem => ({
 	id: 388,
 	referenceId: "ZEN-388",
@@ -279,6 +319,9 @@ describe("pace band ladder", () => {
 			expect(paceBandLabelForRank(undefined, undefined)).toBe(
 				NO_HISTORY_BAND_LABEL,
 			);
+			expect(paceBandLabelForRank(undefined, zenithLadders().get(2))).toBe(
+				NO_HISTORY_BAND_LABEL,
+			);
 		});
 
 		it("names the top band of a short ladder for the highest percentile it actually has", () => {
@@ -314,6 +357,40 @@ describe("pace band ladder", () => {
 				"85th-95th",
 				"Above 95th",
 			]);
+		});
+
+		it("offers the names of the state cut at the most boundaries, wherever it sits in the workflow", () => {
+			const ladders = resolvePaceBandLadders({
+				perStatePercentileValues: laterStateCutFiner,
+				doingStates: ["Analysis", "Review"],
+			});
+
+			expect(paceBandOptionLabels(ladders)).toEqual([
+				NO_HISTORY_BAND_LABEL,
+				"Below 50th",
+				"50th-70th",
+				"70th-85th",
+				"85th-95th",
+				"Above 95th",
+			]);
+		});
+
+		it("takes the names from the first of two states cut at equally many boundaries", () => {
+			const ladders = resolvePaceBandLadders({
+				perStatePercentileValues: equallyCutStates,
+				doingStates: ["Analysis", "Review"],
+			});
+
+			expect(paceBandOptionLabels(ladders)).toEqual([
+				NO_HISTORY_BAND_LABEL,
+				"Below 50th",
+				"50th-95th",
+				"Above 95th",
+			]);
+		});
+
+		it("offers nothing but the no-history name when no state has a ladder", () => {
+			expect(paceBandOptionLabels(new Map())).toEqual([NO_HISTORY_BAND_LABEL]);
 		});
 	});
 

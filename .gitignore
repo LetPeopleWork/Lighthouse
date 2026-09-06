@@ -448,6 +448,9 @@ reports/mutation/
 **/stryker.config*.mjs
 **/stryker.*.config.mjs
 **/vitest.stryker*.ts
+# Except the copy kept beside a feature's mutation write-up, which is the record of what was
+# actually run and is the only way a later reader can reproduce that run's numbers.
+!docs/feature/*/mutation/vitest.stryker*.ts
 
 .claude/scheduled_tasks.lock
 .claude/worktrees/

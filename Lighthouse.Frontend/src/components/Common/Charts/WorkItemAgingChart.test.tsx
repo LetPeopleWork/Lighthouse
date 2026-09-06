@@ -1853,6 +1853,46 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 		expect(lastDialogProps().ageBandColumn).toBeUndefined();
 	});
 
+	it("re-reads the bands when the team or the date range behind them changes", () => {
+		const { rerender } = render(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={zenithPercentiles}
+			/>,
+		);
+
+		expect(lastDialogProps().ageBandColumn?.bandFor(zenithItems[0])).toBe(
+			"85th-95th",
+		);
+
+		const slowerReview: IPerStatePercentileValues[] = [
+			{
+				state: "Review",
+				percentiles: [
+					{ percentile: 50, value: 30 },
+					{ percentile: 70, value: 40 },
+					{ percentile: 85, value: 50 },
+					{ percentile: 95, value: 60 },
+				],
+			},
+		];
+
+		rerender(
+			<WorkItemAgingChart
+				inProgressItems={zenithItems}
+				percentileValues={cycleTimePercentiles}
+				doingStates={zenithDoingStates}
+				perStatePercentileValues={slowerReview}
+			/>,
+		);
+
+		expect(lastDialogProps().ageBandColumn?.bandFor(zenithItems[0])).toBe(
+			"Below 50th",
+		);
+	});
+
 	it("plots exactly the same dots it plotted before the band existed", () => {
 		const { rerender } = render(
 			<WorkItemAgingChart

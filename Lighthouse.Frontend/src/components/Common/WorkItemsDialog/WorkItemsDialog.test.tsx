@@ -1133,6 +1133,10 @@ describe("Work Item Age Band column", () => {
 			// jsdom resolves the transparent keyword to this, and toHaveStyle normalises
 			// only the value it reads back, so the keyword itself would never match.
 			expect(unknown).toHaveStyle("background-color: rgba(0, 0, 0, 0)");
+			// Muted, not merely uncoloured: the row still has to read as secondary text rather than
+			// inherit the same weight as a row that does carry a judgement. This is what the theme's
+			// secondary text colour comes out as.
+			expect(unknown).toHaveStyle("color: rgba(0, 0, 0, 0.6)");
 		});
 
 		test("shows the band whether or not the chart's coloured zones are switched on", () => {
@@ -1243,6 +1247,24 @@ describe("Work Item Age Band column", () => {
 
 			expect(contendingRows[0]).toContain("ZEN-401");
 			expect(contendingRows[1]).toContain("ZEN-604");
+		});
+
+		test("leaves two items in the same band in the order they arrived in", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog {...agingDialogProps} ageBandColumn={ageBandColumn} />,
+			);
+
+			await user.click(bandColumnHeader());
+			await user.click(bandColumnHeader());
+
+			const sameBand = screen
+				.getAllByRole("row")
+				.map((row) => row.textContent ?? "")
+				.filter((text) => text.includes("ZEN-388") || text.includes("ZEN-401"));
+
+			expect(sameBand[0]).toContain("ZEN-388");
+			expect(sameBand[1]).toContain("ZEN-401");
 		});
 
 		test("never lets an item with no history head a worst-first list", async () => {
