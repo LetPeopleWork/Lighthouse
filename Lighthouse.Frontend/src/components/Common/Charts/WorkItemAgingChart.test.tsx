@@ -1698,7 +1698,7 @@ describe("WorkItemAgingChart component", () => {
 	});
 });
 
-describe.skip("Work Item Age Band beside the dot the coach clicked", () => {
+describe("Work Item Age Band beside the dot the coach clicked", () => {
 	const cycleTimePercentiles: IPercentileValue[] = [
 		{ percentile: 50, value: 3 },
 		{ percentile: 85, value: 7 },

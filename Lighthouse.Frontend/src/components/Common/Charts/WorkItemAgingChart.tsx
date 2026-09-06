@@ -35,6 +35,7 @@ import {
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
 import {
+	buildAgeBandColumnDescriptor,
 	PACE_BAND_COLORS_LOW_TO_HIGH,
 	paceBandColorForRank,
 	resolvePaceBandLadders,
@@ -392,6 +393,18 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	const workItemAgeTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM_AGE);
 	const cycleTimeTerm = getTerm(TERMINOLOGY_KEYS.CYCLE_TIME);
 
+	const ageBandColumn = useMemo(
+		() =>
+			buildAgeBandColumnDescriptor({
+				perStatePercentileValues,
+				doingStates,
+				headerName: `${workItemAgeTerm} Band`,
+				description:
+					"Where this age sits against how long finished items took to leave this state",
+			}),
+		[perStatePercentileValues, doingStates, workItemAgeTerm],
+	);
+
 	const meaningfulWorkItemAgePercentiles = useMemo(
 		() => workItemAgePercentileValues.filter((p) => p.value > 0),
 		[workItemAgePercentileValues],
@@ -741,6 +754,7 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 					description: "days",
 					valueGetter: (item) => item.workItemAge,
 				}}
+				ageBandColumn={ageBandColumn}
 				timeInStateColumn={{
 					now,
 					stalenessThresholdDays,
