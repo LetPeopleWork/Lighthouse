@@ -264,10 +264,14 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				headerName: ageBandColumn.headerName,
 				description: ageBandColumn.description,
 				width: 200,
-				// Informational for now: sorting the labels alphabetically would order them by spelling
-				// rather than by how worrying they are, which is worse than not offering the sort.
-				sortable: false,
-				filterable: false,
+				type: "singleSelect",
+				valueOptions: ageBandColumn.optionLabels,
+				// The band names are listed from least to most worrying, so a name's position in that
+				// list is the order a reader wants. Sorting the words themselves orders them by
+				// spelling instead.
+				sortComparator: (first, second) =>
+					ageBandColumn.optionLabels.indexOf(first as string) -
+					ageBandColumn.optionLabels.indexOf(second as string),
 				valueGetter: (_, row) => ageBandColumn.bandFor(row),
 				renderCell: ({ row }) => {
 					const label = ageBandColumn.bandFor(row);

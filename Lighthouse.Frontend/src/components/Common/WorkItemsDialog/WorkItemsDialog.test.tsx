@@ -1196,7 +1196,7 @@ describe("Work Item Age Band column", () => {
 		});
 	});
 
-	describe.skip("ordering, cutting and carrying out the list", () => {
+	describe("ordering, cutting and carrying out the list", () => {
 		test("orders worst band first however old the items themselves are", async () => {
 			const user = userEvent.setup();
 			render(
