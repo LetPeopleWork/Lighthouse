@@ -202,6 +202,17 @@ export interface AgeBandColumnDescriptor {
 	readonly colorForBand: (label: string) => string | undefined;
 }
 
+/**
+ * The column's wording, written once because two different dialogs build this column and a reader
+ * who meets it in both must not be told two different things about the same number.
+ */
+export const AGE_BAND_COLUMN_DESCRIPTION =
+	"Where this age sits against how long finished items took to leave this state";
+
+/** The header follows the team's own word for an item's age, whatever they have renamed it to. */
+export const ageBandColumnHeaderName = (workItemAgeTerm: string): string =>
+	`${workItemAgeTerm} Band`;
+
 export interface AgeBandColumnInputs extends PaceBandLadderInputs {
 	readonly headerName: string;
 	readonly description: string;

@@ -63,7 +63,11 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
-import { buildAgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
+import {
+	AGE_BAND_COLUMN_DESCRIPTION,
+	ageBandColumnHeaderName,
+	buildAgeBandColumnDescriptor,
+} from "../../../utils/charts/paceBands";
 import { isValidDate } from "../../../utils/date/isValidDate";
 import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
@@ -548,9 +552,8 @@ function buildViewData(
 	const ageBandColumn = buildAgeBandColumnDescriptor({
 		perStatePercentileValues: inputs.perStatePercentileValues,
 		doingStates: inputs.doingStates,
-		headerName: `${terms.workItemAge} Band`,
-		description:
-			"Where this age sits against how long finished items took to leave this state",
+		headerName: ageBandColumnHeaderName(terms.workItemAge),
+		description: AGE_BAND_COLUMN_DESCRIPTION,
 	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,

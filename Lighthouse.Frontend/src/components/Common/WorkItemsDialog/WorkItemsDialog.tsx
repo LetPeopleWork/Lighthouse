@@ -88,6 +88,40 @@ const judgementCell = (color: string | undefined, plainColor?: string) => ({
 	},
 });
 
+/**
+ * The band column. It lives outside the dialog because it needs nothing from it beyond the
+ * descriptor, and because the tie between the sort and the option list below is easier to see when
+ * the two sit next to each other rather than buried in a list of six other columns.
+ */
+const ageBandGridColumn = (
+	descriptor: AgeBandColumnDescriptor,
+): DataGridColumn<IWorkItem & GridValidRowModel> => ({
+	field: "ageBand",
+	headerName: descriptor.headerName,
+	description: descriptor.description,
+	width: 200,
+	type: "singleSelect",
+	valueOptions: descriptor.optionLabels,
+	// The band names are listed from least to most worrying, so a name's position in that list is
+	// the order a reader wants. Sorting the words themselves orders them by spelling instead.
+	sortComparator: (first, second) =>
+		descriptor.optionLabels.indexOf(first as string) -
+		descriptor.optionLabels.indexOf(second as string),
+	valueGetter: (_, row) => descriptor.bandFor(row),
+	renderCell: ({ row }) => {
+		const label = descriptor.bandFor(row);
+		return (
+			<Typography
+				variant="body2"
+				data-testid="ageBandColumnContent"
+				{...judgementCell(descriptor.colorForBand(label), "text.secondary")}
+			>
+				{label}
+			</Typography>
+		);
+	},
+});
+
 const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	title,
 	items,
@@ -102,7 +136,6 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 	const workItemTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
-	// Check if items are Features with owning team
 	const isFeature = useCallback((item: IWorkItem): item is IFeature => {
 		return "owningTeam" in item;
 	}, []);
@@ -133,22 +166,20 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			const seventyPercentSLE = sle * 0.7;
 			const fiftyPercentSLE = sle * 0.5;
 
-			// Using updated forecast colors with better contrast
 			if (value > sle) {
-				return riskyColor; // Enhanced red
+				return riskyColor;
 			}
 			if (value >= seventyPercentSLE) {
-				return realisticColor; // Enhanced orange
+				return realisticColor;
 			}
 			if (value >= fiftyPercentSLE) {
-				return confidentColor; // Enhanced light green
+				return confidentColor;
 			}
-			return certainColor; // Enhanced green
+			return certainColor;
 		},
 		[sle],
 	);
 
-	// Define columns for DataGrid
 	const columns = useMemo(() => {
 		const baseColumns: DataGridColumn<IWorkItem & GridValidRowModel>[] = [
 			{
@@ -198,7 +229,6 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 			},
 		];
 
-		// Add Owned by column if needed
 		if (hasOwningTeams) {
 			baseColumns.push({
 				field: "owningTeam",
@@ -211,7 +241,6 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		}
 
 		if (highlightColumn.title) {
-			// Add additional column
 			baseColumns.push({
 				field: "additionalColumn",
 				headerName: `${highlightColumn.title} (${highlightColumn.description})`,
@@ -259,36 +288,7 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 		}
 
 		if (ageBandColumn) {
-			baseColumns.push({
-				field: "ageBand",
-				headerName: ageBandColumn.headerName,
-				description: ageBandColumn.description,
-				width: 200,
-				type: "singleSelect",
-				valueOptions: ageBandColumn.optionLabels,
-				// The band names are listed from least to most worrying, so a name's position in that
-				// list is the order a reader wants. Sorting the words themselves orders them by
-				// spelling instead.
-				sortComparator: (first, second) =>
-					ageBandColumn.optionLabels.indexOf(first as string) -
-					ageBandColumn.optionLabels.indexOf(second as string),
-				valueGetter: (_, row) => ageBandColumn.bandFor(row),
-				renderCell: ({ row }) => {
-					const label = ageBandColumn.bandFor(row);
-					return (
-						<Typography
-							variant="body2"
-							data-testid="ageBandColumnContent"
-							{...judgementCell(
-								ageBandColumn.colorForBand(label),
-								"text.secondary",
-							)}
-						>
-							{label}
-						</Typography>
-					);
-				},
-			});
+			baseColumns.push(ageBandGridColumn(ageBandColumn));
 		}
 
 		if (timeInStateColumn) {

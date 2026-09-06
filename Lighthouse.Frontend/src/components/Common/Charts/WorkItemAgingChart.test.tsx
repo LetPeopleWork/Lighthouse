@@ -9,6 +9,7 @@ import { testTheme } from "../../../tests/testTheme";
 import {
 	type AgeBandColumnDescriptor,
 	classifyPaceBand,
+	PACE_BAND_COLORS_LOW_TO_HIGH,
 	resolvePaceBandLadders,
 } from "../../../utils/charts/paceBands";
 import {
@@ -19,7 +20,6 @@ import {
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import WorkItemAgingChart, {
 	computePaceBandRects,
-	PACE_BAND_COLORS_LOW_TO_HIGH,
 	PaceBandOverlay,
 	STATE_BAND_HALF_WIDTH,
 } from "./WorkItemAgingChart";

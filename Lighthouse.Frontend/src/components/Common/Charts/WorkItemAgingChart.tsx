@@ -35,8 +35,9 @@ import {
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
 import {
+	AGE_BAND_COLUMN_DESCRIPTION,
+	ageBandColumnHeaderName,
 	buildAgeBandColumnDescriptor,
-	PACE_BAND_COLORS_LOW_TO_HIGH,
 	paceBandColorForRank,
 	resolvePaceBandLadders,
 } from "../../../utils/charts/paceBands";
@@ -56,13 +57,6 @@ import LegendChip from "./LegendChip";
 import PercentileLegend from "./PercentileLegend";
 
 export const STATE_BAND_HALF_WIDTH = 0.5;
-
-/**
- * The palette itself lives in the pure pace-band module, which the work item dialog also reads, so
- * that the two surfaces cannot drift apart. It is re-exported here because the chart is where
- * everything else already imports it from.
- */
-export { PACE_BAND_COLORS_LOW_TO_HIGH };
 
 export interface IPaceBandRect {
 	key: string;
@@ -398,9 +392,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 			buildAgeBandColumnDescriptor({
 				perStatePercentileValues,
 				doingStates,
-				headerName: `${workItemAgeTerm} Band`,
-				description:
-					"Where this age sits against how long finished items took to leave this state",
+				headerName: ageBandColumnHeaderName(workItemAgeTerm),
+				description: AGE_BAND_COLUMN_DESCRIPTION,
 			}),
 		[perStatePercentileValues, doingStates, workItemAgeTerm],
 	);
@@ -642,9 +635,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 						>
 							{referenceLinePercentiles.map((p) => {
 								const forecastLevel = new ForecastLevel(p.percentile);
-								// D9: no term prefix — the percentile-source toggle above the chart
-								// already states which population is active, so repeating it on every
-								// line made the two sources read differently for no reason.
+								// The toggle above the chart already says which population these lines
+								// come from, so naming it again on every line would only make the two
+								// sources read differently for no reason.
 								const label = `${p.percentile}%`;
 								return (
 									<ChartsReferenceLine
