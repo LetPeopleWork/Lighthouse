@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
@@ -31,12 +32,15 @@ import type { IPercentileValue } from "../../../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../../../models/PerStatePercentileValues";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import { Team } from "../../../models/Team/Team";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
+	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
 import { generateWorkItemMapForRunChart } from "../../../tests/TestDataProvider";
 import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
@@ -4297,6 +4301,73 @@ describe("BaseMetricsView component", () => {
 			expect(
 				screen.getByTestId("widget-view-data-age-bands-aging"),
 			).toHaveTextContent("Above 95th,70th-85th,No history");
+		});
+
+		it("heads the band column with the team's own word for an age", async () => {
+			localStorage.setItem(
+				`lighthouse:metrics:portfolio:${mockProject.id}:category`,
+				"flow-metrics",
+			);
+
+			const service = createMockMetricsService<IWorkItem>();
+			service.getInProgressItems = vi
+				.fn()
+				.mockResolvedValue([
+					zenithItem({ id: 388, state: "Review", workItemAge: 26 }),
+				]);
+			service.getAgeInStatePercentiles = vi
+				.fn()
+				.mockResolvedValue(zenithPerStatePercentiles);
+
+			const terminologyService = createMockTerminologyService();
+			terminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{
+					id: 1,
+					key: TERMINOLOGY_KEYS.WORK_ITEM_AGE,
+					defaultValue: "Work Item Age",
+					description: "",
+					value: "Item Age",
+				},
+			]);
+
+			const blackoutPeriodService = createMockBlackoutPeriodService();
+			blackoutPeriodService.getAll = vi.fn().mockResolvedValue([]);
+
+			const queryClient = new QueryClient({
+				defaultOptions: { queries: { retry: false } },
+			});
+
+			render(
+				<MemoryRouter>
+					<QueryClientProvider client={queryClient}>
+						<ApiServiceContext.Provider
+							value={createMockApiServiceContext({
+								terminologyService,
+								blackoutPeriodService,
+							})}
+						>
+							<TerminologyProvider>
+								<BaseMetricsView
+									entity={mockProject}
+									metricsService={service}
+									title="Features"
+									defaultDateRange={30}
+									doingStates={zenithDoingStates}
+								/>
+							</TerminologyProvider>
+						</ApiServiceContext.Provider>
+					</QueryClientProvider>
+				</MemoryRouter>,
+			);
+
+			// Matched whole, not contained: "Work Item Age Band" carries "Item Age Band" inside it,
+			// so a header that ignored the renaming would read as a pass under a substring check.
+			await waitFor(() => {
+				expect(
+					screen.getByTestId("widget-view-data-age-band-header-aging")
+						.textContent,
+				).toBe("Item Age Band");
+			});
 		});
 
 		it("offers no band column to a widget whose items are not in flight", async () => {
