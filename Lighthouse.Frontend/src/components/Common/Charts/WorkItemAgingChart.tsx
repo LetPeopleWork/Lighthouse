@@ -35,7 +35,7 @@ import {
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
 import {
-	AGE_BAND_COLUMN_DESCRIPTION,
+	ageBandColumnDescription,
 	ageBandColumnHeaderName,
 	buildAgeBandColumnDescriptor,
 	paceBandColorForRank,
@@ -333,6 +333,12 @@ interface WorkItemAgingChartProps {
 	workItemAgePercentileValues?: IPercentileValue[];
 }
 
+// One array each, shared by every render that was handed no percentiles. A `[]` written into the
+// default below would be a different array on every render, and anything downstream keyed on it —
+// a memo, an effect — would treat "still nothing" as "something changed" and redo its work forever.
+const NO_PER_STATE_PERCENTILES: IPerStatePercentileValues[] = [];
+const NO_PERCENTILES: IPercentileValue[] = [];
+
 const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	inProgressItems,
 	percentileValues,
@@ -341,8 +347,8 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 	stalenessThresholdDays,
 	blockedStalenessThresholdDays,
 	now: providedNow,
-	perStatePercentileValues = [],
-	workItemAgePercentileValues = [],
+	perStatePercentileValues = NO_PER_STATE_PERCENTILES,
+	workItemAgePercentileValues = NO_PERCENTILES,
 }) => {
 	const [groupedDataPoints, setGroupedDataPoints] = useState<
 		IGroupedWorkItem[]
@@ -393,9 +399,9 @@ const WorkItemAgingChart: React.FC<WorkItemAgingChartProps> = ({
 				perStatePercentileValues,
 				doingStates,
 				headerName: ageBandColumnHeaderName(workItemAgeTerm),
-				description: AGE_BAND_COLUMN_DESCRIPTION,
+				description: ageBandColumnDescription(workItemsTerm),
 			}),
-		[perStatePercentileValues, doingStates, workItemAgeTerm],
+		[perStatePercentileValues, doingStates, workItemAgeTerm, workItemsTerm],
 	);
 
 	const meaningfulWorkItemAgePercentiles = useMemo(

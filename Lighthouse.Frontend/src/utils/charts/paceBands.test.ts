@@ -3,6 +3,7 @@ import type { IPerStatePercentileValues } from "../../models/PerStatePercentileV
 import type { IWorkItem, StateCategory } from "../../models/WorkItem";
 import { certainColor, errorColor } from "../theme/colors";
 import {
+	ageBandColumnDescription,
 	buildAgeBandColumnDescriptor,
 	classifyPaceBand,
 	NO_HISTORY_BAND_LABEL,
@@ -10,6 +11,7 @@ import {
 	paceBandColorForRank,
 	paceBandLabelForRank,
 	paceBandOptionLabels,
+	paceBandSortRank,
 	resolvePaceBandLadders,
 } from "./paceBands";
 
@@ -57,6 +59,30 @@ const zenithLadders = () =>
 		perStatePercentileValues: zenithPercentiles,
 		doingStates: zenithDoingStates,
 	});
+
+// A workflow whose states are cut at boundaries of their own, which no work tracking system Lighthouse
+// reads produces today. Review can name a band Analysis never will, and that is the shape the column
+// has to survive rather than reorder around.
+const unequalBoundaryDoingStates = ["Analysis", "Review"];
+
+const unequalBoundaryPercentiles: IPerStatePercentileValues[] = [
+	{
+		state: "Analysis",
+		percentiles: [
+			{ percentile: 50, value: 4 },
+			{ percentile: 70, value: 7 },
+			{ percentile: 85, value: 11 },
+			{ percentile: 95, value: 15 },
+		],
+	},
+	{
+		state: "Review",
+		percentiles: [
+			{ percentile: 60, value: 9 },
+			{ percentile: 90, value: 20 },
+		],
+	},
+];
 
 const workItem = (overrides?: Partial<IWorkItem>): IWorkItem => ({
 	id: 388,
@@ -356,6 +382,49 @@ describe("pace band ladder", () => {
 					description: "unused",
 				}),
 			).toBeUndefined();
+		});
+	});
+
+	describe("a band name the offered list does not carry", () => {
+		const descriptor = () =>
+			buildAgeBandColumnDescriptor({
+				perStatePercentileValues: unequalBoundaryPercentiles,
+				doingStates: unequalBoundaryDoingStates,
+				headerName: "Work Item Age Band",
+				description: "unused",
+			});
+
+		const orderOf = (first: string, second: string, offered: string[]) =>
+			paceBandSortRank(first, offered) - paceBandSortRank(second, offered);
+
+		it("is what a state cut at boundaries of its own produces", () => {
+			const stray = descriptor()?.bandFor(
+				workItem({ state: "Review", workItemAge: 5 }),
+			);
+
+			expect(stray).toBe("Below 60th");
+			expect(descriptor()?.optionLabels).not.toContain(stray);
+		});
+
+		it("sorts after every name the list does carry, on either side of the comparison", () => {
+			const offered = descriptor()?.optionLabels ?? [];
+
+			for (const carried of offered) {
+				expect(orderOf("Below 60th", carried, offered)).toBeGreaterThan(0);
+				expect(orderOf(carried, "Below 60th", offered)).toBeLessThan(0);
+			}
+		});
+
+		it("is left unpainted rather than borrowing a judgement nobody made", () => {
+			expect(descriptor()?.colorForBand("Below 60th")).toBeUndefined();
+		});
+	});
+
+	describe("wording the column explains itself with", () => {
+		it("calls the finished work by the team's own word for it", () => {
+			expect(ageBandColumnDescription("Tickets")).toBe(
+				"Where this age sits against how long finished Tickets took to leave this state",
+			);
 		});
 	});
 });

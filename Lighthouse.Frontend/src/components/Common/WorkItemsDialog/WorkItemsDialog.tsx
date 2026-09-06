@@ -17,7 +17,10 @@ import type { IFeature } from "../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import { useTerminology } from "../../../services/TerminologyContext";
-import type { AgeBandColumnDescriptor } from "../../../utils/charts/paceBands";
+import {
+	type AgeBandColumnDescriptor,
+	paceBandSortRank,
+} from "../../../utils/charts/paceBands";
 import { formatBlockedSince } from "../../../utils/date/blockedDuration";
 import {
 	certainColor,
@@ -99,17 +102,41 @@ const ageBandGridColumn = (
 	field: "ageBand",
 	headerName: descriptor.headerName,
 	description: descriptor.description,
-	width: 200,
+	// Wide enough for "85th-95th", the longest name a band can have. Any wider and it eats into the
+	// name column, which is the only one here that flexes.
+	width: 130,
 	type: "singleSelect",
 	valueOptions: descriptor.optionLabels,
 	// The band names are listed from least to most worrying, so a name's position in that list is
 	// the order a reader wants. Sorting the words themselves orders them by spelling instead.
-	sortComparator: (first, second) =>
-		descriptor.optionLabels.indexOf(first as string) -
-		descriptor.optionLabels.indexOf(second as string),
+	//
+	// Reversing for a descending click is done here rather than left to the grid, because the grid
+	// would reverse the whole order and carry a name the list never carried to the top with it. A
+	// band nobody can place belongs at the bottom whichever way round the column is read.
+	getSortComparator: (direction) => {
+		const unplaced = descriptor.optionLabels.length;
+		const worstFirst = direction === "desc" ? -1 : 1;
+
+		return (first, second) => {
+			const firstRank = paceBandSortRank(
+				first as string,
+				descriptor.optionLabels,
+			);
+			const secondRank = paceBandSortRank(
+				second as string,
+				descriptor.optionLabels,
+			);
+
+			if (firstRank === unplaced || secondRank === unplaced) {
+				return firstRank - secondRank;
+			}
+
+			return worstFirst * (firstRank - secondRank);
+		};
+	},
 	valueGetter: (_, row) => descriptor.bandFor(row),
-	renderCell: ({ row }) => {
-		const label = descriptor.bandFor(row);
+	renderCell: ({ value }) => {
+		const label = value as string;
 		return (
 			<Typography
 				variant="body2"
@@ -196,6 +223,10 @@ const WorkItemsDialog: React.FC<WorkItemsDialogProps> = ({
 				field: "name",
 				headerName: "Name",
 				width: 300,
+				// The only flexing column, so it absorbs whatever the fixed ones leave. With enough of
+				// them the remainder falls below a readable width and every name wraps into a tall
+				// stack; a floor turns that into a horizontal scrollbar instead.
+				minWidth: 200,
 				hideable: false,
 				flex: 1,
 				renderCell: ({ row }) => {

@@ -47,8 +47,9 @@ const percentileName = (percentile: IPercentileValue): string =>
 	`${percentile.percentile}th`;
 
 /**
- * The longest ladder in the workflow. States can end up with ladders of different lengths, and the
- * column has to offer every band any of them can produce, so the longest one names the full set.
+ * The longest ladder in the workflow, which is the one whose band names the column offers. Lighthouse
+ * measures every state at the same percentiles, so any ladder would name the same set; taking the
+ * longest is what keeps that choice safe if a state ever ends up with fewer.
  */
 const widestLadder = (ladders: PaceBandLadders): PaceBandLadder | undefined =>
 	[...ladders.values()].reduce<PaceBandLadder | undefined>(
@@ -172,8 +173,14 @@ export const paceBandLabelForRank = (
 };
 
 /**
- * Every band name a team can show, worst last, with the no-history sentinel first so that ordering by
- * this list puts an unknown below the lowest band rather than at the head of a worst-first list.
+ * Every band name the column offers, calmest first and worst last, with the no-history sentinel ahead
+ * of them all so that ordering by this list puts "we cannot say" below the lowest band rather than at
+ * the head of a worst-first list.
+ *
+ * The list comes from one state's ladder, and that is only sound because every state is measured at
+ * the same percentiles — which is what Lighthouse computes for all of them. Let a team choose its own
+ * percentiles per state and a state could name a band this list has never heard of, so anything
+ * reading a position out of it has to survive not finding one.
  */
 export const paceBandOptionLabels = (ladders: PaceBandLadders): string[] => {
 	const widest = widestLadder(ladders);
@@ -191,6 +198,19 @@ export const paceBandOptionLabels = (ladders: PaceBandLadders): string[] => {
 };
 
 /**
+ * Where a band name sits in the order a reader wants to read the column in. A name the offered list
+ * does not carry sits after every name it does, so it lands at the far end rather than ahead of
+ * everything, which is where a plain "not found" would put it.
+ */
+export const paceBandSortRank = (
+	label: string,
+	optionLabels: readonly string[],
+): number => {
+	const position = optionLabels.indexOf(label);
+	return position === -1 ? optionLabels.length : position;
+};
+
+/**
  * Everything the work item dialog needs to draw the band column, and nothing about where the bands
  * came from. The dialog is shared by many callers and stays ignorant of percentiles.
  */
@@ -204,10 +224,11 @@ export interface AgeBandColumnDescriptor {
 
 /**
  * The column's wording, written once because two different dialogs build this column and a reader
- * who meets it in both must not be told two different things about the same number.
+ * who meets it in both must not be told two different things about the same number. It names the
+ * finished work with the team's own word for it, so the sentence and the header beside it agree.
  */
-export const AGE_BAND_COLUMN_DESCRIPTION =
-	"Where this age sits against how long finished items took to leave this state";
+export const ageBandColumnDescription = (workItemsTerm: string): string =>
+	`Where this age sits against how long finished ${workItemsTerm} took to leave this state`;
 
 /** The header follows the team's own word for an item's age, whatever they have renamed it to. */
 export const ageBandColumnHeaderName = (workItemAgeTerm: string): string =>
@@ -252,6 +273,8 @@ export const buildAgeBandColumnDescriptor = ({
 			),
 		colorForBand: (label) => {
 			const rank = optionLabels.indexOf(label) - 1;
+			// No history reads plain, and so does a name this list never learned: the absence of an
+			// answer must not be dressed in a colour that claims one.
 			return rank < 0 ? undefined : paceBandColorForRank(rank, boundaryCount);
 		},
 	};

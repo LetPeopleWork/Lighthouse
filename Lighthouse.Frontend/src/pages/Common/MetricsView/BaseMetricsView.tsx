@@ -64,7 +64,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
-	AGE_BAND_COLUMN_DESCRIPTION,
+	ageBandColumnDescription,
 	ageBandColumnHeaderName,
 	buildAgeBandColumnDescriptor,
 } from "../../../utils/charts/paceBands";
@@ -397,10 +397,10 @@ function buildWidgetFooters(
 			inputs.cycleTimes,
 			inputs.terms,
 		),
-		// Population is the in-progress set as of endDate (D3) — the same ages the aging chart
-		// already reads, so there is one source of truth for "what is in progress right now".
-		// D6-REVISED bands on absolute counts against the SLE's day value; the configured
-		// percentile is deliberately unused (see feature-delta.md, "D6 gate RESULT").
+		// Measured over the same in-progress items the aging chart reads, so the widget and the chart
+		// can never disagree about what is in flight. The judgement is made on how many items sit past
+		// the SLE's day count, not on where a percentile falls — an SLE is a promise about days, and
+		// counting how many items break it is the only reading a team can act on.
 		workItemAgePercentiles: computeWorkItemAgePercentilesRag(
 			inputs.sle,
 			inputs.agingItems.map((item) => item.workItemAge),
@@ -553,7 +553,7 @@ function buildViewData(
 		perStatePercentileValues: inputs.perStatePercentileValues,
 		doingStates: inputs.doingStates,
 		headerName: ageBandColumnHeaderName(terms.workItemAge),
-		description: AGE_BAND_COLUMN_DESCRIPTION,
+		description: ageBandColumnDescription(terms.workItems),
 	});
 	const ageCycleHighlight = {
 		title: `${terms.workItemAge}/${terms.cycleTime}`,
@@ -1046,9 +1046,9 @@ function buildWidgetNodes(ctx: {
 			/>
 		),
 		aging: (
-			// UPSTREAM-7: the items are an as-of-endDate snapshot, and so is the
-			// currentStateEnteredAt they carry, so `now` must be endDate too. Measuring
-			// time-in-state against today would add every day since the range ended.
+			// The items are a snapshot as of endDate, and so is the currentStateEnteredAt they
+			// carry, so `now` must be endDate too. Measuring time-in-state against today would add
+			// every day since the range ended.
 			<WorkItemAgingChart
 				inProgressItems={ctx.inProgressItems}
 				percentileValues={ctx.percentileValues}
@@ -1619,9 +1619,9 @@ export const BaseMetricsView = <
 
 	// blockedItems spans To Do + In Progress (from useMetricsData's blocked-eligible fetch), so the
 	// overview count/RAG include items blocked while still in To Do — not just the WIP (in-progress) set.
-	// UPSTREAM-7: inProgressItems is an as-of-endDate snapshot, so staleness is measured against
-	// endDate rather than today — otherwise a past range reports every item as having sat in its
-	// state for all the days since the range closed.
+	// inProgressItems is a snapshot as of endDate, so staleness is measured against endDate rather
+	// than today — otherwise a past range reports every item as having sat in its state for all the
+	// days since the range closed.
 	const staleItems = inProgressItems.filter(
 		(item) =>
 			deriveStaleness(

@@ -1011,6 +1011,16 @@ const ageBandColumn: AgeBandColumnDescriptor = {
 	colorForBand: (label) => bandColors[label],
 };
 
+// What the dialog is handed once a team can cut each state at boundaries of its own: Review names a
+// band the offered list, built from one state's ladder, was never told about.
+const strayBandColumn: AgeBandColumnDescriptor = {
+	...ageBandColumn,
+	bandFor: (item) =>
+		item.referenceId === "ZEN-433"
+			? "Below 60th"
+			: (bandsByReference[item.referenceId] ?? "No history"),
+};
+
 const zenithInFlightItem = (
 	referenceId: string,
 	state: string,
@@ -1140,7 +1150,7 @@ describe("Work Item Age Band column", () => {
 
 		test("stays visible for a coach whose saved column arrangement predates it", () => {
 			localStorage.setItem(
-				"work-items-dialog",
+				"lighthouse:datagrid:work-items-dialog:state",
 				JSON.stringify({
 					columnOrder: [
 						"referenceId",
@@ -1335,6 +1345,46 @@ describe("Work Item Age Band column", () => {
 			await user.click(bandColumnHeader());
 
 			expect(bandCellTexts()[0]).toBe("No history");
+		});
+
+		test("keeps a band name the offered list never carried at the far end, not ahead of everything", async () => {
+			const user = userEvent.setup();
+			render(
+				<WorkItemsDialog
+					{...agingDialogProps}
+					ageBandColumn={strayBandColumn}
+				/>,
+			);
+
+			await user.click(bandColumnHeader());
+
+			const calmestFirst = bandCellTexts();
+			expect(calmestFirst[0]).toBe("No history");
+			expect(calmestFirst[calmestFirst.length - 1]).toBe("Below 60th");
+
+			await user.click(bandColumnHeader());
+
+			const worstFirst = bandCellTexts();
+			expect(worstFirst[0]).toBe("Above 95th");
+			expect(worstFirst[worstFirst.length - 1]).toBe("Below 60th");
+		});
+
+		test("leaves a band name the offered list never carried unpainted", () => {
+			render(
+				<WorkItemsDialog
+					{...agingDialogProps}
+					ageBandColumn={strayBandColumn}
+				/>,
+			);
+
+			const stray = screen
+				.getAllByTestId("ageBandColumnContent")
+				.find((cell) => cell.textContent?.includes("Below 60th"));
+
+			for (const bandColor of Object.values(bandColors)) {
+				expect(stray).not.toHaveStyle(`color: ${bandColor}`);
+			}
+			expect(stray).toHaveStyle("background-color: rgba(0, 0, 0, 0)");
 		});
 
 		test("does not take over which column the dialog opens sorted by", () => {
