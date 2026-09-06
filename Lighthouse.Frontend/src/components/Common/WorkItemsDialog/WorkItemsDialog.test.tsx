@@ -1260,9 +1260,16 @@ describe("Work Item Age Band column", () => {
 
 			await user.click(screen.getByRole("combobox", { name: /value/i }));
 
-			expect(
-				screen.getAllByRole("option").map((option) => option.textContent),
-			).toEqual(bandOptionLabels);
+			// Every single-select filter in the grid opens with a valueless "any" entry the grid
+			// prepends itself to clear the filter. It is not one of the bands, so it is dropped
+			// before checking that the bands, and only the bands, are what a coach can pick from.
+			const offeredBands = screen
+				.getAllByRole("option")
+				.filter((option) => option.getAttribute("data-value") !== "");
+
+			expect(offeredBands.map((option) => option.textContent)).toEqual(
+				bandOptionLabels,
+			);
 		});
 
 		test("writes the band into the exported file in words, not as a number", async () => {
@@ -1339,7 +1346,12 @@ describe("Work Item Age Band column", () => {
 				/>,
 			);
 
-			expect(bandColumnHeader()).not.toHaveAttribute("aria-sort");
+			// Every column header in the grid carries aria-sort; only its value says whether that
+			// column is the one being sorted by. "none" is the band column staying out of the way.
+			expect(bandColumnHeader()).toHaveAttribute("aria-sort", "none");
+			expect(
+				screen.getByRole("columnheader", { name: /Time in State/ }),
+			).toHaveAttribute("aria-sort", "descending");
 		});
 	});
 });
