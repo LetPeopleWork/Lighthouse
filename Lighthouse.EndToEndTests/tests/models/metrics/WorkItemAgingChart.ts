@@ -2,6 +2,8 @@ import type { Locator, Page } from "@playwright/test";
 
 const PACE_BANDS_TOGGLE_TEST_ID = "pace-bands-toggle";
 const PACE_BAND_TEST_ID = "pace-band";
+const AGE_BAND_CELL_TEST_ID = "ageBandColumnContent";
+const AGE_BAND_COLUMN_HEADER = "Work Item Age Band";
 
 export class WorkItemAgingChart {
 	private readonly widget: Locator;
@@ -53,5 +55,37 @@ export class WorkItemAgingChart {
 
 	async countCycleTimePercentileChips(): Promise<number> {
 		return this.cycleTimePercentileChips.count();
+	}
+
+	/**
+	 * The band cells in the widget's View Data dialog. The dialog is rendered in a
+	 * portal at the end of the document, so these are scoped to the dialog and not
+	 * to the widget.
+	 *
+	 * Matched by test id rather than by band text. The band names are ordinary words
+	 * that also appear in the chart behind the dialog and in the column's filter
+	 * options, so a text match would count more than the cells and would change its
+	 * answer as the chart finishes painting.
+	 */
+	get ageBandCells(): Locator {
+		return this.page.getByRole("dialog").getByTestId(AGE_BAND_CELL_TEST_ID);
+	}
+
+	async countAgeBandCells(): Promise<number> {
+		return this.ageBandCells.count();
+	}
+
+	async readAgeBands(): Promise<string[]> {
+		return this.ageBandCells.allInnerTexts();
+	}
+
+	get ageBandColumnHeader(): Locator {
+		return this.page
+			.getByRole("dialog")
+			.getByRole("columnheader", { name: AGE_BAND_COLUMN_HEADER });
+	}
+
+	async sortByAgeBand(): Promise<void> {
+		await this.ageBandColumnHeader.click();
 	}
 }

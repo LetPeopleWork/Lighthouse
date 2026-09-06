@@ -53,9 +53,45 @@ test("flow coach toggles per-state pace bands on and off on the team Work Item A
 		.toBe(cycleTimeChipsBefore);
 });
 
-// The portfolio twin of the spec above is gone. It navigated to a portfolio and
+// The portfolio twin of the toggle spec is gone. It navigated to a portfolio and
 // then drove the SAME WorkItemAgingChart component through the SAME toggle — a
 // per-owner permutation of one widget, paid for with a full demo re-seed. The
 // toggle itself is covered by WorkItemAgingChart.test.tsx and
 // useShowPaceBands.test.ts; the portfolio read path by the portfolio
 // work-item-age integration tests.
+
+test("flow coach reads a pace band for every in-flight item in the Work Item Aging chart's View Data dialog", async ({
+	page,
+	request,
+	overviewPage,
+}) => {
+	await loadDemoScenario(request, DEMO_SCENARIO_ID);
+	await waitForBackgroundUpdates(request);
+	await page.goto("/");
+
+	const teamDetail = await overviewPage.goToTeam(DEMO_TEAM_NAME);
+	const metrics = await teamDetail.goToMetrics();
+	const flowMetricsWidgets = await metrics.switchCategory(
+		MetricsCategories.FlowMetrics,
+	);
+	const agingWidget = await metrics.getWidgetByName(
+		MetricsWidgetNames.WorkItemAgingChart,
+		flowMetricsWidgets,
+	);
+	await expect(agingWidget.Widget).toBeVisible();
+
+	const workItemsDialog = await agingWidget.openDialog();
+	const agingChart = new WorkItemAgingChart(page, AGING_CHART_WIDGET_ID);
+
+	await expect.poll(() => agingChart.countAgeBandCells()).toBeGreaterThan(0);
+	expect(await agingChart.countAgeBandCells()).toBe(
+		await workItemsDialog.countRows(),
+	);
+
+	await agingChart.sortByAgeBand();
+	const bestFirst = await agingChart.readAgeBands();
+	await agingChart.sortByAgeBand();
+	const worstFirst = await agingChart.readAgeBands();
+
+	expect(worstFirst).toEqual([...bestFirst].reverse());
+});
