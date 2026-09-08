@@ -194,7 +194,7 @@ describe("useDateRange — picking one date by hand leaves the other alone", () 
 	});
 });
 
-describe.skip("useDateRange — walking the window a period at a time", () => {
+describe("useDateRange — walking the window a period at a time", () => {
 	it("moves a team's window back one week", () => {
 		const { result } = renderDateRange("team", 30);
 
@@ -292,7 +292,7 @@ describe.skip("useDateRange — walking the window a period at a time", () => {
 	});
 });
 
-describe.skip("useDateRange — the window never ends in the future", () => {
+describe("useDateRange — the window never ends in the future", () => {
 	it("offers no way forward from a window that already ends today", () => {
 		const { result } = renderDateRange("team", 30);
 
@@ -323,7 +323,7 @@ describe.skip("useDateRange — the window never ends in the future", () => {
 	});
 });
 
-describe.skip("useDateRange — leaving the page mid-click", () => {
+describe("useDateRange — leaving the page mid-click", () => {
 	it("applies nothing and complains about nothing when the reader navigates away first", () => {
 		const consoleError = vi
 			.spyOn(console, "error")

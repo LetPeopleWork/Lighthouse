@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router";
+import { useDebouncedRevisionRun } from "../../../hooks/useDebouncedRevisionRun";
 import { isValidDate } from "../../../utils/date/isValidDate";
 import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
 import {
@@ -14,6 +15,11 @@ import {
 	presetWindow,
 	shiftWindow,
 } from "./dateWindow";
+
+// Longer than the debounce used for typed input elsewhere: a stepper is clicked deliberately, and
+// the gap between two intended clicks is wider than the gap between two keystrokes, so a shorter
+// window would fire in the middle of a burst and refetch a window nobody wanted to look at.
+const COMMIT_QUIET_PERIOD_MS = 500;
 
 export interface UseDateRangeResult {
 	/** The window the widgets are showing. Only this pair reaches the URL. */
@@ -53,6 +59,8 @@ export function useDateRange(
 	const [committedWindow, setCommittedWindow] = useState<DateWindow>(() =>
 		windowFromParams(searchParams, defaultDateRange),
 	);
+	const [pendingWindow, setPendingWindow] = useState<DateWindow | null>(null);
+	const [stepRevision, setStepRevision] = useState(0);
 
 	// Every control here moves both ends of the window at once. Writing one end at a time rebuilds
 	// the other end from the render that was current when the handler was created, so the second
@@ -64,6 +72,7 @@ export function useDateRange(
 				return;
 			}
 
+			setPendingWindow(null);
 			setCommittedWindow({ start, end });
 
 			const nextParams = new URLSearchParams(searchParams);
@@ -75,6 +84,20 @@ export function useDateRange(
 	);
 
 	const stepDays = getStepDaysForOwner(ownerType);
+	const displayedWindow = pendingWindow ?? committedWindow;
+
+	const commitPendingWindow = useCallback(() => {
+		if (pendingWindow === null) {
+			return;
+		}
+		applyDateRange(pendingWindow.start, pendingWindow.end);
+	}, [applyDateRange, pendingWindow]);
+
+	useDebouncedRevisionRun(
+		stepRevision,
+		commitPendingWindow,
+		COMMIT_QUIET_PERIOD_MS,
+	);
 
 	const applyPreset = useCallback(
 		(days: number) => {
@@ -84,15 +107,21 @@ export function useDateRange(
 		[applyDateRange],
 	);
 
+	// Each click has to walk on from where the previous one left the window, and a burst of them
+	// lands before any re-render, so the step is taken from the queued window rather than from the
+	// one this render closed over.
 	const stepWindow = useCallback(
 		(direction: -1 | 1) => {
-			const next = clampWindowToToday(
-				shiftWindow(committedWindow, direction * stepDays),
-				new Date(),
+			const today = new Date();
+			setPendingWindow((queued) =>
+				clampWindowToToday(
+					shiftWindow(queued ?? committedWindow, direction * stepDays),
+					today,
+				),
 			);
-			applyDateRange(next.start, next.end);
+			setStepRevision((revision) => revision + 1);
 		},
-		[applyDateRange, committedWindow, stepDays],
+		[committedWindow, stepDays],
 	);
 
 	const handleStartDateChange = useCallback(
@@ -121,12 +150,12 @@ export function useDateRange(
 	return {
 		startDate: committedWindow.start,
 		endDate: committedWindow.end,
-		pendingStartDate: committedWindow.start,
-		pendingEndDate: committedWindow.end,
-		isCommitPending: false,
-		canStepForward: canWindowStepForward(committedWindow, today),
+		pendingStartDate: displayedWindow.start,
+		pendingEndDate: displayedWindow.end,
+		isCommitPending: pendingWindow !== null,
+		canStepForward: canWindowStepForward(displayedWindow, today),
 		presets,
-		selectedPresetDays: matchingPresetDays(committedWindow, presets, today),
+		selectedPresetDays: matchingPresetDays(displayedWindow, presets, today),
 		stepDays,
 		applyDateRange,
 		applyPreset,
