@@ -1,4 +1,9 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import {
+	expect,
+	type Locator,
+	type Page,
+	type Request,
+} from "@playwright/test";
 import { WorkItemsDialog } from "./WorkItemsDialog";
 
 export class MetricsWidget {
@@ -404,6 +409,130 @@ export class MetricsDateRange {
 
 		await this.page.goto(url.toString());
 		await requested;
+	}
+
+	/** What the header itself says the window is: `dd MMM yyyy → dd MMM yyyy`. */
+	get windowLabel(): Locator {
+		return this.toggle;
+	}
+
+	/**
+	 * Found by attribute rather than by role: while the popover is open, MUI marks the
+	 * whole application root `aria-hidden`, and because this popover renders inside that
+	 * root rather than in a portal, its own chips are hidden along with everything else.
+	 * `getByRole` honours that and finds nothing.
+	 */
+	private get presetChips(): Locator {
+		return this.page
+			.locator("[role='button'][aria-pressed]")
+			.filter({ hasText: /^Last \d+ days$/ });
+	}
+
+	presetChip(label: string): Locator {
+		return this.presetChips.filter({ hasText: new RegExp(`^${label}$`) });
+	}
+
+	/**
+	 * The presets live in a popover, and a popover puts a modal backdrop over the
+	 * header — so the steppers cannot be reached until it is closed again.
+	 */
+	async open(): Promise<void> {
+		await this.toggle.click();
+		await this.presetChips.first().waitFor();
+	}
+
+	async close(): Promise<void> {
+		await this.page.keyboard.press("Escape");
+		await this.presetChips.first().waitFor({ state: "detached" });
+	}
+
+	/**
+	 * Picks a named window and waits for the metrics round it triggers, keyed on the
+	 * day the window starts. Every preset ends today, so the start is the only part
+	 * that tells one preset's window from another's — waiting on the end would be
+	 * satisfied by the window that was already showing.
+	 */
+	async selectPreset(label: string, expectedStart: Date): Promise<void> {
+		const startParam = MetricsDateRange.toParam(expectedStart);
+
+		const requested = this.page.waitForResponse(
+			(response) =>
+				response.url().includes("/metrics/workItemAgePercentiles?") &&
+				response.url().includes(`startDate=${startParam}`),
+			{ timeout: 30_000 },
+		);
+
+		await this.open();
+		await this.presetChip(label).click();
+		await requested;
+		await this.close();
+	}
+
+	stepBackwardButton(stepDays: number): Locator {
+		return this.page.getByRole("button", {
+			name: `Previous ${stepDays} days`,
+			exact: true,
+		});
+	}
+
+	stepForwardButton(stepDays: number): Locator {
+		return this.page.getByRole("button", {
+			name: `Next ${stepDays} days`,
+			exact: true,
+		});
+	}
+
+	/**
+	 * Runs a burst of window clicks while listening to one metrics endpoint, and returns
+	 * the day each of its calls asked the window to end on. What a caller reads off that
+	 * list is which windows were fetched at all: only the one the burst settled on, or
+	 * also the ones it passed through on the way.
+	 *
+	 * Showing one window fetches the period before it as well, for the trend arrows, so
+	 * the list names more days than there were windows. It answers which days were asked
+	 * for — not how many calls were made.
+	 *
+	 * Only calls issued after this starts listening are recorded, so a round still arriving
+	 * for the window that was showing beforehand does not count against the burst.
+	 * `settledEnd` is the day the burst is expected to land on: registering its wait up
+	 * front is what keeps the listener alive long enough to have caught the intermediate
+	 * calls, had there been any.
+	 */
+	async recordFetchedWindowsDuring(
+		burst: () => Promise<void>,
+		settledEnd: Date,
+		endpointFragment = "/metrics/workItemAgePercentiles?",
+	): Promise<string[]> {
+		const settledParam = MetricsDateRange.toParam(settledEnd);
+		const fetchedWindows: string[] = [];
+
+		const record = (request: Request) => {
+			if (!request.url().includes(endpointFragment)) {
+				return;
+			}
+
+			const endDate = new URL(request.url()).searchParams.get("endDate");
+			if (endDate !== null) {
+				fetchedWindows.push(endDate);
+			}
+		};
+
+		const settled = this.page.waitForResponse(
+			(response) =>
+				response.url().includes(endpointFragment) &&
+				response.url().includes(`endDate=${settledParam}`),
+			{ timeout: 30_000 },
+		);
+
+		this.page.on("request", record);
+		try {
+			await burst();
+			await settled;
+		} finally {
+			this.page.off("request", record);
+		}
+
+		return fetchedWindows;
 	}
 }
 
