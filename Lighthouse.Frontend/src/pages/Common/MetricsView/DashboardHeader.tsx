@@ -16,6 +16,7 @@ import DateRangeSelector from "../../../components/Common/DateRangeSelector/Date
 import { isValidDate } from "../../../utils/date/isValidDate";
 import CategorySelector from "./CategorySelector";
 import type { CategoryKey } from "./categoryMetadata";
+import DateWindowStepper from "./DateWindowStepper";
 import type { DateWindowPreset } from "./dateWindow";
 
 export interface DashboardHeaderProps {
@@ -26,6 +27,13 @@ export interface DashboardHeaderProps {
 	presets?: readonly DateWindowPreset[];
 	selectedPresetDays?: number | null;
 	onSelectPreset?: (days: number) => void;
+	/** What the label reads. Defaults to the committed window when no commit is outstanding. */
+	pendingStartDate?: Date;
+	pendingEndDate?: Date;
+	isCommitPending?: boolean;
+	stepDays?: number;
+	canStepForward?: boolean;
+	onStepWindow?: (direction: -1 | 1) => void;
 	selectedCategory: CategoryKey;
 	onSelectCategory: (key: CategoryKey) => void;
 	showTips: boolean;
@@ -40,6 +48,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 	presets,
 	selectedPresetDays,
 	onSelectPreset,
+	pendingStartDate,
+	pendingEndDate,
+	isCommitPending = false,
+	stepDays,
+	canStepForward = false,
+	onStepWindow,
 	selectedCategory,
 	onSelectCategory,
 	showTips,
@@ -104,9 +118,29 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 					</Typography>
 				)}
 
+				{onStepWindow && stepDays !== undefined && (
+					// The pair ships as one row component, so its own box is dissolved into this row
+					// and the date label placed between the two arrows. An arrow then reads as moving
+					// the window it points at rather than as a control that happens to stand beside it.
+					<Box
+						sx={{
+							display: "contents",
+							"& > *": { display: "contents" },
+							"& > * > :last-of-type": { order: 1 },
+						}}
+					>
+						<DateWindowStepper
+							stepDays={stepDays}
+							canStepForward={canStepForward}
+							onStep={onStepWindow}
+						/>
+					</Box>
+				)}
+
 				<Tooltip title={isNarrow ? "Metrics shown for" : ""}>
 					<ButtonBase
 						data-testid="dashboard-date-range-toggle"
+						data-window-pending={isCommitPending ? "true" : "false"}
 						onClick={handleOpen}
 						sx={{
 							display: "inline-flex",
@@ -115,7 +149,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 							px: 1,
 							py: 0.25,
 							borderRadius: 1,
-							transition: "background-color 150ms",
+							transition: "background-color 150ms, opacity 150ms",
+							// For up to half a second after a click this label already names the new
+							// window while the charts below still show the old one. Unmarked, it would
+							// simply be wrong for that moment, so it reads as provisional until the
+							// charts catch up.
+							opacity: isCommitPending ? 0.55 : 1,
+							fontStyle: isCommitPending ? "italic" : "normal",
 							"&:hover": { backgroundColor: theme.palette.action.hover },
 						}}
 					>
@@ -124,9 +164,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 							<Typography
 								variant="body2"
 								color="text.primary"
-								sx={{ fontWeight: 500 }}
+								sx={{ fontWeight: 500, fontStyle: "inherit" }}
 							>
-								{` ${formatDate(startDate)} → ${formatDate(endDate)}`}
+								{` ${formatDate(pendingStartDate ?? startDate)} → ${formatDate(pendingEndDate ?? endDate)}`}
 							</Typography>
 						)}
 					</ButtonBase>

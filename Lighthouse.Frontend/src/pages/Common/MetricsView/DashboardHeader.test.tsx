@@ -70,7 +70,7 @@ function setMatchMedia(matches: boolean) {
 const renderHeader = async (overrides: Partial<DashboardHeaderProps> = {}) => {
 	const { default: DashboardHeader } = await import("./DashboardHeader");
 
-	render(
+	const withProps = (props: Partial<DashboardHeaderProps>) => (
 		<DashboardHeader
 			startDate={new Date(2025, 6, 15)}
 			endDate={new Date(2025, 7, 14)}
@@ -80,9 +80,16 @@ const renderHeader = async (overrides: Partial<DashboardHeaderProps> = {}) => {
 			onSelectCategory={vi.fn()}
 			showTips={true}
 			onToggleTips={vi.fn()}
-			{...overrides}
-		/>,
+			{...props}
+		/>
 	);
+
+	const view = render(withProps(overrides));
+
+	return {
+		rerender: (next: Partial<DashboardHeaderProps>) =>
+			view.rerender(withProps({ ...overrides, ...next })),
+	};
 };
 
 describe("DashboardHeader", () => {
@@ -182,6 +189,77 @@ describe("DashboardHeader", () => {
 		expect(
 			screen.getByTestId("dashboard-date-range-toggle"),
 		).toBeInTheDocument();
+	});
+
+	it("renders the window steppers and marks a window that has not been applied yet", async () => {
+		setMatchMedia(false);
+
+		const onStepWindow = vi.fn();
+
+		const { rerender } = await renderHeader({
+			pendingStartDate: new Date(2025, 6, 1),
+			pendingEndDate: new Date(2025, 6, 31),
+			isCommitPending: true,
+			stepDays: 14,
+			canStepForward: true,
+			onStepWindow,
+		});
+
+		expect(
+			screen.getByText(/01 Jul 2025\s*→\s*31 Jul 2025/),
+		).toBeInTheDocument();
+
+		expect(screen.getByTestId("dashboard-date-range-toggle")).toHaveAttribute(
+			"data-window-pending",
+			"true",
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Previous 14 days" }));
+		expect(onStepWindow).toHaveBeenCalledWith(-1);
+
+		rerender({
+			startDate: new Date(2025, 6, 1),
+			endDate: new Date(2025, 6, 31),
+			isCommitPending: false,
+		});
+
+		expect(screen.getByTestId("dashboard-date-range-toggle")).toHaveAttribute(
+			"data-window-pending",
+			"false",
+		);
+	});
+
+	it("keeps the steppers reachable on narrow screens where the date text is hidden", async () => {
+		setMatchMedia(true);
+
+		await renderHeader({
+			stepDays: 7,
+			canStepForward: false,
+			onStepWindow: vi.fn(),
+		});
+
+		expect(screen.queryByText(/15 Jul 2025/)).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Previous 7 days" }),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Next 7 days" })).toBeDisabled();
+	});
+
+	it("falls back to the committed window when no pending window is supplied", async () => {
+		setMatchMedia(false);
+
+		await renderHeader();
+
+		expect(
+			screen.getByText(/15 Jul 2025\s*→\s*14 Aug 2025/),
+		).toBeInTheDocument();
+		expect(screen.getByTestId("dashboard-date-range-toggle")).toHaveAttribute(
+			"data-window-pending",
+			"false",
+		);
+		expect(
+			screen.queryByRole("button", { name: /Previous \d+ days/ }),
+		).toBeNull();
 	});
 
 	it("renders tips toggle and calls onToggleTips when clicked", async () => {

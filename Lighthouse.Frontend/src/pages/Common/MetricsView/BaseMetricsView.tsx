@@ -1211,6 +1211,12 @@ export const BaseMetricsView = <
 	const {
 		startDate,
 		endDate,
+		pendingStartDate,
+		pendingEndDate,
+		isCommitPending,
+		canStepForward,
+		stepDays,
+		stepWindow,
 		presets,
 		selectedPresetDays,
 		applyPreset,
@@ -1884,6 +1890,12 @@ export const BaseMetricsView = <
 				presets={presets}
 				selectedPresetDays={selectedPresetDays}
 				onSelectPreset={applyPreset}
+				pendingStartDate={pendingStartDate}
+				pendingEndDate={pendingEndDate}
+				isCommitPending={isCommitPending}
+				stepDays={stepDays}
+				canStepForward={canStepForward}
+				onStepWindow={stepWindow}
 				selectedCategory={selectedCategory}
 				onSelectCategory={setSelectedCategory}
 				showTips={showTips}
