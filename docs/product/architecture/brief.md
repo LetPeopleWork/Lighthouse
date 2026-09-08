@@ -7270,3 +7270,71 @@ review.
 
 Neither behaviour is introduced here. Both are in
 `docs/feature/story-5884-work-item-age-bands/design/upstream-changes.md`.
+
+## Application Architecture — story-5914-metrics-time-horizon-presets (ADO User Story #5914)
+
+This section is **additive** to all prior `## Application Architecture` deltas. Frontend-only; no
+backend, DTO, endpoint or migration change. Pattern, paradigm and core invariants are unchanged. No
+System Context or Container edge moves — the change is entirely inside the React SPA container.
+
+**The metrics window becomes a first-class artefact.** It lives today as two `useState` slots plus
+two setters and a param writer inlined in `BaseMetricsView.tsx:1215-1252`, a 1938-line component.
+It moves into `useDateRange`, which owns the committed window, the pending window, the forward clamp
+and the `?startDate`/`?endDate` round-trip, and exposes exactly one write path,
+`applyDateRange(start, end)`.
+
+**Why one write path, and not two that already exist.** `handleStartDateChange` writes
+`updateDateParams(date, endDate)` and `handleEndDateChange` writes `updateDateParams(startDate, date)`
+— each from the current render's value of the *other* end, with `updateDateParams` rebuilding from a
+`searchParams` stale by the same mechanism. Calling both to move a two-ended window makes the second
+call rewrite the first's start back to its old value: a torn window, written to the URL and then
+fetched. Every control this feature adds moves both ends at once, so the trap sits under all of them.
+Both handlers survive as thin delegates to `applyDateRange`; the torn write becomes unreachable by
+construction rather than by care. ADR-189.
+
+**The debounce is the shipped idiom, promoted, not a new one.** `useDebouncedRevisionRun` — an effect
+keyed on a monotonic revision counter, `setTimeout` inside, `clearTimeout` in the cleanup — was
+module-private to `TeamForecastView.tsx:30-39`. It moves to `src/hooks/useDebouncedRevisionRun.ts`
+and takes its delay as a parameter, defaulting to the 300 ms its two existing callers use.
+`TeamForecastView` imports it; its behaviour does not change. The cleanup is what makes
+unmount-mid-debounce safe as a property of the idiom rather than as something to remember.
+
+**Two debounce values now exist, deliberately.** The metrics window passes 500 ms; `DEBOUNCE_MS = 300`
+(`useModifySettings.ts:50`, `TeamForecastView.tsx:28`) stays where it is. 300 ms is tuned for
+keystroke-driven work — autosave as the user types, a forecast recomputed as a number is edited. A
+stepper is clicked deliberately and the gap between two intended clicks is longer than the gap between
+two keystrokes; firing in that gap is the precise failure the debounce exists to prevent. A single
+shared constant would be wrong for one of the two input styles, so each is named at its call site.
+
+**The load-bearing invariant this feature must not break.** `useVisitedCategories`
+(`useCategorySelection.ts:68-104`) keys its reset token on the formatted window
+(`BaseMetricsView.tsx:1267-1270`), so every *committed* window change collapses the visited set and
+re-fires every fetch for the current category. That monotonic gate is Bug #5571's fix and is why a
+return visit is free. A stepper clicked four times would drive four full refetch rounds through it,
+three for windows nobody wants. The storm is stopped **upstream of the commit** by the debounce; the
+token is not touched, and no new `MetricsFetchKey` or `widgetFetchRequirements` entry is added.
+
+**Pending is not a second source of truth.** The pending window lives in the hook and never reaches
+the URL. Only a committed window writes `?startDate`/`?endDate`, still with `replace: true`, still in
+local Y/M/D — so a link copied mid-burst names a window that was really fetched, browser history gains
+one entry rather than four, and Bug #5566's local-date encoding is untouched. The header renders the
+pending window with a visibly not-yet-applied treatment, which is the honest answer to the one thing a
+user could otherwise catch the feature lying about.
+
+| Invariant | Enforced by |
+|---|---|
+| One preset click writes BOTH `startDate` and `endDate` — never one from a stale render | Vitest on `useDateRange`, plus a Playwright assertion on the URL after a chip click |
+| A burst of stepper clicks costs one committed window and one round of requests | Playwright request count across a click burst; Vitest with fake timers on the hook |
+| No committed window ends after today via a preset or a stepper | Vitest on the clamp, including the sub-step-from-today case where the window keeps its length |
+| Unmounting mid-debounce fires no state update | Vitest unmount-during-quiet-period; structurally guaranteed by the idiom's cleanup |
+| The visited-category reset token is unchanged | Bug #5571's existing `BaseMetricsView.test.tsx` block stays green |
+
+**Component inventory (designed, not yet built):** `useDateRange`, `dateWindowPresets`
+(`getPresetsForOwner` / `getStepDaysForOwner`, keyed on the `ownerType` already derived at
+`BaseMetricsView.tsx:1254-1255`), `DateRangePresets` (chip row inside the popover),
+`DateWindowStepper` (back/forward pair on the header bar) — all new;
+`useDebouncedRevisionRun` — moved and widened; `DateRangeSelector`, `DashboardHeader`,
+`BaseMetricsView` (net shrink) and the `MetricsDateRange` Playwright POM — extended.
+
+ADR: `adr-189-metrics-window-hook-and-revision-keyed-debounce.md`.
+Feature delta: `docs/feature/story-5914-metrics-time-horizon-presets/feature-delta.md`.

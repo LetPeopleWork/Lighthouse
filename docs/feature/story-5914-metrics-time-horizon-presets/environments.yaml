@@ -1,0 +1,122 @@
+# Environment inventory — story-5914-metrics-time-horizon-presets
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+#
+# DEVOPS is a NO-OP for this feature and this file records why rather than padding it out.
+# Frontend-only (D14): no endpoint, no DTO, no EF migration, no HistoricalSchemaPatch entry, no
+# configuration key, no secret, no new dependency, no chart change, no environment variable. Nothing
+# new is deployed — the changed code ships inside the React SPA bundle that already ships.
+#
+# Two axes below are NOT ceremony and DISTILL must parametrize over them:
+#   1. viewport — DDD-1 puts the steppers on the header bar, and DashboardHeader.tsx:90-124 drops the
+#      date text under the MUI `sm` breakpoint. The control's narrow rendering is a real behaviour.
+#   2. runner timezone — every date this feature computes is encoded local Y/M/D on both the URL and
+#      the wire. A UTC runner cannot see an off-by-one that a negative-offset viewer sees. This is
+#      Bug #5566's failure mode and it is invisible in default CI.
+
+target_environments:
+  - name: local-dev
+    description: "Developer workstation. Frontend dev server against a local backend; window changes exercised by hand against real or demo data."
+    platform: [linux, macos, windows, wsl]
+    preconditions:
+      - "pnpm + Node.js 20+ installed"
+      - "A backend reachable for /metrics/* (Start-DevServer.ps1, or the dev instance restored from a production backup)"
+
+  - name: ci-frontend
+    description: "GitHub Actions ubuntu-latest, existing frontend jobs — pnpm test, tsc -b, vite build, biome check. No new workflow, no new job."
+    platform: [linux]
+    preconditions:
+      - "GitHub Actions ubuntu-latest runner"
+      - "Existing ci.yml frontend steps — unchanged by this feature"
+    note: "Runner clock is UTC. See ci-frontend-nonutc."
+
+  - name: ci-frontend-nonutc
+    description: "The same Vitest run with TZ forced to a negative UTC offset. Exists solely so the local Y/M/D encoding is exercised where UTC and local disagree on the day."
+    platform: [linux]
+    preconditions:
+      - "TZ set to a negative-offset zone (e.g. America/Los_Angeles) for the date-arithmetic suites"
+    rationale: >
+      Every preset, step and clamp in this feature computes a calendar day and round-trips it through
+      ?startDate/?endDate in local Y/M/D. On a UTC runner the UTC day and the local day never differ,
+      so an accidental toISOString passes every test and shifts a real viewer's window by a day. This
+      is Bug #5566 exactly. At minimum the useDateRange and dateWindowPresets suites run here.
+
+  - name: e2e-demo
+    description: "Existing Playwright stack against a backend with demo data. Drives the chips and the steppers through the extended MetricsDateRange POM."
+    platform: [linux]
+    preconditions:
+      - "Existing Playwright E2E stack — no new spec infrastructure"
+      - "Demo work-tracking connection seeded (existing testWithDemoData fixture)"
+      - "History deep enough for the widest preset to render populated, or the honest empty state is the assertion"
+
+  - name: viewport-narrow
+    description: "Below the MUI `sm` breakpoint. DashboardHeader hides the 'Metrics shown for:' label and the date text, leaving the calendar icon; the steppers stay visible beside it."
+    platform: [linux]
+    preconditions:
+      - "Playwright viewport width below the MUI sm breakpoint (600px)"
+    rationale: >
+      DDD-1 accepted a three-control row on narrow screens on the argument that back / current /
+      forward reads as a group. That argument is only true if the accessible names carry the step
+      size, since the icons are the only visible signal there. Asserted, not assumed.
+
+  - name: customer-self-hosted
+    description: "End-user deployment, any supported platform. Nothing to install, migrate or configure — the feature is view state in the browser."
+    platform: [linux, windows, macos, docker]
+    preconditions: []
+    observability_note: >
+      No phone-home and no usage instrumentation (see the DEVOPS Monitoring Contracts section).
+      Every outcome KPI is asserted in the test suite before release, not observed in the field.
+
+coexistence_matrix:
+  - tool: existing-visited-category-fetch-gate
+    must_not_break: true
+    rationale: >
+      useVisitedCategories keys its reset token on the formatted window. Bug #5571's monotonic gate is
+      why returning to a visited category is free. DDD-9 forbids touching it; the burst is absorbed
+      before the commit. Its existing BaseMetricsView.test.tsx block must stay green untouched.
+  - tool: existing-manual-date-pickers
+    must_not_break: true
+    rationale: >
+      DateRangeSelector's two BoundedDatePicker instances, their isValidDate guard and the absent end
+      maxDate (D16) are unchanged. The chips render above them; nothing about typing a date changes.
+  - tool: TeamForecastView-debounced-forecasts
+    must_not_break: true
+    rationale: >
+      DDD-3 moves useDebouncedRevisionRun out of TeamForecastView's module scope. The move is
+      behaviour-preserving and TeamForecastView's existing tests are the guard — this is the one file
+      the feature touches that it otherwise has no business in.
+  - tool: existing-MetricsDateRange-POM-callers
+    must_not_break: true
+    rationale: >
+      WorkItemAgeAsOfRangeEnd.spec.ts and PredictabilityOverTime.spec.ts drive the window through
+      apply / applyAndWaitFor. Those signatures are extended around, never changed.
+  - tool: existing-@screenshot-E2E-suite
+    must_not_break: true
+    rationale: >
+      The date popover gains a chip row, so the metrics screenshot that shows it must be regenerated
+      at finalization — delete the PNG first, the regen keeps the old file under a 0.5% diff.
+  - tool: existing-SonarCloud-quality-gate
+    must_not_break: true
+    rationale: "No new issue of any severity on the PR; docs/ci-learnings.md rules pre-applied."
+  - tool: existing-StrykerJS-config
+    must_not_break: true
+    rationale: >
+      New frontend files enter the existing per-feature Stryker scope (>=80% gate). Note the shipped
+      trap: StrykerJS has left @ts-nocheck in files before — check the working tree after a run.
+
+platform_coverage:
+  Browsers: ["Chromium (Playwright default)", "the evergreen set the SPA already targets"]
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  Windows: [Windows Server 2022, Windows 11]
+  macOS: [13.x, 14.x, "arm64 standalone"]
+  Docker: ["existing image — unchanged"]
+  WSL: [WSL2]
+  CI: ["GitHub Actions ubuntu-latest (existing ci.yml — no new workflow, no new job)"]
+  Database:
+    note: "N/A, because no schema, query or provider-visible behaviour changes (D14)."
+
+deployment_assumptions:
+  - "Nothing is installed, migrated or configured. The feature ships as changed code inside the existing SPA bundle."
+  - "No forward/backward compatibility concern: a URL carrying ?startDate/?endDate keeps its meaning across the upgrade, and an old link opened on a new build resolves to the same window (AC-01.8)."
+  - "No opening range changes for any existing Team or Portfolio (D1, D2) — KPI-6 is the before/after check on the dev instance restored from a production backup."
+  - "Rollback is the ordinary frontend rollback: the prior bundle. No state is written that a rollback would strand, because nothing is persisted (D10)."
+  - "Standalone Tauri behaves identically — the window is browser-side state with no server-only path."

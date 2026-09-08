@@ -23,3 +23,25 @@ outcomes:
   artifact: Lighthouse.Frontend/src/utils/charts/paceBands.ts
   related: []
   superseded_by: null
+- id: OUT-2
+  kind: specification
+  summary: Moves a metrics time window through calendar time without changing its
+    length, and never lets it end after today, so a named window and a walked-back
+    window are the same window seen at two moments.
+  feature: story-5914-metrics-time-horizon-presets
+  inputs:
+  - shape: a start and end calendar day in the viewer's own zone, a step size in days
+      or a named window length, and what day today is
+  output:
+    shape: a start and end calendar day the same number of days apart as the input
+      window, ending no later than today, expressed as local calendar days rather
+      than instants
+  keywords:
+  - date-window
+  - time-horizon
+  - metrics-range
+  - calendar-day
+  - clamp
+  artifact: Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.ts
+  related: []
+  superseded_by: null
