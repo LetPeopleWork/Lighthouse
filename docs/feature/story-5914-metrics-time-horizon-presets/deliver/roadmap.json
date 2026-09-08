@@ -50,13 +50,13 @@
             "All 29 tests in dateWindow.test.ts are un-skipped and green"
           ],
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.test.ts",
-          "scenario_name": "dateWindow - owner-aware configuration; a named window ends today; walking the window through time; the window never ends in the future; which named window is showing",
+          "scenario_name": "dateWindow — owner-aware configuration; dateWindow — a named window ends today; dateWindow — walking the window through time; dateWindow — the window never ends in the future; dateWindow — which named window is showing",
           "deps": [],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.ts",
             "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.test.ts"
           ],
-          "implementation_notes": "Replace the seven throwing bodies. Use date-fns (addDays, differenceInCalendarDays, startOfDay, isAfter) - dayjs must not enter this surface. `today` stays a parameter rather than an ambient clock read, which is what keeps the module a pure-function contract with an empty effect universe. The tests assert local Y/M/D component-wise precisely so they can fail when the suite runs outside UTC; do not satisfy them by formatting through ISO. Un-skipping is done by changing `describe.skip` to `describe` in the five blocks - leave the lazy fixture helpers as they are, because a call hoisted back to describe scope fails the file as a broken suite rather than reporting pending tests."
+          "implementation_notes": "Replace the seven throwing bodies. Use date-fns (addDays, differenceInCalendarDays, startOfDay, isAfter) - dayjs must not enter this surface. `today` stays a parameter rather than an ambient clock read, which is what keeps the module a pure-function contract with an empty effect universe. The tests assert local Y/M/D component-wise precisely so they can fail when the suite runs outside UTC; do not satisfy them by formatting through ISO. Un-skipping is done by changing `describe.skip` to `describe` in the five blocks - leave the lazy fixture helpers as they are, because a call hoisted back to describe scope fails the file as a broken suite rather than reporting pending tests. On DEVOPS's ci-frontend-nonutc axis: no CI change is needed here and none should be added. `pnpm test` and the `pnpm run sonarreport` that CI actually invokes are already `cross-env TZ=Europe/Zurich vitest run` (Lighthouse.Frontend/package.json:12-13), so the suite has never run at UTC and environments.yaml's 'Runner clock is UTC' note under ci-frontend is wrong. Do NOT swap in the negative-offset zone environments.yaml suggests: every date in these four files is constructed at local midnight (`new Date(y, m-1, d)`, and `vi.setSystemTime` on such a value), and at a POSITIVE offset an accidental `toISOString().split('T')[0]` yields the previous calendar day and reds, while at a negative offset it yields the same day and passes. Europe/Zurich is the stronger guard for this feature; America/Los_Angeles would quietly weaken it."
         },
         {
           "id": "01-02",
@@ -73,7 +73,7 @@
             "The three US-01 describe blocks in useDateRange.test.tsx are un-skipped and green: 'where the opening window comes from', 'choosing a named window', 'picking one date by hand leaves the other alone'"
           ],
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.test.tsx",
-          "scenario_name": "useDateRange - where the opening window comes from; choosing a named window; picking one date by hand leaves the other alone",
+          "scenario_name": "useDateRange — where the opening window comes from; useDateRange — choosing a named window; useDateRange — picking one date by hand leaves the other alone",
           "deps": ["01-01"],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.ts",
@@ -118,9 +118,11 @@
             "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.tsx",
             "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.test.tsx",
             "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
-            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.tsx"
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.tsx",
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.keyboard.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.popover.test.tsx"
           ],
-          "implementation_notes": "DashboardHeader is touched only to forward the preset props through to the popover; its steppers arrive in 02-04. BaseMetricsView should get smaller here - startDate, endDate, updateDateParams, handleStartDateChange and handleEndDateChange move out into the hook. Bug #5571's category-scoped fetching block in BaseMetricsView.test.tsx must stay green untouched; if it reds, the window's identity or the reset token changed and that is a regression, not a test to update."
+          "implementation_notes": "DashboardHeader is touched only to forward the preset props through to the popover; its steppers arrive in 02-04. BaseMetricsView should get smaller here - startDate, endDate, updateDateParams, handleStartDateChange and handleEndDateChange move out into the hook. Bug #5571's category-scoped fetching block in BaseMetricsView.test.tsx must stay green untouched; if it reds, the window's identity or the reset token changed and that is a regression, not a test to update. Any prop added to DateRangeSelector or DashboardHeader here must be optional, or be threaded through every existing render site: DateRangeSelectorProps is constructed explicitly at three sites in DateRangeSelector.keyboard.test.tsx (L28, L209, L297) and via a shared defaultProps in DateRangeSelector.test.tsx, and all eight DashboardHeaderProps are constructed explicitly in DashboardHeader.popover.test.tsx (L33) as well as in DashboardHeader.test.tsx. A required prop that misses one of those files fails `tsc -b`, which is this step's own zero-warning build criterion - DT-5 named this hazard as the reason DISTILL declined to widen these two prop types, and DELIVER is where it comes due."
         }
       ]
     },
@@ -160,7 +162,7 @@
             "The three remaining describe blocks in useDateRange.test.tsx are un-skipped and green: 'walking the window a period at a time', 'the window never ends in the future', 'leaving the page mid-click'"
           ],
           "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.test.tsx",
-          "scenario_name": "useDateRange - walking the window a period at a time; the window never ends in the future; leaving the page mid-click",
+          "scenario_name": "useDateRange — walking the window a period at a time; useDateRange — the window never ends in the future; useDateRange — leaving the page mid-click",
           "deps": ["02-01"],
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.ts",
@@ -203,9 +205,10 @@
           "files_to_modify": [
             "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.tsx",
             "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.popover.test.tsx",
             "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx"
           ],
-          "implementation_notes": "The pending window is the one thing here a user could catch the product lying about - for up to half a second the label names a window the charts are not showing. The treatment has to make that state visibly provisional rather than silently wrong. Expose it through a data attribute as well as the visual treatment so the test can assert the state without pinning a colour."
+          "implementation_notes": "The pending window is the one thing here a user could catch the product lying about - for up to half a second the label names a window the charts are not showing. The treatment has to make that state visibly provisional rather than silently wrong. Expose it through a data attribute as well as the visual treatment so the test can assert the state without pinning a colour. DashboardHeader.popover.test.tsx constructs DashboardHeaderProps explicitly and is type-checked by `tsc -b`, so a required stepper prop added here has to be threaded there too, not only into DashboardHeader.test.tsx."
         },
         {
           "id": "02-05",
@@ -227,5 +230,85 @@
         }
       ]
     }
-  ]
+  ],
+  "validation": {
+    "status": "approved",
+    "validated_by": "nw-solution-architect",
+    "validated_at": "2026-09-08",
+    "mode": "validation-of-existing-plan",
+    "verdict": "Validated against all four wave sections of feature-delta.md, both slice files, ADR-189 and the eight scaffold files as they actually exist on disk. The nine-step decomposition, the describe-block assignment across the two useDateRange steps, and the dependency chain are correct as written; all 66 authored tests are reachable by exactly one step. The load-bearing claim in 01-02 - that the two per-end setters close over the current render's values and cannot be composed - was verified line by line against BaseMetricsView.tsx and is accurate, with the cited range 1215-1252 still current and no drift. Three narrowly-scoped amendments: two files_to_modify lists were short of existing render sites that are type-checked against the two extended components' prop types, and 01-01 gained a note correcting DEVOPS's ci-frontend-nonutc axis, where the suite already runs at TZ=Europe/Zurich and the negative-offset zone environments.yaml proposes would weaken rather than strengthen the guard for this feature's local-midnight date construction. No step is wrong in a way that needs a human decision.",
+    "checks": [
+      {
+        "check": "scenario-coverage",
+        "result": "pass",
+        "detail": "Counted on disk, not from the wave document. dateWindow.test.ts holds 29 tests in five describe.skip blocks (6+5+7+7+4) whose names match 01-01's scenario_name exactly. useDateRange.test.tsx holds 25 in six blocks; 01-02 claims 'where the opening window comes from' (4), 'choosing a named window' (6) and 'picking one date by hand leaves the other alone' (3) = 13, and 02-02 claims 'walking the window a period at a time' (8), 'the window never ends in the future' (3) and 'leaving the page mid-click' (1) = 12. The two sets are disjoint and exhaust the file. DateRangePresets.test.tsx holds 5 in one block, DateWindowStepper.test.tsx holds 7 in one block. 29+25+5+7 = 66, matching DISTILL's scenario list one name at a time. Every block name in the roadmap matches a real describe string. One cross-step coupling is real and already anticipated: 'brings a window that was walked into the past back to today', inside 01-02's second block, calls stepWindow and advances timers, which is exactly why 01-02's notes require stepWindow implemented in non-debounced form at that step. The test passes under both the non-debounced and the later debounced implementation, so 02-02 does not red it."
+      },
+      {
+        "check": "criteria-grounded-in-authored-tests",
+        "result": "pass",
+        "detail": "Every criterion in 01-01, 01-03, 02-02 and 02-03 maps onto one or more authored assertions; no criterion asserts behaviour no test checks, and no authored test is unmentioned. Three criteria are design constraints rather than test restatements - 01-02's declared effect universe, 01-03's 'computes no dates and reads no owner type', 02-03's 'holds no window' - and those are DESIGN's contract-shape table (pure-function / bounded-change) carried forward verbatim, which is where they belong. Two mild over-reaches were found and left alone as harmless: 01-01's criteria mention a year boundary only for presetWindow while the file also tests it for shiftWindow, and 02-03's criteria name 'Next 28 days' while the portfolio test asserts only 'Previous 28 days'. Both are covered by the closing all-tests-green criterion on those steps."
+      },
+      {
+        "check": "files-to-modify-sufficient",
+        "result": "amended",
+        "detail": "Sufficient for 01-01, 01-02, 01-03, 02-01, 02-02, 02-03 and 02-05 against DESIGN's Component Decomposition and DISTILL's Scaffolds table. Two gaps found on the wiring steps. DateRangeSelectorProps is constructed explicitly at three render sites in DateRangeSelector.keyboard.test.tsx (L28, L209, L297); all eight DashboardHeaderProps are constructed explicitly in DashboardHeader.popover.test.tsx (L33). Neither file was listed. A required new prop on either component therefore fails tsc -b, which is 01-04's and 02-04's own zero-warning build criterion. DT-5 named this exact hazard as the reason DISTILL declined to widen these two prop types during DISTILL; the debt falls due in DELIVER and the file list has to carry it. Both files added, with the reason in the step notes."
+      },
+      {
+        "check": "dependency-order-sound",
+        "result": "pass",
+        "detail": "01-02 genuinely needs 01-01: applyPreset, selectedPresetDays, presets, stepDays, canStepForward and the clamp all call into dateWindow, and its tests throw without those bodies. 01-04 genuinely needs both 01-02 (the hook it consumes in BaseMetricsView) and 01-03 (the component it renders in DateRangeSelector). 02-02 genuinely needs 02-01: DDD-3 and ADR-189 make the promoted revision-keyed hook the mechanism of the 500ms commit, so reordering would mean writing a second debounce idiom and then deleting it - which is the alternative ADR-189 rejected by name. 02-01 depending on 01-04 is slice ordering rather than a technical need, and it is the right call: it keeps the refactor commit at a slice boundary, which is where this repo puts refactors. 01-03 and 02-03 depend on their predecessors only through a type import, so both could in principle run earlier; the stated order is stricter than necessary but never wrong, so it is preserved."
+      },
+      {
+        "check": "dt2-rename-followed",
+        "result": "pass",
+        "detail": "The roadmap says dateWindow.ts everywhere and never dateWindowPresets.ts. That is correct: the file on disk is dateWindow.ts, dateWindow.test.ts imports from './dateWindow', and DateRangePresets.tsx imports DateWindowPreset from '../../../pages/Common/MetricsView/dateWindow'. DESIGN carries both names itself - Component Decomposition says dateWindowPresets.ts while its own Contract shapes table already says dateWindow.ts - and DT-2 settled it. No step, criterion or note anywhere in the roadmap still points at the DESIGN-era name."
+      },
+      {
+        "check": "s4-torn-write-claim-verified",
+        "result": "pass",
+        "detail": "Verified against the current file, and the claim is accurate. BaseMetricsView.tsx:1215 destructures useSearchParams; updateDateParams at L1232-1237 rebuilds from the searchParams of the render it was created in; handleStartDateChange at L1242-1246 calls updateDateParams(date, endDate) and handleEndDateChange at L1248-1252 calls updateDateParams(startDate, date), each reading the other end from the current render's closure. Calling both within one render therefore has the second call overwrite the first call's end of the window with its stale value, and updateDateParams then writes both params to the URL, which the fetch effects and useVisitedCategories' reset token read. The line numbers cited in the roadmap and in S4, DDD-5 and ADR-189 have not drifted: 1215-1252 is exactly the block. Also confirmed nearby and relied on by DDD-8 and ADR-189: ownerType is already derived at L1254-1255, so 01-04 needs no new flag to feed the hook."
+      },
+      {
+        "check": "refactor-guard-exists",
+        "result": "pass",
+        "detail": "useDebouncedRevisionRun is declared at TeamForecastView.tsx:30-39, module-private, reading a module-level DEBOUNCE_MS = 300 at L28, with two call sites at L318 and L396. src/hooks/useDebouncedRevisionRun.ts does not yet exist, so 02-01's target path is genuinely new. TeamForecastView.autorun.test.tsx exists (281 lines) and drives the debounce through fake timers at ten separate advanceTimersByTime(DEBOUNCE_MS) points, so it is a real guard rather than a nominal one, and the roadmap is right that it must not be edited to accommodate the move. One thing a crafter should not be surprised by: DEBOUNCE_MS has a third use at TeamForecastView.tsx:237, in a raw useEffect that does not go through the hook, so the constant stays declared in that file after the move. The criterion already says its DEBOUNCE_MS keeps its current value, and a mistake here fails the build immediately, so no amendment was made."
+      },
+      {
+        "check": "ddd9-bug5571-untouched",
+        "result": "pass",
+        "detail": "No step lists useCategorySelection.ts, widgetFetchRequirements or getFetchKeysForCategories in files_to_modify, and no criterion would be satisfied by changing the reset token. The constraint is stated positively three times rather than only in the out_of_scope list: 01-04 requires that useVisitedCategories' reset token still reads the committed window exactly as before and that Bug #5571's category-scoped block in BaseMetricsView.test.tsx stays green untouched, and 02-02 states that the burst is absorbed before the commit and that the token must not be weakened to absorb it. That matches DDD-9, the Reuse Analysis DO NOT TOUCH row, ADR-189's rejected alternative and the coexistence matrix entry."
+      },
+      {
+        "check": "local-date-encoding-preserved",
+        "result": "pass",
+        "detail": "01-01 forbids toISOString and any UTC-anchored path by name and requires local-calendar arithmetic; 01-02 requires the single write to carry both params encoded local Y/M/D, asserted on the recorded call. No criterion or note anywhere would be satisfied by an ISO path. The scaffolded tests back this: dateWindow.test.ts compares [year, month, day] component-wise and useDateRange.test.tsx formats through a local asLocalIso helper, never through toISOString. Amended 01-01's notes with what the runner actually does, because the upstream statement of this axis is wrong in a way that could cause someone to make the guard weaker in good faith - see the ci-frontend-nonutc amendment."
+      }
+    ],
+    "amendments": [
+      {
+        "step_id": "01-01",
+        "field": "implementation_notes",
+        "change": "Added a paragraph on DEVOPS's ci-frontend-nonutc axis: no CI change is needed, and the negative-offset zone environments.yaml proposes must not be adopted. pnpm test and the pnpm run sonarreport that CI actually invokes are already cross-env TZ=Europe/Zurich vitest run (Lighthouse.Frontend/package.json:12-13).",
+        "why": "DEVOPS's Environment Matrix declares ci-frontend-nonutc non-ceremonial and its CI/CD Pipeline Outline calls for the date suites to run a second time at a negative-offset zone, while environments.yaml notes under ci-frontend that the runner clock is UTC. Both are wrong on the facts. TZ appears nowhere in .github/workflows because it is pinned in the package.json script instead, so the suite has never run at UTC. And the proposed direction is inverted for this feature: every date in the four scaffold files is built at local midnight, where a positive offset makes toISOString().split('T')[0] yield the previous calendar day and red, while a negative offset yields the same day and passes. Adopting America/Los_Angeles would replace a working guard with one blind to exactly the Bug #5566 slip it exists to catch. Recorded in the step rather than acted on, so the plan does not silently skip a declared non-ceremonial axis."
+      },
+      {
+        "step_id": "01-04",
+        "field": "files_to_modify",
+        "change": "Added Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.keyboard.test.tsx and Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.popover.test.tsx, with the reason appended to implementation_notes.",
+        "why": "DT-5: 'in TypeScript a skipped test is still type-checked', which is why DISTILL declined to widen DateRangeSelector's and DashboardHeader's prop types and deferred the integration assertions to DELIVER. This is the step where that widening happens. DateRangeSelectorProps is constructed explicitly at three sites in DateRangeSelector.keyboard.test.tsx and DashboardHeaderProps at one site in DashboardHeader.popover.test.tsx; a required new prop that misses either file fails tsc -b and so fails this step's own criterion of a clean zero-warning pnpm build."
+      },
+      {
+        "step_id": "02-04",
+        "field": "files_to_modify",
+        "change": "Added Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.popover.test.tsx, with the reason appended to implementation_notes.",
+        "why": "Same DT-5 mechanism. This step adds the stepper props to DashboardHeaderProps; DashboardHeader.popover.test.tsx constructs all eight existing props explicitly at L33 and is compiled by tsc -b, so it has to be threaded there and not only into DashboardHeader.test.tsx."
+      }
+    ],
+    "out_of_scope_challenged": [],
+    "notes_for_the_orchestrator": [
+      "Slice 01 ships with no Playwright coverage. slice-01-named-windows-in-one-click.md lists a walking-skeleton spec in its IN scope, but DT-8 and DISTILL's Handoff to DELIVER place the single E2E at the end of slice 02, and the roadmap follows DISTILL. Nothing is lost - 02-05's criteria include the preset-chip click, the header label and both URL params, which is the E2E remainder the AT completeness audit assigns to AC-01.4 - but the preset control's end-to-end wiring is unverified for the whole of slice 01's review. Left unamended because the later wave governs and one combined spec matches this repo's E2E minimalism; flagged because the user reviews slices individually.",
+      "KPI-6 - that no existing Team or Portfolio opens on a different window than before - is the one KPI verified by hand, before/after on the dev instance restored from a production backup. No step owns it and out_of_scope does not name it. It is a finalization concern rather than a crafter concern, and it sits inside 'the user reviews the delivered slices first', but it should be answered explicitly rather than allowed to lapse.",
+      "The Final Wave Review Gate that DISTILL recorded as DELIVER's entry condition is cleared by commit a18ebdd6a."
+    ]
+  }
 }
