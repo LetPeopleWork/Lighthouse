@@ -115,6 +115,7 @@
           "scenario_name": "DateRangeSelector - renders the preset chip row and forwards a chip click",
           "deps": ["01-02", "01-03"],
           "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.ts",
             "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.tsx",
             "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.test.tsx",
             "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",

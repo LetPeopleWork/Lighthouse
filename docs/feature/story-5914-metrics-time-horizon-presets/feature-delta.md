@@ -1207,3 +1207,39 @@ What DELIVER picks up, in order:
    header wiring and the pending-window treatment. Unskip the remaining blocks. Then the Playwright
    walking skeleton (DT-8), extending `MetricsDateRange`.
 3. **Both slices** — never push red; un-skip only as each block goes green.
+
+
+---
+
+## Wave: DELIVER / [WHY] Upstream Issues
+
+### DU-1 — presetWindow normalised the window end to midnight, and that is not behaviour-preserving
+
+Found in step 01-04, by the existing BaseMetricsView suite, which went red on two tests the moment
+the hook replaced the inline window state.
+
+DESIGN declared dateWindow.ts a pure module working in calendar days, and step 01-01 implemented
+presetWindow as end = startOfDay(today). The window BaseMetricsView actually shipped is anchored
+differently: endDate seeded to new Date() and startDate to new Date() minus N days, both carrying
+the current wall-clock time (BaseMetricsView.tsx:159-163 and 1222-1230 at 031c1c8d4).
+
+The URL round-trip cannot see the difference, because both format through formatLocalDate to the
+same local Y/M/D. Every consumer that compares a timestamp against endDate can:
+
+- blockedTrend.ts:91 calls latestAtOrBefore(snapshots, endDate.getTime()). A snapshot recorded
+  today sits at 02:00 local, which is at or before now but after local midnight, so anchoring the
+  end at midnight drops todays reading and the trend silently falls back to an older snapshot.
+- deriveStaleness and the time-in-state measurement passed now = endDate share the exposure.
+
+This contradicts the step criterion that everything downstream of the window is untouched, and it
+is the kind of defect that would not have surfaced in the new tests at all: all 29 dateWindow tests
+pass local-midnight fixtures and assert only Y/M/D parts or calendar-day lengths, so the
+normalisation is invisible to them.
+
+**Resolution.** presetWindow no longer normalises; it returns the window ending at the instant its
+caller passed, so the default window and a clicked preset both end now, exactly as the shipped
+default did. Calendar-day arithmetic is unaffected: addDays preserves time of day and
+differenceInCalendarDays ignores it, so all 29 tests stay green unchanged.
+
+A window restored from the URL still ends at local midnight, because parseLocalDate has always
+returned midnight. That asymmetry predates this feature and is left as it is.
