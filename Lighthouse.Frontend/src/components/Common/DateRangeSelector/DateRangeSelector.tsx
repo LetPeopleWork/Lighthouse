@@ -4,7 +4,9 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import type { DateWindowPreset } from "../../../pages/Common/MetricsView/dateWindow";
 import { isValidDate } from "../../../utils/date/isValidDate";
+import DateRangePresets from "./DateRangePresets";
 
 const DATE_FNS_TOKENS: Record<string, string> = {
 	day: "dd",
@@ -151,6 +153,10 @@ export interface DateRangeSelectorProps {
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
 	onEndDateChange: (date: Date | null) => void;
+	/** Ready-made windows to offer above the two fields. Omit them and only the fields show. */
+	presets?: readonly DateWindowPreset[];
+	selectedPresetDays?: number | null;
+	onSelectPreset?: (days: number) => void;
 	_testLocalDateFormat?: string; // Only used for testing
 }
 
@@ -159,6 +165,9 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 	endDate,
 	onStartDateChange,
 	onEndDateChange,
+	presets,
+	selectedPresetDays = null,
+	onSelectPreset,
 	_testLocalDateFormat,
 }) => {
 	const localDateFormat = _testLocalDateFormat ?? getLocaleDateFormat();
@@ -174,6 +183,14 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					width: "100%",
 				}}
 			>
+				{presets && presets.length > 0 && onSelectPreset && (
+					<DateRangePresets
+						presets={presets}
+						selectedDays={selectedPresetDays}
+						onSelectPreset={onSelectPreset}
+					/>
+				)}
+
 				<BoundedDatePicker
 					label="Start Date"
 					value={startDate}

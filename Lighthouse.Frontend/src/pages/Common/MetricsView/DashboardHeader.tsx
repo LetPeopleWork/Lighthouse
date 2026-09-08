@@ -16,12 +16,16 @@ import DateRangeSelector from "../../../components/Common/DateRangeSelector/Date
 import { isValidDate } from "../../../utils/date/isValidDate";
 import CategorySelector from "./CategorySelector";
 import type { CategoryKey } from "./categoryMetadata";
+import type { DateWindowPreset } from "./dateWindow";
 
 export interface DashboardHeaderProps {
 	startDate: Date;
 	endDate: Date;
 	onStartDateChange: (date: Date | null) => void;
 	onEndDateChange: (date: Date | null) => void;
+	presets?: readonly DateWindowPreset[];
+	selectedPresetDays?: number | null;
+	onSelectPreset?: (days: number) => void;
 	selectedCategory: CategoryKey;
 	onSelectCategory: (key: CategoryKey) => void;
 	showTips: boolean;
@@ -33,6 +37,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 	endDate,
 	onStartDateChange,
 	onEndDateChange,
+	presets,
+	selectedPresetDays,
+	onSelectPreset,
 	selectedCategory,
 	onSelectCategory,
 	showTips,
@@ -140,6 +147,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 					endDate={endDate}
 					onStartDateChange={onStartDateChange}
 					onEndDateChange={onEndDateChange}
+					presets={presets}
+					selectedPresetDays={selectedPresetDays}
+					onSelectPreset={onSelectPreset}
 				/>
 			</Popover>
 		</Box>
