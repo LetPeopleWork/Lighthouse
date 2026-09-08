@@ -50,16 +50,19 @@ export function shiftWindow(window: DateWindow, stepDays: number): DateWindow {
 	};
 }
 
+const daysEndIsPastToday = (window: DateWindow, today: Date): number =>
+	differenceInCalendarDays(window.end, today);
+
 export function clampWindowToToday(
 	window: DateWindow,
 	today: Date,
 ): DateWindow {
-	const daysPastToday = differenceInCalendarDays(window.end, today);
-	return daysPastToday > 0 ? shiftWindow(window, -daysPastToday) : window;
+	const overshoot = daysEndIsPastToday(window, today);
+	return overshoot > 0 ? shiftWindow(window, -overshoot) : window;
 }
 
 export function canStepForward(window: DateWindow, today: Date): boolean {
-	return differenceInCalendarDays(window.end, today) < 0;
+	return daysEndIsPastToday(window, today) < 0;
 }
 
 export function matchingPresetDays(
@@ -67,7 +70,7 @@ export function matchingPresetDays(
 	presets: readonly DateWindowPreset[],
 	today: Date,
 ): number | null {
-	if (differenceInCalendarDays(window.end, today) !== 0) {
+	if (daysEndIsPastToday(window, today) !== 0) {
 		return null;
 	}
 
