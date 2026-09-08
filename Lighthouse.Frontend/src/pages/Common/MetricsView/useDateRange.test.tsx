@@ -74,7 +74,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe.skip("useDateRange — where the opening window comes from", () => {
+describe("useDateRange — where the opening window comes from", () => {
 	it("opens on the range the owner was configured with", () => {
 		const { result } = renderDateRange("team", 30);
 
@@ -108,7 +108,7 @@ describe.skip("useDateRange — where the opening window comes from", () => {
 	});
 });
 
-describe.skip("useDateRange — choosing a named window", () => {
+describe("useDateRange — choosing a named window", () => {
 	it("moves the window to the named number of days ending today", () => {
 		const { result } = renderDateRange("team", 30);
 
@@ -164,7 +164,7 @@ describe.skip("useDateRange — choosing a named window", () => {
 	});
 });
 
-describe.skip("useDateRange — picking one date by hand leaves the other alone", () => {
+describe("useDateRange — picking one date by hand leaves the other alone", () => {
 	it("keeps the end where it was when only the start is picked", () => {
 		const { result } = renderDateRange("team", 30);
 
