@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DateWindowStepper from "./DateWindowStepper";
 
-describe.skip("DateWindowStepper", () => {
+describe("DateWindowStepper", () => {
 	it("says how far it moves the window, because on a narrow screen the icon is all there is", () => {
 		// Below the `sm` breakpoint the header drops its date text and the two icons are the only
 		// visible signal, so the step size has to live in the accessible name or it is not stated

@@ -1,3 +1,6 @@
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { IconButton, Stack } from "@mui/material";
 import type React from "react";
 
 export interface DateWindowStepperProps {
@@ -12,10 +15,24 @@ const DateWindowStepper: React.FC<DateWindowStepperProps> = ({
 	stepDays,
 	canStepForward,
 	onStep,
-}) => {
-	throw new Error(
-		`DateWindowStepper(${stepDays}, ${canStepForward}, ${typeof onStep}) is not implemented`,
-	);
-};
+}) => (
+	<Stack direction="row" spacing={0.5}>
+		<IconButton
+			size="small"
+			aria-label={`Previous ${stepDays} days`}
+			onClick={() => onStep(-1)}
+		>
+			<ChevronLeftIcon fontSize="small" />
+		</IconButton>
+		<IconButton
+			size="small"
+			aria-label={`Next ${stepDays} days`}
+			disabled={!canStepForward}
+			onClick={() => onStep(1)}
+		>
+			<ChevronRightIcon fontSize="small" />
+		</IconButton>
+	</Stack>
+);
 
 export default DateWindowStepper;
