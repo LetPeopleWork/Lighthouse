@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays } from "date-fns";
 
 export type MetricsOwnerType = "team" | "portfolio";
 
@@ -32,9 +32,11 @@ export function getStepDaysForOwner(ownerType: MetricsOwnerType): number {
 	return ownerType === "team" ? 7 : 28;
 }
 
+// The window ends at the instant the caller passed, not at midnight of that day. Widgets compare
+// the end as a point in time, so rounding it down to midnight puts every reading taken so far
+// today after the window and quietly drops them from the trend.
 export function presetWindow(days: number, today: Date): DateWindow {
-	const end = startOfDay(today);
-	return { start: addDays(end, -days), end };
+	return { start: addDays(today, -days), end: today };
 }
 
 export function windowLengthInDays(window: DateWindow): number {

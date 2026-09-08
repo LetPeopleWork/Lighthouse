@@ -7,7 +7,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { useSearchParams } from "react-router";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import BlockedItemsOverTimeChart from "../../../components/Common/Charts/BlockedItemsOverTimeChart";
 import CumulativeStateTimeChart from "../../../components/Common/Charts/CumulativeStateTimeChart";
@@ -68,8 +67,7 @@ import {
 	ageBandColumnHeaderName,
 	buildAgeBandColumnDescriptor,
 } from "../../../utils/charts/paceBands";
-import { isValidDate } from "../../../utils/date/isValidDate";
-import { formatLocalDate, parseLocalDate } from "../../../utils/date/localDate";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import { deriveStaleness } from "../../../utils/staleness/deriveStaleness";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
@@ -128,6 +126,7 @@ import {
 	useCategorySelection,
 	useVisitedCategories,
 } from "./useCategorySelection";
+import { useDateRange } from "./useDateRange";
 import { useShowTips } from "./useShowTips";
 import type { ViewDataPayload } from "./WidgetShell";
 import WidgetShell from "./WidgetShell";
@@ -154,12 +153,6 @@ export interface BaseMetricsViewProps<
 	waitStates?: string[];
 	stateMappings?: IStateMapping[];
 	cycleTimeDefinitions?: ICycleTimeDefinition[];
-}
-
-function getDefaultStartDate(defaultDateRange: number): Date {
-	const date = new Date();
-	date.setDate(date.getDate() - defaultDateRange);
-	return date;
 }
 
 function extractWorkItems(
@@ -1212,47 +1205,21 @@ export const BaseMetricsView = <
 	stateMappings = [],
 	cycleTimeDefinitions = [],
 }: BaseMetricsViewProps<T, E>) => {
-	const [searchParams, setSearchParams] = useSearchParams();
-	const { licenseStatus } = useLicenseRestrictions();
-	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
-
-	// The date params name calendar days and are read and written the way the
-	// request layer encodes them — locally. Routing either side through UTC
-	// shifts a reloaded or shared link by a day for viewers off UTC (Bug #5566).
-	const [startDate, setStartDate] = useState<Date>(() => {
-		const parsed = parseLocalDate(searchParams.get("startDate") ?? "");
-		return parsed ?? getDefaultStartDate(defaultDateRange);
-	});
-
-	const [endDate, setEndDate] = useState<Date>(() => {
-		const parsed = parseLocalDate(searchParams.get("endDate") ?? "");
-		return parsed ?? new Date();
-	});
-
-	const updateDateParams = (start: Date, end: Date) => {
-		const newParams = new URLSearchParams(searchParams);
-		newParams.set("startDate", formatLocalDate(start));
-		newParams.set("endDate", formatLocalDate(end));
-		setSearchParams(newParams, { replace: true });
-	};
-
-	// A date the browser could not parse is still a Date object, and an object is
-	// truthy, so a plain null check lets it through into state and into the URL,
-	// where it turns into NaN and takes the page down on the next render.
-	const handleStartDateChange = (date: Date | null) => {
-		if (!isValidDate(date)) return;
-		setStartDate(date);
-		updateDateParams(date, endDate);
-	};
-
-	const handleEndDateChange = (date: Date | null) => {
-		if (!isValidDate(date)) return;
-		setEndDate(date);
-		updateDateParams(startDate, date);
-	};
-
 	const ownerType: "team" | "portfolio" =
 		"getFeaturesInProgress" in metricsService ? "team" : "portfolio";
+
+	const {
+		startDate,
+		endDate,
+		presets,
+		selectedPresetDays,
+		applyPreset,
+		handleStartDateChange,
+		handleEndDateChange,
+	} = useDateRange(ownerType, defaultDateRange);
+
+	const { licenseStatus } = useLicenseRestrictions();
+	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
 
 	const { selectedCategory, setSelectedCategory } = useCategorySelection(
 		ownerType,
@@ -1914,6 +1881,9 @@ export const BaseMetricsView = <
 				endDate={endDate}
 				onStartDateChange={handleStartDateChange}
 				onEndDateChange={handleEndDateChange}
+				presets={presets}
+				selectedPresetDays={selectedPresetDays}
+				onSelectPreset={applyPreset}
 				selectedCategory={selectedCategory}
 				onSelectCategory={setSelectedCategory}
 				showTips={showTips}
