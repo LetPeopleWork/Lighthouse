@@ -1,3 +1,5 @@
+import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
+
 export type MetricsOwnerType = "team" | "portfolio";
 
 export interface DateWindow {
@@ -14,41 +16,48 @@ export interface DateWindowPreset {
 // URL and sent to the backend as local Y/M/D, so routing any of this through UTC shifts a reader
 // west of Greenwich by a day — and a UTC test runner never sees it (Bug #5566).
 
+const presetsOf = (lengths: readonly number[]): readonly DateWindowPreset[] =>
+	lengths.map((days) => ({ label: `Last ${days} days`, days }));
+
+const TEAM_PRESETS = presetsOf([7, 14, 30, 90]);
+const PORTFOLIO_PRESETS = presetsOf([30, 90, 180]);
+
 export function getPresetsForOwner(
 	ownerType: MetricsOwnerType,
 ): readonly DateWindowPreset[] {
-	throw new Error(`getPresetsForOwner(${ownerType}) is not implemented`);
+	return ownerType === "team" ? TEAM_PRESETS : PORTFOLIO_PRESETS;
 }
 
 export function getStepDaysForOwner(ownerType: MetricsOwnerType): number {
-	throw new Error(`getStepDaysForOwner(${ownerType}) is not implemented`);
+	return ownerType === "team" ? 7 : 28;
 }
 
 export function presetWindow(days: number, today: Date): DateWindow {
-	throw new Error(`presetWindow(${days}, ${today}) is not implemented`);
+	const end = startOfDay(today);
+	return { start: addDays(end, -days), end };
 }
 
 export function windowLengthInDays(window: DateWindow): number {
-	throw new Error(`windowLengthInDays(${window.start}) is not implemented`);
+	return differenceInCalendarDays(window.end, window.start);
 }
 
 export function shiftWindow(window: DateWindow, stepDays: number): DateWindow {
-	throw new Error(
-		`shiftWindow(${window.start}, ${stepDays}) is not implemented`,
-	);
+	return {
+		start: addDays(window.start, stepDays),
+		end: addDays(window.end, stepDays),
+	};
 }
 
 export function clampWindowToToday(
 	window: DateWindow,
 	today: Date,
 ): DateWindow {
-	throw new Error(
-		`clampWindowToToday(${window.end}, ${today}) is not implemented`,
-	);
+	const daysPastToday = differenceInCalendarDays(window.end, today);
+	return daysPastToday > 0 ? shiftWindow(window, -daysPastToday) : window;
 }
 
 export function canStepForward(window: DateWindow, today: Date): boolean {
-	throw new Error(`canStepForward(${window.end}, ${today}) is not implemented`);
+	return differenceInCalendarDays(window.end, today) < 0;
 }
 
 export function matchingPresetDays(
@@ -56,7 +65,10 @@ export function matchingPresetDays(
 	presets: readonly DateWindowPreset[],
 	today: Date,
 ): number | null {
-	throw new Error(
-		`matchingPresetDays(${window.end}, ${presets.length}, ${today}) is not implemented`,
-	);
+	if (differenceInCalendarDays(window.end, today) !== 0) {
+		return null;
+	}
+
+	const length = windowLengthInDays(window);
+	return presets.find((preset) => preset.days === length)?.days ?? null;
 }

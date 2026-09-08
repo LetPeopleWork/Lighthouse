@@ -25,7 +25,7 @@ const asLocalParts = (date: Date): [number, number, number] => [
 
 const TODAY = localDay(2026, 9, 8);
 
-describe.skip("dateWindow — owner-aware configuration", () => {
+describe("dateWindow — owner-aware configuration", () => {
 	it("offers a team four named windows, shortest first", () => {
 		expect(getPresetsForOwner("team").map((p) => p.days)).toEqual([
 			7, 14, 30, 90,
@@ -64,7 +64,7 @@ describe.skip("dateWindow — owner-aware configuration", () => {
 	});
 });
 
-describe.skip("dateWindow — a named window ends today", () => {
+describe("dateWindow — a named window ends today", () => {
 	it("ends a preset window on today and starts it the named number of days earlier", () => {
 		const window = presetWindow(30, TODAY);
 
@@ -100,7 +100,7 @@ describe.skip("dateWindow — a named window ends today", () => {
 	});
 });
 
-describe.skip("dateWindow — walking the window through time", () => {
+describe("dateWindow — walking the window through time", () => {
 	// Built per test, never once at describe scope: a skipped describe still evaluates its body,
 	// so calling into the module here would throw during collection and report the whole file as
 	// broken rather than as pending.
@@ -172,7 +172,7 @@ describe.skip("dateWindow — walking the window through time", () => {
 	});
 });
 
-describe.skip("dateWindow — the window never ends in the future", () => {
+describe("dateWindow — the window never ends in the future", () => {
 	it("lets the window be walked forward while it still ends in the past", () => {
 		const lastMonth = shiftWindow(presetWindow(30, TODAY), -28);
 
@@ -233,7 +233,7 @@ describe.skip("dateWindow — the window never ends in the future", () => {
 	});
 });
 
-describe.skip("dateWindow — which named window is showing", () => {
+describe("dateWindow — which named window is showing", () => {
 	const teamPresets = () => getPresetsForOwner("team");
 
 	it("recognises a window that is exactly a named one", () => {
