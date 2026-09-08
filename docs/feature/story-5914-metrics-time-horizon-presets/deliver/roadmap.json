@@ -1,0 +1,236 @@
+{
+  "roadmap": {
+    "project_id": "story-5914-metrics-time-horizon-presets",
+    "created_at": "2026-09-08",
+    "total_steps": 9,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Ship two controls for the metrics time window on Team and Portfolio dashboards: a row of named preset windows inside the existing date popover, and a back/forward stepper pair on the dashboard header that walks the same-length window through time. Source: ADO User Story #5914, tagged Release Notes, no parent Epic. Frontend only - no endpoint, DTO, EF migration, config key or client change (D14). The 66 acceptance tests are already authored by DISTILL and land skipped across four files; DELIVER implements production code and un-skips each describe block as it goes green. Two phases mirroring the two DISCUSS slices. The load-bearing work is in 01-02: the two existing per-end date setters each rebuild the URL from the other end's current-render value, so they cannot be composed to move a two-ended window - a single applyDateRange(start, end) write path replaces them and makes the torn write unreachable by construction."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewed_by": "Orchestrator self-review, NOT a separate architect dispatch - deviation recorded in the DELIVER handoff notes. Coverage: all 66 scaffolded tests mapped to a step (dateWindow 29 -> 01-01; useDateRange 13 US-01 tests -> 01-02 and 12 US-02 tests -> 02-02; DateRangePresets 5 -> 01-03; DateWindowStepper 7 -> 02-03), plus the two wiring tests DT-5 deferred (01-04, 02-04) and the Playwright skeleton DT-8 deferred (02-05). Steps/unique-files ratio under 2.5. No acceptance criterion names a private method. Every step declares test_file and scenario_name. Phases mirror the two DISCUSS slices; brownfield, no walking skeleton (WS strategy C).",
+    "reviewed_date": "2026-09-08"
+  },
+  "ssot_inputs": [
+    "docs/feature/story-5914-metrics-time-horizon-presets/feature-delta.md",
+    "docs/feature/story-5914-metrics-time-horizon-presets/slices/slice-01-named-windows-in-one-click.md",
+    "docs/feature/story-5914-metrics-time-horizon-presets/slices/slice-02-walk-the-window-through-time.md",
+    "docs/feature/story-5914-metrics-time-horizon-presets/environments.yaml",
+    "docs/product/architecture/adr-189-metrics-window-hook-and-revision-keyed-debounce.md",
+    "docs/product/architecture/brief.md"
+  ],
+  "out_of_scope": [
+    "Changing the Team's opening range - TeamMetricsView.tsx:117-128 is not edited (D1)",
+    "Changing the Portfolio's opening range - PortfolioMetricsView.tsx:68 is not edited (D2)",
+    "Any persistence of the chosen window; it stays URL-only, no localStorage (D10)",
+    "Any RBAC gate or premium gate (D13)",
+    "Any backend change - no endpoint, DTO, EF migration or HistoricalSchemaPatch entry (D14)",
+    "Any Lighthouse-Clients CLI or MCP version bump (D15)",
+    "Constraining the manual end picker to today; it keeps no maxDate (D16)",
+    "Introducing dayjs onto the metrics date surface; date-fns only (D17)",
+    "Weakening useVisitedCategories' date-keyed reset token - Bug #5571's monotonic gate stands (DDD-9)",
+    "Changing DEBOUNCE_MS=300 for its existing callers; 500ms applies only to the metrics window (DDD-4)",
+    "Mutation testing, /nw-finalize, ADO transitions and pushing - the user reviews the delivered slices first",
+    "A previous-period overlay or per-widget delta; this feature moves the window, it does not draw two"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Named windows in one click",
+      "description": "Slice 01. A Delivery Lead opens the date popover on a Team's or Portfolio's metrics, clicks one named window, and the whole dashboard redraws over it with both ends of the window landing in the URL together. Introduces the combined two-ended setter that slice 02 is built on.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "dateWindow pure module - owner-aware presets, window algebra, forward clamp",
+          "criteria": [
+            "getPresetsForOwner('team') returns exactly four presets in ascending order with labels 'Last 7 days', 'Last 14 days', 'Last 30 days', 'Last 90 days'; getPresetsForOwner('portfolio') returns exactly three with labels 'Last 30 days', 'Last 90 days', 'Last 180 days'",
+            "getStepDaysForOwner returns 7 for a team and 28 for a portfolio",
+            "presetWindow(days, today) returns end = today and start = today minus days, both as local calendar days; windowLengthInDays of that window equals days, including across a year boundary and across a daylight-saving transition",
+            "shiftWindow(window, stepDays) moves BOTH ends by stepDays and never changes windowLengthInDays; four successive -7 shifts land on exactly the same window as one -28 shift",
+            "canStepForward(window, today) is false when the window ends on today and false when it already ends after today; true only while the end is strictly before today",
+            "clampWindowToToday(window, today) moves a window whose end is after today back so the end lands exactly on today, moving the start by the same amount so the length is preserved; a window ending on or before today is returned unchanged",
+            "matchingPresetDays returns the preset's days only when the window both ends today AND has that preset's length; a hand-picked length returns null, and a window walked into the past returns null even when its length still matches a preset",
+            "Every returned date is built with local-calendar arithmetic; no value in this module is produced via toISOString or any UTC-anchored path",
+            "All 29 tests in dateWindow.test.ts are un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.test.ts",
+          "scenario_name": "dateWindow - owner-aware configuration; a named window ends today; walking the window through time; the window never ends in the future; which named window is showing",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/dateWindow.test.ts"
+          ],
+          "implementation_notes": "Replace the seven throwing bodies. Use date-fns (addDays, differenceInCalendarDays, startOfDay, isAfter) - dayjs must not enter this surface. `today` stays a parameter rather than an ambient clock read, which is what keeps the module a pure-function contract with an empty effect universe. The tests assert local Y/M/D component-wise precisely so they can fail when the suite runs outside UTC; do not satisfy them by formatting through ISO. Un-skipping is done by changing `describe.skip` to `describe` in the five blocks - leave the lazy fixture helpers as they are, because a call hoisted back to describe scope fails the file as a broken suite rather than reporting pending tests."
+        },
+        {
+          "id": "01-02",
+          "name": "useDateRange hook - single applyDateRange write path replacing the two composable-unsafe setters",
+          "criteria": [
+            "useDateRange(ownerType, defaultDateRange) seeds the window from ?startDate/?endDate when present and otherwise from defaultDateRange with the end on today; an explicit pair in the URL always wins on load",
+            "applyDateRange(start, end) performs exactly ONE setSearchParams call carrying BOTH startDate and endDate, with { replace: true }, encoded local Y/M/D - asserted on the recorded call, not inferred",
+            "handleStartDateChange and handleEndDateChange delegate to applyDateRange so there is one write path; changing one end leaves the other end's value intact in both state and the URL",
+            "An invalid date reaching either handler is ignored: no state change and no navigation",
+            "applyPreset(days) sets the window to that preset ending today, including from a window previously walked into the past",
+            "selectedPresetDays reports the matching preset while one matches, and null after either date is picked by hand",
+            "presets and stepDays are owner-aware, read from the ownerType argument",
+            "The hook's effect universe is exactly the declared one - committed window state, pending window state, one timer and one setSearchParams write; it performs no fetch and touches no browser storage",
+            "The three US-01 describe blocks in useDateRange.test.tsx are un-skipped and green: 'where the opening window comes from', 'choosing a named window', 'picking one date by hand leaves the other alone'"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.test.tsx",
+          "scenario_name": "useDateRange - where the opening window comes from; choosing a named window; picking one date by hand leaves the other alone",
+          "deps": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.test.tsx"
+          ],
+          "implementation_notes": "This is the step the whole feature rests on. The two setters being replaced each rebuild the params from the OTHER end's current-render value and from a stale searchParams, so calling them in sequence writes a window that is half old and half new and then fetches it. Build every write from the function arguments, never from closed-over state, and make applyDateRange the only place params are written. stepWindow, the pending window and canStepForward are implemented here in their non-debounced form so the returned shape is complete and honest; their describe blocks stay skipped until 02-02 adds the quiet period, and no user can reach them before 02-03 ships the control. Do not add the debounce here - it belongs with the stepper that needs it."
+        },
+        {
+          "id": "01-03",
+          "name": "DateRangePresets chip row",
+          "criteria": [
+            "Renders one clickable chip per preset, in the order given, with the preset's label as its text",
+            "Clicking a chip reports that preset's days through onSelectPreset",
+            "The chip matching selectedDays carries aria-pressed=\"true\" and every other chip carries aria-pressed=\"false\"; when selectedDays is null no chip is pressed",
+            "The component computes no dates and reads no owner type - it renders from props and emits intent only",
+            "All 5 tests in DateRangePresets.test.tsx are un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangePresets.test.tsx",
+          "scenario_name": "DateRangePresets",
+          "deps": ["01-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangePresets.tsx",
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangePresets.test.tsx"
+          ],
+          "implementation_notes": "MUI Chip in a Stack, following the visual shape of the chip row in ManualForecaster - visual precedent only, its code is not shared and dayjs must not follow it here. The selected signal is aria-pressed rather than colour or variant, so the state is available to assistive technology and assertable without reading computed style."
+        },
+        {
+          "id": "01-04",
+          "name": "Wire the chip row into DateRangeSelector and the hook into BaseMetricsView",
+          "criteria": [
+            "DateRangeSelector renders the chip row above its two pickers and forwards presets, the selected days and the select handler; its two BoundedDatePicker instances, their validity guard and the absent end maxDate are unchanged",
+            "BaseMetricsView consumes useDateRange in place of its inline window state; the removed code is deleted rather than left alongside",
+            "Everything downstream of the window is untouched: the fetch effects, buildViewData, and useVisitedCategories' reset token still read the committed window exactly as before",
+            "Clicking a preset in the popover updates the header label and drives one round of metrics requests for the new window",
+            "A wiring test asserts the selector renders a chip per preset and that a click reaches the handler it was given",
+            "pnpm test green, pnpm build clean with zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.test.tsx",
+          "scenario_name": "DateRangeSelector - renders the preset chip row and forwards a chip click",
+          "deps": ["01-02", "01-03"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.tsx",
+            "Lighthouse.Frontend/src/components/Common/DateRangeSelector/DateRangeSelector.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.tsx"
+          ],
+          "implementation_notes": "DashboardHeader is touched only to forward the preset props through to the popover; its steppers arrive in 02-04. BaseMetricsView should get smaller here - startDate, endDate, updateDateParams, handleStartDateChange and handleEndDateChange move out into the hook. Bug #5571's category-scoped fetching block in BaseMetricsView.test.tsx must stay green untouched; if it reds, the window's identity or the reset token changed and that is a regression, not a test to update."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Walk the window through time",
+      "description": "Slice 02. A Delivery Lead clicks the back stepper beside the date label, the same-length window moves to the period immediately before, and every widget redraws over it - and clicking four times in a row costs one round of requests rather than four.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "REFACTOR - promote useDebouncedRevisionRun out of TeamForecastView into a shared hook",
+          "criteria": [
+            "useDebouncedRevisionRun lives at src/hooks/useDebouncedRevisionRun.ts and takes its delay as a parameter defaulting to 300",
+            "TeamForecastView imports it instead of declaring it; its own DEBOUNCE_MS of 300 keeps its current value and meaning for its two existing call sites",
+            "TeamForecastView.autorun.test.tsx passes unchanged - it is the behaviour-preserving guard for this move and must not be edited to accommodate it",
+            "The move is committed separately from any feature work, as a refactor commit"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.autorun.test.tsx",
+          "scenario_name": "TeamForecastView autorun debounce - existing suite stays green across the move",
+          "deps": ["01-04"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useDebouncedRevisionRun.ts",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamForecastView.tsx"
+          ],
+          "implementation_notes": "Pure move plus one parameter. The effect keyed on a monotonic revision counter with clearTimeout in its cleanup is exactly the mechanism the stepper needs, and its cleanup is what makes unmount-mid-debounce safe as a property of the hook rather than something to remember. This is the one file the feature touches that it otherwise has no business in, so the existing test file is the whole safety net - run it before and after and do not modify it."
+        },
+        {
+          "id": "02-02",
+          "name": "Pending window and 500ms debounced commit in useDateRange",
+          "criteria": [
+            "Each stepWindow call moves a pending window immediately and commits nothing; the committed window and the URL change only after 500ms of quiet",
+            "Four rapid clicks produce exactly ONE committed window - 28 days earlier on a team - and exactly ONE setSearchParams call",
+            "A further click inside the quiet period restarts it; nothing is committed at 499ms and the commit lands at 500ms",
+            "pendingStartDate/pendingEndDate track every click before commit while startDate/endDate still name the window the widgets are showing; isCommitPending is true across the gap and false once applied",
+            "canStepForward is false while the window ends today and true once it has been walked into the past; stepping forward from a window less than one step from today lands the end exactly on today with the length preserved",
+            "Unmounting mid-debounce commits nothing, writes no params and logs no React warning",
+            "The three remaining describe blocks in useDateRange.test.tsx are un-skipped and green: 'walking the window a period at a time', 'the window never ends in the future', 'leaving the page mid-click'"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.test.tsx",
+          "scenario_name": "useDateRange - walking the window a period at a time; the window never ends in the future; leaving the page mid-click",
+          "deps": ["02-01"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.ts",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/useDateRange.test.tsx"
+          ],
+          "implementation_notes": "Use the hook promoted in 02-01 with a 500ms delay; leave its 300ms default alone for the forecast callers. The quiet period exists for a measurable reason - every committed window change resets useVisitedCategories and re-fires every fetch for the current category, so an undebounced burst is four full refetch rounds for three windows nobody asked to see. Do not weaken that reset token to absorb the burst; the burst is absorbed before the commit. The pending window must never reach the URL, so browser history gains one entry per burst rather than one per click."
+        },
+        {
+          "id": "02-03",
+          "name": "DateWindowStepper back/forward control",
+          "criteria": [
+            "Renders a back and a forward icon button whose accessible names state the step size - 'Previous 7 days' and 'Next 7 days' on a team, 'Previous 28 days' and 'Next 28 days' on a portfolio",
+            "Back reports -1 and forward reports 1 through onStep",
+            "The forward button is disabled when canStepForward is false and reports nothing when clicked in that state; the back button stays enabled",
+            "The component holds no window and computes no dates - it emits a direction only",
+            "All 7 tests in DateWindowStepper.test.tsx are un-skipped and green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/DateWindowStepper.test.tsx",
+          "scenario_name": "DateWindowStepper",
+          "deps": ["02-02"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DateWindowStepper.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DateWindowStepper.test.tsx"
+          ],
+          "implementation_notes": "The accessible names carry the step size because below the sm breakpoint the header hides its date text and the icons become the only visible signal - the step size is stated nowhere else a narrow-screen reader can reach it."
+        },
+        {
+          "id": "02-04",
+          "name": "Wire the steppers into DashboardHeader with a not-yet-applied window treatment",
+          "criteria": [
+            "DashboardHeader renders the stepper pair either side of the date label and forwards the step size, whether forward is available, and the step handler",
+            "The label renders the PENDING window so every click is visible immediately, and carries a visible not-yet-applied treatment while the pending window differs from the committed one, clearing when the commit lands",
+            "The steppers remain visible below the sm breakpoint where the date text is hidden",
+            "A header test asserts the label follows a pending window, that the treatment appears and clears, and that a stepper click reaches the handler",
+            "pnpm test green, pnpm build clean with zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx",
+          "scenario_name": "DashboardHeader - renders the window steppers and marks a window that has not been applied yet",
+          "deps": ["02-03"],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/DashboardHeader.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx"
+          ],
+          "implementation_notes": "The pending window is the one thing here a user could catch the product lying about - for up to half a second the label names a window the charts are not showing. The treatment has to make that state visibly provisional rather than silently wrong. Expose it through a data attribute as well as the visual treatment so the test can assert the state without pinning a colour."
+        },
+        {
+          "id": "02-05",
+          "name": "Playwright walking skeleton - a preset click and a stepper burst against a real dashboard",
+          "criteria": [
+            "MetricsDateRange gains locators for the preset chips and the two steppers, and a helper that counts metrics requests across a click burst; its existing apply and applyAndWaitFor signatures are unchanged so WorkItemAgeAsOfRangeEnd.spec.ts and PredictabilityOverTime.spec.ts keep working",
+            "One spec drives the real dashboard: clicking a preset chip updates the header label and puts BOTH startDate and endDate in the URL for that window",
+            "The same spec walks the window back with repeated stepper clicks inside the quiet period and asserts ONE round of metrics requests for the settled window",
+            "The spec is actually run locally and passes before it is committed - no unrun spec or page-object locator is committed"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/flow/MetricsTimeHorizon.spec.ts",
+          "scenario_name": "Metrics time horizon - a named window in one click, and a burst of steps costing one refetch",
+          "deps": ["02-04"],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/metrics/MetricsPage.ts",
+            "Lighthouse.EndToEndTests/tests/specs/flow/MetricsTimeHorizon.spec.ts"
+          ],
+          "implementation_notes": "Extend the existing page object rather than replacing it - two shipped specs depend on its current methods. Drive the walking skeleton from seeded demo data, one thin scenario per user-visible flow; this is a sanity check that the controls are wired end to end, not a second unit suite. The request-count assertion is the HTTP-level half of the burst invariant whose hook-level half 02-02 already pins."
+        }
+      ]
+    }
+  ]
+}
