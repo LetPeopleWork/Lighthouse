@@ -388,6 +388,14 @@ All pass.
 | KPI-5 — Windows ending in the future via a preset or stepper | **0** | AC-02.6, AC-02.7 |
 | KPI-6 — Existing opening ranges changed | **0** Teams and **0** Portfolios open on a different window than before the upgrade | AC-01.8 plus a before/after check on the dev instance restored from a production backup (D1, D2) |
 
+KPI-6 is the one measured by a **single manual check**, so what guards it *after* release is worth
+stating rather than leaving implied. The continuous guard is structural, not observational: D1 and D2
+mean `TeamMetricsView.tsx:117-128` and `PortfolioMetricsView.tsx:68` are **not edited at all**, so a
+regression would have to be someone deliberately changing an opening range. AC-01.8 keeps an explicit
+`?startDate`/`?endDate` pair winning on load, which is the only other way this could drift. The manual
+before/after is a pre-release confirmation that the untouched code really is untouched — not the
+mechanism keeping it that way.
+
 ---
 
 ## Wave: DISCUSS / [REF] Definition of Done
@@ -600,6 +608,33 @@ the step size so the icons are never the only signal (DDD-1).
 | `MetricsDateRange` POM | `MetricsPage.ts:347-407` | Drives the window in E2E | **EXTEND** | Its URL-based `applyAndWaitFor` stays the setup path for other specs; the new specs add locators and a request counter beside it. |
 
 Zero unjustified CREATE NEW.
+
+### Contract shapes
+
+Per the Effect Isolation mandate: every component above declares its contract shape, the universe of
+effects it may touch, and the mechanism a crafter asserts that universe with. Omitting this passes the
+frame problem to the crafter, who then under-declares and writes a universe-too-narrow suite.
+
+**One component in this feature has an effect at all.** That is the whole point of naming them.
+
+| Component | Contract shape | Universe (declared delta) | Assertion mechanism |
+|---|---|---|---|
+| `dateWindow.ts` | **pure-function** | Empty. Takes dates and numbers, returns dates, numbers and booleans. No React, no clock read — `today` is a parameter precisely so the module has no ambient input. | Return-value equality on local Y/M/D parts (`dateWindow.test.ts`) |
+| `useDateRange` | **bounded-change** | `{ committed startDate/endDate React state, pending window React state, one debounce timer, one setSearchParams write carrying BOTH params with replace: true }`. Nothing else. It never fetches, never touches `localStorage`, never reads the clock outside `presetWindow`'s argument. | Recorded `setSearchParams` calls — params, options **and count** — plus the hook's returned values, under `vi.useFakeTimers()` (`useDateRange.test.tsx`) |
+| `useDebouncedRevisionRun` (moved) | **bounded-change** | `{ one setTimeout, cleared on unmount and on re-run }`. Behaviour-preserving move; the universe is unchanged from what ships today. | Fake timers plus an unmount assertion; the existing `TeamForecastView.autorun.test.tsx` is the regression guard for the move |
+| `DateRangePresets` | **pure-function** (render-only) | Empty. Renders from props and emits intent through a callback; writes nothing and computes no date. | Rendered DOM plus callback arguments (`DateRangePresets.test.tsx`) |
+| `DateWindowStepper` | **pure-function** (render-only) | Empty. Same shape — emits a direction, never a window. | Rendered DOM plus callback arguments (`DateWindowStepper.test.tsx`) |
+| `DateRangeSelector`, `DashboardHeader` (extended) | **pure-function** (render-only) | Empty, and **unchanged** by this feature. Both already render from props and emit through callbacks; they gain children and forwarded props, not effects. | Existing tests, plus the DELIVER wiring tests |
+| `BaseMetricsView` (extended) | **bounded-change**, unchanged shape | Its existing universe minus the window: `startDate`/`endDate`/`updateDateParams` move out into `useDateRange`. A net removal of effect surface, not an addition. | Existing `BaseMetricsView.test.tsx`, including Bug #5571's category-scoped fetching block |
+
+**No unbounded-preservation contract exists here.** Nothing in this feature previews, plans or
+dry-runs, so there is no operation that must return a Plan rather than act — the shape is declared
+absent rather than left unstated.
+
+**Read/write split holds.** Neither new component exposes a write method. `DateRangePresets` emits
+`onSelectPreset(days)` and `DateWindowStepper` emits `onStep(direction)` — both report *intent*, and
+only `useDateRange` turns intent into a window. A component that could set the window directly would
+be a second write path, which is exactly the defect DDD-5 exists to remove.
 
 ---
 
@@ -866,6 +901,12 @@ constraints here, not options. Numbering starts at DT-1 so it collides with neit
 scenario's identifier is its test name. Tags are notional — this repo has no tag runner; they are here
 for the traceability the wave contract asks for.
 
+Two tests assert a property over a range of inputs (window length is preserved however far it is
+walked; forward undoes backward) and are tagged **`@invariant`, not `@property`**. They are
+example-pinned loops, not generative: the frontend has **no `fast-check`** and this feature adds no
+dependency (D14's spirit). Calling them `@property` would claim a generative input space that is not
+there. If PBT is ever adopted here, these two are the obvious first candidates.
+
 ### `src/pages/Common/MetricsView/dateWindow.test.ts` — 29 tests, NEW
 
 | Scenario | Tags |
@@ -884,8 +925,8 @@ for the traceability the wave contract asks for.
 | moves both ends of a team's window one week earlier | `@US-02` `@AC-02.1` |
 | moves both ends of a portfolio's window four weeks earlier | `@US-02` `@AC-02.2` |
 | keeps the window exactly as long as it was | `@US-02` `@AC-02.1` |
-| keeps the window as long as it was however far back it is walked | `@US-02` `@property` |
-| walks forward the same distance it walks back | `@US-02` `@property` |
+| keeps the window as long as it was however far back it is walked | `@US-02` `@invariant` |
+| walks forward the same distance it walks back | `@US-02` `@invariant` |
 | lands four single-week steps exactly where one four-week step lands | `@US-02` `@AC-02.3` |
 | walks back across a year boundary without losing a day | `@US-02` `@edge` |
 | lets the window be walked forward while it still ends in the past | `@US-02` `@AC-02.6` |
