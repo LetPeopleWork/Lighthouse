@@ -7,11 +7,6 @@
     "paradigm": "object-oriented",
     "goal": "Ship two controls for the metrics time window on Team and Portfolio dashboards: a row of named preset windows inside the existing date popover, and a back/forward stepper pair on the dashboard header that walks the same-length window through time. Source: ADO User Story #5914, tagged Release Notes, no parent Epic. Frontend only - no endpoint, DTO, EF migration, config key or client change (D14). The 66 acceptance tests are already authored by DISTILL and land skipped across four files; DELIVER implements production code and un-skips each describe block as it goes green. Two phases mirroring the two DISCUSS slices. The load-bearing work is in 01-02: the two existing per-end date setters each rebuild the URL from the other end's current-render value, so they cannot be composed to move a two-ended window - a single applyDateRange(start, end) write path replaces them and makes the torn write unreachable by construction."
   },
-  "validation": {
-    "status": "approved",
-    "reviewed_by": "Orchestrator self-review, NOT a separate architect dispatch - deviation recorded in the DELIVER handoff notes. Coverage: all 66 scaffolded tests mapped to a step (dateWindow 29 -> 01-01; useDateRange 13 US-01 tests -> 01-02 and 12 US-02 tests -> 02-02; DateRangePresets 5 -> 01-03; DateWindowStepper 7 -> 02-03), plus the two wiring tests DT-5 deferred (01-04, 02-04) and the Playwright skeleton DT-8 deferred (02-05). Steps/unique-files ratio under 2.5. No acceptance criterion names a private method. Every step declares test_file and scenario_name. Phases mirror the two DISCUSS slices; brownfield, no walking skeleton (WS strategy C).",
-    "reviewed_date": "2026-09-08"
-  },
   "ssot_inputs": [
     "docs/feature/story-5914-metrics-time-horizon-presets/feature-delta.md",
     "docs/feature/story-5914-metrics-time-horizon-presets/slices/slice-01-named-windows-in-one-click.md",
