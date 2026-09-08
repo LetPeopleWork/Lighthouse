@@ -1,0 +1,181 @@
+schema_version: 1
+feature_id: story-5914-metrics-time-horizon-presets
+updated: 2026-09-08
+note: >
+  ADO User Story #5914, tagged Release Notes, no parent Epic. Grounded in a pre-DISCUSS code reality
+  check (BaseMetricsView.tsx, DashboardHeader.tsx, DateRangeSelector.tsx, TeamMetricsView.tsx,
+  PortfolioMetricsView.tsx, useCategorySelection.ts, ManualForecaster.tsx, MetricsPage.ts) rather
+  than on the story text. Two load-bearing finds changed what the story is. First: Portfolios ALREADY
+  open at 90 days (PortfolioMetricsView.tsx:68) and Teams do NOT open at a flat 30 — their opening
+  range is derived from the Team's own throughput window, falling back to 30 only under Fixed Dates
+  (TeamMetricsView.tsx:117-128). So the "default timings" half of the story is one no-op plus one
+  change the user declined (D1, D2), and what actually ships is the two controls. Second: the two
+  existing date setters CANNOT be composed — each writes the URL from the other end's current-render
+  value, so calling both to move a two-ended window rewrites the first end back to its stale value
+  (D-S4). Frontend only; no endpoint, no DTO, no migration, no client change.
+
+journeys:
+
+  - name: compare-this-period-against-the-last
+    goal: >
+      A Delivery Lead / RTE in a review reaches the metrics window their question is actually about
+      in one click, then walks that same-length window backwards through time one period at a time
+      and reads the same widgets over each — answering "is that better or worse than before?" from
+      the dashboard rather than from memory or a spreadsheet.
+    persona: "delivery-lead-rte (secondary: flow-coach, who uses the same controls at a standup
+      cadence — narrowing to the last week rather than widening to a quarter)"
+
+    emotional_arc:
+      start: Stalled — "the numbers on screen are for a window nobody asked about, and getting to
+        last quarter means working out what date it was three months ago while the room waits."
+      middle: Fluent — "one click and I'm on the quarter. Now click back once and I'm on the quarter
+        before it, same length, same widgets — I can read the two against each other."
+      end: Confident — "throughput is up on the previous period and the age spread narrowed. That's
+        a direction, not a snapshot, and I can say it without a spreadsheet."
+
+    design_decisions_resolved:
+      - id: D1
+        question: Does the Team's opening range become a flat 30 days, as the story asks?
+        decision: >
+          NO (user, 2026-09-08). Teams already have a default and it is a better one — the window
+          their own throughput configuration names (TeamMetricsView.tsx:117-128). Overriding it would
+          silently change what every existing Team dashboard shows on the next load AND decouple the
+          metrics window from the window the forecasts are computed over. The presets are purely
+          additive; that code is not touched.
+      - id: D2
+        question: Does the Portfolio's 90-day default need building?
+        decision: >
+          No — PortfolioMetricsView.tsx:68 already passes defaultDateRange={90}. Recorded so nobody
+          re-implements it and so the release notes do not claim it as new.
+      - id: D3
+        question: Absolute presets, relative steppers, or both?
+        decision: >
+          Both (user, 2026-09-08). They answer different questions and neither substitutes for the
+          other: a preset reaches "last 3 months" in one click but cannot walk backwards; a stepper
+          walks backwards but takes eight clicks to widen 30 days into 90.
+      - id: D4
+        question: Which presets?
+        decision: >
+          Owner-aware. Team: Last 7 / 14 / 30 / 90 days. Portfolio: Last 30 / 90 / 180 days. Teams
+          are read at a standup cadence and Portfolios at a quarterly one — the same reason their
+          opening defaults already differ. A shared set would be too coarse at one end and too noisy
+          at the other.
+      - id: D5
+        question: How big is one step?
+        decision: >
+          Owner-aware, straight from the story: Team steps 1 week, Portfolio steps 4 weeks.
+      - id: D6
+        question: What does a preset set?
+        decision: >
+          end = today, start = today - N days. A preset is a named window ending NOW, not a duration
+          applied to wherever the window currently sits. This makes it the escape hatch from a
+          stepped-back window, which is what makes D10's lack of persistence survivable.
+      - id: D7
+        question: What does "the same range in the previous period" move?
+        decision: >
+          BOTH ends, preserving the window's length (user, 2026-09-08). A forward twin mirrors it and
+          clamps so end never passes today, rendering disabled once the window already ends today.
+          No floor on the backward stepper — history is as deep as the data is, and an empty window
+          is a legitimate answer the widgets already render honestly. Widening instead of moving was
+          rejected: a 30-day window turned into a 60-day one ending today does not answer "last month
+          versus this month", it averages the two together and hides the difference asked about.
+      - id: D8
+        question: Why debounce the steppers, and by how long?
+        decision: >
+          500 ms quiet period; clicks accumulate into a pending window and only the settled one is
+          committed and fetched. The reason is concrete: useVisitedCategories' reset token embeds the
+          formatted start and end dates (BaseMetricsView.tsx:1267-1270, useCategorySelection.ts:85-104),
+          so EVERY committed change resets the visited-category set and re-fires every fetch for the
+          current category. Four clicks to walk back a month would be four full refetch storms for
+          three windows nobody wants to look at. The story anticipated the need; this is why.
+      - id: D9
+        question: Do intermediate steps enter the URL?
+        decision: >
+          No. Only the committed window writes startDate/endDate, still with replace: true. A link
+          copied mid-click therefore names a real window that was really fetched, and browser history
+          is not polluted with steps.
+      - id: D10
+        question: Does the chosen window survive a reload?
+        decision: >
+          No (user, 2026-09-08). URL-only, exactly as today. The useCategorySelection.ts localStorage
+          pattern was the obvious candidate and is deliberately NOT used. Consequence stated plainly:
+          every fresh visit re-lands on the derived default and the user re-picks — D6 keeps that
+          cheap at one click.
+      - id: D11
+        question: Where do the two controls live?
+        decision: >
+          Steppers flank the date label on the DashboardHeader bar; preset chips go inside the
+          popover, above the two pickers. Walking back three periods must not cost three popover
+          round-trips, and a back/forward pair around the current window is the pattern every
+          calendar and analytics tool already trained the user on. Under the sm breakpoint the header
+          hides the date text and shows the calendar icon alone; the steppers stay visible there.
+          NOTE: this is the one placement call made without asking the user — cheap to move, nothing
+          depends on it.
+      - id: D12
+        question: Does any renameable term appear in the new labels?
+        decision: >
+          No. Every new label is pure date language ("Last 30 days") plus two directional icon
+          buttons. None of the eleven Settings-renameable terms appears. Explicit N/A, not a silent
+          skip.
+      - id: D13
+        question: RBAC or premium gate?
+        decision: >
+          Neither. The controls navigate data the viewer can already reach by typing two dates;
+          gating them would gate convenience, not information.
+      - id: D14
+        question: Any backend change?
+        decision: >
+          None. No endpoint, DTO, EF migration or HistoricalSchemaPatch entry. The metrics endpoints
+          already take startDate and endDate; this only changes which pair the browser sends.
+      - id: D15
+        question: Do the CLI and MCP clients need anything?
+        decision: >
+          No. The window is browser-side view state and the clients already accept explicit dates.
+          No version bump. Explicit N/A.
+      - id: D16
+        question: Should the manual end picker stop accepting future dates?
+        decision: >
+          Not here. DateRangeSelector's end picker has a minDate but no maxDate, so future end dates
+          are already selectable. Presets and the forward stepper both clamp at today; the manual
+          picker is unchanged. Tightening it is a separate question about a pre-existing surface.
+      - id: D17
+        question: date-fns or dayjs for the new arithmetic?
+        decision: >
+          date-fns. DateRangeSelector runs on AdapterDateFns; ManualForecaster's chip row runs on
+          dayjs and is a VISUAL precedent only. Pulling dayjs onto this surface to share four lines
+          of arithmetic would put two date libraries on one screen to save a setDate call.
+
+    shared_artifacts:
+      - name: the window (startDate, endDate)
+        source_of_truth: >
+          BaseMetricsView's committed state, mirrored into the ?startDate/?endDate query params on
+          every commit. A URL pair present on mount wins over any default. The pending window in
+          slice 02 is deliberately NOT a second source of truth — it never leaves the header.
+      - name: ownerType ("team" | "portfolio")
+        source_of_truth: >
+          Already derived in BaseMetricsView.tsx:1254-1255 from the shape of the metrics service.
+          Both the preset list (D4) and the step size (D5) read it; neither introduces a new flag.
+
+    error_paths:
+      - step: A preset or step lands on a window with no data
+        recovery: >
+          The widgets already render their own empty/low-sample states. No new error surface — an
+          empty window is a legitimate answer, not a failure.
+      - step: Navigating away between the last stepper click and the commit
+        recovery: >
+          The debounce timer is cleared on unmount; no state update fires and no React warning is
+          logged. This is the shipped debounced-autosave hazard in this repo, named up front.
+      - step: An invalid date reaching the window
+        recovery: >
+          Not reachable by these controls — presets and steppers compute dates rather than accepting
+          typed ones. The manual pickers' existing isValidDate guard is untouched.
+
+    surfaces:
+      - surface: Preset chip row in the metrics date popover (Team and Portfolio)
+        feature: story-5914-metrics-time-horizon-presets
+        slice: 01
+        status: designed
+      - surface: Backward/forward window steppers on the metrics dashboard header (Team and Portfolio)
+        feature: story-5914-metrics-time-horizon-presets
+        slice: 02
+        status: designed

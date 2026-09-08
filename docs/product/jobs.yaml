@@ -48,6 +48,7 @@ feature_context:
   - epic-5511-task-manager
   - remove-encryption-frame-from-config
   - story-5876-behaviour-settings
+  - story-5914-metrics-time-horizon-presets
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6526,3 +6527,135 @@ jobs:
         rule saying which. Gap 1, the smallest of any job on the board, which is honest: the value
         here is that every future instance-wide switch has an obvious home, not that this one switch
         was hard to find.
+
+  - id: job-lead-reach-the-metrics-window-i-mean-in-one-click
+    title: Reach the metrics window my question is about without doing date arithmetic
+    persona: delivery-lead-rte
+    feature_context: story-5914-metrics-time-horizon-presets
+    created: 2026-09-08
+    note: >
+      NEW in story-5914-metrics-time-horizon-presets (ADO #5914). The metrics window today is reachable
+      only by typing two calendar dates into a popover (BaseMetricsView.tsx:1215-1252,
+      DashboardHeader.tsx:129-144). The code check that grounded this job changed the story: Portfolios
+      ALREADY open at 90 days and Teams already derive their opening range from their own throughput
+      window, so the story's "default timings" half is a no-op plus a change the user declined (D1, D2).
+      What is actually missing is the one-click route to a NAMED window. Free, no premium gate, no RBAC
+      surface, frontend only.
+    job_story: >
+      When I open a Team's or Portfolio's metrics in a retro or a leadership review and the window on
+      screen is not the one my question is about,
+      I want to click a named window - last 30 days, last quarter - instead of working out what date it
+      was three months ago and typing it twice,
+      so I can change the question while I still have the room's attention, rather than doing calendar
+      arithmetic out loud in front of them.
+    dimensions:
+      functional: >
+        A row of preset chips in the metrics date popover, above the two existing pickers. Owner-aware:
+        Team gets Last 7 / 14 / 30 / 90 days, Portfolio gets Last 30 / 90 / 180 days (D4), matching the
+        cadence at which each is read. A preset sets end = today and start = today - N days (D6), so it
+        is also the escape hatch back to the present from a window stepped into the past. Both ends and
+        both URL params are written in one navigation - the existing per-end setters cannot be composed
+        for this, because each rebuilds the URL from the other end's stale current-render value.
+      emotional: >
+        Move from "hold on, what was the date three months ago" - a public stall, mid-sentence - to
+        reaching the window in the same beat as the thought. The dashboard stops being a thing you
+        operate and becomes a thing you ask.
+      social: >
+        Change the frame of a review live, in front of the room, instead of promising to "pull the
+        quarterly numbers after the meeting" - which usually means the question is answered a week
+        late, to an audience that has moved on.
+    forces:
+      push: >
+        Every window change costs two typed dates and the mental arithmetic to produce them. In a
+        review that cost is paid in front of an audience, so in practice it is not paid at all: leads
+        read whatever window happens to be loaded, or they leave the tool and rebuild the comparison in
+        a spreadsheet.
+      pull: >
+        One click on the window they were going to describe in words anyway. No new screen, no new
+        concept - the chips sit in the popover where changing the window already lives.
+      anxiety: >
+        Will clicking a preset change what my dashboard opens at from now on? (No - D10: URL-only, no
+        persistence; and D1/D2: the opening ranges are not touched, so nobody's dashboard opens
+        differently after the upgrade.)
+        Will it fight the dates I typed by hand? (No - an explicit startDate/endDate pair in the URL
+        wins on load, and no chip forces itself over it.)
+      habit: >
+        The chip row is the same control ManualForecaster already trained them on for target dates
+        (End of week, +1 week). The muscle memory transfers; only the surface is new.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - this is friction on a surface people use constantly rather than a missing
+        capability; the window IS reachable today, just expensively. Current satisfaction 1 - two typed
+        dates plus arithmetic, every time, with no shortcut anywhere on the surface. Gap 2 - real and
+        cheap: a presentational chip row plus one combined setter, no backend, no schema, no new
+        concept.
+
+  - id: job-lead-compare-this-period-against-the-one-before
+    title: Tell whether this period is better or worse than the one before it
+    persona: delivery-lead-rte
+    feature_context: story-5914-metrics-time-horizon-presets
+    created: 2026-09-08
+    note: >
+      NEW in story-5914-metrics-time-horizon-presets (ADO #5914). The reading twin of the shipped
+      job-delivery-lead-tell-blocked-trend-vs-last-period (Epic #5074), which bakes a previous-period
+      delta into ONE widget. This job generalises that instinct to every widget on the dashboard by
+      moving the WINDOW rather than adding a second series to each chart - a much cheaper answer to the
+      same question, and the one the story asks for. Deliberately NOT a previous-period overlay; that
+      is a different and far larger feature.
+    job_story: >
+      When I have just read this period's numbers and someone asks whether that is better or worse than
+      before,
+      I want to move the same-length window back one period and read the same widgets over it,
+      so I can answer with a direction rather than a snapshot - and decide whether this is something to
+      raise or something that is simply our level.
+    dimensions:
+      functional: >
+        Backward and forward steppers flanking the date label on the metrics dashboard header. One
+        click moves BOTH ends of the window by one step, preserving its length (D7): a 30-day window
+        becomes the 30 days immediately before. Owner-aware step size - Team 1 week, Portfolio 4 weeks
+        (D5). The forward twin clamps so the end never passes today and disables once the window
+        already ends there. Clicks accumulate into a pending window shown immediately on the label and
+        committed after a 500 ms quiet period (D8), so walking back four weeks costs one round of
+        requests rather than four - which matters because every committed window change resets the
+        visited-category set and re-fires every fetch for the current category.
+      emotional: >
+        Move from "we did 14 last month... I think" - a number defended from memory - to reading both
+        periods off the same widgets minutes apart. The comparison stops being a claim and becomes
+        something the room can see.
+      social: >
+        Report a direction to leadership ("throughput is up on the previous period and the age spread
+        narrowed") instead of a number they cannot interpret, and be able to show where it came from
+        when asked.
+    forces:
+      push: >
+        Comparing periods today means computing four dates, typing two of them, memorising what you
+        saw, then typing the other two back - so the comparison either happens in a spreadsheet outside
+        Lighthouse or it does not happen and the snapshot gets reported alone.
+      pull: >
+        One click on a control sitting beside the window you are already reading. Same widgets, same
+        length, one period earlier - and one more click brings you back.
+      anxiety: >
+        Will repeated clicking hammer the backend or leave me watching windows I do not want? (No - D8:
+        clicks accumulate and only the settled window is fetched.)
+        Will the header claim a window the charts are not showing? (Only for up to 500 ms, and it is
+        visually marked as not-yet-applied while it does - this is the honesty risk the slice is built
+        to answer.)
+        Can I step past today? (No - the forward stepper clamps and disables.)
+      habit: >
+        A back/forward pair around the current window is the pattern every calendar and analytics tool
+        has already trained them on; the step size is the only thing they have to learn, and the
+        button's label names it.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - "better or worse than before?" is the question that follows every metric in
+        every review, and a dashboard that answers only "how much right now" leaves it to memory. The
+        Blocked widget's shipped previous-period delta (Epic #5074) is direct evidence the question is
+        real; this generalises it. Current satisfaction 1 - four dates computed and two typed, or a
+        spreadsheet. Gap 3 - a genuine missing capability, kept small because it moves the existing
+        window rather than adding a second series to every chart.
