@@ -11,6 +11,7 @@ import {
 } from "react";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import { useErrorSnackbar } from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useDebouncedRevisionRun } from "../../../hooks/useDebouncedRevisionRun";
 import type { BacktestResult } from "../../../models/Forecasts/BacktestResult";
 import type {
 	IFeatureCandidate,
@@ -26,17 +27,6 @@ import ManualForecaster from "./ManualForecaster";
 import NewItemForecaster from "./NewItemForecaster";
 
 const DEBOUNCE_MS = 300;
-
-function useDebouncedRevisionRun(revision: number, run: () => void) {
-	useEffect(() => {
-		if (revision === 0) {
-			return;
-		}
-
-		const timer = setTimeout(run, DEBOUNCE_MS);
-		return () => clearTimeout(timer);
-	}, [revision, run]);
-}
 
 interface TeamForecastViewProps {
 	team: Team;
