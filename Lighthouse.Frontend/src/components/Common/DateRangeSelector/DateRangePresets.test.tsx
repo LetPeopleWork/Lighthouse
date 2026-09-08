@@ -16,7 +16,7 @@ const portfolioPresets: readonly DateWindowPreset[] = [
 	{ label: "Last 180 days", days: 180 },
 ];
 
-describe.skip("DateRangePresets", () => {
+describe("DateRangePresets", () => {
 	it("offers a team every window it was given, in the order it was given them", () => {
 		render(
 			<DateRangePresets
