@@ -3,7 +3,9 @@ import {
 	type Locator,
 	type Page,
 	type Request,
+	type Response,
 } from "@playwright/test";
+import { formatLocalDate } from "../../helpers/dates";
 import { WorkItemsDialog } from "./WorkItemsDialog";
 
 export class MetricsWidget {
@@ -341,6 +343,8 @@ export class WorkItemAgePercentilesCard {
 	}
 }
 
+const METRICS_ROUND_ENDPOINT = "/metrics/workItemAgePercentiles?";
+
 /**
  * Drives the dashboard's reporting window. The window lives in the `startDate` /
  * `endDate` query params (BaseMetricsView seeds its state from them and writes
@@ -356,16 +360,16 @@ export class MetricsDateRange {
 		return this.page.getByTestId("dashboard-date-range-toggle");
 	}
 
-	/**
-	 * Local Y/M/D, matching what the dashboard writes and what the request layer
-	 * sends. Encoding the param in UTC instead shifted the window by a day on any
-	 * runner off UTC, timing out every wait keyed on the endDate (Bug #5566).
-	 */
-	private static toParam(date: Date): string {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, "0");
-		const day = String(date.getDate()).padStart(2, "0");
-		return `${year}-${month}-${day}`;
+	private waitForMetricsRound(
+		endpointFragment: string,
+		windowParam: string,
+	): Promise<Response> {
+		return this.page.waitForResponse(
+			(response) =>
+				response.url().includes(endpointFragment) &&
+				response.url().includes(windowParam),
+			{ timeout: 30_000 },
+		);
 	}
 
 	/**
@@ -377,11 +381,7 @@ export class MetricsDateRange {
 	 * left-over response for the default (today-anchored) window.
 	 */
 	async apply(startDate: Date, endDate: Date): Promise<void> {
-		await this.applyAndWaitFor(
-			startDate,
-			endDate,
-			"/metrics/workItemAgePercentiles?",
-		);
+		await this.applyAndWaitFor(startDate, endDate, METRICS_ROUND_ENDPOINT);
 	}
 
 	/**
@@ -395,16 +395,14 @@ export class MetricsDateRange {
 		endDate: Date,
 		endpointFragment: string,
 	): Promise<void> {
-		const endParam = MetricsDateRange.toParam(endDate);
+		const endParam = formatLocalDate(endDate);
 		const url = new URL(this.page.url());
-		url.searchParams.set("startDate", MetricsDateRange.toParam(startDate));
+		url.searchParams.set("startDate", formatLocalDate(startDate));
 		url.searchParams.set("endDate", endParam);
 
-		const requested = this.page.waitForResponse(
-			(response) =>
-				response.url().includes(endpointFragment) &&
-				response.url().includes(`endDate=${endParam}`),
-			{ timeout: 30_000 },
+		const requested = this.waitForMetricsRound(
+			endpointFragment,
+			`endDate=${endParam}`,
 		);
 
 		await this.page.goto(url.toString());
@@ -453,13 +451,9 @@ export class MetricsDateRange {
 	 * satisfied by the window that was already showing.
 	 */
 	async selectPreset(label: string, expectedStart: Date): Promise<void> {
-		const startParam = MetricsDateRange.toParam(expectedStart);
-
-		const requested = this.page.waitForResponse(
-			(response) =>
-				response.url().includes("/metrics/workItemAgePercentiles?") &&
-				response.url().includes(`startDate=${startParam}`),
-			{ timeout: 30_000 },
+		const requested = this.waitForMetricsRound(
+			METRICS_ROUND_ENDPOINT,
+			`startDate=${formatLocalDate(expectedStart)}`,
 		);
 
 		await this.open();
@@ -501,9 +495,9 @@ export class MetricsDateRange {
 	async recordFetchedWindowsDuring(
 		burst: () => Promise<void>,
 		settledEnd: Date,
-		endpointFragment = "/metrics/workItemAgePercentiles?",
+		endpointFragment = METRICS_ROUND_ENDPOINT,
 	): Promise<string[]> {
-		const settledParam = MetricsDateRange.toParam(settledEnd);
+		const settledParam = formatLocalDate(settledEnd);
 		const fetchedWindows: string[] = [];
 
 		const record = (request: Request) => {
@@ -517,11 +511,9 @@ export class MetricsDateRange {
 			}
 		};
 
-		const settled = this.page.waitForResponse(
-			(response) =>
-				response.url().includes(endpointFragment) &&
-				response.url().includes(`endDate=${settledParam}`),
-			{ timeout: 30_000 },
+		const settled = this.waitForMetricsRound(
+			endpointFragment,
+			`endDate=${settledParam}`,
 		);
 
 		this.page.on("request", record);
