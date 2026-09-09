@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useSearchParams } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDateRange } from "./useDateRange";
 
@@ -66,6 +66,17 @@ const renderDateRange = (
 	renderHook(() => useDateRange(ownerType, defaultDateRange), {
 		wrapper: wrapperFor(initialEntry),
 	});
+
+// Hands back the address alongside the window, so a test can act like the rest of the page and put
+// something in the address that the window code knows nothing about.
+const renderDateRangeBesideTheAddress = (initialEntry = "/teams/1") =>
+	renderHook(
+		() => ({
+			range: useDateRange("team", 30),
+			setParams: useSearchParams()[1],
+		}),
+		{ wrapper: wrapperFor(initialEntry) },
+	);
 
 beforeEach(() => {
 	searchParamWrites.length = 0;
@@ -411,6 +422,54 @@ describe("useDateRange — the window never ends in the future", () => {
 		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
 
 		expect(result.current.endDate.getTime()).toBe(NOW.getTime());
+	});
+});
+
+// Each of these moves the window twice, with something changing in between. Reading the second move
+// off the state the first one replaced is the stale-closure family this hook exists to close, and it
+// is invisible to any test that only ever moves the window once.
+describe("useDateRange — a second move reads the first one's result", () => {
+	it("leaves the rest of the address alone when the window is written", () => {
+		const { result } = renderDateRangeBesideTheAddress();
+
+		act(() => result.current.setParams(new URLSearchParams("category=team")));
+		act(() => result.current.range.applyPreset(7));
+
+		const lastWrite = searchParamWrites[searchParamWrites.length - 1];
+		expect(lastWrite.params.get("category")).toBe("team");
+		expect(lastWrite.params.get("endDate")).toBe("2026-09-08");
+	});
+
+	it("walks on from where the last committed step left the window", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() => result.current.stepWindow(-1));
+		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
+		act(() => result.current.stepWindow(-1));
+		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
+
+		expect(asLocalIso(result.current.endDate)).toBe("2026-08-25");
+		expect(asLocalIso(result.current.startDate)).toBe("2026-07-26");
+	});
+
+	it("keeps the end a reader just picked when they then pick a start", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() => result.current.handleEndDateChange(localDay(2026, 9, 1)));
+		act(() => result.current.handleStartDateChange(localDay(2026, 7, 1)));
+
+		expect(asLocalIso(result.current.endDate)).toBe("2026-09-01");
+		expect(asLocalIso(result.current.startDate)).toBe("2026-07-01");
+	});
+
+	it("keeps the start a reader just picked when they then pick an end", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() => result.current.handleStartDateChange(localDay(2026, 7, 1)));
+		act(() => result.current.handleEndDateChange(localDay(2026, 9, 1)));
+
+		expect(asLocalIso(result.current.startDate)).toBe("2026-07-01");
+		expect(asLocalIso(result.current.endDate)).toBe("2026-09-01");
 	});
 });
 
