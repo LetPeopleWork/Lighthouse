@@ -45,7 +45,11 @@ const asLocalIso = (date: Date): string => {
 	return `${date.getFullYear()}-${month}-${day}`;
 };
 
-const TODAY = localDay(2026, 9, 8);
+// Deliberately mid-afternoon rather than midnight. A suite whose clock sits at the start of the day
+// cannot tell a window that ends now from one that ends at the start of today, and the difference is
+// load-bearing: widgets compare a timestamp against the end, so a midnight end drops everything
+// recorded so far today.
+const NOW = new Date(2026, 8, 8, 14, 30, 0);
 
 const wrapperFor = (initialEntry: string) => {
 	const Wrapper = ({ children }: { children: ReactNode }) => (
@@ -66,7 +70,7 @@ const renderDateRange = (
 beforeEach(() => {
 	searchParamWrites.length = 0;
 	vi.useFakeTimers();
-	vi.setSystemTime(TODAY);
+	vi.setSystemTime(NOW);
 });
 
 afterEach(() => {
@@ -194,6 +198,33 @@ describe("useDateRange — picking one date by hand leaves the other alone", () 
 	});
 });
 
+// The single write path is public, and both of its own callers screen their argument before they
+// reach it. Nothing else exercises its guard, so these drive it directly — one unusable end at a
+// time, because a guard that only trips when both ends are unusable would pass every other test.
+describe("useDateRange — the single write path refuses an unusable window", () => {
+	it("writes nothing when the start alone is unusable", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() =>
+			result.current.applyDateRange(new Date("nonsense"), localDay(2026, 9, 8)),
+		);
+
+		expect(searchParamWrites).toHaveLength(0);
+		expect(asLocalIso(result.current.startDate)).toBe("2026-08-09");
+	});
+
+	it("writes nothing when the end alone is unusable", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() =>
+			result.current.applyDateRange(localDay(2026, 8, 1), new Date("nonsense")),
+		);
+
+		expect(searchParamWrites).toHaveLength(0);
+		expect(asLocalIso(result.current.endDate)).toBe("2026-09-08");
+	});
+});
+
 describe("useDateRange — walking the window a period at a time", () => {
 	it("moves a team's window back one week", () => {
 		const { result } = renderDateRange("team", 30);
@@ -251,6 +282,29 @@ describe("useDateRange — walking the window a period at a time", () => {
 		expect(asLocalIso(result.current.pendingEndDate)).toBe("2026-09-01");
 		expect(asLocalIso(result.current.endDate)).toBe("2026-09-08");
 		expect(result.current.isCommitPending).toBe(true);
+	});
+
+	// The chips and the arrows have to agree with the label the moment it changes. Reading them from
+	// the committed window instead would leave the chip pressed and the forward arrow dead for the
+	// half-second after a click, which is exactly the window this feature is about.
+	it("releases the named window and arms the way forward on the click, not on the commit", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() => result.current.stepWindow(-1));
+
+		expect(result.current.selectedPresetDays).toBeNull();
+		expect(result.current.canStepForward).toBe(true);
+	});
+
+	it("marks the named window again the moment a step returns to it", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() => result.current.stepWindow(-1));
+		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
+		act(() => result.current.stepWindow(1));
+
+		expect(result.current.selectedPresetDays).toBe(30);
+		expect(result.current.canStepForward).toBe(false);
 	});
 
 	it("stops saying a window is pending once it has been applied", () => {
@@ -321,13 +375,47 @@ describe("useDateRange — the window never ends in the future", () => {
 		expect(asLocalIso(result.current.endDate)).toBe("2026-09-08");
 		expect(asLocalIso(result.current.startDate)).toBe("2026-08-09");
 	});
+
+	// The address only carries a calendar day, so a restored window ending today comes back ending at
+	// that day's midnight. Widgets read the end as a point in time, so leaving it there would hide
+	// everything recorded since — and the address cannot tell the two windows apart.
+	it("ends a restored window at this moment when it was restored ending today", () => {
+		const { result } = renderDateRange(
+			"team",
+			30,
+			"/teams/1?startDate=2026-08-09&endDate=2026-09-08",
+		);
+
+		expect(result.current.endDate.getTime()).toBe(NOW.getTime());
+	});
+
+	it("leaves a restored window that ends before today at the day it names", () => {
+		const { result } = renderDateRange(
+			"team",
+			30,
+			"/teams/1?startDate=2026-08-01&endDate=2026-08-31",
+		);
+
+		expect(result.current.endDate.getHours()).toBe(0);
+		expect(asLocalIso(result.current.endDate)).toBe("2026-08-31");
+	});
+
+	it("ends a window walked forward onto today at this moment", () => {
+		const { result } = renderDateRange(
+			"team",
+			30,
+			"/teams/1?startDate=2026-08-06&endDate=2026-09-05",
+		);
+
+		act(() => result.current.stepWindow(1));
+		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
+
+		expect(result.current.endDate.getTime()).toBe(NOW.getTime());
+	});
 });
 
 describe("useDateRange — leaving the page mid-click", () => {
-	it("applies nothing and complains about nothing when the reader navigates away first", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+	it("applies nothing when the reader navigates away before the quiet period is up", () => {
 		const { result, unmount } = renderDateRange("team", 30);
 
 		act(() => result.current.stepWindow(-1));
@@ -335,6 +423,18 @@ describe("useDateRange — leaving the page mid-click", () => {
 		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS * 2));
 
 		expect(searchParamWrites).toHaveLength(0);
-		expect(consoleError).not.toHaveBeenCalled();
+	});
+
+	// Committing changes what the debounce is watching, so it arms one more timer over a window that
+	// has already been applied. That timer has to find nothing left to do rather than write again.
+	it("writes once when the timer the commit re-armed comes round", () => {
+		const { result } = renderDateRange("team", 30);
+
+		act(() => result.current.stepWindow(-1));
+		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
+		act(() => vi.advanceTimersByTime(QUIET_PERIOD_MS));
+
+		expect(searchParamWrites).toHaveLength(1);
+		expect(asLocalIso(result.current.endDate)).toBe("2026-09-01");
 	});
 });

@@ -85,11 +85,10 @@ test("@walking_skeleton @US-01 @US-02 a delivery lead picks a named window and t
 	const presetEnd = new Date();
 	await dateRange.selectPreset(PRESET_LABEL, presetStart);
 
+	// One assertion over the whole label, not one per end: two independent substring checks pass
+	// just as happily on a label that reads its window backwards.
 	await expect(dateRange.windowLabel).toContainText(
-		asTheHeaderReadsIt(presetStart),
-	);
-	await expect(dateRange.windowLabel).toContainText(
-		asTheHeaderReadsIt(presetEnd),
+		`${asTheHeaderReadsIt(presetStart)} → ${asTheHeaderReadsIt(presetEnd)}`,
 	);
 
 	// Both ends, not one: a preset that wrote only the end would leave the reader on

@@ -224,5 +224,27 @@ describe("DateRangeSelector component", () => {
 
 			expect(presetChips()).toHaveLength(0);
 		});
+
+		// The three preset props have to arrive together. Passing them one at a time is what a
+		// half-wired caller does, and each case has to leave the row off rather than render an empty
+		// row or a chip nothing is listening to.
+		it("shows no chip row, but still the pickers, for an empty list of presets", () => {
+			render(
+				<DateRangeSelector
+					{...defaultProps}
+					presets={[]}
+					onSelectPreset={vi.fn()}
+				/>,
+			);
+
+			expect(presetChips()).toHaveLength(0);
+			expect(screen.getByText("Start Date")).toBeInTheDocument();
+		});
+
+		it("shows no chip row when nothing is listening for a choice", () => {
+			render(<DateRangeSelector {...defaultProps} presets={presets} />);
+
+			expect(presetChips()).toHaveLength(0);
+		});
 	});
 });

@@ -92,6 +92,10 @@ const renderHeader = async (overrides: Partial<DashboardHeaderProps> = {}) => {
 	};
 };
 
+// The steppers are the only buttons here whose name counts a number of days.
+const stepperButtons = () =>
+	screen.queryAllByRole("button", { name: /^(Previous|Next) \d+ days$/ });
+
 describe("DashboardHeader", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -243,6 +247,24 @@ describe("DashboardHeader", () => {
 			screen.getByRole("button", { name: "Previous 7 days" }),
 		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Next 7 days" })).toBeDisabled();
+	});
+
+	// A step length with nothing listening, or a listener with no step length, is a half-wired
+	// caller. Either one has to leave the arrows off rather than render one whose click goes nowhere.
+	it("leaves the steppers off when only the step length arrived", async () => {
+		setMatchMedia(false);
+
+		await renderHeader({ stepDays: 7 });
+
+		expect(stepperButtons()).toHaveLength(0);
+	});
+
+	it("leaves the steppers off when only the handler arrived", async () => {
+		setMatchMedia(false);
+
+		await renderHeader({ onStepWindow: vi.fn() });
+
+		expect(stepperButtons()).toHaveLength(0);
 	});
 
 	it("falls back to the committed window when no pending window is supplied", async () => {
