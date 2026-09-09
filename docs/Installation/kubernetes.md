@@ -79,7 +79,7 @@ This gets you a responding Lighthouse instance on any cluster (including a local
 ```sh
 helm repo add letpeoplework https://docs.lighthouse.letpeople.work/charts
 helm repo update
-helm search repo lighthouse          # CHART 0.1.14 / APP 26.9.1.6
+helm search repo lighthouse          # CHART 0.1.15 / APP 26.9.9.9
 
 helm install l8e letpeoplework/lighthouse \
   --set postgresql.auth.password='change-me' \
@@ -116,7 +116,7 @@ production-reference values, fill the REQUIRED fields (host, TLS secret, databas
 login — OIDC), and install with `-f`:
 
 ```sh
-helm install l8e letpeoplework/lighthouse --version 0.1.14 -f values-enterprise.yaml
+helm install l8e letpeoplework/lighthouse --version 0.1.15 -f values-enterprise.yaml
 ```
 
 See the [configuration reference](https://github.com/LetPeopleWork/Lighthouse/blob/main/chart/README.md#values)

@@ -31,9 +31,13 @@ type: application
 # 0.1.14: track the v26.9.1.6 release — a binary install that updates from inside Lighthouse no longer
 #         refuses to start on the encryption key the product used to ship in appsettings.json (Bug 5890).
 #         Kubernetes was never affected: the chart has always required an operator-supplied key.
-version: 0.1.14
+# 0.1.15: track the v26.9.9.9 release — named metrics time ranges and a window stepper (Story 5914),
+#         Work Item Age bands in the work item dialog (Story 5884), one Behaviour Settings table that
+#         Feature Ordering moved into (Story 5876), and Faster Updates on by default for new instances
+#         (Story 5912). No chart values changed.
+version: 0.1.15
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag; ADR-083).
-appVersion: "26.9.1.6"
+appVersion: "26.9.9.9"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse
