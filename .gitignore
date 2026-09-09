@@ -490,3 +490,8 @@ social-posts/.slack-cache.json
 # nWave activation marker (keep .nwave/local-config.json trackable)
 .nwave/*
 !.nwave/local-config.json
+
+# Editor AI tooling writes a .github beside whatever directory it was started in, so one
+# turns up inside a project folder from time to time. The repository's real .github is at
+# the root, and this pattern is anchored so that it stays tracked.
+/*/.github/
