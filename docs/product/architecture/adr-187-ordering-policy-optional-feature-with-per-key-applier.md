@@ -1,6 +1,6 @@
 # ADR-187: The Ordering Policy moves to an OptionalFeature, and a per-key applier carries its consequence
 
-- **Status**: **Proposed** (DESIGN, 2026-08-31)
+- **Status**: **Accepted** — implemented 2026-09-04 by story-5876-behaviour-settings (`FeatureOrderingPolicyProvider` reads the `OptionalFeature` row; `FeatureOrderingApplier` is registered as the per-key applier). Proposed at DESIGN, 2026-08-31.
 - **Date**: 2026-08-31
 - **Feature**: `story-5876-behaviour-settings` (ADO User Story #5876 "Move Feature Ordering to Optional Features")
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect), interaction mode = PROPOSE

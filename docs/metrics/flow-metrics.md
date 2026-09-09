@@ -101,6 +101,14 @@ For each *Doing* state, Lighthouse draws horizontal background bands at that sta
 {: .note}
 A **stale** item (one that has been in its current state longer than the configured staleness threshold) appears red in the chart, just like a blocked item. Clicking its bubble shows the item's **Time in State** highlighted in red. An item that is blocked *and* over the threshold is treated as blocked, not stale.
 
+## Work Item Age Band Column
+
+The chart paints a pace zone behind every dot. The work item dialogs put the same judgement into words: open one from the **View Data** button in the widget header, or by clicking a single bubble, and every row carries a **Work Item Age Band**. The header follows whatever you have renamed Work Item Age to under [Terminology Configuration](../settings/configuration.html#terminology-configuration).
+
+The band names are read off the percentile numbers themselves — with the default percentiles that is `Below 50th`, `50th-70th`, `70th-85th`, `85th-95th` and `Above 95th` — and each is coloured to match the zone the chart draws at that height. An age landing exactly on a boundary belongs to the band beneath it. An item sitting in a state with no completed history to measure against reads `No history`: uncoloured, because not knowing how long the work usually takes is not the same as doing well, and ordered below the calmest band rather than above it.
+
+Sort the column to bring the worst-aging items to the top, filter it to a single band through the grid's own column filter, or export the list to CSV, where the band reads in words. When no state in the workflow has any history at all, the column is not shown — a column reading `No history` on every row says nothing the chart is not already saying by drawing no zones.
+
 ## Status Indicator
 
 | Status | Condition |

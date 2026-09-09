@@ -4,6 +4,54 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.9.9.9
+
+## Named time ranges, and stepping the metrics window
+
+Every metrics dashboard opened on a range you had to set with two date pickers, one end at a time. Click the date range in the header and there is now a row of named ranges — 7, 14, 30 or 90 days for a Team, 30, 90 or 180 for a Portfolio — that jump straight to a window ending today.
+
+![Choosing a metrics date range](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/metrics/metricsdaterange.png)
+
+Either side of the date range sit two arrows that walk the window you already have backwards and forwards, keeping its length: a week at a time for a Team, four weeks for a Portfolio. That is how you compare the same span of time across consecutive periods without doing the arithmetic yourself. Click them several times in a row and Lighthouse waits until you stop before it reloads, so six steps cost one fetch rather than six.
+
+Full detail: [Filtering](https://docs.lighthouse.letpeople.work/metrics/widgets.html#filtering).
+
+## Work Item Age bands in the work item dialog
+
+The Work Item Aging chart already paints a coloured pace zone behind every dot: how this item's age compares against how long finished Work Items historically took to leave the state it is sitting in. Reading that meant going dot by dot.
+
+It is now a value on a row. Open the work item dialog from **View Data** or by clicking a bubble, and each row carries a **Work Item Age Band** — `Below 50th`, `50th-70th`, `70th-85th`, `85th-95th`, `Above 95th`, or `No history` where the state has nothing to be measured against. Sort worst-band-first, cut the list to a single band with the column filter, or export it as a CSV whose band column reads in words.
+
+The bands are per state rather than per total age, so an item three days into a state everything else leaves in one reads worse than an item that has been in progress a fortnight and is exactly where it should be.
+
+Full detail: [Work Item Age Band Column](https://docs.lighthouse.letpeople.work/metrics/flow-metrics.html#work-item-age-band-column).
+
+## Behaviour Settings
+
+Instance-wide switches were spread out: *Optional Features* in one place, Feature Ordering in a section of its own. They now sit in one table under **Settings → Behaviour Settings**, a row per switch, each saying what it does and — where it applies — which licence unlocks it.
+
+![Behaviour Settings](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/optionalfeatures.png)
+
+Feature Ordering moved in as one of those rows, and your existing choice came with it. Turning it on still hands out places to the Features that do not have one yet and re-forecasts; turning it off still leaves those places alone, so taking the order back over adds to the end instead of renumbering everything.
+
+Full detail: [Behaviour Settings](https://docs.lighthouse.letpeople.work/settings/configuration.html#behaviour-settings).
+
+## Faster Updates is on by default
+
+Faster Updates — the two-phase refresh that sweeps your query for what actually changed and downloads only that — is out of preview. New instances start with it on. Existing instances keep whatever you had, and the switch is still there, now as one of the Behaviour Settings rows.
+
+## Bugfixes and Improvements
+
+- **The metrics date pickers no longer crash on a half-typed date** — typing a `0` into the day or the month dropped the dashboard onto an error screen. A date is now applied only once it is complete and valid, which also means typing your way through a date no longer reloads the widgets on every keystroke.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Paul Brown](https://www.linkedin.com/in/paulisthrivving/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.9.1.6...v26.9.9.9)
+
 # Lighthouse v26.9.1.6
 
 ## Fixed: updating from inside Lighthouse could leave it unable to start
