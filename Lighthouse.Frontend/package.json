@@ -42,7 +42,7 @@
 		"zod": "^4.5.4"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.11",
+		"@biomejs/biome": "2.5.12",
 		"@stryker-mutator/core": "^9.6.1",
 		"@stryker-mutator/typescript-checker": "^9.6.1",
 		"@stryker-mutator/vitest-runner": "^9.6.1",
@@ -55,16 +55,16 @@
 		"@types/lodash.debounce": "^4.0.9",
 		"@types/node": "^26.4.1",
 		"@types/react": "^19.2.18",
-		"@types/react-dom": "^19.2.5",
+		"@types/react-dom": "^19.2.7",
 		"@vitejs/plugin-react": "^6.1.1",
 		"@vitest/coverage-v8": "^4.1.0",
-		"@vitest/spy": "4.1.11",
+		"@vitest/spy": "5.0.0",
 		"cross-env": "^10.1.0",
 		"jsdom": "^30.0.1",
 		"parse5": "^8.0.0",
 		"typescript": "^7.0.2",
 		"vite": "^8.2.2",
-		"vitest": "^4.1.0",
+		"vitest": "^4.1.11",
 		"vitest-sonar-reporter": "^3.0.0"
 	}
 }
