@@ -31,7 +31,18 @@ A few widgets are scoped to Teams only or Portfolios only, as noted above and in
 
 ## Filtering
 
-You can filter for a time range of your choice. By default you see the last 30 days (for teams) or the last 90 days (for portfolios). Change the start and/or end date via the date pickers and Lighthouse updates the metrics.
+You can filter for a time range of your choice. Portfolios open on the last 90 days. Teams open on the range their throughput is configured over, so a team measuring throughput across six weeks opens on six weeks — unless it uses fixed throughput dates, in which case it opens on the last 30 days.
+
+Click the date range in the header to change it. There are three ways to do so, and all of them move both ends of the range together except the pickers:
+
+![Date Range Selection](../assets/features/metrics/metricsdaterange.png)
+
+- **Named ranges.** The row of chips at the top of the panel jumps straight to a range ending today: 7, 14, 30 or 90 days for a team, and 30, 90 or 180 days for a portfolio. The chip matching the range on show is highlighted, and stops being highlighted as soon as you pick dates that don't match it.
+- **The date pickers.** Set the start and end yourself, for anything the chips don't cover.
+- **The arrows either side of the date range**, which walk the range you already have backwards and forwards a week at a time for a team, four weeks at a time for a portfolio. The length of the range never changes, so this is how you compare the same span of time across consecutive periods. The forward arrow is disabled once the range ends today, because Lighthouse has no data past it.
+
+{: .note}
+The arrows are meant to be clicked several times in a row, so Lighthouse waits about half a second after your last click before it reloads. While it waits, the date range in the header is greyed and italic to show that the widgets below still show the previous range.
 
 Not every widget reacts to this the same way: some recalculate completely, some report a snapshot as of the selected end date, and a few ignore the range entirely. Every widget section states which of the three applies under **Affected by Filtering**.
 

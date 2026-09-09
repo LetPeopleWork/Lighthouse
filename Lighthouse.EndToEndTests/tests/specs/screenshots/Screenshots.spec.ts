@@ -20,6 +20,7 @@ import {
 	BlockedRuleConfigEditor,
 	CycleTimePercentilesWidget,
 	MetricsCategories,
+	MetricsDateRange,
 	MetricsWidgetNames,
 	WorkItemAgePercentilesCard,
 	WorkItemAgingReferenceLineSelector,
@@ -395,6 +396,27 @@ testWithDemo(
 			5,
 			1000,
 		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of the metrics date range selection",
+	async ({ testData, overviewPage }) => {
+		await overviewPage.lightHousePage.goToOverview();
+		const teamDetailPage = await overviewPage.goToTeam(testData.teams[0].name);
+		const metricsPage = await teamDetailPage.goToMetrics();
+
+		// The viewport shot catches all three ways of moving the window at once: the arrows on the
+		// header, the label between them, and the open panel with its named ranges and pickers.
+		const dateRange = new MetricsDateRange(metricsPage.page);
+		await dateRange.open();
+
+		await takePageScreenshot(
+			metricsPage.page,
+			"features/metrics/metricsdaterange.png",
+		);
+
+		await dateRange.close();
 	},
 );
 
