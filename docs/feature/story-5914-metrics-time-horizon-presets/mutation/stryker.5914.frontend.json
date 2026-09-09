@@ -1,0 +1,40 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.stryker.mutation.5914.ts"
+  },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["dist", "coverage", "playwright-report", "reports"],
+  "mutate": [
+    "src/pages/Common/MetricsView/dateWindow.ts",
+    "src/pages/Common/MetricsView/useDateRange.ts",
+    "src/pages/Common/MetricsView/DateWindowStepper.tsx",
+    "src/components/Common/DateRangeSelector/DateRangePresets.tsx",
+    "src/hooks/useDebouncedRevisionRun.ts",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:19-20",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:27-36",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:48-56",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:121-139",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:143-143",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:152-158",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:167-169",
+    "src/pages/Common/MetricsView/DashboardHeader.tsx:190-192",
+    "src/components/Common/DateRangeSelector/DateRangeSelector.tsx:156-159",
+    "src/components/Common/DateRangeSelector/DateRangeSelector.tsx:168-170",
+    "src/components/Common/DateRangeSelector/DateRangeSelector.tsx:186-193",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:70-70",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:129-129",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:1211-1226",
+    "src/pages/Common/MetricsView/BaseMetricsView.tsx:1890-1898"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "stryker-5914-frontend.json" },
+  "tempDirName": ".stryker-tmp-5914"
+}

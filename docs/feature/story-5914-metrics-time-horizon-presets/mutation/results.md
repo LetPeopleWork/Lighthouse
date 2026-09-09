@@ -8,9 +8,11 @@ Frontend only. The story adds no backend code, so Stryker.NET was not run.
 | 2 | 91.37 % | 127 | 12 | After collapsing three copies of one decision and covering the chip's chosen state. |
 | 3 | **94.96 %** | **132** | **7** | After covering the second-move reads. |
 
-Reproduce with `stryker-config.5914.json` and `vitest.stryker.mutation.5914.ts`, both
-copied here from `Lighthouse.Frontend/` where they are gitignored as local tooling.
-Run from `Lighthouse.Frontend/`:
+Reproduce with `stryker.5914.frontend.json` and `vitest.stryker.mutation.5914.ts`,
+both copied here from `Lighthouse.Frontend/` where they are gitignored as local
+tooling. Copy them back beside `package.json` (the config file has to be named
+`stryker-config.5914.json` there for the ignore rule to pick it up) and run from
+`Lighthouse.Frontend/`:
 
 ```
 TZ=Europe/Zurich npx stryker run stryker-config.5914.json
