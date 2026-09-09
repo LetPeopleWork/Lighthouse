@@ -8,6 +8,8 @@ import {
 	clampWindowToToday,
 	type DateWindow,
 	type DateWindowPreset,
+	endsToday,
+	endWindowAt,
 	getPresetsForOwner,
 	getStepDaysForOwner,
 	type MetricsOwnerType,
@@ -40,15 +42,22 @@ export interface UseDateRangeResult {
 	readonly handleEndDateChange: (date: Date | null) => void;
 }
 
+// The address carries a calendar day, which reads back as that day's midnight. A window whose end
+// is today therefore comes back ending before most of today, and the widgets that read the end as a
+// point in time would drop every reading taken since — so a restored end that lands on today is
+// re-anchored to this moment, exactly as a freshly chosen one is.
 function windowFromParams(
 	params: URLSearchParams,
 	defaultDateRange: number,
 ): DateWindow {
-	const configured = presetWindow(defaultDateRange, new Date());
-	return {
+	const today = new Date();
+	const configured = presetWindow(defaultDateRange, today);
+	const restored = {
 		start: parseLocalDate(params.get("startDate") ?? "") ?? configured.start,
 		end: parseLocalDate(params.get("endDate") ?? "") ?? configured.end,
 	};
+
+	return endsToday(restored, today) ? endWindowAt(restored, today) : restored;
 }
 
 export function useDateRange(

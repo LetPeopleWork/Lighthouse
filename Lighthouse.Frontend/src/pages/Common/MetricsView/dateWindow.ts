@@ -53,12 +53,23 @@ export function shiftWindow(window: DateWindow, stepDays: number): DateWindow {
 const daysEndIsPastToday = (window: DateWindow, today: Date): number =>
 	differenceInCalendarDays(window.end, today);
 
+export const endsToday = (window: DateWindow, today: Date): boolean =>
+	daysEndIsPastToday(window, today) === 0;
+
+// Shifting a window carries its old time of day along, so a window walked forward onto today would
+// end at whatever hour it was built at rather than at this moment — and everything that reads the
+// end as a point in time would then drop the hours since. Landing on today re-anchors it.
+export function endWindowAt(window: DateWindow, today: Date): DateWindow {
+	return { start: window.start, end: today };
+}
+
 export function clampWindowToToday(
 	window: DateWindow,
 	today: Date,
 ): DateWindow {
 	const overshoot = daysEndIsPastToday(window, today);
-	return overshoot > 0 ? shiftWindow(window, -overshoot) : window;
+	const clamped = overshoot > 0 ? shiftWindow(window, -overshoot) : window;
+	return endsToday(clamped, today) ? endWindowAt(clamped, today) : clamped;
 }
 
 export function canStepForward(window: DateWindow, today: Date): boolean {
@@ -70,7 +81,7 @@ export function matchingPresetDays(
 	presets: readonly DateWindowPreset[],
 	today: Date,
 ): number | null {
-	if (daysEndIsPastToday(window, today) !== 0) {
+	if (!endsToday(window, today)) {
 		return null;
 	}
 

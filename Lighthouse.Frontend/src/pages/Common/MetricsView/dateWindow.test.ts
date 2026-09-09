@@ -3,6 +3,7 @@ import {
 	canStepForward,
 	clampWindowToToday,
 	type DateWindow,
+	endsToday,
 	getPresetsForOwner,
 	getStepDaysForOwner,
 	matchingPresetDays,
@@ -230,6 +231,89 @@ describe("dateWindow — the window never ends in the future", () => {
 		const clamped = clampWindowToToday(window, TODAY);
 
 		expect(asLocalParts(clamped.end)).toEqual(asLocalParts(window.end));
+	});
+});
+
+// Every test above builds its dates at local midnight and reads them back as Y/M/D, so none of them
+// can see what time of day a window ends at. That blindness let a window end at the start of today
+// instead of at this moment, which silently drops every reading taken so far today from the widgets
+// that compare a timestamp against the end. These assert the instant.
+describe("dateWindow — a window that ends today ends now", () => {
+	const atNine = new Date(2026, 8, 8, 9, 0, 0);
+	const atEleven = new Date(2026, 8, 8, 23, 0, 0);
+
+	it("ends a walked-forward window at this moment, not at the hour it was built", () => {
+		const builtAtNine = presetWindow(7, atNine);
+		const walkedBack = shiftWindow(builtAtNine, -7);
+
+		const walkedForward = clampWindowToToday(
+			shiftWindow(walkedBack, 7),
+			atEleven,
+		);
+
+		expect(walkedForward.end.getTime()).toBe(atEleven.getTime());
+	});
+
+	it("re-anchors a window that was restored ending at the start of today", () => {
+		const restoredFromTheAddress: DateWindow = {
+			start: localDay(2026, 9, 1),
+			end: localDay(2026, 9, 8),
+		};
+
+		const clamped = clampWindowToToday(restoredFromTheAddress, atEleven);
+
+		expect(clamped.end.getTime()).toBe(atEleven.getTime());
+	});
+
+	it("keeps the window's length while re-anchoring its end", () => {
+		const restoredFromTheAddress: DateWindow = {
+			start: localDay(2026, 9, 1),
+			end: localDay(2026, 9, 8),
+		};
+
+		const clamped = clampWindowToToday(restoredFromTheAddress, atEleven);
+
+		expect(windowLengthInDays(clamped)).toBe(7);
+		expect(asLocalParts(clamped.start)).toEqual([2026, 9, 1]);
+	});
+
+	it("never lets a step taken after midnight leave the end in the future", () => {
+		// The window was built yesterday afternoon and the tab was left open. Stepping forward now
+		// clamps onto the new today, and carrying yesterday's hour along would put the end ahead of
+		// the clock.
+		const yesterdayAfternoon = new Date(2026, 8, 8, 16, 0, 0);
+		const justAfterMidnight = new Date(2026, 8, 9, 0, 5, 0);
+		const built = presetWindow(7, yesterdayAfternoon);
+
+		const stepped = clampWindowToToday(
+			shiftWindow(built, 7),
+			justAfterMidnight,
+		);
+
+		expect(stepped.end.getTime()).toBeLessThanOrEqual(
+			justAfterMidnight.getTime(),
+		);
+		expect(stepped.end.getTime()).toBe(justAfterMidnight.getTime());
+	});
+
+	it("leaves a window that ends before today at the time of day it carried", () => {
+		const built = presetWindow(7, atNine);
+		const walkedBack = shiftWindow(built, -7);
+
+		const clamped = clampWindowToToday(walkedBack, atEleven);
+
+		expect(clamped.end.getHours()).toBe(9);
+	});
+
+	it("says a window ends today whatever time of day either side carries", () => {
+		const endingAtMidnight: DateWindow = {
+			start: localDay(2026, 9, 1),
+			end: localDay(2026, 9, 8),
+		};
+
+		expect(endsToday(endingAtMidnight, atEleven)).toBe(true);
+		expect(endsToday(shiftWindow(endingAtMidnight, -1), atEleven)).toBe(false);
+		expect(endsToday(shiftWindow(endingAtMidnight, 1), atEleven)).toBe(false);
 	});
 });
 
