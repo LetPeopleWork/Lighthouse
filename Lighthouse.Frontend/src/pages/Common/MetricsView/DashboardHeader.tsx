@@ -122,6 +122,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 					// The pair ships as one row component, so its own box is dissolved into this row
 					// and the date label placed between the two arrows. An arrow then reads as moving
 					// the window it points at rather than as a control that happens to stand beside it.
+					// Stryker disable all: pure layout. jsdom computes none, so a test over these could
+					// only read back the style string it just wrote. Only a browser shows whether the
+					// arrows really straddle the label.
 					<Box
 						sx={{
 							display: "contents",
@@ -129,6 +132,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 							"& > * > :last-of-type": { order: 1 },
 						}}
 					>
+						{/* Stryker restore all */}
 						<DateWindowStepper
 							stepDays={stepDays}
 							canStepForward={canStepForward}
@@ -149,6 +153,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 							px: 1,
 							py: 0.25,
 							borderRadius: 1,
+							// Stryker disable all: styling only. Which look says "provisional" is not a
+							// behaviour — the state itself is carried by data-window-pending, which is
+							// asserted. A test over these lines could only restate them.
 							transition: "background-color 150ms, opacity 150ms",
 							// For up to half a second after a click this label already names the new
 							// window while the charts below still show the old one. Unmarked, it would
@@ -157,6 +164,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 							opacity: isCommitPending ? 0.55 : 1,
 							fontStyle: isCommitPending ? "italic" : "normal",
 							"&:hover": { backgroundColor: theme.palette.action.hover },
+							// Stryker restore all
 						}}
 					>
 						<CalendarMonthIcon color="action" fontSize="small" />
@@ -164,6 +172,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 							<Typography
 								variant="body2"
 								color="text.primary"
+								// Stryker disable next-line all: styling only, see above.
 								sx={{ fontWeight: 500, fontStyle: "inherit" }}
 							>
 								{` ${formatDate(pendingStartDate ?? startDate)} → ${formatDate(pendingEndDate ?? endDate)}`}

@@ -17,6 +17,38 @@ const portfolioPresets: readonly DateWindowPreset[] = [
 ];
 
 describe("DateRangePresets", () => {
+	it("shows nothing at all when there are no windows to offer", () => {
+		const { container } = render(
+			<DateRangePresets
+				presets={[]}
+				selectedDays={null}
+				onSelectPreset={vi.fn()}
+			/>,
+		);
+
+		expect(container).toBeEmptyDOMElement();
+	});
+
+	// aria-pressed carries the choice to a screen reader; these carry it to everyone else. Without
+	// them the chosen window could render exactly like the three it was chosen over.
+	it("fills and colours the chosen window, and leaves the rest outlined", () => {
+		render(
+			<DateRangePresets
+				presets={teamPresets}
+				selectedDays={30}
+				onSelectPreset={vi.fn()}
+			/>,
+		);
+
+		const chipFor = (label: string) =>
+			screen.getByText(label).closest("[role='button']") as HTMLElement;
+
+		expect(chipFor("Last 30 days").className).toContain("MuiChip-filled");
+		expect(chipFor("Last 30 days").className).toContain("MuiChip-colorPrimary");
+		expect(chipFor("Last 7 days").className).toContain("MuiChip-outlined");
+		expect(chipFor("Last 7 days").className).not.toContain("colorPrimary");
+	});
+
 	it("offers a team every window it was given, in the order it was given them", () => {
 		render(
 			<DateRangePresets

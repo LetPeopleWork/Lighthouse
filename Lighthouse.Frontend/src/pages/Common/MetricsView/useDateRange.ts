@@ -35,7 +35,7 @@ export interface UseDateRangeResult {
 	readonly presets: readonly DateWindowPreset[];
 	readonly selectedPresetDays: number | null;
 	readonly stepDays: number;
-	readonly applyDateRange: (start: Date, end: Date) => void;
+	readonly applyDateRange: (start: Date | null, end: Date | null) => void;
 	readonly applyPreset: (days: number) => void;
 	readonly stepWindow: (direction: -1 | 1) => void;
 	readonly handleStartDateChange: (date: Date | null) => void;
@@ -76,7 +76,7 @@ export function useDateRange(
 	// write silently undoes the first and the page then fetches a window nobody asked for. This is
 	// the only place the window is written, and it is built from its arguments alone.
 	const applyDateRange = useCallback(
-		(start: Date, end: Date) => {
+		(start: Date | null, end: Date | null) => {
 			if (!isValidDate(start) || !isValidDate(end)) {
 				return;
 			}
@@ -133,23 +133,15 @@ export function useDateRange(
 		[committedWindow, stepDays],
 	);
 
+	// Neither handler screens its date: the write path already refuses a window it cannot use, and a
+	// second copy of that decision here would be one more place for the two to disagree.
 	const handleStartDateChange = useCallback(
-		(date: Date | null) => {
-			if (!isValidDate(date)) {
-				return;
-			}
-			applyDateRange(date, committedWindow.end);
-		},
+		(date: Date | null) => applyDateRange(date, committedWindow.end),
 		[applyDateRange, committedWindow.end],
 	);
 
 	const handleEndDateChange = useCallback(
-		(date: Date | null) => {
-			if (!isValidDate(date)) {
-				return;
-			}
-			applyDateRange(committedWindow.start, date);
-		},
+		(date: Date | null) => applyDateRange(committedWindow.start, date),
 		[applyDateRange, committedWindow.start],
 	);
 

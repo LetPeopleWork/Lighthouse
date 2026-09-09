@@ -183,7 +183,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 					width: "100%",
 				}}
 			>
-				{presets && presets.length > 0 && onSelectPreset && (
+				{presets && onSelectPreset && (
 					<DateRangePresets
 						presets={presets}
 						selectedDays={selectedPresetDays}
