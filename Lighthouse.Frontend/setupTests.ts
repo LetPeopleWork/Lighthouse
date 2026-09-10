@@ -53,7 +53,13 @@ const localStorageMock = {
   }),
 };
 
-global.localStorage = localStorageMock as Storage;
+// jsdom exposes localStorage as a getter-only accessor on the window object, so a
+// plain assignment throws. Redefining the property replaces it outright.
+Object.defineProperty(globalThis, "localStorage", {
+  value: localStorageMock as Storage,
+  writable: true,
+  configurable: true,
+});
 
 // Mock CSS imports to avoid CSS parsing errors in tests
 const mockCSS = new Proxy(
