@@ -38,11 +38,12 @@ Then run `gh api repos/LetPeopleWork/Lighthouse --jq .license` and record what a
 
 ## IN scope
 
-- `LICENSE` replaced with: our own header block naming the composite licence and pointing at the
-  additional terms, a clear delimiter, then **the Elastic License 2.0 reproduced byte-for-byte**
-  (AC-01.1, AC-01.3).
-- `LICENSE-ADDITIONAL-TERMS.md` — the reviewed no-competing-use clause and AI sentence from slice 00,
-  separately numbered, carrying no mention of "PolyForm" or polyformproject.org (AC-01.2).
+- `LICENSE` replaced with: our own opening notice naming the composite licence and stating that both
+  parts bind and both are in that file, then Part 1, then a delimiter, then **the Elastic License 2.0
+  reproduced byte-for-byte** as Part 2 (AC-01.1, AC-01.3).
+- The Lighthouse Additional Terms as **Part 1 of `LICENSE`**, above Part 2 — sections 1–6 from slice
+  00, carrying no mention of "PolyForm" or polyformproject.org (AC-01.2). There is no separate terms
+  file.
 - A `NOTICE` file, or a clearly-headed part of `LICENSE`'s header block, recording that every version
   released before the change date remains under the MIT licence in perpetuity, with that date named
   (AC-01.4). This is what keeps the four existing forks unambiguously covered.

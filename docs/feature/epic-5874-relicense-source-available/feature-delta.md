@@ -110,8 +110,11 @@ licence-key functionality or obscuring the features it protects, (3) no removing
 licensing and copyright notices — stand exactly as Elastic published them. Nothing inside Elastic's
 text is edited, reworded or deleted.
 
-**A second document, `LICENSE-ADDITIONAL-TERMS.md`, carries our two additions** and is incorporated
-by reference:
+**Part 1 of the same file carries our additions.** `LICENSE` is one file in two parts — an opening
+notice, then the Lighthouse Additional Terms (Part 1), then ELv2 verbatim (Part 2) at the tail. Part
+1 holds six sections: no competing use (1), prohibited results however produced (2), rights that
+cannot be restricted (3), relationship to commercial agreements (4), termination linkage (5), and
+governing law (6). The two that carry the epic's purpose are:
 
 - **a no-competing-use clause**, taking its wording from **PolyForm Shield 1.0.0** rather than FSL —
   see D2. Shield's Noncompete makes any purpose permitted *except* providing a product that competes
@@ -140,12 +143,13 @@ statement of its own. "Elastic License" is Elastic's trademark, and licence text
 works. Verbatim adoption is clearly fine and widely practised; editing is an unanswered question.
 Two documents answer it by not asking it.
 
-**The known weakness of this shape, and its mitigation**: a reader or a scanner that opens `LICENSE`
-alone sees plain ELv2 and never learns the additional terms exist. The mitigation is a short header
-block **above** Elastic's text — our own words, prepended, with a clear delimiter, never interleaved
-or edited into theirs — naming the composite licence and pointing at the second file; plus shipping
-both documents in every distribution and archive. DESIGN must treat "do not edit inside Elastic's
-text" as a hard constraint on slice 01, not a preference.
+**Why one file and not two.** The first draft put Part 1 in a separate
+`LICENSE-ADDITIONAL-TERMS.md` incorporated by reference. Two independent review rounds both said
+that was the weakest point: a package manager, or a reader who opens only `LICENSE`, may never see
+the second file and can argue lack of notice. Embedding solves it **and costs nothing**, because our
+terms go *above* Elastic's rather than into them. DESIGN must treat "nothing inside Part 2 is edited,
+reworded, reordered or deleted" as a hard constraint on slice 01, not a preference — the check is
+length-anchored on the tail of the file (AC-01.1) and survives any future edit to Part 1.
 
 **What this costs**: the composite is not ELv2 and must never be called ELv2 or carry the
 `Elastic-2.0` SPDX tag. It needs its own name and a `LicenseRef-` identifier, and both added clauses
@@ -384,10 +388,11 @@ answer them from the repo instead of opening a vendor conversation.
 #### Elevator Pitch
 Before: the repo says MIT, which means "do anything", so the honest answer to "may we fork and strip
 the paid gate?" is yes — and the maintainers would rather it were no.
-After: open `github.com/LetPeopleWork/Lighthouse` → `LICENSE` opens with a header naming the
-`Lighthouse Source Available License 1.0`, pointing at `LICENSE-ADDITIONAL-TERMS.md`, and then
-reproduces the Elastic License 2.0 unaltered; between the two files the reader finds five numbered
-prohibitions, one of which names AI-assisted derivation explicitly.
+After: open `github.com/LetPeopleWork/Lighthouse` → `LICENSE` names the `Lighthouse Source Available
+License 1.0`, states that it has two binding parts and that both are in that file, then sets out the
+Lighthouse Additional Terms and reproduces the Elastic License 2.0 unaltered beneath them — five
+numbered prohibitions in all, one of which covers results produced by an AI assistant, each with an
+explicit statement of what it does **not** restrict.
 Decision enabled: the reader decides whether their intended use is permitted, without asking anyone.
 
 **Acceptance criteria**
@@ -639,9 +644,9 @@ base-text question is closed by designing around it rather than answering it.
 
 ### Key Decisions
 
-- [D1] Two documents: `LICENSE` reproduces ELv2 verbatim and unaltered; a binding
-  `LICENSE-ADDITIONAL-TERMS.md` adds no-competing-use and the AI sentence. Permanent, no change date.
-  ELv2's text is not edited, because no grant to edit it exists.
+- [D1] One `LICENSE` in two parts: Part 1 the Lighthouse Additional Terms, Part 2 ELv2 verbatim and
+  unaltered at the tail. Permanent, no change date. ELv2's text is not edited, because no grant to
+  edit it exists — our terms sit above it instead.
 - [D2] FSL rejected for its 2-year conversion clock and missing key clause; its competing-use wording
   superseded by PolyForm Shield's, which reaches free clones and is explicitly adaptable.
 - [D4] Lighthouse repo only; clients and Jira app stay MIT.

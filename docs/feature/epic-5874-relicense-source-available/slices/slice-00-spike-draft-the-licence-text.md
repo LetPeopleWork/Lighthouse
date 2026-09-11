@@ -6,18 +6,23 @@ plus external legal turnaround
 This is a **pre-slice SPIKE, not a slice.** It has no user-visible output and would fail the
 slice-composition gate on its own. It lands as a precursor to slice 01, not as something shipped.
 
-> **Status 2026-09-11 — drafting done, legal review outstanding.** All four documents are written and
-> live in `../drafts/`: `LICENSE.draft` (header block + ELv2 verbatim, round-trip verified
-> byte-identical against Elastic's published text), `LICENSE-ADDITIONAL-TERMS.md`, `NOTICE`, and a
-> `README.md` recording provenance, the two fill-at-release placeholders, and the drafting departures
-> from PolyForm Shield. What remains of this SPIKE is questions 2–7 below, which need a lawyer.
+> **Status 2026-09-11 — drafting done through three review rounds, legal review outstanding.**
+> Everything is in `../drafts/`. `LICENSE.draft` is one file in two parts — notice, then the
+> Lighthouse Additional Terms, then ELv2 verbatim at the tail, round-trip verified byte-identical
+> against Elastic's published text. `NOTICE` carries the version boundary and the preserved MIT text.
+> `README.md` records provenance, the drafting departures from PolyForm Shield, and what each review
+> round changed. `questions-for-counsel.md` is the self-contained brief.
+>
+> Three rounds of practitioner review have run and are folded in: the additional terms moved from a
+> second file into `LICENSE` itself, the fill-at-release placeholder was removed in favour of a
+> boundary anchored on v26.9.9.9, and sections 3–6 (mandatory rights, commercial agreements,
+> termination, governing law) were added. What remains needs a lawyer.
 
 ## Goal
 
-Produce two reviewed, signable documents — `LICENSE` carrying the Elastic License 2.0 verbatim under
-our own header block, and `LICENSE-ADDITIONAL-TERMS.md` carrying a no-competing-use clause and an AI
-sentence — so that slice 01 has something to commit and slices 02–03 have terms they can describe
-accurately.
+Produce a reviewed, signable `LICENSE` — one file in two parts, the Lighthouse Additional Terms above
+the Elastic License 2.0 reproduced verbatim — plus the matching `NOTICE`, so that slice 01 has
+something to commit and slices 02–03 have terms they can describe accurately.
 
 ## The assumption being probed
 
@@ -55,8 +60,8 @@ Confirms if it succeeds: that the instrument is settled and every downstream sli
    read, and is there a drafting of it broad enough to matter but narrow enough not to void something
    we did intend to permit?
 6. What SPDX identifier do we publish? A `LicenseRef-` string used consistently, so the name in
-   `LICENSE`, `LICENSE-ADDITIONAL-TERMS.md`, `README.md` and the docs is one string and not four
-   near-misses. It is **not** `Elastic-2.0`.
+   `LICENSE`, `NOTICE`, `README.md` and the docs is one string and not four near-misses. It is
+   **not** `Elastic-2.0`. Current draft uses `LicenseRef-Lighthouse-SAL-1.0`.
 7. What is the change date, stated as a calendar date, so that the MIT-in-perpetuity grant in AC-01.4
    has an unambiguous boundary?
 
