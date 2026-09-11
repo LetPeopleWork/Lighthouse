@@ -30,6 +30,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string TeamQuery = "project = PROJ";
 
+        private const string AFilterQuery = "project = FOO";
+
+        private const string ASubFilterQuery = "fixVersion is EMPTY";
+
+        /// <summary>What serverInfo answers for a Data Center instance - Jira still calls it "Server" there.</summary>
+        private const string OnDataCenter = "Server";
+
+        private const string OnCloud = "Cloud";
+
+        private const string ServerInfoPath = "rest/api/2/serverInfo";
+
         private const string JiraRejectionSentence =
             "Error in the JQL Query: Expecting a field name but got 'AND'. You must surround 'AND' in quotation marks to use it as a field name. (line 1, character 3)";
 
@@ -92,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             HttpStatusCode filterStatus, string expectedStatusInMessage)
         {
             var refusal = Assert.ThrowsAsync<JiraReadException>(
-                async () => await BoardQueryFor("project = FOO", "fixVersion is EMPTY", filterStatus));
+                async () => await BoardQueryFor(AFilterQuery, ASubFilterQuery, filterStatus));
 
             using (Assert.EnterMultipleScope())
             {
@@ -108,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var refusal = Assert.ThrowsAsync<JiraReadException>(
                 async () => await BoardQueryWhereTheFilterAnswers(
-                    FilterId, "fixVersion is EMPTY", HttpStatusCode.OK, "{\"name\":\"Board filter\"}"));
+                    FilterId, ASubFilterQuery, HttpStatusCode.OK, "{\"name\":\"Board filter\"}"));
 
             using (Assert.EnterMultipleScope())
             {
@@ -128,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetBoardInformation_FilterAndSubFilterBothPresent_BracketsEachHalf()
         {
-            var query = await BoardQueryFor("project = LIGHTHOUSE AND type IN (Bug, Story)", "fixVersion is EMPTY");
+            var query = await BoardQueryFor("project = LIGHTHOUSE AND type IN (Bug, Story)", ASubFilterQuery);
 
             Assert.That(query, Is.EqualTo("(project = LIGHTHOUSE AND type IN (Bug, Story)) AND (fixVersion is EMPTY)"));
         }
@@ -144,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetBoardInformation_SubFilterCarriesAnOrdering_StripsItLikeTheFilter()
         {
-            var query = await BoardQueryFor("project = FOO", "resolution is EMPTY ORDER BY Rank");
+            var query = await BoardQueryFor(AFilterQuery, "resolution is EMPTY ORDER BY Rank");
 
             Assert.That(query, Is.EqualTo("(project = FOO) AND (resolution is EMPTY)"));
         }
@@ -164,7 +175,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetBoardInformation_FilterWithoutSubFilter_BracketsTheFilterAlone()
         {
-            var query = await BoardQueryFor("project = FOO", subFilterJql: null);
+            var query = await BoardQueryFor(AFilterQuery, subFilterJql: null);
 
             Assert.That(query, Is.EqualTo("(project = FOO)"));
         }
@@ -218,18 +229,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         private static HttpMessageHandler CreateHandler(string boardConfiguration, string filterPayload, HttpStatusCode filterStatus)
-        {
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>(
-                    (request, _) => Task.FromResult(BuildResponse(request, boardConfiguration, filterPayload, filterStatus)));
-
-            return mock.Object;
-        }
+            => AHandlerAnswering(request => BuildResponse(request, boardConfiguration, filterPayload, filterStatus));
 
         private static HttpResponseMessage BuildResponse(
             HttpRequestMessage request, string boardConfiguration, string filterPayload, HttpStatusCode filterStatus)
@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var body = path switch
             {
-                _ when path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal) => "{\"deploymentType\":\"Server\"}",
+                _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal) => "{\"deploymentType\":\"Server\"}",
                 _ when path.EndsWith($"board/{BoardId}/configuration", StringComparison.Ordinal) => boardConfiguration,
                 _ when path.EndsWith($"board/{BoardId}/issue", StringComparison.Ordinal) => "{\"issues\":[]}",
                 _ when path.EndsWith("status", StringComparison.Ordinal) => "[]",
@@ -313,42 +313,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// that used to degrade in silence gets exercised without disturbing the others.
         /// </summary>
         private static HttpMessageHandler AReadableBoardExcept(string? refusedPath)
-        {
-            var mock = new Mock<HttpMessageHandler>();
-            mock.Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+            => AHandlerAnswering(request =>
+            {
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                if (refusedPath is not null && path.Contains(refusedPath, StringComparison.Ordinal))
                 {
-                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                    return Respond(HttpStatusCode.Forbidden, "{}");
+                }
 
-                    if (refusedPath is not null && path.Contains(refusedPath, StringComparison.Ordinal))
-                    {
-                        return Task.FromResult(Respond(HttpStatusCode.Forbidden, "{}"));
-                    }
+                var body = path switch
+                {
+                    _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal) => "{\"deploymentType\":\"Server\"}",
+                    _ when path.EndsWith($"board/{BoardId}/configuration", StringComparison.Ordinal) => ReadableBoardConfiguration,
+                    _ when path.EndsWith($"rest/api/2/filter/{FilterId}", StringComparison.Ordinal) => "{\"jql\":\"project = PROJ ORDER BY Rank ASC\"}",
+                    _ when path.EndsWith($"board/{BoardId}/issue", StringComparison.Ordinal) => BoardIssues,
+                    _ when path.EndsWith("rest/api/latest/status", StringComparison.Ordinal) => InstanceStatuses,
+                    _ => "{}",
+                };
 
-                    var body = path switch
-                    {
-                        _ when path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal) => "{\"deploymentType\":\"Server\"}",
-                        _ when path.EndsWith($"board/{BoardId}/configuration", StringComparison.Ordinal) => ReadableBoardConfiguration,
-                        _ when path.EndsWith($"rest/api/2/filter/{FilterId}", StringComparison.Ordinal) => "{\"jql\":\"project = PROJ ORDER BY Rank ASC\"}",
-                        _ when path.EndsWith($"board/{BoardId}/issue", StringComparison.Ordinal) => BoardIssues,
-                        _ when path.EndsWith("rest/api/latest/status", StringComparison.Ordinal) => InstanceStatuses,
-                        _ => "{}",
-                    };
-
-                    return Task.FromResult(Respond(HttpStatusCode.OK, body));
-                });
-
-            return mock.Object;
-        }
+                return Respond(HttpStatusCode.OK, body);
+            });
 
         [Test]
         public async Task ValidateTeamSettings_DataCenterRejectsTheQuery_ReportsTheSentenceJiraAnsweredWith()
         {
-            var result = await TeamValidationWhereSearchAnswers("Server", HttpStatusCode.BadRequest, RejectedQueryBody);
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, RejectedQueryBody);
 
             Assert.That(result.TechnicalDetails, Does.Contain(JiraRejectionSentence));
         }
@@ -356,7 +346,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateTeamSettings_CloudRejectsTheQuery_ReportsTheSentenceJiraAnsweredWith()
         {
-            var result = await TeamValidationWhereSearchAnswers("Cloud", HttpStatusCode.BadRequest, RejectedQueryBody);
+            var result = await TeamValidationWhereSearchAnswers(OnCloud, HttpStatusCode.BadRequest, RejectedQueryBody);
 
             Assert.That(result.TechnicalDetails, Does.Contain(JiraRejectionSentence));
         }
@@ -364,7 +354,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateTeamSettings_QueryRejected_DoesNotCallItAnUnexpectedError()
         {
-            var result = await TeamValidationWhereSearchAnswers("Server", HttpStatusCode.BadRequest, RejectedQueryBody);
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, RejectedQueryBody);
 
             using (Assert.EnterMultipleScope())
             {
@@ -379,7 +369,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var logger = new Mock<ILogger<JiraWorkTrackingConnector>>();
 
-            await TeamValidationWhereSearchAnswers("Server", HttpStatusCode.BadRequest, RejectedQueryBody, logger.Object);
+            await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, RejectedQueryBody, logger.Object);
 
             logger.Verify(
                 log => log.Log(
@@ -394,7 +384,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateTeamSettings_JiraCouldNotBeReached_KeepsTheUnexpectedErrorWording()
         {
-            var handler = AHandlerWhereSearch("Server", _ => throw new HttpRequestException("No such host is known."));
+            var handler = AHandlerWhereSearch(OnDataCenter, _ => throw new HttpRequestException("No such host is known."));
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
 
             var result = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
@@ -409,7 +399,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidatePortfolioSettings_QueryRejected_ReportsTheSentenceJiraAnsweredWith()
         {
-            var handler = ASearchThatAnswers("Server", HttpStatusCode.BadRequest, RejectedQueryBody);
+            var handler = ASearchThatAnswers(OnDataCenter, HttpStatusCode.BadRequest, RejectedQueryBody);
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
 
             var result = await connector.ValidatePortfolioSettings(JiraConnectorTestSetup.APortfolioOnJiraCloud());
@@ -424,7 +414,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateTeamSettings_JiraAnswersWithWorkItems_StillReportsTheUnchangedSuccess()
         {
-            var result = await TeamValidationWhereSearchAnswers("Server", HttpStatusCode.OK, OnePageHoldingOneIssue);
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.OK, OnePageHoldingOneIssue);
 
             using (Assert.EnterMultipleScope())
             {
@@ -437,7 +427,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateTeamSettings_JiraAnswersWithNothing_StillReportsNoWorkItemsFound()
         {
-            var result = await TeamValidationWhereSearchAnswers("Server", HttpStatusCode.OK, OnePageHoldingNothing);
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.OK, OnePageHoldingNothing);
 
             using (Assert.EnterMultipleScope())
             {
@@ -460,7 +450,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task ValidateTeamSettings_CloudRejectsTheQuery_ReportsWhatTheCloudSearchAnswered()
         {
-            var connector = JiraConnectorTestSetup.AConnectorOver(ACloudSearchThatRefuses(new List<string>()));
+            var connector = JiraConnectorTestSetup.AConnectorOver(ACloudSearchThatRefuses([]));
 
             var result = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
 
@@ -475,7 +465,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task ValidateTeamSettings_OnDataCenter_StillWalksTheLegacySearchByOffset()
         {
             var requestedUrls = new List<string>();
-            var handler = AHandlerWhereSearch("Server", _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
+            var handler = AHandlerWhereSearch(OnDataCenter, _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
 
             var result = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
@@ -521,7 +511,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// </summary>
         private static HttpMessageHandler ACloudSearchThatRefuses(ICollection<string> requestedUrls)
             => AHandlerWhereSearch(
-                "Cloud",
+                OnCloud,
                 request => (request.RequestUri?.AbsolutePath ?? string.Empty).Contains(CloudSearchPath, StringComparison.Ordinal)
                     ? Respond(HttpStatusCode.BadRequest, RejectedQueryBody)
                     : Respond(HttpStatusCode.Gone, RemovedEndpointBody),
@@ -534,7 +524,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static async Task<string> TheQueryIssuedFor(Team team)
         {
             var requestedUrls = new List<string>();
-            var handler = AHandlerWhereSearch("Cloud", _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
+            var handler = AHandlerWhereSearch(OnCloud, _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
 
             await connector.ValidateTeamSettings(team);
@@ -574,7 +564,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static HttpMessageHandler AHandlerWhereSearch(
             string deploymentType, Func<HttpRequestMessage, HttpResponseMessage> answerSearch)
-            => AHandlerWhereSearch(deploymentType, answerSearch, new List<string>());
+            => AHandlerWhereSearch(deploymentType, answerSearch, []);
 
         /// <summary>
         /// Every url the connector asked for, in order, so a test can say which endpoints were reached and
@@ -584,6 +574,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             string deploymentType,
             Func<HttpRequestMessage, HttpResponseMessage> answerSearch,
             ICollection<string> requestedUrls)
+            => AHandlerAnswering(request =>
+            {
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                requestedUrls.Add(request.RequestUri?.PathAndQuery ?? string.Empty);
+
+                if (path.Contains("/search", StringComparison.Ordinal))
+                {
+                    return answerSearch(request);
+                }
+
+                var body = path switch
+                {
+                    _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal)
+                        => $"{{\"deploymentType\":\"{deploymentType}\"}}",
+                    _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal) => "[]",
+                    _ => "{}",
+                };
+
+                return Respond(HttpStatusCode.OK, body);
+            });
+
+        private static HttpMessageHandler AHandlerAnswering(Func<HttpRequestMessage, HttpResponseMessage> answer)
         {
             var mock = new Mock<HttpMessageHandler>();
             mock.Protected()
@@ -591,26 +603,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     "SendAsync",
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
-                {
-                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
-                    requestedUrls.Add(request.RequestUri?.PathAndQuery ?? string.Empty);
-
-                    if (path.Contains("/search", StringComparison.Ordinal))
-                    {
-                        return Task.FromResult(answerSearch(request));
-                    }
-
-                    var body = path switch
-                    {
-                        _ when path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal)
-                            => $"{{\"deploymentType\":\"{deploymentType}\"}}",
-                        _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal) => "[]",
-                        _ => "{}",
-                    };
-
-                    return Task.FromResult(Respond(HttpStatusCode.OK, body));
-                });
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) => Task.FromResult(answer(request)));
 
             return mock.Object;
         }

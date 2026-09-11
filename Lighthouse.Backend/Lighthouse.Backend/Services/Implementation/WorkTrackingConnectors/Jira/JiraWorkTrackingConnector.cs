@@ -771,19 +771,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issueTypeNames;
         }
 
+        /// <summary>
+        /// Each half of a board's scope brackets itself before the two are joined. Neither half arrives as a
+        /// self-contained expression, so a filter reading <c>a OR b</c> beside a sub-filter reading <c>c</c>
+        /// joined as written means <c>a OR (b AND c)</c> - a query Jira accepts, and which quietly selects
+        /// work items the board never showed.
+        /// </summary>
         private async Task<string> ExtractJqlFromBoardConfiguration(JsonDocument boardsJson, HttpClient client)
         {
             var root = boardsJson.RootElement;
 
-            var filter = await ExtractFilterQuery(client, root);
+            var filter = await ExtractFilterQuery(root, client);
             var subQuery = RemoveOrderByClause(ExtractSubQuery(root));
 
-            if (string.IsNullOrWhiteSpace(filter))
-            {
-                return string.IsNullOrWhiteSpace(subQuery) ? string.Empty : $"({subQuery})";
-            }
+            var presentHalves = new[] { filter, subQuery }
+                .Where(half => !string.IsNullOrWhiteSpace(half))
+                .Select(half => $"({half})");
 
-            return string.IsNullOrWhiteSpace(subQuery) ? $"({filter})" : $"({filter}) AND ({subQuery})";
+            return string.Join(" AND ", presentHalves);
         }
 
         /// <summary>
@@ -803,7 +808,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return query.GetString() ?? string.Empty;
         }
 
-        private async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
+        private async Task<string> ExtractFilterQuery(JsonElement root, HttpClient client)
         {
             if (!root.TryGetProperty("filter", out var filterProperty) ||
                 !filterProperty.TryGetProperty("id", out var id))
@@ -1685,31 +1690,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private static string ExplanationIn(JiraSearchRejection rejection)
         {
+            var sentences = ErrorMessagesIn(rejection.ResponseBody);
+
+            return sentences.Count > 0
+                ? string.Join(" ", sentences)
+                : $"Jira answered {(int)rejection.StatusCode} {rejection.StatusCode}.";
+        }
+
+        private static List<string> ErrorMessagesIn(string responseBody)
+        {
             try
             {
-                using var json = JsonDocument.Parse(rejection.ResponseBody);
+                using var json = JsonDocument.Parse(responseBody);
 
-                if (json.RootElement.TryGetProperty("errorMessages", out var errorMessages)
-                    && errorMessages.ValueKind == JsonValueKind.Array)
+                if (!json.RootElement.TryGetProperty("errorMessages", out var errorMessages)
+                    || errorMessages.ValueKind != JsonValueKind.Array)
                 {
-                    var sentences = errorMessages
-                        .EnumerateArray()
-                        .Select(message => message.GetString())
-                        .Where(message => !string.IsNullOrWhiteSpace(message))
-                        .ToList();
-
-                    if (sentences.Count > 0)
-                    {
-                        return string.Join(" ", sentences);
-                    }
+                    return [];
                 }
+
+                var sentences = errorMessages
+                    .EnumerateArray()
+                    .Select(message => message.GetString() ?? string.Empty)
+                    .Where(message => !string.IsNullOrWhiteSpace(message));
+
+                return [.. sentences];
             }
             catch (JsonException)
             {
                 // Not every refusal comes back as JSON - a proxy in front of Jira can answer with anything.
+                return [];
             }
-
-            return $"Jira answered {(int)rejection.StatusCode} {rejection.StatusCode}.";
         }
 
         private async Task<Issue> CreateIssueWithCompleteChangelog(HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName)
