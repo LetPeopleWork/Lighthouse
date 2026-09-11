@@ -5,19 +5,23 @@ note: >
   ADO Epic #5874, executing a founder decision taken 2026-08-31 in the business decision record
   2026-08-01-do-we-stay-open-source-or-not. Lighthouse moves off MIT to a named source-available
   licence. The source stays public and inspectable on GitHub; OSI-approved status is explicitly not
-  a goal; every version shipped before the change date stays MIT in perpetuity. Four facts shape
+  a goal; every version shipped before the change date stays MIT in perpetuity. Five facts shape
   every journey below. One: off-the-shelf ELv2 — the BDR's standing leaning — prohibits hosted
   resale and licence-key circumvention but permits deriving a substitute from the source outright,
-  so it covers only half of what this epic set out to prevent, and the instrument becomes a named
-  Lighthouse licence that adds a no-competing-use clause (borrowed from FSL 1.1, without FSL's
-  two-year conversion clock) and an explicitly drafted AI sentence. Two: no mainstream software
-  licence carries an AI clause, so that sentence has no precedent to copy and its job is to state
-  the position publicly — the protection comes from the outcome clause underneath it, because an
-  agent-assisted derivative is an ordinary derivative work and copyright does not care who typed it.
-  Three: the word "open source" appears across three repositories including a schema.org FAQ answer
-  that ranks for "open-source alternative to ActionableAgile", and the same word appears truthfully
-  about the LetPeopleWorkShop and LetPeopleGrow plugins, which must not be swept. Four: GitHub
-  cannot disable forks or pull requests on a public repository, so closing contributions is a
+  so it covers only half of what this epic set out to prevent. Two: ELv2's text may not be edited to
+  fix that — it carries no modified-versions clause the way MPL 2.0 does, its FAQ never raises
+  adaptation, and "Elastic License" is a trademark — so the instrument is two documents instead of
+  one: LICENSE reproduces ELv2 byte-for-byte under a header block of our own, and a binding
+  LICENSE-ADDITIONAL-TERMS.md adds a no-competing-use clause (wording from PolyForm Shield 1.0.0,
+  the one family that expressly permits adapting its text, and broader than FSL's because it reaches
+  competitors provided free of charge) plus an explicitly drafted AI sentence. Three: no mainstream
+  software licence carries an AI clause, so that sentence has no precedent to copy and its job is to
+  state the position publicly — the protection comes from the outcome clause underneath it, because
+  an agent-assisted derivative is an ordinary derivative work and copyright does not care who typed
+  it. Four: the word "open source" appears across three repositories including a schema.org FAQ
+  answer that ranks for "open-source alternative to ActionableAgile", and the same word appears
+  truthfully about the LetPeopleWorkShop and LetPeopleGrow plugins, which must not be swept. Five:
+  GitHub cannot disable forks or pull requests on a public repository, so closing contributions is a
   workflow, not a setting. One pre-slice SPIKE and four slices; see
   docs/feature/epic-5874-relicense-source-available/.
 
@@ -41,9 +45,12 @@ journeys:
 
     steps:
       - step: Find the terms
-        action: Open github.com/LetPeopleWork/Lighthouse and look at the sidebar, or click LICENSE
-        output: A named licence — Lighthouse Source Available License — listing ELv2's three
-          prohibitions plus a no-competing-use clause plus the AI sentence, each separately numbered.
+        action: Open github.com/LetPeopleWork/Lighthouse and click LICENSE
+        output: >
+          A header block naming the Lighthouse Source Available License and pointing at
+          LICENSE-ADDITIONAL-TERMS.md, then the Elastic License 2.0 reproduced unaltered. Between the
+          two files: five numbered prohibitions - hosted service, licence-key circumvention, notice
+          removal, competing use, and AI-assisted derivation of any of those.
       - step: Work out whether it applies to versions already in use
         action: Read the NOTICE, or the corresponding section of LICENSE
         output: A dated statement that every version released before the change date remains MIT in
@@ -83,10 +90,9 @@ journeys:
           cannot be bounded that tightly, the SPIKE escalates rather than shipping a licence that
           quietly forbids self-hosting modifications.
       - situation: A partner wants to host Lighthouse for their client
-        recovery: Unresolved as of this wave, and blocking the SPIKE's conclusion rather than this
-          journey. ELv2 clause 1 forbids providing the software as a hosted service; whether that
-          restricts our own partner motion is a business-model call the BDR has carried unanswered
-          since 2026-08-01 and that must be settled before the wording closes.
+        recovery: Not permitted, and that is intended. Answered by the founders 2026-09-11, closing a
+          BDR item open since 2026-08-01 - partner hosting is not a motion we want, so ELv2 clause 1
+          restricts nothing we intended to do and no carve-out is drafted.
 
   - name: close-the-door-the-old-licence-left-open
     goal: >

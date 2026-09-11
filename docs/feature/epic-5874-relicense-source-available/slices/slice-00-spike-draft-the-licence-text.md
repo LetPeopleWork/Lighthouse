@@ -8,39 +8,56 @@ slice-composition gate on its own. It lands as a precursor to slice 01, not as s
 
 ## Goal
 
-Produce a reviewed, signable licence text — ELv2's three prohibitions plus a no-competing-use clause
-plus an explicit AI sentence — so that slice 01 has something to commit and slices 02–03 have terms
-they can describe accurately.
+Produce two reviewed, signable documents — `LICENSE` carrying the Elastic License 2.0 verbatim under
+our own header block, and `LICENSE-ADDITIONAL-TERMS.md` carrying a no-competing-use clause and an AI
+sentence — so that slice 01 has something to commit and slices 02–03 have terms they can describe
+accurately.
 
 ## The assumption being probed
 
-**That ELv2's published text can be adapted and renamed at all, and that a no-competing-use clause
-can be written without sweeping in a customer's own internal modifications.**
+**That a second document, incorporated by reference, actually binds a recipient who only ever opens
+`LICENSE` — and that the no-competing-use clause can be written without sweeping in a customer's own
+internal modifications.**
 
-Disproves if it fails: the whole D1 shape. If Elastic's text cannot be adapted, the fallback is to
-write the licence from scratch rather than derive it — more legal cost, same intent, and slice 01
-slips rather than changes. If the competing-use wording cannot be bounded, the fallback is plain ELv2
-plus the AI sentence, accepting that internal derivation stays permitted (this is materially less
-than the epic set out to do, and it is a decision to take back to the founders, not to absorb
-quietly).
+Disproves if it fails: the two-document shape. If incorporation by reference will not hold, the
+fallback is to draft a single self-contained licence from scratch — more legal cost, same intent,
+slice 01 slips rather than changes. If the competing-use wording cannot be bounded away from a
+customer's own instance, the fallback is plain ELv2 plus the AI sentence, accepting that internal
+derivation stays permitted. That is materially less than the epic set out to do, and it is a decision
+to take back to the founders, not to absorb quietly.
 
 Confirms if it succeeds: that the instrument is settled and every downstream slice can quote it.
 
 ## Questions this SPIKE must answer
 
-1. May ELv2's text be adapted and redistributed under a different name? Elastic publishes it for
-   others to adopt; adopting it **modified** is a different question and is the one that matters here.
-2. Does the no-competing-use clause, as drafted, permit an organisation to modify Lighthouse for its
-   own internal use? It must — that is the difference between a source-available licence and a
-   closed one, and the whole point of keeping the source inspectable.
-3. **The partner-hosting question, carried unanswered from the BDR since 2026-08-01.** ELv2 clause 1
-   forbids providing the software to others as a hosted service. Does any partner motion we want look
-   like "a PKT hosts Lighthouse for their client"? If yes, an explicit carve-out is drafted. This is a
-   business-model call that has to be made before the wording closes, not after.
-4. What SPDX identifier do we publish? A `LicenseRef-` string that we then use consistently, so the
-   name in `LICENSE`, `README.md` and the docs is one string and not three near-misses.
-5. What is the change date, stated as a calendar date, so that the MIT-in-perpetuity grant in
-   AC-01.2 has an unambiguous boundary?
+1. ~~May ELv2's text be adapted and redistributed under a different name?~~ **Answered 2026-09-11 by
+   research, and designed around rather than relied on.** No grant exists: ELv2 has no
+   modified-versions clause (unlike MPL 2.0 §10.3), its seven-question FAQ never raises adaptation,
+   and the document bears no copyright or reuse statement. Verbatim adoption is clearly fine and
+   widespread; editing is unanswered. Hence the two-document shape — **Elastic's text is never
+   edited**. Not legal advice; the lawyer confirms the shape rather than re-running the question.
+2. Does incorporation by reference bind a recipient who reads only `LICENSE`? This is now the primary
+   legal question and the shape's known weak point. The header block above Elastic's text is the
+   intended mitigation; the lawyer says whether it suffices.
+3. Does the no-competing-use clause permit an organisation to modify Lighthouse for its own internal
+   use? It must — that is the difference between a source-available licence and a closed one, and the
+   whole point of keeping the source inspectable. The wording comes from PolyForm Shield 1.0.0, whose
+   Changes and New Works License already carries that property; it has to survive the reshaping.
+4. Is PolyForm's README permission enough authority to reuse Shield's wording under a different
+   name, once every mention of "PolyForm" and polyformproject.org is stripped as it requires?
+5. Does the AI sentence — which has no precedent in any software licence — do anything a court would
+   read, and is there a drafting of it broad enough to matter but narrow enough not to void something
+   we did intend to permit?
+6. What SPDX identifier do we publish? A `LicenseRef-` string used consistently, so the name in
+   `LICENSE`, `LICENSE-ADDITIONAL-TERMS.md`, `README.md` and the docs is one string and not four
+   near-misses. It is **not** `Elastic-2.0`.
+7. What is the change date, stated as a calendar date, so that the MIT-in-perpetuity grant in AC-01.4
+   has an unambiguous boundary?
+
+~~The partner-hosting question.~~ **Closed 2026-09-11**: a partner hosting Lighthouse for their
+client is not a motion we want and would not be permitted regardless, so ELv2 clause 1 restricts
+nothing we intended to do and no carve-out is drafted. Carried unanswered in the BDR since
+2026-08-01; record the answer there.
 
 ## Out of scope
 
@@ -50,6 +67,5 @@ Confirms if it succeeds: that the instrument is settled and every downstream sli
 
 ## Done when
 
-The drafted text exists in the feature workspace, a lawyer has read it, and questions 1–5 each have a
-written answer. Question 3's answer is recorded back into the BDR's open-item list, since that record
-has carried it unanswered since August.
+Both drafted documents exist in the feature workspace, a lawyer has read them, and questions 2–7 each
+have a written answer.

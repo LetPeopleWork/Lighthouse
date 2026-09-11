@@ -38,16 +38,28 @@ Then run `gh api repos/LetPeopleWork/Lighthouse --jq .license` and record what a
 
 ## IN scope
 
-- `LICENSE` replaced with the reviewed text from slice 00: ELv2's three prohibitions, the
-  no-competing-use clause, the AI sentence, each separately numbered (AC-01.1).
-- A `NOTICE` file, or a clearly-headed section of `LICENSE`, recording that every version released
-  before the change date remains under the MIT licence in perpetuity, with that date named
-  (AC-01.2, AC-01.6). This is what keeps the four existing forks unambiguously covered.
-- The licence name and its `LicenseRef-` SPDX identifier used identically in `LICENSE`, `README.md`
-  and `docs/licensing/licensing.md` (AC-01.3).
-- `Lighthouse.EndToEndTests/package.json`: the `"license": "MIT"` field corrected (AC-01.5).
+- `LICENSE` replaced with: our own header block naming the composite licence and pointing at the
+  additional terms, a clear delimiter, then **the Elastic License 2.0 reproduced byte-for-byte**
+  (AC-01.1, AC-01.3).
+- `LICENSE-ADDITIONAL-TERMS.md` — the reviewed no-competing-use clause and AI sentence from slice 00,
+  separately numbered, carrying no mention of "PolyForm" or polyformproject.org (AC-01.2).
+- A `NOTICE` file, or a clearly-headed part of `LICENSE`'s header block, recording that every version
+  released before the change date remains under the MIT licence in perpetuity, with that date named
+  (AC-01.4). This is what keeps the four existing forks unambiguously covered.
+- The licence name and its `LicenseRef-` SPDX identifier used identically across `LICENSE`,
+  `LICENSE-ADDITIONAL-TERMS.md`, `README.md` and `docs/licensing/licensing.md` (AC-01.5).
+- `Lighthouse.EndToEndTests/package.json`: the `"license": "MIT"` field corrected (AC-01.7).
+- Both documents added to whatever packages the published artefacts — Docker image, standalone
+  archives, chart — so the second file is not a repository-only artefact (AC-01.8).
 - Whatever GitHub repo-settings change the sidebar needs, once the dogfood moment shows what it
   actually renders.
+
+## Hard constraint
+
+**Nothing inside Elastic's text is edited, reworded, reordered or deleted.** Our words go above it,
+behind a delimiter, and in the second file. No grant exists to publish a modified Elastic License, and
+the two-document shape exists precisely to avoid needing one. A reviewer should be able to diff the
+ELv2 portion against Elastic's published text and get nothing back.
 
 ## OUT of scope
 

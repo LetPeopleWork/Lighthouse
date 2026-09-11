@@ -99,39 +99,74 @@ genuinely MIT and unaffected. Changing them would make the copy wrong.
 
 ## Wave: DISCUSS / [REF] Locked Decisions
 
-### D1 — The instrument is a Lighthouse Source Available Licence, built on ELv2
+### D1 — Two documents: ELv2 verbatim, plus binding Lighthouse Additional Terms
 
-ELv2's three prohibitions verbatim — (1) no providing the software to others as a hosted or managed
-service, (2) no circumventing the licence-key functionality or obscuring the features it protects,
-(3) no removing or altering licensing and copyright notices — **plus** two additions:
+*Revised 2026-09-11 after the base-text research below. The earlier form of D1 adapted ELv2's text
+directly; that is no longer the shape.*
 
-- **a no-competing-use clause**, adapted from FSL 1.1's definition: making the software available to
-  others in a commercial product or service that substitutes for Lighthouse, substitutes for any
-  other product or service we offer using it, or offers the same or substantially similar
-  functionality.
+**`LICENSE` reproduces the Elastic License 2.0 word for word, unaltered.** Its three prohibitions —
+(1) no providing the software to others as a hosted or managed service, (2) no circumventing the
+licence-key functionality or obscuring the features it protects, (3) no removing or altering
+licensing and copyright notices — stand exactly as Elastic published them. Nothing inside Elastic's
+text is edited, reworded or deleted.
+
+**A second document, `LICENSE-ADDITIONAL-TERMS.md`, carries our two additions** and is incorporated
+by reference:
+
+- **a no-competing-use clause**, taking its wording from **PolyForm Shield 1.0.0** rather than FSL —
+  see D2. Shield's Noncompete makes any purpose permitted *except* providing a product that competes
+  with Lighthouse or with any product we provide using it, and its Competition paragraph states that
+  products compete across different interfaces, platforms and programming languages, **and even when
+  provided free of charge**. That last clause is the one that reaches the case this epic actually
+  fears: an organisation rebuilding Lighthouse internally with an AI assistant and never selling it.
+  PolyForm's own README grants permission to adapt its text provided every mention of "PolyForm" and
+  polyformproject.org is removed — so this wording may be taken and reshaped, which ELv2's may not.
 - **an explicit sentence naming AI**: that using the source — in whole or in part, directly or as
   input to an automated or AI-assisted process, including code assistants and agents, and including
-  use as training data — to produce a work falling under any of the above prohibitions is itself
+  use as training data — to produce a work falling under any of the prohibitions above is itself
   prohibited.
 
 Permanent. No change date. Source stays public and inspectable on GitHub.
 
-**Why ELv2 could not be taken unchanged**: ELv2 restricts nothing about modification or derivation.
-Under plain ELv2 an organisation may legally build a rival forecasting product out of this source, as
-long as they do not host it for others and do not touch the key. That is the first thing the epic set
-out to prevent, and off-the-shelf ELv2 does not prevent it.
+**Why ELv2 could not be taken as the whole instrument**: it restricts nothing about modification or
+derivation. Under plain ELv2 an organisation may legally build a rival forecasting product out of
+this source, as long as they do not host it for others and do not touch the key. That is the first
+thing the epic set out to prevent.
 
-**What this costs**: it is no longer plain ELv2 and must not be called ELv2. It needs its own name, a
-`LicenseRef-` SPDX identifier, and a lawyer's read — including whether and how Elastic's published
-text may be adapted at all (D13).
+**Why ELv2's text is not edited to fix that**: no grant to do so exists. ELv2 carries no
+modified-versions clause — unlike MPL 2.0 §10.3, which expressly permits a renamed modified version —
+its seven-question FAQ never addresses adaptation, and the text bears no copyright notice or reuse
+statement of its own. "Elastic License" is Elastic's trademark, and licence texts are copyrightable
+works. Verbatim adoption is clearly fine and widely practised; editing is an unanswered question.
+Two documents answer it by not asking it.
 
-### D2 — FSL 1.1 examined and rejected
+**The known weakness of this shape, and its mitigation**: a reader or a scanner that opens `LICENSE`
+alone sees plain ELv2 and never learns the additional terms exist. The mitigation is a short header
+block **above** Elastic's text — our own words, prepended, with a clear delimiter, never interleaved
+or edited into theirs — naming the composite licence and pointing at the second file; plus shipping
+both documents in every distribution and archive. DESIGN must treat "do not edit inside Elastic's
+text" as a hard constraint on slice 01, not a preference.
 
-FSL's Competing Use ban is the clause D1 borrows, and it is a better fit for the threat than anything
-in ELv2. But FSL grants every version an automatic Apache-2.0 or MIT licence **on its second
-anniversary**, and carries no licence-key clause at all. The 2026-08-28 comparison rejected BUSL's
-four-year clock as "committing today to giving away the thing whose protection is the entire point";
-FSL's clock is half as long. Taking the clause without the clock is the decision.
+**What this costs**: the composite is not ELv2 and must never be called ELv2 or carry the
+`Elastic-2.0` SPDX tag. It needs its own name and a `LicenseRef-` identifier, and both added clauses
+need a lawyer's read (D13).
+
+### D2 — FSL 1.1 examined and rejected, and its clause superseded by PolyForm Shield's
+
+FSL grants every version an automatic Apache-2.0 or MIT licence **on its second anniversary** and
+carries no licence-key clause at all. The 2026-08-28 comparison rejected BUSL's four-year clock as
+"committing today to giving away the thing whose protection is the entire point"; FSL's clock is half
+as long. Rejected as an instrument.
+
+Its Competing Use definition was, briefly, the clause D1 borrowed. **PolyForm Shield 1.0.0's
+Noncompete replaces it**, for two reasons. Substance: FSL bars *"making the Software available to
+others in a commercial product or service"*, which leaves the free internal clone untouched — the
+exact case AI assistance makes cheap. Shield states that products compete across interfaces,
+platforms and languages and **"even when provided free of charge"**. Permission: the
+`getsentry/fsl.software` repository carries no `LICENSE` or `NOTICE` file at all and the template
+grants nothing about reusing its own wording, whereas PolyForm's README explicitly permits changes so
+long as every mention of "PolyForm" and polyformproject.org is removed. Shield's wording can be taken
+and reshaped with permission; FSL's cannot, on anything better than custom.
 
 ### D3 — BUSL 1.1 stays rejected, unchanged from the BDR
 
@@ -211,17 +246,35 @@ only thing standing between the source and a substitute.
 
 ### D13 — Legal review is a hard pre-requisite, not a review step
 
-No LICENSE diff lands before a lawyer has read the drafted text. Two specific questions travel with
-it: whether ELv2's published text may be adapted and renamed at all, and whether the no-competing-use
-wording does what D1 intends without sweeping in a customer's internal modifications. Same shape as
-epic 5733's legal DoR item.
+No LICENSE diff lands before a lawyer has read the drafted text. Same shape as epic 5733's legal DoR
+item.
 
-### D14 — The managed-service clause versus partner hosting must be answered during drafting
+The question that used to lead this list — *may ELv2's text be adapted and renamed at all?* — is
+**answered and designed around** rather than carried: no grant exists, so the text is not adapted
+(D1). What remains for the lawyer is narrower and concrete:
 
-BDR open item 2, never settled. ELv2 clause 1 forbids providing the software to others as a hosted
-service. If any partner motion could look like "a PKT hosts Lighthouse for their client", the clause
-restricts our own partners. Either an explicit carve-out is drafted or the motion is ruled out; the
-drafting cannot proceed on an unanswered version of this.
+1. Does incorporating a second document by reference bind a recipient who only ever opens `LICENSE`?
+   This is the shape's known weak point and the reason for the prepended header block.
+2. Does the Shield-derived no-competing-use wording sweep in a customer's own internal modifications?
+   It must not. Shield's Changes and New Works License expressly permits changes for any permitted
+   purpose, and that property has to survive the reshaping.
+3. Is PolyForm's README permission sufficient authority to reuse Shield's wording inside a licence of
+   a different name, once every "PolyForm" and polyformproject.org reference is stripped as it
+   requires?
+4. Does the AI sentence, which has no precedent in any software licence, do anything a court would
+   read — and does it risk being read so broadly that it voids something we did intend to permit?
+
+### D14 — The managed-service clause versus partner hosting: CLOSED, no carve-out needed
+
+BDR open item 2, carried unanswered since 2026-08-01 and answered by the founders on 2026-09-11: a
+partner hosting Lighthouse for their client is **not a motion we want**, and would not be permitted
+regardless of what the licence says. ELv2 clause 1 therefore restricts nothing we intended to do, and
+no carve-out is drafted.
+
+Two consequences worth carrying. The drafting is unblocked — this was the last open question in front
+of the SPIKE. And clause 1 turns out never to have been load-bearing for us, which is part of why D1
+can afford to leave Elastic's text untouched and put the clauses that *do* carry weight into a
+separate document.
 
 ### D15 — RBAC: N/A, explicitly
 
@@ -295,7 +348,8 @@ changes are all *read* surfaces:
 1. **Legal review of the drafted licence text (D13)** — blocking for slice 01 only. Slices 02–04 do
    not depend on it, but slice 02's copy must not claim terms the final text does not carry, so
    slice 02 ships after slice 01 in practice.
-2. **The partner-hosting question (D14)** answered before drafting closes.
+2. ~~**The partner-hosting question (D14)**~~ — answered 2026-09-11: partner hosting is not a motion
+   we want and would not be permitted anyway, so no carve-out is needed and the SPIKE is unblocked.
 3. ~~**A sibling ADO item for the Premium-gate hardening (D11)**~~ — done: Epic
    [#5972](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5972), linked `related` to
    #5874, so the deferral is visible on the board rather than only in this document.
@@ -330,23 +384,32 @@ answer them from the repo instead of opening a vendor conversation.
 #### Elevator Pitch
 Before: the repo says MIT, which means "do anything", so the honest answer to "may we fork and strip
 the paid gate?" is yes — and the maintainers would rather it were no.
-After: open `github.com/LetPeopleWork/Lighthouse` → GitHub's sidebar reads `Lighthouse Source
-Available License 1.0` and the file lists five numbered prohibitions, one of which names AI-assisted
-derivation explicitly.
+After: open `github.com/LetPeopleWork/Lighthouse` → `LICENSE` opens with a header naming the
+`Lighthouse Source Available License 1.0`, pointing at `LICENSE-ADDITIONAL-TERMS.md`, and then
+reproduces the Elastic License 2.0 unaltered; between the two files the reader finds five numbered
+prohibitions, one of which names AI-assisted derivation explicitly.
 Decision enabled: the reader decides whether their intended use is permitted, without asking anyone.
 
 **Acceptance criteria**
 
-- AC-01.1 `LICENSE` contains ELv2's three prohibitions, the no-competing-use clause, and the AI
-  sentence, each as a separately numbered item.
-- AC-01.2 `LICENSE` states that versions released before the change date remain under the MIT
-  licence in perpetuity, and names that date.
-- AC-01.3 The licence carries a name and a `LicenseRef-` SPDX identifier used consistently in
-  `LICENSE`, `README.md` and `docs/licensing/licensing.md`.
-- AC-01.4 `gh api repos/LetPeopleWork/Lighthouse --jq .license` no longer reports `mit`.
-- AC-01.5 `Lighthouse.EndToEndTests/package.json` no longer declares `"license": "MIT"`.
-- AC-01.6 A `NOTICE` (or equivalent section) records the MIT grant that applied up to the change
-  date, so the four existing forks remain unambiguously covered.
+- AC-01.1 `LICENSE` reproduces the Elastic License 2.0 **byte-for-byte unaltered** below a clearly
+  delimited header block of our own. Verified by diffing the ELv2 portion against Elastic's published
+  text — a non-empty diff fails this criterion.
+- AC-01.2 `LICENSE-ADDITIONAL-TERMS.md` exists and carries the no-competing-use clause and the AI
+  sentence as separately numbered items, with no mention of "PolyForm" or polyformproject.org
+  anywhere in it (PolyForm's own condition for reusing Shield's wording).
+- AC-01.3 `LICENSE`'s header block names the composite licence and states that the additional terms
+  are part of it, so a reader who opens only that file learns the second document exists.
+- AC-01.4 A statement that versions released before the change date remain under the MIT licence in
+  perpetuity, naming that date — in `NOTICE` or in `LICENSE`'s header block, not inside Elastic's
+  text.
+- AC-01.5 The licence name and its `LicenseRef-` SPDX identifier are used identically in `LICENSE`,
+  `LICENSE-ADDITIONAL-TERMS.md`, `README.md` and `docs/licensing/licensing.md` — one string, not four
+  near-misses. Neither file claims the `Elastic-2.0` identifier.
+- AC-01.6 `gh api repos/LetPeopleWork/Lighthouse --jq .license` no longer reports `mit`.
+- AC-01.7 `Lighthouse.EndToEndTests/package.json` no longer declares `"license": "MIT"`.
+- AC-01.8 Both documents ship together in every published artefact — the Docker image, the standalone
+  archives and the chart — not only in the git repository.
 
 ### US-02 — See the same claim in the product that I saw in the repo
 
@@ -542,7 +605,7 @@ Slice 03 is verifiable on the website preview deploy the same day.
 |---|---|---|
 | 1 | Business value stated | Four elevator pitches. Upstream: a founder decision taken 2026-08-31 after two 3-lens panels, carried to the board as Epic #5874. |
 | 2 | Job traceability | US-01 → `job-prospect-know-what-i-may-do-with-the-source`; US-02 and US-03 → `job-maintainer-say-the-same-thing-everywhere`; US-04 → `job-maintainer-protect-future-increments-without-going-closed`. No `infrastructure-only` escape used. |
-| 3 | Acceptance criteria testable | 23 ACs. Each asserts a rendered string, a file's content, an API response field, or an observed workflow outcome. |
+| 3 | Acceptance criteria testable | 25 ACs. Each asserts a rendered string, a file's content, an API response field, or an observed workflow outcome. AC-01.1 is a literal diff against Elastic's published text. |
 | 4 | Dependencies known | Three, all named in Pre-requisites. One is genuinely blocking (legal review, D13) and blocks slice 01 only. |
 | 5 | Sized | Four slices, ~3.5h–5h each, plus one pre-slice SPIKE. |
 | 6 | Technical feasibility | Every mechanism is established in this repo except the auto-close workflow, whose only unknown (`pull_request_target` from a fork) is named in slice 04's learning hypothesis. |
@@ -550,14 +613,15 @@ Slice 03 is verifiable on the website preview deploy the same day.
 | 8 | UX defined | The exact replacement strings are fixed by D6 and enumerated per surface in the inventory. Two open wording calls — the footer line and the `/compare` FAQ answer — are explicit in AC-02.1 and AC-03.3 rather than left implicit. |
 | 9 | Testable in isolation | Vitest against the two components; the grep gate runs standalone; the workflow is exercisable on a throwaway PR; the licence text is checkable by reading one file. |
 
-**Requirements completeness: 0.95.** The gap is D13 — the licence text itself cannot be finalised
-inside DISCUSS, because it needs a lawyer, and two of its clauses (the no-competing-use wording and
-the AI sentence) have no precedent to copy. The requirement is specified; the text is not drafted.
-That is the SPIKE, and it is why slice 01 is second rather than first.
+**Requirements completeness: 0.96**, revised up from 0.95 on 2026-09-11 when D14 closed and the
+base-text question was answered. The remaining gap is D13: the licence text cannot be finalised
+inside DISCUSS because it needs a lawyer, and the AI sentence has no precedent in any software
+licence to copy. The requirement is specified and its shape is now fixed — two documents, Elastic's
+text untouched — but the words are not drafted. That is the SPIKE, and it is why slice 01 is second
+rather than first.
 
-**Not completed in DISCUSS, and flagged rather than skipped**: D14's partner-hosting question. It is
-a business-model call, not a requirements call, and the BDR says to settle the business model before
-the licence. It blocks the SPIKE's conclusion, not this wave.
+**Nothing else is left open.** D14 is closed (partner hosting is not a motion we want), and the
+base-text question is closed by designing around it rather than answering it.
 
 ---
 
@@ -565,10 +629,11 @@ the licence. It blocks the SPIKE's conclusion, not this wave.
 
 ### Key Decisions
 
-- [D1] Lighthouse Source Available Licence built on ELv2 + FSL's competing-use clause + a drafted AI
-  sentence; permanent, no change date.
-- [D2] FSL rejected for its 2-year conversion clock and missing key clause; its Competing Use
-  definition is borrowed.
+- [D1] Two documents: `LICENSE` reproduces ELv2 verbatim and unaltered; a binding
+  `LICENSE-ADDITIONAL-TERMS.md` adds no-competing-use and the AI sentence. Permanent, no change date.
+  ELv2's text is not edited, because no grant to edit it exists.
+- [D2] FSL rejected for its 2-year conversion clock and missing key clause; its competing-use wording
+  superseded by PolyForm Shield's, which reaches free clones and is explicitly adaptable.
 - [D4] Lighthouse repo only; clients and Jira app stay MIT.
 - [D6] "Source available" is the one public term.
 - [D8] Code contributions end; enforced by an auto-close workflow, since GitHub offers no setting.
@@ -602,8 +667,9 @@ listed three unresolved items. Two are resolved by this wave and one is deferred
 1. **"The scanner question has still never been evidenced."** → Resolved by observation (D10). The
    community was asked directly; nobody cared about OSI status, and those with a requirement needed
    "source available". The BDR's own symmetric-evidence standard is now met.
-2. **"ELv2's managed-service clause vs partner hosting."** → Still open, and now has an owner and a
-   deadline: it must be answered before the SPIKE's drafting closes (D14).
+2. **"ELv2's managed-service clause vs partner hosting."** → **Resolved 2026-09-11** (D14). Partner
+   hosting is not a motion LetPeopleWork wants and would not be permitted regardless, so clause 1
+   restricts nothing intended and no carve-out is drafted. Record the answer in the BDR.
 3. **"Option E — harden the Premium gate technically."** → Deferred out of this epic with a reason,
    and requires its own ADO item (D11).
 
@@ -679,7 +745,8 @@ right answer and this feature would be a two-day job.
 tag so scanners see a known family, and state the AI position in a `NOTICE` or `ai.txt` that is not a
 licence term. Rejected because it is the worst of both — it advertises a restriction it does not
 impose, and a reader who checks will find that out. A position stated without force invites exactly
-the test it cannot survive.
+the test it cannot survive. **Do not confuse this with what was chosen**: D1's second document is a
+*binding* term incorporated by reference, not a notice. The difference is the whole point.
 
 **PolyForm Strict.** Use only: no modification, no distribution, by anyone. It covers every line of
 the brief and is off the shelf. Rejected because it forbids a customer patching their own instance,
@@ -687,15 +754,49 @@ which is a substantial part of why anyone self-hosts, and it forecloses the insp
 that the "your data never leaves your network" claim rests on. It would also be the one option that
 genuinely reads as going closed, which the founder decision explicitly ruled out.
 
-**A licence drafted entirely from scratch.** Maximum fit to intent, zero recognition, every clause
-ours to defend, highest legal cost. Held as the SPIKE's fallback if adapting Elastic's text turns out
-not to be permissible — same intent, more money, later date.
+**PolyForm Shield, adapted, as the whole instrument.** The strongest option not taken. Shield's
+Noncompete is the broadest competing-use text available — products compete across interfaces,
+platforms and languages, *"even when provided free of charge"* — it is permanent, its Changes and New
+Works License expressly preserves customer self-modification, and **PolyForm is the only steward that
+grants permission to adapt its text**, on the condition that every mention of "PolyForm" and
+polyformproject.org is stripped. It was the recommendation. Not taken because ELv2's licence-key
+clause is the one piece of off-the-shelf text that names our actual strip point by name, and the
+two-document shape keeps it verbatim while still reaching Shield's substance through the second file.
+Shield's *wording* is used for the no-competing-use clause regardless (D2) — what was declined is
+making Shield the base document.
 
-**What was chosen and why it is not free.** ELv2's three prohibitions plus FSL's competing-use clause
-plus a drafted AI sentence gets the whole brief with a permanent term and no clock. The cost is real:
-it is no longer a licence anyone recognises, it must not be called ELv2, its SPDX identifier is a
-`LicenseRef-` string that no scanner has a rule for, and every word of the two added clauses needs a
-lawyer. Plain ELv2 would have cost none of that.
+**A licence drafted entirely from scratch.** Maximum fit to intent, zero recognition, every clause
+ours to defend, highest legal cost and the longest lead time on the one item already on the critical
+path. Held as the SPIKE's fallback.
+
+**What was chosen and why it is not free.** `LICENSE` carries ELv2 verbatim; a second binding
+document adds no-competing-use (Shield's wording) and the AI sentence. Permanent, no clock, whole
+brief covered, and Elastic's text never edited. The cost is real: the composite is not a licence
+anyone recognises, it must not be called ELv2 or carry `Elastic-2.0`, and a reader or scanner that
+opens only `LICENSE` sees plain ELv2 and may never learn the second file exists — which is why the
+header block is a requirement rather than a nicety. Plain ELv2 would have cost none of this and
+protected roughly half as much.
+
+### The base-text question, and why it reshaped D1
+
+The first form of D1 adapted ELv2's text directly. Research on 2026-09-11 found no grant to do that,
+and found that one licence family grants it explicitly. What was checked:
+
+| Base text | Explicit permission to publish a **modified** version? |
+|---|---|
+| **ELv2** | **None.** No modified-versions clause; the seven-question FAQ never raises adaptation; no copyright notice or reuse statement on the document. "Elastic License" is a trademark. Verbatim adoption is clearly fine and common — SPDX lists `Elastic-2.0` and third-party projects ship it unchanged. |
+| **FSL 1.1** | **None.** A template with `${year}` / `${licensor name}` placeholders, plainly built for adoption, but `getsentry/fsl.software` carries no `LICENSE` and no `NOTICE`, and the template says nothing about reusing its own wording. |
+| **PolyForm** | **Yes, explicitly.** Its README: *"If you make changes to a PolyForm license, you must remove all mention of 'PolyForm' and polyformproject.org, as well."* Plus a contributor permission grant over the text. |
+| **MPL 2.0** | Yes — §10.3 permits a renamed modified version. The model PolyForm follows. |
+| **Apache-2.0** | Verbatim adoption fine; no modification grant. |
+
+Licence texts are copyrightable works. "Nobody would sue over a licence text" may well be true and is
+not a basis a two-person company should build its own licence on, particularly when the alternative
+costs nothing. So the question is not answered — it is designed around. Elastic's text is reproduced
+unaltered and our clauses live in a second binding document, which is structurally what BUSL does
+(fixed template plus a grant the licensor writes) and what any dual-licence arrangement does.
+
+This is research, not legal advice, and it narrows D13's review rather than replacing it.
 
 ### D12 — Why the AI clause is not the mechanism
 
