@@ -2,7 +2,7 @@
 
 Stryker.NET, backend only. No frontend file changed in this fix, so no StrykerJS run.
 
-Config: `Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.bug-5973-jira-board-query.json`.
+Config: `stryker.5973.backend.json` in this directory, copied from `Lighthouse.Backend/Lighthouse.Backend.Tests/stryker-config.bug-5973-jira-board-query.json` (the working copy is gitignored as local tooling).
 
 ## Score
 
