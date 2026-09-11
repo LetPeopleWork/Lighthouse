@@ -1627,6 +1627,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issues;
         }
 
+        /// <summary>
+        /// Cloud is asked once and answered once. The endpoint this used to retry on is one Jira Cloud has
+        /// removed, and it now answers "this API is gone" to every call, valid query or not - so retrying it
+        /// could only ever replace the sentence naming what was wrong with a notice about an endpoint the
+        /// operator never chose to call.
+        /// </summary>
         private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride)
         {
             var issues = new List<Issue>();
@@ -1644,8 +1650,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (rejection is not null)
             {
-                LogTheRefusal(jqlQuery, rejection);
-                return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, maxResultsOverride);
+                throw RejectedQuery(jqlQuery, rejection);
             }
 
             return issues;
@@ -1913,10 +1918,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string PrepareGenericQuery(IEnumerable<string> options, string fieldName, string queryOperator, string queryComparison)
         {
-            var query = string.Join($" {queryOperator} ", options.Select(o => $"{fieldName} {queryComparison} \"{o}\""));
+            var query = string.Join($" {queryOperator} ", options.Select(o => $"{fieldName} {queryComparison} \"{QuotedForJql(o)}\""));
             query = options.Any() ? $"AND ({query}) " : string.Empty;
             return query;
         }
+
+        /// <summary>
+        /// A state or a work item type is named by whoever configured Jira, and inside a quoted JQL string two
+        /// of the characters they are free to use mean something to Jira: a double quote ends the string early,
+        /// and a backslash escapes whatever follows it. Either one left as it stands makes the whole query
+        /// unparseable, and Jira then refuses it outright - so the team or portfolio fetches nothing at all.
+        /// The backslashes are doubled first, or the pass after this one would escape them again.
+        /// </summary>
+        private static string QuotedForJql(string name)
+            => name
+                .Replace("\\", "\\\\", StringComparison.Ordinal)
+                .Replace("\"", "\\\"", StringComparison.Ordinal);
 
         public static bool RoutesViaAtlassianCloudGateway(string authenticationMethodKey) =>
             authenticationMethodKey == AuthenticationMethodKeys.JiraScopedToken

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
@@ -48,6 +49,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly string RejectedQueryBody =
             $"{{\"errorMessages\":[{JsonSerializer.Serialize(JiraRejectionSentence)}],\"errors\":{{}}}}";
+
+        /// <summary>
+        /// What Jira Cloud answers on the old search endpoint, to every call, whether the query is valid or
+        /// not. It is the sentence a Cloud user saw instead of the one naming what was actually wrong.
+        /// </summary>
+        private const string RemovedEndpointSentence =
+            "The requested API has been removed. Please migrate to the /rest/api/3/search/jql API.";
+
+        private static readonly string RemovedEndpointBody =
+            $"{{\"errorMessages\":[{JsonSerializer.Serialize(RemovedEndpointSentence)}],\"errors\":{{}}}}";
+
+        private const string CloudSearchPath = "rest/api/3/search/jql";
+
+        private const string LegacySearchPath = "rest/api/latest/search";
 
         private static readonly string ReadableBoardConfiguration =
             "{\"columnConfig\":{\"columns\":["
@@ -431,6 +446,107 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task ValidateTeamSettings_CloudRejectsTheQuery_NeverAsksTheEndpointCloudNoLongerHas()
+        {
+            var requestedUrls = new List<string>();
+            var connector = JiraConnectorTestSetup.AConnectorOver(ACloudSearchThatRefuses(requestedUrls));
+
+            await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
+
+            Assert.That(UrlsReaching(requestedUrls, LegacySearchPath), Is.Empty);
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_CloudRejectsTheQuery_ReportsWhatTheCloudSearchAnswered()
+        {
+            var connector = JiraConnectorTestSetup.AConnectorOver(ACloudSearchThatRefuses(new List<string>()));
+
+            var result = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.TechnicalDetails, Does.Contain(JiraRejectionSentence));
+                Assert.That(result.TechnicalDetails, Does.Not.Contain(RemovedEndpointSentence));
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_OnDataCenter_StillWalksTheLegacySearchByOffset()
+        {
+            var requestedUrls = new List<string>();
+            var handler = AHandlerWhereSearch("Server", _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
+            var connector = JiraConnectorTestSetup.AConnectorOver(handler);
+
+            var result = await connector.ValidateTeamSettings(JiraConnectorTestSetup.ATeamOnJiraCloud());
+
+            var searches = UrlsReaching(requestedUrls, LegacySearchPath);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.IsValid, Is.True);
+                Assert.That(searches, Is.Not.Empty);
+                Assert.That(searches[0], Does.Contain("startAt=0"));
+                Assert.That(UrlsReaching(requestedUrls, CloudSearchPath), Is.Empty);
+            }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_AStateNameCarriesADoubleQuote_LeavesTheQuoteEscaped()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.DoneStates.Clear();
+            team.DoneStates.Add("Say \"Done\"");
+
+            var jql = await TheQueryIssuedFor(team);
+
+            Assert.That(jql, Does.Contain("status = \"Say \\\"Done\\\"\""));
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_AWorkItemTypeCarriesABackslash_LeavesTheBackslashEscaped()
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            team.WorkItemTypes.Clear();
+            team.WorkItemTypes.Add("Story\\Task");
+
+            var jql = await TheQueryIssuedFor(team);
+
+            Assert.That(jql, Does.Contain("issuetype = \"Story\\\\Task\""));
+        }
+
+        /// <summary>
+        /// A Cloud instance as it actually answers once the old search endpoint is gone: the endpoint Jira
+        /// still has says what is wrong with the query, and the one it removed says only that it is removed.
+        /// </summary>
+        private static HttpMessageHandler ACloudSearchThatRefuses(ICollection<string> requestedUrls)
+            => AHandlerWhereSearch(
+                "Cloud",
+                request => (request.RequestUri?.AbsolutePath ?? string.Empty).Contains(CloudSearchPath, StringComparison.Ordinal)
+                    ? Respond(HttpStatusCode.BadRequest, RejectedQueryBody)
+                    : Respond(HttpStatusCode.Gone, RemovedEndpointBody),
+                requestedUrls);
+
+        private static List<string> UrlsReaching(IEnumerable<string> requestedUrls, string path)
+            => requestedUrls.Where(url => url.Contains(path, StringComparison.Ordinal)).ToList();
+
+        /// <summary>The JQL the connector put on the wire, read back out of the search url it asked for.</summary>
+        private static async Task<string> TheQueryIssuedFor(Team team)
+        {
+            var requestedUrls = new List<string>();
+            var handler = AHandlerWhereSearch("Cloud", _ => Respond(HttpStatusCode.OK, OnePageHoldingOneIssue), requestedUrls);
+            var connector = JiraConnectorTestSetup.AConnectorOver(handler);
+
+            await connector.ValidateTeamSettings(team);
+
+            var searchUrl = UrlsReaching(requestedUrls, CloudSearchPath)[0];
+            var jqlParameter = searchUrl[(searchUrl.IndexOf('?', StringComparison.Ordinal) + 1)..]
+                .Split('&')
+                .First(parameter => parameter.StartsWith("jql=", StringComparison.Ordinal));
+
+            return Uri.UnescapeDataString(jqlParameter["jql=".Length..]);
+        }
+
         private static bool NamesBothTheQueryAndWhatJiraAnswered(object? loggedState)
         {
             var line = loggedState?.ToString() ?? string.Empty;
@@ -456,12 +572,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static HttpMessageHandler ASearchThatAnswers(string deploymentType, HttpStatusCode searchStatus, string searchBody)
             => AHandlerWhereSearch(deploymentType, _ => Respond(searchStatus, searchBody));
 
-        /// <summary>
-        /// Both deployments answer the search the same way here, so a test reads the same reported text whether
-        /// the Cloud walk carries the rejection out itself or falls back to the Data Center endpoint first.
-        /// </summary>
         private static HttpMessageHandler AHandlerWhereSearch(
             string deploymentType, Func<HttpRequestMessage, HttpResponseMessage> answerSearch)
+            => AHandlerWhereSearch(deploymentType, answerSearch, new List<string>());
+
+        /// <summary>
+        /// Every url the connector asked for, in order, so a test can say which endpoints were reached and
+        /// which were left alone - neither of which can be read off the answer the connector returns.
+        /// </summary>
+        private static HttpMessageHandler AHandlerWhereSearch(
+            string deploymentType,
+            Func<HttpRequestMessage, HttpResponseMessage> answerSearch,
+            ICollection<string> requestedUrls)
         {
             var mock = new Mock<HttpMessageHandler>();
             mock.Protected()
@@ -472,6 +594,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
                 {
                     var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+                    requestedUrls.Add(request.RequestUri?.PathAndQuery ?? string.Empty);
 
                     if (path.Contains("/search", StringComparison.Ordinal))
                     {
