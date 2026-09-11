@@ -52,15 +52,25 @@ Then run `gh api repos/LetPeopleWork/Lighthouse --jq .license` and record what a
 - `Lighthouse.EndToEndTests/package.json`: the `"license": "MIT"` field corrected (AC-01.7).
 - `LICENSE` and `NOTICE` added to whatever packages the published artefacts — Docker image,
   standalone archives, chart (AC-01.8).
-- **A machine-readable TDM reservation**, if counsel confirms it is worth publishing: a W3C TDMRep
-  file at `/.well-known/tdmrep.json` on `letpeople.work` and `docs.lighthouse.letpeople.work`, with
-  `tdm-reservation` set and a `tdm-policy` URL pointing at the licensing page. The EU DSM Directive's
-  Art. 4 text-and-data-mining exception applies unless the rightsholder has reserved the use "in an
-  appropriate manner", and for content published online it points to machine-readable means — so the
-  clause in `LICENSE` may bind a licensee and still not reserve anything against a crawler.
-  **Known limitation, carried to counsel rather than engineered around:** TDMRep is served from an
-  origin's `/.well-known/` path, and we do not control `github.com`, which is where the source
-  actually sits. A file on our own domains cannot cover the copy a crawler would find.
+- **Licence metadata, so scanners do not misclassify the composite as `Elastic-2.0`.** Both counsel
+  raised this independently. `"license": "LicenseRef-Lighthouse-SAL-1.0"` in every package manifest
+  that carries one, and the same string wherever repository metadata records a licence. GitHub's own
+  detector will not match the file, which is expected — what must not happen is a scanner matching
+  the reproduced ELv2 text and reporting `Elastic-2.0`, since Part 1's restrictions would then be
+  invisible to it.
+- **A layered TDM reservation**, per counsel. The EU DSM Directive's Art. 4 text-and-data-mining
+  exception applies unless the rightsholder has reserved the use "in an appropriate manner", and for
+  content published online it points to machine-readable means — so the clause in `LICENSE` may bind
+  a licensee and still reserve nothing against a crawler. Three layers, none sufficient alone:
+  1. the express reservation in `LICENSE` Part 1 section 2 (already drafted);
+  2. a W3C TDMRep file at `/.well-known/tdmrep.json` on `letpeople.work` and
+     `docs.lighthouse.letpeople.work`, with `tdm-reservation` set and a `tdm-policy` URL pointing at
+     the licensing page;
+  3. repository-level reservation metadata on GitHub itself.
+  **Layer 2 cannot reach the copy that matters.** TDMRep is served from an origin's `/.well-known/`
+  path and we do not control `github.com`, which is where the source actually sits — hence layer 3.
+  Counsel also notes TDMRep is a W3C Community Group report rather than a Standard, so the
+  implementation must not claim certainty about its effect.
 - Whatever GitHub repo-settings change the sidebar needs, once the dogfood moment shows what it
   actually renders.
 

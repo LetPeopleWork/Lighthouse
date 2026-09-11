@@ -6,13 +6,15 @@ These Additional Terms are part of this license. They are read together with the
 Elastic License 2.0 reproduced in Part 2 below. Where the two parts conflict,
 these Additional Terms govern.
 
-The license granted in Part 2 does not extend to, and expressly excludes, any
-use prohibited by these Additional Terms. A prohibited use falls outside the
-scope of the license granted, and is not licensed.
+To the extent a use would, absent a license, infringe the licensor's copyright or
+any other right of the licensor, the license granted in Part 2 does not extend to
+it, and expressly excludes it, if these Additional Terms prohibit it. Such a use
+falls outside the scope of the license granted, and is not licensed.
 
-Where a prohibited use does not itself infringe copyright, the prohibition still
-binds you as a term of this license, and the licensor retains every contractual
-remedy for it.
+Where a prohibited use would not, absent a license, infringe any such right, the
+prohibition still binds you as a term of this license, and the licensor retains
+every contractual remedy for it. Nothing in this license purports to make conduct
+infringing that would not otherwise be so.
 
 "The software", "the licensor", "you" and "your company" carry the meanings
 given to them in Part 2.
@@ -93,15 +95,26 @@ anything section 1 permits.
 3. RIGHTS THAT CANNOT BE RESTRICTED
 
 Nothing in this license restricts any right you hold under mandatory law that
-cannot be excluded by agreement. Where applicable, that includes your statutory
-rights to observe, study or test the functioning of the software in order to
-determine the ideas and principles underlying it, to make a back-up copy, and to
-decompile the software so far as necessary to achieve interoperability with
-other programs.
+cannot be excluded by agreement, and no provision of this license is to be read
+as waiving or narrowing such a right.
 
-Where a provision of this license would restrict such a right, that provision
-does not apply to the extent of the restriction, and the rest of this license
-continues in force.
+Where applicable, those rights include the rights of a lawful acquirer under
+Articles 5 and 6 of Directive 2009/24/EC on the legal protection of computer
+programs, and the corresponding provisions of Swiss law including Article 21 of
+the Federal Act on Copyright and Related Rights:
+
+  - to observe, study or test the functioning of the software in order to
+    determine the ideas and principles underlying any element of it, while
+    performing any act you are entitled to perform;
+  - to make a back-up copy so far as necessary for your use of the software;
+  - to reproduce and translate the form of the code so far as indispensable to
+    obtain the information necessary to achieve interoperability with other
+    programs.
+
+This list is illustrative and not exhaustive. Where a provision of this license
+would restrict any right that mandatory law does not permit to be restricted,
+that provision does not apply to the extent of the restriction, and the rest of
+this license continues in force.
 
 
 4. RELATIONSHIP TO COMMERCIAL AGREEMENTS
@@ -115,9 +128,11 @@ it expressly says that it does.
 
 5. TERMINATION
 
-A violation of these Additional Terms is a violation of this license for the
-purposes of the Termination section of the Elastic License 2.0 in Part 2,
-including that section's cure and reinstatement provisions.
+The Termination section of the Elastic License 2.0 in Part 2 applies to this
+license as a whole. A violation of these Additional Terms is a violation of "these
+terms" as that section uses the phrase, and has the same consequences: the use in
+question is not licensed, your licenses terminate automatically, and the same
+thirty-day cure and reinstatement provisions apply to you on the same conditions.
 
 
 6. GOVERNING LAW AND JURISDICTION
@@ -126,7 +141,14 @@ This license is governed by the substantive law of Switzerland, excluding its
 conflict-of-law rules and excluding the United Nations Convention on Contracts
 for the International Sale of Goods. The courts of Zurich, Switzerland have
 exclusive jurisdiction over any dispute arising out of or in connection with
-this license, to the extent that mandatory law does not require otherwise.
+this license.
+
+This section does not deprive you of the protection of any provision that
+mandatory law does not allow to be derogated from by agreement, and does not
+displace any court that mandatory law requires or permits you to bring
+proceedings before. If you are a consumer, the mandatory consumer-protection
+rules and the rules of jurisdiction of the country in which you are habitually
+resident apply to you regardless of this section.
 
 
 For worked examples of what this license allows and does not allow, see the

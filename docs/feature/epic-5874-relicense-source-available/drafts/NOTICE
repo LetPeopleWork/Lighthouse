@@ -1,11 +1,17 @@
 Lighthouse
 Copyright (c) 2025-2026 LetPeopleWork GmbH
+Portions copyright (c) 2025-2026 individual contributors
+
+Contributions from people outside LetPeopleWork GmbH were accepted into this
+project under the MIT License. Their authors retain copyright in what they wrote.
+Nothing in the LICENSE file or in this NOTICE transfers that copyright or
+withdraws the MIT License under which those contributions were published.
 
 CURRENT LICENSE
 ---------------
 
-Every version of Lighthouse released after v26.9.9.9 is licensed under
-the Lighthouse Source Available License 1.0
+Every version of Lighthouse released after v26.9.9.9 (released 9 September 2026)
+is licensed under the Lighthouse Source Available License 1.0
 (SPDX: LicenseRef-Lighthouse-SAL-1.0). The complete license is in the LICENSE
 file. It has two parts, both in that one file and both binding:
 

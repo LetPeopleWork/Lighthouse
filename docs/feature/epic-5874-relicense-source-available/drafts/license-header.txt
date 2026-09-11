@@ -28,7 +28,9 @@ WHAT LICENSE APPLIES TO WHICH VERSION
   in this file applies retroactively to those versions. The full text of that
   MIT License is preserved in the NOTICE file.
 
-  This license applies to every version of Lighthouse released after v26.9.9.9.
+  This license applies to every version of Lighthouse released after v26.9.9.9,
+  which was released on 9 September 2026. Both the version and the date are
+  stated so the boundary is unambiguous either way.
 
 THIS IS NOT THE ELASTIC LICENSE 2.0. Part 2 is the Elastic License 2.0
 reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,
