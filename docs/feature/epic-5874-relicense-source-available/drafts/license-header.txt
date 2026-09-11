@@ -31,7 +31,7 @@ WHAT LICENSE APPLIES TO WHICH VERSION
   in this file applies retroactively to those versions. The full text of that
   MIT License is preserved in the NOTICE file.
 
-  These terms apply to version <FILL AT RELEASE> and to every later version.
+  These terms apply to every version of Lighthouse released after v26.9.9.9.
 
 THIS IS NOT THE ELASTIC LICENSE 2.0. The text below is the Elastic License 2.0
 reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,

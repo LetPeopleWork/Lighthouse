@@ -40,14 +40,21 @@ AC-01.1, and it must hold after every future edit to the header:
 awk '/^={80}$/{n++; next} n==2' LICENSE | tail -n +2 | diff - elv2-verbatim.txt
 ```
 
-## Two placeholders to fill
+## No placeholders. Nothing to fill at release.
 
-1. `<FILL AT RELEASE>` in `license-header.txt` and `NOTICE` — the first version
-   published under these terms. It is the next release's calver tag, which does
-   not exist until the release runs. **Both files must be filled with the same
-   string in the same commit.**
-2. Nothing else. The backward boundary is already fixed and verifiable:
-   **v26.9.9.9, released 2026-09-09, is the last MIT version.**
+The version boundary is stated once, in both files, as **"every version released
+after v26.9.9.9"**. v26.9.9.9 shipped 2026-09-09 and is the last MIT release, so
+the boundary is fully determinate today and needs no future date.
+
+The first draft named the next release instead and left a `<FILL AT RELEASE>`
+placeholder in two files. Both reviewers flagged it, and one proposed filling it
+from CI at tag time — which would leave the committed `LICENSE` permanently
+incomplete while artifacts carried different text. Repo and distribution
+disagreeing about the licence is worse than the problem. Re-anchoring backwards
+on the last MIT version expresses the identical boundary with nothing to forget.
+
+Source taken from `main` between the licence commit and the next release is
+covered by these terms: it is not a version released on or before v26.9.9.9.
 
 ## Drafting provenance, recorded here and deliberately not in the shipped files
 
@@ -74,12 +81,36 @@ Section 2 has no precedent to derive from — no mainstream software licence
 carries an AI clause. It is drafted here for the first time and is the part most
 in need of the lawyer's eye.
 
+## Review round 1 — 2026-09-11
+
+Two practitioner reviews came back on the first draft. Neither was legal advice.
+What changed as a result:
+
+| Finding | Change |
+|---|---|
+| Section 1 contradicted its own carve-out: "compete even when provided only within a single organization" against "you may run a modified copy inside your own organization" | **Fixed.** The line is now drawn between *your deployment of the software* and *a separate product built out of it*, not between internal and external. The contradicting half-sentence is gone; the internal-substitute case is still covered, by naming it directly. |
+| Section 1 reached the licensor's *affiliates*, an unknowable scope for a reader | **Dropped.** It now reaches the software and other products the licensor provides using it. |
+| The AI clause was ~90 words of machinery for a one-sentence rule | **Simplified**, and retitled to what it actually says: prohibited results stay prohibited however they are produced. |
+| `<FILL AT RELEASE>` placeholder; one reviewer proposed filling it from CI | **Removed entirely** — see above. CI-filling would leave the committed `LICENSE` permanently incomplete. |
+| Users will not know where the internal-use boundary lies; add worked examples | **Accepted, but placed in the docs FAQ, not the licence.** Examples inside a binding document become interpretive anchors on cases nobody anticipated. Precedent: ELv2's own FAQ carries the hosted-service examples; its licence does not. The Additional Terms point at the FAQ and say the examples are not part of the terms. |
+
+One recommendation was **not** taken. One review read the future-product
+paragraph as a customer discomfort and suggested limiting it; the other read the
+same paragraph as a customer protection. The second reading is the correct one —
+without that paragraph, a release by the licensor could put an existing customer
+in violation overnight through no act of their own. The paragraph was kept, given
+its own heading, and its purpose stated in the text. The half of the first
+review that was right — make the trigger explicit — was applied.
+
 ## What the lawyer is being asked
 
-The four questions are in `../slices/slice-00-spike-draft-the-licence-text.md`.
-The two that matter most:
+The full question set is in `questions-for-counsel.md` beside this file. Two of
+those questions came out of preparing this draft and were raised by neither
+reviewer:
 
-- Does a second document, incorporated by reference, bind a recipient who opens
-  only `LICENSE`? The header block is the intended mitigation.
-- Does section 2 do anything a court would read, without sweeping so broadly
-  that it voids something section 1 deliberately permits?
+- **There is no governing-law or jurisdiction clause anywhere.** ELv2 has none,
+  and the Additional Terms add none.
+- **Termination may not reach the Additional Terms.** ELv2's Termination clause
+  is triggered by using the software "in violation of these terms" — where
+  "these terms" is ELv2. Breaching section 1 or section 2 of the Additional
+  Terms may therefore have no stated consequence.
