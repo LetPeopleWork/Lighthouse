@@ -71,6 +71,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string RemovedEndpointBody =
             $"{{\"errorMessages\":[{JsonSerializer.Serialize(RemovedEndpointSentence)}],\"errors\":{{}}}}";
 
+        /// <summary>A refusal with no errorMessages list in it at all - nothing here names a field to correct.</summary>
+        private const string ARefusalWithoutErrorMessages = "{\"errors\":{\"jql\":\"unparseable\"}}";
+
+        private const string ARefusalWhereErrorMessagesIsNotAList = "{\"errorMessages\":\"Expecting a field name\"}";
+
+        /// <summary>What a proxy or an application server standing in front of Jira answers: not JSON at all.</summary>
+        private const string ARefusalThatIsNotJson =
+            "<html><head><title>400 Bad Request</title></head><body><h1>Bad Request</h1></body></html>";
+
+        private const string AMissingFieldSentence = "Field 'foo' does not exist or you do not have permission to view it.";
+
+        private const string ASecondMissingFieldSentence = "Field 'bar' does not exist or you do not have permission to view it.";
+
+        private static readonly string ARefusalNamingTwoFields =
+            "{\"errorMessages\":["
+            + $"{JsonSerializer.Serialize(AMissingFieldSentence)},{JsonSerializer.Serialize(ASecondMissingFieldSentence)}"
+            + "],\"errors\":{}}";
+
         private const string CloudSearchPath = "rest/api/3/search/jql";
 
         private const string LegacySearchPath = "rest/api/latest/search";
@@ -128,6 +146,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// The prose is only half of what a refusal has to carry. The wizard branches on the code, puts the
+        /// error next to the input it names, and a support bundle is read for the request that actually
+        /// failed - and none of those three can be recovered from the sentence the user sees.
+        /// </summary>
+        [Test]
+        public void GetBoardInformation_FilterCannotBeRead_CarriesTheCodeTheFailedRequestAndTheFieldToCorrect()
+        {
+            var refusal = Assert.ThrowsAsync<JiraReadException>(
+                async () => await BoardQueryFor(AFilterQuery, ASubFilterQuery, HttpStatusCode.Forbidden));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal!.Verdict.Code, Is.EqualTo("board_filter_unreadable"));
+                Assert.That(refusal.Verdict.TechnicalDetails, Is.EqualTo("GET rest/api/2/filter/10001 answered 403 Forbidden."));
+                Assert.That(refusal.Verdict.FieldName, Is.EqualTo("DataRetrievalValue"));
+                Assert.That(refusal.Verdict.Message, Does.Contain("share filter 10001"));
+            }
+        }
+
+        /// <summary>
+        /// A filter Jira handed over without a query in it fails for a different reason than one it would not
+        /// hand over, and the administrator has to be able to tell them apart - the permissions advice that
+        /// both messages carry is wasted effort on the first of them.
+        /// </summary>
+        [Test]
+        public void GetBoardInformation_FilterCarriesNoQuery_SaysTheFilterCameBackWithoutOne()
+        {
+            var refusal = Assert.ThrowsAsync<JiraReadException>(
+                async () => await BoardQueryWhereTheFilterAnswers(
+                    FilterId, ASubFilterQuery, HttpStatusCode.OK, "{\"name\":\"Board filter\"}"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal!.Verdict.Code, Is.EqualTo("board_filter_unreadable"));
+                Assert.That(refusal.Verdict.Message, Does.Contain("the filter it returned holds no query"));
+            }
+        }
+
         [Test]
         public async Task GetBoardInformation_FilterIsOnlyAnOrdering_DoesNotProduceAQueryStartingWithAnd()
         {
@@ -170,6 +227,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(query.Count(character => character == '('), Is.EqualTo(query.Count(character => character == ')')));
                 Assert.That(query, Is.EqualTo("(project = FOO AND (status = Open ORDER BY Rank))"));
             }
+        }
+
+        /// <summary>
+        /// A filter carrying an ordering inside brackets and its own ordering at the end is the case that
+        /// tells a bracket count that works from one that does not: only a count returning to zero reaches
+        /// the second ordering, and only the second one may be cut. A query left whole - which is what every
+        /// broken count produces - is also the right answer to the bracketed ordering on its own, so reading
+        /// that case alone cannot say whether the counting happened.
+        /// </summary>
+        [Test]
+        public async Task GetBoardInformation_OrderingSitsInsideBracketsAndAtTheEnd_StripsOnlyTheOneAtTheEnd()
+        {
+            var query = await BoardQueryFor("project = FOO AND (status = Open ORDER BY Rank) ORDER BY Rank ASC", subFilterJql: null);
+
+            Assert.That(query, Is.EqualTo("(project = FOO AND (status = Open ORDER BY Rank))"));
+        }
+
+        [Test]
+        public async Task GetBoardInformation_OrderingSitsTwoBracketsDeep_StillStripsTheOneAtTheEnd()
+        {
+            var query = await BoardQueryFor(
+                "project = FOO AND ((status = Open ORDER BY Rank) OR labels is EMPTY) ORDER BY created DESC",
+                subFilterJql: null);
+
+            Assert.That(query, Is.EqualTo("(project = FOO AND ((status = Open ORDER BY Rank) OR labels is EMPTY))"));
         }
 
         [Test]
@@ -408,6 +490,73 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(result.Code, Is.EqualTo("query_rejected"));
                 Assert.That(result.TechnicalDetails, Does.Contain(JiraRejectionSentence));
+            }
+        }
+
+        /// <summary>
+        /// Not every refusal is a complaint about the query. Jira can answer without the errorMessages list,
+        /// with something other than a list under that name, or - when a proxy in front of Jira turns the
+        /// request away - with no JSON at all. The user still has to be told something, and once there is no
+        /// sentence to pass on, the status is the whole of what is left to say.
+        /// </summary>
+        [TestCase(ARefusalWithoutErrorMessages)]
+        [TestCase(ARefusalWhereErrorMessagesIsNotAList)]
+        [TestCase(ARefusalThatIsNotJson)]
+        public async Task ValidateTeamSettings_RefusalNamesNothingToCorrect_FallsBackToTheStatusJiraAnsweredWith(string refusalBody)
+        {
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, refusalBody);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Code, Is.EqualTo("query_rejected"));
+                Assert.That(result.TechnicalDetails, Is.EqualTo("Jira answered 400 BadRequest."));
+            }
+        }
+
+        /// <summary>
+        /// Jira names one problem per sentence and can name several at once. Running them together would
+        /// hand the user a sentence Jira never wrote, and dropping all but one hides work still to do.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_JiraNamesTwoProblems_KeepsBothSentencesApart()
+        {
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, ARefusalNamingTwoFields);
+
+            Assert.That(result.TechnicalDetails, Is.EqualTo(
+                "Field 'foo' does not exist or you do not have permission to view it."
+                + " Field 'bar' does not exist or you do not have permission to view it."));
+        }
+
+        /// <summary>
+        /// The headline is what the user reads first and the field name is where the wizard puts it. Jira's
+        /// own sentence goes in the detail underneath, and on its own it says nothing about what to change.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_QueryRejected_BlamesTheQueryAndNamesTheFieldToCorrect()
+        {
+            var result = await TeamValidationWhereSearchAnswers(OnDataCenter, HttpStatusCode.BadRequest, RejectedQueryBody);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Message, Is.EqualTo("Jira could not run this query."));
+                Assert.That(result.FieldName, Is.EqualTo("DataRetrievalValue"));
+            }
+        }
+
+        /// <summary>
+        /// Every mapped name becomes its own comparison, and the clause only asks for "any of these" while
+        /// the OR between them survives. Finding one comparison somewhere in the query cannot tell that
+        /// apart from a clause whose parts have run together into something Jira refuses outright.
+        /// </summary>
+        [Test]
+        public async Task ValidateTeamSettings_SeveralStatesMapped_AsksForEachOfThemWithOrBetween()
+        {
+            var jql = await TheQueryIssuedFor(JiraConnectorTestSetup.ATeamOnJiraCloud());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(jql, Does.Contain("AND (status = \"To Do\" OR status = \"In Progress\" OR status = \"Done\")"));
+                Assert.That(jql, Does.Contain("AND (issuetype = \"Story\")"));
             }
         }
 
