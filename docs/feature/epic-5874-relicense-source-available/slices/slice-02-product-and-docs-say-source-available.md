@@ -46,17 +46,33 @@ docs site and walk the six changed pages.
 - `docs/index.md:7,15`, `docs/licensing/licensing.md:9`, `docs/security.md:32`,
   `docs/compliance/security-update-policy.md:23` (AC-02.3) — with `security.md` and `index.md`
   rewritten rather than word-swapped, per the hypothesis above.
-- `docs/licensing/licensing.md` gains the FAQ entry: what changed, when, what it means for an
-  existing self-hosted instance, and that prior versions stay MIT (AC-02.4). This is one of the two
-  rollout artefacts the BDR settled on; the other is the dated note, which is not a code change.
-- A repeatable grep gate (AC-02.5) that passes only when no Lighthouse-about-itself open-source or
-  MIT claim remains, and that explicitly allows the LetPeopleWorkShop / LetPeopleGrow references and
-  third-party dependency licence listings.
+- `docs/licensing/licensing.md` gains the source-licence section — **drafted and ready** in
+  `../drafts/licensing-faq.md`, which contains both the replacement opening line and the section to
+  insert (AC-02.4). It leads by disambiguating the two things that page calls a "license": the
+  source-code licence, and the premium `license.json` key. Counsel wanted those kept apart, and that
+  page is where they would otherwise get confused. It carries the worked allowed / not-allowed
+  tables. This is one of the two rollout artefacts the BDR settled on; the other is the dated note,
+  which is not a code change.
+- **`docs/contributions/contributions.md`** — moved here when slice 04 was dropped. Its opening line
+  is *"We develop Ligththouse as an Open Source project, so that people can actively contribute"*,
+  which the claim gate flags and which the new licence contradicts. The prose fix lands here: say
+  what is genuinely welcome — bug reports, feedback, docs corrections, word of mouth — without the
+  open-source framing, and keep the existing contributors' thanks. It also carries a typo that has
+  been live for a while. **What does not land is slice 04's enforcement mechanism** (a PR template
+  and a `pull_request_target` auto-close workflow); that was judged not worth the effort.
+- ~~A repeatable grep gate (AC-02.5)~~ — **built and committed ahead of this slice** as
+  `Scripts/check_license_claims.sh` (`69a891579`). It is red today with 17 hits and must be green
+  when this slice and slice 03 are done. Run it; do not rewrite it. If it flags a true statement
+  about software that is not Lighthouse, add that hit to its `ALLOW` list with a reason rather than
+  widening the pattern.
 
 ## OUT of scope
 
-- `docs/contributions/contributions.md` — slice 04 owns that file end to end, and touching two of its
-  lines here would collide.
+- The **contribution enforcement mechanism** — the PR template and the `pull_request_target`
+  auto-close workflow that slice 04 would have carried. Dropped on 2026-09-11 as not worth the
+  effort; the board item is Removed. Only the prose fix moved here. Consequence to be honest about:
+  a code pull request can still be opened and nothing stops it, so someone has to notice and reply
+  by hand. That was the trade accepted.
 - `docs/releasenotes/releasenotes.md:935-937` — that section is about OSS *attribution* of our
   dependencies and stays accurate as written.
 - `docs/Installation/configuration.md:151` ("Postgres is an open-source…") and
