@@ -754,31 +754,32 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             var root = boardsJson.RootElement;
 
-            var subQuery = string.Empty;
-
             var filter = await ExtractFilterQuery(client, root);
+            var subQuery = RemoveOrderByClause(ExtractSubQuery(root));
 
-            subQuery = ExtractSubQuery(root, subQuery);
+            if (string.IsNullOrWhiteSpace(filter))
+            {
+                return string.IsNullOrWhiteSpace(subQuery) ? string.Empty : $"({subQuery})";
+            }
 
-            return $"{filter} {subQuery}";
+            return string.IsNullOrWhiteSpace(subQuery) ? $"({filter})" : $"({filter}) AND ({subQuery})";
         }
 
-        private static string ExtractSubQuery(JsonElement root, string subQuery)
+        /// <summary>
+        /// A board's sub-filter is returned as it was written, with no conjunction attached. Whether it belongs
+        /// next to the board's saved filter at all is the caller's decision, and only the caller can see whether
+        /// that filter turned out to be readable - joining the two here produced a query starting with a bare
+        /// <c>AND</c> whenever it was not, which Jira rejects outright.
+        /// </summary>
+        private static string ExtractSubQuery(JsonElement root)
         {
             if (!root.TryGetProperty("subQuery", out var subQueryElement) ||
                 !subQueryElement.TryGetProperty("query", out var query))
             {
-                return subQuery;
+                return string.Empty;
             }
 
-            subQuery = query.GetString() ?? string.Empty;
-
-            if (!string.IsNullOrEmpty(subQuery))
-            {
-                subQuery = $"AND ({subQuery})";
-            }
-
-            return subQuery;
+            return query.GetString() ?? string.Empty;
         }
 
         private static async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
@@ -834,10 +835,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// and sit outside quotes to count: an operator searching for <c>summary ~ "reorder by priority"</c> or for
         /// <c>summary ~ "ORDER BY"</c> has written no ordering at all, and cutting the query there leaves a filter
         /// Jira still accepts - one that quietly returns the wrong work items and feeds a wrong forecast.
+        ///
+        /// They also have to sit outside brackets. The caller cuts everything from here onwards, so an ordering
+        /// found inside a bracketed group would take the group's closing bracket away with it and hand Jira a
+        /// query it cannot parse. A query carrying an ordering there was already malformed; it is left whole
+        /// rather than cut into.
         /// </summary>
         private static int IndexOfOrderByClause(string jql)
         {
             var index = 0;
+            var bracketDepth = 0;
 
             while (index < jql.Length)
             {
@@ -847,7 +854,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     continue;
                 }
 
-                if (StartsOrderByClauseAt(jql, index))
+                if (jql[index] == '(')
+                {
+                    bracketDepth++;
+                }
+                else if (jql[index] == ')')
+                {
+                    bracketDepth--;
+                }
+                else if (bracketDepth == 0 && StartsOrderByClauseAt(jql, index))
                 {
                     return index;
                 }
