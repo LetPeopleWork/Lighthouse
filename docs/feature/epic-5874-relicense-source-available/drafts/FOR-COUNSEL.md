@@ -50,8 +50,6 @@ a stated reason rather than reconstruct one.
 
 ---
 
----
-
 ## A. Structure — the questions that decide whether this works at all
 
 **A1. Does the one-file structure hold?**
