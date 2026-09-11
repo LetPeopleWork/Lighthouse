@@ -1102,7 +1102,8 @@ Extends the existing workflows. No new CI platform, no new runner class.
 | Backend build + test | `ci_backend.yml` (existing, called by `ci.yml`) | push to `main`, PR, `features/**` | The three hard gates: zero-leak `DelegatingHandler` assertion, payload-purity invariant, revocation-latency assertion, plus `UsageDataEmitSeamArchUnitTest`. **All run with no egress** |
 | Frontend build + test | `ci_frontend.yml` (existing) | same | Dialog forbidden-phrase test (A13), indicator rendering, `usageDataEligibility.ts` |
 | Docs field-list check | `ci_backend.yml`, new step | same | Compares the emitted field set against `docs/settings/usagedata.md`. Built with the first event, not the fifth |
-| E2E | `ci_e2e.yml` (existing) | same | One walking-skeleton spec per the project's E2E minimalism rule. Collector host pointed at a stub |
+| E2E build | `ci_e2e.yml` (existing) | same | Type-check and compile only — this workflow does **not** run Playwright |
+| E2E execution | `ci_verifysqlite.yml`, `ci_verifypostgres.yml`, `ci_verifyauth.yml` (existing) | same | Where the walking-skeleton spec actually runs. **Six app-start blocks** need the collector override (see below) |
 | Sonar gate | `ci_sonar_gates.yml` (existing) | PR | Unchanged |
 | **Privacy canary** | **`ci_usagedata_canary.yml` (new)** | `schedule: daily` + `workflow_dispatch` | The only job that talks to PostHog. Never called from `ci.yml` |
 
@@ -1111,11 +1112,41 @@ connector tests talk to real Jira / Linear / ADO / ServiceNow instances, do not 
 is missing, and the shared Linear key rate-limits the next CI run — one of six resulting failures ever
 names the 429. A vendor-talking assertion wired into the per-commit path buys the same class of
 problem. It gets its own workflow, guarded by `if: github.repository == 'LetPeopleWork/Lighthouse'`
-(the precedent is `ci_generate-update-feed.yml`), and its tests carry
-`[Category("UsageDataCanary")]` so a bare `dotnet test` never reaches the network.
+(the precedent is `ci_generate-update-feed.yml`).
 
-**That category must be added to the documented local filter in `CLAUDE.md`** in the same change, or
-the first developer to run the suite locally starts emitting canary events (P6).
+**The canary tests carry two categories, not one:** `[Category("Integration")]` **and**
+`[Category("UsageDataCanary")]`. This is the convention every network-talking test in the repository
+already follows — `JiraScopedTokenIntegrationTest.cs:13-14` is the model. `Integration` is what both
+`ci_backend.yml`'s computed filter (`Category!=Integration`, line 118) and the documented local filter
+in `CLAUDE.md` exclude; `UsageDataCanary` is what the canary workflow selects on.
+
+A single `UsageDataCanary` category would have excluded the canary from **nothing**: it does not match
+`Integration`, so `ci_backend.yml` would have run it on every push and every PR, and `ci.yml` passes
+`secrets: inherit` to that job — so once the PostHog secrets exist, the per-commit backend job would
+have emitted to the vendor with live credentials. Two categories, and no `CLAUDE.md` edit is needed at
+all.
+
+### The E2E override, and why a missing one is silent
+
+ADR-176 defaults `CollectorBaseUrl` to `https://eu.i.posthog.com`. The slice-01 walking skeleton is
+consent → heartbeat → collector → revoke. Playwright does not run in `ci_e2e.yml`; it runs against a
+started backend in `ci_verifysqlite.yml:141`, `ci_verifypostgres.yml:154` and `ci_verifyauth.yml`
+(three separate app starts: `test:auth`, `test:rbac` and the default run), with a fourth app start in
+`ci_verifywindows.yml` for the smoke check. **Six app-start environment blocks**, each of which needs
+`UsageData__CollectorBaseUrl` pointed at a blackhole host.
+
+Not empty — empty means "fall back to the PostHog default", which is the failure. The precedent for
+the shape is `Lighthouse__OAuth__UseStubProvider: "true"` in the same blocks.
+
+An override missing from any one of the six sends real heartbeats from CI into the production census,
+and **produces no error and no red build**, because the emit is fire-and-forget and degrades silently
+by specification. Six copies of a YAML line that must all be remembered is a review habit, which is
+what this delta refuses elsewhere. So the guard is a backend invariant as well: **an emit whose
+resolved collector host is the production default is refused when the process is running under a test
+environment**, asserted once rather than configured six times.
+
+Open, and owned by DISTILL: the heartbeat is daily, so an E2E run may never trigger an emit at all.
+The spec needs a forced-emit seam or it asserts nothing.
 
 ### The canary's two jobs
 
@@ -1126,11 +1157,59 @@ project customers emit into. Two jobs recover it, and neither writes to producti
 | Job | Project | Action | Proves |
 |---|---|---|---|
 | `assertion-can-fail` | CI project | Emit one event with `$geoip_disable`, one **without**, read both back | The assertion is capable of failing. Without the second event "property absent" is green forever, including on the day the guarantee breaks |
-| `production-sweep` | Production project | **Read-only** query over the last 24h: zero events carry `$ip` or `$geoip_*` | The real project, on real traffic, with no synthetic rows written into the census |
+| `production-sweep` | Production project | **Read-only** query over a rolling window: zero events carry `$ip` or `$geoip_*` | The real project, on real traffic, with no synthetic rows written into the census |
+| `settings-parity` | Both projects | **Read-only** project-settings query: IP capture and the GeoIP transformation are in the same state in both | That `assertion-can-fail`'s result transfers to production at all |
 
-`production-sweep` is vacuous on any day with no events — it must assert a non-zero event count first
-and report "no traffic" distinctly from "clean traffic", or it is the green-wired light C4 already
-caught once.
+Three mechanical requirements, each of which closes a way for this to pass while broken:
+
+1. **`production-sweep` must assert a non-zero event count before it asserts cleanliness**, and report
+   "no traffic" as an outcome distinct from "clean traffic". Otherwise it is green on every quiet day —
+   the green-wired light C4 already caught once, arriving by a different route.
+2. **The sweep window must be longer than the schedule interval.** A 24h window on a daily cron leaves
+   an uncovered gap the moment one run is delayed or skipped, and GitHub's scheduler is best-effort.
+   Use 30h and accept the overlap; a gap is invisible, a double-count is not.
+3. **`assertion-can-fail` must poll for the read-back, bounded.** Capture-to-query at PostHog is
+   asynchronous on the order of minutes, so an immediate read flakes — and ADR-176 says in its own
+   words that *"a flaky scheduled job gets muted, which silently deletes this layer"*.
+
+**Why `settings-parity` exists, and what the first draft of this section got wrong.** It claimed
+`production-sweep` checks that the two projects are configured identically. It does not and cannot:
+it asserts something about *events*, and a clean result cannot distinguish "production is configured
+correctly" from "production's query API stopped projecting `$ip`". The positive control that
+distinguishes those lives in `assertion-can-fail`, which by design runs against the *other* project.
+Left there, the combined control assumed exactly the parity it claimed to be checking — circular, in
+the one place this Epic can least afford it. A direct settings read is not circular: it compares the
+two configurations to each other rather than inferring one from the other's traffic. It also recovers
+part of "AI features are off", which ADR-176 demoted to layer 3 on the guess that the *query* API
+cannot answer it; the project-settings endpoint is a different endpoint.
+
+**Considered and not adopted: a reserved identifier in production.** ADR-176's original design used a
+reserved `distinct_id` so the detecting event is synthetic, and
+`OUT-usagedata-instances-reporting` counts distinct identifiers — so a reserved one is trivially
+excluded from the census. That would give production a real positive control. It is not adopted
+because it writes synthetic rows into the production project, which is the thing the product owner
+chose against on 2026-09-11. `settings-parity` buys most of the same assurance with no write. If the
+settings endpoint turns out not to expose these values, this is the fallback and the choice should be
+revisited rather than the claim weakened.
+
+### What happens when the canary goes red
+
+A detective control has to detect *to somebody*. A scheduled workflow that fails into the Actions tab
+is how ADR-176's own warning — *"a flaky scheduled job gets muted, which silently deletes this
+layer"* — actually comes true.
+
+| Outcome | Meaning | Response |
+|---|---|---|
+| `production-sweep` **clean**, non-zero events | Working as promised | Nothing |
+| `production-sweep` **no traffic** | Nobody emitted in the window. Says nothing about the guarantee | Not a failure. Reported distinctly, and escalated only if it persists past the point where `OUT-usagedata-instances-reporting` expects traffic |
+| `production-sweep` **dirty** | Events at the vendor carry an IP or geo properties | **Stop-the-line.** Turn the `UsageData` OptionalFeature off instance-wide on the vendor's own instance, check the two project settings against their recorded expected state in `docs/settings/usagedata.md` (layer 3 — this is what makes layer 2 actionable rather than merely red), and establish the window: which events, from when. Users were told this would not happen, so the disclosure question is live and belongs to the maintainer, not to CI |
+| `settings-parity` **mismatch** | The two projects drifted. `assertion-can-fail`'s result no longer transfers | Re-align, then re-run both jobs before trusting either |
+| `assertion-can-fail` **cannot produce an enriched control event** | The assertion has stopped being able to fail | Treat as red. This is the vacuous-pass alarm and it is the one nobody will think to look for |
+
+**Notification is a prerequisite, not a detail.** The workflow must route failure somewhere a human
+reads — the maintainer, through whatever channel already carries a failed scheduled build. Who that is
+and through what channel is the one thing in this band with no default: **it needs naming before the
+canary workflow is written**, or the control is decorative.
 
 ---
 
@@ -1168,6 +1247,17 @@ This is flagged rather than fixed, because the fix is a product decision:
 Recommendation: **(1) for the KPI, (3) as a settings-page nicety if it is wanted at all.** (2) spends
 a legal review on a vanity ratio.
 
+**One real number is available on day one, and it is free.** The consent table records *every*
+decision locally — H1 added `Revoked` as a third state, so grants, declines and revocations all have
+rows. On the vendor's own dogfood instance, where slice 01's acceptance happens anyway (AC-04.6),
+grants ÷ decisions is a direct SQL read: no payload change, no new field, no legal exposure. It is
+n=1 and unrepresentative, and it is still strictly better than "unmeasurable" — enough to sanity-check
+a 20% target before slice 02's 60-day window closes.
+
+**This needs an owner and a date.** DoR-9 is attached to slice 01's ship. This decision should be
+attached to slice 02's start the same way, or slice 02 ships with an exit condition nobody can
+evaluate and DoD item 9 points at a KPI known to be uncomputable.
+
 ---
 
 ## Wave: DEVOPS / [REF] Deployment Strategy
@@ -1178,12 +1268,30 @@ traffic shifting to design.
 
 - **Kubernetes**: rolling, unchanged. The chart already carries `stakater/reloader` wiring and a
   bounded drain window.
-- **Rollback contract**: the consent table and the `AppSetting.Key` unique index ship in migrations.
-  Per this project's expand-only rule, the migration is additive, so rolling the image back leaves a
-  table the old code ignores. **The unique index is the exception worth naming**: H4 already caught
-  that it can fail on an upgraded customer database, so the migration de-duplicates before indexing
-  and carries its own test on both providers. A failed migration must not brick an upgrade for a
-  feature the customer never enabled.
+- **Rollback contract, consent table**: additive. Rolling the image back leaves a table the old code
+  ignores. This is the expand-only rule working as intended.
+- **Rollback contract, `AppSetting.Key` unique index: image rollback is NOT the recovery path.** Two
+  reasons, and neither is theoretical:
+  1. **The migration deletes rows.** ADR-175 point 4 has it keep the lowest `Id` per key and delete
+     the rest, because an index cannot be created over duplicates. A `Down` migration can drop the
+     index; it cannot resurrect the deleted rows. And `AppSettingSeeder` removes obsolete settings by
+     `Id` rather than by key and inserts with hard-coded `Id`s — so on a long-upgraded install, the
+     row that survives dedup and the row some historical path expected are not obviously the same row.
+  2. **A unique index constrains the rolled-back code too.** The old image never ran against it. Any
+     pre-rollback write path that could produce two rows with the same `Key` now fails a constraint on
+     an image that used to work.
+
+  **The recovery path is a database restore, not an image rollback**, and that is a different
+  instruction with a different RPO. It has to be written down before this ships, because the operator
+  reading it will be in the middle of an incident.
+- **Before the migration is written**: audit every `AppSettings` writer and seeder for a path that can
+  produce a duplicate key, and record the result. ADR-175's own Consequences call this a shared-contract
+  edit that should be verified against the seeders first; this band is where that verification belongs.
+- **If the migration fails mid-flight** — a `CREATE UNIQUE INDEX` under lock contention on Postgres, or
+  a dedup that trips an unforeseen constraint — the upgrade stops with the schema half-moved. The
+  operator needs to know that state is recoverable by restore and that re-running the upgrade is safe
+  once the duplicate is resolved by hand. "A failed migration must not brick an upgrade" is the goal;
+  saying it is not the same as having a procedure for the case where it does.
 - **Chart**: 0.1.16 adds one value (P4). Additive, no breaking change, no operator action required to
   keep an existing install working.
 
@@ -1243,25 +1351,53 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
 | `Telemetry:` configuration section | Yes | Namespace-disjoint by decision (D1). Nothing new may be named `Telemetry*` |
 | `DeltaSync` optional feature | Yes | It is not premium. Slice 03 must verify it stayed ungated when the premium refusal became real |
 | Existing `OptionalFeaturesController` callers | Yes | AC-07.1 changes the response contract. Extend the test factory before touching it |
-| `GitHubService` release check | Yes | Unchanged and undocumented until now. The docs page names it as a separate outbound call (D11) |
+| `GitHubService` release check | Yes | Unchanged; the docs page names it as a separate outbound call (D11) |
+| Focused-commit convention | Yes | `ci_changes.yml:157` force-sets **every** connector output to true when any `.github/workflows/ci*.yml` file changes — and `ci_usagedata_canary.yml` matches that pattern. So adding the canary workflow triggers the full live-connector run too, a second time, unless it lands in the same commit as the `Program.cs` registration. One commit or two full runs; pick deliberately |
 | Helm installs on chart ≤ 0.1.15 | Yes | 0.1.16's new value is additive with a default; an install that never sets it behaves as today |
-| Local `dotnet test` with no secrets | Yes | The canary category must be excluded by the documented filter, or the suite starts emitting |
+| Local `dotnet test` with no secrets | Yes | Carried by the `Integration` category the canary tests also wear (P6) — already in the documented filter, so nothing new to remember |
+| The migration on an upgraded customer database | Yes | The `AppSetting.Key` dedup deletes rows and the index constrains rolled-back code. Recovery is a database restore, not an image rollback |
 
 ---
 
 ## Wave: DEVOPS / [REF] Pre-requisites
 
 1. **A PostHog Cloud EU organisation with two projects** — production (the census) and CI (the
-   canary). Both configured identically for the two privacy settings; the parity is what
-   `production-sweep` exists to check rather than assume.
-2. **Four new CI secrets**: `POSTHOG_CI_PROJECT_API_KEY` (write, CI project),
-   `POSTHOG_PROD_PROJECT_ID`, `POSTHOG_CI_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY` (read, query API,
-   scoped to those two projects only).
-3. **Egress from the GitHub runner to `eu.i.posthog.com`** for the canary workflow only.
-4. **Chart 0.1.16 released** before a Kubernetes tenant can be told the collector host is
-   configurable (P4).
-5. **DoR-9 closed** before slice 01 ships. Unchanged by DEVOPS, and DEVOPS cannot close it. The DPA
-   read now also has to cover a second project.
+   canary). Both must carry the same IP-capture and GeoIP settings; `settings-parity` is what checks
+   that, and it is the only job that can.
+2. **Credentials, which are not four peers.** They have very different blast radii and must be
+   handled differently:
+
+   | Credential | What it is | Worst case |
+   |---|---|---|
+   | `POSTHOG_CI_PROJECT_API_KEY` | A PostHog **project** write key for the CI project. Public by design — these ship in browser bundles | Junk events in a project nobody reads |
+   | `POSTHOG_PERSONAL_API_KEY` | A **user-scoped** read credential | **The whole census.** Every instance identifier, version, licence tier and deployment mode, for every consenting instance |
+   | `POSTHOG_PROD_PROJECT_ID` / `POSTHOG_CI_PROJECT_ID` | Identifiers | Not secrets. Storing them as secrets buys nothing and makes the rotation story four items long instead of one |
+
+3. **The personal key's blast radius is a DoR-9 question, not a CI detail.** It reads the dataset this
+   Epic spends ADR-175 making unguessable, and two properties of this repository make that sharper:
+   `ci.yml` passes `secrets: inherit` to thirteen called workflows, so a repo-level secret is in scope
+   for jobs with no business holding it; and the project is trunk-based with direct pushes to `main`,
+   so a workflow that reads a secret can land without a PR in the path. Required before the canary is
+   wired:
+   - **Store it as a GitHub Environment secret**, not a repository secret, and give the canary workflow
+     an explicit `secrets:` mapping — never `secrets: inherit`.
+   - **Name a holder and a rotation interval**, and the revocation step on suspected compromise. A
+     credential with no named owner is not managed.
+   - **Scope it as narrowly as PostHog allows.** If a saved insight can answer "how many events, and do
+     any carry `$ip`" under a narrower scope than event-level read, use that instead.
+   - **Route it into DoR-9** beside the DPA read. "Who else can read the census, and how" is the same
+     class of question as retention and erasure, which ADR-175 point 7 already sends there.
+4. **Network access from the runner to `eu.i.posthog.com`.** Worth stating plainly: GitHub-hosted
+   `ubuntu-latest` runners have unrestricted egress, so there is no per-workflow allowance to grant and
+   nothing enforces "the canary workflow only". What actually keeps every other job off the vendor is
+   the `Integration` category exclusion. If real egress control is wanted, it needs a self-hosted
+   runner with an egress policy — and that is a decision nobody has taken.
+5. **Chart 0.1.16 released** before a Kubernetes tenant can be told the collector host is
+   configurable (P4). This is a **separate release train**: `chart/**` is not in `ci.yml`'s
+   `push.paths`, and `ci_chart.yml` publishes behind a `Release` environment gate. It does not ship
+   with the feature commit.
+6. **DoR-9 closed** before slice 01 ships. Unchanged by DEVOPS, and DEVOPS cannot close it. The DPA
+   read now also has to cover a second project, and the personal-key blast radius above.
 
 ---
 
@@ -1272,11 +1408,15 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
 | P1 | The canary runs against a **separate PostHog CI project**, and is split into `assertion-can-fail` (CI project, writes) and `production-sweep` (production project, read-only) | Product owner's call on 2026-09-11. Keeps synthetic rows out of the census without giving up the claim that the *production* project honours the arrangement |
 | P2 | `production-sweep` must assert a non-zero event count before asserting cleanliness, and report "no traffic" distinctly from "clean traffic" | Otherwise it is green on every day nobody emits — the vacuous-pass failure C4 already caught once in this design |
 | P3 | The canary lives in a new `ci_usagedata_canary.yml`, daily schedule plus `workflow_dispatch`, repository-guarded, never called from `ci.yml` | The live-connector precedent in this repository: vendor-talking tests in the per-commit path rate-limit the next run and produce failures that read as regressions |
-| P4 | Chart **0.1.16** adds `app.usageData.collectorBaseUrl` → `UsageData__CollectorBaseUrl`, empty meaning the PostHog EU default | The chart has no generic `extraEnv` passthrough; per-setting values are the established pattern (`app.embed.enabled`, 0.1.11). Without it the air-gap claim is false on Kubernetes, which is the one shape where an air-gapped customer is most likely to be |
+| P4 | Chart **0.1.16** adds `app.usageData.collectorBaseUrl` → `UsageData__CollectorBaseUrl`, emitted **conditionally** with `{{- with }}` | The chart has no generic `extraEnv` passthrough. The precedent is `app.timeZone`, not `app.embed.enabled`: `Embed__Enabled` is emitted unconditionally because `false` is a real value, whereas an unconditionally emitted **empty** collector URL would override the appsettings default and break every default install — silently, because the emit is fire-and-forget. Without the value at all, the air-gap claim is false on Kubernetes, the one shape an air-gapped customer is most likely to be running |
 | P5 | The three hard gates run in the normal backend suite with **zero egress**; the canary is never a merge gate | A gate that needs a vendor to be up is not a gate. The canary is a detective control and is allowed to be late |
-| P6 | `[Category("UsageDataCanary")]` is added to the documented local exclusion filter in `CLAUDE.md` in the same change that introduces it | A network-talking category that is not in the filter reaches every developer's next `dotnet test` |
+| P6 | Canary tests carry **both** `[Category("Integration")]` and `[Category("UsageDataCanary")]` | `ci_backend.yml:118` filters on `Category!=Integration`, so a `UsageDataCanary`-only test would run on every push and PR — with `secrets: inherit` in scope. The two-category convention is what every network-talking test here already uses (`JiraScopedTokenIntegrationTest.cs:13-14`), and it needs **no** `CLAUDE.md` edit, because `Integration` is already excluded both in CI and locally |
 | P7 | The Prometheus counter is **recommended, not required** | Useful to an admin, but nothing in the delta asks for it and slice 01 is already oversized (H6) |
 | P8 | `docs/product/kpi-contracts.yaml` is **not** updated in this wave | The seven deferred KPIs move to a live source at slice 04 per AC-08.6. Writing instrumentation now would name a measurement source that does not yet exist — the kind of claim this Epic exists to stop making |
+| P9 | Project parity is checked by a **third job reading both projects' settings**, not inferred from production's traffic | `production-sweep` asserts a property of events. A clean result cannot tell "production is configured correctly" from "production's query API stopped projecting `$ip`". Inferring parity from it assumed the thing it claimed to check |
+| P10 | The canary's failure states are enumerated with a response each, and the workflow must route failure to a named human before it is written | ADR-176 warns that a flaky scheduled job gets muted, which deletes the layer. A red build nobody is routed to is the same outcome arriving quietly. `production-sweep` **dirty** is stop-the-line and carries a disclosure question, because users were told this would not happen |
+| P11 | The `POSTHOG_PERSONAL_API_KEY` is an Environment-scoped secret with an explicit `secrets:` mapping, a named holder and a rotation interval — never `secrets: inherit` — and its blast radius goes to DoR-9 | It reads the entire census: every instance identifier ADR-175 spends four alternatives making unguessable. `ci.yml` inherits secrets into thirteen workflows and this project pushes straight to `main`, so "who else can read this" is not hypothetical |
+| P12 | The six E2E app-start blocks override the collector host, **and** the backend refuses an emit to the production default under a test environment | Six YAML lines that must all be remembered is a review habit. A missing one emits real heartbeats into the census from CI, with no error and no red build |
 
 ---
 
@@ -1310,9 +1450,13 @@ decision is made**, so the contradiction stays visible rather than being quietly
 
 **To DISTILL (`nw-acceptance-designer`)**
 
-- `environments.yaml` names nine environments; the ones that change behaviour rather than packaging
-  are `auth-off` vs `auth-on`, `community` vs `premium`, and `kubernetes-multi`. Parametrise over
-  those three axes, not over all nine.
+- `environments.yaml` names twelve environments; five axes change behaviour rather than packaging:
+  `auth-off` vs `auth-on`, `community` vs `premium`, `kubernetes-multi`, **SQLite vs Postgres**, and
+  **fresh install vs `upgrade-from-pre-5733`**. Parametrise over those five, not over all twelve.
+  Provider is an axis and not packaging for one reason: EF InMemory does not enforce unique indexes,
+  so the get-or-create concurrency test passes vacuously on it.
+- `air-gapped-self-collector` is the environment the chart change exists for, and it had no scenario
+  anywhere until now. `ci-clean` is not a substitute — it tests "no collector", not "a different one".
 - The `auth-on`, two-accounts-one-browser case has no scenario anywhere yet: consent is per browser,
   so the second account inherits the first's decision. Correct per D2, and it needs to be written
   down as intended before someone files it.
@@ -1324,9 +1468,72 @@ decision is made**, so the contradiction stays visible rather than being quietly
   canary workflow is written, or the first run asserts against nothing.
 - Chart 0.1.16 also needs the tenant values wiring in the private platform repository — a separate
   repository, and therefore a separate change that is easy to forget until a tenant asks for it.
-- The `Program.cs` registration edit expands CI to the full live-connector run. Land it once.
+- The `Program.cs` registration edit expands CI to the full live-connector run, and so does adding
+  `ci_usagedata_canary.yml`. Land them together or spend two full runs.
+- **Generate the migration with the existing `CreateMigration` PowerShell script**, not
+  `dotnet ef migrations add`. Both `Lighthouse.Migrations.Sqlite` and `Lighthouse.Migrations.Postgres`
+  need it, and the migration DLLs are HintPath references — build them before running anything that
+  loads them.
+- Name the human the canary's failure notification reaches, and the channel, before writing the
+  workflow (P10).
+- Name the holder and rotation interval for `POSTHOG_PERSONAL_API_KEY` (P11).
 
 **Unchanged upstream**
 
-- DoR-9 is still open and still blocks slice 01 shipping. It now also covers a second PostHog project
-  and, if the product owner picks option (2) above, a sixth payload field.
+- DoR-9 is still open and still blocks slice 01 shipping. It now also covers a second PostHog project,
+  the personal-key blast radius (P11), and, if the product owner picks option (2) above, a sixth
+  payload field.
+
+---
+
+## Wave: DEVOPS / [REF] Peer Review and Revisions
+
+Reviewed 2026-09-11. **Verdict: NEEDS_REVISION** — 8 blocking. Every blocking finding was verified
+against the repository before being accepted; all 8 were correct, and three of them were claims in the
+first draft that were simply false. Fixed in place. What follows is what changed.
+
+### Corrected — claims that were untrue as written
+
+| # | Finding | Correction |
+|---|---|---|
+| 1 | *"Tests carry `[Category("UsageDataCanary")]` so a bare `dotnet test` never reaches the network."* `ci_backend.yml:118` computes its filter as `Category!=Integration` — a canary-only category matches nothing and would have run on **every push and PR**, with `ci.yml` passing `secrets: inherit` to that job. A category alone stops nothing locally either | Two categories, `Integration` + `UsageDataCanary`, which is what every network-talking test here already does. P6 rewritten; the `CLAUDE.md` edit it proposed is no longer needed at all |
+| 2 | The CI/CD table put E2E in `ci_e2e.yml`. That workflow **builds** the suite; Playwright runs in `ci_verifysqlite.yml`, `ci_verifypostgres.yml` and `ci_verifyauth.yml`, with a fourth app start in `ci_verifywindows.yml`. "Collector host pointed at a stub" was one line standing in for **six app-start blocks** — and a missing one emits real heartbeats into the production census with no error and no red build | Table corrected, the six blocks named, and the override backed by a backend invariant (P12) rather than six YAML lines somebody must remember |
+| 3 | *"The parity is what `production-sweep` exists to check rather than assume."* It cannot. The sweep asserts a property of events and cannot distinguish "production is configured correctly" from "production's query API stopped projecting `$ip`" — the control that would distinguish them runs against the other project by design. The claim assumed the parity it said it was checking | Third job, `settings-parity`, reading both projects' settings directly (P9). Corrected in the ADR-176 amendment too |
+
+### Corrected — defects
+
+| # | Finding | Correction |
+|---|---|---|
+| 4 | **The rollback contract called a row-deleting migration "additive".** ADR-175 point 4 has the dedup keep the lowest `Id` per key and delete the rest; a `Down` cannot restore them. And a unique index constrains the rolled-back image, which never ran against it | Rewritten. The recovery path is a **database restore**, not an image rollback, plus a required seeder/writer audit and a mid-flight-failure procedure |
+| 5 | **The canary had no alerting, owner or runbook.** ADR-176 warns that a flaky scheduled job gets muted and the layer disappears; a red build routed to nobody is that outcome arriving quietly | Failure states enumerated with a response each, `dirty` as stop-the-line with the disclosure question named, and notification made a prerequisite (P10) |
+| 6 | **The `POSTHOG_PERSONAL_API_KEY` blast radius was never assessed** — it reads the entire census, `ci.yml` inherits secrets into thirteen workflows, and this project pushes straight to `main` | Credentials split by blast radius, Environment-scoped secret with explicit mapping, holder and rotation required, routed into DoR-9 (P11) |
+| 7 | **`environments.yaml` omitted air-gapped, upgrade and rollback**, and collapsed the provider axis that H4 and ADR-175 both require — contradicting the band's own instruction to DISTILL | Three environments added, `database_providers` made an explicit axis, DISTILL handoff corrected from three axes to five |
+| 8 | **P4 cited the wrong chart precedent.** `Embed__Enabled` is emitted unconditionally because `false` is meaningful; an unconditionally emitted **empty** collector URL overrides the appsettings default and breaks every default install, silently | `{{- with }}`, following `app.timeZone`. Corrected in P4 and in the ADR amendment |
+
+### Accepted and applied without argument
+
+- The sweep window is 30h, not 24h — a window equal to the interval leaves a gap the moment one run
+  is delayed, and GitHub's scheduler is best-effort.
+- `assertion-can-fail` polls for its read-back, bounded. ADR-176 required this and the first draft
+  dropped it on the way into the implementable artifact.
+- Adding `ci_usagedata_canary.yml` *also* trips `ci_changes.yml:157`'s workflow-file rule and forces
+  the full live-connector run. Land it with the `Program.cs` commit or spend two.
+- The `CreateMigration` script and the two migration projects belong in the DELIVER handoff.
+- `OUT-usagedata-consent-uptake` has one free measurement the analysis missed: grants ÷ decisions is a
+  local SQL read on the dogfood instance, where slice 01's acceptance already happens. n=1, and better
+  than "unmeasurable". The decision also now has a gate — slice 02's start.
+- "Undocumented until now" about the GitHub release check was wrong: D11 documented it in DISCUSS, two
+  waves ago.
+- Pre-requisite 4 was written as an infrastructure control. GitHub-hosted runners have unrestricted
+  egress; what actually keeps other jobs off the vendor is the category filter. Reworded to say so.
+- The four "secrets" are not peers — two of them are identifiers and not secrets at all.
+
+### Noted, not changed
+
+- **The three hard gates are detective, not preventive, on a direct-push trunk.** CI runs after the
+  commit is on `main`, so a zero-leak regression is caught once it has landed. True, and a property of
+  the branching model rather than of this feature. Worth branch protection on `main` for these three
+  specifically; that is a repository decision, not this Epic's to take.
+- **The Prometheus counter stays recommended-not-required**, with the reviewer's observation recorded:
+  it is the only proposed control that gives the *customer* independent evidence rather than the vendor
+  checking itself. Revisit at slice 03 rather than dropping.

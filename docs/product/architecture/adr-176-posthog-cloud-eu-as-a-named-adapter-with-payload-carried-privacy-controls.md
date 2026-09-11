@@ -258,22 +258,48 @@ So the canary splits:
 | Job | Project | Action | What it establishes |
 |---|---|---|---|
 | `assertion-can-fail` | CI project | Emit one event carrying `$geoip_disable`, one deliberately omitting it, read both back | That the assertion is capable of failing. This is the positive control, and it must not run against production because its whole purpose is to produce an enriched record |
-| `production-sweep` | Production project | Read-only query over the last 24 hours: no event carries `$ip` or `$geoip_*` | That the project customers emit into is behaving, measured on real traffic, with nothing written into the census |
+| `production-sweep` | Production project | Read-only query over a rolling 30-hour window: no event carries `$ip` or `$geoip_*` | That the project customers emit into is behaving, measured on real traffic, with nothing written into the census |
+| `settings-parity` | Both projects | Read-only project-settings query: IP capture and the GeoIP transformation are in the same state in both | That `assertion-can-fail`'s result transfers to production at all |
 
 `production-sweep` must assert a non-zero event count before it asserts cleanliness, and must report
 "no traffic" as a distinct outcome from "clean traffic". A sweep that is green on a day with no events
 is the same green-wired light the positive control exists to prevent, arriving by a different route.
+Its window is deliberately longer than the daily interval: GitHub's scheduler is best-effort, and one
+delayed run would otherwise leave a gap nothing reports. `assertion-can-fail` polls for its read-back,
+bounded, because capture-to-query is asynchronous on the order of minutes and a flaky scheduled job
+gets muted — which is how this layer disappears.
 
-The two projects must be configured identically for IP capture and GeoIP. That parity is not
-assumed — `production-sweep` is what checks it.
+**`settings-parity` exists because `production-sweep` cannot check parity, and an earlier draft of
+this amendment claimed it could.** The sweep asserts a property of *events*. A clean result cannot
+distinguish "production is configured correctly" from "production's query API stopped projecting
+`$ip`" — and the positive control that would distinguish them runs against the other project by
+design. Inferring parity from the sweep assumed exactly what it claimed to be checking. Reading both
+projects' settings and comparing them is not circular. It also partly recovers "AI features are off",
+which the ADR above demoted to layer 3 on the reasoning that the *query* API cannot answer it; the
+project-settings endpoint is a different endpoint.
+
+The alternative — a reserved, census-excluded `distinct_id` giving production its own positive
+control — is the stronger control and is **not** adopted, because it writes synthetic rows into the
+production project and that is the thing the product owner chose against. If the settings endpoint
+turns out not to expose these values, this is the fallback, and the choice gets revisited rather than
+the claim weakened.
 
 ### The air-gap claim needed a chart change
 
 This ADR states the collector base URL is configurable and treats that as satisfying the
 self-hostable-endpoint requirement inherited from Epic #5015. On Kubernetes it did not: the Helm chart
 carries no generic environment passthrough, so a tenant had no way to reach the setting at all. Chart
-**0.1.16** adds `app.usageData.collectorBaseUrl`, rendered to `UsageData__CollectorBaseUrl`, following
-the per-setting pattern `app.embed.enabled` established in 0.1.11. Empty keeps the PostHog EU default.
+**0.1.16** adds `app.usageData.collectorBaseUrl`, rendered to `UsageData__CollectorBaseUrl`.
+
+It is emitted **conditionally**, with `{{- with }}`, following `app.timeZone` — not `app.embed.enabled`.
+The distinction matters: `Embed__Enabled` is emitted unconditionally because `false` is a meaningful
+value, whereas an unconditionally emitted empty collector URL would override the appsettings default
+with an empty string and break the emit path on every default install — silently, because the emit is
+fire-and-forget. Absent means "leave the default alone".
+
+A collector URL that is set but unparseable should fail startup rather than fall back, for the same
+reason `app.timeZone` refuses an unresolvable id: a silent fallback on a privacy-relevant endpoint
+sends data somewhere the operator did not choose.
 
 Until that chart ships, the air-gap position is true for Docker and standalone and false for
 Kubernetes — which is the deployment shape an air-gapped customer is most likely to be running.
