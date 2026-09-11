@@ -238,3 +238,42 @@ exists not to repeat), [ADR-174](./adr-174-the-emit-gate-is-uncached-fail-closed
 (the permit this publisher requires),
 [ADR-177](./adr-177-deployment-mode-is-a-usage-data-owned-closed-value-set.md) (one of the five fields,
 whose value set is a payload-contract decision).
+
+---
+
+## Amendment — 2026-09-11, DEVOPS wave
+
+Two changes to layer 2 and one addition to the air-gap position. Neither contradicts the decision
+above; both make it implementable.
+
+### Layer 2 is two jobs against two projects, not one job against one
+
+The canary emits synthetic events, and the product owner chose to keep those out of the project that
+holds the census. That choice costs the control its strongest claim: a canary that writes to a CI
+project and reads it back demonstrates the configuration of a project no customer ever emits into. The
+claim this ADR actually makes is about the production project.
+
+So the canary splits:
+
+| Job | Project | Action | What it establishes |
+|---|---|---|---|
+| `assertion-can-fail` | CI project | Emit one event carrying `$geoip_disable`, one deliberately omitting it, read both back | That the assertion is capable of failing. This is the positive control, and it must not run against production because its whole purpose is to produce an enriched record |
+| `production-sweep` | Production project | Read-only query over the last 24 hours: no event carries `$ip` or `$geoip_*` | That the project customers emit into is behaving, measured on real traffic, with nothing written into the census |
+
+`production-sweep` must assert a non-zero event count before it asserts cleanliness, and must report
+"no traffic" as a distinct outcome from "clean traffic". A sweep that is green on a day with no events
+is the same green-wired light the positive control exists to prevent, arriving by a different route.
+
+The two projects must be configured identically for IP capture and GeoIP. That parity is not
+assumed — `production-sweep` is what checks it.
+
+### The air-gap claim needed a chart change
+
+This ADR states the collector base URL is configurable and treats that as satisfying the
+self-hostable-endpoint requirement inherited from Epic #5015. On Kubernetes it did not: the Helm chart
+carries no generic environment passthrough, so a tenant had no way to reach the setting at all. Chart
+**0.1.16** adds `app.usageData.collectorBaseUrl`, rendered to `UsageData__CollectorBaseUrl`, following
+the per-setting pattern `app.embed.enabled` established in 0.1.11. Empty keeps the PostHog EU default.
+
+Until that chart ships, the air-gap position is true for Docker and standalone and false for
+Kubernetes — which is the deployment shape an air-gapped customer is most likely to be running.

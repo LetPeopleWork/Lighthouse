@@ -1,0 +1,103 @@
+# environments.yaml — epic-5733-opt-in-usage-data
+#
+# Consumed by DISTILL to parametrise acceptance scenarios. Only three axes actually change
+# behaviour: whether a user identity exists (auth), whether the admin switch is operable
+# (licence tier), and whether more than one process emits (replica count). The rest is packaging.
+
+target_environments:
+  - name: standalone
+    description: "Signed desktop binary. Single process, SQLite, auth impossible."
+    platform: [windows, macos, linux]
+    preconditions: []
+    notes: "One replica by definition. Collector host overridable via appsettings.json."
+
+  - name: docker-single
+    description: "Single container. Reference shape for the slice-01 walking skeleton."
+    platform: [linux]
+    preconditions: ["container runtime"]
+    notes: "Collector host overridable via environment variable."
+
+  - name: kubernetes-single
+    description: "Helm chart, Postgres-only, replicaCount 1."
+    platform: [linux]
+    preconditions: ["chart >= 0.1.16 for a collector host override"]
+    notes: "Before 0.1.16 the chart cannot reach UsageData__CollectorBaseUrl at all."
+
+  - name: kubernetes-multi
+    description: "Helm chart, replicaCount > 1, Redis backplane configured."
+    platform: [linux]
+    preconditions: ["redis.connectionString set", "chart >= 0.1.16"]
+    notes: >-
+      Every replica runs the emitter. AC-04.1 (one heartbeat per instance per day) holds only
+      because of the UsageData:LastHeartbeatDay compare-and-swap. This is the environment that
+      falsifies it if the CAS is wrong, and the only one.
+
+  - name: auth-off
+    description: "DisabledAuthenticationHandler active — every caller is lighthouse|auth-disabled."
+    platform: [windows, macos, linux]
+    preconditions: ["no OIDC, no local auth"]
+    notes: >-
+      The consent endpoints are unauthenticated by necessity here, not by oversight. Per-account
+      consent would collapse to one shared decision.
+
+  - name: auth-on
+    description: "OIDC or local authentication configured."
+    platform: [windows, macos, linux]
+    preconditions: ["identity provider reachable"]
+    notes: >-
+      Consent stays per browser. Two accounts sharing one browser share one decision — intended
+      per D2, and currently written down nowhere. DISTILL owes it a scenario.
+
+  - name: community-licence
+    description: "No premium licence."
+    platform: [windows, macos, linux]
+    preconditions: []
+    notes: "Admin cannot switch the asking off. Declined browsers are re-asked in ~3 months."
+
+  - name: premium-licence
+    description: "Valid premium licence imported."
+    platform: [windows, macos, linux]
+    preconditions: ["valid_not_expired_license.json imported"]
+    notes: "Admin switch operable. A decline is final — the dialog says so, and must stay true."
+
+  - name: ci-clean
+    description: "GitHub Actions runner with no route to the collector host."
+    platform: [linux]
+    preconditions: ["no POSTHOG_* secrets in scope"]
+    notes: >-
+      Where the three hard gates run. All of them must pass with zero egress; a gate that needs
+      a vendor to be reachable is not a gate.
+
+coexistence_matrix:
+  - tool: live-connector test categories (Jira, Linear, ADO, ServiceNow, GitHub)
+    must_not_break: true
+    note: "Program.cs edit expands the CI filter to the full Integration run. Land it in one commit."
+  - tool: "Telemetry: configuration section (OpenTelemetry / Prometheus)"
+    must_not_break: true
+    note: "Namespace-disjoint by decision. Nothing new may be named Telemetry*."
+  - tool: DeltaSync optional feature
+    must_not_break: true
+    note: "Not premium. Must stay ungated when the premium refusal becomes real in slice 03."
+  - tool: existing OptionalFeaturesController callers
+    must_not_break: true
+    note: "AC-07.1 changes the response contract. Extend the test factory first."
+  - tool: Helm installs on chart 0.1.15 and earlier
+    must_not_break: true
+    note: "0.1.16's value is additive with a default."
+  - tool: local `dotnet test` without secrets
+    must_not_break: true
+    note: "UsageDataCanary category must be in the documented exclusion filter."
+
+platform_coverage:
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  Windows: [Windows 11, Windows Server 2022]
+  macOS: [13.x, 14.x]
+  Kubernetes: [chart 0.1.16+, Postgres-only]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "Migrations are expand-only: rolling the image back leaves tables the old code ignores."
+  - "The AppSetting.Key unique index de-duplicates before indexing — a customer database that
+     already carries duplicate keys must upgrade, not brick, for a feature they never enabled."
+  - "An install that never sets the collector host behaves exactly as it does today."
+  - "The canary workflow is the only CI job permitted egress to the collector host."

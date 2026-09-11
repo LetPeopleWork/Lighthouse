@@ -1068,3 +1068,265 @@ exact build. And it says nothing about whether the raw IP is observed upstream o
 pipeline, only that it is not used for enrichment and, with IP capture off, not stored. The canary in
 ADR-176 — including its positive control — remains worth running once the project exists, as
 behavioural confirmation rather than as the blocking gate it was written to be.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Usage Data ships into every shape Lighthouse runs in, and the shapes differ in ways this feature
+cares about — whether a user identity exists at all, whether an operator can set a configuration
+value, and whether more than one process emits.
+
+| Environment | Platform | Preconditions | What it changes for Usage Data |
+|---|---|---|---|
+| `standalone` | Windows, macOS, Linux desktop binaries | Single process, SQLite, auth impossible | One replica by definition. Consent is per browser and there is exactly one browser. Collector URL settable via `appsettings.json` |
+| `docker-single` | Docker / Docker Compose | One container, SQLite or Postgres | Collector URL settable via environment variable. The reference shape for the slice-01 walking skeleton |
+| `kubernetes-single` | Helm chart, Postgres-only | `replicaCount: 1` | Collector URL reachable **only after chart 0.1.16** (P4). Before that, an air-gapped tenant cannot override it |
+| `kubernetes-multi` | Helm chart, Postgres-only | `replicaCount > 1`, `redis.connectionString` set | Every replica runs the emitter. The `UsageData:LastHeartbeatDay` compare-and-swap (ADR-174 point 8) is what keeps AC-04.1 true |
+| `auth-off` | Any of the above | `DisabledAuthenticationHandler` active | Every caller is `lighthouse\|auth-disabled` (S11). The consent endpoints are unauthenticated **by necessity**, not by oversight |
+| `auth-on` | Any of the above | OIDC or local auth configured | Consent is still per browser, not per account. A second account on the same browser inherits the decision — DISTILL needs the scenario |
+| `community-licence` | Any of the above | No premium licence | The admin switch cannot be turned off (D5). Re-ask cadence applies |
+| `premium-licence` | Any of the above | Valid premium licence | The switch is operable. A decline is final |
+| `ci-clean` | GitHub Actions `ubuntu-latest` | No network to the collector host | Where the three hard gates run. Must pass with zero egress |
+
+Machine-readable form: `docs/feature/epic-5733-opt-in-usage-data/environments.yaml`.
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+Extends the existing workflows. No new CI platform, no new runner class.
+
+| Stage | Workflow | Trigger | Usage Data content |
+|---|---|---|---|
+| Backend build + test | `ci_backend.yml` (existing, called by `ci.yml`) | push to `main`, PR, `features/**` | The three hard gates: zero-leak `DelegatingHandler` assertion, payload-purity invariant, revocation-latency assertion, plus `UsageDataEmitSeamArchUnitTest`. **All run with no egress** |
+| Frontend build + test | `ci_frontend.yml` (existing) | same | Dialog forbidden-phrase test (A13), indicator rendering, `usageDataEligibility.ts` |
+| Docs field-list check | `ci_backend.yml`, new step | same | Compares the emitted field set against `docs/settings/usagedata.md`. Built with the first event, not the fifth |
+| E2E | `ci_e2e.yml` (existing) | same | One walking-skeleton spec per the project's E2E minimalism rule. Collector host pointed at a stub |
+| Sonar gate | `ci_sonar_gates.yml` (existing) | PR | Unchanged |
+| **Privacy canary** | **`ci_usagedata_canary.yml` (new)** | `schedule: daily` + `workflow_dispatch` | The only job that talks to PostHog. Never called from `ci.yml` |
+
+**The canary is a separate workflow on purpose.** This repository already has the failure mode: live
+connector tests talk to real Jira / Linear / ADO / ServiceNow instances, do not skip when a credential
+is missing, and the shared Linear key rate-limits the next CI run — one of six resulting failures ever
+names the 429. A vendor-talking assertion wired into the per-commit path buys the same class of
+problem. It gets its own workflow, guarded by `if: github.repository == 'LetPeopleWork/Lighthouse'`
+(the precedent is `ci_generate-update-feed.yml`), and its tests carry
+`[Category("UsageDataCanary")]` so a bare `dotnet test` never reaches the network.
+
+**That category must be added to the documented local filter in `CLAUDE.md`** in the same change, or
+the first developer to run the suite locally starts emitting canary events (P6).
+
+### The canary's two jobs
+
+The choice of a **separate PostHog CI project** keeps synthetic events out of the census, and costs
+the control its strongest claim: a canary passing against a CI project proves nothing about the
+project customers emit into. Two jobs recover it, and neither writes to production:
+
+| Job | Project | Action | Proves |
+|---|---|---|---|
+| `assertion-can-fail` | CI project | Emit one event with `$geoip_disable`, one **without**, read both back | The assertion is capable of failing. Without the second event "property absent" is green forever, including on the day the guarantee breaks |
+| `production-sweep` | Production project | **Read-only** query over the last 24h: zero events carry `$ip` or `$geoip_*` | The real project, on real traffic, with no synthetic rows written into the census |
+
+`production-sweep` is vacuous on any day with no events — it must assert a non-zero event count first
+and report "no traffic" distinctly from "clean traffic", or it is the green-wired light C4 already
+caught once.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts
+
+| KPI | Instrument | Where | Gate? |
+|---|---|---|---|
+| `OUT-usagedata-zero-leak-before-consent` | `DelegatingHandler` asserting zero requests to the collector host across a full emit cycle with zero consent + ArchUnitNET rule forbidding ad-hoc `HttpClient` construction | `ci_backend.yml`, every commit | **Hard** |
+| `OUT-usagedata-revocation-latency` | Assertion at the emit path: revoke, then run the emit cycle, assert no publish | `ci_backend.yml`, every commit | **Hard** |
+| `OUT-usagedata-payload-purity` | Invariant over the serialised payload: closed field set, no free text, compared against `docs/settings/usagedata.md` | `ci_backend.yml`, every commit | **Hard** |
+| `OUT-usagedata-instances-reporting` | Distinct `distinct_id` count, rolling 24h | PostHog production project | No |
+| `OUT-usagedata-kpis-unblocked` | Count of `status: deferred-pending-telemetry-feature` rows in `docs/product/kpi-contracts.yaml` | Repository, checked at slice 04 | No |
+| `OUT-usagedata-no-nag-complaints` | Community channels, GitHub issues. Manual, and correctly so — a complaint is not an event | — | No |
+| `OUT-usagedata-consent-uptake` | **Not measurable as written. See below.** | — | No |
+
+### `OUT-usagedata-consent-uptake` cannot be measured at the collector
+
+The KPI reads *"Consent grants ÷ dialogs shown, both counted at the collector."* The denominator
+cannot exist. A browser that is shown the dialog and declines sends nothing — that is D3, the Epic's
+own non-negotiable, and it is what `OUT-usagedata-zero-leak-before-consent` enforces as a hard CI
+gate. Counting dialogs shown at the collector would require an event from browsers that refused, i.e.
+the exact behaviour the feature is built to prevent. The two cannot both hold.
+
+This is flagged rather than fixed, because the fix is a product decision:
+
+1. **Drop the denominator.** Measure grants per reporting instance over time. Honest, no new data, no
+   ratio.
+2. **Count dialogs shown locally, emit the count from consenting instances only.** Gives a ratio that
+   is still biased (it omits every instance where nobody consented), and adds a sixth field to a
+   payload AC-02.1 enumerates to the user — which under AC-08.5 is a re-consent question and therefore
+   a DoR-9 question.
+3. **Leave the count instance-local and unemitted**, visible to the admin on the settings page only.
+   Answers "is my instance nagging people" without sending anything.
+
+Recommendation: **(1) for the KPI, (3) as a settings-page nicety if it is wanted at all.** (2) spends
+a legal review on a vanity ratio.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment Strategy
+
+Lighthouse is shipped software, not a hosted service: the deployment unit is a release artifact
+(container image, Helm chart, signed standalone binaries) that a customer installs. There is no
+traffic shifting to design.
+
+- **Kubernetes**: rolling, unchanged. The chart already carries `stakater/reloader` wiring and a
+  bounded drain window.
+- **Rollback contract**: the consent table and the `AppSetting.Key` unique index ship in migrations.
+  Per this project's expand-only rule, the migration is additive, so rolling the image back leaves a
+  table the old code ignores. **The unique index is the exception worth naming**: H4 already caught
+  that it can fail on an upgraded customer database, so the migration de-duplicates before indexing
+  and carries its own test on both providers. A failed migration must not brick an upgrade for a
+  feature the customer never enabled.
+- **Chart**: 0.1.16 adds one value (P4). Additive, no breaking change, no operator action required to
+  keep an existing install working.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+**per-feature**, unchanged — already the project standard and already in `CLAUDE.md`. Kill rate ≥ 80%
+on the consent and emit paths, both stacks, per DoD item 5.
+
+One scoping note: the Stryker configuration traps in this repository are known — the .NET runner
+ignores line-span and whole-file `mutate` globs, and StrykerJS has left `@ts-nocheck` in hundreds of
+files. Scope the run to the Usage Data paths explicitly and check the mutant count before trusting the
+score.
+
+---
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+Unchanged: OpenTelemetry → Prometheus scrape plus structured JSON logs, enabled by
+`telemetry.enabled` in the chart, off by default. **This is the surface D1 renamed around and Usage
+Data is deliberately not part of it.**
+
+Inside the customer's instance, Usage Data contributes:
+
+- **Structured log on suppression.** When the gate refuses, one debug-level line naming which
+  condition refused (master switch off, no live grant, no identifier). This is the admin's evidence
+  in a security review and costs nothing when nothing is being sent.
+- **No log line ever carries the instance identifier or the consent token.** `ISystemInfoService`'s
+  own doctrine — that a fourth field added later is withheld by the sentence that withheld the first
+  three — applies to logs as well as to the API.
+- **Recommended, not required: one counter** `lighthouse_usagedata_emits_total{result=sent|suppressed}`
+  on the existing Prometheus surface. No identifier, no payload, no per-browser dimension. It lets an
+  admin answer "has this instance sent anything" from their own monitoring rather than from our word.
+  Nothing in the delta asks for it; drop it if slice 01 is tight, since H6 already found the slice
+  oversized.
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+Trunk-based on `main`, unchanged. Commits push directly; `ci.yml` runs on every push to `main` and on
+PRs. No feature branch is created for this Epic.
+
+The relevant consequence for Usage Data is the project's own green-before-push convention: the
+slice-04 cache invariant has no test until slice 04, and DESIGN's recommendation is to write it now,
+skipped, with the un-skip condition named. A skipped Vitest `describe` still evaluates its body, so
+the scaffold call must not be hoisted into it or the suite reports BROKEN rather than pending.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Thing | Must keep working | Why it is at risk here |
+|---|---|---|
+| Live connector tests (Jira / Linear / ADO / ServiceNow) | Yes | Registering the emitter edits `Program.cs`, which `ci_changes.yml` treats as a shared-connector change and expands the filter to `Category=Integration` — the full live-connector run, with its flake and rate-limit exposure. Accepted, and worth spending in **one** commit rather than five |
+| `Telemetry:` configuration section | Yes | Namespace-disjoint by decision (D1). Nothing new may be named `Telemetry*` |
+| `DeltaSync` optional feature | Yes | It is not premium. Slice 03 must verify it stayed ungated when the premium refusal became real |
+| Existing `OptionalFeaturesController` callers | Yes | AC-07.1 changes the response contract. Extend the test factory before touching it |
+| `GitHubService` release check | Yes | Unchanged and undocumented until now. The docs page names it as a separate outbound call (D11) |
+| Helm installs on chart ≤ 0.1.15 | Yes | 0.1.16's new value is additive with a default; an install that never sets it behaves as today |
+| Local `dotnet test` with no secrets | Yes | The canary category must be excluded by the documented filter, or the suite starts emitting |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+1. **A PostHog Cloud EU organisation with two projects** — production (the census) and CI (the
+   canary). Both configured identically for the two privacy settings; the parity is what
+   `production-sweep` exists to check rather than assume.
+2. **Four new CI secrets**: `POSTHOG_CI_PROJECT_API_KEY` (write, CI project),
+   `POSTHOG_PROD_PROJECT_ID`, `POSTHOG_CI_PROJECT_ID`, `POSTHOG_PERSONAL_API_KEY` (read, query API,
+   scoped to those two projects only).
+3. **Egress from the GitHub runner to `eu.i.posthog.com`** for the canary workflow only.
+4. **Chart 0.1.16 released** before a Kubernetes tenant can be told the collector host is
+   configurable (P4).
+5. **DoR-9 closed** before slice 01 ships. Unchanged by DEVOPS, and DEVOPS cannot close it. The DPA
+   read now also has to cover a second project.
+
+---
+
+## Wave: DEVOPS / [REF] Decisions
+
+| ID | Decision | Rationale |
+|---|---|---|
+| P1 | The canary runs against a **separate PostHog CI project**, and is split into `assertion-can-fail` (CI project, writes) and `production-sweep` (production project, read-only) | Product owner's call on 2026-09-11. Keeps synthetic rows out of the census without giving up the claim that the *production* project honours the arrangement |
+| P2 | `production-sweep` must assert a non-zero event count before asserting cleanliness, and report "no traffic" distinctly from "clean traffic" | Otherwise it is green on every day nobody emits — the vacuous-pass failure C4 already caught once in this design |
+| P3 | The canary lives in a new `ci_usagedata_canary.yml`, daily schedule plus `workflow_dispatch`, repository-guarded, never called from `ci.yml` | The live-connector precedent in this repository: vendor-talking tests in the per-commit path rate-limit the next run and produce failures that read as regressions |
+| P4 | Chart **0.1.16** adds `app.usageData.collectorBaseUrl` → `UsageData__CollectorBaseUrl`, empty meaning the PostHog EU default | The chart has no generic `extraEnv` passthrough; per-setting values are the established pattern (`app.embed.enabled`, 0.1.11). Without it the air-gap claim is false on Kubernetes, which is the one shape where an air-gapped customer is most likely to be |
+| P5 | The three hard gates run in the normal backend suite with **zero egress**; the canary is never a merge gate | A gate that needs a vendor to be up is not a gate. The canary is a detective control and is allowed to be late |
+| P6 | `[Category("UsageDataCanary")]` is added to the documented local exclusion filter in `CLAUDE.md` in the same change that introduces it | A network-talking category that is not in the filter reaches every developer's next `dotnet test` |
+| P7 | The Prometheus counter is **recommended, not required** | Useful to an admin, but nothing in the delta asks for it and slice 01 is already oversized (H6) |
+| P8 | `docs/product/kpi-contracts.yaml` is **not** updated in this wave | The seven deferred KPIs move to a live source at slice 04 per AC-08.6. Writing instrumentation now would name a measurement source that does not yet exist — the kind of claim this Epic exists to stop making |
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+**ADR-176, layer 2, original wording:** *"A CI job, on a schedule rather than per-commit, emits one
+event with a reserved `distinct_id` and then reads that same event back through PostHog's query API"*
+— a single job against a single project.
+
+**New:** two jobs against two projects (P1). The split is forced by the choice of a separate CI
+project: a write-and-read-back cycle in a project no customer emits into demonstrates that project's
+configuration and nothing else. `production-sweep` is what carries the claim ADR-176 actually makes.
+
+**ADR-176 says nothing about the Helm chart.** It states the collector base URL is configurable and
+treats that as sufficient for the air-gap requirement inherited from #5015. On Kubernetes it was not:
+the chart cannot reach the setting. P4 closes it. This is an addition to ADR-176's scope, not a
+contradiction of it.
+
+Both are recorded as an amendment in
+`docs/product/architecture/adr-176-posthog-cloud-eu-as-a-named-adapter-with-payload-carried-privacy-controls.md`.
+
+**Back-propagation to DISCUSS — not applied, needs the product owner.**
+`OUT-usagedata-consent-uptake` is unmeasurable as written (see Monitoring Contracts). Unlike the
+zero-leak rescope, this one is not a wording fix: option (1) removes the ratio the KPI is built on,
+and option (2) costs a re-consent question. **The KPI stays as written in the delta until that
+decision is made**, so the contradiction stays visible rather than being quietly softened.
+
+---
+
+## Wave: DEVOPS / [REF] Open Questions Deferred
+
+**To DISTILL (`nw-acceptance-designer`)**
+
+- `environments.yaml` names nine environments; the ones that change behaviour rather than packaging
+  are `auth-off` vs `auth-on`, `community` vs `premium`, and `kubernetes-multi`. Parametrise over
+  those three axes, not over all nine.
+- The `auth-on`, two-accounts-one-browser case has no scenario anywhere yet: consent is per browser,
+  so the second account inherits the first's decision. Correct per D2, and it needs to be written
+  down as intended before someone files it.
+- `production-sweep`'s "no traffic" state needs its own assertion, not a skip.
+
+**To DELIVER**
+
+- Create the two PostHog projects and record their settings in `docs/settings/usagedata.md` before the
+  canary workflow is written, or the first run asserts against nothing.
+- Chart 0.1.16 also needs the tenant values wiring in the private platform repository — a separate
+  repository, and therefore a separate change that is easy to forget until a tenant asks for it.
+- The `Program.cs` registration edit expands CI to the full live-connector run. Land it once.
+
+**Unchanged upstream**
+
+- DoR-9 is still open and still blocks slice 01 shipping. It now also covers a second PostHog project
+  and, if the product owner picks option (2) above, a sixth payload field.
