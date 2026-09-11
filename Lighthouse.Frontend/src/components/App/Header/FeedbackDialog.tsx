@@ -138,7 +138,7 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ open, onClose }) => {
 						</Typography>
 					</Box>
 					<Typography variant="body1" sx={{ mb: 2 }}>
-						Lighthouse is completely Free and Open Source. If you find it
+						Lighthouse is free to use and its source is public. If you find it
 						valuable for your team and would like to support its continued
 						development, consider making a donation:
 					</Typography>
@@ -166,11 +166,11 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({ open, onClose }) => {
 						for your team? We'd love to help bring your vision to life!
 					</Typography>
 					<Typography variant="body1">
-						While Lighthouse remains completely Free and Open Source, we offer
-						custom feature development services. Whether it's a unique
-						integration, specialized reporting, or workflow enhancements - let's
-						discuss how we can build exactly what you need. Reach out through
-						the email above to explore the possibilities!
+						While Lighthouse remains free to use, we offer custom feature
+						development services. Whether it's a unique integration, specialized
+						reporting, or workflow enhancements - let's discuss how we can build
+						exactly what you need. Reach out through the email above to explore
+						the possibilities!
 					</Typography>
 				</DialogContentText>
 			</DialogContent>

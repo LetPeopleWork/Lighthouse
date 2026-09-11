@@ -67,7 +67,7 @@ For details on how we handle security updates, including response timelines and 
 - **Medium**: Target fix within 180 calendar days
 - **Low**: Addressed as time permits
 
-These are best-effort targets. Lighthouse is provided "as-is" under the MIT license. See our [Terms and Conditions](https://letpeople.work/lighthouse#lighthouse-license) for complete legal terms.
+These are best-effort targets. Lighthouse is provided "as-is" under the Lighthouse Source Available License 1.0. See our [Terms and Conditions](https://letpeople.work/lighthouse#lighthouse-license) for complete legal terms.
 
 ## Security Contacts
 

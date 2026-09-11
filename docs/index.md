@@ -4,7 +4,7 @@ layout: home
 nav_order: 1
 ---
 
-Lighthouse is an open-source, self-hosted flow metrics and Monte Carlo forecasting tool for software delivery teams. It helps you run probabilistic forecasts in a continuous and simple way: it connects to your Work Tracking Tool (currently Jira, Azure DevOps, Linear, and CSV are supported) and will automatically update your team's flow metrics and Throughput as well as your portfolio's forecasted delivery dates. Everything runs on your own infrastructure, so your data never leaves your network.
+Lighthouse is a source-available, self-hosted flow metrics and Monte Carlo forecasting tool for software delivery teams. It helps you run probabilistic forecasts in a continuous and simple way: it connects to your Work Tracking Tool (currently Jira, Azure DevOps, Linear, and CSV are supported) and will automatically update your team's flow metrics and Throughput as well as your portfolio's forecasted delivery dates. Everything runs on your own infrastructure, so your data never leaves your network.
 
 <div style="text-align: center;">
     <img src="./assets/features/teamdetail.png" alt="Team Forecasts" style="max-width: 500px;">
@@ -12,7 +12,7 @@ Lighthouse is an open-source, self-hosted flow metrics and Monte Carlo forecasti
 
 You can use it with a single team for doing manual "When" and "How Many" forecasts, as well as for tracking portfolios with one or multiple teams.
 
-Lighthouse is provided free of charge as open-source software by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, [please reach out](https://letpeople.work#contact).
+Lighthouse is provided free of charge, with its source public and inspectable, by [Let People Work](https://letpeople.work). If you want to learn more about the tool, what we can offer you and your company, or just want to chat, [please reach out](https://letpeople.work#contact).
 
 ## Standalone and Server Edition
 

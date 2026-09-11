@@ -20,7 +20,7 @@ This policy applies to:
 
 **These are best-effort targets, not contractual guarantees.**
 
-Lighthouse is provided "as-is" under the MIT license. LetPeopleWork GmbH is a 2-person company with limited capacity. Response and fix timelines may vary based on:
+Lighthouse is provided "as-is" under the Lighthouse Source Available License 1.0. LetPeopleWork GmbH is a 2-person company with limited capacity. Response and fix timelines may vary based on:
 - Complexity of the vulnerability
 - Availability of team members
 - Dependencies on third-party fixes

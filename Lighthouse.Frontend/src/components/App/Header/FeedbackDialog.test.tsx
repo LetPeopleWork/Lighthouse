@@ -119,7 +119,7 @@ describe("FeedbackDialog", () => {
 
 		expect(screen.getByText("Support Our Work")).toBeInTheDocument();
 		expect(
-			screen.getByText(/Lighthouse is completely Free and Open Source/),
+			screen.getByText(/Lighthouse is free to use and its source is public/),
 		).toBeInTheDocument();
 
 		const kofiLink = screen.getByText("Support us on Ko-fi");

@@ -4,7 +4,7 @@ layout: home
 nav_order: 99
 ---
 
-We develop Ligththouse as an Open Source project, so that people can actively contribute. There are many different ways that you can contribute, not only via writing code.
+Lighthouse is built by LetPeopleWork, and its source is public so you can read and audit it. We do not accept outside code contributions - but there are many other ways to contribute, and they matter more to us than code does.
 
 There are various ways on how you can support Lighthouse:
 
@@ -17,7 +17,7 @@ We do have a [Slack community](https://join.slack.com/t/let-people-work/shared_i
 We use our Slack Community also to look for feedback, asking for support where we may lack some skills, or identify pilot users for preview features we want to get an early feedback on.
 
 # Support Our Work
-Lighthouse is completely free and open-source. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework){:target="_blank"}. Your support helps us maintain and improve Lighthouse for everyone!
+Lighthouse is free to use. If you find it valuable for your team and would like to support its continued development, consider making a donation on [Ko-fi](https://ko-fi.com/letpeoplework){:target="_blank"}. Your support helps us maintain and improve Lighthouse for everyone!
 
 # Feature Requests
 For feature requests and ideas, our preferred way is our [Product Board](https://ideas.letpeople.work){:target="_blank"}. Please check existing ideas, add your own, and vote on what matters most to you.

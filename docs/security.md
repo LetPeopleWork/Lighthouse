@@ -29,7 +29,7 @@ If you found a vulnerability, please email [security@letpeople.work](mailto:secu
 
 ## Verify our claims
 
-Everything above is checkable. Lighthouse is open source, so the paragraphs below name what to look for.
+Everything above is checkable. Lighthouse's source is public and you run it yourself, so the paragraphs below name what to look for.
 
 ### What is stored, and what is done to it
 

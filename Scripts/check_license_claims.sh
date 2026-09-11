@@ -33,10 +33,12 @@ PATTERN='open[ -]source|\bMIT\b'
 # licence history on purpose.
 #
 # docs/_site is build output. tools/codesign holds a CI runner's own checkout.
+# This script skips itself: it is full of the very phrases it hunts for.
 skip_path() {
   case "$1" in
     docs/feature/*|docs/product/*|docs/architecture/*) return 0 ;;
     docs/_site/*|tools/codesign/*)                     return 0 ;;
+    Scripts/check_license_claims.sh)                   return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -44,9 +46,18 @@ skip_path() {
 # Permitted matches: "<path glob>|<regex the matched line must satisfy>|<why>".
 # A hit is allowed only when BOTH its path and its text match an entry.
 ALLOW=(
-  "LICENSE|MIT|the licence itself records which versions remain under MIT"
-  "NOTICE|MIT|the notice preserves the MIT text for versions released before the change"
+  "LICENSE|MIT|the licence itself records which releases remain under MIT"
+  "LICENSE|not open source|the licence says plainly that it is not open source; that is the point"
+  "NOTICE|MIT|the notice preserves the MIT text for releases that predate the change"
+  "NOTICE|third-party open-source components|describes bundled dependencies, not Lighthouse"
+  "README.md|Releases up to and including v26.9.9.9 remain MIT|states the historical grant, which readers need"
   "docs/LICENSE|MIT|the just-the-docs Jekyll theme's own MIT licence, (c) 2022 just-the-docs, not ours"
+  # The licensing page is the one page that has to discuss both terms to explain
+  # the change. Allowed phrase by phrase rather than file-wide, so that writing
+  # "Lighthouse is open source" on that page still fails.
+  "docs/licensing/licensing.md|It is not open source under|denies the label; that is the sentence's whole job"
+  "docs/licensing/licensing.md|published under the MIT License from 2025 until|states the historical grant a reader needs"
+  "docs/licensing/licensing.md|The MIT License permitted both|explains why the licence changed"
   "docs/Installation/configuration.md|Postgres is an open-source|true statement about Postgres, not about Lighthouse"
   "docs/Installation/authentication.md|Keycloak.*open-source|true statement about Keycloak, not about Lighthouse"
   "docs/releasenotes/releasenotes.md|Open-Source Software \(OSS\) Attribution|names the section listing third-party components we bundle"

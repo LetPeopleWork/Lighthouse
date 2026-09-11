@@ -2,7 +2,7 @@
 
 ![Latest Release](https://img.shields.io/github/v/release/letpeoplework/lighthouse?sort=semver&display_name=release&label=latest&color=rgb(48%2C%2087%2C%2078)&link=https%3A%2F%2Fgithub.com%2FLetPeopleWork%2FLighthouse%2Freleases%2Flatest)
 
-Lighthouse is a free, open-source forecasting and Flow metrics platform designed for Agile and Kanban teams. By applying Monte Carlo simulations to your historical throughput, Lighthouse helps teams predict delivery dates, understand predictability, and keep systems stable with actionable Flow Metrics.
+Lighthouse is a free, source-available forecasting and Flow metrics platform designed for Agile and Kanban teams. By applying Monte Carlo simulations to your historical throughput, Lighthouse helps teams predict delivery dates, understand predictability, and keep systems stable with actionable Flow Metrics.
 
 Try the Community version — no account or credit card required; runs on your infrastructure and ships with a demo mode for exploration.
 
@@ -14,7 +14,7 @@ Try the Community version — no account or credit card required; runs on your i
 - Built for Kanban: in-depth flow metrics (WIP, Cycle Time, Throughput, Work Item Age) and widgets for teams and projects
 - Integrations with Jira, Azure DevOps, CSV import and Linear (preview) to keep your existing toolchain
 - Dashboards and Predictability Score to turn data into decisions and keep systems stable
-- Free & open-source (MIT); runs on your infrastructure
+- Free to start & source available; runs on your infrastructure
 
 ## Built for Kanban & Stability
 
@@ -100,7 +100,7 @@ Core dashboards and widget screenshots are available in the docs:
 
 ## License & Security
 
-Lighthouse is MIT licensed — see the LICENSE file. The product runs fully on your infrastructure; data is not sent to third-party cloud providers by default.
+Lighthouse is source available under the Lighthouse Source Available License 1.0 — see the LICENSE file. Releases up to and including v26.9.9.9 remain MIT licensed. The product runs fully on your infrastructure; data is not sent to third-party cloud providers by default.
 
 ## Known limitations
 

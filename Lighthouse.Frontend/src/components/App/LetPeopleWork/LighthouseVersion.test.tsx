@@ -298,7 +298,7 @@ describe("LighthouseVersion component", () => {
 		// Check for copyright
 		expect(
 			screen.getByText(
-				/© 2026 LetPeopleWork GmbH. Licensed under MIT License./,
+				/© 2026 LetPeopleWork GmbH. Source available — see LICENSE./,
 			),
 		).toBeInTheDocument();
 	});
