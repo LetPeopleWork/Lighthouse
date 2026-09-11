@@ -23,6 +23,8 @@ primary_jobs:
   - job-maintainer-learn-servicenow-viability  # epic-5513-servicenow-integration (2026-07-27, #5513): decide go/narrow/stop on the ServiceNow market with evidence
   - job-qualify-jira-native-demand  # epic-5146-jira-forge-app (2026-08-02, #5146): find out whether Jira-nativeness is a real buying trigger before funding a marketplace-grade Forge app
   - job-maintainer-answer-the-secret-storage-question  # epic-5775-secret-encryption-key-custody (2026-08-14, #5775): answer a prospect's security team from public docs that match the shipped defaults
+  - job-maintainer-protect-future-increments-without-going-closed  # epic-5874-relicense-source-available (2026-09-11, #5874): move off MIT to a named source-available licence without closing the source
+  - job-maintainer-say-the-same-thing-everywhere  # epic-5874-relicense-source-available (2026-09-11, #5874): three repos, one term, on the day the LICENSE diff lands
 
 goals:
   - Keep public screenshots accurate with near-zero per-release effort

@@ -49,6 +49,7 @@ feature_context:
   - remove-encryption-frame-from-config
   - story-5876-behaviour-settings
   - story-5914-metrics-time-horizon-presets
+  - epic-5874-relicense-source-available
 
 jobs:
   - id: job-rbac-bootstrap
@@ -6659,3 +6660,147 @@ jobs:
         real; this generalises it. Current satisfaction 1 - four dates computed and two typed, or a
         spreadsheet. Gap 3 - a genuine missing capability, kept small because it moves the existing
         window rather than adding a second series to every chart.
+
+  # ── epic-5874-relicense-source-available (2026-09-11, ADO #5874) ─────────────────────────────
+  # Executes the founder decision of 2026-08-31 recorded in the business decision record
+  # 2026-08-01-do-we-stay-open-source-or-not. Source stays public; OSI status is not a goal.
+
+  - id: job-maintainer-protect-future-increments-without-going-closed
+    title: Protect future increments without closing the source
+    persona: lighthouse-maintainer
+    job_story: >
+      When AI assistance makes it cheap for someone to derive a substitute from source I publish, or
+      to strip the one attribute that gates the paid features,
+      I want the licence to prohibit both outcomes by name,
+      so I can keep the code inspectable — which is the strongest thing I have to sell — without
+      funding my own competitor.
+    dimensions:
+      functional: A licence prohibiting hosted resale, key circumvention, notice removal, competing
+        use, and the use of the source as input to an automated or AI-assisted process producing any
+        of those; permanent, with no conversion date; source still public on GitHub
+      emotional: Move from exposed ("MIT means yes to everything, and the gate is one file") to
+        settled ("the thing I feared is written down as not permitted")
+      social: Be read by practitioners as having made a narrow, honest change rather than as having
+        gone closed — the register this audience punishes hardest is a change made on a feeling
+    forces:
+      push: >
+        MIT permits a fork, a rebrand and a sale today, and always has. AI did not create that
+        exposure; it lowered the cost of acting on it. The Premium gate is a one-file strip point.
+      pull: >
+        A named source-available licence keeps everything that was doing work — public source,
+        verifiable "your data never leaves your network", free Community edition — and removes only
+        the uses nobody was invited to make.
+      anxiety: >
+        Does this read as going closed? (No, and the licence says so in its first line.)
+        Does it stall an enterprise evaluation at an SBOM scanner? (Asked directly in the community
+        Slack: effectively nobody cared about OSI status, and those with a requirement needed
+        "source available".)
+        Does an AI clause with no precedent anywhere actually do anything? (On its own, little — it
+        signals. The outcome clause underneath it is what protects.)
+        Does it restrict our own partners? (Unresolved: ELv2 clause 1 forbids hosted service. Must be
+        settled before the wording closes.)
+      habit: >
+        Both panels and the founders defaulted to MIT for years, and the repo's own contributions
+        page still opens by inviting code. The habit being broken is treating "open source" as an
+        identity rather than as one instrument among several.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 rather than 5 — the commercial lens argued, unrefuted, that CHF 6,401 against
+        40,000 is a demand problem and no licence text closes it; this protects future increments and
+        should not be expected to behave like a revenue move. Current satisfaction 1 — MIT permits
+        every outcome the epic wants to prevent. Gap 3 — real, bounded, and reversible if a genuine
+        evaluation ever stalls on it.
+
+  - id: job-prospect-know-what-i-may-do-with-the-source
+    title: Know what my company is allowed to do with this source
+    persona: forecasting-prospect
+    job_story: >
+      When I am evaluating a self-hosted tool and my security or legal colleague asks what we are
+      permitted to do with its source,
+      I want one authoritative statement of what is and is not allowed, in language I can read in a
+      minute,
+      so I can answer them without guessing and without opening a conversation with the vendor.
+    dimensions:
+      functional: Read the licence, the perpetuity statement for versions already deployed, and a
+        docs FAQ covering what changed and when — from the repository, without asking anyone
+      emotional: Move from guarded ("free and self-hosted usually means a licence nobody will
+        explain") to able to quote it to a colleague without hedging
+      social: Be the person who brought a tool that survived the legal check, rather than the one who
+        brought a surprise
+    forces:
+      push: >
+        A licence question is the kind of thing that stalls an evaluation quietly — nobody argues
+        about it, the thread just stops. A permissive licence is not automatically the easy answer
+        either; "you may do anything" is what a legal team asks follow-up questions about.
+      pull: >
+        Five numbered prohibitions readable in a minute, plus a dated statement that versions already
+        deployed stay MIT, is faster to clear than either a permissive licence with no position or a
+        commercial agreement behind a signature.
+      anxiety: >
+        Are we allowed to modify it for our own use? (Yes — the competing-use clause bars making a
+        substitute available to others, not changing your own instance.)
+        Does the version we already run get re-licensed under us? (No — everything before the change
+        date stays MIT in perpetuity.)
+        Is the source still readable, so the "data never leaves our network" claim is checkable?
+        (Yes. That is the property the whole decision was constrained to preserve.)
+      habit: >
+        Evaluators scan for a familiar SPDX tag and stop reading. A LicenseRef string is not on that
+        list, so the file itself has to answer the question the tag usually answers.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 2
+      gap: 1
+      rationale: >
+        Importance 3 — evidence says this matters less than it feels: zero of sixteen connection
+        records cite GitHub, and when asked directly in the community Slack effectively nobody cared
+        about OSI status. Current satisfaction 2 — MIT does answer the question today, just with an
+        answer the maintainers no longer want to give. Gap 1 — deliberately small. The job is not
+        under-served; it must simply not become worse-served by the change.
+
+  - id: job-maintainer-say-the-same-thing-everywhere
+    title: Have every public surface say the same thing on the day the change lands
+    persona: lighthouse-maintainer
+    job_story: >
+      When the licence changes,
+      I want every public surface — repository, documentation site, running product, marketing site —
+      to say the same accurate thing at once,
+      so nobody reads "open source" on the website and "source available" in the repo and concludes
+      that one of them is lying.
+    dimensions:
+      functional: One term used identically across three repositories, a repeatable check that keeps
+        it that way, and a docs FAQ that answers the follow-up question
+      emotional: Move from exposed (three surfaces, three answers, and no way to know which is stale)
+        to done with it
+      social: Be seen to have made the change cleanly in one go, rather than leaking it surface by
+        surface over weeks
+    forces:
+      push: >
+        The claim is currently spread across a hero, a pricing-table row, a schema.org FAQ answer, a
+        PWA manifest, a footer string, a feedback dialog and six docs pages. Every one of them is a
+        place a reader can catch a contradiction on the first click.
+      pull: >
+        A grep gate turns "did we get them all?" from a memory exercise into a check that either
+        passes or names the file that fails.
+      anxiety: >
+        Will a repo-wide replace break the true statements? (Yes, if unguarded — the plugin copy and
+        the Postgres and Keycloak references are all correct as written, and the gate must allow
+        them by name.)
+        Will rewriting the schema.org FAQ answer cost the organic ranking the page earns on
+        "open-source alternative to ActionableAgile"? (Possibly. There is no free option, which is
+        why it is measured rather than assumed.)
+      habit: >
+        Copy drift is normally caught at release time in a catch-up pass. This feature is the
+        argument for catching it at the moment of change, because the window between surfaces
+        disagreeing is exactly when a reader looks.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 0
+      gap: 4
+      rationale: >
+        Importance 4 — a licence change whose surfaces contradict each other does more reputational
+        damage than the change itself. Current satisfaction 0 — nothing exists today; every surface
+        asserts open source. Gap 4 — the largest in this feature, and the one carrying the only
+        measurable commercial risk (organic traffic to the comparison page).
