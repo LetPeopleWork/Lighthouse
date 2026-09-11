@@ -6,13 +6,12 @@ CURRENT LICENSE
 
 Every version of Lighthouse released after v26.9.9.9 is licensed under
 the Lighthouse Source Available License 1.0
-(SPDX: LicenseRef-Lighthouse-SAL-1.0), which consists of two documents that are
-read together:
+(SPDX: LicenseRef-Lighthouse-SAL-1.0). The complete license is in the LICENSE
+file. It has two parts, both in that one file and both binding:
 
-  LICENSE                       the Elastic License 2.0, reproduced without
-                                alteration, beneath a notice describing this
-                                composite license
-  LICENSE-ADDITIONAL-TERMS.md   the Lighthouse Additional Terms
+  Part 1   the Lighthouse Additional Terms, which limit the rights granted in
+           Part 2
+  Part 2   the Elastic License 2.0, reproduced verbatim and unaltered
 
 The source code remains public and inspectable. This is not a move to closed
 source, and OSI-approved status is not claimed.
@@ -28,8 +27,7 @@ versions only.
 
 If you hold a copy of any of those versions — including a fork taken from the
 repository before the change — your rights under the MIT License are unaffected
-by anything in the LICENSE file or in the Lighthouse Additional Terms, and
-nothing in those documents asks you to give them up.
+by anything in the LICENSE file, and nothing in it asks you to give them up.
 
 The MIT License that applied to those versions, preserved in full:
 

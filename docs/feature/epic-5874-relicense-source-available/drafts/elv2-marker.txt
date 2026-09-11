@@ -1,0 +1,8 @@
+================================================================================
+  PART 2 - ELASTIC LICENSE 2.0, REPRODUCED VERBATIM
+
+  Everything below this block is the Elastic License 2.0, reproduced without
+  modification from https://www.elastic.co/licensing/elastic-license.
+  Nothing in it has been added, removed, reworded or reordered.
+================================================================================
+

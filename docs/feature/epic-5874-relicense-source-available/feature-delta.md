@@ -392,23 +392,28 @@ Decision enabled: the reader decides whether their intended use is permitted, wi
 
 **Acceptance criteria**
 
-- AC-01.1 `LICENSE` reproduces the Elastic License 2.0 **byte-for-byte unaltered** below a clearly
-  delimited header block of our own. Verified by diffing the ELv2 portion against Elastic's published
-  text — a non-empty diff fails this criterion.
-- AC-01.2 `LICENSE-ADDITIONAL-TERMS.md` exists and carries the no-competing-use clause and the AI
-  sentence as separately numbered items, with no mention of "PolyForm" or polyformproject.org
-  anywhere in it (PolyForm's own condition for reusing Shield's wording).
-- AC-01.3 `LICENSE`'s header block names the composite licence and states that the additional terms
-  are part of it, so a reader who opens only that file learns the second document exists.
-- AC-01.4 A statement that versions released before the change date remain under the MIT licence in
-  perpetuity, naming that date — in `NOTICE` or in `LICENSE`'s header block, not inside Elastic's
-  text.
-- AC-01.5 The licence name and its `LicenseRef-` SPDX identifier are used identically in `LICENSE`,
-  `LICENSE-ADDITIONAL-TERMS.md`, `README.md` and `docs/licensing/licensing.md` — one string, not four
-  near-misses. Neither file claims the `Elastic-2.0` identifier.
+- AC-01.1 `LICENSE` ends with the Elastic License 2.0 reproduced **byte-for-byte unaltered** as
+  Part 2. Verified by `diff <(tail -n "$(wc -l < elv2-verbatim.txt)" LICENSE) elv2-verbatim.txt` —
+  a non-empty diff fails this criterion. Part 2 is always the tail of the file, so the check survives
+  any future edit to Part 1.
+- AC-01.2 `LICENSE` carries the Lighthouse Additional Terms as **Part 1, inside the same file and
+  above Part 2** — sections 1 (no competing use), 2 (prohibited results however produced),
+  3 (termination linkage) and 4 (governing law). There is no separate terms file. No mention of
+  "PolyForm" or polyformproject.org appears anywhere in `LICENSE` (PolyForm's own condition for
+  reusing Shield's wording).
+- AC-01.3 `LICENSE` opens by stating that the licence has two parts, that both bind, that both are in
+  that file, and that no rights are granted except subject to both. It states that the composite is
+  not the Elastic License 2.0 and must not be identified as `Elastic-2.0`.
+- AC-01.4 A statement that versions up to and including v26.9.9.9 remain under the MIT licence in
+  perpetuity — in `NOTICE` and in `LICENSE`'s opening notice, never inside Part 2. `NOTICE`
+  reproduces the MIT text in full. No placeholder anywhere: the forward boundary reads "every version
+  released after v26.9.9.9" and needs nothing filled in at release.
+- AC-01.5 The licence name and its `LicenseRef-Lighthouse-SAL-1.0` identifier are used identically in
+  `LICENSE`, `NOTICE`, `README.md` and `docs/licensing/licensing.md` — one string, not four
+  near-misses. Nothing claims the `Elastic-2.0` identifier.
 - AC-01.6 `gh api repos/LetPeopleWork/Lighthouse --jq .license` no longer reports `mit`.
 - AC-01.7 `Lighthouse.EndToEndTests/package.json` no longer declares `"license": "MIT"`.
-- AC-01.8 Both documents ship together in every published artefact — the Docker image, the standalone
+- AC-01.8 `LICENSE` and `NOTICE` ship in every published artefact — the Docker image, the standalone
   archives and the chart — not only in the git repository.
 
 ### US-02 — See the same claim in the product that I saw in the repo
@@ -438,7 +443,12 @@ security team.
   `docs/security.md`, `docs/compliance/security-update-policy.md` make no "open source" or "MIT"
   claim about Lighthouse itself.
 - AC-02.4 `docs/licensing/licensing.md` gains a short FAQ entry: what changed, when, what it means
-  for an existing self-hosted instance, and that prior versions stay MIT.
+  for an existing self-hosted instance, and that prior versions stay MIT. It also carries the
+  **worked "allowed / not allowed" examples** — running a modified instance, building a plugin,
+  integrating with another tool, building a substitute — stated as guidance, not as terms. Both
+  review rounds asked for examples; they live here rather than in `LICENSE`, following ELv2's own
+  split, because examples inside a binding document become interpretive anchors on cases nobody
+  anticipated. The FAQ must not contradict Part 1 or purport to grant anything Part 1 does not.
 - AC-02.5 A repeatable check (grep gate) reports zero "open source"/"MIT" claims about Lighthouse
   across the repo, while still passing on the plugin references it must not touch (D7) and on
   third-party dependency licence listings.

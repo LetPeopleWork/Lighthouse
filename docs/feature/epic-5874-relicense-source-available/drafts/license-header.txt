@@ -6,22 +6,19 @@ Copyright (c) 2025-2026 LetPeopleWork GmbH
 Lighthouse is source available. The source code is public and inspectable, and
 you may run it, read it, and change it for your own use. It is not open source
 under the Open Source Initiative's definition, and it is not closed: this file
-and the one beside it tell you exactly what you may and may not do.
+tells you exactly what you may and may not do.
 
-THIS LICENSE HAS TWO PARTS. Both are binding and both must be read together:
+THIS LICENSE HAS TWO PARTS. Both are binding, both are in this file, and neither
+stands alone:
 
-  1. The Elastic License 2.0, reproduced in full below this notice, without
-     alteration.
+  PART 1  The Lighthouse Additional Terms, immediately below. They limit the
+          rights granted in Part 2.
 
-  2. The Lighthouse Additional Terms, in the file LICENSE-ADDITIONAL-TERMS.md,
-     distributed alongside this file. They add two further limitations on the
-     copyright license granted below.
+  PART 2  The Elastic License 2.0, reproduced verbatim after Part 1, without
+          alteration.
 
-The grant in the Elastic License 2.0 below is offered subject to the Lighthouse
-Additional Terms as well as to the limitations stated in the Elastic License 2.0
-itself. Where the two documents conflict, the Lighthouse Additional Terms
-govern. Anyone who receives any part of the software from you must receive both
-documents.
+No rights are granted under this license except subject to both parts. Anyone
+who receives any part of the software from you must receive this entire file.
 
 WHAT LICENSE APPLIES TO WHICH VERSION
 
@@ -31,18 +28,13 @@ WHAT LICENSE APPLIES TO WHICH VERSION
   in this file applies retroactively to those versions. The full text of that
   MIT License is preserved in the NOTICE file.
 
-  These terms apply to every version of Lighthouse released after v26.9.9.9.
+  This license applies to every version of Lighthouse released after v26.9.9.9.
 
-THIS IS NOT THE ELASTIC LICENSE 2.0. The text below is the Elastic License 2.0
+THIS IS NOT THE ELASTIC LICENSE 2.0. Part 2 is the Elastic License 2.0
 reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,
-not Elasticsearch B.V., and the composite terms in these two documents are not
-the Elastic License 2.0 and are not endorsed by or affiliated with
-Elasticsearch B.V. Do not identify this software as Elastic-2.0 licensed; its
-identifier is LicenseRef-Lighthouse-SAL-1.0.
-
-================================================================================
-  The text below this line is the Elastic License 2.0, reproduced without
-  modification from https://www.elastic.co/licensing/elastic-license.
-  Nothing in it has been added, removed, reworded or reordered.
-================================================================================
+not Elasticsearch B.V.; Part 1 restricts rights that the Elastic License 2.0
+alone would grant; and this composite license is neither the Elastic License 2.0
+nor endorsed by or affiliated with Elasticsearch B.V. Do not identify this
+software as Elastic-2.0 licensed. Its identifier is
+LicenseRef-Lighthouse-SAL-1.0.
 

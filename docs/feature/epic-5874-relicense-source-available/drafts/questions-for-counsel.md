@@ -1,7 +1,10 @@
 # Lighthouse relicensing — questions for counsel
 
-**Prepared 2026-09-11.** Send with three documents: `LICENSE.draft`,
-`LICENSE-ADDITIONAL-TERMS.md`, `NOTICE`.
+**Prepared 2026-09-11, revised after two rounds of practitioner review.** Send
+with two documents: `LICENSE.draft` and `NOTICE`.
+
+Two rounds of non-legal review have already run. Everything they could settle has
+been settled and folded into the draft; what follows is what they could not.
 
 ## What we are doing, in four sentences
 
@@ -13,50 +16,55 @@ restricted. We are **not** going closed source, and we are **not** seeking
 OSI-approved status. Everything released up to and including v26.9.9.9
 (2026-09-09) stays MIT permanently; the change binds later versions only.
 
-The instrument is two documents read together: `LICENSE` reproduces the Elastic
-License 2.0 **verbatim and unaltered** beneath a header block of ours, and
-`LICENSE-ADDITIONAL-TERMS.md` adds two clauses. We chose that shape deliberately:
-Elastic publishes ELv2 for others to adopt, but grants nothing about publishing a
-*modified* version of its text, so we do not modify it.
+The instrument is **one file in two parts**. `LICENSE` opens with a notice, then
+Part 1 — the Lighthouse Additional Terms, which are ours — then Part 2, the
+Elastic License 2.0 reproduced **verbatim and unaltered**. We chose that shape
+deliberately: Elastic publishes ELv2 for others to adopt, but grants nothing
+about publishing a *modified* version of its text, so we do not modify it. Our
+restrictions sit above it rather than inside it.
 
 ---
 
 ## A. Structure — the questions that decide whether this works at all
 
-**A1. Does a second document, incorporated by reference, bind someone who only
-ever opens `LICENSE`?**
-This is our central structural question. Our mitigation is a header block at the
-top of `LICENSE`, above Elastic's text, naming the composite and pointing at the
-second file. Is that sufficient, or do the additional terms need to be physically
-inside the same file to bind reliably?
+**A1. Does the one-file structure hold?**
+Our first draft put the Additional Terms in a second file incorporated by
+reference. Both reviewers said that was the weakest point — a package manager or
+a reader who opens only `LICENSE` may never see the second file and can argue
+lack of notice. **We restructured: everything binding is now in `LICENSE`, with
+our terms above Elastic's.** Does that resolve it, or does anything else need to
+change in how the two parts are presented?
 
-**A2. Is the grant correctly framed?**
+**A2. Is the grant correctly framed as scope rather than covenant?**
 ELv2 grants a licence to "use, copy, distribute, make available, and prepare
-derivative works". Our header says that grant is offered *subject to* the
-Additional Terms, and that the Additional Terms govern on conflict. Is it
-stronger to frame this as a **narrower grant from the outset** (the right was
-never given) rather than as a **restriction on a right already granted**? We
-would rather not rely on a conflict-resolution sentence if a narrower grant is
-cleaner.
+derivative works". Part 1 says: *"The rights granted by the Elastic License 2.0
+do not authorize the uses prohibited by these Additional Terms."* The intent is
+that a prohibited use falls **outside the scope of the grant** — so it is
+infringement, not merely breach of covenant — without our having to rewrite
+Elastic's grant language, which we will not do. **Does that sentence achieve
+it?** If not, what wording would, given Part 2 is untouchable?
 
 **A3. Reproducing Elastic's text under our own name — any exposure?**
-We reproduce ELv2 unaltered, state plainly that the composite is not ELv2 and
-must not be identified as `Elastic-2.0`, and that we are not affiliated with or
-endorsed by Elasticsearch B.V. Is reproducing a third party's licence text
-inside our own licence, under a different name, a copyright or trademark
-concern? Is our disclaimer adequate, or is something else required?
+We reproduce ELv2 unaltered as Part 2, state plainly that the composite is not
+ELv2 and must not be identified as `Elastic-2.0`, that Part 1 restricts rights
+ELv2 alone would grant, and that we are not affiliated with or endorsed by
+Elasticsearch B.V. Is reproducing a third party's licence text inside our own
+licence a copyright or trademark concern? Is our disclaimer adequate?
 
-**A4. Do we need to name a governing law and jurisdiction?**
-There is currently **no governing-law or jurisdiction clause anywhere** — ELv2
-has none, and our Additional Terms add none. We are a Swiss GmbH selling
-internationally, mostly into Europe. Should we add one, and if so, what?
+**A4. Confirm or replace our governing-law clause.**
+There was none; we added one as a candidate (Part 1, section 4): Swiss
+substantive law, conflict rules and CISG excluded, Zurich exclusive forum,
+"to the extent that mandatory law does not require otherwise". We are a Swiss
+GmbH distributing publicly and selling mostly into Europe. **Is that the right
+clause, and is the mandatory-law carve-out adequate** for EU counterparties and
+for anyone who might qualify as a consumer?
 
-**A5. What happens when someone breaches our Additional Terms?**
-ELv2's Termination clause is triggered by using the software "in violation of
-these terms", where "these terms" reads as ELv2's own. Breaching section 1 or
-section 2 of our Additional Terms may therefore have **no stated consequence**.
-Should the Additional Terms carry their own termination language, or expressly
-adopt ELv2's, including its 30-day cure period?
+**A5. Confirm the termination linkage.**
+ELv2's Termination clause fires on use "in violation of these terms", where
+"these terms" reads as ELv2's own — so breaching our Part 1 arguably triggered
+nothing. Part 1 section 3 now says a violation of the Additional Terms is a
+violation of this licence for the purposes of that Termination section,
+including its cure and reinstatement provisions. **Does that close it?**
 
 ---
 
@@ -114,12 +122,25 @@ like this (ELv2, BUSL, FSL, PolyForm and SSPL are all silent; the AI restriction
 that exist are in model licences and content contracts). Is it enforceable,
 merely declaratory, or actively unhelpful?
 
-**C2. Is the training-data limb sound?**
-Restricting use of licensed code as training data is the most novel part. Does
-that restriction hold against a licensee? Does it interact badly with any
-text-and-data-mining exception (we are thinking of the EU DSM Directive Art. 4,
-which can be reserved by the rightsholder — is this document an effective
-reservation, and should it say so explicitly)?
+**C2. The training-data limb, and the Art. 4(3) reservation — two questions, not
+one.**
+Restricting use of licensed code as training data is the most novel part.
+
+  (a) **Contract.** Does the restriction hold against a licensee who accepted
+      this licence?
+
+  (b) **Statutory exception.** EU DSM Directive Art. 4 permits text and data
+      mining of lawfully accessible works *unless the rightsholder has expressly
+      reserved the use in an appropriate manner* — and for content made publicly
+      available online, the Directive points to **machine-readable** means. One
+      reviewer proposed we assert in the licence that this constitutes an Art.
+      4(3) reservation. The other warned against self-certifying a mechanism we
+      have not confirmed. **We took the cautious reading and assert nothing.**
+
+So: **is a clause in `LICENSE` an effective Art. 4(3) reservation on its own?**
+If not, what machine-readable mechanism should a public source repository carry
+— `robots.txt`, a TDM reservation protocol file, repository metadata, something
+else — and should the licence then reference it?
 
 **C3. Does it sweep too far?**
 Section 2 carries an express carve-out that it adds no restriction on tools, and
@@ -131,12 +152,34 @@ be read to void something section 1 deliberately permits?
 
 ## D. Housekeeping
 
-**D1. Do past contributors need to agree?**
-Seven commits from two outside contributors landed under MIT with no CLA. Our
-understanding is that MIT's sublicensing right means we need nothing from them to
-license future versions differently, and that their contributions remain MIT in
-the versions already released. Please confirm — this is the classic relicensing
-trap and we would rather be certain.
+**D1. Do past contributors need to agree? Our two reviewers disagreed, flatly.**
+Seven commits from two outside contributors landed under MIT with no CLA.
+
+One reviewer said MIT's sublicensing right does **not** permit relicensing their
+code, and advised obtaining written consent or rewriting the seven commits,
+reasoning that MIT "requires that the original MIT conditions (and lack of
+additional restrictions) remain attached". Our reading is that this is wrong:
+MIT has no no-further-restrictions clause — that belongs to GPL and CC-BY-SA —
+and MIT expressly grants the right to "sublicense", which is the right to license
+onward on different terms. The surviving obligation is retaining the copyright
+and permission notice, which `NOTICE` does in full, and the already-released
+versions stay MIT regardless.
+
+The other reviewer agreed with that reading but said the real risk is **chain of
+title**, not the licence mechanism.
+
+So, two questions:
+
+  (a) **Is our reading of MIT's sublicensing right correct**, such that no
+      consent is needed and no code needs rewriting?
+
+  (b) If so, what chain-of-title checks do you want on those seven commits —
+      did the contributors own what they contributed, were they acting for an
+      employer, did any commit carry third-party code, were any repository or
+      contribution terms in force at the time?
+
+This is the one question where a wrong answer is expensive in both directions:
+chasing signatures we do not need, or shipping on rights we do not have.
 
 **D2. Is the version boundary stated unambiguously?**
 `LICENSE` and `NOTICE` both say these terms apply to "every version released
