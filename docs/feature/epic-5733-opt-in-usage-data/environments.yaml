@@ -2,9 +2,11 @@
 #
 # Consumed by DISTILL to parametrise acceptance scenarios. Five axes change behaviour:
 #   auth on/off, licence tier, replica count, database provider, and fresh-install vs upgrade.
-# Provider is an axis and not packaging: the dedup migration must be tested on both, and the
-# get-or-create concurrency test is vacuous on EF InMemory, which does not enforce unique indexes.
-# Everything else in this file is packaging.
+# Provider is an axis and not packaging — but for a narrower reason than this file first gave.
+# Corrected 2026-09-11: the original reason (a dedup migration, and EF InMemory not enforcing unique
+# indexes) was withdrawn when AppSetting.Key turned out to be the primary key already. What survives
+# is the consent store: revoke and the throttled liveness touch are conditional updates read through
+# an affected-row count, which EF InMemory cannot express at all. Everything else here is packaging.
 
 target_environments:
   - name: standalone
@@ -73,21 +75,23 @@ target_environments:
       "point it at any URL" and the docs must not say it is.
 
   - name: upgrade-from-pre-5733
-    description: "Existing install upgrading across the consent-table and AppSetting.Key index migration."
+    description: "Existing install upgrading across the consent-table migration."
     platform: [linux, windows, macos]
-    preconditions: ["database predates this Epic", "may contain duplicate AppSettings keys"]
+    preconditions: ["database predates this Epic"]
     notes: >-
-      The highest-risk environment in this feature and the only one where the dedup manifests.
-      Must be exercised on both providers. A fresh install never reaches this code path.
+      Downgraded 2026-09-11. This was "the highest-risk environment in this feature", on the strength
+      of an AppSetting.Key dedup that turned out to be unnecessary. The migration is additive: it adds
+      the consent table. One scenario that an existing database upgrades cleanly and keeps its
+      settings is enough.
 
   - name: rollback-after-upgrade
     description: "Image rolled back to the pre-5733 version after the migration has run."
     platform: [linux, windows, macos]
-    preconditions: ["migration applied", "unique index present"]
+    preconditions: ["migration applied"]
     notes: >-
-      The consent table is ignored by the old code and is fine. The unique index is not: the old
-      image never ran against it, and the deleted duplicate rows cannot be restored by a Down
-      migration. Recovery is a database restore. Assert the documented instruction matches reality.
+      Corrected 2026-09-11. No unique index is added and no row is deleted, so the old image simply
+      ignores a table it does not know about — image rollback works, as the expand-only rule intends.
+      Assert exactly that, and that the rolled-back instance sends nothing.
 
   - name: ci-clean
     description: "GitHub Actions runner with no route to the collector host."
@@ -126,19 +130,23 @@ platform_coverage:
   CI: [GitHub Actions ubuntu-latest]
 
 database_providers:
-  # An axis, not packaging. Both must be exercised for the migration scenarios.
+  # An axis, not packaging — for the consent store, whose conditional updates EF InMemory cannot
+  # express. Both must be exercised for the store scenarios.
   - sqlite
   - postgres
-  # EF InMemory is NOT a third option here: it does not enforce unique indexes, so the
-  # get-or-create concurrency test passes vacuously on it.
+  # EF InMemory is not a third option for those. Note it DOES enforce primary keys, so the earlier
+  # claim in this file that it made the identifier get-or-create test vacuous was wrong.
 
 deployment_assumptions:
-  - "The consent table is expand-only: rolling the image back leaves a table the old code ignores."
-  - "The AppSetting.Key migration is NOT reversible. It deletes duplicate rows before indexing, and
-     a Down migration cannot restore them. Recovery from a bad upgrade is a database restore, not an
-     image rollback, and the operator instruction must say so."
-  - "A unique index on a shared pre-existing table constrains the rolled-back image too — it was
-     never tested against that constraint."
+  - "The migration is expand-only and adds one table: rolling the image back leaves a table the old
+     code ignores. Image rollback is a supported recovery path."
+  - "No schema change is made to AppSettings. Key is already its primary key, so the get-or-create
+     arbiter ships today. (An earlier version of this file required a dedup migration and a
+     database-restore recovery path; both were withdrawn on 2026-09-11 as defending an impossible
+     state.)"
+  - "AppSetting.Id is NOT the key and carries no constraint. Every row this feature mints defaults to
+     Id = 0, and AppSettingSeeder.RemoveObsoleteSettings deletes by Id — safe today because its list
+     starts at 9, and worth one guard test."
   - "An install that never sets the collector host behaves exactly as it does today."
   - "The canary workflow is the only CI job that talks to the collector. This is enforced by the
      Integration test-category exclusion, not by network policy: GitHub-hosted runners have

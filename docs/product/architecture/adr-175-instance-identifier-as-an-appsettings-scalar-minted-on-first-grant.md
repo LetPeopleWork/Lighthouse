@@ -50,21 +50,37 @@ winner; then write the consent row. A browser that loses the identifier race sti
    instance where one person clicked No is such an instance. This is the detail most likely to be got
    wrong, because both buttons mint a *consent token* and only one mints an *instance identifier*.
 
-4. **Get-or-create is atomic, arbitrated by a unique index.** `AppSettingService` is registered
+4. **Get-or-create is atomic, arbitrated by the primary key.** `AppSettingService` is registered
    `AddScoped`, so two browsers granting at the same moment run two scopes with two `DbContext`s.
    Read-then-insert would produce two identifiers and the losing one would already have been returned
    to a caller. The minting path inserts and, on a unique-constraint violation, re-reads and returns
-   the winner. **The same additive migration that adds the consent table must add a unique index on
-   `AppSetting.Key`** - the arbiter has to exist for the pattern to work.
+   the winner.
 
-   **The migration must de-duplicate before it indexes.** "No code today depends on duplicate keys"
-   is a statement about code, not about data, and it is data that fails a migration. `AppSettingSeeder`
-   assigns hard-coded ids and carries a list of historical keys it removes; a table with that much
-   churn behind it is exactly where a duplicate survives in some long-upgraded install. An
-   `ADD UNIQUE` that meets one aborts the upgrade for that customer, on a feature they never enabled -
-   a migration that bricks an instance over an opt-in feature is the worst possible failure here. The
-   migration keeps the lowest `Id` per key and deletes the rest, and that step needs its own test on
-   both providers.
+   **The arbiter already exists and needs no migration.** `LighthouseAppContext.cs:101` configures
+   `modelBuilder.Entity<AppSetting>().HasKey(a => a.Key)` — `Key` *is* the primary key of the table.
+   Duplicate keys have never been storable, so the insert-then-catch pattern works as written against
+   every provider, on every existing customer database, with nothing added.
+
+   **Correction, 2026-09-11.** Points 4 and its Consequences previously required this migration to add
+   a unique index on `AppSetting.Key` and to de-duplicate before indexing — keeping the lowest `Id` per
+   key and deleting the rest — on the reasoning that a long-upgraded install might hold duplicates. It
+   cannot: the schema has never permitted them. That paragraph was written without checking the
+   `DbContext`, the DESIGN peer review then sharpened it into a bricked-upgrade hazard (H4), and DEVOPS
+   inherited it and rewrote the rollback contract around it. **All of it defended a state that cannot
+   occur, and the `DELETE` it prescribed could never have been exercised.** The dedup step, its
+   two-provider test, and the restore-rather-than-rollback contract are withdrawn. The migration for
+   this feature is purely additive again — it adds the consent table and nothing else — so an image
+   rollback is a supported recovery path, as the project's expand-only rule intends.
+
+   **What is real, and is smaller.** `AppSetting.Id` exists (from `IEntity`) but is **not** the key and
+   carries no uniqueness constraint. `UpsertSetting` (`AppSettingService.cs:174`) mints new rows as
+   `new AppSetting { Key = ..., Value = ... }`, so every row this feature creates carries the default
+   `Id = 0` — the same trap already known on `OptionalFeature`. `AppSettingSeeder.RemoveObsoleteSettings`
+   deletes **by `Id`**, and its `obsoleteIds` list currently starts at 9, so the identifier row is safe
+   today. It would not be if a low id were ever added to that list: the sweep would take the instance
+   identifier with it, silently, and the instance would mint a new one and appear in the census as a
+   second instance. Guard it with a test asserting the sweep leaves usage-data rows alone, not with a
+   migration.
 
 5. **The read is cheap and the write happens once.** After the first grant, resolving the identifier
    is one indexed key lookup, which is what the gate does when constructing a permit. A missing
@@ -136,8 +152,8 @@ winner; then write the consent row. A browser that loses the identifier race sti
 exact shape - `EnsureInstallTimestamp()` is a lazy get-or-create over an `AppSettings` row and is the
 direct model for the minting method - and it already holds the private `UpsertSetting` helper, a
 `TimeProvider` and the repository. `AppSettingKeys` -> **EXTEND**, one constant, following the
-existing `Area:Name` convention. `AppSetting` entity -> **UNCHANGED** apart from the unique index on
-`Key`. `IRandomNumberService` -> **UNCHANGED**, assessed and **rejected as unsuitable**: it is
+existing `Area:Name` convention. `AppSetting` entity -> **UNCHANGED**, with no schema change at all:
+`Key` is already the primary key (see point 4), so the arbiter the mint relies on ships today. `IRandomNumberService` -> **UNCHANGED**, assessed and **rejected as unsuitable**: it is
 `new Random().Next(maxValue)`, a statistical PRNG for Monte Carlo forecasting, and using it for an
 identity value would be a security defect wearing the costume of reuse.
 `ISystemInfoService` / `SystemInfo` -> **UNCHANGED**, and deliberately: the identifier must not join
@@ -152,7 +168,8 @@ guard it"* - is the reasoning being honoured by keeping the identifier out of it
 |---|---|
 | An instance that never granted has no identifier | NUnit: refuse consent, assert the `AppSettings` key is absent |
 | A refusal does not mint | NUnit: post a decline, assert no identifier row was written |
-| Two concurrent grants yield one identifier | NUnit **against SQLite in-memory or a Postgres container, not EF InMemory** - the InMemory provider does not enforce unique indexes, so this test would pass whether or not the index or the arbitration exists |
+| Two concurrent grants yield one identifier | NUnit against a real provider. EF InMemory *does* enforce primary keys, so it would catch a missing arbiter here — but it models neither the write contention nor the provider-specific violation type the catch clause keys on, so run it where the consent-store tests already run |
+| The obsolete-settings sweep leaves the identifier alone | NUnit: mint the identifier, run `AppSettingSeeder`, assert the row survives. `RemoveObsoleteSettings` deletes by `Id`, and every row this feature mints carries the default `Id = 0` |
 | A browser that loses the identifier race still records its grant | NUnit: force a unique violation on the mint, assert the consent row is written and the returned identifier is the winner's |
 | It is derived from nothing | NUnit: mint twice under identical hostname, database name and licence, assert the values differ; and the minting method takes no parameters |
 | It never leaves through an API | ArchUnitNET: no controller or DTO type may reference the identifier accessor except the usage-data emit path |

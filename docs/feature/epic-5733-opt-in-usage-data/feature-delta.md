@@ -846,7 +846,7 @@ the existing ArchUnitNET adoption in `Lighthouse.Backend.Tests/Architecture/`.
 | A6 | The emitter is a plain `BackgroundService`, **not** an `UpdateServiceBase` | ADR-174 |
 | A7 | The domain-event bus is **not** the invalidation channel — it swallows handler exceptions by design | ADR-174 |
 | A8 | Instance identifier is one `AppSettings` scalar, 16 CSPRNG bytes, minted **only on a grant** | [ADR-175](../../product/architecture/adr-175-instance-identifier-as-an-appsettings-scalar-minted-on-first-grant.md) |
-| A9 | A unique index on `AppSetting.Key` ships in the same migration, as the get-or-create arbiter | ADR-175 |
+| A9 | ~~A unique index on `AppSetting.Key` ships in the same migration, as the get-or-create arbiter~~ **WITHDRAWN 2026-09-11** — `Key` is already the primary key (`LighthouseAppContext.cs:101`), so the arbiter ships today and no migration is needed. The dedup step, its two-provider test and the rollback contract built on it are withdrawn with it | ADR-175 |
 | A10 | Collector is `PostHogUsageDataPublisher`, named, behind a port | [ADR-176](../../product/architecture/adr-176-posthog-cloud-eu-as-a-named-adapter-with-payload-carried-privacy-controls.md) |
 | A11 | The privacy guarantee moves into the payload (`$ip: null`, `$geoip_disable: true`) where CI can assert it — **verified against PostHog's server source; either property alone suppresses enrichment** | ADR-176 |
 | A12 | A scheduled canary reads the vendor back and asserts no IP, no geo enrichment, AI features off | ADR-176 |
@@ -864,12 +864,12 @@ alone; where it means "assessed and rejected", the reason is stated.
 |---|---|---|
 | `IAppSettingService` / `AppSettingService` | **EXTEND** | `EnsureInstallTimestamp()` is already a lazy get-or-create over an `AppSettings` row — the exact shape the instance identifier needs. Private `UpsertSetting`, `TimeProvider` and the repository are all in place |
 | `AppSettingKeys` | **EXTEND** | One constant, existing `Area:Name` convention |
-| `AppSetting` entity | **EXTEND (index only)** | Needs a unique index on `Key` to arbitrate concurrent get-or-create; service is `AddScoped`, so two grants run two `DbContext`s |
+| `AppSetting` entity | **UNCHANGED** | `Key` is already the primary key (`LighthouseAppContext.cs:101`), so concurrent get-or-create is arbitrated with no schema change. Note the separate hazard this uncovered: `Id` is **not** the key and carries no constraint, `UpsertSetting` mints every row with the default `Id = 0`, and `AppSettingSeeder.RemoveObsoleteSettings` deletes **by `Id`** — safe today (its list starts at 9), guarded by a test rather than a migration |
 | `OptionalFeature` + `OptionalFeatureKeys` | **EXTEND** | One key. `IsPremium` already exists on the entity |
 | `OptionalFeatureSeeder` | **EXTEND** | `AddOrUpdateCurrentFeatures` seeds a new key with its declared `Enabled` and never overwrites it afterwards — exactly the upgrade semantics required, for free |
 | `OptionalFeaturesController` | **UNCHANGED HERE — defect fixed by story #5876** | Line 41 returns the unchanged feature on a premium miss: HTTP 200, write dropped, caller cannot tell. Story #5876 fixes it, because it creates the first premium optional feature and reaches the branch first. This Epic verifies the refusal holds and that `DeltaSync` stayed ungated. If #5876 has not shipped, the fix returns here and the **shared contract** caution applies — grep callers and extend the test factory first |
 | `UpdateServiceBase<TEntity>` + `TeamUpdater`/`PortfolioUpdater`/`ForecastUpdater` | **UNCHANGED — rejected as base class** | `where TEntity : class, IEntity`; iterates `repository.GetAll()`, asks `ShouldUpdateEntity` per row, enqueues per-entity work under an `UpdateType` feeding the SignalR status hub. The heartbeat is instance-scoped with no entity to iterate. Riding it needs a fake entity and two `NotSupportedException` overrides. House precedent for instance-scoped background work is plain `AddHostedService` (`GracefulShutdownService`, `KeyRingFileWatcher`) |
-| `UpdateQueueService` / `IUpdateExecutionLock` | **UNCHANGED** | Cluster-wide single execution is not needed; the identifier is per instance, not per replica |
+| `UpdateQueueService` / `IUpdateExecutionLock` | **ASSESSED — verdict reopened 2026-09-11** | The original reason ("cluster-wide single execution is not needed; the identifier is per instance, not per replica") is a true clause that does not imply its conclusion, as C2 found: every replica runs the emitter. ADR-174 point 8 replaced it with a `UsageData:LastHeartbeatDay` compare-and-swap — but `AppSettingService.UpsertSetting` is read-then-write (`GetByPredicate` → `Add`/`Update`), so that store cannot perform a CAS and no component change was specified. **Open: either give the day key a bespoke conditional-update accessor, or re-adopt the execution lock with a restart guard** |
 | `IDomainEventDispatcher` | **UNCHANGED — rejected as invalidation channel** | Swallows handler exceptions by design (`CA1031` suppressed: *"one failing handler must not abort the others"*). Correct for metrics; for a consent gate a dropped invalidation means sending after a revoke, silently |
 | `PlatformService` / `IPlatformService` | **COMPOSE, not modify** | `IsDocker()` is true in a Kubernetes pod; `KUBERNETES_SERVICE_HOST` appears nowhere. Adding a `SupportedPlatform.Kubernetes` member would touch the release/update path where `Docker` carries operational meaning about in-place updates |
 | `GitHubService` | **UNCHANGED** | Pre-existing unconsented outbound call. Documented in the docs page, not altered. Its bypass of `IHttpClientFactory` is why no outbound chokepoint exists — raised as a board item, not fixed here |
@@ -993,7 +993,7 @@ follows is what changed, not a defence.
 | H3 | `POST /consent` was unauthenticated, unrate-limited, and wrote a durable row per call. A single caller could plant one `Granted` row and keep an instance emitting for a full liveness window | `UsageDataConsentPolicy`, matching `AuthLoginPolicy` / `ApiKeysPolicy` / `EmbedSessionPolicy` |
 | Q1 | Write-on-read `LastSeenAt`: unthrottled writes on a hot path with SQLite's process-wide writer lock; and **a caching proxy would suppress the touch and silently decay consent under an active user** | Throttled to a `WHERE LastSeenAt < @stale` conditional update (~7h at a 30-day window), plus a mandatory `Cache-Control: no-store`. Also corrected the claim that the window measures "activity" — it measures a browser still presenting its token |
 | H5 | ADR-175 said the identifier was written *"in the same save"* as the consent row **and** insert-then-catch-unique-violation. Both cannot hold: a violation aborts the save and **loses the user's grant** | Writes separated and ordered: identifier first in its own transaction, then the consent row. New enforcement row: a losing race still records the grant |
-| H4 | The `AppSetting.Key` unique index could fail on upgraded customer databases, bricking an upgrade for a feature they never enabled. And the concurrency test was **vacuous on EF InMemory**, which does not enforce unique indexes | Migration de-duplicates before indexing, with its own test on both providers. Concurrency test moved to SQLite-in-memory or a Postgres container |
+| H4 | ~~The `AppSetting.Key` unique index could fail on upgraded customer databases, bricking an upgrade for a feature they never enabled. And the concurrency test was **vacuous on EF InMemory**, which does not enforce unique indexes~~ | **THE FINDING ITSELF WAS WRONG, retracted 2026-09-11.** `Key` is already the primary key (`LighthouseAppContext.cs:101`): duplicates are unstorable, no index is added, no upgrade can break, and EF InMemory *does* enforce primary keys. The remediation it prescribed — a row-deleting dedup migration with a two-provider test — was then inherited by DEVOPS and hardened into a database-restore rollback contract. An adversarial review sharpening an unchecked premise is how a phantom risk gains authority; the premise needed one `grep` |
 | C4 | The canary could pass vacuously — "property X is absent" is green forever if the API stops projecting it | **Positive control added**: a second event omitting `$geoip_disable`, asserting geo properties *do* appear. Plus a bounded poll for ingestion latency, a stated daily interval, and "AI features off" demoted to layer 3 as probably unanswerable via the query API |
 | C5 | The `/state` response contract was unspecified while five ACs depended on its fields — and AC-02.9's Community/Premium copy needs licence tier, which is otherwise behind `[Authorize]` | DTO specified in the brief. The anonymous-disclosure decision taken explicitly: return the **derived** `willAskAgain` boolean, not the tier |
 
@@ -1285,28 +1285,28 @@ traffic shifting to design.
   bounded drain window.
 - **Rollback contract, consent table**: additive. Rolling the image back leaves a table the old code
   ignores. This is the expand-only rule working as intended.
-- **Rollback contract, `AppSetting.Key` unique index: image rollback is NOT the recovery path.** Two
-  reasons, and neither is theoretical:
-  1. **The migration deletes rows.** ADR-175 point 4 has it keep the lowest `Id` per key and delete
-     the rest, because an index cannot be created over duplicates. A `Down` migration can drop the
-     index; it cannot resurrect the deleted rows. And `AppSettingSeeder` removes obsolete settings by
-     `Id` rather than by key and inserts with hard-coded `Id`s — so on a long-upgraded install, the
-     row that survives dedup and the row some historical path expected are not obviously the same row.
-  2. **A unique index constrains the rolled-back code too.** The old image never ran against it. Any
-     pre-rollback write path that could produce two rows with the same `Key` now fails a constraint on
-     an image that used to work.
+- **Rollback contract, `AppSetting`: nothing to contract for. WITHDRAWN 2026-09-11.** This section
+  previously said image rollback was *not* the recovery path, because the migration deleted rows to
+  de-duplicate `AppSetting.Key` before indexing it. **`Key` is already the primary key**
+  (`LighthouseAppContext.cs:101`), so duplicates have never been storable, no index is added, nothing
+  is deleted, and the `DELETE` that drove all of this could never have executed. The whole paragraph
+  — database-restore instruction, seeder audit, mid-flight-failure procedure — defended a state the
+  schema forbids. See ADR-175 point 4's correction.
 
-  **The recovery path is a database restore, not an image rollback**, and that is a different
-  instruction with a different RPO. It has to be written down before this ships, because the operator
-  reading it will be in the middle of an incident.
-- **Before the migration is written**: audit every `AppSettings` writer and seeder for a path that can
-  produce a duplicate key, and record the result. ADR-175's own Consequences call this a shared-contract
-  edit that should be verified against the seeders first; this band is where that verification belongs.
-- **If the migration fails mid-flight** — a `CREATE UNIQUE INDEX` under lock contention on Postgres, or
-  a dedup that trips an unforeseen constraint — the upgrade stops with the schema half-moved. The
-  operator needs to know that state is recoverable by restore and that re-running the upgrade is safe
-  once the duplicate is resolved by hand. "A failed migration must not brick an upgrade" is the goal;
-  saying it is not the same as having a procedure for the case where it does.
+  **The migration is additive: it adds the consent table and nothing else.** Image rollback is a
+  supported recovery path again, exactly as the expand-only rule intends, and the rolled-back image
+  ignores a table it does not know about.
+
+  Worth recording how this survived four waves: DESIGN invented the risk without opening the
+  `DbContext`, its own adversarial review sharpened it into a bricked-upgrade hazard (H4), this band
+  inherited it and made the consequence more severe, the DEVOPS review verified that rewrite as
+  holding, and DISTILL committed a Testcontainers dependency partly on its basis. Five checks, one
+  unchecked premise. The fix is one `grep` nobody ran.
+- **The real hazard is smaller and needs a test, not a migration.** `AppSetting.Id` is not the key and
+  carries no constraint; `UpsertSetting` mints every new row with the default `Id = 0`; and
+  `AppSettingSeeder.RemoveObsoleteSettings` deletes **by `Id`**. Its `obsoleteIds` list starts at 9, so
+  the instance identifier is safe today — but a low id added to that list later would delete it
+  silently, and the instance would mint a new one and re-enter the census as a second instance.
 - **Chart**: 0.1.16 adds one value (P4). Additive, no breaking change, no operator action required to
   keep an existing install working.
 
@@ -1370,7 +1370,8 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
 | Focused-commit convention | Yes | `ci_changes.yml:157` force-sets **every** connector output to true when any `.github/workflows/ci*.yml` file changes — and `ci_usagedata_canary.yml` matches that pattern. So adding the canary workflow triggers the full live-connector run too, a second time, unless it lands in the same commit as the `Program.cs` registration. One commit or two full runs; pick deliberately |
 | Helm installs on chart ≤ 0.1.15 | Yes | 0.1.16's new value is additive with a default; an install that never sets it behaves as today |
 | Local `dotnet test` with no secrets | Yes | Carried by the `Integration` category the canary tests also wear (P6) — already in the documented filter, so nothing new to remember |
-| The migration on an upgraded customer database | Yes | The `AppSetting.Key` dedup deletes rows and the index constrains rolled-back code. Recovery is a database restore, not an image rollback |
+| The migration on an upgraded customer database | Yes | Additive only — it adds the consent table. The `AppSetting.Key` dedup that this row previously warned about was withdrawn on 2026-09-11: `Key` is already the primary key |
+| The obsolete-settings sweep | Yes | `AppSettingSeeder.RemoveObsoleteSettings` deletes by `Id`, and every row this feature mints carries `Id = 0`. Safe today; guard it with a test |
 
 ---
 
@@ -1524,7 +1525,7 @@ first draft that were simply false. Fixed in place. What follows is what changed
 
 | # | Finding | Correction |
 |---|---|---|
-| 4 | **The rollback contract called a row-deleting migration "additive".** ADR-175 point 4 has the dedup keep the lowest `Id` per key and delete the rest; a `Down` cannot restore them. And a unique index constrains the rolled-back image, which never ran against it | Rewritten. The recovery path is a **database restore**, not an image rollback, plus a required seeder/writer audit and a mid-flight-failure procedure |
+| 4 | **The rollback contract called a row-deleting migration "additive".** ADR-175 point 4 has the dedup keep the lowest `Id` per key and delete the rest; a `Down` cannot restore them | **Fixed, then the whole thing was retracted 2026-09-11.** The original wording was right by accident — the migration *is* additive, because there is no dedup: `Key` is already the primary key. My "fix" replaced a correct statement with an alarming and false one, and the next review verified the false version as holding. Both are now withdrawn |
 | 5 | **The canary had no alerting, owner or runbook.** ADR-176 warns that a flaky scheduled job gets muted and the layer disappears; a red build routed to nobody is that outcome arriving quietly | Failure states enumerated with a response each, `dirty` as stop-the-line with the disclosure question named, and notification made a prerequisite (P10) |
 | 6 | **The `POSTHOG_PERSONAL_API_KEY` blast radius was never assessed** — it reads the entire census, `ci.yml` inherits secrets into thirteen workflows, and this project pushes straight to `main` | Credentials split by blast radius, Environment-scoped secret with explicit mapping, holder and rotation required, routed into DoR-9 (P11) |
 | 7 | **`environments.yaml` omitted air-gapped, upgrade and rollback**, and collapsed the provider axis that H4 and ADR-175 both require — contradicting the band's own instruction to DISTILL | Three environments added, `database_providers` made an explicit axis, DISTILL handoff corrected from three axes to five |
@@ -1573,8 +1574,8 @@ constraints here, not options. Numbering starts at DT-1 so it collides with none
 | DT-3 | **No production scaffold types on the backend.** C# is compiled: a test naming `UsageDataConsent`, `IUsageDataGate` or `PostHogUsageDataPublisher` breaks the **whole** test assembly's build — BROKEN, the exact classification the scaffold rule exists to prevent, and a zero-warning-gate failure besides. Backend ATs are black box over HTTP and name only types that exist today. Precedent: `epic-5146-jira-forge-app`, same reasoning. | — |
 | DT-4 | **Frontend scaffolds are real modules that throw, and the throw interpolates its arguments.** `noUnusedParameters` is on, so a stub ignoring its props does not compile, and underscore-prefixing would force a rename in DELIVER. Interpolating satisfies the compiler and makes the failure name the missing contract and what it was asked. Precedent: `story-5914`. | — |
 | DT-5 | **Every scaffold call sits inside a test body, never at describe scope.** `describe.skip` still *evaluates its describe body*; a hoisted call throws during collection and the file reports as a failed **suite** — BROKEN, not pending. Verified by running: 5 files, 2 skipped, zero failed suites. | — |
-| DT-6 | **The store-level guarantees are specified here and authored in DELIVER.** Conditional revoke, the throttled liveness touch, the multi-replica heartbeat CAS and the `AppSetting.Key` dedup all need the entity, which DT-3 forbids scaffolding. They are named in the AT completeness audit with their mechanism — `Testcontainers.PostgreSql`, recorded in the ATDD policy — so DELIVER inherits the decision rather than re-taking it. | A1, A2, P-store |
-| DT-7 | **The consent store runs on real Postgres, not SQLite or EF InMemory.** Product owner's call, 2026-09-11. Revoke and the touch are conditional updates read through an affected-row count, which EF InMemory cannot express. Cost recorded rather than buried: `requires-docker` carries no `Integration` category, so **nothing filters these** — they run on every push and need Docker locally. | A2 |
+| DT-6 | **The store-level guarantees are specified here and authored in DELIVER.** Conditional revoke and the throttled liveness touch need the entity, which DT-3 forbids scaffolding. **Corrected 2026-09-11:** this row also named the `AppSetting.Key` dedup (withdrawn — `Key` is already the primary key) and the multi-replica heartbeat CAS, which is **not specified at all**: ADR-174 point 8 puts it on `AppSettingService`, whose `UpsertSetting` is read-then-write and cannot perform a compare-and-swap. DISTILL was deferring to a specification that does not exist. It is now an open DESIGN question, not a DELIVER task. | A1, A2 |
+| DT-7 | **The consent store runs on real Postgres, not SQLite or EF InMemory.** Product owner's call, 2026-09-11. Revoke and the touch are conditional updates read through an affected-row count, which EF InMemory cannot express. This reason survives the `AppSetting.Key` withdrawal untouched — it never depended on it. Cost recorded rather than buried: `requires-docker` carries no `Integration` category, so **nothing filters these** — they run on every push and need Docker locally, which contradicts this band's own coexistence row and is flagged for reconciliation. | A2 |
 | DT-8 | **The indicator's two states differ by accessible name, not by colour.** Asserted directly (`aria-label` of one state ≠ the other), which is how AC-01.2's greyscale-safety becomes testable at all. A colour-only signal would be assertable only by computed style — brittle, and inaccessible in the way the AC exists to prevent. | AC-01.2 |
 | DT-9 | **The indicator fails closed: `unknown` renders as not-sending.** Named explicitly because the adjacent, obvious thing to copy is `useRbac`, which fails **open** via `PERMISSIVE_SUMMARY` on purpose. A privacy indicator guessing "sending" when it cannot tell is alarming and wrong; guessing "not sending" is only wrong. | AC-01.4 |
 | DT-10 | **The dialog takes `willAskAgain` as a boolean, never a licence tier.** It is the shape C5 settled for the `/state` response, and the dialog's props mirror it so the component never learns what a licence is. | C5, D5 |
@@ -1664,7 +1665,7 @@ production and a leaked emit lands in the census.
 |---|---|---|
 | `IUsageDataPublisher` → `PostHogUsageDataPublisher` | **DELIVER** | Needs the type (DT-3). Capturing fake per the ATDD policy; the real publisher may never resolve in a test |
 | Consent persistence → `UsageDataConsentRepository` | **DELIVER** | Needs the entity (DT-3, DT-6). `Testcontainers.PostgreSql`, `[Category("requires-docker")]` |
-| Instance identifier → `AppSettingService` | **DELIVER** | The get-or-create races and the `AppSetting.Key` dedup migration, both providers |
+| Instance identifier → `AppSettingService` | **DELIVER** | The get-or-create race (arbitrated by the existing primary key, no migration), and the guard that `AppSettingSeeder`'s by-`Id` sweep leaves the identifier alone |
 | Deployment-mode signal → `UsageDataDeploymentModeResolver` | **DELIVER** | Needs the type. The Kubernetes case is the whole point: `IsDocker()` is true in a pod |
 | The three HTTP endpoints (driving) | **YES — this wave** | `UsageDataConsentEndpointsTests`, real ASP.NET host via `IntegrationTestBase` |
 | Footer indicator, consent dialog (driving) | **YES — this wave** | Real components rendered through RTL, no shallow rendering, no component mocking |
@@ -1865,7 +1866,7 @@ What DELIVER picks up, in order:
 
 1. **The driven side first**, because four of six adapters and most of the error paths are owed there:
    the consent entity and repository (Postgres, `requires-docker`), the identifier and its migration
-   (both providers, dedup before index), the gate and permit, then the publisher.
+   (additive, one table — no `AppSetting` schema change), the gate and permit, then the publisher.
 2. **Then the invariants that need those types**: payload purity, revocation latency, the zero-leak
    `DelegatingHandler` plus the ArchUnit rule, and the multi-replica heartbeat CAS.
 3. **Then the wiring**: the service, the indicator in `Footer`, the dialog, and the two wiring tests
