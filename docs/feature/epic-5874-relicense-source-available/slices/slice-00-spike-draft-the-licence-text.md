@@ -6,7 +6,16 @@ plus external legal turnaround
 This is a **pre-slice SPIKE, not a slice.** It has no user-visible output and would fail the
 slice-composition gate on its own. It lands as a precursor to slice 01, not as something shipped.
 
-> **Status 2026-09-11 — drafting done through three review rounds, legal review outstanding.**
+> # ✅ COMPLETE — 2026-09-11
+>
+> Counsel has reviewed both documents and every drafting change asked for has landed. The one
+> unresolved item, whether to seek Elastic's written confirmation before reproducing ELv2 verbatim,
+> was decided by the founders as an accepted risk (D19). Contributor consent is obtained (D21).
+> **Slice 01 is unblocked.**
+>
+> ---
+>
+> **Status through drafting — three practitioner review rounds, then counsel.**
 > Everything is in `../drafts/`. `LICENSE.draft` is one file in two parts — notice, then the
 > Lighthouse Additional Terms, then ELv2 verbatim at the tail, round-trip verified byte-identical
 > against Elastic's published text. `NOTICE` carries the version boundary and the preserved MIT text.

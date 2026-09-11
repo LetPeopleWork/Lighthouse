@@ -1,7 +1,9 @@
 # Slice 01 — Licence terms in force
 
 **Feature**: `epic-5874-relicense-source-available` | **Stories**: US-01 | **ADO**: [#5968](https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/5968) | **Estimate**: ~3.5h
-**Depends on**: slice 00 (SPIKE) complete and reviewed
+**Depends on**: slice 00 (SPIKE) — **satisfied 2026-09-11.** Counsel reviewed, drafting changes
+applied, contributor consent obtained, the one open risk accepted and recorded (D19). Nothing blocks
+this slice.
 
 ## Goal
 

@@ -251,26 +251,85 @@ scratch, and its job is to state the position publicly and remove the "we didn't
 protection comes from the outcome clause underneath it. DESIGN must not let the AI sentence be the
 only thing standing between the source and a substitute.
 
-### D13 — Legal review is a hard pre-requisite, not a review step
+### D13 — Legal review: DONE 2026-09-11, two opinions, one accepted risk
 
-No LICENSE diff lands before a lawyer has read the drafted text. Same shape as epic 5733's legal DoR
-item.
+Counsel has read `LICENSE` and `NOTICE`. Both opinions call the model viable and the structure sound.
+Every drafting change either asked for landed in `f5e03b34c`: the scope sentence qualified so it no
+longer reads as expanding statutory copyright by declaration, section 3 citing Articles 5 and 6 of
+Directive 2009/24/EC and Article 21 of the Swiss Copyright Act by name, section 6 expressly
+preserving non-derogable protections and mandatory jurisdiction rules for consumers, section 5
+spelling out the termination bridge, and `NOTICE` carrying a portions-copyright line for the outside
+contributors.
 
-The question that used to lead this list — *may ELv2's text be adapted and renamed at all?* — is
-**answered and designed around** rather than carried: no grant exists, so the text is not adapted
-(D1). What remains for the lawyer is narrower and concrete:
+**The two opinions split on one thing, and it is the only reservation carried into release — see
+D19.**
 
-1. Does the one-file structure bind reliably? Two review rounds called incorporation by reference the
-   draft's weakest point, so the Additional Terms moved inside `LICENSE` as Part 1 rather than being
-   pointed at from it. Counsel confirms the shape rather than assessing the risk we removed.
-2. Does the Shield-derived no-competing-use wording sweep in a customer's own internal modifications?
-   It must not. Shield's Changes and New Works License expressly permits changes for any permitted
-   purpose, and that property has to survive the reshaping.
-3. Is PolyForm's README permission sufficient authority to reuse Shield's wording inside a licence of
-   a different name, once every "PolyForm" and polyformproject.org reference is stripped as it
-   requires?
-4. Does the AI sentence, which has no precedent in any software licence, do anything a court would
-   read — and does it risk being read so broadly that it voids something we did intend to permit?
+### D19 — A3: shipping over a stated legal reservation, deliberately
+
+One opinion holds that reproducing ELv2 verbatim inside a LetPeopleWork composite licence *"still
+presents a copyright/trademark risk"* and recommends obtaining **written confirmation from Elastic**
+before publishing. The other holds the same act is *"safe under copyright and trademark law"* given
+the disclaimer, and approves it without qualification.
+
+**Decision, taken by the founders on 2026-09-11: ship on the permissive opinion. Do not write to
+Elastic.** The reasoning, recorded so it can be judged rather than reconstructed:
+
+- ELv2 is published for adoption. Third-party projects ship it unchanged today and SPDX carries an
+  `Elastic-2.0` identifier for exactly that purpose.
+- `LICENSE` states in its opening notice that the composite is not ELv2, must not be identified as
+  `Elastic-2.0`, that Part 1 restricts rights ELv2 alone would grant, and that we are neither
+  affiliated with nor endorsed by Elasticsearch B.V. Both opinions call that disclaimer good.
+- Asking and being refused is worse than not asking. A declined request, followed by publication
+  anyway, is a materially weaker position than publication on advice.
+
+**What this costs, stated plainly:** we are publishing over one counsel's express reservation. If
+Elastic ever objects, this paragraph is the record of the decision, the advice on both sides, and who
+took it. It is an accepted risk, not an oversight, and it should be revisited if Elastic's licensing
+posture changes.
+
+### D20 — ELv2's patent provisions are accepted knowingly, not inherited by accident
+
+Counsel flagged what four review rounds missed: adopting ELv2 brings its **Patents** section, not
+just its hosted-service restriction. Part 2 grants every licensee a patent licence under any patent
+claim LetPeopleWork can license, and terminates that licence immediately if the licensee asserts a
+patent claim against the software.
+
+Accepted as drafted. For a two-person company with no patent portfolio the grant costs nothing it
+holds, and the defensive-termination limb works in our favour. Recorded here so that it is a decision
+rather than a clause nobody read — and so that acquiring a patent later is understood to interact
+with it.
+
+### D21 — Contributor consent obtained
+
+The chain-of-title question both opinions identified as the real issue is closed: the founders
+contacted the outside contributors on 2026-09-11 and have their agreement. **Keep the replies.** The
+entire value of asking is the written record it produces for a future diligence exercise, and a
+consent nobody can later produce is a consent that was not worth obtaining.
+
+### What counsel answered, in one place
+
+| Question | Verdict |
+|---|---|
+| One-file structure (A1) | Holds. Solves the notice and incorporation concern. Add `LicenseRef-Lighthouse-SAL-1.0` to package metadata so scanners cannot report `Elastic-2.0`. |
+| Scope vs covenant (A2) | Structure works. Qualifier added so it does not read as expanding statutory copyright. The contractual backstop *strengthens* rather than weakens it. |
+| Reproducing ELv2 (A3) | **Split.** See D19. |
+| Governing law (A4) | Sensible for B2B. Consumer protections and mandatory jurisdiction now expressly preserved. |
+| Termination linkage (A5) | Essentially fixed; wording tightened. |
+| "Separate product that substitutes" (B1) | Workable. Disputes will be fact-specific, which is inherent rather than a drafting fault. |
+| Internal-use restriction (B2) | Can work. Savings clause directionally right, now citing the statutes by name. |
+| Cross-language reach (B3) | Contractual, not a copyright claim — as we had it. Review under competition law recommended if Lighthouse becomes commercially significant. |
+| Future managed offering (B4) | Current wording covers it. |
+| Safe harbour (B5) | Customer-protective. Retain. |
+| AI clause (C1, C3) | Useful anti-avoidance language; the carve-out is effective. Do not present it as an independent IP right. |
+| TDM reservation (C2) | Contract binds a licensee. Layered measures needed; do not claim certainty. See slice 01. |
+| Contributors (D1) | MIT analysis correct; chain of title is the real question. **Closed — see D21.** |
+| Version boundary (D2) | State it by version *and* date. Done. |
+| Examples (D3) | FAQ, not the licence. As drafted. |
+| Commercial precedence (D4) | Our chosen default is the preferable one. |
+
+Two items counsel flagged that nobody else had: the **patent provisions** inherited from ELv2 (D20),
+and that **competition-law review** of the cross-language restriction becomes worthwhile if the
+product grows. The second is not a release blocker and is recorded for the 2026-11-30 revisit.
 
 ### D14 — The managed-service clause versus partner hosting: CLOSED, no carve-out needed
 
