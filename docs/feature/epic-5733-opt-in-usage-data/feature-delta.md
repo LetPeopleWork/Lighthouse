@@ -663,10 +663,33 @@ costs nothing. n=1, unrepresentative, and a real number. See the DEVOPS Monitori
 | 6 | Slices ≤ 1 day with learning hypotheses | PASS with one documented exception | Slice 01 fails the 4-component taste test as an accepted walking-skeleton cost; see Slice Taste Tests. |
 | 7 | Out-of-scope explicit | PASS | Out of Scope section; the OptionalFeatures rework is explicitly deferred to the board. |
 | 8 | Outcome KPIs with numeric targets and measurement method | PASS | 7 KPIs, each with a target and a named source. |
-| 9 | Legal / compliance review of consent copy and the Art 5(3) reading (D2), and of whether a widened payload requires re-consent (AC-08.5) | **OPEN — blocking slice 01** | Not resolvable inside DISCUSS. Named here so it is scheduled rather than discovered. |
+| 9 | Compliance assessment, **self-performed and risk accepted by the maintainer** — six questions, see below | **PARTLY CLOSED 2026-09-11** | Re-scoped on 2026-09-11. The row previously said "legal / DPO sign-off" and named two questions; three waves then widened it to six without editing the row, so it understated its own gate. It also assumed a legal function that does not exist here. The maintainer's decision: read it ourselves, accept the risk in writing, do not buy a review. |
 
-**DoR verdict: 8 of 9 PASS, DoR-9 open and blocking.** DESIGN and SPIKE-00 may start; slice 01 may not
-ship until DoR-9 closes.
+**DoR-9's six questions, and where each stands:**
+
+| # | Question | Status |
+|---|---|---|
+| 1 | The ePrivacy Art 5(3) reading behind D2 — a post-click token is strictly-necessary | **Accepted.** The argument is written out in D2 and stands on EDPB Guidelines 2/2023. Risk accepted: it is a reading, not a ruling |
+| 2 | Whether a widened payload needs re-consent (AC-08.5) | **Open**, and it governs slice 04 and A14's value set, not slice 01 |
+| 3 | The PostHog DPA | **READ 2026-09-11.** SCCs plus EU-US Data Privacy Framework; return-or-delete on request at termination; sub-processors by general authorization against a **dynamic** page. See the residency finding below |
+| 4 | Retention and erasure (H10) | **Ours to set, not PostHog's.** The DPA specifies no retention period during service, so this is a project-settings decision plus a documented position. Still open |
+| 5 | `POSTHOG_PERSONAL_API_KEY` blast radius (P11) | **Accepted** with the custody in P11 |
+| 6 | Whether census data may appear in a public CI log (P14) | **Closed by P14** — the canary asserts on counts and property names only |
+
+**The residency claim is narrower than it reads, and the dialog copy must not overstate it.** The DPA
+says: *"Company acknowledges that the Processor will Process the Company Personal Data outside of the
+Protected Area including in the US"*. That is compatible with everything the SPIKE established — the
+live sub-processor page confirms AWS, PlanetScale and Modal in Germany and Wiz in Germany/France, with
+Cloudflare as global edge — because it covers PostHog's own staff and internal tooling rather than
+where the data rests. But "data rests in Frankfurt" is **not** "data never leaves the EU", and a reader
+of the consent dialog who infers the second from the first has been misled by omission. That is the
+same failure class A13 exists to prevent for the IP, and it earns the same treatment: the dialog says
+where the data rests and does not imply it never goes further.
+
+**DoR verdict: 8 of 9 PASS; DoR-9 partly closed, two questions open (2 and 4), neither blocking slice
+01.** Question 2 governs slice 04. Question 4 needs a retention number and a sentence, both of which
+are ours to write. **Slice 01 is no longer gated on an external party** — it is gated on writing the
+retention position down.
 
 ---
 

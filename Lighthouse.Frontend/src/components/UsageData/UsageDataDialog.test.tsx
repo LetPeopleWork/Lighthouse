@@ -128,6 +128,18 @@ describe.skip("UsageDataDialog", () => {
 			/(cannot|can't|could not) (be )?identif/i,
 		],
 		["that nothing is tracked", /(never|not|no) track/i],
+		// Added 2026-09-11 after reading the PostHog DPA, which reserves processing "outside of the
+		// Protected Area including in the US". Data RESTS in Frankfurt and the named sub-processors
+		// are EU — but that is not "never leaves the EU", and a reader who infers the second from
+		// the first has been misled by omission. Same failure class as the IP claim above.
+		[
+			"that the data never leaves the EU",
+			/\b(never|not|doesn't|does not|no)\b[^.]{0,40}(leave|leaves)[^.]{0,20}(the )?(eu|europe|germany)/i,
+		],
+		[
+			"that the data stays only in the EU",
+			/\b(stays?|remains?|kept|stored)\b[^.]{0,30}\b(only|solely|exclusively|entirely)\b[^.]{0,20}(in )?(the )?(eu|europe|germany)/i,
+		],
 	])("never claims %s", (_name, forbidden) => {
 		renderDialog();
 		anchorOnRenderedDialog();
