@@ -113,10 +113,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var sweepQuery in sweepQueries)
             {
-                var walkedEveryPage = await WalkSweep(client, transport, sweepQuery, pageLimit, CollectStamp);
+                var rejection = await WalkSweep(client, transport, sweepQuery, pageLimit, CollectStamp);
 
-                if (!walkedEveryPage)
+                if (rejection is not null)
                 {
+                    LogTheRefusal(sweepQuery, rejection);
                     throw new InvalidOperationException($"Jira rejected a page of the identity sweep for {sweptDescription}.");
                 }
             }
@@ -1014,6 +1015,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 return ConnectionValidationResult.Success();
             }
+            catch (JiraQueryRejectedException rejection)
+            {
+                return QueryWasRejected(rejection);
+            }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Team Settings for Team {TeamName}", team.Name);
@@ -1047,6 +1052,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 return ConnectionValidationResult.Success();
             }
+            catch (JiraQueryRejectedException rejection)
+            {
+                return QueryWasRejected(rejection);
+            }
             catch (Exception exception)
             {
                 logger.LogInformation(exception, "Error during Validation of Project Settings for Project {ProjectName}", portfolio.Name);
@@ -1056,6 +1065,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     exception.Message);
             }
         }
+
+        /// <summary>
+        /// A query Jira refused is not an unexpected error - we know exactly what went wrong, because Jira
+        /// said so. The headline is what a user reads first, so it has to name the query rather than blame
+        /// something unnamed, and Jira's own sentence goes underneath it where the detail belongs. The throw
+        /// site has already written the query and the whole response body to the log.
+        /// </summary>
+        private static ConnectionValidationResult QueryWasRejected(JiraQueryRejectedException rejection)
+            => ConnectionValidationResult.Failure(
+                "query_rejected",
+                "Jira could not run this query.",
+                rejection.Message,
+                "DataRetrievalValue");
 
         private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio portfolio, IEnumerable<Issue> issues)
         {
@@ -1545,8 +1567,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var url = $"rest/api/latest/search?jql={encodedJqlQuery}&startAt={startAt}&maxResults={maxResults}&expand=changelog";
                 var response = await client.GetAsync(url);
-                response.EnsureSuccessStatusCode();
                 var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw RejectedQuery(jqlQuery, new JiraSearchRejection(response.StatusCode, responseBody));
+                }
+
                 using var jsonResponse = JsonDocument.Parse(responseBody);
 
                 var maxResultActual = jsonResponse.RootElement.GetProperty("maxResults").GetInt32();
@@ -1580,15 +1607,72 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection),
                 SinglePage: maxResultsOverride.HasValue);
 
-            var walkedEveryPage = await WalkCloudSearchPages(client, request, async jsonIssue =>
+            var rejection = await WalkCloudSearchPages(client, request, async jsonIssue =>
                 issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName)));
 
-            if (!walkedEveryPage)
+            if (rejection is not null)
             {
+                LogTheRefusal(jqlQuery, rejection);
                 return await GetIssuesByQueryFromDataCenter(client, owner, jqlQuery, maxResultsOverride);
             }
 
             return issues;
+        }
+
+        /// <summary>What Jira answered when it would not run a query: the status alone never says why.</summary>
+        private sealed record JiraSearchRejection(HttpStatusCode StatusCode, string ResponseBody);
+
+        /// <summary>
+        /// The query and the whole answer, at a level a support bundle actually carries. A query Jira refuses
+        /// cannot be diagnosed from anything else, and reading it off a debug log means asking the user to
+        /// reproduce the failure with logging turned up.
+        /// </summary>
+        private void LogTheRefusal(string jqlQuery, JiraSearchRejection rejection)
+            => logger.LogWarning(
+                "Jira refused the query '{Query}' with {StatusCode}. Jira answered: {ResponseBody}",
+                jqlQuery,
+                (int)rejection.StatusCode,
+                rejection.ResponseBody);
+
+        private JiraQueryRejectedException RejectedQuery(string jqlQuery, JiraSearchRejection rejection)
+        {
+            LogTheRefusal(jqlQuery, rejection);
+
+            return new JiraQueryRejectedException(ExplanationIn(rejection), jqlQuery, rejection.StatusCode);
+        }
+
+        /// <summary>
+        /// Jira puts the sentence a user can act on - which field it did not recognise, at which character -
+        /// in errorMessages. Anything else that comes back through here is not a JQL complaint, so the status
+        /// is all there is left to report.
+        /// </summary>
+        private static string ExplanationIn(JiraSearchRejection rejection)
+        {
+            try
+            {
+                using var json = JsonDocument.Parse(rejection.ResponseBody);
+
+                if (json.RootElement.TryGetProperty("errorMessages", out var errorMessages)
+                    && errorMessages.ValueKind == JsonValueKind.Array)
+                {
+                    var sentences = errorMessages
+                        .EnumerateArray()
+                        .Select(message => message.GetString())
+                        .Where(message => !string.IsNullOrWhiteSpace(message))
+                        .ToList();
+
+                    if (sentences.Count > 0)
+                    {
+                        return string.Join(" ", sentences);
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Not every refusal comes back as JSON - a proxy in front of Jira can answer with anything.
+            }
+
+            return $"Jira answered {(int)rejection.StatusCode} {rejection.StatusCode}.";
         }
 
         private async Task<Issue> CreateIssueWithCompleteChangelog(HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName)
@@ -1616,9 +1700,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// One query's worth of the sweep, over whichever search endpoint this instance actually has. Cloud pages
         /// by handing back a token for the next page; Data Center has no such token and is walked by offset. Each
         /// endpoint answers 404 on the other deployment, so this is not a detail that can be hidden any deeper.
-        /// Answers false when Jira rejected a page.
+        /// Answers what Jira said when it rejected a page, and null when every page came back.
         /// </summary>
-        private static Task<bool> WalkSweep(
+        private static Task<JiraSearchRejection?> WalkSweep(
             HttpClient client, JiraDeployment transport, string sweepQuery, int pageLimit, Func<JsonElement, Task> onIssue)
             => transport == JiraDeployment.Cloud
                 ? WalkCloudSearchPages(
@@ -1630,9 +1714,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>
         /// The one token-paged walk over Jira Cloud's search endpoint. Both the whole-query download and the
         /// identity sweep go through it, which is what keeps the two enumerating the same result set.
-        /// Answers false when Jira rejects a page, leaving the caller to decide between falling back and failing.
+        /// Answers what Jira said when it rejects a page, and null when every page came back.
         /// </summary>
-        private static async Task<bool> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue)
+        private static async Task<JiraSearchRejection?> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue)
         {
             string? nextPageToken = null;
             var pageCount = 0;
@@ -1656,12 +1740,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
 
                 var response = await client.GetAsync(url.ToString());
+                var body = await response.Content.ReadAsStringAsync();
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    return false;
+                    return new JiraSearchRejection(response.StatusCode, body);
                 }
 
-                var body = await response.Content.ReadAsStringAsync();
                 using var json = JsonDocument.Parse(body);
 
                 foreach (var jsonIssue in json.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
@@ -1674,7 +1759,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             while (!request.SinglePage && !string.IsNullOrEmpty(nextPageToken) && pageCount < MaxCloudSearchPages);
 
-            return true;
+            return null;
         }
 
         /// <summary>
@@ -1682,10 +1767,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// reach the next page is to ask for the offset after the one just read, and to keep asking until the
         /// offset has passed the total the instance reports back. The caller names the fields it needs and
         /// nothing else - naming no field at all would make Data Center return every one of them, which is the
-        /// whole cost the sweep exists to avoid. Answers false when Jira rejects a page, leaving the caller to
-        /// decide between falling back and failing.
+        /// whole cost the sweep exists to avoid. Answers what Jira said when it rejects a page, leaving the
+        /// caller to decide between falling back and failing, and null when every page came back.
         /// </summary>
-        private static async Task<bool> WalkDataCenterSearchOffsets(
+        private static async Task<JiraSearchRejection?> WalkDataCenterSearchOffsets(
             HttpClient client, string jql, string fields, int pageLimit, Func<JsonElement, Task> onIssue)
         {
             var encodedJql = Uri.EscapeDataString(jql);
@@ -1698,12 +1783,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var url = $"rest/api/latest/search?jql={encodedJql}&fields={Uri.EscapeDataString(fields)}&startAt={startAt}&maxResults={pageSize}";
 
                 var response = await client.GetAsync(url);
+                var body = await response.Content.ReadAsStringAsync();
+
                 if (!response.IsSuccessStatusCode)
                 {
-                    return false;
+                    return new JiraSearchRejection(response.StatusCode, body);
                 }
 
-                var body = await response.Content.ReadAsStringAsync();
                 using var json = JsonDocument.Parse(body);
 
                 // Jira decides the page size, not the caller, and an instance that answered zero would leave the
@@ -1718,7 +1804,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 }
             }
 
-            return true;
+            return null;
         }
 
         /// <summary>
@@ -2324,7 +2410,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 var transport = await GetDeploymentType(client, connection);
                 var pageLimit = ResolveIssuesPerRequest(connection);
 
-                return transport == JiraDeployment.Cloud
+                var rejection = transport == JiraDeployment.Cloud
                     ? await WalkCloudSearchPages(
                         client,
                         new CloudSearchRequest(query, ReleaseMembershipFields, ExpandChangelog: false, pageLimit, SinglePage: false),
@@ -2332,6 +2418,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     : await WalkDataCenterSearchOffsets(
                         client, OrderedForOffsetPaging(query), ReleaseMembershipFields, pageLimit,
                         issue => CollectCarriedWork(issue, carriedWork));
+
+                if (rejection is not null)
+                {
+                    LogTheRefusal(query, rejection);
+                    return false;
+                }
+
+                return true;
             }
             catch (Exception exception) when (JiraCouldNotBeAsked(exception))
             {
