@@ -80,6 +80,23 @@ describe("SurveyNudge eligibility gating", () => {
 
 		expect(await queryHeadingFound()).toBeInTheDocument();
 	});
+
+	// Epic 5733 slice 01. This popup currently tells every Community user that Lighthouse never
+	// tracks how they use it. The day Usage Data ships, an indicator in the footer says otherwise,
+	// and the product contradicts itself in two places a reader can see at once. Pending until the
+	// copy is corrected — it fails today, and that is the point of it.
+	it.skip("does not promise that Lighthouse never tracks how you use it", async () => {
+		renderNudge({
+			licenseStatus: getMockLicenseStatus(),
+			systemInfo: getMockSystemInfo({ installTimestamp: daysBefore(20) }),
+		});
+
+		await queryHeadingFound();
+
+		expect(document.body.textContent ?? "").not.toMatch(
+			/never tracks how you use it/i,
+		);
+	});
 });
 
 const queryHeadingFound = () =>

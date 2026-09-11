@@ -1557,3 +1557,321 @@ first draft that were simply false. Fixed in place. What follows is what changed
 - **The Prometheus counter stays recommended-not-required**, with the reviewer's observation recorded:
   it is the only proposed control that gives the *customer* independent evidence rather than the vendor
   checking itself. Revisit at slice 03 rather than dropping.
+
+---
+
+## Wave: DISTILL / [REF] Distill decisions
+
+Wave: DISTILL. Date: 2026-09-11. Density: lean, Tier-1 only — DISTILL declares no `ask-intelligent`
+triggers, so no expansion menu was offered. DISCUSS D1-D11, DESIGN A1-A14 and DEVOPS P1-P13 are
+constraints here, not options. Numbering starts at DT-1 so it collides with none of them.
+
+| ID | Decision | Implements |
+|---|---|---|
+| DT-1 | **Slice 01 only.** Product owner's call, 2026-09-11. Slices 02-04 are separate ADO Stories and re-enter DISTILL when they start. Slice 01 is already oversized (H6), and DoR-9 could still change slice 04's payload — authoring its tests now would be writing against a spec legal has not seen. | — |
+| DT-2 | **No Gherkin, no `.feature` file, no `__SCAFFOLD__` markers.** The project's ATDD policy says in its own preamble that the Python-pilot artifacts do not apply here. Skip markers are NUnit `[Ignore]` and Vitest `describe.skip`/`it.skip`. A scenario's identifier is its test name. | — |
+| DT-3 | **No production scaffold types on the backend.** C# is compiled: a test naming `UsageDataConsent`, `IUsageDataGate` or `PostHogUsageDataPublisher` breaks the **whole** test assembly's build — BROKEN, the exact classification the scaffold rule exists to prevent, and a zero-warning-gate failure besides. Backend ATs are black box over HTTP and name only types that exist today. Precedent: `epic-5146-jira-forge-app`, same reasoning. | — |
+| DT-4 | **Frontend scaffolds are real modules that throw, and the throw interpolates its arguments.** `noUnusedParameters` is on, so a stub ignoring its props does not compile, and underscore-prefixing would force a rename in DELIVER. Interpolating satisfies the compiler and makes the failure name the missing contract and what it was asked. Precedent: `story-5914`. | — |
+| DT-5 | **Every scaffold call sits inside a test body, never at describe scope.** `describe.skip` still *evaluates its describe body*; a hoisted call throws during collection and the file reports as a failed **suite** — BROKEN, not pending. Verified by running: 5 files, 2 skipped, zero failed suites. | — |
+| DT-6 | **The store-level guarantees are specified here and authored in DELIVER.** Conditional revoke, the throttled liveness touch, the multi-replica heartbeat CAS and the `AppSetting.Key` dedup all need the entity, which DT-3 forbids scaffolding. They are named in the AT completeness audit with their mechanism — `Testcontainers.PostgreSql`, recorded in the ATDD policy — so DELIVER inherits the decision rather than re-taking it. | A1, A2, P-store |
+| DT-7 | **The consent store runs on real Postgres, not SQLite or EF InMemory.** Product owner's call, 2026-09-11. Revoke and the touch are conditional updates read through an affected-row count, which EF InMemory cannot express. Cost recorded rather than buried: `requires-docker` carries no `Integration` category, so **nothing filters these** — they run on every push and need Docker locally. | A2 |
+| DT-8 | **The indicator's two states differ by accessible name, not by colour.** Asserted directly (`aria-label` of one state ≠ the other), which is how AC-01.2's greyscale-safety becomes testable at all. A colour-only signal would be assertable only by computed style — brittle, and inaccessible in the way the AC exists to prevent. | AC-01.2 |
+| DT-9 | **The indicator fails closed: `unknown` renders as not-sending.** Named explicitly because the adjacent, obvious thing to copy is `useRbac`, which fails **open** via `PERMISSIVE_SUMMARY` on purpose. A privacy indicator guessing "sending" when it cannot tell is alarming and wrong; guessing "not sending" is only wrong. | AC-01.4 |
+| DT-10 | **The dialog takes `willAskAgain` as a boolean, never a licence tier.** It is the shape C5 settled for the `/state` response, and the dialog's props mirror it so the component never learns what a licence is. | C5, D5 |
+| DT-11 | **The forbidden-phrase test is six patterns, not one.** A13 forbids claiming the IP is not transmitted; the same sentence can be written six ways, and "completely anonymous" and "we cannot identify you" are the two that would slip past a single-pattern check while being the most damaging to get wrong. | A13 |
+| DT-12 | **The SurveyNudge correction is a skipped test on the shipped component, not a copy edit.** It asserts the popup no longer promises Lighthouse never tracks you. It fails today — deliberately. Making the copy change now would be DELIVER's work landing in DISTILL, and shipping the change before the feature exists would make the product *understate* itself instead of overstating it. | S3 |
+| DT-13 | **No Playwright work in this wave.** The E2E walking skeleton is specified below and written in DELIVER. Three standing repo rules collide otherwise: never commit an unrun spec or page-object locator, never push red, and `pnpm build` runs `tsc -b`, so a spec calling a page-object method nobody has written fails the build for everyone. | — |
+
+---
+
+## Wave: DISTILL / [REF] Scenario list
+
+**39 scenarios: 28 frontend (`describe.skip` / `it.skip`), 11 backend (`[Ignore]`).** No `.feature`
+file exists (DT-2), so a scenario's identifier is its test name. Tags are notional — this repo has no
+tag runner; they are here for the traceability the wave contract asks for.
+
+### `src/components/UsageData/UsageDataIndicator.test.tsx` — 7 tests, NEW
+
+| Scenario | Tags |
+|---|---|
+| says it is sending, in words rather than in colour | `@US-01` `@AC-01.1` |
+| says it is not sending, in words rather than in colour | `@US-01` `@AC-01.1` |
+| tells the two states apart by their accessible name, so the difference survives greyscale | `@US-01` `@AC-01.2` `@a11y` |
+| says nothing is being sent when it could not find out, because a privacy control fails closed | `@US-01` `@AC-01.4` `@error` |
+| is there whether or not anything is being sent, because absence answers nothing | `@US-01` `@D7` |
+| reopens the decision when it is clicked | `@US-03` `@AC-03.1` |
+| reopens the decision from the not-sending state too, so a refusal can be changed | `@US-03` `@AC-03.1` `@edge` |
+
+### `src/components/UsageData/UsageDataDialog.test.tsx` — 20 tests, NEW
+
+| Scenario | Tags |
+|---|---|
+| names each of the five fields as something that would be sent (5 cases) | `@US-02` `@AC-02.1` |
+| names who would hold the data, not just that it is sent | `@US-02` `@AC-02.3` |
+| says where the data would rest, in a place a reader can check | `@US-02` `@AC-02.3` |
+| never claims the IP is not transmitted / not seen / never leaves the machine / no data leaves / completely anonymous / we cannot identify you (6 cases) | `@US-02` `@AC-02.2` `@A13` |
+| tells a reader who will be asked again that they will be asked again | `@US-02` `@AC-02.9` `@D5` |
+| tells a reader who will not be asked again that this is the last time | `@US-02` `@AC-02.9` `@D5` |
+| does not say it will ask again to someone it will never ask again | `@US-02` `@AC-02.9` `@error` |
+| reports a grant when the reader agrees | `@US-02` `@AC-02.4` |
+| reports a refusal when the reader declines | `@US-02` `@AC-02.4` |
+| offers a way out that is not a decision, because a dialog nobody can leave is a dark pattern | `@US-02` `@edge` |
+| renders nothing at all when it is closed | `@US-02` `@edge` |
+
+### `src/components/SurveyNudge/SurveyNudge.test.tsx` — 1 test appended
+
+| Scenario | Tags |
+|---|---|
+| does not promise that Lighthouse never tracks how you use it | `@S3` `@blocking` |
+
+### `Lighthouse.Backend.Tests/Integration/UsageData/UsageDataConsentEndpointsTests.cs` — 11 tests, NEW
+
+| Scenario | Tags |
+|---|---|
+| GetState, with no token at all, answers rather than refusing | `@US-01` `@driving_port` |
+| GetState, with an unknown token, answers exactly as it does with no token | `@US-01` `@security` `@oracle` |
+| GetState tells the browser whether it will be asked again, without naming the licence | `@US-02` `@C5` `@security` |
+| GetState forbids caching | `@US-01` `@Q1` `@error` |
+| PostConsent, when the browser agrees, mints a token for it | `@US-02` `@AC-02.4` |
+| PostConsent, when the browser declines, also mints a token | `@US-02` `@D2` `@edge` |
+| PostConsent mints a different token every time | `@US-02` `@security` |
+| PostConsent is rate-limited | `@US-02` `@H3` `@security` |
+| DeleteConsent, with the browser's own token, stops the instance sending | `@US-03` `@AC-03.2` `@D8` |
+| DeleteConsent, with a token this instance never minted, answers exactly as a real revoke does | `@US-03` `@security` `@oracle` |
+| The consent endpoints require no authentication, because most instances have none | `@US-01` `@S11` |
+
+---
+
+## Wave: DISTILL / [REF] WS strategy
+
+**Walking skeleton: specified, authored in DELIVER (DT-13).** DISCUSS chose strategy A — skeleton
+first — because nothing in Lighthouse has ever sent a product event to a vendor collector. That
+remains right, and the skeleton is still the first thing DELIVER builds; what this wave cannot do is
+write its Playwright spec, because a spec whose page-object methods do not exist fails `tsc -b` and
+therefore everyone's build.
+
+The skeleton, for DELIVER: a lead opens the app against seeded demo data, sees the indicator saying
+nothing is being sent, clicks it, reads the five fields in the dialog, agrees, sees the indicator
+change, and clicks again to revoke. One spec, one new page object, driven through the production
+composition root — and the collector host pointed at a blackhole (P12), because the default is
+production and a leaked emit lands in the census.
+
+---
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Adapter | `@real-io` scenario | Covered by |
+|---|---|---|
+| `IUsageDataPublisher` → `PostHogUsageDataPublisher` | **DELIVER** | Needs the type (DT-3). Capturing fake per the ATDD policy; the real publisher may never resolve in a test |
+| Consent persistence → `UsageDataConsentRepository` | **DELIVER** | Needs the entity (DT-3, DT-6). `Testcontainers.PostgreSql`, `[Category("requires-docker")]` |
+| Instance identifier → `AppSettingService` | **DELIVER** | The get-or-create races and the `AppSetting.Key` dedup migration, both providers |
+| Deployment-mode signal → `UsageDataDeploymentModeResolver` | **DELIVER** | Needs the type. The Kubernetes case is the whole point: `IsDocker()` is true in a pod |
+| The three HTTP endpoints (driving) | **YES — this wave** | `UsageDataConsentEndpointsTests`, real ASP.NET host via `IntegrationTestBase` |
+| Footer indicator, consent dialog (driving) | **YES — this wave** | Real components rendered through RTL, no shallow rendering, no component mocking |
+
+Four of six adapters land in DELIVER. That is a consequence of DT-3, not an omission, and it is the
+single largest thing a reader should take from this band: **DISTILL could author the driving side and
+not the driven side.** Each row above names what is owed and the mechanism it is owed under.
+
+---
+
+## Wave: DISTILL / [REF] Scaffolds
+
+Two frontend modules, both new files, neither touching shipped code:
+
+| Scaffold | Contract it declares |
+|---|---|
+| `src/components/UsageData/UsageDataIndicator.tsx` | `UsageDataSendingState` (`sending` / `not-sending` / `unknown`) + `UsageDataIndicatorProps` |
+| `src/components/UsageData/UsageDataDialog.tsx` | `UsageDataDecision` (`granted` / `declined`) + `UsageDataDialogProps` including `fields`, `collectorName`, `dataResidency`, `willAskAgain` |
+
+Both throw a message naming the function and interpolating its arguments (DT-4). No backend scaffolds
+(DT-3). No `__SCAFFOLD__` marker — the policy retires it for this repo; `grep -rn "is not implemented"
+Lighthouse.Frontend/src/components/UsageData` is the equivalent progress check, and it must return
+nothing when slice 01 is done.
+
+---
+
+## Wave: DISTILL / [REF] Test placement
+
+- `Lighthouse.Frontend/src/components/UsageData/` — colocated `*.test.tsx` beside the component, the
+  convention the ATDD policy records for React component ATs.
+- `Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/` — a new folder beside
+  `Integration/Containers/`, matching where black-box `WebApplicationFactory` ATs live. The
+  Postgres-backed store tests DELIVER writes belong in `Integration/Containers/` instead, with the
+  rest of the `requires-docker` set.
+- `SurveyNudge.test.tsx` — appended in place. The assertion is about that component's copy, and it
+  belongs where a reader changing the copy will see it.
+
+---
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving port from DESIGN | Exercised by |
+|---|---|
+| `GET /api/latest/usagedata/state` | `UsageDataConsentEndpointsTests` — real HTTP through the real host, including the two oracle assertions and `Cache-Control: no-store` |
+| `POST /api/latest/usagedata/consent` | Same — grant, decline, token uniqueness, rate limit |
+| `DELETE /api/latest/usagedata/consent` | Same — revoke with own token, and with a token never minted |
+| Footer indicator opens the dialog | `UsageDataIndicator.test.tsx` clicks the real button. The indicator and dialog meeting inside `Footer` is DELIVER's wiring test |
+| Consent dialog, two decisions | `UsageDataDialog.test.tsx` clicks the real buttons |
+| Team/Portfolio page as a whole, end to end | **DELIVER**, one Playwright walking skeleton (DT-13) |
+| `docs/settings/usagedata.md` | **DELIVER** — the page does not exist yet, and the CI check comparing it against the emitted field set needs the field set |
+
+---
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DESIGN's driving ports and the `/state` DTO — consumed as written. The token travels in
+  `X-Lighthouse-UsageData-Token`; DESIGN said "a request header" without naming one, so this wave
+  names it.
+- DEVOPS's `environments.yaml` — `auth-off` is asserted directly (the endpoints answer without
+  authentication). `upgrade-from-pre-5733`, `rollback-after-upgrade` and the SQLite/Postgres axis are
+  DELIVER's, because all three need the migration.
+- The ATDD infrastructure policy — two rows appended this wave (`IUsageDataConsentRepository`,
+  `IUsageDataPublisher`).
+- SPIKE-00 promoted nothing (DISCARD), so there is no walking skeleton to inherit.
+
+---
+
+## Wave: DISTILL / [REF] Wave-decision reconciliation
+
+**Reconciliation passed — 0 contradictions.** DISCUSS D1-D11, DESIGN A1-A14 and DEVOPS P1-P13 were
+read in full, along with DESIGN's four flagged contradictions and DEVOPS's two back-propagations.
+
+Every contradiction in the chain was already resolved in-band rather than left for this wave:
+
+- DESIGN's four (S13's wrong affordance, the declined no-per-emit-read constraint, `UpdateServiceBase`,
+  "exactly five fields") are recorded with their resolutions in the DESIGN band.
+- DEVOPS's two back-propagations are both **applied**, not pending: `OUT-usagedata-zero-leak-before-consent`
+  was rescoped during DESIGN review, and `OUT-usagedata-consent-uptake` on 2026-09-11.
+
+The one place a reader might expect a contradiction and find none: DEVOPS P12 requires the backend to
+refuse an emit to the production collector host under a test environment, which reads like a new
+constraint on DESIGN's publisher. It is an addition, not a contradiction — ADR-176 fixes the default
+host and says nothing about test contexts.
+
+---
+
+## Wave: DISTILL / [REF] AT completeness audit
+
+Slice 01's criteria only (DT-1). Where a criterion is *partly* covered, the remainder is named.
+
+| AC | Covered by | Remainder in DELIVER |
+|---|---|---|
+| AC-01.1 | Indicator says which state it is in, in words | The indicator mounted in `Footer` |
+| AC-01.2 | Indicator — accessible names differ between states (DT-8) | — |
+| AC-01.3 | — | **DELIVER**: the indicator reflects real `/state`, which needs the service |
+| AC-01.4 | Indicator — `unknown` renders as not-sending (DT-9) | — |
+| AC-02.1 | Dialog names all five fields | The field list agreeing with `docs/settings/usagedata.md` (CI check) |
+| AC-02.2 | Dialog — six forbidden phrases (DT-11) | — |
+| AC-02.3 | Dialog names PostHog and Frankfurt | The docs page carrying residency and sub-processors |
+| AC-02.4 | Dialog reports grant/decline; `POST /consent` mints a token for each | — |
+| AC-02.9 | Dialog — `willAskAgain` both ways; `/state` derives it without naming the licence | — |
+| AC-03.1 | Indicator click reopens the decision, from either state | — |
+| AC-03.2 | `DELETE /consent` stops the instance sending | **DELIVER**: the emit path actually not firing, which needs the gate |
+| AC-03.4 | — | **DELIVER**: `Revoked` as a third state, re-askable (H1) |
+| AC-03.5 | — | **DELIVER**: the liveness-window gap — cleared storage makes a browser immediately re-askable but stops it counting only after the window |
+| AC-04.1 | — | **DELIVER**: one heartbeat per instance per day, `requires-docker`, N hosts one container |
+| AC-04.2 | — | **DELIVER**: payload purity — the serialised property set equals the declared set exactly |
+| AC-04.3 | — | **DELIVER**: no consenting browser means no identifier at all |
+| AC-04.4 | — | **DELIVER**: identifier derived from nothing, 16 CSPRNG bytes |
+| AC-04.5 | — | **DELIVER**: fire-and-forget, degrades silently |
+| S3 | SurveyNudge forbidden-phrase test (skipped, fails today by design) | The copy change itself |
+| S4 | — | **DELIVER**: the CRA self-assessment row 1.7 |
+| `OUT-usagedata-zero-leak-before-consent` | — | **DELIVER**: `DelegatingHandler` + the ArchUnit rule forbidding ad-hoc client construction |
+
+Error and edge coverage: 11 of 39 carry `@error`, `@edge`, `@oracle` or `@security` — 28%, below the
+40% guideline and reported rather than met. The reason is DT-3: the error paths this feature is
+richest in (the gate refusing, the emit degrading, a losing identifier race still recording the grant)
+all live on the driven side, which this wave could not author. The ratio should be re-measured after
+DELIVER writes them, where it will be well above the guideline.
+
+---
+
+## Wave: DISTILL / [REF] RED classification
+
+Verified by running, not asserted.
+
+1. **Backend builds clean.** `dotnet build` on the test project: **0 warnings, 0 errors** — after one
+   fix. The first build failed with `CS0121: The call is ambiguous between SomeItemsConstraint.Using(IComparer)
+   and Using<T>(IComparer<T>)`. Exactly the class of thing DT-3 exists to prevent reaching the whole
+   assembly, caught by the gate rather than by a reviewer.
+2. **Frontend: 5 files, 2 skipped, 3 passed, 0 failed suites.** No collection error — the DT-5 trap
+   (`describe.skip` still evaluating its body) did not fire, because every scaffold call sits inside a
+   test body.
+3. **RED confirmed by probe.** `UsageDataIndicator`'s block was temporarily unskipped and the file
+   run: **7 failed tests**, each `Error: UsageDataIndicator(state=…, onOpenDecision=function) is not
+   implemented`. The assertion is never reached because the contract is missing — the correct RED
+   shape. No `ImportError`, no fixture failure, no collection failure. The block was restored.
+
+Classification for all 39: `MISSING_FUNCTIONALITY`. Zero in the BROKEN categories.
+
+---
+
+## Wave: DISTILL / [REF] Verification
+
+Run at hand-off, on the working tree:
+
+| Gate | Result |
+|---|---|
+| `dotnet build` (test project) | **0 warnings, 0 errors** |
+| `npx tsc -b` | **Clean**, exit 0 — the scaffolds compile under `strict`, `noUnusedLocals`, `noUnusedParameters` (DT-4 is why) |
+| `npx biome check` on the new and touched files | **Clean** after `--write`, scoped to the two directories (never repo-wide — the `*/docs` symlink hazard) |
+| `npx vitest run` on the touched paths | **41 passed, 28 skipped, 0 failed**, zero collection errors |
+
+The suite is **green by construction** at hand-off: every new test is skipped or `[Ignore]`d, and the
+only shipped file touched is `SurveyNudge.test.tsx`, where the addition is skipped.
+
+---
+
+## Wave: DISTILL / [REF] Outcomes registry
+
+**Not registered this wave. N/A, because** every typed contract slice 01 introduces — the consent
+record, the gate, the permit, the publisher port — is a type DT-3 forbids creating here. Registering
+an OUT-N row for a contract with no artifact would put a promise in the registry that nothing
+implements, which is the failure the registry exists to catch rather than commit.
+
+DELIVER registers them as each lands. The candidates, named now so the decision is not re-taken:
+the emit gate (`specification` — may this instance send, fail-closed), the consent record
+(`invariant` — one row per browser, revocable, decaying on a liveness window), and the payload
+contract (`invariant` — the closed field set). `nwave-ai outcomes check-delta` returned exit 0 on this
+delta during DESIGN.
+
+---
+
+## Wave: DISTILL / [REF] KPI contracts
+
+`docs/product/kpi-contracts.yaml` is **not extended. N/A, because** P8 already settled it: the seven
+deferred KPIs move to a live measurement source at slice 04 per AC-08.6, and naming a source that does
+not exist is the habit this Epic was commissioned to end. The three hard-gate KPIs are asserted in the
+suite rather than measured in the field, so there is no measurement window or `@kpi` tag to link.
+
+Stated rather than skipped.
+
+---
+
+## Wave: DISTILL / [REF] Handoff to DELIVER
+
+**Held for review — DELIVER is not entered.** Nothing is finalized and no mutation testing has run.
+
+The four-reviewer Final Wave Review Gate (Eclipse / Architect / Forge / Sentinel) has **not** been
+dispatched. It is the documented entry condition for DELIVER and must clear — or be explicitly waived
+— before slice 01 starts. Recorded here rather than silently skipped. Note that Forge already reviewed
+the DEVOPS band on 2026-09-11 (NEEDS_REVISION, 8 blocking, all fixed); that was a per-wave review and
+does not substitute for the consolidated gate.
+
+**DoR-9 still blocks shipping, not building.** Everything below may be built; none of it may ship.
+
+What DELIVER picks up, in order:
+
+1. **The driven side first**, because four of six adapters and most of the error paths are owed there:
+   the consent entity and repository (Postgres, `requires-docker`), the identifier and its migration
+   (both providers, dedup before index), the gate and permit, then the publisher.
+2. **Then the invariants that need those types**: payload purity, revocation latency, the zero-leak
+   `DelegatingHandler` plus the ArchUnit rule, and the multi-replica heartbeat CAS.
+3. **Then the wiring**: the service, the indicator in `Footer`, the dialog, and the two wiring tests
+   the component tests deliberately do not cover.
+4. **Then the corrections that gate the ship**: `SurveyNudge` copy (un-skip DT-12's test),
+   `cra-self-assessment.md` row 1.7, and `docs/settings/usagedata.md` with the CI field-list check.
+5. **Last, the Playwright walking skeleton** (DT-13), with the collector host pointed at a blackhole in
+   all six app-start blocks (P12).
+6. Never push red; un-skip only as each block goes green.
