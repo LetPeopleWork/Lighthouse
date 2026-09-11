@@ -35,6 +35,11 @@ lack of notice. **We restructured: everything binding is now in `LICENSE`, with
 our terms above Elastic's.** Does that resolve it, or does anything else need to
 change in how the two parts are presented?
 
+One operational sub-question: are there package-registry or repository
+conventions under which this composite file could nevertheless be misclassified
+as `Elastic-2.0` — licence scanners matching on the reproduced text, for
+instance — and should we add metadata to prevent that?
+
 **A2. Scope versus covenant — and the remedy where copyright does not reach.**
 Part 1 now carries two sentences rather than one:
 
@@ -52,12 +57,27 @@ underlying act implicates no copyright right — a cross-language rebuild being 
 obvious case. **Do both sentences do what they are meant to, and does the second
 weaken the first** by conceding that some prohibited uses are contract-only?
 
+One specific drafting suggestion we would like your view on: should the first
+sentence be qualified along the lines of *"to the extent the relevant act would
+otherwise require a license from the licensor"*? The concern behind it is that
+without such a qualifier we may appear to be purporting to convert
+non-copyrightable activity into infringement by declaration, which could weaken
+the sentence rather than strengthen it.
+
 **A3. Reproducing Elastic's text under our own name — any exposure?**
 We reproduce ELv2 unaltered as Part 2, state plainly that the composite is not
 ELv2 and must not be identified as `Elastic-2.0`, that Part 1 restricts rights
 ELv2 alone would grant, and that we are not affiliated with or endorsed by
-Elasticsearch B.V. Is reproducing a third party's licence text inside our own
-licence a copyright or trademark concern? Is our disclaimer adequate?
+Elasticsearch B.V.
+
+**We have deliberately avoided modifying the ELv2 text because we do not want to
+rely on any implied permission to publish a modified version of it.** That is a
+risk-avoidance choice on our part, not a legal conclusion we are asking you to
+adopt — if you think adapting the text is straightforwardly permissible, a single
+self-contained document would read better and we would rather know.
+
+So: is reproducing a third party's licence text verbatim inside our own licence a
+copyright or trademark concern? Is our disclaimer adequate?
 
 **A4. Confirm or replace our governing-law clause.**
 There was none; we added one as a candidate (Part 1, section 4): Swiss
@@ -133,10 +153,9 @@ and does it read the way we intend?
 **C1. Does it do anything a court would read?**
 Section 2 says a prohibited result stays prohibited however it was produced —
 by hand, by an automated system, or where the software reached that system as
-input, context or training data. No mainstream software licence carries a clause
-like this (ELv2, BUSL, FSL, PolyForm and SSPL are all silent; the AI restrictions
-that exist are in model licences and content contracts). Is it enforceable,
-merely declaratory, or actively unhelpful?
+input, context or training data. We are aware this is an unusual contractual
+provision and want advice on its enforceability and practical effect: is it
+enforceable, merely declaratory, or actively unhelpful?
 
 **C2. The training-data limb, and the Art. 4(3) reservation — two questions, not
 one.**
@@ -170,6 +189,10 @@ would encounter it.
   (c) If nothing reaches the GitHub copy, is the reservation worth publishing at
       all, or does a partial reservation create a worse position than a clear
       contractual prohibition alone?
+  (d) TDMRep is a **W3C Community Group Report, not a W3C Standard**, and its own
+      specification says so expressly. Do you regard it as a sufficiently
+      "appropriate" machine-readable reservation for Art. 4(3) purposes, and if
+      not, which implementation should we use instead?
 
 **C3. Does it sweep too far?**
 Section 2 carries an express carve-out that it adds no restriction on tools, and
@@ -181,34 +204,108 @@ be read to void something section 1 deliberately permits?
 
 ## D. Housekeeping
 
-**D1. Do past contributors need to agree? Our two reviewers disagreed, flatly.**
-Seven commits from two outside contributors landed under MIT with no CLA.
+**D1. Do past contributors need to agree? Our reviewers disagreed, flatly — and
+our own figures were wrong.**
 
-One reviewer said MIT's sublicensing right does **not** permit relicensing their
-code, and advised obtaining written consent or rewriting the seven commits,
-reasoning that MIT "requires that the original MIT conditions (and lack of
-additional restrictions) remain attached". Our reading is that this is wrong:
-MIT has no no-further-restrictions clause — that belongs to GPL and CC-BY-SA —
-and MIT expressly grants the right to "sublicense", which is the right to license
-onward on different terms. The surviving obligation is retaining the copyright
-and permission notice, which `NOTICE` does in full, and the already-released
-versions stay MIT regardless.
+Reviewers split on the principle. One said MIT's sublicensing right does **not**
+permit relicensing outside contributions, and advised obtaining written consent
+or re-implementing them; the reasoning offered was that MIT "requires that the
+original MIT conditions (and lack of additional restrictions) remain attached".
+Our reading is that this particular reasoning is wrong — MIT has no
+no-further-restrictions clause, that belongs to GPL and CC-BY-SA, and MIT
+expressly grants the right to "sublicense". The surviving obligation is retaining
+the copyright and permission notice, which `NOTICE` does in full, and the
+already-released versions stay MIT regardless. A later review put the objection
+more narrowly: sublicensing does not extinguish the original authors' underlying
+copyright. That we accept, and it is what `NOTICE` records.
 
-The other reviewer agreed with that reading but said the real risk is **chain of
-title**, not the licence mechanism.
+The other reviewer agreed with our reading of MIT and said the real risk is
+**chain of title**, not the licence mechanism. We think that is right, which is
+why the measured position is set out below rather than argued.
 
-So, two questions:
+So, three questions:
 
   (a) **Is our reading of MIT's sublicensing right correct**, such that no
-      consent is needed and no code needs rewriting?
+      consent is needed and no code needs re-implementing?
 
-  (b) If so, what chain-of-title checks do you want on those seven commits —
-      did the contributors own what they contributed, were they acting for an
-      employer, did any commit carry third-party code, were any repository or
-      contribution terms in force at the time?
+  (b) If so, what chain-of-title diligence do you want on these commits — did
+      the contributors own what they contributed, were they acting for an
+      employer, did any commit carry third-party code?
+
+  (c) If consent **is** the safer route regardless of the strict legal position,
+      we would rather do it now than meet it in a future diligence exercise.
+      Three short messages is not a burden. Would you draft the wording?
+
+### The historical outside contributions, measured
+
+The business decision record behind this project recorded *"seven commits from
+two people"*. That was wrong, and we corrected it from the repository on
+2026-09-11. The actual position:
+
+| Contributor | Commits | Dates | Contactable via |
+|---|---|---|---|
+| Lorenzo (`mr.milgauss@hotmail.com`) | 4 | 2025-03-10 → 2025-03-25 | email |
+| Sascha Lucius (`sascha.lucius@posteo.de`) | 1 | 2026-04-13 | email |
+| ZylkaGreger | 3 | 2026-06-23 → 2026-07-17 | GitHub only — commits carry a `users.noreply.github.com` address |
+
+**Eight commits from three people, not seven from two.** All were accepted into
+the repository while it carried the MIT License and its standard notice. No CLA
+was in force at any time, and the repository has never carried contribution terms
+beyond the licence itself.
+
+What still survives on `main`, by `git blame`:
+
+| Contributor | Shipped product code | Tests | Editor config / docs | Total |
+|---|---|---|---|---|
+| Lorenzo | 0 | 0 | 28 (`.vscode/`) | 28 |
+| Sascha Lucius | 38 | 237 | 0 | 275 |
+| ZylkaGreger | 21 | 129 | 1 (`docs/index.md`) | 151 |
+| **Total** | **59** | **366** | **29** | **454** |
+
+Per-file detail:
+
+```
+Lorenzo
+    12  .vscode/launch.json
+    16  .vscode/tasks.json
+
+Sascha Lucius
+   237  .../DeliveryGrid/DeliverySection.test.tsx
+    34  .../DeliveryGrid/DeliverySection.tsx
+     2  .../Portfolios/Detail/PortfolioFeatureList.tsx
+     2  .../Teams/Detail/TeamFeatureList.tsx
+
+ZylkaGreger
+    47  .../Charts/EstimationVsCycleTimeChart.test.tsx
+     3  .../Charts/EstimationVsCycleTimeChart.tsx
+    38  .../Charts/FeatureSizeScatterPlotChart.test.tsx
+     4  .../Charts/FeatureSizeScatterPlotChart.tsx
+    33  .../MetricsView/BaseMetricsView.test.tsx
+     5  .../MetricsView/BaseMetricsView.tsx
+    11  .../MetricsView/widgetInfoMetadata.test.ts
+     7  .../MetricsView/widgetInfoMetadata.ts
+     2  .../MetricsView/WidgetShell.tsx
+     1  docs/index.md
+```
+
+Three observations we would want you to weigh:
+
+1. **Only 59 lines reach the distributed product.** Tests and `.vscode/` files
+   are in the public repository but are not shipped in the Docker image or the
+   standalone archives. They are still part of the work being relicensed.
+2. **Lorenzo's surviving contribution is entirely editor configuration.** His one
+   commit touching production code (an Azure DevOps query fix) is in a file that
+   no longer exists.
+3. **One contributor is reachable only through GitHub.** If written consent is
+   the route you recommend, that is the constraint on it.
+
+We have not contacted any of them. We would rather ask you first whether consent
+is needed at all than approach three people with a request that turns out to be
+unnecessary — and if it is needed, we would rather ask once, with wording you
+have approved.
 
 This is the one question where a wrong answer is expensive in both directions:
-chasing signatures we do not need, or shipping on rights we do not have.
+chasing consent we do not need, or shipping on rights we do not have.
 
 **D2. Is the version boundary stated unambiguously?**
 `LICENSE` and `NOTICE` both say these terms apply to "every version released

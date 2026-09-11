@@ -203,8 +203,11 @@ and any grep gate built in slice 02/03 must exclude them by name rather than by 
 ### D8 — Outside code contributions end
 
 `contributions.md` is rewritten: bug reports, feedback, docs corrections and word-of-mouth stay
-welcome; code pull requests are not accepted. Evidence base: seven commits from two people in the
-project's history, Issues and Discussions already disabled. Mechanism, given GitHub offers no switch
+welcome; code pull requests are not accepted. Evidence base: **eight commits from three people** in
+the project's history — measured from the repository on 2026-09-11, correcting the BDR's "seven
+commits from two people" — with Issues and Discussions already disabled. The correction does not
+change this decision: eight commits from three people over eighteen months is still a channel that is
+not producing much. It does change D1's weight; see there. Mechanism, given GitHub offers no switch
 (see inventory): a `pull_request_target` workflow closes PRs opened from forks with a comment naming
 where to send the thing instead. Forks themselves cannot be prevented and are not treated as a
 problem.
@@ -870,7 +873,7 @@ what it is not, and leads with the word being taken away.
 ### D8 — Contributions
 
 **Keep accepting PRs with an inbound-equals-outbound note.** Lowest friction, preserves the framing
-`contributions.md` opens with today. Rejected on the evidence: seven commits from two people across
+`contributions.md` opens with today. Rejected on the evidence: eight commits from three people across
 the project's life, Issues and Discussions already switched off. The invitation was not producing
 much, and keeping it alive under a licence that prohibits derivation is a contradiction a careful
 reader will spot.

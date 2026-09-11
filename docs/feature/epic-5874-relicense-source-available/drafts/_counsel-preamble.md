@@ -27,8 +27,10 @@ restrictions sit above it rather than inside it.
 
 The company is a Swiss GmbH. Distribution is public and free; revenue comes from
 a signed licence key that unlocks premium features, sold under a separate
-commercial agreement. Two outside contributors have made seven commits in the
-project's history, under MIT, with no CLA.
+commercial agreement. Three outside contributors have made eight commits in the
+project's history, all under MIT and with no CLA ever in force; roughly 450 of
+their lines survive on the current main branch, of which 59 reach the distributed
+product. Question D1 sets those figures out in full.
 
 ## 2. What we need from you
 
