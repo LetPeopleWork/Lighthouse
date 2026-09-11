@@ -612,7 +612,7 @@ dogfood *is* its acceptance (AC-04.6).
 
 | ID | Target | Measurement | Slice |
 |---|---|---|---|
-| OUT-usagedata-consent-uptake | ≥ 20% of browsers shown the dialog answer Yes, within 60 days of slice 02 | Consent grants ÷ dialogs shown, both counted at the collector | 02 |
+| OUT-usagedata-consent-uptake | Grants per reporting instance trends upward over the 60 days after slice 02, and the dogfood instance's own grants ÷ decisions is ≥ 20% | Distinct granting browsers per reporting instance at the collector, plus a direct SQL read of the consent table on the vendor's own instance | 02 |
 | OUT-usagedata-instances-reporting | ≥ 25 distinct instance identifiers report in a rolling 24h window within 90 days of slice 02 | Distinct instance identifiers at the collector | 01, 02 |
 | OUT-usagedata-zero-leak-before-consent | **0 requests to the collector host** from an instance that has no consenting browser | Automated: an integration test asserting no outbound call on the collector host across a full emit cycle with zero consent, plus an ArchUnitNET rule forbidding ad-hoc HTTP client construction so the assertion cannot be bypassed | 01 |
 | OUT-usagedata-revocation-latency | 100% of revocations stop the next emit; 0 emits after a revoke | Automated assertion at the emit path (AC-03.2) | 01 |
@@ -623,6 +623,14 @@ dogfood *is* its acceptance (AC-04.6).
 `OUT-usagedata-zero-leak-before-consent`, `-revocation-latency` and `-payload-purity` are hard CI
 gates. The rest are collector-sourced and become measurable for the first time *because* of this
 Epic — which is the recursion the Epic exists to break.
+
+**`OUT-usagedata-consent-uptake` was rewritten on 2026-09-11**, in DEVOPS, because the original
+wording was unmeasurable rather than merely hard: it asked for grants ÷ dialogs shown *both counted at
+the collector*, and a browser that declines sends nothing — that is D3, enforced as a hard CI gate by
+`OUT-usagedata-zero-leak-before-consent`. The denominator would have required an event from the
+browsers that refused. The ratio is dropped centrally; the one place a true ratio exists is the
+vendor's own instance, where the consent table records grants, declines and revocations and a SQL read
+costs nothing. n=1, unrepresentative, and a real number. See the DEVOPS Monitoring Contracts section.
 
 ---
 
@@ -1206,10 +1214,15 @@ layer"* — actually comes true.
 | `settings-parity` **mismatch** | The two projects drifted. `assertion-can-fail`'s result no longer transfers | Re-align, then re-run both jobs before trusting either |
 | `assertion-can-fail` **cannot produce an enriched control event** | The assertion has stopped being able to fail | Treat as red. This is the vacuous-pass alarm and it is the one nobody will think to look for |
 
-**Notification is a prerequisite, not a detail.** The workflow must route failure somewhere a human
-reads — the maintainer, through whatever channel already carries a failed scheduled build. Who that is
-and through what channel is the one thing in this band with no default: **it needs naming before the
-canary workflow is written**, or the control is decorative.
+**Notification: GitHub's built-in scheduled-workflow failure email to the repository owner.** Decided
+2026-09-11. No workflow in this repository has any Slack or webhook integration today, so every other
+option meant introducing one; this is the mechanism that already exists and costs nothing.
+
+The residual is stated rather than glossed: this is precisely the channel ADR-176 warns about when it
+says a flaky scheduled job gets muted and the layer silently disappears. Nothing here prevents that —
+it depends on the maintainer continuing to read those emails. **If the canary ever starts flapping,
+this is the first decision to revisit**, because a filtered email and a deleted control are the same
+thing. A failure-opened GitHub issue is the fallback: durable, visible, and it needs no new secret.
 
 ---
 
@@ -1223,9 +1236,9 @@ canary workflow is written**, or the control is decorative.
 | `OUT-usagedata-instances-reporting` | Distinct `distinct_id` count, rolling 24h | PostHog production project | No |
 | `OUT-usagedata-kpis-unblocked` | Count of `status: deferred-pending-telemetry-feature` rows in `docs/product/kpi-contracts.yaml` | Repository, checked at slice 04 | No |
 | `OUT-usagedata-no-nag-complaints` | Community channels, GitHub issues. Manual, and correctly so — a complaint is not an event | — | No |
-| `OUT-usagedata-consent-uptake` | **Not measurable as written. See below.** | — | No |
+| `OUT-usagedata-consent-uptake` | Distinct granting browsers per reporting instance, plus grants ÷ decisions read straight out of the consent table on the dogfood instance | PostHog production project + one SQL read | No |
 
-### `OUT-usagedata-consent-uptake` cannot be measured at the collector
+### `OUT-usagedata-consent-uptake` could not be measured at the collector — RESOLVED 2026-09-11
 
 The KPI reads *"Consent grants ÷ dialogs shown, both counted at the collector."* The denominator
 cannot exist. A browser that is shown the dialog and declines sends nothing — that is D3, the Epic's
@@ -1244,19 +1257,21 @@ This is flagged rather than fixed, because the fix is a product decision:
 3. **Leave the count instance-local and unemitted**, visible to the admin on the settings page only.
    Answers "is my instance nagging people" without sending anything.
 
-Recommendation: **(1) for the KPI, (3) as a settings-page nicety if it is wanted at all.** (2) spends
-a legal review on a vanity ratio.
+**Decision, taken by the product owner on 2026-09-11: option (1), plus the dogfood read.** Applied to
+the DISCUSS Outcome KPIs table above rather than left as a flagged contradiction — the same
+back-propagation the zero-leak rescope got. Option (2) is rejected on its own terms: it spends a legal
+review on a ratio that would still be biased.
 
-**One real number is available on day one, and it is free.** The consent table records *every*
-decision locally — H1 added `Revoked` as a third state, so grants, declines and revocations all have
-rows. On the vendor's own dogfood instance, where slice 01's acceptance happens anyway (AC-04.6),
-grants ÷ decisions is a direct SQL read: no payload change, no new field, no legal exposure. It is
-n=1 and unrepresentative, and it is still strictly better than "unmeasurable" — enough to sanity-check
-a 20% target before slice 02's 60-day window closes.
+**The dogfood number is free and available on day one.** The consent table records *every* decision
+locally — H1 added `Revoked` as a third state, so grants, declines and revocations all have rows. On
+the vendor's own instance, where slice 01's acceptance happens anyway (AC-04.6), grants ÷ decisions is
+a direct SQL read: no payload change, no new field, no legal exposure. n=1 and unrepresentative, and
+still strictly better than "unmeasurable" — enough to sanity-check a 20% target before slice 02's
+60-day window closes. It carries the ≥ 20% half of the target; the collector carries the trend.
 
-**This needs an owner and a date.** DoR-9 is attached to slice 01's ship. This decision should be
-attached to slice 02's start the same way, or slice 02 ships with an exit condition nobody can
-evaluate and DoD item 9 points at a KPI known to be uncomputable.
+Option (3) — surfacing the local counts to the admin on the settings page — was not adopted. It is an
+addition rather than an answer, and slice 01 is already oversized (H6). Revisit if an admin ever asks
+"is my instance nagging people".
 
 ---
 
@@ -1381,8 +1396,11 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
    wired:
    - **Store it as a GitHub Environment secret**, not a repository secret, and give the canary workflow
      an explicit `secrets:` mapping — never `secrets: inherit`.
-   - **Name a holder and a rotation interval**, and the revocation step on suspected compromise. A
-     credential with no named owner is not managed.
+   - **Custody, decided 2026-09-11: the maintainer holds it, and it rotates on suspicion rather than
+     on a calendar.** Chosen deliberately over a quarterly cadence, because a documented interval
+     nobody keeps is worse than an honest one — it reads as a control while providing none. The
+     residual: a leaked key stays valid until somebody notices, and nothing prompts a look. What makes
+     that survivable is the narrowing below, not the rotation policy.
    - **Scope it as narrowly as PostHog allows.** If a saved insight can answer "how many events, and do
      any carry `$ip`" under a narrower scope than event-level read, use that instead.
    - **Route it into DoR-9** beside the DPA read. "Who else can read the census, and how" is the same
@@ -1414,9 +1432,10 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
 | P7 | The Prometheus counter is **recommended, not required** | Useful to an admin, but nothing in the delta asks for it and slice 01 is already oversized (H6) |
 | P8 | `docs/product/kpi-contracts.yaml` is **not** updated in this wave | The seven deferred KPIs move to a live source at slice 04 per AC-08.6. Writing instrumentation now would name a measurement source that does not yet exist — the kind of claim this Epic exists to stop making |
 | P9 | Project parity is checked by a **third job reading both projects' settings**, not inferred from production's traffic | `production-sweep` asserts a property of events. A clean result cannot tell "production is configured correctly" from "production's query API stopped projecting `$ip`". Inferring parity from it assumed the thing it claimed to check |
-| P10 | The canary's failure states are enumerated with a response each, and the workflow must route failure to a named human before it is written | ADR-176 warns that a flaky scheduled job gets muted, which deletes the layer. A red build nobody is routed to is the same outcome arriving quietly. `production-sweep` **dirty** is stop-the-line and carries a disclosure question, because users were told this would not happen |
-| P11 | The `POSTHOG_PERSONAL_API_KEY` is an Environment-scoped secret with an explicit `secrets:` mapping, a named holder and a rotation interval — never `secrets: inherit` — and its blast radius goes to DoR-9 | It reads the entire census: every instance identifier ADR-175 spends four alternatives making unguessable. `ci.yml` inherits secrets into thirteen workflows and this project pushes straight to `main`, so "who else can read this" is not hypothetical |
+| P10 | The canary's failure states are enumerated with a response each; notification is **GitHub's built-in scheduled-workflow failure email** to the repository owner | ADR-176 warns that a flaky scheduled job gets muted, which deletes the layer. No workflow here has Slack or webhook integration, so every alternative meant adding one. Chosen 2026-09-11 with the residual named: this is the channel that gets filtered, and a failure-opened issue is the fallback if the canary flaps |
+| P11 | The `POSTHOG_PERSONAL_API_KEY` is an Environment-scoped secret with an explicit `secrets:` mapping — never `secrets: inherit` — held by the maintainer and **rotated on suspicion, not on a calendar**; its blast radius goes to DoR-9 | It reads the entire census: every instance identifier ADR-175 spends four alternatives making unguessable. `ci.yml` inherits secrets into thirteen workflows and this project pushes straight to `main`, so "who else can read this" is not hypothetical. A quarterly cadence was offered and declined on 2026-09-11 — an interval nobody keeps reads as a control while providing none |
 | P12 | The six E2E app-start blocks override the collector host, **and** the backend refuses an emit to the production default under a test environment | Six YAML lines that must all be remembered is a review habit. A missing one emits real heartbeats into the census from CI, with no error and no red build |
+| P13 | `OUT-usagedata-consent-uptake` drops its denominator; the one true ratio is read out of the consent table on the dogfood instance | The original asked for grants ÷ dialogs shown at the collector, and a declining browser sends nothing. Decided 2026-09-11 and applied to the DISCUSS table, rather than left flagged |
 
 ---
 
@@ -1438,11 +1457,12 @@ contradiction of it.
 Both are recorded as an amendment in
 `docs/product/architecture/adr-176-posthog-cloud-eu-as-a-named-adapter-with-payload-carried-privacy-controls.md`.
 
-**Back-propagation to DISCUSS — not applied, needs the product owner.**
-`OUT-usagedata-consent-uptake` is unmeasurable as written (see Monitoring Contracts). Unlike the
-zero-leak rescope, this one is not a wording fix: option (1) removes the ratio the KPI is built on,
-and option (2) costs a re-consent question. **The KPI stays as written in the delta until that
-decision is made**, so the contradiction stays visible rather than being quietly softened.
+**Back-propagation to DISCUSS — APPROVED and applied 2026-09-11.**
+`OUT-usagedata-consent-uptake` was unmeasurable as written (see Monitoring Contracts): grants ÷
+dialogs shown *both at the collector*, where a declining browser sends nothing by design. The product
+owner took option (1) — drop the ratio centrally, measure grants per reporting instance — plus the
+dogfood SQL read for the one place a true ratio exists. The DISCUSS Outcome KPIs table is updated, the
+same way the zero-leak rescope was.
 
 ---
 
@@ -1474,9 +1494,9 @@ decision is made**, so the contradiction stays visible rather than being quietly
   `dotnet ef migrations add`. Both `Lighthouse.Migrations.Sqlite` and `Lighthouse.Migrations.Postgres`
   need it, and the migration DLLs are HintPath references — build them before running anything that
   loads them.
-- Name the human the canary's failure notification reaches, and the channel, before writing the
-  workflow (P10).
-- Name the holder and rotation interval for `POSTHOG_PERSONAL_API_KEY` (P11).
+- Confirm the repository owner actually receives GitHub's scheduled-workflow failure emails before
+  relying on them — send one deliberate failure and check it arrives (P10). An alerting path nobody has
+  ever seen fire is an assumption, not a control.
 
 **Unchanged upstream**
 
