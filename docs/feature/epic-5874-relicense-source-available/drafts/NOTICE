@@ -1,0 +1,65 @@
+Lighthouse
+Copyright (c) 2025-2026 LetPeopleWork GmbH
+
+CURRENT LICENSE
+---------------
+
+Lighthouse version <FILL AT RELEASE> and every later version are licensed under
+the Lighthouse Source Available License 1.0
+(SPDX: LicenseRef-Lighthouse-SAL-1.0), which consists of two documents that are
+read together:
+
+  LICENSE                       the Elastic License 2.0, reproduced without
+                                alteration, beneath a notice describing this
+                                composite license
+  LICENSE-ADDITIONAL-TERMS.md   the Lighthouse Additional Terms
+
+The source code remains public and inspectable. This is not a move to closed
+source, and OSI-approved status is not claimed.
+
+
+PRIOR VERSIONS REMAIN UNDER THE MIT LICENSE, PERMANENTLY
+--------------------------------------------------------
+
+Every version of Lighthouse up to and including v26.9.9.9, released 2026-09-09,
+was published under the MIT License. Those versions remain licensed under the
+MIT License in perpetuity. The license change is not retroactive: it binds later
+versions only.
+
+If you hold a copy of any of those versions — including a fork taken from the
+repository before the change — your rights under the MIT License are unaffected
+by anything in the LICENSE file or in the Lighthouse Additional Terms, and
+nothing in those documents asks you to give them up.
+
+The MIT License that applied to those versions, preserved in full:
+
+    MIT License
+
+    Copyright (c) 2025 LetPeopleWork GmbH
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+THIRD-PARTY COMPONENTS
+----------------------
+
+Lighthouse bundles third-party open-source components, each under its own
+license. The complete inventory, with versions and licenses, is generated per
+release as a CycloneDX SBOM and is readable in the running application under
+Settings > System Info > OSS Attribution.

@@ -1,0 +1,141 @@
+Lighthouse Source Available License 1.0
+SPDX-License-Identifier: LicenseRef-Lighthouse-SAL-1.0
+
+Copyright (c) 2025-2026 LetPeopleWork GmbH
+
+Lighthouse is source available. The source code is public and inspectable, and
+you may run it, read it, and change it for your own use. It is not open source
+under the Open Source Initiative's definition, and it is not closed: this file
+and the one beside it tell you exactly what you may and may not do.
+
+THIS LICENSE HAS TWO PARTS. Both are binding and both must be read together:
+
+  1. The Elastic License 2.0, reproduced in full below this notice, without
+     alteration.
+
+  2. The Lighthouse Additional Terms, in the file LICENSE-ADDITIONAL-TERMS.md,
+     distributed alongside this file. They add two further limitations on the
+     copyright license granted below.
+
+The grant in the Elastic License 2.0 below is offered subject to the Lighthouse
+Additional Terms as well as to the limitations stated in the Elastic License 2.0
+itself. Where the two documents conflict, the Lighthouse Additional Terms
+govern. Anyone who receives any part of the software from you must receive both
+documents.
+
+WHAT LICENSE APPLIES TO WHICH VERSION
+
+  Every version of Lighthouse up to and including v26.9.9.9, released
+  2026-09-09, was published under the MIT License and remains licensed under
+  the MIT License in perpetuity. Nothing in this file changes that, and nothing
+  in this file applies retroactively to those versions. The full text of that
+  MIT License is preserved in the NOTICE file.
+
+  These terms apply to version <FILL AT RELEASE> and to every later version.
+
+THIS IS NOT THE ELASTIC LICENSE 2.0. The text below is the Elastic License 2.0
+reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,
+not Elasticsearch B.V., and the composite terms in these two documents are not
+the Elastic License 2.0 and are not endorsed by or affiliated with
+Elasticsearch B.V. Do not identify this software as Elastic-2.0 licensed; its
+identifier is LicenseRef-Lighthouse-SAL-1.0.
+
+================================================================================
+  The text below this line is the Elastic License 2.0, reproduced without
+  modification from https://www.elastic.co/licensing/elastic-license.
+  Nothing in it has been added, removed, reworded or reordered.
+================================================================================
+
+Elastic License 2.0
+
+URL: https://www.elastic.co/licensing/elastic-license
+
+## Acceptance
+
+By using the software, you agree to all of the terms and conditions below.
+
+## Copyright License
+
+The licensor grants you a non-exclusive, royalty-free, worldwide,
+non-sublicensable, non-transferable license to use, copy, distribute, make
+available, and prepare derivative works of the software, in each case subject to
+the limitations and conditions below.
+
+## Limitations
+
+You may not provide the software to third parties as a hosted or managed
+service, where the service provides users with access to any substantial set of
+the features or functionality of the software.
+
+You may not move, change, disable, or circumvent the license key functionality
+in the software, and you may not remove or obscure any functionality in the
+software that is protected by the license key.
+
+You may not alter, remove, or obscure any licensing, copyright, or other notices
+of the licensor in the software. Any use of the licensor’s trademarks is subject
+to applicable law.
+
+## Patents
+
+The licensor grants you a license, under any patent claims the licensor can
+license, or becomes able to license, to make, have made, use, sell, offer for
+sale, import and have imported the software, in each case subject to the
+limitations and conditions in this license. This license does not cover any
+patent claims that you cause to be infringed by modifications or additions to
+the software. If you or your company make any written claim that the software
+infringes or contributes to infringement of any patent, your patent license for
+the software granted under these terms ends immediately. If your company makes
+such a claim, your patent license ends immediately for work on behalf of your
+company.
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of the software from you
+also gets a copy of these terms.
+
+If you modify the software, you must include in any modified copies of the
+software prominent notices stating that you have modified the software.
+
+## No Other Rights
+
+These terms do not imply any licenses other than those expressly granted in
+these terms.
+
+## Termination
+
+If you use the software in violation of these terms, such use is not licensed,
+and your licenses will automatically terminate. If the licensor provides you
+with a notice of your violation, and you cease all violation of this license no
+later than 30 days after you receive that notice, your licenses will be
+reinstated retroactively. However, if you violate these terms after such
+reinstatement, any additional violation of these terms will cause your licenses
+to terminate automatically and permanently.
+
+## No Liability
+
+*As far as the law allows, the software comes as is, without any warranty or
+condition, and the licensor will not be liable to you for any damages arising
+out of these terms or the use or nature of the software, under any kind of
+legal claim.*
+
+## Definitions
+
+The **licensor** is the entity offering these terms, and the **software** is the
+software the licensor makes available under these terms, including any portion
+of it.
+
+**you** refers to the individual or entity agreeing to these terms.
+
+**your company** is any legal entity, sole proprietorship, or other kind of
+organization that you work for, plus all organizations that have control over,
+are under the control of, or are under common control with that
+organization. **control** means ownership of substantially all the assets of an
+entity, or the power to direct its management and policies by vote, contract, or
+otherwise. Control can be direct or indirect.
+
+**your licenses** are all the licenses granted to you for the software under
+these terms.
+
+**use** means anything you do with the software requiring one of your licenses.
+
+**trademark** means trademarks, service marks, and similar rights.

@@ -1,0 +1,48 @@
+Lighthouse Source Available License 1.0
+SPDX-License-Identifier: LicenseRef-Lighthouse-SAL-1.0
+
+Copyright (c) 2025-2026 LetPeopleWork GmbH
+
+Lighthouse is source available. The source code is public and inspectable, and
+you may run it, read it, and change it for your own use. It is not open source
+under the Open Source Initiative's definition, and it is not closed: this file
+and the one beside it tell you exactly what you may and may not do.
+
+THIS LICENSE HAS TWO PARTS. Both are binding and both must be read together:
+
+  1. The Elastic License 2.0, reproduced in full below this notice, without
+     alteration.
+
+  2. The Lighthouse Additional Terms, in the file LICENSE-ADDITIONAL-TERMS.md,
+     distributed alongside this file. They add two further limitations on the
+     copyright license granted below.
+
+The grant in the Elastic License 2.0 below is offered subject to the Lighthouse
+Additional Terms as well as to the limitations stated in the Elastic License 2.0
+itself. Where the two documents conflict, the Lighthouse Additional Terms
+govern. Anyone who receives any part of the software from you must receive both
+documents.
+
+WHAT LICENSE APPLIES TO WHICH VERSION
+
+  Every version of Lighthouse up to and including v26.9.9.9, released
+  2026-09-09, was published under the MIT License and remains licensed under
+  the MIT License in perpetuity. Nothing in this file changes that, and nothing
+  in this file applies retroactively to those versions. The full text of that
+  MIT License is preserved in the NOTICE file.
+
+  These terms apply to version <FILL AT RELEASE> and to every later version.
+
+THIS IS NOT THE ELASTIC LICENSE 2.0. The text below is the Elastic License 2.0
+reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,
+not Elasticsearch B.V., and the composite terms in these two documents are not
+the Elastic License 2.0 and are not endorsed by or affiliated with
+Elasticsearch B.V. Do not identify this software as Elastic-2.0 licensed; its
+identifier is LicenseRef-Lighthouse-SAL-1.0.
+
+================================================================================
+  The text below this line is the Elastic License 2.0, reproduced without
+  modification from https://www.elastic.co/licensing/elastic-license.
+  Nothing in it has been added, removed, reworded or reordered.
+================================================================================
+

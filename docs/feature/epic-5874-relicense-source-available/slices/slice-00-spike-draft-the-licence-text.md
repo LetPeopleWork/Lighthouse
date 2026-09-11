@@ -6,6 +6,12 @@ plus external legal turnaround
 This is a **pre-slice SPIKE, not a slice.** It has no user-visible output and would fail the
 slice-composition gate on its own. It lands as a precursor to slice 01, not as something shipped.
 
+> **Status 2026-09-11 — drafting done, legal review outstanding.** All four documents are written and
+> live in `../drafts/`: `LICENSE.draft` (header block + ELv2 verbatim, round-trip verified
+> byte-identical against Elastic's published text), `LICENSE-ADDITIONAL-TERMS.md`, `NOTICE`, and a
+> `README.md` recording provenance, the two fill-at-release placeholders, and the drafting departures
+> from PolyForm Shield. What remains of this SPIKE is questions 2–7 below, which need a lawyer.
+
 ## Goal
 
 Produce two reviewed, signable documents — `LICENSE` carrying the Elastic License 2.0 verbatim under
