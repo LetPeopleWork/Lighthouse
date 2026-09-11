@@ -147,6 +147,46 @@ online content. We took the cautious reading: the contractual prohibition is in
 section 2, and the machine-readable mechanism is a question for counsel rather
 than an assertion we make about ourselves.
 
+## Review round 3 — 2026-09-11
+
+Both reviewers now call the structure sound. Four things were genuinely new and
+are applied; two were already in the draft; one is a straight disagreement.
+
+| Finding | Change |
+|---|---|
+| The scope sentence does not *guarantee* an infringement remedy — where the prohibited act does not itself infringe copyright (a cross-language rebuild, say), there may be nothing to infringe. Part 1 should preserve a contractual claim as well. | **Added.** The scope sentence is strengthened ("does not extend to, and expressly excludes"), and a second paragraph now says that where a prohibited use does not itself infringe copyright, the prohibition still binds as a term and every contractual remedy is retained. Belt and braces, because which one applies depends on the act. |
+| The EU Software Directive makes certain user rights non-excludable — observe/study/test, back-up, decompilation for interoperability — and contractual provisions to the contrary are void. Does section 1 accidentally catch any of them? | **Answered by drafting, new section 3.** Nothing in the licence restricts a mandatory right; where a provision would, it does not apply to that extent and the rest stands. Cheaper than arguing the point later. |
+| Section 1.1's exclusions did not cover *tools that consume the software's output*, or a broader product with merely incidental overlap. | **Added** to 1.1, along with customer-specific extensions. |
+| Nothing states how this licence relates to the paid commercial agreement. | **Added, section 4** — see the disagreement below. |
+| A machine-readable TDM reservation is needed alongside the licence text. | **Moved into slice 01's scope**, not into the licence. Mechanism verified: W3C TDMRep, `/.well-known/tdmrep.json`, properties `tdm-reservation` and `tdm-policy`. One reviewer named the file slightly wrong. **And it is origin-scoped** — see below. |
+
+**The disagreement, and how it was resolved.** On the relationship to commercial
+terms, one reviewer proposed that the commercial agreement *"shall control in the
+event of any conflict"*; the other that commercial terms *"do not modify this
+License unless they expressly say so"*. Opposite defaults. **We drafted the
+second.** A private contract that can silently override the public licence is a
+hazard: it invites the argument that an enterprise agreement granted rights the
+source licence withholds, and nobody reading `LICENSE` could know. Express
+override is still available to us when we want it. Flagged to counsel rather than
+settled here.
+
+**What neither reviewer noticed about TDMRep.** The protocol is served from the
+origin's `/.well-known/` path. We control `letpeople.work` and
+`docs.lighthouse.letpeople.work`; **we do not control `github.com`**, which is
+where the source actually sits and where a crawler would find it. So a TDMRep
+file cannot cover the copy that matters most, and for that copy the reservation
+rests on the licence text alone. That limitation is now a question for counsel
+rather than an assumption.
+
+**Already in the draft, re-recommended anyway.** One review proposed the
+substitution definition — *"primary purpose … rather than to extend, integrate
+with, or operate"* — which round 2 had already taken from that same reviewer's
+earlier note, verbatim. The same review asked whether section 3 (now 5) uses
+ELv2's 30-day cure; it has said *"including that section's cure and reinstatement
+provisions"* since round 2. The reviewer also still had the deleted
+`LICENSE-ADDITIONAL-TERMS.md` in hand. Worth confirming which revision a reviewer
+holds before the next round.
+
 ## What the lawyer is being asked
 
 The full question set is in `questions-for-counsel.md` beside this file.

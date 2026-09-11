@@ -35,14 +35,22 @@ lack of notice. **We restructured: everything binding is now in `LICENSE`, with
 our terms above Elastic's.** Does that resolve it, or does anything else need to
 change in how the two parts are presented?
 
-**A2. Is the grant correctly framed as scope rather than covenant?**
-ELv2 grants a licence to "use, copy, distribute, make available, and prepare
-derivative works". Part 1 says: *"The rights granted by the Elastic License 2.0
-do not authorize the uses prohibited by these Additional Terms."* The intent is
-that a prohibited use falls **outside the scope of the grant** — so it is
-infringement, not merely breach of covenant — without our having to rewrite
-Elastic's grant language, which we will not do. **Does that sentence achieve
-it?** If not, what wording would, given Part 2 is untouchable?
+**A2. Scope versus covenant — and the remedy where copyright does not reach.**
+Part 1 now carries two sentences rather than one:
+
+> *"The license granted in Part 2 does not extend to, and expressly excludes, any
+> use prohibited by these Additional Terms. A prohibited use falls outside the
+> scope of the license granted, and is not licensed."*
+>
+> *"Where a prohibited use does not itself infringe copyright, the prohibition
+> still binds you as a term of this license, and the licensor retains every
+> contractual remedy for it."*
+
+The first aims at an infringement remedy; the second exists because a reviewer
+warned, correctly, that scope framing cannot manufacture infringement where the
+underlying act implicates no copyright right — a cross-language rebuild being the
+obvious case. **Do both sentences do what they are meant to, and does the second
+weaken the first** by conceding that some prohibited uses are contract-only?
 
 **A3. Reproducing Elastic's text under our own name — any exposure?**
 We reproduce ELv2 unaltered as Part 2, state plainly that the composite is not
@@ -78,13 +86,21 @@ first draft blurred this and a reviewer caught the contradiction. Is the revised
 wording clear enough to be enforceable, or is it void for uncertainty? If the
 latter, how would you draw the same line?
 
-**B2. Does the internal-deployment restriction survive?**
+**B2. Does the internal-deployment restriction survive, and does it collide with
+non-excludable statutory rights?**
 We deliberately cover the case of an organisation building its own substitute
 from our source and deploying it only to its own staff, never selling it. That is
-the commercial risk we care most about — AI assistance has made it cheap. Is a
-restriction on purely internal use enforceable, and does it create any
-unfair-terms exposure in standard business terms (we are aware this is a live
-question under Swiss and German law)?
+the commercial risk we care most about — AI assistance has made it cheap.
+
+  (a) Is a restriction on purely internal use enforceable, and does it create
+      unfair-terms exposure in standard business terms under Swiss or German law?
+
+  (b) The Software Directive makes certain user rights non-excludable and voids
+      contrary contractual provisions — observing, studying and testing to
+      determine underlying ideas and principles; back-up copies; decompilation
+      for interoperability. **Does section 1 accidentally reach any of them?**
+      Part 1 section 3 is our savings clause, drafted to make the question moot.
+      **Is it adequate, or does it need to name the exceptions more precisely?**
 
 **B3. Is the cross-language and cross-platform reach overbroad?**
 Section 1 says products compete even in a different interface, platform or
@@ -138,9 +154,22 @@ Restricting use of licensed code as training data is the most novel part.
       have not confirmed. **We took the cautious reading and assert nothing.**
 
 So: **is a clause in `LICENSE` an effective Art. 4(3) reservation on its own?**
-If not, what machine-readable mechanism should a public source repository carry
-— `robots.txt`, a TDM reservation protocol file, repository metadata, something
-else — and should the licence then reference it?
+
+If not, we plan to publish a W3C TDMRep reservation — `/.well-known/tdmrep.json`
+with `tdm-reservation` set and a `tdm-policy` URL. **There is a limitation we
+cannot engineer around, and we would like your view on it:** TDMRep is served
+from an origin's `/.well-known/` path. We control `letpeople.work` and
+`docs.lighthouse.letpeople.work` and can publish there. **We do not control
+`github.com`**, which is where the source actually lives and where a crawler
+would encounter it.
+
+  (a) Does a TDMRep file on our own domains reserve anything in respect of the
+      copy hosted on GitHub?
+  (b) If not, is there any mechanism that does — repository metadata, a file in
+      the repository root, something in the licence text itself?
+  (c) If nothing reaches the GitHub copy, is the reservation worth publishing at
+      all, or does a partial reservation create a worse position than a clear
+      contractual prohibition alone?
 
 **C3. Does it sweep too far?**
 Section 2 carries an express carve-out that it adds no restriction on tools, and
@@ -195,10 +224,24 @@ while stating they are guidance and not part of the terms — following ELv2's o
 FAQ, which carries the hosted-service examples outside the licence. Is that the
 right split, or should examples be binding?
 
-**D4. Does this licence need to reference our paid Terms and Conditions?**
+**D4. Which instrument wins — the licence or the commercial agreement? Our
+reviewers proposed opposite defaults.**
 Premium features are unlocked by a signed licence key sold under a separate
-commercial agreement. The two documents here say nothing about that agreement,
-and it says nothing about these. Is silence correct, or should they cross-refer?
+commercial agreement. Part 1 section 4 now cross-refers, and we had to pick a
+default:
+
+  - One reviewer proposed the commercial agreement *"shall control in the event
+    of any conflict"*.
+  - The other proposed that commercial terms *"do not modify this License unless
+    they expressly say so"*.
+
+**We drafted the second**, because a private contract that silently overrides the
+public licence invites the argument that an enterprise agreement granted rights
+the source licence withholds, and no reader of `LICENSE` could detect it. Express
+override stays available when we want it.
+
+**Is that the right default**, and does section 4 as drafted achieve it without
+undermining the commercial agreements we actually sign?
 
 ---
 

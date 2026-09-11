@@ -47,19 +47,34 @@ Then run `gh api repos/LetPeopleWork/Lighthouse --jq .license` and record what a
   released before the change date remains under the MIT licence in perpetuity, with that date named
   (AC-01.4). This is what keeps the four existing forks unambiguously covered.
 - The licence name and its `LicenseRef-` SPDX identifier used identically across `LICENSE`,
-  `LICENSE-ADDITIONAL-TERMS.md`, `README.md` and `docs/licensing/licensing.md` (AC-01.5).
+  `NOTICE`, `README.md` and `docs/licensing/licensing.md` (AC-01.5).
 - `Lighthouse.EndToEndTests/package.json`: the `"license": "MIT"` field corrected (AC-01.7).
-- Both documents added to whatever packages the published artefacts — Docker image, standalone
-  archives, chart — so the second file is not a repository-only artefact (AC-01.8).
+- `LICENSE` and `NOTICE` added to whatever packages the published artefacts — Docker image,
+  standalone archives, chart (AC-01.8).
+- **A machine-readable TDM reservation**, if counsel confirms it is worth publishing: a W3C TDMRep
+  file at `/.well-known/tdmrep.json` on `letpeople.work` and `docs.lighthouse.letpeople.work`, with
+  `tdm-reservation` set and a `tdm-policy` URL pointing at the licensing page. The EU DSM Directive's
+  Art. 4 text-and-data-mining exception applies unless the rightsholder has reserved the use "in an
+  appropriate manner", and for content published online it points to machine-readable means — so the
+  clause in `LICENSE` may bind a licensee and still not reserve anything against a crawler.
+  **Known limitation, carried to counsel rather than engineered around:** TDMRep is served from an
+  origin's `/.well-known/` path, and we do not control `github.com`, which is where the source
+  actually sits. A file on our own domains cannot cover the copy a crawler would find.
 - Whatever GitHub repo-settings change the sidebar needs, once the dogfood moment shows what it
   actually renders.
 
 ## Hard constraint
 
 **Nothing inside Elastic's text is edited, reworded, reordered or deleted.** Our words go above it,
-behind a delimiter, and in the second file. No grant exists to publish a modified Elastic License, and
-the two-document shape exists precisely to avoid needing one. A reviewer should be able to diff the
-ELv2 portion against Elastic's published text and get nothing back.
+as Part 1, behind a delimiter. No grant exists to publish a modified Elastic License, and the
+two-part shape exists precisely to avoid needing one. ELv2 is always the tail of the file, so the
+check is length-anchored and survives any future edit to Part 1:
+
+```sh
+diff <(tail -n "$(wc -l < elv2-verbatim.txt)" LICENSE) elv2-verbatim.txt
+```
+
+A non-empty diff fails AC-01.1.
 
 ## OUT of scope
 

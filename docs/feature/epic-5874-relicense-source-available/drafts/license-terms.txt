@@ -6,8 +6,13 @@ These Additional Terms are part of this license. They are read together with the
 Elastic License 2.0 reproduced in Part 2 below. Where the two parts conflict,
 these Additional Terms govern.
 
-The rights granted by the Elastic License 2.0 do not authorize the uses
-prohibited by these Additional Terms.
+The license granted in Part 2 does not extend to, and expressly excludes, any
+use prohibited by these Additional Terms. A prohibited use falls outside the
+scope of the license granted, and is not licensed.
+
+Where a prohibited use does not itself infringe copyright, the prohibition still
+binds you as a term of this license, and the licensor retains every contractual
+remedy for it.
 
 "The software", "the licensor", "you" and "your company" carry the meanings
 given to them in Part 2.
@@ -39,10 +44,16 @@ Running the software is always permitted. That includes running a modified
 copy, changing it as much as you like, and serving everyone in your
 organization from a single instance, for as long as you like.
 
-Plugins, extensions, integrations, and applications built around the software
-are not separate substitutes for it, and neither is a modified deployment of the
-software itself. The line this section draws is between your deployment of the
-software and a separate product built out of it.
+None of the following is a separate substitute for the software: a plugin, an
+extension, an integration, an extension written for your own needs, an
+application built around the software, a tool that consumes its output, or a
+modified deployment of the software itself. A broader product that happens to
+contain some functionality overlapping with the software is not a substitute for
+it unless providing substantially the same core functionality is that product's
+primary purpose.
+
+The line this section draws is between your deployment of the software and a
+separate product built out of it.
 
 1.2 IF THE LICENSOR LATER BRINGS YOUR PRODUCT INTO COMPETITION
 
@@ -75,15 +86,41 @@ change the software for any purpose this license permits. Using a code assistant
 to modify your own instance is permitted for exactly the same reason that
 modifying it by hand is permitted.
 
+Section 2 closes a route to the results section 1 prohibits. It does not narrow
+anything section 1 permits.
 
-3. TERMINATION
+
+3. RIGHTS THAT CANNOT BE RESTRICTED
+
+Nothing in this license restricts any right you hold under mandatory law that
+cannot be excluded by agreement. Where applicable, that includes your statutory
+rights to observe, study or test the functioning of the software in order to
+determine the ideas and principles underlying it, to make a back-up copy, and to
+decompile the software so far as necessary to achieve interoperability with
+other programs.
+
+Where a provision of this license would restrict such a right, that provision
+does not apply to the extent of the restriction, and the rest of this license
+continues in force.
+
+
+4. RELATIONSHIP TO COMMERCIAL AGREEMENTS
+
+Some features of the software are enabled by a license key issued by the
+licensor, and their use may also be governed by a separate written commercial
+agreement between you and the licensor. That agreement and this license are
+separate instruments. A commercial agreement does not modify this license unless
+it expressly says that it does.
+
+
+5. TERMINATION
 
 A violation of these Additional Terms is a violation of this license for the
 purposes of the Termination section of the Elastic License 2.0 in Part 2,
 including that section's cure and reinstatement provisions.
 
 
-4. GOVERNING LAW AND JURISDICTION
+6. GOVERNING LAW AND JURISDICTION
 
 This license is governed by the substantive law of Switzerland, excluding its
 conflict-of-law rules and excluding the United Nations Convention on Contracts
@@ -93,6 +130,6 @@ this license, to the extent that mandatory law does not require otherwise.
 
 
 For worked examples of what this license allows and does not allow, see the
-licensing page in the Lighthouse documentation. Those examples are guidance and
-are not part of this license.
+licensing page in the Lighthouse documentation. Those examples are guidance.
+They do not expand or restrict the rights granted by this license.
 
