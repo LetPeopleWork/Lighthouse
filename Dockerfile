@@ -62,6 +62,7 @@ RUN apt-get update \
 USER app
 
 COPY --from=publish /app/publish .
+COPY LICENSE NOTICE /app/
 
 ENV Kestrel__Endpoints__Http__Url="http://+:80"
 ENV Kestrel__Endpoints__Https__Url="https://+:443"

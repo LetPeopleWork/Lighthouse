@@ -1,0 +1,100 @@
+Lighthouse
+Copyright (c) 2025-2026 LetPeopleWork GmbH
+
+
+CONTRIBUTOR COPYRIGHT AND THE MIT LICENSE
+-----------------------------------------
+
+Portions of this software were written by people outside LetPeopleWork GmbH and
+are copyright their respective authors:
+
+  Copyright (c) 2025 Lorenzo (MrMilgauss)
+  Copyright (c) 2026 Sascha Lucius
+  Copyright (c) 2026 ZylkaGreger
+
+Those contributions were offered and accepted under the MIT License, and the
+MIT License requires that its copyright notice and permission notice accompany
+every copy. That text is reproduced in full below, and this notice is the
+required accompaniment for those portions.
+
+Their authors retain copyright in what they wrote. Nothing in the LICENSE file
+or in this NOTICE transfers that copyright, and nothing withdraws the MIT
+License under which those contributions were published. LetPeopleWork GmbH
+sublicenses the combined work under the Lighthouse Source Available License 1.0,
+which the MIT License expressly permits.
+
+CURRENT LICENSE
+---------------
+
+All source code in this repository from the commit that introduced the current
+LICENSE file onward, and every release built from it, is licensed under the
+Lighthouse Source Available License 1.0
+(SPDX: LicenseRef-Lighthouse-SAL-1.0). The complete license is in the LICENSE
+file. It has two parts, both in that one file and both binding:
+
+  Part 1   the Lighthouse Additional Terms, which limit the rights granted in
+           Part 2
+  Part 2   the Elastic License 2.0, reproduced verbatim and unaltered
+
+The source code remains public and inspectable. This is not a move to closed
+source, and OSI-approved status is not claimed.
+
+
+PRIOR VERSIONS REMAIN UNDER THE MIT LICENSE, PERMANENTLY
+--------------------------------------------------------
+
+Everything released up to and including v26.9.9.9, on 9 September 2026, was
+published under the MIT License. Those releases remain licensed under the MIT
+License in perpetuity. The license change is not retroactive: it binds later
+source only. v26.9.9.9 is named because it is the last release that preceded the
+change; the boundary itself is the commit that introduced the current LICENSE
+file.
+
+If you hold a copy of any of those versions — including a fork taken from the
+repository before the change — your rights under the MIT License are unaffected
+by anything in the LICENSE file, and nothing in it asks you to give them up.
+
+The MIT License that applied to those versions, preserved in full:
+
+    MIT License
+
+    Copyright (c) 2025 LetPeopleWork GmbH
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+CONTRIBUTIONS
+-------------
+
+LetPeopleWork GmbH does not accept outside code contributions to this project.
+Issues, Discussions and the wiki are disabled. Bug reports, feedback and
+documentation corrections are welcome through the channels listed at
+https://letpeople.work - please send them there rather than as a pull request.
+
+This is stated so that nobody contributes code under an assumption about the
+terms that would apply to it.
+
+
+THIRD-PARTY COMPONENTS
+----------------------
+
+Lighthouse bundles third-party open-source components, each under its own
+license. The complete inventory, with versions and licenses, is generated per
+release as a CycloneDX SBOM and is readable in the running application under
+Settings > System Info > OSS Attribution.

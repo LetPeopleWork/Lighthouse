@@ -18,7 +18,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "LicenseRef-Lighthouse-SAL-1.0",
   "description": "",
   "devDependencies": {
     "@biomejs/biome": "2.5.12",

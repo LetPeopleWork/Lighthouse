@@ -46,7 +46,7 @@ skip_path() {
 ALLOW=(
   "LICENSE|MIT|the licence itself records which versions remain under MIT"
   "NOTICE|MIT|the notice preserves the MIT text for versions released before the change"
-  "docs/LICENSE|MIT|published copy of the licence, same reason"
+  "docs/LICENSE|MIT|the just-the-docs Jekyll theme's own MIT licence, (c) 2022 just-the-docs, not ours"
   "docs/Installation/configuration.md|Postgres is an open-source|true statement about Postgres, not about Lighthouse"
   "docs/Installation/authentication.md|Keycloak.*open-source|true statement about Keycloak, not about Lighthouse"
   "docs/releasenotes/releasenotes.md|Open-Source Software \(OSS\) Attribution|names the section listing third-party components we bundle"

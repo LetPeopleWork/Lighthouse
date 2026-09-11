@@ -77,6 +77,9 @@ jobs:
           mkdir -p "${SIDECAR_DIR}"
           mkdir -p "${RESOURCES_DIR}"
 
+          # The licence travels with the app, not only with the repository.
+          cp LICENSE NOTICE "${RESOURCES_DIR}/"
+
           cp ./Lighthouse/win-x64/Lighthouse.exe "${SIDECAR_DIR}/Lighthouse.Backend-${TARGET_TRIPLE}.exe"
           cp -r ./Lighthouse/win-x64/. "${RESOURCES_DIR}/"
           rm "${RESOURCES_DIR}/Lighthouse.exe"

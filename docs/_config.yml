@@ -17,6 +17,12 @@ exclude:
   - feature
   - product
 
+# Jekyll drops dot-directories from the build by default. The text and data
+# mining reservation has to be served from /.well-known/ to be found, so it has
+# to be named here or it never reaches the site.
+include:
+  - .well-known
+
 enable_copy_code_button: true
 
 mermaid:
