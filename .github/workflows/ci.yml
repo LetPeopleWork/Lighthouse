@@ -11,6 +11,13 @@ on:
       - ".github/workflows/ci*.yml"
       - ".github/actions/**"
       - "examples/postgres/**"
+      # The image build reads all four. Without them a Dockerfile or
+      # .dockerignore change reaches main without ever being built, which is how
+      # a broken COPY got there in the first place.
+      - "Dockerfile"
+      - ".dockerignore"
+      - "LICENSE"
+      - "NOTICE"
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:  
