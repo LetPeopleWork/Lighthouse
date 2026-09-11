@@ -1,0 +1,99 @@
+{
+  "roadmap": {
+    "project_id": "fix-jira-board-team-validation",
+    "created_at": "2026-09-11T00:00:00Z",
+    "total_steps": 4
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Jira board query assembly and error surfacing",
+      "description": "Fix the malformed JQL Lighthouse builds from a Jira board whose filter strips to empty, and stop discarding the rejection Jira sends back.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Bracket board filter and sub-filter independently",
+          "agent": "nw-software-crafter",
+          "criteria": [
+            "A board whose filter strips to empty yields a query with no leading AND",
+            "Filter and sub-filter are each parenthesised before being joined",
+            "A top-level OR in the board filter no longer loses its right operand to AND precedence",
+            "An ordering clause inside brackets is not treated as the query's own ORDER BY",
+            "Existing board-information integration assertion updated to the new bracketed shape"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs"
+          ],
+          "implementation_notes": "Root cause. ExtractJqlFromBoardConfiguration joins an empty filter to a sub-filter that already carries its own leading AND, producing '( AND (...))'. Give ExtractSubQuery the raw sub-filter and let the caller decide the conjunction. IndexOfOrderByClause needs a bracket-depth counter with the existing quote skip kept first."
+        },
+        {
+          "id": "01-02",
+          "name": "Report what Jira said and stop calling it unexpected",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-01"
+          ],
+          "criteria": [
+            "A rejected search surfaces Jira's errorMessages text in the validation technical details",
+            "A query Jira rejected reports a distinct code and message, not an unexpected error",
+            "The rejected query and the response body are logged at warning level",
+            "Genuinely unexpected failures keep the existing unexpected-error wording",
+            "Successful validation output is unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs"
+          ],
+          "implementation_notes": "Two discard sites, not one. The Data Center throw site calls EnsureSuccessStatusCode before the body read; the Cloud walk answers a bare false and drops the body one layer earlier. The existing logged-body pattern in GetBoardsFromJira is the shape to follow. Once the body is readable a rejected query is no longer unexpected, so it must not share the catch-all wording - the headline is what users read. Team and portfolio validation share the search layer, so both improve from one change."
+        },
+        {
+          "id": "01-03",
+          "name": "Fail loudly when a board filter cannot be read",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-02"
+          ],
+          "criteria": [
+            "An unreadable board filter fails validation instead of yielding an unscoped query",
+            "The failure names the HTTP status and points at the connection account's permissions",
+            "A filter that is legitimately empty still yields a valid query scoped by the sub-filter",
+            "Each silent board-configuration degradation logs status and reason before returning",
+            "Board information for a readable filter is unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs"
+          ],
+          "implementation_notes": "Empty has two causes the code cannot currently tell apart: a filter whose JQL really is only an ordering clause, and a filter the connection could not read at all. After step 01-01 both produce well-formed JQL, so the second case would pass validation and silently scope a team to the entire Jira instance - a worse failure than the 400 it replaced. The item-count check is no safety net because an over-broad query returns plenty. Distinguish the two and fail on the unreadable one."
+        },
+        {
+          "id": "01-04",
+          "name": "Stop falling back to the removed Cloud search endpoint",
+          "agent": "nw-software-crafter",
+          "deps": [
+            "01-03"
+          ],
+          "criteria": [
+            "A failed Cloud search no longer retries the Data Center endpoint",
+            "The error a Cloud caller sees describes the request Lighthouse actually made",
+            "Data Center search behaviour is unchanged",
+            "A state or type name containing a quote is escaped before interpolation"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs"
+          ],
+          "implementation_notes": "Jira Cloud removed rest/api/latest/search and answers 410 to every call, valid query or not, so the fallback can only ever replace a real error with a deprecation notice. Keep the fallback for unknown deployments if one exists; drop it when the deployment is known to be Cloud."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "note": "Bugfix roadmap derived from rca.md and live-proof.md; root cause reproduced live on board 107 before planning. Steps 01-02 and 01-03 added on maintainer review: reading Jira's rejection makes the catch-all wording wrong, and a well-formed query built from an unreadable filter must not pass silently."
+  }
+}
