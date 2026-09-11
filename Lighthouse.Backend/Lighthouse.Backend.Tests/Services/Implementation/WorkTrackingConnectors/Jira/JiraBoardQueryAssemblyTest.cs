@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models.Validation;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -48,12 +49,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string RejectedQueryBody =
             $"{{\"errorMessages\":[{JsonSerializer.Serialize(JiraRejectionSentence)}],\"errors\":{{}}}}";
 
-        [Test]
-        public async Task GetBoardInformation_FilterUnreadable_DoesNotProduceAQueryStartingWithAnd()
-        {
-            var query = await BoardQueryFor("project = FOO", "fixVersion is EMPTY", HttpStatusCode.Forbidden);
+        private static readonly string ReadableBoardConfiguration =
+            "{\"columnConfig\":{\"columns\":["
+            + "{\"statuses\":[{\"id\":\"1\"}]},"
+            + "{\"statuses\":[{\"id\":\"3\"}]},"
+            + "{\"statuses\":[{\"id\":\"5\"}]}"
+            + $"]}},\"filter\":{{\"id\":\"{FilterId}\"}},\"subQuery\":{{\"query\":\"fixVersion is EMPTY\"}}}}";
 
-            Assert.That(query, Is.EqualTo("(fixVersion is EMPTY)"));
+        private const string BoardIssues =
+            "{\"issues\":["
+            + "{\"fields\":{\"issuetype\":{\"name\":\"Story\"}}},"
+            + "{\"fields\":{\"issuetype\":{\"name\":\"Bug\"}}},"
+            + "{\"fields\":{\"issuetype\":{\"name\":\"Story\"}}}"
+            + "]}";
+
+        private const string InstanceStatuses =
+            "["
+            + "{\"id\":\"1\",\"name\":\"To Do\",\"statusCategory\":{\"name\":\"To Do\"}},"
+            + "{\"id\":\"3\",\"name\":\"In Progress\",\"statusCategory\":{\"name\":\"In Progress\"}},"
+            + "{\"id\":\"5\",\"name\":\"Done\",\"statusCategory\":{\"name\":\"Done\"}},"
+            + "{\"id\":\"9\",\"name\":\"Cancelled\",\"statusCategory\":{\"name\":\"Done\"}}"
+            + "]";
+
+        [TestCase(HttpStatusCode.Forbidden, "403")]
+        [TestCase(HttpStatusCode.NotFound, "404")]
+        public void GetBoardInformation_FilterCannotBeRead_RefusesTheBoardInsteadOfScopingItToEverything(
+            HttpStatusCode filterStatus, string expectedStatusInMessage)
+        {
+            var refusal = Assert.ThrowsAsync<JiraReadException>(
+                async () => await BoardQueryFor("project = FOO", "fixVersion is EMPTY", filterStatus));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal!.Verdict.Message, Does.Contain(expectedStatusInMessage));
+                Assert.That(refusal.Verdict.Message, Does.Contain("permission"));
+                Assert.That(refusal.Verdict.Message, Does.Contain("account"));
+                Assert.That(refusal.Verdict.IsValid, Is.False);
+            }
+        }
+
+        [Test]
+        public void GetBoardInformation_FilterCarriesNoQuery_RefusesTheBoardTheSameWay()
+        {
+            var refusal = Assert.ThrowsAsync<JiraReadException>(
+                async () => await BoardQueryWhereTheFilterAnswers(
+                    FilterId, "fixVersion is EMPTY", HttpStatusCode.OK, "{\"name\":\"Board filter\"}"));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal!.Verdict.Message, Does.Contain("permission"));
+                Assert.That(refusal.Verdict.Message, Does.Contain("account"));
+            }
         }
 
         [Test]
@@ -116,13 +162,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(query, Is.Empty);
         }
 
-        private static async Task<string> BoardQueryFor(
+        private static Task<string> BoardQueryFor(
             string? filterJql,
             string? subFilterJql,
             HttpStatusCode filterStatus = HttpStatusCode.OK)
+            => BoardQueryWhereTheFilterAnswers(
+                filterJql is null ? null : FilterId,
+                subFilterJql,
+                filterStatus,
+                $"{{\"jql\":{JsonSerializer.Serialize(filterJql ?? string.Empty)}}}");
+
+        private static async Task<string> BoardQueryWhereTheFilterAnswers(
+            string? filterId,
+            string? subFilterJql,
+            HttpStatusCode filterStatus,
+            string filterPayload)
         {
-            var boardConfiguration = BuildBoardConfiguration(filterJql is null ? null : FilterId, subFilterJql);
-            var handler = CreateHandler(boardConfiguration, filterJql, filterStatus);
+            var boardConfiguration = BuildBoardConfiguration(filterId, subFilterJql);
+            var handler = CreateHandler(boardConfiguration, filterPayload, filterStatus);
 
             var connector = JiraConnectorTestSetup.AConnectorOver(handler);
             var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
@@ -145,7 +202,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             return $"{{\"columnConfig\":{{\"columns\":[]}}{filterPart}{subQueryPart}}}";
         }
 
-        private static HttpMessageHandler CreateHandler(string boardConfiguration, string? filterJql, HttpStatusCode filterStatus)
+        private static HttpMessageHandler CreateHandler(string boardConfiguration, string filterPayload, HttpStatusCode filterStatus)
         {
             var mock = new Mock<HttpMessageHandler>();
             mock.Protected()
@@ -154,19 +211,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
                 .Returns<HttpRequestMessage, CancellationToken>(
-                    (request, _) => Task.FromResult(BuildResponse(request, boardConfiguration, filterJql, filterStatus)));
+                    (request, _) => Task.FromResult(BuildResponse(request, boardConfiguration, filterPayload, filterStatus)));
 
             return mock.Object;
         }
 
         private static HttpResponseMessage BuildResponse(
-            HttpRequestMessage request, string boardConfiguration, string? filterJql, HttpStatusCode filterStatus)
+            HttpRequestMessage request, string boardConfiguration, string filterPayload, HttpStatusCode filterStatus)
         {
             var path = request.RequestUri?.AbsolutePath ?? string.Empty;
 
             if (path.EndsWith($"rest/api/2/filter/{FilterId}", StringComparison.Ordinal))
             {
-                return Respond(filterStatus, $"{{\"jql\":{JsonSerializer.Serialize(filterJql ?? string.Empty)}}}");
+                return Respond(filterStatus, filterPayload);
             }
 
             var body = path switch
@@ -180,6 +237,97 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             };
 
             return Respond(HttpStatusCode.OK, body);
+        }
+
+        [Test]
+        public async Task GetBoardInformation_EveryPartReadable_ReportsTheBoardsQueryTypesAndStates()
+        {
+            var boardInformation = await BoardReadOver(AReadableBoardExcept(refusedPath: null));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(boardInformation.DataRetrievalValue, Is.EqualTo("(project = PROJ) AND (fixVersion is EMPTY)"));
+                Assert.That(string.Join(",", boardInformation.WorkItemTypes), Is.EqualTo("Story,Bug"));
+                Assert.That(string.Join(",", boardInformation.ToDoStates), Is.EqualTo("To Do"));
+                Assert.That(string.Join(",", boardInformation.DoingStates), Is.EqualTo("In Progress"));
+                Assert.That(string.Join(",", boardInformation.DoneStates), Is.EqualTo("Done"));
+            }
+        }
+
+        [TestCase($"board/{BoardId}/configuration")]
+        [TestCase($"board/{BoardId}/issue")]
+        [TestCase("rest/api/latest/status")]
+        public async Task GetBoardInformation_PartOfTheBoardCannotBeRead_LogsWhatJiraAnsweredBeforeCarryingOn(string refusedPath)
+        {
+            var logger = new Mock<ILogger<JiraWorkTrackingConnector>>();
+
+            await BoardReadOver(AReadableBoardExcept(refusedPath), logger.Object);
+
+            logger.Verify(
+                log => log.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => NamesTheStatusAndTheReason(state)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.AtLeastOnce);
+        }
+
+        private static bool NamesTheStatusAndTheReason(object? loggedState)
+        {
+            var line = loggedState?.ToString() ?? string.Empty;
+
+            return line.Contains("403", StringComparison.Ordinal)
+                && line.Contains("Forbidden", StringComparison.Ordinal);
+        }
+
+        private static Task<BoardInformation> BoardReadOver(HttpMessageHandler handler)
+            => BoardReadOver(handler, Mock.Of<ILogger<JiraWorkTrackingConnector>>());
+
+        private static async Task<BoardInformation> BoardReadOver(
+            HttpMessageHandler handler, ILogger<JiraWorkTrackingConnector> logger)
+        {
+            var connector = JiraConnectorTestSetup.AConnectorOver(handler, logger);
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+
+            return await connector.GetBoardInformation(team.WorkTrackingSystemConnection, BoardId);
+        }
+
+        /// <summary>
+        /// A board every endpoint answers for, save one. Refusing a single endpoint is how each of the reads
+        /// that used to degrade in silence gets exercised without disturbing the others.
+        /// </summary>
+        private static HttpMessageHandler AReadableBoardExcept(string? refusedPath)
+        {
+            var mock = new Mock<HttpMessageHandler>();
+            mock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                    if (refusedPath is not null && path.Contains(refusedPath, StringComparison.Ordinal))
+                    {
+                        return Task.FromResult(Respond(HttpStatusCode.Forbidden, "{}"));
+                    }
+
+                    var body = path switch
+                    {
+                        _ when path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal) => "{\"deploymentType\":\"Server\"}",
+                        _ when path.EndsWith($"board/{BoardId}/configuration", StringComparison.Ordinal) => ReadableBoardConfiguration,
+                        _ when path.EndsWith($"rest/api/2/filter/{FilterId}", StringComparison.Ordinal) => "{\"jql\":\"project = PROJ ORDER BY Rank ASC\"}",
+                        _ when path.EndsWith($"board/{BoardId}/issue", StringComparison.Ordinal) => BoardIssues,
+                        _ when path.EndsWith("rest/api/latest/status", StringComparison.Ordinal) => InstanceStatuses,
+                        _ => "{}",
+                    };
+
+                    return Task.FromResult(Respond(HttpStatusCode.OK, body));
+                });
+
+            return mock.Object;
         }
 
         [Test]

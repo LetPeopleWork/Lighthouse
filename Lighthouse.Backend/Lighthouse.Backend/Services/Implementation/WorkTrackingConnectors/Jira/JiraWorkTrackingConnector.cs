@@ -440,8 +440,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 return await GetBoardInformationFromJira(client, boardId);
             }
-            catch
+            catch (WorkTrackingReadException)
             {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, "Could not read Board {BoardId} for System {ConnectionName}", boardId, workTrackingSystemConnection.Name);
                 return new BoardInformation();
             }
         }
@@ -627,7 +632,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ? numericValue
                 : update.Value;
 
-        private static async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
+        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
         {
             var boardInformation = new BoardInformation();
 
@@ -635,6 +640,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
+                logger.LogWarning(
+                    "Could not read the configuration of Board {BoardId}: Jira answered {StatusCode} ({ReasonPhrase}). The board is reported with no query, no work item types and no states.",
+                    boardId, (int)response.StatusCode, response.ReasonPhrase);
+
                 return boardInformation;
             }
 
@@ -646,17 +655,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client);
 
             boardInformation.WorkItemTypes = await workItemTypesTask;
-            boardInformation.DataRetrievalValue = await jqlTask;
 
             var (toDoStates, doingStates, doneStates) = await statusMappingTask;
             boardInformation.ToDoStates = toDoStates;
             boardInformation.DoingStates = doingStates;
             boardInformation.DoneStates = doneStates;
 
+            // Awaited last because it is the only one of the three that can throw, and abandoning a running
+            // task leaves its own failure unobserved.
+            boardInformation.DataRetrievalValue = await jqlTask;
+
             return boardInformation;
         }
 
-        private static async
+        private async
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
             GetStateMappingForBoard(JsonDocument boardsJson, HttpClient client)
         {
@@ -676,7 +688,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return await MapStatusToCategory(client, distinctStatusIds);
         }
 
-        private static async
+        private async
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
             MapStatusToCategory(HttpClient client, List<string> statusList)
         {
@@ -684,6 +696,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
+                logger.LogWarning(
+                    "Could not read the status list from Jira: {StatusCode} ({ReasonPhrase}). The board is reported with no states mapped.",
+                    (int)response.StatusCode, response.ReasonPhrase);
+
                 return ([], [], []);
             }
             var json = await response.Content.ReadAsStringAsync();
@@ -726,12 +742,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return (todoStatuses, inProgressStatuses, doneStatuses);
         }
 
-        private static async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, string boardId)
+        private async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, string boardId)
         {
             var response = await client.GetAsync($"{BoardsEndpoint}/{boardId}/issue?maxResults=1000");
 
             if (!response.IsSuccessStatusCode)
             {
+                logger.LogWarning(
+                    "Could not read the work items of Board {BoardId}: Jira answered {StatusCode} ({ReasonPhrase}). The board is reported with no work item types.",
+                    boardId, (int)response.StatusCode, response.ReasonPhrase);
+
                 return [];
             }
 
@@ -751,7 +771,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return issueTypeNames;
         }
 
-        private static async Task<string> ExtractJqlFromBoardConfiguration(JsonDocument boardsJson, HttpClient client)
+        private async Task<string> ExtractJqlFromBoardConfiguration(JsonDocument boardsJson, HttpClient client)
         {
             var root = boardsJson.RootElement;
 
@@ -783,29 +803,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return query.GetString() ?? string.Empty;
         }
 
-        private static async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
+        private async Task<string> ExtractFilterQuery(HttpClient client, JsonElement root)
         {
-            var filter = string.Empty;
-
             if (!root.TryGetProperty("filter", out var filterProperty) ||
                 !filterProperty.TryGetProperty("id", out var id))
             {
-                return filter;
+                return string.Empty;
             }
 
-            var filterId = id.ToString();
-            filter = await GetFilterQueryById(client, filterId);
-
-            return filter;
+            return await GetFilterQueryById(client, id.ToString());
         }
 
-        private static async Task<string> GetFilterQueryById(HttpClient client, string filterId)
+        /// <summary>
+        /// The board's saved filter with its ordering clause taken off, which can leave nothing at all - and
+        /// nothing is a real answer: a board ordered by rank and filtered by nothing really does mean every
+        /// work item in the instance, and the board's own sub-filter is then the whole of its scope.
+        ///
+        /// A filter we could not read is not that, and reporting both as an empty string is what let a board
+        /// whose filter the connection's account may not see hand a team the entire Jira instance, with
+        /// nothing anywhere saying so.
+        /// </summary>
+        private async Task<string> GetFilterQueryById(HttpClient client, string filterId)
         {
             var response = await client.GetAsync($"rest/api/2/filter/{filterId}");
 
             if (!response.IsSuccessStatusCode)
             {
-                return string.Empty;
+                logger.LogWarning(
+                    "Could not read Jira filter {FilterId} behind a board: Jira answered {StatusCode} ({ReasonPhrase}).",
+                    filterId, (int)response.StatusCode, response.ReasonPhrase);
+
+                throw JiraReadException.BoardFilterRefused(filterId, response.StatusCode);
             }
 
             var filterResponseBody = await response.Content.ReadAsStringAsync();
@@ -813,7 +841,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!filterJson.RootElement.TryGetProperty("jql", out var jqlQuery))
             {
-                return string.Empty;
+                logger.LogWarning(
+                    "Jira filter {FilterId} behind a board came back without a query in it: {ResponseBody}",
+                    filterId, filterResponseBody);
+
+                throw JiraReadException.BoardFilterCarriedNoQuery(filterId, response.StatusCode);
             }
 
             return RemoveOrderByClause(jqlQuery.GetString() ?? string.Empty);
