@@ -26,16 +26,17 @@ something to commit and slices 02–03 have terms they can describe accurately.
 
 ## The assumption being probed
 
-**That a second document, incorporated by reference, actually binds a recipient who only ever opens
-`LICENSE` — and that the no-competing-use clause can be written without sweeping in a customer's own
-internal modifications.**
+**That the no-competing-use clause can be written without sweeping in a customer's own internal
+modifications, or into rights that mandatory law will not let us restrict.**
 
-Disproves if it fails: the two-document shape. If incorporation by reference will not hold, the
-fallback is to draft a single self-contained licence from scratch — more legal cost, same intent,
-slice 01 slips rather than changes. If the competing-use wording cannot be bounded away from a
-customer's own instance, the fallback is plain ELv2 plus the AI sentence, accepting that internal
-derivation stays permitted. That is materially less than the epic set out to do, and it is a decision
-to take back to the founders, not to absorb quietly.
+Disproves if it fails: the whole point of staying source-available. If the competing-use wording
+cannot be bounded away from a customer's own instance, the fallback is plain ELv2 plus the AI
+clause, accepting that internal derivation stays permitted. That is materially less than the epic
+set out to do, and it is a decision to take back to the founders, not to absorb quietly.
+
+*The assumption this section used to probe — whether a second document incorporated by reference
+binds a recipient who opens only `LICENSE` — was retired in review round 2 by not relying on it. The
+Additional Terms now live inside `LICENSE` as Part 1.*
 
 Confirms if it succeeds: that the instrument is settled and every downstream slice can quote it.
 

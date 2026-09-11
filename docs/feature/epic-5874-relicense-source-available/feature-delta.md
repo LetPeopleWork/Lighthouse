@@ -257,8 +257,9 @@ The question that used to lead this list — *may ELv2's text be adapted and ren
 **answered and designed around** rather than carried: no grant exists, so the text is not adapted
 (D1). What remains for the lawyer is narrower and concrete:
 
-1. Does incorporating a second document by reference bind a recipient who only ever opens `LICENSE`?
-   This is the shape's known weak point and the reason for the prepended header block.
+1. Does the one-file structure bind reliably? Two review rounds called incorporation by reference the
+   draft's weakest point, so the Additional Terms moved inside `LICENSE` as Part 1 rather than being
+   pointed at from it. Counsel confirms the shape rather than assessing the risk we removed.
 2. Does the Shield-derived no-competing-use wording sweep in a customer's own internal modifications?
    It must not. Shield's Changes and New Works License expressly permits changes for any permitted
    purpose, and that property has to survive the reshaping.
@@ -631,8 +632,9 @@ Slice 03 is verifiable on the website preview deploy the same day.
 **Requirements completeness: 0.96**, revised up from 0.95 on 2026-09-11 when D14 closed and the
 base-text question was answered. The remaining gap is D13: the licence text cannot be finalised
 inside DISCUSS because it needs a lawyer, and the AI sentence has no precedent in any software
-licence to copy. The requirement is specified and its shape is now fixed — two documents, Elastic's
-text untouched — but the words are not drafted. That is the SPIKE, and it is why slice 01 is second
+licence to copy. The requirement is specified, its shape is fixed — one `LICENSE` in two parts,
+Elastic's text untouched — and as of 2026-09-11 the words **are** drafted and have been through three
+rounds of practitioner review; what they have not had is counsel. That is the SPIKE, and it is why slice 01 is second
 rather than first.
 
 **Nothing else is left open.** D14 is closed (partner hosting is not a motion we want), and the
