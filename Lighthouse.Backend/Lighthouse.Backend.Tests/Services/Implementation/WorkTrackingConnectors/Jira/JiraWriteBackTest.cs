@@ -39,8 +39,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         // delete permission on this team-managed project -- keeping runs isolated. Mirrors the Azure DevOps
         // fix in commit 2964383c.
         // Jira JQL search is eventually consistent; bound the read-back poll so a lagging index does not
-        // fail the write-then-read assertions (worst case ~5s, returns early on the first non-null read).
-        private const int ReadBackMaxAttempts = 10;
+        // fail the write-then-read assertions (worst case ~15s, returns early on the first non-null read).
+        // These tests write the same field on the same issue and run in parallel, so on a loaded machine
+        // they contend with each other on top of the index lag - five seconds was not enough for that.
+        private const int ReadBackMaxAttempts = 30;
         private static readonly TimeSpan ReadBackPollDelay = TimeSpan.FromMilliseconds(500);
 
         private string EpicId = string.Empty;
