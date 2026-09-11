@@ -3,10 +3,10 @@ SPDX-License-Identifier: LicenseRef-Lighthouse-SAL-1.0
 
 Copyright (c) 2025-2026 LetPeopleWork GmbH
 
-Lighthouse is source available. The source code is public and inspectable, and
-you may run it, read it, and change it for your own use. It is not open source
-under the Open Source Initiative's definition, and it is not closed: this file
-tells you exactly what you may and may not do.
+Lighthouse is source available. The source code is public and inspectable. It is
+not open source under the Open Source Initiative's definition, and it is not
+closed. The two parts below set out what you may and may not do; the summary in
+this notice is not a substitute for reading them.
 
 THIS LICENSE HAS TWO PARTS. Both are binding, both are in this file, and neither
 stands alone:
@@ -20,17 +20,23 @@ stands alone:
 No rights are granted under this license except subject to both parts. Anyone
 who receives any part of the software from you must receive this entire file.
 
-WHAT LICENSE APPLIES TO WHICH VERSION
+WHAT LICENSE APPLIES TO WHICH SOURCE
 
-  Every version of Lighthouse up to and including v26.9.9.9, released
-  2026-09-09, was published under the MIT License and remains licensed under
-  the MIT License in perpetuity. Nothing in this file changes that, and nothing
-  in this file applies retroactively to those versions. The full text of that
-  MIT License is preserved in the NOTICE file.
+  Everything released up to and including v26.9.9.9, on 9 September 2026, was
+  published under the MIT License and remains licensed under the MIT License in
+  perpetuity. Nothing in this file changes that, and nothing in this file
+  applies retroactively. The full text of that MIT License is preserved in the
+  NOTICE file.
 
-  This license applies to every version of Lighthouse released after v26.9.9.9,
-  which was released on 9 September 2026. Both the version and the date are
-  stated so the boundary is unambiguous either way.
+  This license applies to all source code in this repository from the commit
+  that first introduced this file onward, and to every release built from it -
+  including source taken from a branch between releases, which is not covered by
+  the MIT grant above. The boundary is the commit, not the tag; v26.9.9.9 is
+  named because it is the last release that preceded it.
+
+  Each revision of the software is governed by the LICENSE file as it stood in
+  that revision. If this file is replaced by a later version of this license,
+  that later version governs only the revisions that carry it.
 
 THIS IS NOT THE ELASTIC LICENSE 2.0. Part 2 is the Elastic License 2.0
 reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,

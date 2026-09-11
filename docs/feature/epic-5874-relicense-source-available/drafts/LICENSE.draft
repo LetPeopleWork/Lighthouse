@@ -3,10 +3,10 @@ SPDX-License-Identifier: LicenseRef-Lighthouse-SAL-1.0
 
 Copyright (c) 2025-2026 LetPeopleWork GmbH
 
-Lighthouse is source available. The source code is public and inspectable, and
-you may run it, read it, and change it for your own use. It is not open source
-under the Open Source Initiative's definition, and it is not closed: this file
-tells you exactly what you may and may not do.
+Lighthouse is source available. The source code is public and inspectable. It is
+not open source under the Open Source Initiative's definition, and it is not
+closed. The two parts below set out what you may and may not do; the summary in
+this notice is not a substitute for reading them.
 
 THIS LICENSE HAS TWO PARTS. Both are binding, both are in this file, and neither
 stands alone:
@@ -20,17 +20,23 @@ stands alone:
 No rights are granted under this license except subject to both parts. Anyone
 who receives any part of the software from you must receive this entire file.
 
-WHAT LICENSE APPLIES TO WHICH VERSION
+WHAT LICENSE APPLIES TO WHICH SOURCE
 
-  Every version of Lighthouse up to and including v26.9.9.9, released
-  2026-09-09, was published under the MIT License and remains licensed under
-  the MIT License in perpetuity. Nothing in this file changes that, and nothing
-  in this file applies retroactively to those versions. The full text of that
-  MIT License is preserved in the NOTICE file.
+  Everything released up to and including v26.9.9.9, on 9 September 2026, was
+  published under the MIT License and remains licensed under the MIT License in
+  perpetuity. Nothing in this file changes that, and nothing in this file
+  applies retroactively. The full text of that MIT License is preserved in the
+  NOTICE file.
 
-  This license applies to every version of Lighthouse released after v26.9.9.9,
-  which was released on 9 September 2026. Both the version and the date are
-  stated so the boundary is unambiguous either way.
+  This license applies to all source code in this repository from the commit
+  that first introduced this file onward, and to every release built from it -
+  including source taken from a branch between releases, which is not covered by
+  the MIT grant above. The boundary is the commit, not the tag; v26.9.9.9 is
+  named because it is the last release that preceded it.
+
+  Each revision of the software is governed by the LICENSE file as it stood in
+  that revision. If this file is replaced by a later version of this license,
+  that later version governs only the revisions that carry it.
 
 THIS IS NOT THE ELASTIC LICENSE 2.0. Part 2 is the Elastic License 2.0
 reproduced verbatim, but the licensor of this software is LetPeopleWork GmbH,
@@ -48,6 +54,16 @@ These Additional Terms are part of this license. They are read together with the
 Elastic License 2.0 reproduced in Part 2 below. Where the two parts conflict,
 these Additional Terms govern.
 
+WHEN THESE TERMS APPLY TO YOU
+
+These Additional Terms apply to you from the moment you obtain any part of the
+software or its source code - by copying, downloading, cloning, forking, or
+receiving it from anyone - and from the moment you supply any part of it to any
+system. They do not depend on your running the software, and they apply whether
+or not what you do with the software would require a license from the licensor.
+
+HOW THESE TERMS RELATE TO THE LICENSE IN PART 2
+
 To the extent a use would, absent a license, infringe the licensor's copyright or
 any other right of the licensor, the license granted in Part 2 does not extend to
 it, and expressly excludes it, if these Additional Terms prohibit it. Such a use
@@ -59,7 +75,8 @@ every contractual remedy for it. Nothing in this license purports to make conduc
 infringing that would not otherwise be so.
 
 "The software", "the licensor", "you" and "your company" carry the meanings
-given to them in Part 2.
+given to them in Part 2. "Your company" includes the organizations described
+there as being under common control with yours.
 
 
 1. NO COMPETING USE
@@ -70,7 +87,7 @@ the software.
 
 You may not use the software to build a separate product that substitutes for
 it. This applies whether you make that product available to others or deploy it
-only inside your own organization.
+only inside your company.
 
 A separate product substitutes for the software when its primary purpose is to
 provide substantially the same core functionality as the software, rather than
@@ -85,42 +102,59 @@ competes.
 1.1 WHAT SECTION 1 DOES NOT RESTRICT
 
 Running the software is always permitted. That includes running a modified
-copy, changing it as much as you like, and serving everyone in your
-organization from a single instance, for as long as you like.
+copy, changing it as much as you like, and serving everyone in your company from
+a single instance, for as long as you like.
 
 None of the following is a separate substitute for the software: a plugin, an
-extension, an integration, an extension written for your own needs, an
-application built around the software, a tool that consumes its output, or a
-modified deployment of the software itself. A broader product that happens to
-contain some functionality overlapping with the software is not a substitute for
-it unless providing substantially the same core functionality is that product's
-primary purpose.
+extension written for your own needs, an integration, an application built
+around the software, a tool that consumes its output, or a modified deployment
+of the software itself. A broader product that happens to contain some
+functionality overlapping with the software is not a substitute for it unless
+providing substantially the same core functionality is that product's primary
+purpose.
 
-The line this section draws is between your deployment of the software and a
-separate product built out of it.
+SERVICES DELIVERED TO SOMEONE ELSE'S DEPLOYMENT ARE PERMITTED. Installing,
+configuring, operating, migrating, training on, supporting or consulting about
+the software, on a deployment that your client controls, is permitted - and
+stays permitted even though the licensor offers such services itself. Section 1
+does not restrict it.
+
+What is not permitted is running the software as a service that you operate on
+your client's behalf, on infrastructure you control, so that your client
+receives access to the software rather than running it. That is a hosted or
+managed service, and Part 2 prohibits it separately.
+
+The line section 1 draws is between your deployment of the software, or a
+deployment your client controls, and a separate product built out of it.
 
 1.2 IF THE LICENSOR LATER BRINGS YOUR PRODUCT INTO COMPETITION
 
-If you are using the software to provide a product that does not compete, and
-the licensor afterwards releases a new version of the software, or a new product
-built using the software, and that release brings your product into competition
-for the first time, then:
+If you are using the software to provide a product or service that does not
+compete, and the licensor afterwards releases a new version of the software, or
+begins providing a new product or service built using the software, and that
+brings your product or service into competition for the first time, then:
 
-  - your product does not thereby become a violation of this license;
-  - you may continue to use every version of the software released before that
-    release to provide it; and
-  - you may not use any version released after it to provide it.
+  - what you provide does not thereby become a violation of this license;
+  - you may continue to use every version of the software released before the
+    date of that release to provide it; and
+  - you may not use any version released on or after that date to provide it.
 
 This section exists to protect you. Without it, a release by the licensor could
 put you in violation of this license overnight, through no act of your own.
 
 
-2. PROHIBITED RESULTS STAY PROHIBITED HOWEVER THEY ARE PRODUCED
+2. WHAT SECTION 1 PROHIBITS STAYS PROHIBITED HOWEVER IT IS PRODUCED
 
-A result that this license prohibits is prohibited regardless of how it was
-produced. It makes no difference whether a person wrote it by hand, whether an
-automated system produced it, or whether the software reached that system as
-input, as context, or as training data.
+A product or service that section 1 prohibits you from building or providing
+remains prohibited regardless of how it was produced. It makes no difference
+whether a person wrote it by hand, whether an automated system produced it, or
+whether the software reached that system as input, as context, or as training
+data.
+
+The licensor expressly reserves the right to reproduce and extract the software,
+and any part of it, for text and data mining, including for the training,
+fine-tuning or evaluation of any automated or machine-learning system. This
+reservation is made in respect of every copy of the software, however obtained.
 
 2.1 WHAT SECTION 2 DOES NOT RESTRICT
 
@@ -130,7 +164,7 @@ change the software for any purpose this license permits. Using a code assistant
 to modify your own instance is permitted for exactly the same reason that
 modifying it by hand is permitted.
 
-Section 2 closes a route to the results section 1 prohibits. It does not narrow
+Section 2 closes a route to what section 1 prohibits. It does not narrow
 anything section 1 permits.
 
 
@@ -165,7 +199,7 @@ Some features of the software are enabled by a license key issued by the
 licensor, and their use may also be governed by a separate written commercial
 agreement between you and the licensor. That agreement and this license are
 separate instruments. A commercial agreement does not modify this license unless
-it expressly says that it does.
+it expressly says that it does, and then only to the extent it states.
 
 
 5. TERMINATION
@@ -191,6 +225,13 @@ displace any court that mandatory law requires or permits you to bring
 proceedings before. If you are a consumer, the mandatory consumer-protection
 rules and the rules of jurisdiction of the country in which you are habitually
 resident apply to you regardless of this section.
+
+
+7. SEVERABILITY
+
+If any provision of these Additional Terms is held unenforceable, it is modified
+to the minimum extent necessary to make it enforceable, or severed if it cannot
+be. The remainder of this license continues in force.
 
 
 For worked examples of what this license allows and does not allow, see the

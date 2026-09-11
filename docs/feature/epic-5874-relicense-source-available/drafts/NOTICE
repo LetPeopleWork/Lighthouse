@@ -1,17 +1,34 @@
 Lighthouse
 Copyright (c) 2025-2026 LetPeopleWork GmbH
-Portions copyright (c) 2025-2026 individual contributors
 
-Contributions from people outside LetPeopleWork GmbH were accepted into this
-project under the MIT License. Their authors retain copyright in what they wrote.
-Nothing in the LICENSE file or in this NOTICE transfers that copyright or
-withdraws the MIT License under which those contributions were published.
+
+CONTRIBUTOR COPYRIGHT AND THE MIT LICENSE
+-----------------------------------------
+
+Portions of this software were written by people outside LetPeopleWork GmbH and
+are copyright their respective authors:
+
+  Copyright (c) 2025 Lorenzo (MrMilgauss)
+  Copyright (c) 2026 Sascha Lucius
+  Copyright (c) 2026 ZylkaGreger
+
+Those contributions were offered and accepted under the MIT License, and the
+MIT License requires that its copyright notice and permission notice accompany
+every copy. That text is reproduced in full below, and this notice is the
+required accompaniment for those portions.
+
+Their authors retain copyright in what they wrote. Nothing in the LICENSE file
+or in this NOTICE transfers that copyright, and nothing withdraws the MIT
+License under which those contributions were published. LetPeopleWork GmbH
+sublicenses the combined work under the Lighthouse Source Available License 1.0,
+which the MIT License expressly permits.
 
 CURRENT LICENSE
 ---------------
 
-Every version of Lighthouse released after v26.9.9.9 (released 9 September 2026)
-is licensed under the Lighthouse Source Available License 1.0
+All source code in this repository from the commit that introduced the current
+LICENSE file onward, and every release built from it, is licensed under the
+Lighthouse Source Available License 1.0
 (SPDX: LicenseRef-Lighthouse-SAL-1.0). The complete license is in the LICENSE
 file. It has two parts, both in that one file and both binding:
 
@@ -26,10 +43,12 @@ source, and OSI-approved status is not claimed.
 PRIOR VERSIONS REMAIN UNDER THE MIT LICENSE, PERMANENTLY
 --------------------------------------------------------
 
-Every version of Lighthouse up to and including v26.9.9.9, released 2026-09-09,
-was published under the MIT License. Those versions remain licensed under the
-MIT License in perpetuity. The license change is not retroactive: it binds later
-versions only.
+Everything released up to and including v26.9.9.9, on 9 September 2026, was
+published under the MIT License. Those releases remain licensed under the MIT
+License in perpetuity. The license change is not retroactive: it binds later
+source only. v26.9.9.9 is named because it is the last release that preceded the
+change; the boundary itself is the commit that introduced the current LICENSE
+file.
 
 If you hold a copy of any of those versions — including a fork taken from the
 repository before the change — your rights under the MIT License are unaffected
@@ -58,6 +77,18 @@ The MIT License that applied to those versions, preserved in full:
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
+
+
+CONTRIBUTIONS
+-------------
+
+LetPeopleWork GmbH does not accept outside code contributions to this project.
+Issues, Discussions and the wiki are disabled. Bug reports, feedback and
+documentation corrections are welcome through the channels listed at
+https://letpeople.work - please send them there rather than as a pull request.
+
+This is stated so that nobody contributes code under an assumption about the
+terms that would apply to it.
 
 
 THIRD-PARTY COMPONENTS

@@ -299,6 +299,47 @@ holds, and the defensive-termination limb works in our favour. Recorded here so 
 rather than a clause nobody read — and so that acquiring a patent later is understood to interact
 with it.
 
+### D22 — Consultancies are expressly carved out of section 1
+
+The third reviewer's sharpest finding: section 1 bars providing a *service* that competes with a
+service the licensor provides using the software — and LetPeopleWork sells workshops and consulting
+around Lighthouse. A coach running an instance during a client engagement was therefore arguably in
+breach, and section 1.1 did not save them because it spoke only of *your* organisation, never a
+client's. That would have caught the peer layer the original decision record called unbuyable and
+unrecoverable, and it contradicted our own FAQ draft, which already told consultancies this was fine.
+
+**Fixed by carve-out**, not by dropping "service". Section 1.1 now permits installing, configuring,
+operating, migrating, training on, supporting and consulting about the software on a deployment the
+*client* controls, and says it stays permitted even though the licensor offers such services itself.
+What remains prohibited is running it as a service on infrastructure you control so the client
+receives access rather than running it — which Part 2 bars anyway. Section 1.2's safe harbour was
+widened in the same pass: it previously triggered only on a new *version* or *product*, so a licensor
+who launched a new consulting line gave an existing partner no protection at all.
+
+### D23 — The gradual-replacement gap is the enforcement ceiling, and is accepted
+
+A team that replaces the software's internals feature by feature inside a fork never visibly crosses
+the line between a modified deployment (permitted) and a separate product (not). The reviewer offered
+a dependency test — a deployment stops being one when it no longer depends on the software's own code
+for its core functionality. **Not adopted.** Every line here is fuzzy at the margin, and a sharper
+test mostly teaches a determined fork where to keep a thin dependency alive.
+
+Recorded instead as the known ceiling of what any licence text achieves here. The lever that actually
+raises the cost is technical, and it is Epic #5972.
+
+### D24 — What the relicence cannot do, stated honestly
+
+The same reviewer made a strategic point that belongs in the record rather than the licence.
+
+Everything up to v26.9.9.9 is MIT, has been public since 2025, and is already in every code-model
+training corpus that crawls GitHub. Section 2 can only ever bite on post-change diffs. **The
+substitute-derivation risk this epic exists to close is, for the codebase as it stands today, already
+open and cannot be closed.**
+
+That does not make the change pointless — it protects the next years of work, which is most of the
+value. But the internal narrative should be that this is a forward-looking gate, not a fix, and
+anyone who describes it as protecting Lighthouse from AI-assisted cloning is overstating it.
+
 ### D21 — Contributor consent obtained
 
 The chain-of-title question both opinions identified as the real issue is closed: the founders
