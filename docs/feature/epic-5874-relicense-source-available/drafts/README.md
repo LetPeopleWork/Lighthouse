@@ -1,8 +1,24 @@
 # Licence drafts — Epic 5874, slice 00 (ADO #5967)
 
-**Status: DRAFT. Not in force. Nothing here is law until a lawyer has read it and
-slice 01 (#5968) commits it to the repository root.** The repository is still
-MIT-licensed while these files sit in this folder.
+> # ✅ LANDED — 2026-09-11
+>
+> **The authoritative licence is now `/LICENSE` and `/NOTICE` at the repository
+> root.** These files are the drafting record, kept for provenance: how the text
+> was assembled, where each clause came from, what four practitioner review
+> rounds and two counsel opinions changed, and why.
+>
+> `LICENSE.draft` is a historical snapshot and **will drift**. Never edit it
+> expecting the repository licence to change, and never read it expecting to
+> learn the current terms. Read `/LICENSE`.
+>
+> To change the licence: edit `license-header.txt` or `license-terms.txt`,
+> reassemble with the command below, verify the ELv2 tail is still byte-identical,
+> and copy the result to `/LICENSE`. Never hand-edit `/LICENSE` — Part 2 has to
+> stay byte-for-byte Elastic's text, and a stray edit there is the one mistake
+> this whole structure exists to prevent.
+
+**Status while drafting: DRAFT, not in force.** The repository was still
+MIT-licensed while these files sat here alone.
 
 ## What is here
 
