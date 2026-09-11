@@ -6573,9 +6573,14 @@ Two invariants are new and are the point of the design:
   neighbouring `useRbac` policy, which fails **open** via `PERMISSIVE_SUMMARY` so an RBAC outage never
   locks a user out. Both are correct for their own question; copying either into the other's place is
   a defect. A crafter working here will meet both within a few files of each other.
-- **Emitting requires a permit only the gate can construct.** `IUsageDataPublisher.PublishAsync` takes
-  a `UsageDataEmitPermit`, and nothing outside the gate can make one. "Send without checking consent"
-  is not a rule to remember; it does not compile.
+- **Emitting requires a permit only the gate is supposed to construct.** `IUsageDataPublisher.PublishAsync`
+  takes a `UsageDataEmitPermit`. The permit's constructor is `internal`, which makes emitting without
+  checking consent something you cannot do *by accident* — there is no parameterless path to a publish.
+  It is **not** a compile-time guarantee: `Lighthouse.Backend` is one assembly with `InternalsVisibleTo`,
+  so any backend type can construct one. **Enforcement is `UsageDataEmitSeamArchUnitTest`, a test.**
+  (Corrected 2026-09-11. This bullet previously read "it does not compile"; ADR-174 §2 withdrew that
+  claim and the correction did not reach here until the consolidated wave review found it. ADR-163
+  point 2 withdrew the same overclaim once before — see the note further up this document.)
 
 ---
 
@@ -6737,10 +6742,12 @@ state exists, so there is nothing that can be stale.
 failure, no retry storm, and at most one log line per attempt. Nothing is queued for later — a consent
 that was live at emit time is not a licence to send tomorrow.
 
-**Testability** rests on the permit type. Because the publisher cannot be called without a permit, the
-zero-leak property is a compile-time fact with a behavioural test as backstop, rather than a
-behavioural test alone — which matters because there is no single outbound chokepoint in this codebase
-to observe.
+**Testability** rests on the permit type giving the seam a name. The publisher cannot be called without
+a permit, so every emit path is greppable and ArchUnit has one type to assert against — which matters
+because there is no single outbound chokepoint in this codebase to observe. The zero-leak property is
+enforced by **tests** (the ArchUnit seam rule plus a `DelegatingHandler` assertion), not by the
+compiler: one assembly with `InternalsVisibleTo` means an internal constructor is visible to every
+backend type. Corrected 2026-09-11; this paragraph previously called it "a compile-time fact".
 
 ---
 

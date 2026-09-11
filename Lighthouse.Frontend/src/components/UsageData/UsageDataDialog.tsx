@@ -14,6 +14,10 @@ export interface UsageDataDialogProps {
 	dataResidency: string;
 	/** Every field that would leave this instance, named. The dialog enumerates these verbatim. */
 	fields: readonly string[];
+	/** Categories the payload never carries. Stated positively in the dialog, not merely implied. */
+	neverSent: readonly string[];
+	/** Link to the full list — docs/settings/usagedata.md, which also names the GitHub release check. */
+	docsUrl: string;
 	/**
 	 * Whether a decline will be revisited. Derived server-side and handed over as a boolean rather
 	 * than a licence tier, so the dialog never has to know what a licence is — and so an anonymous
@@ -29,13 +33,16 @@ export const UsageDataDialog = ({
 	collectorName,
 	dataResidency,
 	fields,
+	neverSent,
+	docsUrl,
 	willAskAgain,
 	onDecision,
 	onClose,
 }: UsageDataDialogProps): React.ReactElement => {
 	throw new Error(
 		`UsageDataDialog(open=${open}, collectorName=${collectorName}, dataResidency=${dataResidency}, ` +
-			`fields=${fields.length}, willAskAgain=${willAskAgain}, onDecision=${typeof onDecision}, ` +
+			`fields=${fields.length}, neverSent=${neverSent.length}, docsUrl=${docsUrl}, ` +
+			`willAskAgain=${willAskAgain}, onDecision=${typeof onDecision}, ` +
 			`onClose=${typeof onClose}) is not implemented`,
 	);
 };

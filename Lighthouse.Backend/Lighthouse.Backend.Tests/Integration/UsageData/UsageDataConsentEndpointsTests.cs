@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private const string Pending = "pending: epic 5733 slice 01 (#5834)";
 
+        private static readonly string[] LicenceDisclosureNeedles = ["licen", "premium", "tier"];
+
         [Test]
         [Ignore(Pending + " — the state endpoint does not exist yet")]
         public async Task GetState_WithNoTokenAtAll_AnswersRatherThanRefusing()
@@ -41,12 +43,24 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [Ignore(Pending + " — the state endpoint does not exist yet")]
         public async Task GetState_WithAnUnknownToken_AnswersExactlyAsItDoesWithNoToken()
         {
-            var withoutToken = await ReadStateAsync(token: null);
+            var baseline = await Client.GetAsync(StateRoute);
+            var withoutToken = await baseline.Content.ReadAsStringAsync();
             var withUnknownToken = await ReadStateAsync(token: "a-token-this-instance-never-minted");
 
-            Assert.That(withUnknownToken, Is.EqualTo(withoutToken),
-                "an endpoint that answers differently for a token it has never seen is an oracle: "
-                + "it would let anyone test whether a given token exists on this instance");
+            using (Assert.EnterMultipleScope())
+            {
+                // Anchor first. Without it this test compares two responses to each other and
+                // nothing else, so two empty 404 bodies are equal and it passes before the
+                // endpoint exists - and would keep passing if the oracle ever leaked through the
+                // status code or a header rather than the body.
+                Assert.That(baseline.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(withoutToken, Does.Contain("willAskAgain").IgnoreCase,
+                    "the baseline must actually be the state document before comparing anything to it");
+
+                Assert.That(withUnknownToken, Is.EqualTo(withoutToken),
+                    "an endpoint that answers differently for a token it has never seen is an oracle: "
+                    + "it would let anyone test whether a given token exists on this instance");
+            }
         }
 
         [Test]
@@ -64,9 +78,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                     Is.True,
                     "the dialog's copy depends on it, and deriving it server-side is what keeps the "
                     + "licence tier off an endpoint that needs no authentication");
-                Assert.That(properties.Any(p => p.Contains("licen", StringComparison.OrdinalIgnoreCase)
-                        || p.Contains("premium", StringComparison.OrdinalIgnoreCase)
-                        || p.Contains("tier", StringComparison.OrdinalIgnoreCase)),
+                // Over the whole serialised body, not just its top-level property names: a nested
+                // object such as cadence: { tier: "premium" } discloses the tier and would pass a
+                // top-level-only check.
+                Assert.That(
+                    LicenceDisclosureNeedles.Any(needle =>
+                        state.Contains(needle, StringComparison.OrdinalIgnoreCase)),
                     Is.False,
                     "this endpoint is anonymous; disclosing the licence tier through it would widen "
                     + "what an unauthenticated caller learns about the instance");
@@ -128,10 +145,20 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "browser revoke another's consent or keep an instance emitting");
         }
 
+        /// <remarks>
+        /// BEFORE UN-IGNORING: move this to its own fixture with its own
+        /// <c>TestWebApplicationFactory</c> overriding PermitLimit and WindowSeconds, and a forwarded
+        /// client IP - the shape <c>S6_RateLimitingTests</c> already uses. As written it saturates the
+        /// bucket on the fixture's single shared host, and the default window is 60 seconds, so every
+        /// other PostConsent test in this class would then red deterministically. <c>[SetUp]</c> resets
+        /// the database, not the limiter. A serial fixture also needs an allowlist entry in
+        /// <c>BackendTestParallelizationGuardTest</c>.
+        /// </remarks>
         [Test]
-        [Ignore(Pending + " — the consent endpoint does not exist yet")]
+        [Ignore(Pending + " — the consent endpoint does not exist yet; see the remarks before un-ignoring")]
         public async Task PostConsent_IsRateLimited()
         {
+            var permitted = 0;
             HttpStatusCode? refused = null;
 
             for (var attempt = 0; attempt < 200 && refused is null; attempt++)
@@ -141,12 +168,23 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 {
                     refused = response.StatusCode;
                 }
+                else
+                {
+                    permitted++;
+                }
             }
 
-            Assert.That(refused, Is.EqualTo(HttpStatusCode.TooManyRequests),
-                "the endpoint is unauthenticated and writes a durable row per call. Unlimited, a "
-                + "single caller could plant a granted row and keep an instance emitting for a "
-                + "whole liveness window");
+            using (Assert.EnterMultipleScope())
+            {
+                // Without this, a policy misconfigured to PermitLimit 0 - refusing the very first
+                // call - satisfies the test that exists to prove the endpoint still works.
+                Assert.That(permitted, Is.GreaterThan(0),
+                    "a limiter that refuses everyone is not a limiter, it is an outage");
+                Assert.That(refused, Is.EqualTo(HttpStatusCode.TooManyRequests),
+                    "the endpoint is unauthenticated and writes a durable row per call. Unlimited, a "
+                    + "single caller could plant a granted row and keep an instance emitting for a "
+                    + "whole liveness window");
+            }
         }
 
         [Test]
@@ -161,7 +199,14 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(revoke.IsSuccessStatusCode, Is.True);
-                Assert.That(afterwards, Does.Not.Contain("\"sending\":true"),
+
+                // Parsed, not a raw-substring negative: Does.Not.Contain("\"sending\":true") also
+                // passes on indented JSON, on a renamed property, on an error status and on an
+                // empty body - every way the behaviour can be absent.
+                using var afterDocument = JsonDocument.Parse(afterwards);
+                Assert.That(afterDocument.RootElement.TryGetProperty("sending", out var sending), Is.True,
+                    "the state document must say whether the instance is sending before its value means anything");
+                Assert.That(sending.GetBoolean(), Is.False,
                     "revocation takes effect immediately and server-side — not at the next restart, "
                     + "and not at the next daily emit");
             }
@@ -176,8 +221,17 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             var real = await SendWithTokenAsync(HttpMethod.Delete, ConsentRoute, token);
             var unknown = await SendWithTokenAsync(HttpMethod.Delete, ConsentRoute, "never-minted-here");
 
-            Assert.That(unknown.StatusCode, Is.EqualTo(real.StatusCode),
-                "distinguishing the two turns revoke into a token-existence oracle");
+            using (Assert.EnterMultipleScope())
+            {
+                // Same anchor as the state oracle: on an unrouted path both calls are 405 and
+                // equal, so the comparison alone is green before anything is implemented.
+                Assert.That(token, Is.Not.Empty, "the grant must have minted a token to revoke");
+                Assert.That(real.IsSuccessStatusCode, Is.True,
+                    "the real revoke must succeed before its status means anything as a baseline");
+
+                Assert.That(unknown.StatusCode, Is.EqualTo(real.StatusCode),
+                    "distinguishing the two turns revoke into a token-existence oracle");
+            }
         }
 
         [Test]
@@ -189,8 +243,10 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(state.StatusCode, Is.Not.EqualTo(HttpStatusCode.Unauthorized));
-                Assert.That(consent.StatusCode, Is.Not.EqualTo(HttpStatusCode.Unauthorized),
+                // Asserting "not 401" is not enough: a 404 is not 401 either, so the weaker form
+                // passed against a product with no endpoints at all.
+                Assert.That(state.IsSuccessStatusCode, Is.True);
+                Assert.That(consent.IsSuccessStatusCode, Is.True,
                     "with auth off every caller is the same subject, so account-scoped consent would "
                     + "collapse to one decision the first person makes for everybody. The browser is "
                     + "the only unit of consent that behaves the same in every deployment shape");

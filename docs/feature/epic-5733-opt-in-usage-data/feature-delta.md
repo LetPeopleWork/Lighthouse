@@ -782,7 +782,7 @@ The four that carry the design:
 |---|---|
 | `UsageDataConsent` + bespoke repository | One row per browser, keyed by token digest, with a `LastSeenAt` liveness stamp. `AnyLiveGrantAsync` is a SQL `EXISTS`, which is also how "revoking the last browser stops the heartbeat" happens with no rule of its own |
 | `IUsageDataGate` | Reads the master switch and the consent set **fresh on every emit**. Fail-closed. No cache, so staleness is unrepresentable rather than mitigated |
-| `UsageDataEmitPermit` | Sealed, internal constructor, mintable only by the gate. The publisher requires one, so "emit without checking consent" does not compile |
+| `UsageDataEmitPermit` | Sealed, internal constructor, minted by the gate. The publisher requires one, so an emit cannot happen **by omission** — there is no path to publish that skips the gate by accident. Not a compile-time guarantee (one assembly, `InternalsVisibleTo`); enforcement is `UsageDataEmitSeamArchUnitTest`. Corrected 2026-09-11 — this row still carried the claim C1 retracted |
 | `PostHogUsageDataPublisher` | The **named** adapter. Not a port with a decision attached to it |
 
 ---
@@ -1134,24 +1134,54 @@ A single `UsageDataCanary` category would have excluded the canary from **nothin
 have emitted to the vendor with live credentials. Two categories, and no `CLAUDE.md` edit is needed at
 all.
 
+**The two categories are still not enough on their own, and this is the path that matters.**
+`ci_backend.yml:114` seeds `parts=("Category!=Integration")`; line 129, under `force_full`, appends
+`Category=Integration`; line 138 joins them with `|`. The filter becomes
+`Category!=Integration|Category=Integration` — every test, which is what "force full" means and is
+correct for the connector suites. It is not correct for a test that talks to a vendor with live
+credentials. And the two commits **this feature itself lands** are exactly the ones that set it: a
+`Program.cs` edit hits the shared-connector whitelist, and adding `ci_usagedata_canary.yml` matches
+`ci_changes.yml:157`'s `^.github/workflows/ci.*\.yml` rule, which force-sets every connector output.
+
+So the exclusion has to survive `force_full`. Change that branch to append
+`(Category=Integration&Category!=UsageDataCanary)` rather than `Category=Integration`, and **land that
+change before the commit that registers the emitter**, not with it. Verify with
+`dotnet test --list-tests` under the force_full filter before the canary tests are written.
+
 ### The E2E override, and why a missing one is silent
 
 ADR-176 defaults `CollectorBaseUrl` to `https://eu.i.posthog.com`. The slice-01 walking skeleton is
-consent → heartbeat → collector → revoke. Playwright does not run in `ci_e2e.yml`; it runs against a
-started backend in `ci_verifysqlite.yml:141`, `ci_verifypostgres.yml:154` and `ci_verifyauth.yml`
-(three separate app starts: `test:auth`, `test:rbac` and the default run), with a fourth app start in
-`ci_verifywindows.yml` for the smoke check. **Six app-start environment blocks**, each of which needs
-`UsageData__CollectorBaseUrl` pointed at a blackhole host.
+consent → heartbeat → collector → revoke. Playwright does not run in `ci_e2e.yml`, which stops at
+`pnpm run build`. **There are seven app starts in CI**, not the six this section first claimed:
 
-Not empty — empty means "fall back to the PostHog default", which is the failure. The precedent for
-the shape is `Lighthouse__OAuth__UseStubProvider: "true"` in the same blocks.
+| Where | Note |
+|---|---|
+| `ci_verifysqlite.yml:106` | Has an `env:` block |
+| `ci_verifypostgres.yml:119` | Has an `env:` block |
+| `ci_verifyauth.yml:109` (`test:auth`) | Has an `env:` block |
+| `ci_verifyauth.yml:177` (`test:rbac`) | Has an `env:` block |
+| `ci_verifyauth.yml:245` (`test:proxyauth`, behind a TLS-terminating Traefik proxy) | Has an `env:` block — and is the one a reader skips |
+| `ci_verifywindows.yml:86` | Smoke check |
+| **`ci_verifymacos.yml:145`** | `open -a /Applications/Lighthouse.app`, **no `env:` block at all** — it launches an installed bundle, so it cannot take a per-step override the way the other six can. Runs on every `ci.yml` execution |
 
-An override missing from any one of the six sends real heartbeats from CI into the production census,
-and **produces no error and no red build**, because the emit is fire-and-forget and degrades silently
-by specification. Six copies of a YAML line that must all be remembered is a review habit, which is
-what this delta refuses elsewhere. So the guard is a backend invariant as well: **an emit whose
-resolved collector host is the production default is refused when the process is running under a test
-environment**, asserted once rather than configured six times.
+**The compensating invariant this section originally proposed does not work, and is withdrawn.** It
+said an emit to the production default would be refused "when the process is running under a test
+environment". There is no such signal: `ASPNETCORE_ENVIRONMENT` and `DOTNET_ENVIRONMENT` appear in
+**no** workflow in this repository, and every app start launches the published Release binary, which
+defaults to Production. The invariant would never have fired in any environment it was written for.
+
+**Re-specified on a signal that exists, and it is configuration-shaped rather than environment-shaped:
+refuse an emit to the compiled-in production default unless `CollectorBaseUrl` was explicitly
+supplied.** A real deployment always supplies it — the chart renders it (P4), Docker and standalone set
+it — and no CI app start does, including the macOS bundle that cannot. One assertion, no YAML, and it
+covers the seventh start that no override can reach.
+
+The per-block overrides are still worth setting where a block exists, as defence in depth: point
+`UsageData__CollectorBaseUrl` at a blackhole host. Not empty — empty means "fall back to the PostHog
+default", which is the failure. The precedent for the shape is `Lighthouse__OAuth__UseStubProvider:
+"true"` in the same blocks. But they are no longer the guarantee: an override missing from any one of
+them sends real heartbeats from CI into the production census with **no error and no red build**,
+because the emit is fire-and-forget and degrades silently by specification.
 
 Open, and owned by DISTILL: the heartbeat is daily, so an E2E run may never trigger an emit at all.
 The spec needs a forced-emit seam or it asserts nothing.
@@ -1429,14 +1459,15 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
 | P3 | The canary lives in a new `ci_usagedata_canary.yml`, daily schedule plus `workflow_dispatch`, repository-guarded, never called from `ci.yml` | The live-connector precedent in this repository: vendor-talking tests in the per-commit path rate-limit the next run and produce failures that read as regressions |
 | P4 | Chart **0.1.16** adds `app.usageData.collectorBaseUrl` → `UsageData__CollectorBaseUrl`, emitted **conditionally** with `{{- with }}` | The chart has no generic `extraEnv` passthrough. The precedent is `app.timeZone`, not `app.embed.enabled`: `Embed__Enabled` is emitted unconditionally because `false` is a real value, whereas an unconditionally emitted **empty** collector URL would override the appsettings default and break every default install — silently, because the emit is fire-and-forget. Without the value at all, the air-gap claim is false on Kubernetes, the one shape an air-gapped customer is most likely to be running |
 | P5 | The three hard gates run in the normal backend suite with **zero egress**; the canary is never a merge gate | A gate that needs a vendor to be up is not a gate. The canary is a detective control and is allowed to be late |
-| P6 | Canary tests carry **both** `[Category("Integration")]` and `[Category("UsageDataCanary")]` | `ci_backend.yml:118` filters on `Category!=Integration`, so a `UsageDataCanary`-only test would run on every push and PR — with `secrets: inherit` in scope. The two-category convention is what every network-talking test here already uses (`JiraScopedTokenIntegrationTest.cs:13-14`), and it needs **no** `CLAUDE.md` edit, because `Integration` is already excluded both in CI and locally |
+| P6 | Canary tests carry **both** `[Category("Integration")]` and `[Category("UsageDataCanary")]`, **and `ci_backend.yml`'s `force_full` branch must append `(Category=Integration&Category!=UsageDataCanary)`** | The two-category convention (`JiraScopedTokenIntegrationTest.cs:13-14`) covers the default filter and needs no `CLAUDE.md` edit. It does **not** cover `force_full`, where the filter becomes `Category!=Integration\|Category=Integration` — every test — and the commits this feature lands (a `Program.cs` edit; adding any `ci*.yml`) are exactly what sets it. Corrected 2026-09-11: the first version of this decision closed only half the paths, on the one that mattered least |
 | P7 | The Prometheus counter is **recommended, not required** | Useful to an admin, but nothing in the delta asks for it and slice 01 is already oversized (H6) |
 | P8 | `docs/product/kpi-contracts.yaml` is **not** updated in this wave | The seven deferred KPIs move to a live source at slice 04 per AC-08.6. Writing instrumentation now would name a measurement source that does not yet exist — the kind of claim this Epic exists to stop making |
 | P9 | Project parity is checked by a **third job reading both projects' settings**, not inferred from production's traffic | `production-sweep` asserts a property of events. A clean result cannot tell "production is configured correctly" from "production's query API stopped projecting `$ip`". Inferring parity from it assumed the thing it claimed to check |
 | P10 | The canary's failure states are enumerated with a response each; notification is **GitHub's built-in scheduled-workflow failure email** to the repository owner | ADR-176 warns that a flaky scheduled job gets muted, which deletes the layer. No workflow here has Slack or webhook integration, so every alternative meant adding one. Chosen 2026-09-11 with the residual named: this is the channel that gets filtered, and a failure-opened issue is the fallback if the canary flaps |
 | P11 | The `POSTHOG_PERSONAL_API_KEY` is an Environment-scoped secret with an explicit `secrets:` mapping — never `secrets: inherit` — held by the maintainer and **rotated on suspicion, not on a calendar**; its blast radius goes to DoR-9 | It reads the entire census: every instance identifier ADR-175 spends four alternatives making unguessable. `ci.yml` inherits secrets into thirteen workflows and this project pushes straight to `main`, so "who else can read this" is not hypothetical. A quarterly cadence was offered and declined on 2026-09-11 — an interval nobody keeps reads as a control while providing none |
-| P12 | The six E2E app-start blocks override the collector host, **and** the backend refuses an emit to the production default under a test environment | Six YAML lines that must all be remembered is a review habit. A missing one emits real heartbeats into the census from CI, with no error and no red build |
+| P12 | **The backend refuses an emit to the compiled-in production collector host unless `CollectorBaseUrl` was explicitly supplied.** The per-block overrides remain as defence in depth | Corrected 2026-09-11. The original invariant keyed on "running under a test environment", and there is no such signal — `ASPNETCORE_ENVIRONMENT`/`DOTNET_ENVIRONMENT` appear in no workflow and every app start runs the published Release binary as Production, so it would never have fired. There are also **seven** app starts, not six, and `ci_verifymacos.yml:145` has no `env:` block at all. A configuration-shaped guard covers the one no override can reach |
 | P13 | `OUT-usagedata-consent-uptake` drops its denominator; the one true ratio is read out of the consent table on the dogfood instance | The original asked for grants ÷ dialogs shown at the collector, and a declining browser sends nothing. Decided 2026-09-11 and applied to the DISCUSS table, rather than left flagged |
+| P14 | **The canary asserts on counts and property names only — never on event bodies or `distinct_id`s.** Failure messages carry a count and a time window; event-level forensics happens in the PostHog UI, not in CI output | This is a **public repository**: Actions logs need no credentials to read and are retained by default. `production-sweep` queries the census with a read key, and P10's dirty-response instruction ("establish the window: which events, from when") invites printing exactly the instance identifiers ADR-175 spends four alternatives making unguessable — a privacy incident inside the control built to prevent one. Whether census data may appear in a public CI log at all is now a DoR-9 question |
 
 ---
 
@@ -1587,9 +1618,14 @@ constraints here, not options. Numbering starts at DT-1 so it collides with none
 
 ## Wave: DISTILL / [REF] Scenario list
 
-**39 scenarios: 28 frontend (`describe.skip` / `it.skip`), 11 backend (`[Ignore]`).** No `.feature`
+**51 scenarios: 40 frontend (`describe.skip` / `it.skip`), 11 backend (`[Ignore]`).** No `.feature`
 file exists (DT-2), so a scenario's identifier is its test name. Tags are notional — this repo has no
 tag runner; they are here for the traceability the wave contract asks for.
+
+The count grew from 39 after the consolidated wave review: AC-02.2 (the never-sent categories, stated
+positively), AC-02.4 (the docs link), AC-02.5 and AC-02.6 (nothing written to the browser before the
+click) were all authorable here and were missing, and several matchers were split so a positive case
+and its negation are asserted separately rather than by one pattern that matched both.
 
 ### `src/components/UsageData/UsageDataIndicator.test.tsx` — 7 tests, NEW
 
@@ -1758,17 +1794,24 @@ Slice 01's criteria only (DT-1). Where a criterion is *partly* covered, the rema
 
 | AC | Covered by | Remainder in DELIVER |
 |---|---|---|
-| AC-01.1 | Indicator says which state it is in, in words | The indicator mounted in `Footer` |
-| AC-01.2 | Indicator — accessible names differ between states (DT-8) | — |
-| AC-01.3 | — | **DELIVER**: the indicator reflects real `/state`, which needs the service |
-| AC-01.4 | Indicator — `unknown` renders as not-sending (DT-9) | — |
-| AC-02.1 | Dialog names all five fields | The field list agreeing with `docs/settings/usagedata.md` (CI check) |
-| AC-02.2 | Dialog — six forbidden phrases (DT-11) | — |
+| AC-01.1 | — | **DELIVER**: the indicator mounted in `Footer`, beside the version. DESIGN moved it out of the "Contact us" link row, and this criterion still describes the old placement — flagged upstream |
+| AC-01.2 | Indicator — accessible names differ between states, asserted as names not attributes (DT-8) | — |
+| AC-01.3 | Indicator says which state it is in, in the journey's exact words | The indicator reflecting real `/state`, which needs the service |
+| AC-01.4 | — | **DELIVER**: renders identically on standalone, auth-off and RBAC. Needs the deployment shapes, not a component test |
+| AC-01.5 | Indicator — `unknown` renders as not-sending (DT-9) | — |
+| AC-01.6 | Indicator click reopens the decision, from either state | — |
+| AC-02.1 | Dialog names all five fields, and the list is now the payload's own (identifier, version, deployment mode, licence tier, **timestamp**) | The field list agreeing with `docs/settings/usagedata.md` (CI check) |
+| AC-02.2 | Dialog states each of the six never-sent categories **positively** | — |
 | AC-02.3 | Dialog names PostHog and Frankfurt | The docs page carrying residency and sub-processors |
-| AC-02.4 | Dialog reports grant/decline; `POST /consent` mints a token for each | — |
-| AC-02.9 | Dialog — `willAskAgain` both ways; `/state` derives it without naming the licence | — |
-| AC-03.1 | Indicator click reopens the decision, from either state | — |
+| AC-02.4 | Dialog links `docs/settings/usagedata.md` (`docsUrl`, asserted on the rendered link) | The page existing, and carrying the GitHub-release-check carve-out (D11) |
+| AC-02.5 | Dialog — Escape closes without deciding, and `onDecision` is never called | — |
+| AC-02.6 | Dialog — browser storage untouched across open and close, and no decision reported | The network half (no request before the click), which belongs with the zero-leak harness |
+| AC-02.7 | `POST /consent` mints a token on a grant; dialog reports `granted` | — |
+| AC-02.8 | `POST /consent` mints a token on a decline too; dialog reports `declined` | — |
+| AC-02.9 | Dialog — `willAskAgain` both ways, each anchored against the other's copy; `/state` derives it without naming the licence | — |
+| AC-02.10 | SurveyNudge forbidden-phrase test (skipped, fails today by design) | **DELIVER**: the copy change itself, plus CRA rows 1.7 **and 1.9** |
 | AC-03.2 | `DELETE /consent` stops the instance sending | **DELIVER**: the emit path actually not firing, which needs the gate |
+| AC-03.3 | — | **DELIVER**: revocation survives a restart, which needs the store |
 | AC-03.4 | — | **DELIVER**: `Revoked` as a third state, re-askable (H1) |
 | AC-03.5 | — | **DELIVER**: the liveness-window gap — cleared storage makes a browser immediately re-askable but stops it counting only after the window |
 | AC-04.1 | — | **DELIVER**: one heartbeat per instance per day, `requires-docker`, N hosts one container |
@@ -1776,15 +1819,25 @@ Slice 01's criteria only (DT-1). Where a criterion is *partly* covered, the rema
 | AC-04.3 | — | **DELIVER**: no consenting browser means no identifier at all |
 | AC-04.4 | — | **DELIVER**: identifier derived from nothing, 16 CSPRNG bytes |
 | AC-04.5 | — | **DELIVER**: fire-and-forget, degrades silently |
-| S3 | SurveyNudge forbidden-phrase test (skipped, fails today by design) | The copy change itself |
-| S4 | — | **DELIVER**: the CRA self-assessment row 1.7 |
-| `OUT-usagedata-zero-leak-before-consent` | — | **DELIVER**: `DelegatingHandler` + the ArchUnit rule forbidding ad-hoc client construction |
+| AC-04.6 | — | **DELIVER**: slice 01's acceptance is the dogfood instance emitting and being seen |
+| AC-04.7 | — | **DELIVER**: the emit carries no browser-supplied value |
+| S3 / S4 | Covered as AC-02.10 above | **DELIVER**: the SurveyNudge copy, CRA row 1.7 **and row 1.9** ("No outbound connections except to configured work tracking systems" — already false via the GitHub release check, and more so once the collector exists; found by the DISCUSS reviewer, unmentioned in any band before that) |
+| `OUT-usagedata-zero-leak-before-consent` | The browser half — AC-02.6's storage assertion | **DELIVER**: `DelegatingHandler` + the ArchUnit rule forbidding ad-hoc client construction |
 
-Error and edge coverage: 11 of 39 carry `@error`, `@edge`, `@oracle` or `@security` — 28%, below the
-40% guideline and reported rather than met. The reason is DT-3: the error paths this feature is
-richest in (the gate refusing, the emit degrading, a losing identifier race still recording the grant)
-all live on the driven side, which this wave could not author. The ratio should be re-measured after
-DELIVER writes them, where it will be well above the guideline.
+Error and edge coverage: **13 of 51** tests carry `@error`, `@edge`, `@oracle` or `@security` — 25%,
+below the 40% guideline and reported rather than met.
+
+Two corrections to how this was stated before. The earlier figure ("11 of 39, 28%") was arithmetically
+wrong at the granularity the total was counted at. And the stated reason was only half true: DT-3
+genuinely puts the richest error paths out of reach — the gate refusing, the emit degrading silently, a
+losing identifier race that still records the grant — but AC-02.5 and AC-02.6 were driving-side edge
+cases DT-3 never reached, and they were simply missing rather than deferred. They are now written.
+
+The ratio went **down** while coverage went up, because most of what was added is positive assertion.
+The 13 excludes the 7 forbidden-phrase and 6 never-sent tests, which are copy constraints and could be
+argued into the numerator — that would put it at 39%, which is close enough to the guideline to be
+exactly the kind of reclassification that makes a metric meaningless. Counted conservatively and left
+below the line. Re-measure after DELIVER, where the driven-side error paths land.
 
 ---
 
@@ -1804,7 +1857,22 @@ Verified by running, not asserted.
    implemented`. The assertion is never reached because the contract is missing — the correct RED
    shape. No `ImportError`, no fixture failure, no collection failure. The block was restored.
 
-Classification for all 39: `MISSING_FUNCTIONALITY`. Zero in the BROKEN categories.
+4. **The backend was then probed too, and the first claim here was false.** This section originally
+   read *"Classification for all 39: MISSING_FUNCTIONALITY"* on the strength of the frontend probe
+   alone. Running the backend fixture with its `[Ignore]` attributes stripped gave **8 failed, 3
+   passed**. Three tests passed against a product with no endpoints at all:
+   `GetState_WithAnUnknownToken_…` and `DeleteConsent_WithATokenThisInstanceNeverMinted_…` compared two
+   responses to *each other* with no anchor that either had succeeded (two empty 404 bodies are equal;
+   two 405s on an unrouted DELETE are equal), and `TheConsentEndpoints_RequireNoAuthentication_…`
+   asserted only `Is.Not.EqualTo(Unauthorized)`, which a 404 satisfies.
+
+   Falsely green is worse than BROKEN: the two oracle tests would have stayed green if the leak ever
+   arrived through the status code or a header rather than the body, which is the channel an oracle
+   usually leaks through. All three are now anchored — assert the baseline succeeded and is the state
+   document, *then* compare — and re-probed: **11 failed, 0 passed.**
+
+**Classification for all 51: `MISSING_FUNCTIONALITY`.** Zero BROKEN, zero falsely green. This time it
+was verified on both stacks rather than generalised from one file.
 
 ---
 
@@ -1817,7 +1885,8 @@ Run at hand-off, on the working tree:
 | `dotnet build` (test project) | **0 warnings, 0 errors** |
 | `npx tsc -b` | **Clean**, exit 0 — the scaffolds compile under `strict`, `noUnusedLocals`, `noUnusedParameters` (DT-4 is why) |
 | `npx biome check` on the new and touched files | **Clean** after `--write`, scoped to the two directories (never repo-wide — the `*/docs` symlink hazard) |
-| `npx vitest run` on the touched paths | **41 passed, 28 skipped, 0 failed**, zero collection errors |
+| `npx vitest run` on the touched paths | **41 passed, 40 skipped, 0 failed**, zero collection errors |
+| `dotnet test` on the backend fixture, `[Ignore]` stripped | **11 failed, 0 passed** — every one RED for the right reason (re-run after the review; the first attempt had 3 passing falsely) |
 
 The suite is **green by construction** at hand-off: every new test is skipped or `[Ignore]`d, and the
 only shipped file touched is `SurveyNudge.test.tsx`, where the addition is skipped.
