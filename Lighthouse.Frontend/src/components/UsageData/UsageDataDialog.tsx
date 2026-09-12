@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -29,6 +30,8 @@ export interface UsageDataDialogProps {
 	 * endpoint never has to disclose one.
 	 */
 	willAskAgain: boolean;
+	/** Set when the last answer could not be recorded, so the dialog can stay open and say so. */
+	failedToRecord?: boolean;
 	onDecision: (decision: UsageDataDecision) => void;
 	onClose: () => void;
 }
@@ -52,6 +55,7 @@ export const UsageDataDialog = ({
 	neverSent,
 	docsUrl,
 	willAskAgain,
+	failedToRecord = false,
 	onDecision,
 	onClose,
 }: UsageDataDialogProps): React.ReactElement => {
@@ -82,6 +86,14 @@ export const UsageDataDialog = ({
 					for one year.
 				</Typography>
 
+				{/* Both of these are limits rather than features, and the dialog is where they have to
+				    be read. Somebody deciding here relies on this, not on the linked page. */}
+				<Typography variant="body2" sx={{ mb: 2 }}>
+					Sending stops within 30 days of your last visit. Changing your mind
+					stops anything further being sent, and does not erase what was already
+					sent.
+				</Typography>
+
 				<Typography variant="body2" sx={{ mb: 2 }}>
 					{willAskAgain
 						? "If you decide later, we will ask you again in a few months."
@@ -95,6 +107,13 @@ export const UsageDataDialog = ({
 					, which also covers what you can change afterwards.
 				</Typography>
 			</DialogContent>
+
+			{failedToRecord ? (
+				<Alert severity="error" sx={{ mx: 3, mb: 1 }}>
+					Your answer could not be saved, so nothing has changed. Please try
+					again.
+				</Alert>
+			) : null}
 
 			<DialogActions>
 				<Button onClick={() => onDecision("declined")} color="inherit">

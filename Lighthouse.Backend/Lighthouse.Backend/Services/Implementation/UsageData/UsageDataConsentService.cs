@@ -16,7 +16,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         IAppSettingService appSettingService,
         ILicenseService licenseService,
         IOptionsMonitor<UsageDataConfiguration> configuration,
-        TimeProvider timeProvider) : IUsageDataConsentService
+        TimeProvider timeProvider,
+        ILogger<UsageDataConsentService> logger) : IUsageDataConsentService
     {
         // The liveness stamp is refreshed at most this often per browser. Without a throttle a
         // read-shaped request becomes a write on every page load, and SQLite serialises writers across
@@ -60,9 +61,23 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             // The identifier is written first and on its own. Minting it in the same save as the
             // consent row would mean a failure writing either one loses both - and the one that must
             // not be lost is the person's answer.
+            //
+            // Which is also why this cannot be allowed to throw. The answer is the thing the person
+            // gave us; an instance that ends up consenting but unnamed simply sends nothing until the
+            // identifier is minted on a later grant, and that is a far better outcome than refusing
+            // somebody's decision because of a write they know nothing about.
             if (decision == UsageDataDecision.Granted)
             {
-                await appSettingService.EnsureUsageDataInstanceId();
+                try
+                {
+                    await appSettingService.EnsureUsageDataInstanceId();
+                }
+                catch (Exception exception)
+                {
+                    logger.LogError(
+                        exception,
+                        "Could not mint the usage data instance identifier. The consent is still being recorded.");
+                }
             }
 
             var token = UrlSafeValue.Generate(TokenByteLength);

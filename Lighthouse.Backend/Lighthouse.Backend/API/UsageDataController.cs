@@ -27,7 +27,12 @@ namespace Lighthouse.Backend.API
         private const string Granted = "granted";
         private const string Declined = "declined";
 
+        // Rate-limited like the two writes, for a different reason. This one only reads, but it does
+        // measurably more work when it is given a token than when it is not, and an attacker who can
+        // ask without limit could average that difference out and learn which tokens this instance
+        // has seen - the very thing the identical responses exist to prevent.
         [HttpGet("state")]
+        [EnableRateLimiting(RateLimitingConfiguration.UsageDataConsentPolicy)]
         public async Task<ActionResult<UsageDataState>> GetState(
             [FromHeader(Name = ConsentTokenHeader)] string? token, CancellationToken cancellationToken)
         {

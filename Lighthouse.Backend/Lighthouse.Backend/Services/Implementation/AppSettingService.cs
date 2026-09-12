@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Extensions;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -117,9 +118,31 @@ namespace Lighthouse.Backend.Services.Implementation
                 Value = identifier,
             });
 
-            await repository.Save();
+            try
+            {
+                await repository.Save();
+                return identifier;
+            }
+            catch (DbUpdateException exception)
+            {
+                // Two browsers agreeing at the same moment run two scopes with two contexts, so both
+                // can find no identifier and both try to write one. The key of this table is the
+                // setting's own key, so the database refuses the second rather than storing a
+                // duplicate - and the right answer is the one that got there first, not an error.
+                //
+                // The refused row stays tracked by this context until it is let go of. Left attached,
+                // the next save on this request would retry the same doomed insert.
+                foreach (var entry in exception.Entries)
+                {
+                    entry.State = EntityState.Detached;
+                }
 
-            return identifier;
+                return GetUsageDataInstanceId()
+                    ?? throw new InvalidOperationException(
+                        "The usage data instance identifier could not be written and no existing one "
+                        + "could be read back.",
+                        exception);
+            }
         }
 
         public string? GetUsageDataInstanceId()

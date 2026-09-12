@@ -114,6 +114,7 @@ const Footer: React.FC = () => {
 						neverSent={USAGE_DATA_NEVER_SENT}
 						docsUrl={USAGE_DATA_DOCS_URL}
 						willAskAgain={usageData.willAskAgain}
+						failedToRecord={usageData.failedToRecord}
 						onDecision={usageData.decide}
 						onClose={usageData.closeDialog}
 					/>

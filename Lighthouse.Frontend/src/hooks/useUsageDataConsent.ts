@@ -39,10 +39,22 @@ export interface UsageDataConsent {
 	indicatorState: UsageDataSendingState;
 	willAskAgain: boolean;
 	isDialogOpen: boolean;
+	failedToRecord: boolean;
 	openDialog: () => void;
 	closeDialog: () => void;
 	decide: (decision: UsageDataDecisionValue) => Promise<void>;
 }
+
+/**
+ * How often a tab that stays open re-asks for the state.
+ *
+ * This request is also what keeps this browser's consent alive, and the server only refreshes the
+ * stamp a few times a window, so asking hourly costs almost no writes. Asking only once, when the
+ * footer first mounts, would be the bug it looks like it is not: this is a single-page application,
+ * so a tab left open for weeks never mounts the footer again, and consent would quietly age out
+ * from under somebody who is using Lighthouse every day.
+ */
+const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 
 export const useUsageDataConsent = (): UsageDataConsent => {
 	const { usageDataService } = useContext(ApiServiceContext);
@@ -51,12 +63,15 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 		useState<UsageDataSendingState>("unknown");
 	const [willAskAgain, setWillAskAgain] = useState(false);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [failedToRecord, setFailedToRecord] = useState(false);
+	const [decision, setDecision] = useState<string | null>(null);
 
 	const refresh = useCallback(async () => {
 		try {
 			const state = await usageDataService.getState(readToken());
 			setIndicatorState(state.sending ? "sending" : "not-sending");
 			setWillAskAgain(state.willAskAgain);
+			setDecision(state.decision);
 		} catch {
 			// The indicator fails closed. Guessing "sending" when we cannot tell would be alarming
 			// and wrong; guessing "not sending" is only wrong.
@@ -66,22 +81,44 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 
 	useEffect(() => {
 		void refresh();
+
+		const timer = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
+		return () => clearInterval(timer);
 	}, [refresh]);
 
 	const decide = useCallback(
-		async (decision: UsageDataDecisionValue) => {
-			const token = await usageDataService.recordDecision(decision);
-			writeToken(token);
-			setIsDialogOpen(false);
-			await refresh();
+		async (next: UsageDataDecisionValue) => {
+			const token = readToken();
+
+			try {
+				// Saying no to something already agreed to is a withdrawal, not a fresh refusal.
+				// Recording it as a new row would leave the original grant untouched and still live,
+				// so the instance would keep sending for the rest of the liveness window while this
+				// browser showed the opposite - the user having done exactly what they were told
+				// would stop it.
+				if (next === "declined" && decision === "Granted" && token) {
+					await usageDataService.revoke(token);
+				} else {
+					writeToken(await usageDataService.recordDecision(next));
+				}
+
+				setFailedToRecord(false);
+				setIsDialogOpen(false);
+				await refresh();
+			} catch {
+				// The dialog stays open and says so. Closing it would tell somebody their choice had
+				// been taken when it had not.
+				setFailedToRecord(true);
+			}
 		},
-		[usageDataService, refresh],
+		[usageDataService, refresh, decision],
 	);
 
 	return {
 		indicatorState,
 		willAskAgain,
 		isDialogOpen,
+		failedToRecord,
 		openDialog: () => setIsDialogOpen(true),
 		closeDialog: () => setIsDialogOpen(false),
 		decide,
