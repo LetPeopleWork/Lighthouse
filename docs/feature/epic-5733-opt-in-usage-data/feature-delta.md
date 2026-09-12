@@ -1990,11 +1990,17 @@ Slice 01's criteria only (DT-1). Where a criterion is *partly* covered, the rema
 | S3 / S4 | Covered as AC-02.10 above | **DELIVER**: the SurveyNudge copy, CRA row 1.7 **and row 1.9** ("No outbound connections except to configured work tracking systems" — already false via the GitHub release check, and more so once the collector exists; found by the DISCUSS reviewer, unmentioned in any band before that) |
 | `OUT-usagedata-zero-leak-before-consent` | The browser half — AC-02.6's storage assertion | **DELIVER**: `DelegatingHandler` + the ArchUnit rule forbidding ad-hoc client construction |
 
-Error and edge coverage: **13 of 51** tests carry `@error`, `@edge`, `@oracle` or `@security` — 25%,
-below the 40% guideline and reported rather than met.
+Error and edge coverage: **12 of 33 authored blocks** carry `@error`, `@edge`, `@oracle` or
+`@security` — **36%**, below the 40% guideline and reported rather than met.
 
-Two corrections to how this was stated before. The earlier figure ("11 of 39, 28%") was arithmetically
-wrong at the granularity the total was counted at. And the stated reason was only half true: DT-3
+**Corrected 2026-09-12, and the correction matters more than the number.** This read "13 of 51 — 25%",
+which divided *blocks* by *expanded cases*: tags attach to a block, so an `it.each` of nine patterns
+counts once in the numerator and nine times in the denominator. Mixing the two conventions understated
+coverage by eleven points and made a near-miss look like a failure. The counting convention is now
+stated at the top of the scenario list for exactly this reason.
+
+One earlier correction is kept for the record. The figure before that ("11 of 39, 28%") was
+arithmetically wrong at the granularity the total was counted at. And the stated reason was only half true: DT-3
 genuinely puts the richest error paths out of reach — the gate refusing, the emit degrading silently, a
 losing identifier race that still records the grant — but AC-02.5 and AC-02.6 were driving-side edge
 cases DT-3 never reached, and they were simply missing rather than deferred. They are now written.
@@ -2037,8 +2043,10 @@ Verified by running, not asserted.
    usually leaks through. All three are now anchored — assert the baseline succeeded and is the state
    document, *then* compare — and re-probed: **11 failed, 0 passed.**
 
-**Classification for all 51: `MISSING_FUNCTIONALITY`.** Zero BROKEN, zero falsely green. This time it
-was verified on both stacks rather than generalised from one file.
+**Classification for all 53: `MISSING_FUNCTIONALITY`.** Zero BROKEN, zero falsely green. This time it
+was verified on both stacks rather than generalised from one file. Re-confirmed by running both suites
+on 2026-09-12: 42 frontend cases skipped across two files, 11 backend ignored, nothing failing and
+nothing broken.
 
 ---
 
@@ -2087,13 +2095,46 @@ Stated rather than skipped.
 
 ## Wave: DISTILL / [REF] Handoff to DELIVER
 
-**Held for review — DELIVER is not entered.** Nothing is finalized and no mutation testing has run.
+**Gate cleared 2026-09-12; DELIVER may be entered at slice 01a.** Nothing is finalized and no mutation
+testing has run.
 
-The four-reviewer Final Wave Review Gate (Eclipse / Architect / Forge / Sentinel) has **not** been
-dispatched. It is the documented entry condition for DELIVER and must clear — or be explicitly waived
-— before slice 01 starts. Recorded here rather than silently skipped. Note that Forge already reviewed
-the DEVOPS band on 2026-09-11 (NEEDS_REVISION, 8 blocking, all fixed); that was a per-wave review and
-does not substitute for the consolidated gate.
+Two conditions travel into DELIVER and are not optional:
+
+1. **Recount error-and-edge coverage after 01b lands** and report it against the 40% guideline. It is
+   36% now and the shortfall is DT-3-bound, which the driven side removes.
+2. **Prove the canary's alerting path before 01b ships** — send one deliberate failure on a scheduled
+   workflow and confirm the maintainer receives GitHub's email. An alerting channel nobody has tested
+   is an assumption wearing the costume of a control.
+
+**The four-reviewer Final Wave Review Gate ran on 2026-09-12 and CLEARED on the second cycle.**
+
+| Reviewer | Cycle 1 | Cycle 2 |
+|---|---|---|
+| Eclipse (DISCUSS) | rejected — 3 blockers | **approved** |
+| Architect (DESIGN) | rejected — 1 blocker | **approved** |
+| Forge (DEVOPS) | needs_revision — 3 blockers | **approved** (1 low) |
+| Sentinel (DISTILL) | needs_revision — 1 blocker | **conditionally approved** (1 high, 1 low) |
+
+Zero blockers outstanding. Sentinel's remaining high is the error-and-edge coverage ratio, accepted
+with a condition: it is DT-3-bound on the backend and is recounted after 01b, when the driven side
+arrives. Forge's low is the untested alerting path. Both are DELIVER-scope action items and are
+carried below.
+
+**What the gate was worth, stated plainly, because this is the argument for running it again.** It
+found **three false statements about existing code** that four waves and several adversarial reviews
+had passed over — S5, S8 and S10, see the verification log. One of them, S8, had been *true when
+written* and was overtaken by story #5876 shipping the fix, which meant this Epic had been carrying a
+precondition that was already satisfied. It also found a CI filter that would have run the vendor
+canary on every push, a test whose name claimed an assertion it never made, and three counting errors
+including one that understated error coverage by eleven points by dividing blocks by expanded cases.
+
+Two things the gate got wrong, recorded so its output is not treated as automatically correct:
+Sentinel cited a `@AC-03.2` tag that does not exist in a file with no AC tags at all, and its line
+numbers were wrong throughout; Forge raised the absence of the canary workflow and the EF migrations as
+defects, when those are the work DELIVER does. Reviewer findings are evidence, not verdicts.
+
+Forge's earlier per-wave review of the DEVOPS band on 2026-09-11 (NEEDS_REVISION, 8 blocking, all
+fixed) did not substitute for this consolidated gate, and the gate found more.
 
 **DoR-9 no longer blocks slice 01.** It closed on 2026-09-12; see the DoR Validation section. Its one
 remaining question governs slice 04.
