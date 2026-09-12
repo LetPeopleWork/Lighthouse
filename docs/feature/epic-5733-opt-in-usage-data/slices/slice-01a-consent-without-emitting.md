@@ -23,7 +23,7 @@ they chose is what the server holds.
   follows in the same interaction, and the server holds the new state.
 - Instance identifier: random, minted lazily on first grant, persisted. Nothing reads it yet.
 - `docs/settings/usagedata.md`: the complete field list, what is never sent, where the data rests,
-  the retention period, the 30-day decay, and what revoking does and does not do. The dialog links
+  the one-year retention, the 30-day decay, and what revoking does and does not do. The dialog links
   it, so it has to exist here rather than in 01b.
 - The composite index over the columns the live-grant question filters on.
 

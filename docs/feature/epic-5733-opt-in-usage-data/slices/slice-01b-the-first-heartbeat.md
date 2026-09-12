@@ -77,7 +77,9 @@ revokes from the footer, and the next cycle produces nothing. That round trip is
 - **Slice 01a complete.** The gate has nothing to read without the consent record, and the payload
   has no identifier without the minting path.
 - The collector projects configured: production and continuous-integration, client IP discarded, the
-  location lookup off, the vendor's AI features off, retention set per ADR-175 point 7.
+  GeoIP transformation disabled (a **separate** control from discarding the IP), and the vendor's AI
+  data-processing consent off at the **organization** level. Retention is not configurable - confirm
+  it reads one year, which is what the free plan gives, per ADR-175 point 7.
 - Docker available on any machine running the backend suite. The day-key claim cannot be tested on
   EF InMemory, which does not implement the conditional update it relies on, so those tests join the
   container-backed set the consent store already needs — and that set carries no `Integration`

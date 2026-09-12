@@ -550,9 +550,21 @@ Decision enabled: whether to invest further in a shipped feature, fix it, or ret
 - AC-08.4 Every event carries the instance identifier and is subject to the same consent and master
   switch as the heartbeat.
 - AC-08.5 A browser that consented before these events existed keeps its consent, and the events it
-  did not see enumerated are added to the docs and the dialog on the next open. Whether re-consent is
-  required for a widened payload is a legal question flagged at DoR-9 and answered before this slice
-  ships.
+  did not see enumerated are added to the docs and the dialog on the next open. **Answered 2026-09-12:
+  widening the payload does not by itself require re-consent** — but only inside a boundary, because
+  an unbounded "no" would let any future slice add anything at all under a consent given for five
+  fields. Re-consent **is** required if any one of these changes:
+  - the payload gains anything scoped to a person, or any free text (AC-08.3 already forbids both, so
+    crossing this line means AC-08.3 was relaxed first, deliberately);
+  - the purpose widens past "measure the installed base and how Lighthouse is used";
+  - the set of parties who hold the data widens — turning the collector's AI features on attaches four
+    more, which is why they stay off;
+  - retention lengthens, which a paid-plan upgrade would do silently (ADR-175 point 7).
+
+  Short of those, the dialog and `docs/settings/usagedata.md` are updated in the same change that adds
+  the event, and the existing consent stands. The reasoning: the purpose is unchanged, the data stays
+  instance-scoped with no person in it, and the indicator and one-click revoke are in front of the
+  user the whole time.
 - AC-08.6 The KPI contracts whose questions these events answer move off
   `status: deferred-pending-telemetry-feature` and name the events that now source them (S5).
 
@@ -677,16 +689,16 @@ n=1, falsifiable, and cheap.
 | 6 | Slices ≤ 1 day with learning hypotheses | PASS | The exception was slice 01, which failed the 4-component taste test. Split into 01a and 01b on 2026-09-12; both pass, and each keeps its own hypothesis. See Slice Taste Tests. |
 | 7 | Out-of-scope explicit | PASS | Out of Scope section; the OptionalFeatures rework is explicitly deferred to the board. |
 | 8 | Outcome KPIs with numeric targets and measurement method | PASS | 7 KPIs, each with a target and a named source. |
-| 9 | Compliance assessment, **self-performed and risk accepted by the maintainer** — six questions, see below | **CLOSED 2026-09-12** for slice 01; question 2 remains open and governs slice 04 | Re-scoped on 2026-09-11. The row previously said "legal / DPO sign-off" and named two questions; three waves then widened it to six without editing the row, so it understated its own gate. It also assumed a legal function that does not exist here. The maintainer's decision: read it ourselves, accept the risk in writing, do not buy a review. |
+| 9 | Compliance assessment, **self-performed and risk accepted by the maintainer** — six questions, see below | **CLOSED 2026-09-12 — all six answered** | Re-scoped on 2026-09-11. The row previously said "legal / DPO sign-off" and named two questions; three waves then widened it to six without editing the row, so it understated its own gate. It also assumed a legal function that does not exist here. The maintainer's decision: read it ourselves, accept the risk in writing, do not buy a review. |
 
 **DoR-9's six questions, and where each stands:**
 
 | # | Question | Status |
 |---|---|---|
 | 1 | The ePrivacy Art 5(3) reading behind D2 — a post-click token is strictly-necessary | **Accepted.** The argument is written out in D2 and stands on EDPB Guidelines 2/2023. Risk accepted: it is a reading, not a ruling |
-| 2 | Whether a widened payload needs re-consent (AC-08.5) | **Open**, and it governs slice 04 and A14's value set, not slice 01 |
+| 2 | Whether a widened payload needs re-consent (AC-08.5) | **Closed 2026-09-12. No** — inside a stated boundary. Re-consent is required only if the payload gains something person-scoped or free-text, the purpose widens, the set of parties holding the data widens, or retention lengthens. Otherwise the dialog and docs are updated alongside the new event and existing consent stands. Full wording at AC-08.5 |
 | 3 | The PostHog DPA | **READ 2026-09-11.** SCCs plus EU-US Data Privacy Framework; return-or-delete on request at termination; sub-processors by general authorization against a **dynamic** page. See the residency finding below |
-| 4 | Retention and erasure (H10) | **Closed 2026-09-12.** 13 months at the collector — or the shortest option at or above a year, if the vendor's settings do not offer thirteen months. The identifier is not deleted when consent lapses, because deleting it would count a returning instance twice. Revocation stops future sending and does not erase what was already sent, and the dialog says so rather than letting a reader infer deletion. Written into ADR-175 point 7 |
+| 4 | Retention and erasure (H10) | **Closed 2026-09-12.** One year, which is **not a setting** — PostHog fixes retention by plan (1 year free, 7 years on every paid plan) and says a shorter period cannot be configured or requested. A year answers every question we ask. Carry the consequence: a paid upgrade silently widens it to seven and falsifies the dialog. The identifier is not deleted when consent lapses, because that would count a returning instance twice. Revocation stops future sending and does not erase; the dialog says so rather than letting a reader infer deletion. Written into ADR-175 point 7 |
 | 5 | `POSTHOG_PERSONAL_API_KEY` blast radius (P11) | **Accepted** with the custody in P11 |
 | 6 | Whether census data may appear in a public CI log (P14) | **Closed by P14** — the canary asserts on counts and property names only |
 
@@ -700,10 +712,10 @@ of the consent dialog who infers the second from the first has been misled by om
 same failure class A13 exists to prevent for the IP, and it earns the same treatment: the dialog says
 where the data rests and does not imply it never goes further.
 
-**DoR verdict: 9 of 9 PASS as of 2026-09-12.** DoR-9's question 4 closed that day, with the retention
-and erasure position now written out in ADR-175 point 7. One question remains open — question 2,
-whether a widened payload needs re-consent — and it governs slice 04 and A14's value set, not slice
-01. **Neither 01a nor 01b is gated on an external party or on an unwritten decision.**
+**DoR verdict: 9 of 9 PASS as of 2026-09-12, and all six of DoR-9's questions are now answered.**
+Question 4 closed with the retention and erasure position in ADR-175 point 7; question 2 closed with
+a bounded "no" on re-consent at AC-08.5. **Nothing in this Epic is gated on an external party or on
+an unwritten decision.**
 
 ---
 
@@ -1006,8 +1018,9 @@ cheap to reverse and none is load-bearing for the shape of the design.
 - ~~DoR-9 remains open and blocking for slice 01 shipping.~~ **Closed 2026-09-12** — self-performed
   and risk-accepted rather than bought as a legal review, which is what the row had assumed. See the
   DoR Validation section.
-- AC-08.5 (whether a widened payload requires re-consent) is a legal question that now also governs
-  the deployment-mode value set — which is why A14 fixes that set at slice 01 rather than later.
+- ~~AC-08.5 (whether a widened payload requires re-consent) is a legal question.~~ **Answered
+  2026-09-12: no, within a boundary** — see AC-08.5. A14 still fixes the deployment-mode value set at
+  slice 01, because widening a value set the dialog enumerates is cheaper to avoid than to justify.
 
 ---
 
@@ -2010,11 +2023,12 @@ is the one place that lists them.
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | How long the collector keeps events | **13 months**, or the shortest option at or above a year if the vendor's project settings do not offer thirteen. Every outcome measure is a rolling window, and the longest question anyone asks the census is year-on-year. The continuous-integration project takes the shortest retention it can. ADR-175 point 7 |
+| 1 | How long the collector keeps events | **One year, and not by choice** — PostHog fixes retention by plan (1 free / 7 paid) and will not shorten it on request. A year happens to answer every question we ask. A paid upgrade would silently make it seven and falsify the dialog. ADR-175 point 7 |
 | 2 | What the heartbeat day key is written with | A **narrow conditional-update accessor of its own**, not the `AppSettings` upsert, using the `ExecuteUpdateAsync`-with-the-old-value-in-the-`Where` shape this codebase already uses for compare-and-swap. ADR-174 point 8 |
 | 3 | Whether slice 01 splits | **Yes — 01a and 01b.** The reviewer's H6 split, accepted |
 | 4 | The 30-day consent decay | **Kept at 30 days, and disclosed in the dialog.** ADR-173 |
 | 5 | Whether the uptake measure needs a target that can fail | **Yes**, and the half that could not fail is deleted rather than re-targeted |
+| 6 | Whether a widened payload needs re-consent (AC-08.5) | **No, within a stated boundary.** Re-consent only if the payload gains something person-scoped or free-text, the purpose widens, the set of parties holding the data widens, or retention lengthens. An unbounded "no" would let a later slice add anything under a consent given for five fields |
 
 **A premise withdrawn, found while writing decision 2.** ADR-174 point 8 said the day key used "the
 same compare-and-swap shape that `DeliveryMetricSnapshot`'s `RecordedDay` already uses". It does not.

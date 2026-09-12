@@ -95,13 +95,28 @@ winner; then write the consent row. A browser that loses the identifier race sti
    was taken by the maintainer on 2026-09-12 and is written out here so that it is not quietly
    re-litigated later.
 
-   **The collector keeps events for 13 months.** Every question the outcome measures ask is a rolling
-   window - a 24-hour reporting count, a 30-, 60- or 90-day trend - and the longest question anyone
-   asks of the census is whether the installed base grew against the same month a year earlier.
-   Thirteen months answers that, and nothing longer answers anything we ask. If the vendor's project
-   settings do not offer thirteen months, take the shortest option **at or above one year** and give
-   up the year-on-year comparison rather than buying three years to keep it. The continuous-integration
-   project holds only canary probes and takes the shortest retention available to it.
+   **Retention is one year, and it is not ours to set.** PostHog fixes retention by plan rather than
+   by project setting: one year on the free plan, seven on every paid plan, and their own
+   documentation says a shorter period cannot be configured and is not available on request. So the
+   number is chosen by which plan we are on, not by a toggle.
+
+   One year is the right number anyway, which is what makes this comfortable rather than merely
+   unavoidable. Every question the outcome measures ask is a rolling window - a 24-hour reporting
+   count, a 30-, 60- or 90-day trend - and the only longer question is whether the installed base grew
+   against the same month a year earlier. A year answers that, near enough, and nothing we ask needs
+   more.
+
+   **The consequence to carry: upgrading the plan silently widens retention to seven years.** The
+   SPIKE already says to re-check cost at slice 04, when product events could move the volume past
+   the free allowance. That re-check is now also a privacy decision, because the dialog states a
+   retention period and a plan change would falsify it without anyone touching the copy. If the
+   volume ever forces a paid plan, the dialog and the docs page change in the same act.
+
+   **A deletion path does exist, and is worth knowing even though nothing promises it.** PostHog can
+   delete a person together with their events, and the instance identifier is the `distinct_id` - so
+   deleting one "person" erases exactly one instance's history. That makes an erasure request
+   answerable by hand if one is ever made. It is deliberately not offered in the dialog: a promise of
+   erasure is a promise to operate a process, and there is no process here yet.
 
    **The identifier is not deleted when the last live grant expires.** Deleting it would make a
    returning instance a new instance in the census, silently inflating the one number this feature
@@ -114,7 +129,7 @@ winner; then write the consent row. A browser that loses the identifier race sti
    still consenting. Once the last browser revokes, the instance stops emitting and what it already
    sent ages out on the retention period. The promise the dialog can honestly make is the one it
    should make: revoking stops anything further being sent, and what was already sent is kept for up
-   to thirteen months.
+   to a year.
 
 ## Alternatives considered
 
