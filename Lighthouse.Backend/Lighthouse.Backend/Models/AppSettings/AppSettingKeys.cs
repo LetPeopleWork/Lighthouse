@@ -23,7 +23,5 @@
         public const string SurveyNudgeRemindLaterCount = "SurveyNudge:RemindLaterCount";
 
         public const string FeatureOrderingPolicy = "FeatureOrdering:Policy";
-
-        public const string UsageDataInstanceId = "UsageData:InstanceId";
     }
 }

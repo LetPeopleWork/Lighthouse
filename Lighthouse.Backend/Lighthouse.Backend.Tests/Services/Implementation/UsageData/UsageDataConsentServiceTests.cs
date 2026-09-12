@@ -1,10 +1,8 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Services.Implementation.UsageData;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -22,17 +20,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         private const int WindowDays = 30;
 
         private Mock<IUsageDataConsentRepository> repositoryMock;
-        private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IUsageDataConsentRepository>();
-            appSettingServiceMock = new Mock<IAppSettingService>();
             licenseServiceMock = new Mock<ILicenseService>();
-
-            appSettingServiceMock.Setup(s => s.EnsureUsageDataInstanceId()).ReturnsAsync("an-instance");
         }
 
         [Test]
@@ -133,40 +127,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         [Test]
-        public async Task RecordDecision_WhenSomebodyAgrees_NamesTheInstanceFirst()
-        {
-            await CreateService().RecordDecisionAsync(UsageDataDecision.Granted, TestContext.CurrentContext.CancellationToken);
-
-            appSettingServiceMock.Verify(s => s.EnsureUsageDataInstanceId(), Times.Once);
-        }
-
-        [Test]
-        public async Task RecordDecision_WhenSomebodyRefuses_LeavesTheInstanceUnnamed()
-        {
-            await CreateService().RecordDecisionAsync(UsageDataDecision.Declined, TestContext.CurrentContext.CancellationToken);
-
-            appSettingServiceMock.Verify(s => s.EnsureUsageDataInstanceId(), Times.Never,
-                "an instance nobody has agreed on has no identifier at all, which is what makes "
-                + "\"we hold nothing about instances that did not opt in\" true of the database");
-        }
-
-        [Test]
-        public async Task RecordDecision_WhenTheInstanceCannotBeNamed_StillRecordsTheAnswer()
-        {
-            appSettingServiceMock
-                .Setup(s => s.EnsureUsageDataInstanceId())
-                .ThrowsAsync(new InvalidOperationException("the identifier could not be written"));
-
-            await CreateService().RecordDecisionAsync(UsageDataDecision.Granted, TestContext.CurrentContext.CancellationToken);
-
-            repositoryMock.Verify(
-                r => r.AddAsync(It.IsAny<UsageDataConsent>(), It.IsAny<CancellationToken>()),
-                Times.Once,
-                "the answer is the thing the person gave us; refusing it over a write they know "
-                + "nothing about is the worse failure");
-        }
-
-        [Test]
         public async Task RecordDecision_MintsADifferentTokenEveryTime()
         {
             var service = CreateService();
@@ -213,11 +173,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
 
             return new UsageDataConsentService(
                 repositoryMock.Object,
-                appSettingServiceMock.Object,
                 licenseServiceMock.Object,
                 monitor,
-                new FakeTimeProvider(Now),
-                Mock.Of<ILogger<UsageDataConsentService>>());
+                new FakeTimeProvider(Now));
         }
 
         private sealed class FakeTimeProvider(DateTime now) : TimeProvider
