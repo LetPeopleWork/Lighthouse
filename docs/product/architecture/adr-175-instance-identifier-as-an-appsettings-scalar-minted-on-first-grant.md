@@ -1,6 +1,18 @@
 # ADR-175: The instance identifier is one `AppSettings` scalar, minted from a CSPRNG on the first grant and never on a refusal
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Superseded** by
+  [ADR-191](./adr-191-analytics-identity-is-a-per-browser-pseudonym-never-on-the-wire.md)
+  (DESIGN, 2026-09-12). It was **Proposed** (DESIGN, 2026-08-22) and was never Accepted.
+- **Superseded because**: the maintainer decided the payload carries user and feature counts only,
+  with **no instance identifier at all**. This ADR's Context says the identifier's purpose is to
+  become the `distinct_id`; point 5 gives its only read as the gate constructing a permit; point 6
+  says it is never exposed to the browser and never returned by any API. With the `distinct_id`
+  reassigned to a per-browser pseudonym there is no remaining consumer, so the scalar is retired and
+  the shipped minting path is removed — see ADR-191 point 6 for what happens to rows already written.
+  **What survives**: the retention position (point 7), "derived from nothing", "minted only on a
+  grant, never on a refusal", and "it never leaves through an API". All four are carried forward at
+  browser scope. **The consequence this ADR could not avoid — that install counts exist at all — is
+  now a deliberate loss**, stated in ADR-191.
 - **Date**: 2026-08-22
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slice 01)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

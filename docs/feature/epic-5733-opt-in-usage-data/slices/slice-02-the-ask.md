@@ -1,5 +1,28 @@
 # Slice 02 — People are actually asked, once, and told the truth about when they will be asked again
 
+> **Position confirmed — 2026-09-12.** Unchanged in content and unchanged in sequence: this runs
+> **after** `slice-01c-the-event-pipe.md` and **before** slice 03 and slice 04, exactly as the original
+> order had it. DESIGN briefly proposed moving slice 04 ahead of this one; the maintainer kept the
+> original order, and the reasoning that put it there still holds — the event vocabulary should be
+> chosen once there is a consenting population to spend it on, and this is the slice that creates one.
+>
+> **This slice now carries more weight than it did.** Slice 01c ships a real product event to a
+> population that is only the dogfood instance plus whoever went looking for the footer icon, because
+> the unprompted ask does not exist until here. **This is the slice that turns the pipe from a
+> demonstrated mechanism into a measurement.** An empty dashboard between 01c and this slice is the
+> expected state, not a fault.
+>
+> One thing also gets easier: AC-05.8 ("with the admin switch off, the dialog never appears") used to
+> be asserted against the setting's absence. The gate that reads the optional feature exists from 01c
+> onward, so it is now asserted against a real reader rather than a placeholder.
+>
+> **New in scope — `PruneStaleAsync` gets its owner here.** It has shipped with zero production callers
+> (verified: interface, implementation and tests only), so the consent table currently grows one row
+> per browser ever asked, without bound. **This is the slice that makes that growth real**, because
+> before the unprompted ask rows accrue only from people who went hunting for a footer icon, and after
+> it every browser that is shown the dialog writes one — including every refusal. Scheduling the prune
+> belongs to the slice that creates the problem, not to the one that happened to introduce the method.
+
 ## Goal
 
 The Usage Data dialog arrives unprompted at a sensible moment, once per browser, with an honest

@@ -1,6 +1,29 @@
 # ADR-176: PostHog Cloud EU behind a named publisher adapter, with the privacy guarantee moved into the payload where CI can assert it, and a canary that reads the vendor back
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Proposed** (DESIGN, 2026-08-22). **Re-confirmed against the 2026-09-12 emission
+  redesign** ([ADR-190](./adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md)).
+  The decision stands in full; three notes.
+- **Confirmation, 2026-09-12.** The redesign changes where an event is *detected*, not where it is
+  *sent from*: the backend still posts to the capture API and the browser still never contacts the
+  collector. So the named adapter, the port in front of it, the four privacy layers and the
+  `$ip: null` / `$geoip_disable: true` payload properties are all untouched. The alternative this ADR
+  rejected — *"emit browser-side so the customer's server IP is never exposed"* — is still rejected,
+  and for the same reason it always was.
+- **Amendment A, 2026-09-12 — layers 1 and 2 now carry more weight, because the volume is larger.**
+  They were sized for one heartbeat per instance per day. Per-event traffic means more observations of
+  the same customer server IP at the vendor's edge, and it means the per-event purity assertion runs
+  over an event type that a person's actions populate rather than a scheduler. The enforcement row
+  *"every event carries the IP and GeoIP suppression properties … per event type"* was written to
+  cover this and does. **The free-tier allowance estimate (~30k events/month against 1M) predates the
+  redesign and must be recomputed before slice 04 chooses its event set** — a paid plan would widen
+  retention to seven years and falsify the published position (ADR-175 point 7, carried into ADR-191).
+- **Amendment B, 2026-09-12 — layer 4's field enumeration moved out of the dialog.** This ADR requires
+  the dialog to state *"the five fields, by name"*. The shipped `UsageDataDialog` deliberately does
+  not, on the grounds that a list in a dialog goes stale silently while still looking authoritative;
+  `docs/settings/usagedata.md` carries it and the dialog links there. **Layer 4's substance survives
+  and is stronger than the enumeration was**: the forbidden-phrase test over rendered copy, and the
+  rule that the dialog never claims the IP is not transmitted. The shipped dialog goes further than
+  this ADR asked and says nothing about the IP at all, which cannot be misread.
 - **Date**: 2026-08-22
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slices 01 and 04)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

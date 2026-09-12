@@ -1,4 +1,42 @@
-# Slice 01b — One heartbeat arrives, one click stops it, and the product stops saying it collects nothing
+# ~~Slice 01b — One heartbeat arrives, one click stops it, and the product stops saying it collects nothing~~
+
+> # ⚠ SUPERSEDED — 2026-09-12
+>
+> **This slice will not be built. ADO #5975 is Removed.**
+>
+> **Why.** The daily backend heartbeat was the only way to answer "how many instances exist and which
+> versions do they run" while the emit path had no browser behind it. The maintainer has since decided
+> that the payload carries **user and feature counts only, with no instance identifier** — which
+> removes the thing a heartbeat would be a heartbeat *of* — and that the instance facts it carried
+> (version, deployment mode, platform, standalone, licence tier) become **properties attached to
+> product events** instead. With those two decisions there is nothing left for a scheduled emit to
+> send that an event does not already carry.
+>
+> **What replaces it**: `slice-01c-the-event-pipe.md`. The browser detects events, posts them to
+> Lighthouse's own backend, the backend verifies a live consent grant on every batch, attaches the
+> instance properties and forwards.
+>
+> **What carried over from this slice, unchanged in substance**:
+> - the fail-closed, uncached gate and the emit permit (now per batch rather than per day);
+> - the zero-leak `DelegatingHandler` harness **and** the architecture rule forbidding ad-hoc HTTP
+>   client construction, still built inside the slice rather than after it;
+> - revocation enforcement at the emit path (AC-03.2), now checked twice — at accept and at drain;
+> - the usage data page rewrite and the two copy corrections (`SurveyNudge.tsx` and CRA
+>   self-assessment row 1.7), which travel with 01c for exactly the reason they travelled with this
+>   slice: it is the slice that first makes them false.
+>
+> **What died with it**: the once-per-day emit, the five-field payload, the
+> `UsageData:LastHeartbeatDay` compare-and-swap and its seeding requirement, the
+> Testcontainers-backed day-key test, and the whole replica-multiplication problem — which
+> *dissolves* rather than being solved, because a browser-originated event enters through exactly one
+> replica and is forwarded once.
+>
+> **The decisions**: `docs/product/architecture/adr-190-*.md` (supersedes ADR-174) and
+> `docs/product/architecture/adr-191-*.md` (supersedes ADR-175).
+>
+> Everything below is the slice as it stood, left as the record.
+
+---
 
 **Second half of the walking skeleton.** Everything that sends, and the gate that decides whether it
 may. Slice 01a built a decision nothing acted on; this is what acts on it.

@@ -6558,6 +6558,16 @@ Architect: Morgan (Solution Architect)
 Paradigm: OOP (C# backend), functional-leaning React (hooks, pure components) on the frontend
 Scope: application / components only. No system-design or domain-model wave ran for this feature.
 
+> **⚠ The emission half of this section was superseded on 2026-09-12.** The daily backend heartbeat
+> it describes is abandoned (ADO #5975 Removed). Read
+> `## Application Architecture — epic-5733-opt-in-usage-data — 2026-09-12 emission redesign`
+> below for what replaces it: the browser detects events, our own backend verifies consent per batch,
+> attaches instance properties and forwards, and there is no instance identifier in the payload.
+> **Still accurate here**: the ports-and-adapters pattern, the fail-closed gate invariant, the permit
+> and its 2026-09-11 correction, and everything about the consent record. **No longer accurate**: the
+> two C4 diagrams, the heartbeat rows of Component Decomposition, and the `/state` contract table —
+> the shipped endpoint answers three fields (`Sending`, `Decision`, `WillAskAgain`), not six.
+
 ---
 
 ### Architectural Pattern
@@ -6775,6 +6785,225 @@ rather than `IObjectProvider<IType>`, or CA1859 fails the Sonar gate.
 - [ADR-175](./adr-175-instance-identifier-as-an-appsettings-scalar-minted-on-first-grant.md): instance identifier
 - [ADR-176](./adr-176-posthog-cloud-eu-as-a-named-adapter-with-payload-carried-privacy-controls.md): named collector adapter and the compensating control
 - [ADR-177](./adr-177-deployment-mode-is-a-usage-data-owned-closed-value-set.md): deployment-mode value set
+
+---
+
+## Application Architecture — epic-5733-opt-in-usage-data — 2026-09-12 emission redesign
+
+Wave: DESIGN. Date: 2026-09-12. Architect: Morgan. Mode: PROPOSE. Scope: application / components,
+**emission mechanism only**.
+
+**This subsection supersedes the emission half of the section above.** Everything from "System
+Context (C4 L1)" through "ADR References" describes a **daily backend heartbeat**, and that design is
+abandoned — ADO #5975 is Removed. What stands unchanged above: the ports-and-adapters pattern, the
+fail-closed-gate invariant, the permit and its correction, and the consent record. What is superseded:
+the two C4 diagrams, the heartbeat rows of Component Decomposition, the `/state` contract table, and
+the instance-identifier driven port.
+
+**Slice 01a shipped on 2026-09-12** — consent store, three anonymous endpoints, service,
+`useUsageDataConsent`, footer indicator, consent dialog. It is production code and is not redesigned.
+
+### What changes
+
+**The browser detects; our own backend sends.** No `posthog-js`, so no third-party script in the
+page, no ad-blocker bias in an audience of engineers, and total payload control. The browser posts
+detected events to Lighthouse's own API; the backend verifies a live consent grant on **every**
+batch, attaches instance properties server-side, and forwards. The instance facts the heartbeat
+existed to carry — version, deployment mode, platform, standalone, licence tier — become event
+properties, which is what deletes the heartbeat.
+
+**The payload carries user and feature counts only.** The `distinct_id` is a per-browser pseudonym.
+There is no instance identifier, so **install counts are permanently unanswerable** — stated as an
+accepted loss, not a gap to close later. PostHog Groups is not used: paid, and moot without an
+install entity.
+
+### The two structural guarantees
+
+- **A customer's entity id cannot reach the collector.** The ingest DTO's route field is a closed
+  `UsageDataRouteKey` enum, not a path. The server owns the `/teams/:id` text PostHog sees. A client
+  sending a real path does not deserialise, so the leak has no moment at which to happen — it is not
+  mitigated, it is unrepresentable. Event names are closed the same way, which is also what makes
+  "no event ships ahead of its documentation" a compile error rather than a review habit.
+- **A client cannot choose its own `distinct_id`.** The pseudonym is minted server-side on a grant,
+  stored in a new nullable `AnalyticsId` column on the consent row, and resolved from the presented
+  token. It is never a field in any request or response, in either direction. The consent token — the
+  capability to revoke — never reaches a third party and is never the analytics id.
+
+### The consent gate, at the granularity ADR-174 predicted
+
+ADR-174 declined the "no per-emit database read" constraint and said the question *"becomes real only
+at slice 04, where product events are per-user-action rather than daily"*. That is now the only
+granularity, and the answer is **still no cache**: one indexed lookup on the unique `TokenHash` index
+per batch, which is the same read the shipped state endpoint already performs hourly per open tab.
+
+The gate runs **at accept and again at drain**. Nothing is persisted anywhere — no outbox table, no
+browser-side queue — because a durable queue survives a revocation and sends afterwards, which is the
+one behaviour AC-03.2 forbids. The residual is one in-flight HTTP request, named rather than denied.
+
+**Revocation gets better than the abandoned design managed.** ADR-173 had to admit that clearing
+browser storage stopped the heartbeat only after the liveness window. Here the browser *is* the
+emitter, so clearing storage stops emission instantly.
+
+### The abuse surface of an anonymous ingest endpoint, bounded
+
+Not "anyone on the network": a caller with no live grant gets `204` and nothing is forwarded, and
+permitted and suppressed are byte-identical so the endpoint is not an oracle. Volume is bounded twice
+— a fixed-window limiter partitioned on the **token digest** with an IP fallback (per-IP alone would
+throttle fifty colleagues behind one NAT against each other), and a **per-instance daily budget** that
+drops silently, because the quota actually at risk is the maintainer's single PostHog allowance,
+which is shared across every instance in the world and which no per-instance limiter can see.
+Content is bounded structurally: the DTO has no free `string` property at all.
+
+### The residual linkage surface, stated
+
+Version + deployment mode + licence tier + auth-enabled is aggregate across a large population and
+near-identifying for a rare tuple. It does not *identify*; it *reduces the candidate set*. Version
+carries nearly all the entropy and is the one bounded: a released version is shared by thousands, and
+a non-release-shaped string emits the literal `unreleased`. What is **not** bounded and is disclosed
+rather than engineered around: per-event emission produces an activity trace, and therefore an
+approximate time zone, that a daily heartbeat did not. The vendor stamps arrival, so rounding our own
+timestamps would be theatre.
+
+`auth-enabled` is carried on a **smaller** basis than before: not because counts are derived from the
+subject — they are not — but because it is the only signal of whether "one browser ≈ one person" is
+plausible on that instance.
+
+### System Context (C4 L1) — supersedes the diagram above
+
+```mermaid
+C4Context
+  title System Context — Usage Data (Epic 5733, 2026-09-12 redesign)
+  Person(user, "Person using Lighthouse", "Decides, per browser, whether usage data may be sent")
+  Person(admin, "System administrator", "Governs whether Lighthouse may ask, and may suspend sending")
+  Person(maintainer, "Lighthouse maintainer", "Reads feature-usage counts")
+  System(lh, "Lighthouse instance", "Self-hosted. Forwards events only for browsers holding live consent")
+  System_Ext(posthog, "PostHog Cloud EU", "Operated by PostHog Inc. Data rests in Frankfurt")
+  System_Ext(github, "GitHub Releases API", "Pre-existing unconsented release check - documented, not changed")
+  Rel(user, lh, "Grants or revokes consent in, and generates events in")
+  Rel(admin, lh, "Suspends or resumes usage data in")
+  Rel(lh, posthog, "Forwards consented events to")
+  Rel(lh, github, "Checks for releases against")
+  Rel(maintainer, posthog, "Reads feature usage from")
+```
+
+### Container (C4 L2) — supersedes the diagram above
+
+```mermaid
+C4Container
+  title Container Diagram — Usage Data (2026-09-12 redesign)
+  Person(user, "Person using Lighthouse")
+  Person(admin, "System administrator")
+  Container(spa, "Lighthouse Frontend", "React 18 + TypeScript", "Detects events, buffers them in memory, holds the consent token")
+  Container(api, "Lighthouse Backend", "ASP.NET Core .NET 10", "Hosts the consent and ingest endpoints, the gate, the queue and the forwarder")
+  ContainerDb(db, "Lighthouse database", "SQLite or PostgreSQL", "Holds consent rows and their browser pseudonyms")
+  System_Ext(posthog, "PostHog Cloud EU", "Capture API")
+  Rel(user, spa, "Decides consent in, and acts in")
+  Rel(admin, spa, "Toggles the Usage Data switch in")
+  Rel(spa, api, "Posts detected events to, and reads consent state from")
+  Rel(api, db, "Resolves the consent token against, and refreshes liveness in")
+  Rel(api, posthog, "Forwards enriched events to")
+```
+
+No component diagram: five backend types and two frontend modules do not warrant a third level.
+
+### Component delta
+
+Full table in `docs/feature/epic-5733-opt-in-usage-data/feature-delta.md` →
+**Wave: DESIGN / [REF] Component Decomposition (redesign)**.
+
+- **NEW (backend)**: `UsageDataEventBatchDto` / `UsageDataEventDto`, `UsageDataEventName`,
+  `UsageDataRouteKey`, `IUsageDataGate` + `UsageDataGate`, `UsageDataEmitPermit` /
+  `UsageDataEmitDecision` / `UsageDataSuppressionReason`, `IUsageDataEventQueue` +
+  `UsageDataEventQueue`, `UsageDataForwardingService`, `IUsageDataInstanceProperties`,
+  `IUsageDataPublisher` + `PostHogUsageDataPublisher`, `IUsageDataDeploymentModeResolver`.
+- **EXTEND (backend)**: `UsageDataController` (one action), `UsageDataConsent` (one nullable column,
+  one additive migration per provider), `UsageDataConsentService`, `RateLimitingConfiguration` +
+  `appsettings.json`.
+- **DELETE (backend)**: `IUsageDataConsentRepository.AnyLiveGrantAsync` — it has no production caller
+  today and this design removes the only one it could ever have; `IAppSettingService`'s
+  `EnsureUsageDataInstanceId` / `GetUsageDataInstanceId` and `AppSettingKeys.UsageDataInstanceId`.
+- **NEW (frontend)**: `usageDataEvents.ts` (in-memory buffer, no storage), `usageDataRouteKeys.ts`.
+- **EXTEND (frontend)**: `UsageDataService`, `useUsageDataConsent` (discard the pending buffer before
+  revoking).
+
+### Two claims about existing code this DESIGN establishes
+
+`AnyLiveGrantAsync` is **dead production code today**, not merely obsolete after this change: the
+shipped `UsageDataConsentService.GetStateAsync` computes `Sending` from `consent?.Decision` directly,
+and the two `UsageDataConsentServiceTests` setups at `:62` and `:74` exist to assert the service
+*ignores* it. `PruneStaleAsync` likewise has no production caller, which means the consent table
+currently grows one row per browser ever asked, forever — carried as an open item, not decided here.
+
+### What the redesign does to the stories
+
+**#5836 (instance-wide admin switch) becomes materially stronger.** With `posthog-js`, OFF could hide
+UI and ask an SDK to stop; a tab open since before the flip would keep sending. With ingest through
+our own gate, a stale tab's POST is accepted and dropped, so the screenshot an administrator takes to
+close a security review is true rather than approximately true.
+
+**#5837 (first named product events): importance up, position unchanged, scope narrowed.** With the
+heartbeat gone it is what the Epic delivers — that framing stands. DESIGN proposed moving it ahead of
+#5835 and the maintainer declined on 2026-09-12, keeping the original sequencing: the vocabulary is
+worth choosing once there is a consenting population to spend it on, and #5835 is what creates one.
+Slice 01c now ships **one** real product event, so #5837 is the *remaining* 1–3, for an Epic-wide
+total of 2–4.
+
+**Slice 01c ships the pipe plus one real product event** — a Team or Portfolio detail tab was opened.
+Chosen for what it exercises rather than for being cheap: `/teams/:id/:tab?` and
+`/portfolios/:id/:tab?` (`App.tsx:213,218`) are the only routes carrying both a customer entity id and
+a user-meaningful second segment, so a single event on them must drop the identifier and keep the tab,
+with the browser sending neither — the route key is an enum member such as `TeamDetail_Metrics`. Every
+other route is strictly easier.
+
+**Two consequences of shipping a real event before the unprompted ask.** Between 01c and #5835 the
+only consenting browsers are the dogfood instance and whoever went looking for the footer icon, so an
+empty collector dashboard in that window is the expected state rather than a broken pipe — verified
+against the shipped 01a flow, where the dialog opens only on an indicator click. And
+`docs/settings/usagedata.md` becomes a **ship blocker inside 01c**: the shipped dialog carries no
+field list and links that page as authoritative, so it is the only disclosure there is, and an event
+that ships ahead of its documentation is a defect by the Epic's own non-negotiable.
+
+### Architectural enforcement (this redesign)
+
+| Rule | Mechanism |
+|---|---|
+| No path-shaped value can reach the wire | Compiler (enum-typed route field); NUnit rejecting a body carrying `"/teams/42"` |
+| No event may carry free text | ArchUnitNET: the ingest DTO and the emitted event expose no non-enum-backed `string` |
+| An undocumented event cannot be emitted | Compiler for our client, `400` for anyone else's, plus a CI docs comparison |
+| Value-type DTO properties are nullable, never `[JsonRequired]` | Sonar S6964 — `[JsonRequired]` on a new property `400`s every payload written before it |
+| The ingest policy is actually limited | Startup assertion: an unconfigured policy name silently resolves to `NoLimiter` (`Program.cs:1159-1162`) |
+| A revocation between accept and drain suppresses the batch | NUnit: accept, revoke, drain, assert no publish |
+| The browser persists no event queue | Vitest: `localStorage` and `sessionStorage` untouched across a full emit-and-flush cycle |
+| Nothing publishes without a permit | Compiler (no zero-argument overload) plus `UsageDataEmitSeamArchUnitTest` — a test, not a compile-time guarantee |
+| The analytics id never appears in any request or response | ArchUnitNET plus NUnit over the shipped response bodies |
+| An unreleased version string never leaves | NUnit over the publisher |
+| A malformed token is answered identically to an unknown one | NUnit parameterised over empty, truncated, over-long and non-base64url tokens. The `400` is reserved for a malformed **body**; a bad token must never short-circuit, or the endpoint becomes an oracle for token shape |
+| The forwarder touches nothing outside its declared universe | ArchUnitNET: the queue and the publisher port only — no repository, no `DbContext`, no domain-event dispatcher |
+| Shutdown discards rather than flushes, and a failed publish is not retried | NUnit: `StopAsync` with a full queue publishes nothing; a throwing publisher is attempted once and leaves the loop running |
+| Suppression is counted, not logged per event | NUnit with a capturing logger: a revoked token flushing repeatedly produces no per-request line. ADR-174's "one log line per attempt" was right at one attempt a day and is a flood mechanism per event |
+
+**Observability and cost** are in ADR-190 §8. Two things worth carrying here: suppression reasons are
+counted with one line per reason per day rather than logged per event, and budget exhaustion emits one
+operator-facing warning a day — silent to the caller is deliberate, silent to the operator would make
+abuse indistinguishable from popularity. An actively-used tab costs up to **120 indexed lookups an
+hour** against the unique `TokenHash` index, roughly 120× the shipped state endpoint's hourly poll.
+Small in absolute terms, and not a rounding difference on what ships today.
+
+### ADR References (this redesign)
+
+- [ADR-190](./adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md): the
+  event pipe. **Supersedes ADR-174**, inheriting its uncached fail-closed gate, its permit, its
+  fail-closed rule, its cache-may-only-suppress invariant, its single-host constant and its zero-leak
+  honesty note; dropping the day key and the replica-multiplication problem, which dissolve.
+- [ADR-191](./adr-191-analytics-identity-is-a-per-browser-pseudonym-never-on-the-wire.md): the
+  per-browser pseudonym. **Supersedes ADR-175**, which was verified to serve no purpose beyond the
+  `distinct_id` before being retired. Records the permanent loss of install counts and the rejection
+  of browser fingerprinting.
+- ADR-173, ADR-176 and ADR-177 were each re-checked against the new direction and **survive**, each
+  with a dated confirmation note. ADR-176's layer-4 field enumeration and ADR-177's
+  "the dialog lists exactly this set" enforcement row are both withdrawn — the shipped dialog
+  deliberately enumerates nothing and points at `docs/settings/usagedata.md`, which makes the docs
+  comparison check the only surviving enforcement of the field list and therefore load-bearing.
 
 ---
 

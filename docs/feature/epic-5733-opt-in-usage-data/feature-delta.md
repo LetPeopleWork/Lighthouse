@@ -813,6 +813,28 @@ not have today.
 
 ---
 
+> ## ⚠ The DESIGN sections that follow — DDD Decision through Peer Review and Revisions — were **SUPERSEDED on 2026-09-12**
+>
+> They describe the **daily backend heartbeat** design. That design is abandoned: ADO #5975 (slice
+> 01b, "the first heartbeat") is Removed, and usage data is now **detected in the browser and
+> forwarded by our own backend, per event**. They are left in place rather than deleted so that the
+> record shows the design changed, not that it was always this.
+>
+> **What is superseded**: everything about the heartbeat, the emitter background service, the
+> `UsageData:LastHeartbeatDay` day key, the instance identifier and the five-field payload —
+> decisions **A3** and **A6**–**A9**, the `IUsageDataGate`/`UsageDataHeartbeatService` rows of
+> Component Decomposition, and the reuse verdicts on `UpdateServiceBase`, `UpdateQueueService` /
+> `IUpdateExecutionLock` and `AppSettingService`.
+>
+> **What still stands**: the DDD verdict, the consent-record decisions **A1**–**A2**, the fail-closed
+> gate and permit **A4**–**A5**, the collector decisions **A10**–**A13** and the deployment-mode
+> decision **A14**. All four surviving ADRs carry dated re-confirmation notes of their own.
+>
+> **The replacement sections are appended at the end of this file**, from
+> `## Wave: DESIGN / [REF] Redesign premise (2026-09-12)` onward.
+
+---
+
 ## Wave: DESIGN / [REF] DDD Decision
 
 **No DDD wave ran, and none is warranted.** Design scope was application/components only.
@@ -2222,3 +2244,500 @@ elsewhere in the repository. That is a different failure from the invented `AppS
 and it needs a different guard: an invented claim is caught by reading the code once, a stale claim is
 caught only by reading it **again, later**. Anything in this table is a snapshot with a date on it, not
 a standing fact.
+
+---
+
+## Wave: DESIGN / [REF] Redesign premise (2026-09-12)
+
+Scope: **application / components**, emission mechanism only. Interaction mode: PROPOSE. Architect:
+Morgan. DISCUSS is unchanged and was not re-run — the problem, the audience, the opt-in stance and
+the per-browser consent model all hold. Slice 01a (ADO #5834) is **shipped and pushed** and is not
+redesigned.
+
+Six premises, five from the maintainer and one that falls out of them:
+
+1. **The browser detects; our backend sends.** No `posthog-js`. No third-party script, no ad-blocker
+   bias in an audience of engineers, it works where the browser cannot reach the vendor, and the
+   payload stays entirely ours.
+2. **The backend verifies a live consent grant on every event.** Frontend gating is UX. The ingest
+   endpoint is anonymous and must not trust its caller.
+3. **Instance facts become properties on events**, not a daily record of their own. This is what
+   deletes the heartbeat.
+4. **Route patterns, never real paths.** Entity ids must not leak.
+5. **The consent token is never the analytics id.** It is the capability to revoke.
+6. **User and feature counts only — no instance id in the payload.** Install counts are given up
+   permanently; the reasoning and the cost are in ADR-191.
+
+Fingerprinting was considered and is **rejected**, recorded in ADR-191's alternatives so it is not
+reopened: no ePrivacy 5(3) exemption for an analytics purpose, it contradicts the shipped dialog
+copy, it defeats revocation by design, and it is less accurate than a random value in both
+directions.
+
+**ADRs**: [ADR-190](../../product/architecture/adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md)
+(the pipe, superseding ADR-174) and
+[ADR-191](../../product/architecture/adr-191-analytics-identity-is-a-per-browser-pseudonym-never-on-the-wire.md)
+(the identity, superseding ADR-175). ADR-173, ADR-176 and ADR-177 were each re-checked against the
+new direction and **survive**, each with a dated confirmation note and, for 176 and 177, an
+amendment to one enforcement row.
+
+---
+
+## Wave: DESIGN / [REF] Options weighed for the event pipe
+
+PROPOSE mode. Four places where a real fork existed; each is an ADR-190 or ADR-191 alternative with
+its full reasoning, summarised here.
+
+### Fork 1 — what the wire carries
+
+| Option | Trade-off | Verdict |
+|---|---|---|
+| Real path + free event-name string; server normalises with regex | Cheapest client. Puts real entity ids inside our process where logging can copy them out, and rests the whole promise on a regex set staying complete for every route anyone adds | **Rejected** |
+| Pattern string + server-side allow-list | Much better. But a rejected pattern still *arrived* as an arbitrary string, so the logging-before-validation exposure survives, smaller | **Rejected on a narrow point** |
+| **Closed route-key enum + closed event-name enum; server owns the pattern text** | One generated mapping to maintain. A real path does not deserialise, so it cannot arrive at all | **Chosen** |
+
+### Fork 2 — where the analytics id lives
+
+| Option | Trade-off | Verdict |
+|---|---|---|
+| Browser mints and sends it | What an SDK would do. Makes the `distinct_id` client-controlled: anyone who clicked Yes once can emit under any pseudonym, and cohort counts become writable | **Rejected** |
+| HMAC of the token digest under a server secret | No column, no storage, unguessable offline. Couples the pseudonym to the capability, and makes a re-consent after withdrawal reattach the old history | **Rejected** |
+| **Backend mints on grant, stores beside the consent row, resolves from the token** | One additive nullable column and one migration. The id is never in any request or response, in either direction | **Chosen** |
+
+### Fork 3 — how a batch reaches the collector
+
+| Option | Trade-off | Verdict |
+|---|---|---|
+| Synchronous inside the request | Simplest. Couples a user's page to a vendor's availability; violates "no user-visible failure" | **Rejected** |
+| Durable outbox table | Loses nothing. Survives a revoke and a restart, so accepted-then-withdrawn events get sent; and it stores unsent analytics about customer behaviour in the customer's own database | **Rejected** |
+| **Bounded in-process channel, drained by a hosted service, consent re-checked at drain** | Loses unflushed events on shutdown and overflow, which costs nothing. The queue forgets, which is the property this queue wants | **Chosen** |
+
+### Fork 4 — what bounds volume
+
+| Option | Trade-off | Verdict |
+|---|---|---|
+| Per-IP rate limit only, as ADR-005 | Matches every other anonymous endpoint. Throttles fifty colleagues behind one NAT against each other, and cannot see the quota actually at risk | **Insufficient alone** |
+| **Per-token-digest rate limit (IP fallback) + a per-instance daily budget that drops silently** | Two mechanisms instead of one. The limiter bounds one browser; the budget bounds the maintainer's single PostHog allowance, which is shared across every instance in the world and which no per-instance limiter can see | **Chosen** |
+
+---
+
+## Wave: DESIGN / [REF] Component Decomposition (redesign)
+
+Backend: 1 new endpoint on an existing controller, 5 new types, 4 extensions, 3 deletions.
+Frontend: 2 new modules, 2 extensions.
+
+| Component | Location | Change | Responsibility |
+|---|---|---|---|
+| `UsageDataEventsController` action | `API/UsageDataController.cs` | **EXTEND** | `POST /events`, anonymous, rate-limited, `204` in every non-malformed case |
+| `UsageDataEventBatchDto` / `UsageDataEventDto` | `API/DTO/` | **CREATE NEW** | Two closed enums and two bounded ints. No free `string` property |
+| `UsageDataEventName`, `UsageDataRouteKey` | `Models/UsageData/` | **CREATE NEW** | The documented vocabularies. Widened only alongside the docs page |
+| `IUsageDataGate` + `UsageDataGate` | `Services/.../UsageData/` | **CREATE NEW** | Resolves the token, reads the master switch, fail-closed, mints the permit. No cache |
+| `UsageDataEmitPermit`, `UsageDataEmitDecision`, `UsageDataSuppressionReason` | `Models/UsageData/` | **CREATE NEW** | Carried forward from ADR-174 §2–§3, reason enum revised |
+| `IUsageDataEventQueue` + `UsageDataEventQueue` | `Services/.../UsageData/` | **CREATE NEW** | Bounded in-process channel. Drop-oldest on overflow |
+| `UsageDataForwardingService` | `Services/.../BackgroundServices/` | **CREATE NEW** | Hosted service. Drains, re-checks consent, enriches, publishes |
+| `IUsageDataInstanceProperties` + resolver | `Services/.../UsageData/` | **CREATE NEW** | Version (release-shaped or `unreleased`), deployment mode, tier, auth-enabled |
+| `IUsageDataPublisher` + `PostHogUsageDataPublisher` | `Services/.../UsageData/` | **CREATE NEW** | Unchanged from ADR-176. Named adapter, one host constant, `$ip: null`, `$geoip_disable: true` |
+| `IUsageDataDeploymentModeResolver` | `Services/.../UsageData/` | **CREATE NEW** | Unchanged from ADR-177. Composes `IPlatformService` |
+| `UsageDataConsent` | `Models/UsageData/` | **EXTEND** | One nullable `AnalyticsId` column, additive migration on both providers |
+| `UsageDataConsentService` | `Services/.../UsageData/` | **EXTEND** | Mints the pseudonym on a grant; the instance-id call and its `try`/`catch` are removed |
+| `RateLimitingConfiguration` + `appsettings.json` | `Configuration/` | **EXTEND** | `UsageDataIngestPolicy`, declared **and configured** in the same commit |
+| `IUsageDataConsentRepository.AnyLiveGrantAsync` | `Services/Interfaces/Repositories/` | **DELETE** | No production caller today, and none possible after this |
+| `IAppSettingService.EnsureUsageDataInstanceId` / `GetUsageDataInstanceId` / `AppSettingKeys.UsageDataInstanceId` | `Services/`, `Models/AppSettings/` | **DELETE** | ADR-191 §6 |
+| `usageDataEvents.ts` | `src/services/UsageData/` | **CREATE NEW** | In-memory buffer, flush on timer and on `visibilitychange`, discard on revoke. No storage |
+| `usageDataRouteKeys.ts` | `src/services/UsageData/` | **CREATE NEW** | Route object → `UsageDataRouteKey`. The only place a React Router path is read |
+| `UsageDataService` | `src/services/Api/` | **EXTEND** | One `postEvents` method on the existing `BaseApiService` subclass |
+| `useUsageDataConsent` | `src/hooks/` | **EXTEND** | Discard the pending buffer before the revoke request is sent |
+
+---
+
+## Wave: DESIGN / [REF] Driving Ports (redesign)
+
+| Surface | Kind | Auth | Slice |
+|---|---|---|---|
+| `GET /api/latest/usagedata/state` | HTTP | None; token in `X-Lighthouse-UsageData-Token` | 01a — **shipped** |
+| `POST /api/latest/usagedata/consent` | HTTP | None | 01a — **shipped** |
+| `DELETE /api/latest/usagedata/consent` | HTTP | None; token in header | 01a — **shipped** |
+| Footer indicator opens the dialog | UI | — | 01a — **shipped** |
+| Consent dialog, two decisions | UI | — | 01a — **shipped** |
+| **`POST /api/latest/usagedata/events`** | HTTP | None; token in header. `204` always, `400` on a malformed body | **01c — new** |
+| Consent dialog, unprompted on install age | UI | — | 02 |
+| Optional Features, Usage Data toggle | UI | `RbacGuard(SystemAdmin)` | 03 |
+
+**No CLI or MCP surface, and no change to one.** The Lighthouse-Clients CLI and MCP server are not
+browsers, hold no consent, and detect no events. Unchanged from DISCUSS.
+
+**No new RBAC permission.** Ingest is deliberately not RBAC-gated: the consent token *is* the
+authorisation, and on an auth-off instance there is no role to check.
+
+**Route naming is a design input, not a free choice.** See the reconciliation added to
+`spike/findings.md` §AC-00.5 — blocklists carry generic path patterns that match on any domain, and
+a route named for tracking would reintroduce the ad-blocker bias this whole design exists to avoid,
+at larger scale. `usagedata/events` is chosen to sit under the existing controller and away from the
+vocabulary those rules use. Confirming which patterns those lists actually carry is an open item.
+
+---
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters (redesign)
+
+| Port | Adapter | Notes |
+|---|---|---|
+| `IUsageDataPublisher` | `PostHogUsageDataPublisher` | `{CollectorBaseUrl}/i/v0/e/`, default `https://eu.i.posthog.com`, configurable for air-gap. Unchanged from ADR-176 |
+| Consent persistence | `UsageDataConsentRepository` | Unchanged. `FindByTokenHashAsync` and `TouchAsync` are the gate's two operations |
+| Instance facts | `IPlatformService`, `ILighthouseReleaseService`, `ILicenseService`, `IAuthModeResolver` | All existing. Composed, none modified |
+| Event queue | `UsageDataEventQueue` | In-process `Channel<T>`. Deliberately not durable |
+
+**External integration → `nw-platform-architect`.** PostHog Cloud EU. A consumer-driven contract
+test on the capture transport is still **not** recommended — emit is fire-and-forget and degrades
+silently by specification. What *is* required is ADR-176's scheduled privacy-behaviour canary, and it
+now matters more: per-event volume means far more traffic under the same guarantee. Two things to
+carry into DEVOPS:
+
+- **Recompute the free-tier allowance before slice 04 chooses its event set.** The ~30k/month figure
+  in ADR-176 was a heartbeat estimate. A paid plan would widen retention from one year to seven and
+  falsify the published position.
+- **The canary's jobs are unchanged** but the `production-sweep` window now observes real user
+  traffic rather than one synthetic record a day, which makes its non-zero-count precondition easier
+  to satisfy and its cleanliness assertion stronger.
+
+---
+
+## Wave: DESIGN / [REF] Contract shapes and effect isolation
+
+Every new component, classified at design time. The universe column is what each is allowed to
+touch; anything outside it is a defect the crafter should be able to assert against.
+
+| Component | Contract shape | Declared universe | Assertion mechanism |
+|---|---|---|---|
+| `usageDataRouteKeys.ts` | **pure function** | none | Vitest: same input, same output, no globals read |
+| `UsageDataEventBatchDto` → domain mapping | **pure function** | none | NUnit over the mapping; rejects anything not an enum member |
+| `IUsageDataGate.EvaluateAsync` | **pure-read** — returns a decision, writes nothing except the throttled liveness touch, which is declared | one `UsageDataConsent` row's `LastSeenAt` | NUnit with a repository double asserting no other write |
+| `IUsageDataInstanceProperties` | **pure-read** | environment + three existing services, all read-only | NUnit with doubles |
+| `UsageDataEventQueue` | **bounded-change** | its own channel | NUnit: overflow drops oldest, never blocks the request thread |
+| `UsageDataForwardingService` | **bounded-change** | `Channel<UsageDataEventBatch>` + one named `HttpClient`. No repository, no `DbContext`, no domain-event dispatcher. Delta: the channel empties, PostHog receives zero or more events. No retry; shutdown discards rather than flushes | ArchUnit on the declared universe; `DelegatingHandler` assertion; NUnit on throw-survival, no-retry and `StopAsync`. Full contract table in ADR-190 §3 |
+| `PostHogUsageDataPublisher` | **bounded-change** | one named `HttpClient` | ArchUnit: only this type names the collector host |
+| `usageDataEvents.ts` buffer | **bounded-change** | one in-memory array | Vitest: `localStorage` and `sessionStorage` untouched across a full emit-and-flush cycle |
+
+The design's two structural guarantees, in the same language: a real entity id reaching the collector
+is **non-representable** (the route field is an enum), and a client-chosen `distinct_id` is
+**non-representable** (there is no field for one).
+
+---
+
+## Wave: DESIGN / [REF] Earned Trust — what each dependency has to prove
+
+Four external dependencies. Three are probed; one deliberately is not, and the reason is stated
+rather than skipped.
+
+| Dependency | Probe | On failure |
+|---|---|---|
+| The database (consent store) | Already covered: the gate's own fail-closed contract *is* the probe. A repository that throws yields `Suppressed(EvaluationFailed)` | Suppress. Never throw into a user's request |
+| The rate-limiter wiring | **Startup assertion**: the `UsageDataIngestPolicy` resolves to a real limiter, not `NoLimiter`. `Program.cs:1159-1162` returns `GetNoLimiter` for an unconfigured policy name, silently | This one **should** refuse to start. An unlimited anonymous write endpoint is worse than a dead feature |
+| The collector (PostHog) | `ProbeAsync` on the publisher, run once at startup and recorded as a health fact | **Recorded, not enforced.** See below |
+| The environment's version string | Shape check at the publisher: a non-release-shaped version emits `unreleased` | Emit the sentinel. No failure |
+
+**The deliberate deviation, and why it is not laziness.** The composition-root invariant is normally
+"wire, then probe, then use", with a failed probe refusing startup and emitting
+`health.startup.refused`. That is wrong here, and applying it dogmatically would be a defect: the
+collector is a **non-essential** dependency by specification — AC-04.5 requires an unreachable
+collector to cause no user-visible failure — so refusing to start Lighthouse because a vendor is down
+would convert an analytics outage into a customer outage. The probe therefore runs, records, and
+degrades. **The rate-limiter probe is the one that does refuse**, because the thing it protects is a
+security property of our own code rather than the availability of somebody else's.
+
+**What the collector probe must exercise**, since the substrate is known to shift: a `2xx` from the
+capture endpoint for a synthetic event under a reserved pseudonym; a DNS failure; a TLS failure; a
+`429`; and a hang beyond the configured timeout. Each must produce a recorded health fact and no
+exception escaping into the drain loop.
+
+---
+
+## Wave: DESIGN / [REF] C4 delta (redesign)
+
+### System Context (C4 L1)
+
+```mermaid
+C4Context
+  title System Context — Usage Data (Epic 5733, 2026-09-12 redesign)
+  Person(user, "Person using Lighthouse", "Decides, per browser, whether usage data may be sent")
+  Person(admin, "System administrator", "Governs whether Lighthouse may ask, and may suspend sending")
+  Person(maintainer, "Lighthouse maintainer", "Reads feature-usage counts")
+  System(lh, "Lighthouse instance", "Self-hosted. Forwards events only for browsers holding live consent")
+  System_Ext(posthog, "PostHog Cloud EU", "Operated by PostHog Inc. Data rests in Frankfurt")
+  System_Ext(github, "GitHub Releases API", "Pre-existing unconsented release check - documented, not changed")
+  Rel(user, lh, "Grants or revokes consent in, and generates events in")
+  Rel(admin, lh, "Suspends or resumes usage data in")
+  Rel(lh, posthog, "Forwards consented events to")
+  Rel(lh, github, "Checks for releases against")
+  Rel(maintainer, posthog, "Reads feature usage from")
+```
+
+The GitHub call is drawn deliberately, for the same reason as before: it is the honest answer to
+"what else does this instance send", it predates this Epic, and the usage data page names it as a
+separate outbound call this consent does not cover.
+
+### Container (C4 L2)
+
+```mermaid
+C4Container
+  title Container Diagram — Usage Data (2026-09-12 redesign)
+  Person(user, "Person using Lighthouse")
+  Person(admin, "System administrator")
+  Container(spa, "Lighthouse Frontend", "React 18 + TypeScript", "Detects events, buffers them in memory, holds the consent token")
+  Container(api, "Lighthouse Backend", "ASP.NET Core .NET 10", "Hosts the consent and ingest endpoints, the gate, the queue and the forwarder")
+  ContainerDb(db, "Lighthouse database", "SQLite or PostgreSQL", "Holds consent rows and their browser pseudonyms")
+  System_Ext(posthog, "PostHog Cloud EU", "Capture API")
+  Rel(user, spa, "Decides consent in, and acts in")
+  Rel(admin, spa, "Toggles the Usage Data switch in")
+  Rel(spa, api, "Posts detected events to, and reads consent state from")
+  Rel(api, db, "Resolves the consent token against, and refreshes liveness in")
+  Rel(api, posthog, "Forwards enriched events to")
+```
+
+**No component diagram.** The subsystem is five backend types and two frontend modules; an L3 would
+restate the decomposition table above.
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis (revised 2026-09-12)
+
+This revises and extends the table above rather than replacing it. **Rows whose verdict the redesign
+changes are marked CHANGED**; rows added by the redesign are marked NEW. Every unmarked row of the
+earlier table stands.
+
+| Existing | Verdict | Evidence |
+|---|---|---|
+| `IUsageDataConsentRepository.FindByTokenHashAsync` / `TouchAsync` | **REUSE AS-IS** — NEW | Exactly the gate's two operations. The lookup rides the unique index at `Data/LighthouseAppContext.cs:166-168`; the touch is already throttled by a `WHERE LastSeenAt < @stale` conditional update |
+| `IUsageDataConsentRepository.AnyLiveGrantAsync` | **DELETE** — NEW | It has **no production caller today**: shipped `UsageDataConsentService.GetStateAsync` reads `consent?.Decision` directly, and the two `UsageDataConsentServiceTests` setups at `:62` and `:74` exist to assert the service *ignores* it. It was the heartbeat's gate, and there is no heartbeat. Its doc comment — *"This is the whole of the question the emitter asks"* — becomes false on the day this ships |
+| `IUsageDataConsentRepository.PruneStaleAsync` | **KEEP, and OWNED BY SLICE 02** — NEW | Zero production callers today (verified: interface, implementation and tests only), so the consent table grows one row per browser ever asked, without bound. **No longer an open question.** It is assigned to slice 02 because that is the slice that makes the growth real — before the unprompted ask, rows accrue only from people who went hunting for the footer icon; after it, every browser shown the dialog writes one, refusals included. The owner is the slice that creates the problem, not the one that happened to introduce the method |
+| `UsageDataConsent` entity | **EXTEND** — NEW | One nullable `AnalyticsId` column. Additive, expand-only, one migration per provider through `Create-Migration.ps1`. **Shared-contract caution applies**: the entity is one release old and the DELIVER rule is to grep callers and extend the test factory before touching it |
+| `UsageDataConsentService` | **EXTEND** — NEW | Mints the pseudonym in the same `AddAsync` as the consent row. The `EnsureUsageDataInstanceId()` call at `:80` and its `try`/`catch` are removed |
+| `RateLimitingConfiguration` + `ConfigureRateLimiting` | **EXTEND** — NEW | One policy, partitioned on the token digest with an IP fallback. **The trap**: an unconfigured policy name resolves to `RateLimitPartition.GetNoLimiter` (`Program.cs:1159-1162`), so the `appsettings.json` entry ships in the same commit. The shipped `UsageDataConsent` policy is `20 / 60s / queue 0` (`appsettings.json:68`) and is the reference |
+| `IAuthModeResolver` | **REUSE AS-IS** — NEW | `Resolve().Mode == AuthMode.Enabled` answers the `auth-enabled` property (`Services/Implementation/Auth/AuthModeResolver.cs:34-72`) |
+| `ILighthouseReleaseService.GetCurrentVersion()` | **REUSE AS-IS** — NEW | `Services/Interfaces/ILighthouseReleaseService.cs:8` |
+| `ILicenseService.CanUsePremiumFeatures()` | **REUSE AS-IS** — NEW | `Services/Interfaces/Licensing/ILicenseService.cs:11` |
+| `IAppSettingService` / `AppSettingService` | **CHANGED: EXTEND → REVERT** | Was EXTEND for the instance identifier. `EnsureUsageDataInstanceId()` (`:101`), `GetUsageDataInstanceId()` (`:148`) and the call site are removed. Rows already written on granting instances are left alone — the seeder's obsolete sweep deletes by `Id` and these carry `Id = 0` |
+| `AppSettingKeys` | **CHANGED: EXTEND → REVERT** | `UsageDataInstanceId = "UsageData:InstanceId"` (`Models/AppSettings/AppSettingKeys.cs:27`) is removed |
+| `AppSetting` entity | **CHANGED: UNCHANGED → MOOT** | The whole `Key`-as-primary-key arbiter analysis was about a shared scalar this feature no longer stores. It remains true of the table; it is no longer this feature's concern |
+| `UpdateServiceBase<TEntity>` + the three updaters | **CHANGED: rejected-as-base-class → the question is smaller** | There is no scheduled emitter. The drain is a hosted service with no entity to iterate, no per-entity refresh settings and no business in the operator's refresh-status surface. Still the wrong base, for a smaller reason |
+| `UpdateQueueService` / `IUpdateExecutionLock` | **CHANGED: verdict reopened → CLOSED, not needed** | The reopened row existed because a plain `AddHostedService` runs in every replica and would emit N heartbeats a day under one identifier. A browser-originated event enters through exactly one replica and is forwarded once. The problem dissolves rather than being solved, and the day key, its seeding requirement and its Testcontainers test go with it |
+| `IDomainEventDispatcher` | **CHANGED: same verdict, different reason** | Previously rejected on its swallow-and-continue policy. That policy would actually be tolerable for an event whose loss is free. It is rejected because it is a *domain*-event bus: routing analytics through it puts a vendor adapter on the domain fan-out path that every future handler pays for |
+| `PlatformService` / `IPlatformService` | **UNCHANGED — compose, not modify** | Re-verified: `IsDocker()` keys on `DOTNET_RUNNING_IN_CONTAINER`, `/.dockerenv` and `LIGHTHOUSE_DOCKER` (`PlatformService.cs:44-49`), all true in a pod; `SupportedPlatform` is still four members (`IPlatformService.cs:3-9`) |
+| `useRbac` | **UNCHANGED — anti-pattern, now for two gates** | Fails **open** via `PERMISSIVE_SUMMARY` on purpose. Both the footer indicator and the new ingest gate must fail **closed** |
+| `useUsageDataConsent` | **EXTEND** — NEW | Discard the pending event buffer before the revoke request is sent. Its hourly `REFRESH_INTERVAL_MS` state call already keeps liveness alive; the ingest call now does too |
+| `UsageDataService` / `BaseApiService` / `ApiServiceContext` | **EXTEND** — NEW | One `postEvents` method on the shipped subclass. Established pattern |
+| React Router route objects | **REUSE AS-IS** — NEW | The only place a path is read, and it is read to produce a key, never to send one |
+| `ArchiveConfirmationDialog.test.tsx` | **UNCHANGED — technique copied** | Still the model for the forbidden-phrase assertion over dialog copy |
+| `Lighthouse.Backend.Tests/Architecture/` | **EXTEND** | `UsageDataEmitSeamArchUnitTest` survives, plus the no-free-text rule over the ingest DTO. Fluent slice fields must be concrete `GivenTypesConjunctionWithDescription` or `CA1859` fails the Sonar gate |
+
+---
+
+## Wave: DESIGN / [REF] Story impact and slice re-ordering
+
+**No ADO change was made and none should be made from this document.** This is the design's view;
+the board is the maintainer's to move.
+
+| Story | Status after the redesign |
+|---|---|
+| **#5834** slice 01a | **Shipped and pushed.** Not redesigned. Two removals land on it in 01c: the instance-identifier mint, and `AnyLiveGrantAsync` |
+| **#5975** slice 01b, the first heartbeat | **Removed.** Its slot is taken by the proposed story below |
+| **#5835** ask once, at a sensible moment | **Unchanged** |
+| **#5836** instance-wide admin switch | **Stronger.** With `posthog-js` the switch would have been advisory — a tab open since before the flip keeps sending, and the SDK is the only thing that could stop it. With ingest through our own gate, OFF is enforced at the emit path: a stale tab's POST is accepted and dropped. The screenshot an administrator takes to close a security review is now **true** rather than approximately true |
+| **#5837** first named product events | **Importance up, position unchanged, scope narrowed.** It is what the Epic delivers now that the heartbeat is gone — that framing stands. But the **maintainer kept the original sequencing** (#5835 before #5837), and slice 01c now ships **one** real product event, so #5837 is the *remaining* named events: 1–3 more, for an Epic-wide total of 2–4 |
+
+### Proposed new story (propose only — nothing created)
+
+> **Title**: The usage data event pipe — the browser detects, Lighthouse sends
+> **Parent**: Epic #5733. **Replaces**: #5975 (Removed). **Slice**: 01c.
+>
+> One consenting browser generates a route event; Lighthouse's own backend verifies the grant,
+> attaches the instance properties, forwards it, and the maintainer sees it in the collector the same
+> day. Revoking from the footer stops the next one, with nothing queued anywhere that could outlive
+> the decision.
+>
+> **In scope**: the ingest endpoint with its rate-limit policy and daily budget; the fail-closed gate
+> and the permit; the bounded queue and the forwarding service with its drain-time re-check; the
+> instance-property resolver including ADR-177's deployment mode; the publisher adapter and its named
+> client; the browser-side detector and route-key map; the `AnalyticsId` column and its migration;
+> removal of the instance identifier and `AnyLiveGrantAsync`; **exactly one real product event** — a
+> Team or Portfolio detail tab was opened — chosen for what it exercises rather than for being cheap;
+> **the usage data page rewritten, as a ship blocker rather than a follow-up**, because the shipped
+> dialog carries no field list and links that page as authoritative; and the two copy corrections
+> (`SurveyNudge.tsx:114`, verified 2026-09-12 to carry *"Lighthouse never tracks how you use it"*
+> verbatim, and CRA self-assessment row 1.7), which land here because this is the slice that first
+> makes them false.
+>
+> **Out of scope**: every further named product event (#5837); the unprompted ask (#5835); the admin
+> switch (#5836).
+>
+> **Disproves** "a browser-detected, backend-verified event pipe can enforce consent with no
+> staleness" if a revoked browser's next batch is forwarded, or if the zero-consent check finds any
+> traffic to the collector host.
+
+### Slice ordering
+
+| Order | Slice | Note |
+|---|---|---|
+| 1 | SPIKE-00 | Done. Its emit-direction conclusion is superseded in place |
+| 2 | **01a** consent without emitting | **Shipped** |
+| 3 | **01c** the event pipe **+ one real product event** | New. The emit half of the walking skeleton, demo-able end to end |
+| 4 | **02** the ask | Creates the population the events are measured over. Also takes ownership of `PruneStaleAsync` |
+| 5 | **03** admin veto | Dependency-driven, and it now has something enforceable to veto |
+| 6 | **04** the remaining named events | 1–3 more, informed by 02's uptake number |
+
+**This is the original order, restored.** DESIGN proposed moving 04 ahead of 02 on the grounds that
+with the heartbeat gone the named events are what the Epic delivers. **The maintainer declined and
+kept the original sequencing** on 2026-09-12. The importance framing stands — #5837 is the point of
+the Epic — but the reason 04 sits last has not changed: the event vocabulary is worth choosing once
+there is a consenting population to spend it on, and 02 is what creates one. The proposed reordering
+and its trade-off are recorded here rather than deleted, because the alternative was real and a later
+reader should see it was considered.
+
+**The interaction the two decisions create, which is the thing to actually watch.** 01c ships a real
+event, and 01c runs *before* the unprompted ask. So between 01c and 02 the only consenting browsers
+are the dogfood instance and whoever went looking for the footer icon — verified against the shipped
+01a flow, where the dialog opens only on an indicator click. **An empty collector dashboard in that
+window is the expected state, not a broken pipe.** 01c's own production acceptance is unaffected,
+because AC-04.6 has always been a dogfood criterion.
+
+---
+
+## Wave: DESIGN / [REF] Outcome Collision Check
+
+**Result: no collision, and a registry finding.**
+
+`docs/product/outcomes/registry.yaml` contains exactly two entries, `OUT-1` (pace-band
+classification, `story-5884-work-item-age-bands`) and `OUT-2` (metrics date-window movement,
+`story-5914-metrics-time-horizon-presets`). Neither has any overlap with usage data — different
+feature, different inputs, different artifact — so no collision is possible.
+
+**The finding**: every `OUT-usagedata-*` id this feature-delta cites —
+`-consent-uptake`, `-instances-reporting`, `-zero-leak-before-consent`, `-revocation-latency`,
+`-payload-purity`, `-kpis-unblocked`, `-no-nag-complaints` — is **absent from the registry**. They
+are outcome *KPIs* in the DISCUSS sense and the registry holds `kind: specification` entries about
+reusable behaviour, so the two are different registers that happen to share an `OUT-` prefix. No
+entries were fabricated to make this check pass. Whether the KPI ids should be registered, or the
+prefix collision resolved, is a methodology question for the maintainer and not a design decision.
+
+---
+
+## Wave: DESIGN / [REF] Assumptions made without being able to ask
+
+Running headless in PROPOSE mode. Each is a real judgement call, each is cheap to reverse.
+
+| # | Assumption | Reverse if |
+|---|---|---|
+| 1 | Flush on a ~30s timer and on `visibilitychange` → hidden, via `sendBeacon` to our own origin for the unload case | A shorter interval is wanted for the dogfood loop; it is one constant |
+| 2 | ~~The pipe slice carries exactly **one** event (the route view)~~ | **RESOLVED 2026-09-12 — confirmed, and strengthened.** 01c ships exactly one event and it must be a **real product event**, not a bare page view, so that the privacy canary and the route-key handling are exercised by real traffic rather than a test double. See assumption 8 for which event |
+| 3 | Intra-batch ordering uses a client offset against a server receive time, with no client wall-clock on the wire | Absolute client time is wanted for something; it would need a separate justification, because a wrong client clock silently corrupts the dataset |
+| 4 | The per-instance daily budget exists and defaults to a configured number | The maintainer prefers to watch the quota manually first. The mechanism is cheap and the failure it prevents is expensive |
+| 5 | ~~`PruneStaleAsync` stays uncalled for now~~ | **RESOLVED 2026-09-12 — it is owned by slice 02**, the slice that makes consent-row growth real. No longer deliberately unowned |
+| 6 | The shipped instance identifier is **removed** rather than left dormant | The maintainer would rather not delete shipped, mutation-tested code — in which case it stays, unread, and the usage data page says so |
+| 7 | ~~Slice 04 runs before slice 02~~ | **RESOLVED 2026-09-12 — the maintainer kept the original order.** #5835 before #5837. The assumption is left visible rather than deleted because the alternative was genuinely arguable |
+| 8 | Slice 01c's single event is a **Team or Portfolio detail tab open**, not a bare page view | The maintainer would rather spend the first event on an unambiguous capability-use action. Two alternatives are named with their trade-offs in `slices/slice-01c-the-event-pipe.md` → "The event, and why this one"; either is a one-line change, because the route-key mechanism is identical in all three |
+
+---
+
+## Wave: DESIGN / [REF] Open Questions Deferred (redesign)
+
+**To DISTILL (`nw-acceptance-designer`)**
+
+- The revoke-mid-flight scenario needs three cases, not one: discarded before send, suppressed at
+  accept, suppressed at drain. The fourth — already handed to `HttpClient` — is the accepted residual
+  and should be written as a documented limitation rather than a test.
+- AC-03.5 changes character: clearing storage now stops emission **instantly**, not after the
+  liveness window. The old scenario asserting the window-bounded tail is no longer the behaviour.
+- The `DelegatingHandler` zero-leak harness moves from slice 01b to 01c and is still built inside the
+  slice, not after it.
+- The `AnalyticsId` column is a shared-contract edit on a one-release-old entity. Extend the consent
+  test factory before touching it.
+
+**To DELIVER**
+
+- **Confirm which generic path patterns EasyPrivacy and AdGuard carry**, and check the chosen ingest
+  route against them. This is the one thing that could quietly reintroduce the ad-blocker bias the
+  whole design exists to avoid. Nothing in the SPIKE settles it.
+- **Recompute the PostHog free-tier headroom** at the new per-event volume before #5837 picks its
+  event set. A paid plan silently widens retention to seven years and falsifies the published
+  position.
+- Set the canary schedule interval; it is still the exposure window for vendor drift.
+- `ARCHITECTURE.md` §16 says "The full set (001–159)" and is stale. It should now read 191.
+
+**Outstanding and deliberately not fixed here**
+
+- **`docs/settings/usagedata.md` still describes the daily heartbeat in detail, and the shipped
+  consent dialog links to it as authoritative.** The dialog deliberately carries no field list of its
+  own and points at that page instead, so for as long as the page is wrong the product's most
+  load-bearing privacy disclosure is wrong. It was **not touched by this DESIGN**, as instructed.
+  **Its deadline moved on 2026-09-12 and is now inside slice 01c as a ship blocker**: that slice emits
+  a real product event, and an event that ships ahead of its documentation is a defect by the Epic's
+  own non-negotiable (AC-08.2). With the dialog carrying no list, this page is the only disclosure
+  there is — so it is not "rewrite it in the same change", it is "the slice is not done until it is
+  rewritten".
+- **`OUT-usagedata-instances-reporting` is unmeasurable as written** and `US-04`/`AC-04.7` need
+  rewording. Both are upstream changes — see `design/upstream-changes.md`.
+
+---
+
+## Wave: DESIGN / [REF] Peer Review and Revisions (redesign)
+
+Adversarial review run 2026-09-12 against ADR-190 and ADR-191, scoped to the two new ADRs because
+those are the durable artefacts. **Verdict: REJECT — 2 critical, 4 high.** The reviewer verified all
+fourteen load-bearing `path:line` citations independently and found none wrong, which is the first
+time this Epic has passed that check.
+
+### Accepted and fixed
+
+| # | Finding | Fix |
+|---|---|---|
+| C1 | **The forwarder had no declared contract shape.** "A hosted service that drains" is a description, not something to implement against. Universe and delta undeclared; retry, shutdown and cycle semantics unspecified | ADR-190 §3 gains a full contract table — type, contract shape, universe, declared delta, retry (**none**), failure (never escapes the loop), shutdown (**discards, does not flush**), cycle. Six new enforcement rows including an ArchUnit rule on the declared universe |
+| H1 | **Observability absent.** No signal for suppression reasons, budget exhaustion or forwarder health | New ADR-190 §8. And it surfaced a real inversion: ADR-174's *"at most one log line per attempt"* was right at one attempt a day and becomes a **flood mechanism** per event — a revoked browser with a stale tab would log forever, so the instance most likely to fill a disk is the one whose owner withdrew. Suppression is therefore **counted, not logged**, with one line per reason per day |
+| H2 | **Budget exhaustion was silent to the operator, not just to the caller.** Abuse and popularity are indistinguishable from outside | §4: one warning line per day naming the budget and the count. Once per day, not once per drop — a per-drop log is a flood mechanism an attacker can trigger |
+| H3 | **No performance model.** No DB-load numbers | §8, and the first draft of that paragraph was **wrong in the design's favour**: it said an active tab costs "twice" the state endpoint's hourly poll. It is up to **120×**. Corrected in place, with the correction named, because arithmetic done in the direction of the conclusion is the failure mode this Epic keeps having |
+| H4 | **ADR-173 coupling not version-controlled.** The liveness window is used repeatedly and never valued | §2 names it (30 days, `UsageDataConfiguration.ConsentLivenessWindowDays`) and states that a change to it is a change to both ADRs |
+| H5 | **Testability**: no end-to-end revocation scenario, no hostile-body testing | Enforcement gains a full grant→emit→revoke→emit integration row and a fuzz-style row over the ingest deserialiser |
+
+### Accepted, already answered elsewhere
+
+| # | Finding | Where |
+|---|---|---|
+| H6 | **US-04 upstream coordination is unresolved** and could strand a crafter who builds the design against acceptance criteria that promise an installed-base number | Already written before the review, in `design/upstream-changes.md` (U1–U6). The reviewer could not see it — it was scoped to the ADRs. ADR-191 now cross-references it and states that it gates **DISTILL**, not this ADR |
+
+### Rejected, with the reason
+
+**C2 — "token enumeration: if a malformed token produces 400 and valid tokens produce 204, an attacker
+can enumerate valid tokens."** The premise does not hold against the design as written. The token
+travels in a **header**; the `400` is reserved for a malformed **body**. A garbage token is not a
+malformed body — it fails to resolve and lands on the same `204` as a token that was never minted.
+There is no oracle of the shape described.
+
+Accepting a finding whose mechanism is wrong would be this Epic's third sharpened error, so it is
+rejected rather than absorbed. **But it pointed at two real things and both are now fixed**, which is
+what a good adversarial finding does even when its diagnosis misses:
+
+- The no-`400`-for-a-bad-token rule was **implicit**, and it is exactly the rule a crafter would
+  helpfully break by adding a guard clause. ADR-190 §2 now states it outright and enforces it with a
+  parameterised test over empty, truncated, over-long and non-base64url tokens.
+- The **timing** side-channel is real and was unstated. A resolving token costs a queue write; a
+  non-resolving one does not. The shipped `/state` controller already worries about exactly this in
+  its own comment (`API/UsageDataController.cs:30-33`). Named, not closed by constant-time work,
+  bounded by the rate limit — which is now a second reason the limiter is on this endpoint.
+
+**The multi-token rate-limiter bypass** was also raised and is not a new finding: §4 already carries
+the per-instance daily budget as the answer, and §5 already accepts that a legitimate consenter can
+emit plausible-but-false events. What was missing was the operator signal, which is H2 above.
+
+### Not actioned
+
+A formal STRIDE table was recommended. Declined for proportionality: the endpoint has one
+authorisation rule, one authenticated identity, no state transition a caller can drive, and a payload
+that cannot carry customer content. §5 already walks the surface in prose with named bounds. A STRIDE
+grid over four cells would be ceremony, and this Epic has enough documents.
+
+---
+
+## Wave: DESIGN / [REF] Shared-contract trigger check
+
+`EVENT: shared-contract-check — NO TRIGGER (skipped)`. DESIGN authors no code, so no shared contract
+is edited in this wave. **Two are prescribed for DELIVER and carry the house caution**: the
+`UsageDataConsent` entity gains a column, and `UsageDataController` gains an action. Grep callers and
+extend the consent test factory before either is touched.
+

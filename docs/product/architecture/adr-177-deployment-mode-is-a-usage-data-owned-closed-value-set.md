@@ -1,6 +1,24 @@
 # ADR-177: Deployment mode is a closed value set owned by the usage-data payload and resolved beside `PlatformService`, not inside it
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Proposed** (DESIGN, 2026-08-22). **Re-confirmed against the 2026-09-12 emission
+  redesign** ([ADR-190](./adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md)).
+  The decision stands; two notes.
+- **Confirmation, 2026-09-12.** This ADR opens *"deployment mode is one of the five heartbeat fields,
+  and the consent dialog enumerates the payload by name"*, and both clauses are now false — there is
+  no heartbeat, and the shipped dialog deliberately does not enumerate. **The reasoning still lands,
+  because neither clause was load-bearing.** The premise that does the work is that *what is sent is
+  published, so the value set is part of what the user agreed to*; the field moves from one daily
+  record to a property on every event, and a published set is if anything more exposed, not less. The
+  `PlatformService` argument is untouched and was re-verified: `IsDocker()` keys on
+  `DOTNET_RUNNING_IN_CONTAINER`, `/.dockerenv` and `LIGHTHOUSE_DOCKER`
+  (`Services/Implementation/PlatformService.cs:44-49`), all true in a Kubernetes pod, and
+  `SupportedPlatform` is still the four members at `Services/Interfaces/IPlatformService.cs:3-9`.
+- **Amendment, 2026-09-12 — the "dialog lists exactly this set" enforcement row is withdrawn.** The
+  shipped `UsageDataDialog` states in as many words that it *"does not enumerate what is sent"*
+  because a list in a dialog goes stale silently while still looking authoritative; the field list
+  lives on `docs/settings/usagedata.md`. The Vitest rule asserting the dialog's enumerated values
+  equal the enum's members is therefore unsatisfiable. **The docs comparison check is the one that
+  survives, and it is now the only one** — which makes it load-bearing rather than a second opinion.
 - **Date**: 2026-08-22
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slice 01)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

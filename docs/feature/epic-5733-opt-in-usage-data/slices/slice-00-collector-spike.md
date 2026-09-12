@@ -3,6 +3,15 @@
 **This is a SPIKE, not a slice.** It ships no user value and must not be released as one.
 Timebox: 1 day. Output: a written recommendation, not code that survives.
 
+> **Closed. Its collector choice stands; its emit-direction conclusion does not — 2026-09-12.**
+> PostHog Cloud EU is confirmed, the Plausible disproof is confirmed, and the browser still never
+> contacts the collector. What changed is where an event *originates*: the browser now detects and
+> posts to Lighthouse's own backend, which verifies consent, attaches instance properties and
+> forwards. The superseded passages are marked **in place** in `../spike/findings.md` at AC-00.1,
+> AC-00.5 and design implications 1 and 5 — including the reconciliation of AC-00.5's measured block
+> rate, which was scoped to vendor domains and does not transfer to a same-origin POST. See
+> `docs/product/architecture/adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md`.
+
 ## Goal
 
 Decide the collector and the emit direction before the walking skeleton is built against either.

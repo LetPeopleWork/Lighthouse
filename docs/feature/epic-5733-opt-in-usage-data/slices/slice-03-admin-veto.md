@@ -1,5 +1,21 @@
 # Slice 03 — One switch stops the asking and the sending, and a refused toggle says so
 
+> **STRONGER — 2026-09-12.** Its position is unchanged from the original order (after slice 02, before
+> slice 04; dependency-driven, because it needs something to veto), but what it delivers is materially
+> better than it was.
+>
+> The abandoned design had a backend heartbeat, so the switch always could have been enforced at the
+> emit path. The decision that makes this slice stronger is the one it was *nearly* the opposite of:
+> had usage data been emitted by `posthog-js` in the browser, this switch could only ever have hidden
+> UI and asked an SDK to stop — a tab open since before the flip would keep sending, and the
+> administrator's screenshot would have been approximately true. With ingest through our own gate, a
+> stale tab's POST is accepted and **dropped**, and AC-06's guarantee is a property of the server
+> rather than a request to the client.
+>
+> **What this slice now inherits rather than builds**: the gate already reads the `UsageData` optional
+> feature from slice 01c onward, and `MasterSwitchOff` is already a suppression reason. This slice
+> seeds the key, wires the toggle, and asserts the behaviour — it does not add the enforcement.
+
 ## Goal
 
 A system administrator can enforce an organisational policy on usage data with one control, and can

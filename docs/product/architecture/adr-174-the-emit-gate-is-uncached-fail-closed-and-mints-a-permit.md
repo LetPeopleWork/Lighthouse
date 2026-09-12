@@ -1,6 +1,19 @@
 # ADR-174: The emit gate reads the database every time, fails closed, and hands back a permit that nothing else can construct
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Superseded** by
+  [ADR-190](./adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md)
+  (DESIGN, 2026-09-12). It was **Proposed** (DESIGN, 2026-08-22) and was never Accepted.
+- **Superseded because**: the daily backend heartbeat this gate was built for is abandoned (ADO #5975
+  Removed). Usage data is now detected in the browser and forwarded per event, so the whole of point
+  8 — the `UsageData:LastHeartbeatDay` compare-and-swap, its seeding requirement and its
+  replica-multiplication problem — has nothing left to solve.
+  **What survives is carried forward rather than rewritten**: the uncached fail-closed gate (§1), the
+  gate-minted `UsageDataEmitPermit` with its own correction about not being a compile-time guarantee
+  (§2), "every uncertainty resolves to do not send" (§3), "a cache may only ever suppress" (§4), the
+  rule that the domain-event bus is not in this path (§5), the single collector-host constant (§7)
+  and the zero-leak honesty note. ADR-190 carries an inheritance table saying which is which. This
+  ADR's own observation that the caching question *"becomes real only at slice 04, where product
+  events are per-user-action rather than daily"* turned out to name the design that replaced it.
 - **Date**: 2026-08-22
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slices 01, 03, 04)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

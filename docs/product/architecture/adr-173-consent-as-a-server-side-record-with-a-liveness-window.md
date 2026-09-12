@@ -1,6 +1,24 @@
 # ADR-173: Consent is a server-side record keyed by a hashed opaque token, and it is live only while the browser holding it keeps showing up
 
-- **Status**: **Proposed** (DESIGN, 2026-08-22)
+- **Status**: **Proposed** (DESIGN, 2026-08-22). **Re-confirmed against the 2026-09-12 emission
+  redesign** ([ADR-190](./adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md)),
+  with three amendments below. The decision — a server-side row keyed by a token digest, three
+  decision states, a bespoke repository, a liveness stamp, rate-limited endpoints — stands unchanged.
+- **Amendment A, 2026-09-12 — the "What this design does not achieve" section no longer applies, and
+  it is the redesign's best outcome.** That section admits clearing browser storage stops the
+  *heartbeat* only after the liveness window, because the heartbeat had no browser behind it. With
+  events originating in the browser, the browser **is** the emitter: clearing storage stops emission
+  instantly. AC-03.5's equivalence now holds in all three respects rather than two.
+- **Amendment B, 2026-09-12 — point 4 is withdrawn as a production requirement.** `AnyLiveGrantAsync`
+  was the heartbeat's gate. There is no instance-scoped emitter left, so every event has a browser and
+  the gate asks a per-token question instead. The method has no production caller today and will never
+  acquire one; ADR-190 deletes it. AC-03.3 ("revoking the last consenting browser stops the heartbeat
+  too") becomes vacuous rather than violated — each browser's revocation stops exactly that browser.
+- **Amendment C, 2026-09-12 — the liveness window keeps its length and loses its main job.** It was
+  load-bearing for cleared-storage equivalence (see Amendment A). What remains is smaller and still
+  worth the 30 days: consent-table hygiene through `PruneStaleAsync`, and a bound on how long a grant
+  left by a browser that never returns stays available to a replayed token. `PruneStaleAsync` still
+  has no caller — carried as an open item, not decided here.
 - **Date**: 2026-08-22
 - **Feature**: epic-5733-opt-in-usage-data (ADO Epic #5733, slices 01-02)
 - **Deciders**: Benjamin Huser-Berta (maintainer), Morgan (Solution Architect)

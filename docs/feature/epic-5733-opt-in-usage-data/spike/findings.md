@@ -34,6 +34,18 @@ collector wins on merit, and the direction follows from it rather than the other
 | **Direction** | **Server-side.** The .NET backend posts; the browser never talks to the collector. |
 | **Reason, in one sentence** | Only an endpoint we operate lets us guarantee the customer's IP is not stored, and that guarantee is what the consent dialog is promising (AC-02.1, AC-02.2) — with a hosted analytics vendor, IP handling is the vendor's behaviour, not our decision. |
 
+> **SUPERSEDED IN PART — 2026-09-12 (DESIGN, emission redesign).** The **Direction** row is now half
+> right and half wrong, and the halves matter separately.
+>
+> *Still true*: the .NET backend is what posts to the collector, and **the browser never talks to the
+> collector**. That is unchanged and is still the decision.
+>
+> *No longer true*: "server-side" was also read as meaning the event *originates* on the server, as a
+> scheduled heartbeat. It does not. The browser now **detects** events and posts them to Lighthouse's
+> own API, which verifies consent, attaches instance properties and forwards. Nothing about the
+> Plausible disproof or the vendor research below is affected. See
+> `docs/product/architecture/adr-190-usage-data-events-detected-in-the-browser-forwarded-by-the-backend.md`.
+
 ### Why not Plausible
 
 Two independent disqualifiers, both verified from Plausible's own published source rather than from
@@ -206,6 +218,28 @@ account is on Growth the number can only be read off the dashboard by hand.
 This is worth running whichever collector wins, because it is the only honest number anyone in this
 project has ever had about how much of its own audience blocks analytics.
 
+> **RECONCILED — 2026-09-12 (DESIGN, emission redesign).** The redesign introduces a browser-side
+> POST, so this section has to be asked again rather than assumed away. **It does not transfer, and
+> the reason is what was actually measured.**
+>
+> Every row of the table above is scoped to a **vendor collector domain**: `plausible.io` and
+> `i.posthog.com` / `eu.i.posthog.com`, matched by AdGuard at whole-domain scope and by EasyPrivacy at
+> script or ingest-path scope. Nothing here measured, or could measure, a request to the customer's
+> own Lighthouse origin. The new POST is same-origin to the host the user is already logged into, and
+> that host is on no blocklist — it is the customer's own deployment, at whatever address they chose.
+> A blocker that suppressed it would break the application the user is looking at.
+>
+> **The residual this does leave, which was not measured and must not be assumed either.** Both lists
+> also carry *generic path patterns* that match on any domain. If the ingest route is named something
+> a generic rule matches, the same population that blocks `i.posthog.com` would block our own endpoint
+> and the bias would come straight back, at a much larger scale than the vendor path ever had. No
+> evidence in this SPIKE settles which patterns those lists carry, so the route name is a design
+> input rather than a free choice, and confirming it is an open item in the DESIGN delta.
+>
+> The measurement proposed above — the Supabase `responses` count against the Plausible event count
+> over the same window — is still the only honest block-rate number available for this audience, and
+> is still unrun.
+
 ---
 
 ## Findings outside the acceptance criteria
@@ -269,6 +303,10 @@ may still put a port in front of it; it may not leave the adapter unnamed.
 1. The emit path is server-side, fire-and-forget, once per day, degrading silently (AC-04.5). No
    browser ever contacts the collector — which also means the consent token never leaves the browser
    as a network identifier to the collector.
+
+   > **SUPERSEDED IN PART — 2026-09-12.** "Once per day" is gone with the heartbeat; emission is now
+   > per event, fire-and-forget and still degrading silently. The rest of the sentence holds: no
+   > browser contacts the collector, and the consent token never reaches it. ADR-190.
 2. The collector base URL is configuration with a default, and the wire contract is a documented JSON
    POST — that *is* the air-gap story (AC-00.4), so it must be specified precisely enough for a
    customer to reimplement in ten lines.
@@ -278,6 +316,10 @@ may still put a port in front of it; it may not leave the adapter unnamed.
    Widening it later is a re-consent question under AC-08.5.
 5. The instance identifier is ours to define — no vendor identity model constrains it. Neither
    Plausible's daily IP+UA hash nor PostHog's `distinct_id` is in play.
+
+   > **SUPERSEDED — 2026-09-12.** There is no instance identifier in the payload at all. The
+   > `distinct_id` is a per-browser pseudonym resolved server-side from the consent token and never
+   > carried on the wire. Install counts are given up deliberately. ADR-191.
 6. There is nothing to procure and no DPA to sign before slice 01. The prerequisite the delta listed
    as a lead-time dependency is discharged by choosing an endpoint we already operate.
 

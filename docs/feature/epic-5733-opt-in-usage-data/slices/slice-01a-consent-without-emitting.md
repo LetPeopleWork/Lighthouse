@@ -1,5 +1,25 @@
 # Slice 01a — A person can see the offer, decide on it, and change their mind, and nothing is sent
 
+> **SHIPPED AND PUSHED — ADO #5834.** Backend mutation 93.62%, frontend 85.87%. Not redesigned by the
+> 2026-09-12 emission redesign.
+>
+> **Three things this slice shipped are changed by that redesign, and they land in
+> `slice-01c-the-event-pipe.md` rather than here.**
+> - The **instance identifier** minted on a grant (`UsageDataConsentService.RecordDecisionAsync`
+>   → `EnsureUsageDataInstanceId()`) is **removed**. Nothing ever read it, and with no instance
+>   identifier in the payload nothing ever will. ADR-191 supersedes ADR-175.
+> - `IUsageDataConsentRepository.AnyLiveGrantAsync` is **removed**. It was the heartbeat's gate; it
+>   has no production caller today and there is no heartbeat to acquire one. ADR-173 amendment B.
+> - `UsageDataConsent` gains a nullable **`AnalyticsId`** column — the per-browser pseudonym that
+>   becomes the collector's `distinct_id`, minted on a grant, resolved server-side, never on the wire.
+>   One additive migration per provider. The entity is a shared contract and one release old: grep
+>   callers and extend the consent test factory before touching it.
+>
+> **What this slice got right and the redesign keeps**: the per-browser opaque token, the three
+> decision states, the throttled liveness touch behind `Cache-Control: no-store`, the byte-identical
+> answers for an unknown and an absent token, and a dialog that enumerates nothing and links the page
+> instead.
+
 **First half of the walking skeleton.** The consent record and the surfaces that read and write it.
 Nothing in this slice can send anything anywhere, because nothing that sends exists yet.
 
