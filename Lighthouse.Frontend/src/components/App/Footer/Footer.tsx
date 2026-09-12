@@ -13,11 +13,8 @@ import {
 import type React from "react";
 import { useUsageDataConsent } from "../../../hooks/useUsageDataConsent";
 import {
-	USAGE_DATA_COLLECTOR_NAME,
 	USAGE_DATA_DOCS_URL,
 	USAGE_DATA_NEVER_SENT,
-	USAGE_DATA_RESIDENCY,
-	USAGE_DATA_SENT_FIELDS,
 } from "../../../models/UsageData/UsageData";
 import { UsageDataDialog } from "../../UsageData/UsageDataDialog";
 import { UsageDataIndicator } from "../../UsageData/UsageDataIndicator";
@@ -108,12 +105,8 @@ const Footer: React.FC = () => {
 
 					<UsageDataDialog
 						open={usageData.isDialogOpen}
-						collectorName={USAGE_DATA_COLLECTOR_NAME}
-						dataResidency={USAGE_DATA_RESIDENCY}
-						fields={USAGE_DATA_SENT_FIELDS}
 						neverSent={USAGE_DATA_NEVER_SENT}
 						docsUrl={USAGE_DATA_DOCS_URL}
-						willAskAgain={usageData.willAskAgain}
 						failedToRecord={usageData.failedToRecord}
 						onDecision={usageData.decide}
 						onClose={usageData.closeDialog}

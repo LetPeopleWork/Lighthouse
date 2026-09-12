@@ -5,8 +5,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 
@@ -14,22 +12,10 @@ export type UsageDataDecision = "granted" | "declined";
 
 export interface UsageDataDialogProps {
 	open: boolean;
-	/** The processor's name. The dialog must say who holds the data, not just that it is sent. */
-	collectorName: string;
-	/** Where the data rests, in words a reader can check — e.g. "Frankfurt, Germany". */
-	dataResidency: string;
-	/** Every field that would leave this instance, named. The dialog enumerates these verbatim. */
-	fields: readonly string[];
 	/** Categories the payload never carries. Stated positively in the dialog, not merely implied. */
 	neverSent: readonly string[];
-	/** Link to the full list — docs/settings/usagedata.md, which also names the GitHub release check. */
+	/** Link to the full account — docs/settings/usagedata.md. */
 	docsUrl: string;
-	/**
-	 * Whether a decline will be revisited. Derived server-side and handed over as a boolean rather
-	 * than a licence tier, so the dialog never has to know what a licence is — and so an anonymous
-	 * endpoint never has to disclose one.
-	 */
-	willAskAgain: boolean;
 	/** Set when the last answer could not be recorded, so the dialog can stay open and say so. */
 	failedToRecord?: boolean;
 	onDecision: (decision: UsageDataDecision) => void;
@@ -42,6 +28,10 @@ export interface UsageDataDialogProps {
  * lets two unrelated sentences read as one claim - "we will not do X. Ask again later" becoming
  * "will not ... ask".
  *
+ * The dialog deliberately does not enumerate what is sent, name who holds it, or say how often it
+ * goes. All of that changes as the feature grows, and a list in a dialog goes stale silently while
+ * still looking authoritative. The linked page carries it and is the one place to keep current.
+ *
  * The dialog also says nothing at all about the IP address, deliberately. The instance's address
  * reaches the collector's edge on any request, as it does for any website; what the controls
  * suppress is whether it is stored and enriched. Saying the weaker true thing invites a reader to
@@ -49,12 +39,8 @@ export interface UsageDataDialogProps {
  */
 export const UsageDataDialog = ({
 	open,
-	collectorName,
-	dataResidency,
-	fields,
 	neverSent,
 	docsUrl,
-	willAskAgain,
 	failedToRecord = false,
 	onDecision,
 	onClose,
@@ -64,47 +50,48 @@ export const UsageDataDialog = ({
 			<DialogTitle>May Lighthouse send usage data?</DialogTitle>
 
 			<DialogContent dividers>
-				<Typography variant="body2" sx={{ mb: 1 }}>
-					Once a day, this instance would send five things about itself.
-				</Typography>
-
-				<List dense disablePadding sx={{ mb: 2, listStyleType: "disc", pl: 3 }}>
-					{fields.map((field) => (
-						<ListItem key={field} sx={{ display: "list-item", py: 0 }}>
-							{field}
-						</ListItem>
-					))}
-				</List>
-
 				<Typography variant="body2" sx={{ mb: 2 }}>
-					We never send {neverSent.join(", ")}.
+					Lighthouse can tell us how it is being used. This is off unless you
+					switch it on.
 				</Typography>
 
 				<Typography variant="body2" sx={{ mb: 2 }}>
-					{collectorName} would hold it, on servers in {dataResidency}.
-					Processing can also happen elsewhere, including in the US. We keep it
-					for one year.
+					You are identified only by a random identifier, created for this
+					purpose, that means nothing anywhere else. We never send{" "}
+					{neverSent.join(", ")}. The usage data page lists exactly what is
+					sent, and is kept current as that changes.
 				</Typography>
 
-				{/* Both of these are limits rather than features, and the dialog is where they have to
-				    be read. Somebody deciding here relies on this, not on the linked page. */}
+				<Typography variant="subtitle2" sx={{ mb: 1 }}>
+					Why we ask for this
+				</Typography>
+
 				<Typography variant="body2" sx={{ mb: 2 }}>
-					Sending stops within 30 days of your last visit. Changing your mind
-					stops anything further being sent, and does not erase what was already
+					We cannot see how Lighthouse is used. Without this we are guessing
+					which parts earn their keep, which features nobody opens, and where
+					our time is best spent. Usage data lets us decide from evidence rather
+					than intuition, so Lighthouse improves in the directions people
+					actually use it.
+				</Typography>
+
+				<Typography variant="subtitle2" sx={{ mb: 1 }}>
+					You stay in control
+				</Typography>
+
+				{/* This is a limit rather than a feature, and the dialog is where it has to be read.
+				    Somebody deciding here relies on this, not on the linked page. */}
+				<Typography variant="body2" sx={{ mb: 2 }}>
+					You can change your mind at any time from the footer, and nothing
+					further is sent. Changing your mind does not erase what was already
 					sent.
-				</Typography>
-
-				<Typography variant="body2" sx={{ mb: 2 }}>
-					{willAskAgain
-						? "If you decide later, we will ask you again in a few months."
-						: "Whichever you choose, we will not ask you again."}
 				</Typography>
 
 				<Typography variant="body2">
 					<Link href={docsUrl} target="_blank" rel="noopener noreferrer">
 						Read the full usage data page
 					</Link>
-					, which also covers what you can change afterwards.
+					, which covers what is sent, who holds it, where it is stored, and how
+					long it is kept.
 				</Typography>
 			</DialogContent>
 

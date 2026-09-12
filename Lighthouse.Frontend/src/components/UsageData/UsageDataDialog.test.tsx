@@ -3,26 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { UsageDataDialog, type UsageDataDialogProps } from "./UsageDataDialog";
 
-// AC-02.1 and AC-04.2 both fix the payload as exactly these five. An earlier version of this file
-// said "When this instance was installed" — the install timestamp is a SOURCE the instance holds
-// (S12), not a field that is sent, and naming it here would have put a wrong list in front of the
-// person being asked to consent to it.
-const THE_FIVE_FIELDS = [
-	"A random identifier for this instance",
-	"Lighthouse version",
-	"How Lighthouse is deployed",
-	"Whether the licence is Community or Premium",
-	"When the data was sent",
-] as const;
-
-// AC-02.2 is a POSITIVE requirement: the dialog must say these are never sent.
+// The dialog must say these are never sent, out loud, rather than leaving a reader to infer it from
+// a list of what is. This copy is kept separate from the production constant on purpose: a test
+// that imported it would only assert that the code equals itself.
 const NEVER_SENT = [
 	"work item titles",
 	"queries",
 	"names",
 	"URLs",
 	"email addresses",
-	"free text",
+	"or any free text you have typed",
 ] as const;
 
 const DOCS_URL =
@@ -35,12 +25,8 @@ const renderDialog = (overrides?: Partial<UsageDataDialogProps>) => {
 	render(
 		<UsageDataDialog
 			open={true}
-			collectorName="PostHog"
-			dataResidency="Frankfurt, Germany"
-			fields={THE_FIVE_FIELDS}
 			neverSent={NEVER_SENT}
 			docsUrl={DOCS_URL}
-			willAskAgain={false}
 			onDecision={onDecision}
 			onClose={onClose}
 			{...overrides}
@@ -57,25 +43,67 @@ const anchorOnRenderedDialog = () =>
 	expect(screen.getByRole("dialog")).toBeInTheDocument();
 
 describe("UsageDataDialog", () => {
-	it.each(THE_FIVE_FIELDS)(
-		"names %s as something that would be sent",
-		(field) => {
-			renderDialog();
-
-			expect(screen.getByText(new RegExp(field, "i"))).toBeInTheDocument();
-		},
-	);
-
-	it("names who would hold the data, not just that it is sent", () => {
+	it("says the feature is off until somebody turns it on", () => {
 		renderDialog();
 
-		expect(screen.getByText(/PostHog/)).toBeInTheDocument();
+		expect(document.body.textContent ?? "").toMatch(
+			/off unless you switch it on/i,
+		);
 	});
 
-	it("says where the data would rest, in a place a reader can check", () => {
+	// The identifier is the whole basis on which somebody can accept this, so the dialog says what it
+	// is rather than leaving it to the linked page.
+	it("says how a reader is identified, and that it means nothing elsewhere", () => {
 		renderDialog();
 
-		expect(screen.getByText(/Frankfurt, Germany/)).toBeInTheDocument();
+		expect(document.body.textContent ?? "").toMatch(/random identifier/i);
+		expect(document.body.textContent ?? "").toMatch(
+			/means nothing anywhere else/i,
+		);
+	});
+
+	// Asking for something without saying why it is wanted is how consent dialogs earn their
+	// reputation. This section is the answer, and its absence is a defect rather than a style choice.
+	it("says why the data is wanted and what it changes", () => {
+		renderDialog();
+
+		expect(screen.getByText(/why we ask for this/i)).toBeInTheDocument();
+		expect(document.body.textContent ?? "").toMatch(
+			/evidence rather than intuition/i,
+		);
+	});
+
+	it("says the decision can be reversed later, and from where", () => {
+		renderDialog();
+
+		expect(document.body.textContent ?? "").toMatch(
+			/change your mind at any time from the footer/i,
+		);
+	});
+
+	// Reversible is not retroactive, and a reader who hears the first as the second has been misled.
+	it("does not let a reversible choice read as an erasable one", () => {
+		renderDialog();
+
+		expect(document.body.textContent ?? "").toMatch(
+			/does not erase what was already sent/i,
+		);
+	});
+
+	// The dialog used to enumerate the payload and name the processor. Both now live on the linked
+	// page, because both change as the feature grows and a stale list in a dialog still looks
+	// authoritative. If either comes back here, it comes back with a way to keep it true.
+	it.each([
+		["how often anything is sent", /once a (day|week)|daily|every day/i],
+		["a count of what is sent", /\b(three|four|five|six) things\b/i],
+		["who holds the data", /posthog/i],
+		["where the data rests", /frankfurt|germany/i],
+		["how long it is kept", /\bfor (one|a) year\b|\b\d+ (months|days)\b/i],
+	])("leaves %s to the page that can be kept current", (_name, forbidden) => {
+		renderDialog();
+		anchorOnRenderedDialog();
+
+		expect(document.body.textContent ?? "").not.toMatch(forbidden);
 	});
 
 	it.each(NEVER_SENT)(
@@ -93,11 +121,9 @@ describe("UsageDataDialog", () => {
 	it("reads as a sentence rather than a run-on list", () => {
 		renderDialog();
 
-		expect(
-			screen.getByText(
-				"We never send work item titles, queries, names, URLs, email addresses, free text.",
-			),
-		).toBeInTheDocument();
+		expect(document.body.textContent ?? "").toContain(
+			"We never send work item titles, queries, names, URLs, email addresses, or any free text you have typed.",
+		);
 	});
 
 	it("says nothing about a failure it has not had", () => {
@@ -177,33 +203,14 @@ describe("UsageDataDialog", () => {
 		expect(document.body.textContent ?? "").not.toMatch(forbidden);
 	});
 
-	it("tells a reader who will be asked again that they will be asked again", () => {
-		renderDialog({ willAskAgain: true });
-		anchorOnRenderedDialog();
-
-		// Anchored on the negation, not just the phrase: /ask (you )?again/ is a substring of
-		// "we will never ask you again", so the loose form passed against the opposite copy.
-		expect(document.body.textContent ?? "").toMatch(/\bask(ed)? (you )?again/i);
-		expect(document.body.textContent ?? "").not.toMatch(
-			/\b(never|not|won't|will not)\b[^.]{0,30}ask/i,
-		);
-	});
-
-	it("tells a reader who will not be asked again that this is the last time", () => {
-		renderDialog({ willAskAgain: false });
-		anchorOnRenderedDialog();
-
-		expect(document.body.textContent ?? "").toMatch(
-			/\b(never|won't|will not|not)\b[^.]{0,30}ask/i,
-		);
-	});
-
-	it("does not promise a Community reader silence it cannot deliver", () => {
-		renderDialog({ willAskAgain: true });
+	// Nothing asks unprompted yet, so any promise about being asked again - in either direction -
+	// describes behaviour that does not exist. It belongs here only once the cadence does.
+	it("makes no promise about being asked again, in either direction", () => {
+		renderDialog();
 		anchorOnRenderedDialog();
 
 		expect(document.body.textContent ?? "").not.toMatch(
-			/\b(never|won't|will not)\b[^.]{0,30}ask/i,
+			/\bask(ed|ing)? (you )?again\b/i,
 		);
 	});
 
@@ -255,12 +262,12 @@ describe("UsageDataDialog", () => {
 		renderDialog({ open: false });
 
 		// Not queryByRole('dialog') alone: that excludes hidden elements by default, so a MUI
-		// dialog left mounted with keepMounted would pass while the whole field list and the
-		// collector's name sat in the DOM.
+		// dialog left mounted with keepMounted would pass while the whole of the copy sat in the DOM.
 		const rendered = document.body.textContent ?? "";
-		expect(rendered).not.toContain("PostHog");
-		for (const field of THE_FIVE_FIELDS) {
-			expect(rendered).not.toContain(field);
+		expect(rendered).not.toMatch(/random identifier/i);
+		expect(rendered).not.toMatch(/why we ask for this/i);
+		for (const category of NEVER_SENT) {
+			expect(rendered).not.toContain(category);
 		}
 	});
 });
