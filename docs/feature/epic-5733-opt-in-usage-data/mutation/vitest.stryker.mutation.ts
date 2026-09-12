@@ -20,6 +20,7 @@ export default defineConfig({
 			"src/components/UsageData/UsageDataIndicator.test.tsx",
 			"src/components/UsageData/UsageDataDialog.test.tsx",
 			"src/hooks/useUsageDataConsent.test.tsx",
+			"src/services/Api/UsageDataService.test.ts",
 		],
 		exclude: [
 			"**/node_modules/**",
@@ -27,12 +28,5 @@ export default defineConfig({
 			"**/.stryker-tmp*/**",
 			"**/StrykerOutput/**",
 		],
-		server: {
-			deps: {
-				inline: [/@mui\//, /react-transition-group/],
-			},
-		},
-		pool: "threads",
-		isolate: true,
 	},
 });

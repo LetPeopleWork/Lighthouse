@@ -5,7 +5,11 @@ Run 2026-09-12 against `main`. Gate is 80 % kill rate on both stacks.
 | stack | score | tested | killed | survived | no cov | wall clock |
 | --- | --- | --- | --- | --- | --- | --- |
 | Backend (Stryker.NET) | **93.62 %** | 47 | 44 | 2 | 1 | 2 m 42 s |
-| Frontend (StrykerJS 9.6.1) | **not measurable** | — | — | — | — | — |
+| Frontend (StrykerJS 9.6.1) | **85.87 %** | 92 | 79 | 13 | 0 | 1 m 00 s |
+
+The frontend number required pinning vitest back to `4.1.11` for the duration of the run. The repo
+ships `5.0.0`, on which this gate cannot be measured at all — see **Frontend** below, which is worth
+reading before the score is trusted or repeated.
 
 Configs: `stryker.5834.backend.json`, `stryker.5834.frontend.json`, `vitest.stryker.mutation.ts`.
 
@@ -75,15 +79,23 @@ and the keep-what-exists path.
 
 ---
 
-## Frontend — could not be measured, and the reason is not this feature
+## Frontend — 85.87 %, measured only by pinning vitest back
 
-StrykerJS reported **3.26 %** for the four frontend files. That number is wrong and is not reported
-as a result.
+| file | killed | survived | no cov |
+| --- | --- | --- | --- |
+| `UsageDataService.ts` | 15 | 0 | 0 |
+| `useUsageDataConsent.ts` | 47 | 2 | 0 |
+| `UsageDataIndicator.tsx` | 7 | 1 | 0 |
+| `UsageDataDialog.tsx` | 10 | 10 | 0 |
+
+The first run reported **3.26 %**. That number was wrong, and the reason was not this feature.
+
+### Why the first number was not a result
 
 **The evidence it is a harness fault:**
 
-1. `Ran 0.17 tests per mutant on average`, with `coverageAnalysis: "off"` — which means every test
-   runs for every mutant. The per-mutant log lines read `Tests ran:` followed by nothing.
+1. `Ran 0.17 tests per mutant on average`, against `7.16` for the same config once it works. The
+   per-mutant log lines read `Tests ran:` followed by nothing.
 2. The dry run is fine: `Initial test run succeeded. Ran 45 tests in 3 seconds`. Tests are found;
    they just do not run against mutants.
 3. `UsageDataDialog.tsx` scored **0 killed / 19 survived** while 31 passing tests exercise that
@@ -91,26 +103,80 @@ as a result.
    contact.
 4. The whole run took 39 s. 74 mutants × 45 tests cannot fit in 39 s.
 
-**The control experiment.** Re-running the reference feature's own config
-(`stryker.5611.frontend.json`, unchanged code) produces **54.55 %** today against the **85.71 %**
-recorded in its own `results.md`. Same config, same code, different answer — so the regression is in
-the toolchain, not in either feature. Its dry run now collects 7 tests where its six spec files hold
-far more.
+**The cause, proven rather than suspected.** Commit `78a672ecd` raised vitest from `4.1.11` to
+`5.0.0` on 2026-09-10. Story 5914's frontend mutation result was committed on 2026-09-09 — the day
+before — at **94.96 %**.
 
-**Most likely cause:** `@stryker-mutator/vitest-runner ^9.6.1` against `vitest ^5.0.0`. The reference
-run predates that vitest major, and a runner that cannot drive the new vitest would show exactly this
-signature — dry run fine, per-mutant runs empty.
+Re-running 5914's own config against its own unchanged code, changing nothing but the vitest version:
 
-**This affects every future frontend mutation gate in this repository, not just this feature.** It
-wants its own investigation and probably a runner upgrade; it should not be rediscovered per feature.
+| vitest | 5914's score | tests per mutant |
+| --- | --- | --- |
+| `5.0.0` (what the repo has today) | 7.19 % | 0.17 |
+| `4.1.11` (what 5914 was measured on) | **94.96 %** | 16.14 |
 
-### What the broken run found anyway, and which was real
+94.96 % is the number in 5914's committed `results.md`, reproduced to two decimals. That is not a
+correlation; it is the same measurement coming back once the version is put back.
 
-`UsageDataService.ts` reported 1 survivor and **14 no-coverage** mutants. That one is genuine and
-was not an artefact: the file had no test at all. The backend endpoint tests cover the server side and
-the hook tests mock the service out entirely, so nothing exercised it. **`UsageDataService.test.ts`
-now exists** — 6 tests covering the header name each call sends, what each returns, and that
-withdrawal names the token.
+Three other hypotheses were tested and disproven first, so they do not need retesting: the runner
+version (`@stryker-mutator/vitest-runner` 9.6.1 vs 10.0.0 — identical behaviour), `related: false`,
+and the `pool` / `isolate` / `server.deps` settings. None moved the number.
+
+**Nothing warns.** `@stryker-mutator/vitest-runner` declares `peerDependencies: { "vitest": ">=2.0.0" }`,
+so the install is considered valid, the dry run succeeds, and the tool reports a plausible-looking low
+score instead of failing. A frontend mutation gate run on this repository today returns a number that
+looks like weak tests and is actually an empty test run.
+
+**This blocks the frontend gate repo-wide, not just this feature.** The three options — pin vitest
+back to 4.x, accept the gate as blocked until the runner supports vitest 5, or pin plus report
+upstream — trade a working test suite against a working mutation gate and are the maintainer's call,
+not a decision to be made inside a feature's mutation pass.
+
+### What the real run found
+
+Pinned to `4.1.11`, the first honest measurement was **45.65 %**, and it went up in three steps:
+
+| | score | what changed |
+| --- | --- | --- |
+| first honest run | 45.65 % | — |
+| + include fix | 61.96 % | `UsageDataService.test.ts` was missing from `vitest.stryker.mutation.ts`'s `include` list, so its 6 tests never ran and its file showed 14 no-coverage mutants. The file went to 100 %. |
+| + 13 hook and dialog tests | 82.61 % | below |
+| + 2 corrected tests | 85.87 % | below |
+
+**Closed by this pass — 13 new tests, written against the survivor list:**
+
+- **The withdrawal condition** (`next === "declined" && decision === "Granted" && token`) held five
+  survivors. Each clause is load-bearing and dropping any one sends the wrong request, but only the
+  happy path had a test. Three cases now cover the rest: a token held with no prior grant, a grant
+  reaffirmed rather than withdrawn, and a grant that belongs to some other browser.
+- **The hourly refresh.** Nothing asserted the interval at all, so `60 * 60 * 1000` could become
+  `60 / 60 * 1000` unnoticed — a tab would re-ask every second. Two tests with fake timers: nothing
+  at 59 minutes, a second fetch at 60, and no further fetch after unmount.
+- **The initial state, the dialog lifecycle and the failure banner.** Whether the dialog closes on
+  success, whether an earlier failure clears, and whether `closeDialog` closes anything were all
+  unasserted. The dialog's `failedToRecord` had no test of any kind — both the alert and its absence
+  are now covered.
+
+**Two of those tests were themselves wrong, and mutation testing is what said so.** Both passed on
+the first try and neither could have failed:
+
+- *"falls back to not knowing when the state cannot be fetched"* asserted `"unknown"` after a
+  rejected fetch — but `"unknown"` is also the initial state, so it asserted nothing. It now lets the
+  hook learn the state first and then lose it, which is the case that actually distinguishes the two.
+- *"treats a browser that cannot be asked for a token as one that holds none"* asserted the token
+  read as `null` while storage was empty, where `null` is simply the normal answer. It now writes a
+  token first, so `null` can only come from the throwing path. That also exposed a second fault:
+  `vi.spyOn(Storage.prototype, "getItem")` never intercepted anything under jsdom — the real value
+  came back. Spying on the `localStorage` instance works.
+
+A survivor that turns out to be a test which cannot fail is the most valuable kind, and the reason
+the score is quoted after the fix rather than before it.
+
+### Accepted survivors
+
+| where | count | why they stay |
+| --- | --- | --- |
+| `UsageDataDialog.tsx`, `UsageDataIndicator.tsx` | 11 | MUI `sx` / `style` props: `{ mb: 2 }` emptied, `"disc"` and `"list-item"` blanked. These change spacing and bullet shape, nothing a DOM assertion can see and nothing that alters what the dialog says. Pinning them would mean asserting on style objects, which breaks on every visual tweak and protects nothing. |
+| `useUsageDataConsent.ts:80,87` | 2 | React dependency arrays emptied. Killing these means re-rendering with a swapped API service mid-test purely to observe a stale closure — a scenario the application never produces, since the service is created once at composition. |
 
 ### Config note for the next feature
 
