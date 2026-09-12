@@ -1476,6 +1476,7 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
    | Credential | What it is | Worst case |
    |---|---|---|
    | `POSTHOG_CI_PROJECT_API_KEY` | A PostHog **project** write key for the CI project. Public by design — these ship in browser bundles | Junk events in a project nobody reads |
+   | `UsageData:ProjectApiKey` (production) | The same kind of key, for the census project — but this one **ships inside every Lighthouse install**, because an instance cannot emit without it | **Anyone who reads it out of a config file can write to the census.** Nothing can be read with it, so this is not a confidentiality loss; it is a measurement one. See the integrity note below |
    | `POSTHOG_PERSONAL_API_KEY` | A **user-scoped** read credential | **The whole census.** Every instance identifier, version, licence tier and deployment mode, for every consenting instance |
    | `POSTHOG_PROD_PROJECT_ID` / `POSTHOG_CI_PROJECT_ID` | Identifiers | Not secrets. Storing them as secrets buys nothing and makes the rotation story four items long instead of one |
 
@@ -1496,17 +1497,41 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
      any carry `$ip`" under a narrower scope than event-level read, use that instead.
    - **Route it into DoR-9** beside the DPA read. "Who else can read the census, and how" is the same
      class of question as retention and erasure, which ADR-175 point 7 already sends there.
-4. **Network access from the runner to `eu.i.posthog.com`.** Worth stating plainly: GitHub-hosted
+4. **Two things about the production project key that had not been written down**, both found on
+   2026-09-12 while the projects were being created.
+
+   **How it reaches an install is undecided.** The key has to be present in every deployment or
+   nothing emits, and the chart carries only `collectorBaseUrl` (P4) — not the key. So it arrives
+   either as a committed default in `appsettings.json` or injected at build or release time, and
+   nobody has chosen. Decide it in slice 01b, and note that the committed-default route meets this
+   repository's own secret-scanning pre-push hook, which will have an opinion about a vendor key in a
+   tracked file.
+
+   **The census can be written to by its own audience, and that is accepted rather than fixed.**
+   A shared key that ships to customers authenticates nothing: anyone running Lighthouse can read it
+   out of their own config and post events with any `distinct_id` they like. There is no
+   confidentiality loss — the key writes, it does not read — but every number this Epic produces is a
+   count of events written with a credential the audience holds.
+
+   It is accepted because the alternatives are disproportionate to what is being protected: a
+   per-instance credential means an enrolment service and a registry of installs, which is a larger
+   privacy surface than the census it would defend, and signed payloads need a key that also ships.
+   What is required instead is that the number be read knowing this. `OUT-usagedata-instances-reporting`
+   asks for ≥ 25 distinct identifiers in a rolling 24 hours — a threshold one bored person could
+   manufacture in an afternoon. Treat a sharp jump, or a population of identifiers that never report a
+   second time on a plausible cadence, as a reason to look rather than a result. Same posture as the
+   unbound embed nonce: named, sized, accepted, and detectable.
+5. **Network access from the runner to `eu.i.posthog.com`.** Worth stating plainly: GitHub-hosted
    `ubuntu-latest` runners have unrestricted egress, so there is no per-workflow allowance to grant and
    nothing enforces "the canary workflow only". What actually keeps every other job off the vendor is
    the `Integration` category exclusion. If real egress control is wanted, it needs a self-hosted
    runner with an egress policy — and that is a decision nobody has taken.
-5. **Chart 0.1.16 released** before a Kubernetes tenant can be told the collector host is
+6. **Chart 0.1.16 released** before a Kubernetes tenant can be told the collector host is
    configurable (P4). This is a **separate release train**: `chart/**` is not in `ci.yml`'s
    `push.paths`, and `ci_chart.yml` publishes behind a `Release` environment gate. It does not ship
    with the feature commit.
-6. **DoR-9 closed** before slice 01 ships. Unchanged by DEVOPS, and DEVOPS cannot close it. The DPA
-   read now also has to cover a second project, and the personal-key blast radius above.
+7. ~~**DoR-9 closed** before slice 01 ships.~~ **Closed 2026-09-12** — all six questions answered; see
+   the DoR Validation section.
 
 ---
 
