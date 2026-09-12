@@ -8,6 +8,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Models.UsageData;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -79,6 +80,8 @@ namespace Lighthouse.Backend.Data
         public DbSet<PercentilesOverTimeSnapshot> PercentilesOverTimeSnapshots { get; set; } = null!;
 
         public DbSet<ProcessBehaviorSnapshot> ProcessBehaviorSnapshots { get; set; } = null!;
+
+        public DbSet<UsageDataConsent> UsageDataConsents { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -159,6 +162,16 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<EmbedSessionToken>()
                 .HasIndex(t => t.HandshakeNonceHash);
+
+            modelBuilder.Entity<UsageDataConsent>()
+                .HasIndex(c => c.TokenHash)
+                .IsUnique();
+
+            // "Is anyone still consenting" is asked on a schedule for as long as the feature is on,
+            // and it filters on exactly these two columns. Without this it is a table scan over every
+            // browser that ever answered.
+            modelBuilder.Entity<UsageDataConsent>()
+                .HasIndex(c => new { c.Decision, c.LastSeenAt });
 
             // Subject is deliberately not a foreign key: a session token can name someone who has no profile
             // row yet, because profiles are only created the first time that person actually arrives.

@@ -1412,6 +1412,40 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("TerminologyEntries");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.UsageData.UsageDataConsent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AskedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Decision")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("Decision", "LastSeenAt");
+
+                    b.ToTable("UsageDataConsents");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.WorkItem", b =>
                 {
                     b.Property<int>("Id")
