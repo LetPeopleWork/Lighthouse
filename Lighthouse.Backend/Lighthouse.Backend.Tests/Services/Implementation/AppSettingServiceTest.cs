@@ -255,6 +255,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 TimeProvider.System);
         }
 
+        [Test]
+        public async Task EnsureUsageDataInstanceId_OnAnInstanceThatHasNone_MintsAndStoresOne()
+        {
+            var identifier = await CreateService().EnsureUsageDataInstanceId();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(identifier, Is.Not.Empty);
+                repositoryMock.Verify(
+                    x => x.Add(It.Is<AppSetting>(s => s.Key == AppSettingKeys.UsageDataInstanceId && s.Value == identifier)),
+                    Times.Once);
+                // Without the save the identifier exists only for the length of this request, and the
+                // next grant mints a different one - so the same instance would be counted twice.
+                repositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task EnsureUsageDataInstanceId_OnAnInstanceThatAlreadyHasOne_KeepsIt()
+        {
+            SetupRepositoryForKeys(AppSettingKeys.UsageDataInstanceId, "the-one-it-already-had");
+
+            var identifier = await CreateService().EnsureUsageDataInstanceId();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(identifier, Is.EqualTo("the-one-it-already-had"),
+                    "minting a second identifier would make one instance look like two in the census, "
+                    + "which is the single number this whole feature exists to produce");
+                repositoryMock.Verify(x => x.Add(It.IsAny<AppSetting>()), Times.Never);
+            }
+        }
+
         private void SetupRepositoryForKeys(params string[] keyValuePairs)
         {
             for (int i = 0; i < keyValuePairs.Length; i += 2)
