@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string ConsentRoute = "/api/latest/usagedata/consent";
         private const string ConsentTokenHeader = "X-Lighthouse-UsageData-Token";
 
-        private const string Pending = "pending: epic 5733 slice 01 (#5834)";
+        private const string Pending = "pending: epic 5733 slice 01a (#5834)";
 
         private static readonly string[] LicenceDisclosureNeedles = ["licen", "premium", "tier"];
 
@@ -187,9 +187,17 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
+        /// <remarks>
+        /// This asserts what the state endpoint answers after a revoke, which is all that can be
+        /// asserted while nothing emits. The criterion it looks like it covers - that the next emit
+        /// does not happen, observed at the emit path - is a different assertion against a component
+        /// that does not exist until the emitter ships, and it is owed there. An earlier name for
+        /// this test claimed the stronger thing and would have let that assertion be marked covered
+        /// by a test that never goes near an emitter.
+        /// </remarks>
         [Test]
         [Ignore(Pending + " — the revoke endpoint does not exist yet")]
-        public async Task DeleteConsent_WithTheBrowsersOwnToken_StopsTheInstanceSending()
+        public async Task DeleteConsent_WithTheBrowsersOwnToken_MakesTheStateEndpointReportNotSending()
         {
             var token = await ReadTokenAsync(await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" }));
 

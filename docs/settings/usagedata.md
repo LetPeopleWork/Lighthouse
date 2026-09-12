@@ -75,7 +75,9 @@ collector, which is also why nothing here can be blocked or seen by a browser ex
 allow a shorter period, so one year is what the plan we are on provides. It comfortably covers every
 question we ask of this data, all of which look back days or weeks rather than years.
 
-If that ever changes, this page and the consent dialog change with it, in the same release.
+We can only state that number because it cannot move quietly. A longer retention period counts as a
+material change, so it would mean updating this page, updating the dialog, and **asking everyone who
+already agreed to agree again** — not a billing decision taken without you.
 
 ## What Lighthouse stores on your own server
 

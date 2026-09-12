@@ -126,7 +126,12 @@ jobs:
         fi
 
         if [ "$force_full" == "true" ]; then
-          parts+=("Category=Integration")
+          # The usage-data canary talks to a live analytics vendor and is meant to run on its own
+          # daily schedule, with its own credentials. It carries the Integration category too, so
+          # without the second clause a force-full run would pull it into every ordinary push that
+          # touches a shared path — spending the vendor quota and handing its secrets to a job that
+          # has no business holding them.
+          parts+=("(Category=Integration&Category!=UsageDataCanary)")
         else
           [ "${{ inputs.jira_connector }}"   == "true" ] && parts+=("Category=JiraIntegration")
           [ "${{ inputs.ado_connector }}"    == "true" ] && parts+=("Category=AdoIntegration")

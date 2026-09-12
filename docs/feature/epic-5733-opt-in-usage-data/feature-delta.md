@@ -365,8 +365,15 @@ Decision enabled: whether to help improve Lighthouse, made on evidence rather th
 - AC-02.9 The dialog tells a Community user it will ask again in a few months and tells a Premium
   user it will not ask again — matching what actually happens (D5).
 - AC-02.10 **No surface in the product or its compliance documentation claims Lighthouse does not
-  track usage.** `SurveyNudge.tsx:114` and `cra-self-assessment.md:35` are corrected in this slice
-  (S3, S4).
+  track usage.** `SurveyNudge.tsx:114` and `cra-self-assessment.md:35` are corrected in **slice 01b**,
+  the half that first makes them false (S3, S4).
+- AC-02.11 **The dialog states the retention period, and that period is only safe to state because
+  changing it requires asking again.** Retention is one year and is fixed by the collector's plan
+  rather than by a setting we control — a paid upgrade would silently make it seven and falsify copy
+  that nobody edited. That is why "retention lengthens" is one of the four re-consent triggers in
+  AC-08.5: the dialog may name a number precisely because the number cannot move without the people
+  who agreed to it being asked again. A plan change is a product decision that carries a copy change
+  and a re-consent with it, not a billing detail.
 
 ---
 
@@ -582,7 +589,7 @@ Decision enabled: whether to invest further in a shipped feature, fix it, or ret
 
 | Activity | Slice 01a (decide) | Slice 01b (emit) | Slice 02 | Slice 03 | Slice 04 |
 |---|---|---|---|---|---|
-| Find out what it sends | US-01 indicator, US-02 dialog + docs page | docs page names the separate GitHub call | — | — | US-08 docs widened |
+| Find out what it sends | US-01 indicator, US-02 dialog + docs page | docs page names the separate GitHub call; **SurveyNudge and CRA row 1.7 corrected** (S3, S4, AC-02.10) | — | — | US-08 docs widened |
 | Decide | US-02 (on click) | — | US-05 (asked unprompted, honest cadence) | — | — |
 | Change my mind | US-03 as a record, indicator follows | US-03 enforced against the emitter (AC-03.2) | — | — | — |
 | Govern it | — | — | — | US-06 switch (US-07 honest refusal → story #5876) | — |
@@ -1749,7 +1756,7 @@ constraints here, not options. Numbering starts at DT-1 so it collides with none
 | DT-8 | **The indicator's two states differ by accessible name, not by colour.** Asserted directly (`aria-label` of one state ≠ the other), which is how AC-01.2's greyscale-safety becomes testable at all. A colour-only signal would be assertable only by computed style — brittle, and inaccessible in the way the AC exists to prevent. | AC-01.2 |
 | DT-9 | **The indicator fails closed: `unknown` renders as not-sending.** Named explicitly because the adjacent, obvious thing to copy is `useRbac`, which fails **open** via `PERMISSIVE_SUMMARY` on purpose. A privacy indicator guessing "sending" when it cannot tell is alarming and wrong; guessing "not sending" is only wrong. | AC-01.4 |
 | DT-10 | **The dialog takes `willAskAgain` as a boolean, never a licence tier.** It is the shape C5 settled for the `/state` response, and the dialog's props mirror it so the component never learns what a licence is. | C5, D5 |
-| DT-11 | **The forbidden-phrase test is six patterns, not one.** A13 forbids claiming the IP is not transmitted; the same sentence can be written six ways, and "completely anonymous" and "we cannot identify you" are the two that would slip past a single-pattern check while being the most damaging to get wrong. | A13 |
+| DT-11 | **The forbidden-phrase test is nine patterns, not one.** A13 forbids claiming the IP is not transmitted; the same sentence can be written many ways, and "completely anonymous" and "we cannot identify you" are the two that would slip past a single-pattern check while being the most damaging to get wrong. **Seven at the time of this decision; two more were added on 2026-09-11** after the DPA read, forbidding "the data never leaves the EU" and "the data stays only in the EU" — the same failure class as the IP claim, since the data *rests* in Frankfurt but the agreement reserves processing outside it. This row said six and was corrected on 2026-09-12 when the gate compared it against the file. | A13 |
 | DT-12 | **The SurveyNudge correction is a skipped test on the shipped component, not a copy edit.** It asserts the popup no longer promises Lighthouse never tracks you. It fails today — deliberately. Making the copy change now would be DELIVER's work landing in DISTILL, and shipping the change before the feature exists would make the product *understate* itself instead of overstating it. | S3 |
 | DT-13 | **No Playwright work in this wave.** The E2E walking skeleton is specified below and written in DELIVER. Three standing repo rules collide otherwise: never commit an unrun spec or page-object locator, never push red, and `pnpm build` runs `tsc -b`, so a spec calling a page-object method nobody has written fails the build for everyone. | — |
 
@@ -1757,16 +1764,33 @@ constraints here, not options. Numbering starts at DT-1 so it collides with none
 
 ## Wave: DISTILL / [REF] Scenario list
 
-**51 scenarios: 40 frontend (`describe.skip` / `it.skip`), 11 backend (`[Ignore]`).** No `.feature`
-file exists (DT-2), so a scenario's identifier is its test name. Tags are notional — this repo has no
-tag runner; they are here for the traceability the wave contract asks for.
+**53 pending scenarios as the test runners count them: 42 frontend (`describe.skip` / `it.skip`),
+11 backend (`[Ignore]`).** Counted as authored blocks instead — one `it.each` being one block — it is
+33. Both numbers are given because they differ by a lot and each is the right answer to a different
+question: 53 is what a CI log shows, 33 is what somebody maintaining the file edits.
+
+| File | Blocks | Cases |
+|---|---|---|
+| `UsageDataIndicator.test.tsx` | 7 | 10 |
+| `UsageDataDialog.test.tsx` | 14 | 31 |
+| `SurveyNudge.test.tsx` (appended) | 1 | 1 |
+| `UsageDataConsentEndpointsTests.cs` | 11 | 11 |
+
+**Corrected 2026-09-12.** This section said "51 scenarios: 40 frontend, 11 backend", which matched
+neither count under either convention, and the tables below had not been updated when tests were added
+after the wave review. Verified by running both suites rather than by recounting the tables.
+
+No `.feature` file exists (DT-2), so a scenario's identifier is its test name. Tags are notional —
+this repo has no tag runner; they are here for the traceability the wave contract asks for.
 
 The count grew from 39 after the consolidated wave review: AC-02.2 (the never-sent categories, stated
 positively), AC-02.4 (the docs link), AC-02.5 and AC-02.6 (nothing written to the browser before the
 click) were all authorable here and were missing, and several matchers were split so a positive case
-and its negation are asserted separately rather than by one pattern that matched both.
+and its negation are asserted separately rather than by one pattern that matched both. **Those three
+additions were made in the file and never added to the dialog table below — which is how the table
+came to describe a file it no longer matched.**
 
-### `src/components/UsageData/UsageDataIndicator.test.tsx` — 7 tests, NEW
+### `src/components/UsageData/UsageDataIndicator.test.tsx` — 7 blocks / 10 cases, NEW
 
 | Scenario | Tags |
 |---|---|
@@ -1778,19 +1802,22 @@ and its negation are asserted separately rather than by one pattern that matched
 | reopens the decision when it is clicked | `@US-03` `@AC-03.1` |
 | reopens the decision from the not-sending state too, so a refusal can be changed | `@US-03` `@AC-03.1` `@edge` |
 
-### `src/components/UsageData/UsageDataDialog.test.tsx` — 20 tests, NEW
+### `src/components/UsageData/UsageDataDialog.test.tsx` — 14 blocks / 31 cases, NEW
 
 | Scenario | Tags |
 |---|---|
 | names each of the five fields as something that would be sent (5 cases) | `@US-02` `@AC-02.1` |
 | names who would hold the data, not just that it is sent | `@US-02` `@AC-02.3` |
 | says where the data would rest, in a place a reader can check | `@US-02` `@AC-02.3` |
-| never claims the IP is not transmitted / not seen / never leaves the machine / no data leaves / completely anonymous / we cannot identify you (6 cases) | `@US-02` `@AC-02.2` `@A13` |
+| says each of the never-sent categories is never sent — work item titles, queries, names, URLs, email addresses, free text (6 cases) | `@US-02` `@AC-02.2` |
+| links the full list, so the dialog is not the only place the answer exists | `@US-02` `@AC-02.4` |
+| never claims the IP is not sent / never reaches anyone / nothing leaves the machine / no data leaves / completely anonymous / you cannot be identified / nothing is tracked / the data never leaves the EU / the data stays only in the EU (9 cases) | `@US-02` `@AC-02.2` `@A13` |
 | tells a reader who will be asked again that they will be asked again | `@US-02` `@AC-02.9` `@D5` |
 | tells a reader who will not be asked again that this is the last time | `@US-02` `@AC-02.9` `@D5` |
-| does not say it will ask again to someone it will never ask again | `@US-02` `@AC-02.9` `@error` |
+| does not promise a Community reader silence it cannot deliver | `@US-02` `@AC-02.9` `@error` |
 | reports a grant when the reader agrees | `@US-02` `@AC-02.4` |
 | reports a refusal when the reader declines | `@US-02` `@AC-02.4` |
+| writes nothing to the browser while it is only being read | `@US-02` `@AC-02.6` `@D2` |
 | offers a way out that is not a decision, because a dialog nobody can leave is a dark pattern | `@US-02` `@edge` |
 | renders nothing at all when it is closed | `@US-02` `@edge` |
 
@@ -1812,7 +1839,7 @@ and its negation are asserted separately rather than by one pattern that matched
 | PostConsent, when the browser declines, also mints a token | `@US-02` `@D2` `@edge` |
 | PostConsent mints a different token every time | `@US-02` `@security` |
 | PostConsent is rate-limited | `@US-02` `@H3` `@security` |
-| DeleteConsent, with the browser's own token, stops the instance sending | `@US-03` `@AC-03.2` `@D8` |
+| DeleteConsent, with the browser's own token, makes the state endpoint report not-sending | `@US-03` `@AC-03.1` `@D8` |
 | DeleteConsent, with a token this instance never minted, answers exactly as a real revoke does | `@US-03` `@security` `@oracle` |
 | The consent endpoints require no authentication, because most instances have none | `@US-01` `@S11` |
 
@@ -1949,7 +1976,7 @@ Slice 01's criteria only (DT-1). Where a criterion is *partly* covered, the rema
 | AC-02.8 | `POST /consent` mints a token on a decline too; dialog reports `declined` | — |
 | AC-02.9 | Dialog — `willAskAgain` both ways, each anchored against the other's copy; `/state` derives it without naming the licence | — |
 | AC-02.10 | SurveyNudge forbidden-phrase test (skipped, fails today by design) | **DELIVER**: the copy change itself, plus CRA rows 1.7 **and 1.9** |
-| AC-03.2 | `DELETE /consent` stops the instance sending | **DELIVER**: the emit path actually not firing, which needs the gate |
+| AC-03.2 | **Nothing covers it today.** The backend test that looked like it did asserts what the *state endpoint* answers after a revoke, never the emit path, and was renamed on 2026-09-12 to stop it reading as coverage it does not provide | **01b**: the emit path actually not firing, which needs the gate. This is the one acceptance criterion the 01a/01b split left genuinely uncovered, and it is uncoverable until the emitter exists |
 | AC-03.3 | — | **DELIVER**: revocation survives a restart, which needs the store |
 | AC-03.4 | — | **DELIVER**: `Revoked` as a third state, re-askable (H1) |
 | AC-03.5 | — | **DELIVER**: the liveness-window gap — cleared storage makes a browser immediately re-askable but stops it counting only after the window |
