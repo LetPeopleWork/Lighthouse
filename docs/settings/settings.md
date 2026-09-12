@@ -30,5 +30,10 @@ Create and manage API keys for the Lighthouse CLI, MCP servers, and other automa
 ### [Role-Based Access Control](rbac.html)
 Configure who can read, edit, and create teams and portfolios once [authentication](../Installation/authentication.html) is enabled. Covers the four roles (System Admin, Team Admin, Portfolio Admin, Viewer), the first-time bootstrap, direct grants, SSO group mappings, team / portfolio creation rights, and the Emergency Admin recovery path.
 
+### [Usage Data](usagedata.html)
+What Lighthouse can send about the instance itself — the five fields, what is never sent, who holds
+it and for how long, what is stored on your own server to remember your answer, and how to change
+your mind. Off until somebody agrees to it.
+
 ### [System Info](systeminfo.html)
 Access detailed information about your system as well as logging information for troubleshooting and monitoring Lighthouse operations, including log level configuration and log viewing capabilities.
