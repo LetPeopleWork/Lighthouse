@@ -1356,6 +1356,9 @@ namespace Lighthouse.Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AnalyticsId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("AskedAt")
                         .HasColumnType("TEXT");
 

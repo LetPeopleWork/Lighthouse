@@ -37,5 +37,16 @@ namespace Lighthouse.Backend.Models.UsageData
         /// every supported database.
         /// </summary>
         public DateTime? AskedAt { get; set; }
+
+        /// <summary>
+        /// The pseudonym the collector sees, so it can tell a repeat visit from a new one. Derived
+        /// from nothing and meaningless outside Lighthouse. It is worked out on the server from the
+        /// token the browser presents and is never a field in any request or response, in either
+        /// direction - so no caller can choose it, and nobody can emit under somebody else's.
+        ///
+        /// Null on a row that recorded a refusal, and on every row that was already in the table
+        /// when this column arrived: a browser that said no has no pseudonym anywhere.
+        /// </summary>
+        public string? AnalyticsId { get; set; }
     }
 }

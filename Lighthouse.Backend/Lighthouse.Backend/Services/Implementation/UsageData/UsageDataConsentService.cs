@@ -25,6 +25,10 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         // has to be unguessable rather than merely unique.
         private const int TokenByteLength = 32;
 
+        // 128 bits, which is plenty for a value whose only job is to be distinct: unlike the token it
+        // grants nothing, so guessing one buys an attacker no capability.
+        private const int AnalyticsIdByteLength = 16;
+
         public async Task<UsageDataState> GetStateAsync(string? token, CancellationToken cancellationToken)
         {
             var now = timeProvider.GetUtcNow().UtcDateTime;
@@ -71,6 +75,13 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                     Decision = decision,
                     DecidedAt = now,
                     LastSeenAt = now,
+
+                    // Written in the same save as the answer itself, so there is no moment where a
+                    // browser has consented but has nothing to be counted under. Only for a yes: a
+                    // browser that refused must have no pseudonym anywhere.
+                    AnalyticsId = decision == UsageDataDecision.Granted
+                        ? UrlSafeValue.Generate(AnalyticsIdByteLength)
+                        : null,
                 },
                 cancellationToken);
 
