@@ -122,12 +122,31 @@ requires and that nothing outside the gate can construct.**
    start emit again.
 
    **The mechanism is `ExecuteUpdateAsync` with the expected old value in the `Where` clause**, which
-   is already how this codebase performs a compare-and-swap.
-   `Services/Implementation/Encryption/SecretCustodyService.cs` moves a stored secret onto a new key
-   with `.Where(row => row.Id == id && row.Value == expected).ExecuteUpdateAsync(...)` and reads the
-   returned count as the verdict - one row means this caller won, zero means another writer got there
-   first. `OidcGroupSnapshotWriter` and `CurrentUserProfileService` write the same way. It works on
-   every database provider Lighthouse supports.
+   is already how this codebase performs a compare-and-swap. **The precedent to copy is
+   `EmbedSessionTokenRepository.TryMarkRedeemedAsync`** (`Services/Implementation/Repositories/`),
+   because it is the same shape of problem - claim a thing once, and let the database say who won:
+
+   ```csharp
+   // ADR-131: one predicate, so the affected-row count is the single-use verdict.
+   public Task<int> TryMarkRedeemedAsync(string tokenId, DateTime redeemedAt, CancellationToken ct)
+   {
+       return context.EmbedSessionTokens
+           .Where(token => token.TokenId == tokenId
+               && token.RedeemedAt == null          // <- the guard belongs in the Where,
+               && token.RevokedAt == null           //    never in an if-statement above it
+               && token.ExpiresAt > redeemedAt)
+           .ExecuteUpdateAsync(
+               setters => setters.SetProperty(token => token.RedeemedAt, redeemedAt), ct);
+   }
+   ```
+
+   The day key takes the same form: the key and the *expected previous day* both go in the `Where`, the
+   new day is the `SetProperty`, and the returned count is the answer. Every condition that decides
+   whether this caller may proceed must be inside that single predicate - a check performed before the
+   statement is a read-then-write with extra steps, and loses the race it was written to win.
+
+   `SecretCustodyService.MoveAsync`, `OidcGroupSnapshotWriter` and `CurrentUserProfileService` use the
+   same construct for their own purposes. It works on every database provider Lighthouse supports.
 
    It does **not** go through the `AppSettings` upsert. `AppSettingService.UpsertSetting` reads and
    then writes, which is the shape the problem is. Every other setting is right to use it, and

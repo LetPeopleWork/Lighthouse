@@ -45,12 +45,12 @@ Established by reading the code before writing requirements. Every decision belo
 | S2 | **Lighthouse already phones home, unconsented.** Every instance calls GitHub for the release check, so GitHub sees the customer's server IP and User-Agent. Nobody has ever documented this. | `Services/Implementation/GitHubService.cs:20`, `LighthouseReleaseService.cs:48` |
 | S3 | The product ships the sentence **"Lighthouse never tracks how you use it, so your feedback is the only way we learn what to improve"** to every Community user, in a popup. | `components/SurveyNudge/SurveyNudge.tsx:114` |
 | S4 | The CRA self-assessment claims **"Minimal data collection, no telemetry"** as a conformance statement against requirement 1.7. | `docs/compliance/cra-self-assessment.md:35` |
-| S5 | Seven outcome KPIs sit at `status: deferred-pending-telemetry-feature`, each naming Epic #5015 as `blocked_by`. The KPI-contract preamble states as fact that no phone-home exists. | `docs/product/kpi-contracts.yaml:8,116,183,209,247,262` |
+| S5 | **Five** outcome KPIs sit at `status: deferred-pending-telemetry-feature`, naming Epic #5015 as `blocked_by`. The KPI-contract preamble states as fact that no phone-home exists *"unless the customer opts in (no such mechanism exists today)"*. **Corrected 2026-09-12** — this row said seven, and every line number it cited was stale. | `docs/product/kpi-contracts.yaml:7-9` (preamble), `:135,201,221,256,271` (the five) |
 | S6 | **No per-browser machinery exists.** `SurveyNudge` state lives in `AppSettings` — one row for the whole instance. The first person to dismiss it dismisses it for everybody. | `AppSettingKeys.SurveyNudgeNextEligibleAt`, `AppSettingService.cs:113` |
 | S7 | SurveyNudge cadence: Community-only, 14-day minimum install age, 6-month quiet cadence, 7-day remind-later capped at 2 repeats. | `nudgeEligibility.ts:26,36`, `AppSettingService.cs:20-24` |
-| S8 | `OptionalFeature` already carries `IsPremium`. The gate enforces it by **silently returning the unchanged feature** — no error, no signal, the write is dropped and the caller cannot tell. | `Models/OptionalFeatures/OptionalFeature.cs`, `API/OptionalFeaturesController.cs:41` |
+| S8 | `OptionalFeature` carries `IsPremium`, and the gate **refuses visibly**: `403 Forbidden`, *"Access Denied: Premium Features Required"*. **Corrected 2026-09-12** — this row said the write was silently dropped with a 200 and the caller could not tell. That was true when the row was written; story **#5876 has since shipped the fix**, so the S8 precondition this Epic depends on is **satisfied and verified**, not pending. | `Models/OptionalFeatures/OptionalFeature.cs`, `API/OptionalFeaturesController.cs:53-58` |
 | S9 | `OptionalFeatureSeeder` refreshes Name / Description / IsPreview / IsPremium on every upgrade but **never** `Enabled` — "whether it is on is the operator's". A brand-new key seeds with its declared `Enabled`. | `Services/Implementation/Seeding/OptionalFeatureSeeder.cs` |
-| S10 | Exactly one live optional feature (`DeltaSync`, preview, off). The toggle is `RbacGuard(SystemAdmin)`. | `OptionalFeatureKeys.cs`, `OptionalFeaturesController.cs:36` |
+| S10 | **Two** seeded optional features: `DeltaSync` ("Faster Updates", `Enabled = true`, **not** preview) and `FeatureOrdering` (`Enabled = false`, **`IsPremium = true`** — the one premium optional feature, and therefore the only row S8's gate actually refuses today). Four further keys exist but are not seeded. The toggle is `RbacGuard(SystemAdmin)`. **Corrected 2026-09-12** — this row said "exactly one live optional feature (`DeltaSync`, preview, off)", which was wrong on the count and on all three of DeltaSync's attributes. | `OptionalFeatureKeys.cs`, `Seeding/OptionalFeatureSeeder.cs:53-71`, `OptionalFeaturesController.cs:40` |
 | S11 | **There is no user identity in a large part of the installed base.** Auth is optional, and standalone can never have it. With auth off, `DisabledAuthenticationHandler` hands *every* caller the same subject `lighthouse\|auth-disabled`. | `Auth/DisabledAuthenticationHandler.cs:15`, `Auth/AuthModeResolver.cs:59` |
 | S12 | Everything a heartbeat needs already exists — version (`GetCurrentVersion()`), standalone/platform (`PlatformService`), licence tier (`CanUsePremiumFeatures()`), install timestamp. **No instance identifier exists.** | `LighthouseReleaseService.cs:22`, `PlatformService.cs:10,47`, `AppSettingKeys.InstallTimestamp` |
 | S13 | The footer already renders an icon row with tooltips (`ExternalLinkButton`) beside `LighthouseVersion` — the exact affordance the indicator needs, already styled. | `components/App/Footer/Footer.tsx:53-82` |
@@ -268,7 +268,10 @@ role, and on an auth-off instance there is no role to check (S11).
   collector (D10).
 - A vendor collector account and, if the probe picks a hosted processor, a signed DPA naming it. This
   is a procurement dependency with a lead time, not an engineering task.
-- Legal / DPO review of the consent copy and the D2 reading of ePrivacy Art 5(3) — DoR-9.
+- ~~Legal / DPO review of the consent copy and the D2 reading of ePrivacy Art 5(3) — DoR-9.~~
+  **No external review remains.** DoR-9 was rescoped on 2026-09-11 to a self-performed assessment with
+  the risk accepted in writing by the maintainer, and closed on 2026-09-12. This line survived the
+  rescope and implied a gate that no longer exists.
 - One EF migration per supported database provider for the consent record, generated via the existing
   `CreateMigration` script, additive-only.
 - Egress: the customer instance must be able to reach the collector host. Documented as a
@@ -615,7 +618,7 @@ be released as one.
 | 2 | Slice 01a consent without emitting | The half that can fail for structural reasons on the consent side: a browser-held decision the server can act on later, and a dialog that costs nothing to close undecided. Ships no emit path, so the product's existing "we collect nothing" claims stay true throughout. |
 | 3 | Slice 01b the first heartbeat | The half that can fail on the emit side: revocation latency, zero leak, and one heartbeat per instance rather than per replica. Also the slice that makes the product stop contradicting itself (S3, S4), because it is the slice that first makes those claims false — so nothing after it may ship before it. |
 | 4 | Slice 02 the ask | Highest learning leverage per hour: uptake is the number the whole Epic rests on, and until people are actually asked it is unmeasured. Deliberately before the admin switch, because a switch governing a prompt nobody sees proves nothing. |
-| 5 | Slice 03 admin veto | Dependency-driven: needs something to veto. The S8 defect fix it used to carry moved to story #5876 on 2026-08-31 and is now a precondition — confirm it before starting, and bring it back here if #5876 has not shipped. |
+| 5 | Slice 03 admin veto | Dependency-driven: needs something to veto. The S8 defect fix it used to carry moved to story #5876 on 2026-08-31 and became a precondition. **Confirmed shipped 2026-09-12** — the gate returns 403, so nothing comes back into this slice. |
 | 6 | Slice 04 product events | Last on purpose. The event vocabulary should be chosen once there is a real consenting population to spend it on, and after slice 02 tells us how big that population is. |
 
 Dogfood cadence: every slice is dogfooded on the vendor's own instance the day it ships. Slice 01b's
@@ -750,7 +753,10 @@ an unwritten decision.**
   table, not merely inconvenient.
 - Nothing may be read from or written to the browser before the consent click (D2).
 - No event may carry customer content, enforced as a CI invariant.
-- The premium gate must stop silently dropping writes before a privacy control rides on it (S8). Fixed by story #5876, not here — a precondition to verify, not an assumption to hold.
+- ~~The premium gate must stop silently dropping writes before a privacy control rides on it (S8).~~
+  **Verified satisfied 2026-09-12** by opening `OptionalFeaturesController.cs`: the gate returns
+  `403 Forbidden` with a message. Story #5876 shipped it. This was correctly written as "a precondition
+  to verify, not an assumption to hold" — and verifying it is what found the stale S8 row.
 - Two shipped surfaces and one compliance document currently promise the opposite of this Epic and
   must change with slice 01b (S3, S4) — the half that first makes them false.
 
@@ -2116,3 +2122,35 @@ both took one `grep` to settle. The working conclusion is not "review harder" �
 thorough. It is that **a claim about what existing code does is not review-able prose, and has to be
 opened rather than reasoned about.** The real precedent is named now, with its file, so the next
 reader can check it in one step.
+
+---
+
+## Wave: DELIVER / [REF] Current-State verification log, 2026-09-12
+
+The Final Wave Review Gate ran on 2026-09-12 and Eclipse's first blocker was that the fourteen
+Current-State claims had never been re-opened, given this Epic's record. Every one was then checked
+against the code. **Three were wrong.** The gate earned its cost here.
+
+| Claim | Verdict |
+|---|---|
+| S1 Telemetry name taken | Holds — both files present |
+| S2 GitHub release check phones home | Holds |
+| S3 SurveyNudge sentence | Holds — text present at the cited line |
+| S4 CRA row 1.7 | Holds |
+| **S5 "Seven" deferred KPIs** | **WRONG.** Five, and all six cited line numbers were stale. Corrected |
+| S6 SurveyNudge state is instance-wide | Holds |
+| S7 SurveyNudge cadence numbers | Holds |
+| **S8 premium gate drops writes silently** | **WRONG, and stale rather than invented.** It was true when written; #5876 shipped the fix and the gate now returns 403. The precondition this Epic rested on is therefore satisfied — which nobody knew, because nobody had looked |
+| S9 Seeder never refreshes `Enabled` | Holds |
+| **S10 "exactly one live optional feature (DeltaSync, preview, off)"** | **WRONG on the count and on all three attributes.** Two are seeded; DeltaSync is enabled and not preview; the premium one is `FeatureOrdering`, which matters because it is the only row S8's gate refuses |
+| S11 One shared subject when auth is off | Holds |
+| S12 No instance identifier exists | Holds |
+| S13 Footer icon row | Holds |
+| S14 No Terminology key covers this | Holds |
+
+Three in fourteen, in a document that four waves and several adversarial reviews had already passed
+over. Two of the three were **stale rather than fabricated** — true when written, overtaken by work
+elsewhere in the repository. That is a different failure from the invented `AppSetting.Key` migration,
+and it needs a different guard: an invented claim is caught by reading the code once, a stale claim is
+caught only by reading it **again, later**. Anything in this table is a snapshot with a date on it, not
+a standing fact.
