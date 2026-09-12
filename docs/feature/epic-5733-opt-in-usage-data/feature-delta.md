@@ -1258,19 +1258,37 @@ project customers emit into. Two jobs recover it, and neither writes to producti
 | `production-sweep` | Production project | **Read-only** query over a rolling window: zero events carry `$ip` or `$geoip_*` | The real project, on real traffic, with no synthetic rows written into the census |
 | `settings-parity` | Both projects | **Read-only** project-settings query: IP capture and the GeoIP transformation are in the same state in both | That `assertion-can-fail`'s result transfers to production at all |
 
-**With one project, two of those three jobs cannot run — stated plainly rather than quietly dropped.**
-The free plan allows one project (see Pre-requisites), so until a second exists:
+### The canary on one project - what survives, and how C4 is recovered
 
-| Job | Status on one project |
-|---|---|
-| `production-sweep` | **Runs, unchanged.** Read-only against the real project on real traffic. This is the job carrying most of the value |
-| `assertion-can-fail` | **Blocked.** It deliberately emits one event *without* `$geoip_disable` to prove the assertion can fail. Running that against the census would write a geo-enriched event into the dataset this Epic promises carries no location data |
-| `settings-parity` | **Moot.** Nothing to compare one project against |
+The free plan allows one project (see Pre-requisites), so the two-project shape above cannot be built
+as written. An earlier reading of this said C4 therefore went unfixed. **That overstated the loss.**
+C4 is two claims, and only one of them needed a second project.
 
-The cost is exactly what C4 identified and is not cosmetic: with only `production-sweep`, *"zero events
-carry `$geoip_*`"* stays green forever if the vendor stops projecting the property, including on the
-day the guarantee breaks. Layer 1 - the payload properties asserted against the serialised body in CI -
-is unaffected and remains the layer that actually meets the standard.
+What C4 actually feared: *"property X is absent" is green forever if the API stops projecting it.* The
+way that bites is a **rename** - if geo enrichment is running and the vendor renames
+`$geoip_country_code` to something else, `production-sweep` reports a clean census while location data
+flows. Proving the assertion can fail was only ever a proxy for catching that.
+
+It is catchable directly, read-only, on one project. PostHog exposes every property key a project has
+actually seen at `GET /api/projects/{project_id}/property_definitions/` (paged with `limit`/`offset`;
+no search parameter, so page through and filter locally - a census project's property vocabulary is
+small). So:
+
+| Job | Project | Action | Proves |
+|---|---|---|---|
+| `production-sweep` | The one project | **Read-only** query over a rolling window: zero events carry `$ip` or `$geoip_*` | The real project, on real traffic, with no synthetic rows written into the census |
+| `schema-sweep` **(new)** | The one project | **Read-only** listing of property definitions: no key matching `$geoip*`, `$geo*` or `$ip` exists at all | That `production-sweep`'s silence means absence rather than a renamed property. This is the C4 failure mode, caught at its source |
+| `assertion-can-fail` | **No project** | A plain unit test runs the same assertion logic over a fixture that *does* contain a geo property, and asserts it fails | The assertion is capable of failing. It never needed a vendor round trip to show this |
+| `settings-parity` | - | **Dropped.** Nothing to compare one project against, and with one project there is no drift between projects to detect | - |
+
+**The honest residual**, now small: nothing proves that the vendor's *live* enrichment would surface
+geo properties if it were switched on, because that is the one assertion needing a real event emitted
+without suppression, and there is no project to send it to that is not the census. What is left
+uncovered is "enrichment is on and produces properties we have never seen under any name" - narrower
+than "the assertion is vacuous", which is what the previous wording implied.
+
+Layer 1 - the payload properties asserted against the serialised request body in CI - is untouched by
+any of this and remains the layer that actually meets the standard.
 
 One idea to reject before someone has it: emitting the positive control into production under a
 synthetic `distinct_id` and deleting that person afterwards. It writes location data into the census,
@@ -1495,10 +1513,11 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
    obtain a drift detector for configuration that cannot drift until something is emitting. The
    canary's value begins when slice 01b ships, not now.
 
-   Worth five minutes before accepting the degradation: PostHog says Cloud users may *"create,
-   manage, and join organizations without limits"*, so a **second free organisation** may carry its
-   own one-project allowance. If it does, the canary gets its project at no cost and none of the
-   below applies. Unverified.
+   A second free organisation was considered as a way to get a second project at no cost, and
+   **declined on 2026-09-12 as not worth the administrative split** - two orgs means two member lists,
+   two billing surfaces and a personal API key whose scope spans both. The canary loses less than it
+   first appeared: see "The canary on one project", where the C4 failure mode is recovered read-only
+   against the single project.
 2. **Credentials, which are not four peers.** They have very different blast radii and must be
    handled differently:
 

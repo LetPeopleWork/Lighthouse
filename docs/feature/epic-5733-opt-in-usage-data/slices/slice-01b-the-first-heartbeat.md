@@ -81,8 +81,10 @@ revokes from the footer, and the next cycle produces nothing. That round trip is
   and the vendor's AI data-processing consent off at the **organization** level. Retention is not
   configurable - confirm it reads one year, which is what the free plan gives, per ADR-175 point 7.
 - **One project, not two.** The free plan allows one, and buying a second would move retention to
-  seven years. Of the canary's three jobs only `production-sweep` can run; `assertion-can-fail` and
-  `settings-parity` wait for a second project. The delta's canary section carries what that costs.
+  seven years. The canary becomes `production-sweep` plus a new read-only `schema-sweep` over the
+  project's property definitions, with the can-it-fail check demoted to a unit test over a fixture.
+  `settings-parity` is dropped. The delta's "canary on one project" section carries the reasoning and
+  the residual.
 - Docker available on any machine running the backend suite. The day-key claim cannot be tested on
   EF InMemory, which does not implement the conditional update it relies on, so those tests join the
   container-backed set the consent store already needs — and that set carries no `Integration`
