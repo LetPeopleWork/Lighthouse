@@ -35,14 +35,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// </summary>
         Task<int> TryRevokeAsync(string tokenHash, DateTime revokedAt, CancellationToken cancellationToken);
 
-        /// <summary>
-        /// Whether any browser still holds live consent. This is the whole of the question the emitter
-        /// asks, which is why it is one indexed existence check rather than a list to be counted:
-        /// withdrawing the last live grant makes it false the next time it is asked, with no separate
-        /// rule anywhere that has to remember to stop sending.
-        /// </summary>
-        Task<bool> AnyLiveGrantAsync(DateTime livenessThreshold, CancellationToken cancellationToken);
-
         Task<int> PruneStaleAsync(DateTime threshold, CancellationToken cancellationToken);
     }
 }

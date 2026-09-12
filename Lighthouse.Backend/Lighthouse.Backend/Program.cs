@@ -1404,6 +1404,7 @@ namespace Lighthouse.Backend
                 builder.Configuration.GetSection(UsageDataConfiguration.SectionName));
             builder.Services.AddScoped<IUsageDataConsentRepository, UsageDataConsentRepository>();
             builder.Services.AddScoped<IUsageDataConsentService, UsageDataConsentService>();
+            builder.Services.AddSingleton<IUsageDataGate, UsageDataGate>();
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);

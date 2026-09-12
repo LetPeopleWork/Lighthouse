@@ -48,14 +48,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     cancellationToken);
         }
 
-        public Task<bool> AnyLiveGrantAsync(DateTime livenessThreshold, CancellationToken cancellationToken)
-        {
-            return context.UsageDataConsents
-                .AnyAsync(consent => consent.Decision == UsageDataDecision.Granted
-                    && consent.LastSeenAt > livenessThreshold,
-                    cancellationToken);
-        }
-
         // Rows are removed on how long ago the browser was last seen, never on what it answered. A
         // refusal that ages out is a browser that has stopped visiting, and deleting it is what lets
         // a genuinely new browser be asked; deleting refusals sooner than grants would quietly turn

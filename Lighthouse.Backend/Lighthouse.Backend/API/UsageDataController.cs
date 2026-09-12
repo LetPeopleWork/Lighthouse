@@ -20,7 +20,14 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/[controller]")]
     [ApiController]
     [AllowAnonymous]
-    public class UsageDataController(IUsageDataConsentService consentService) : ControllerBase
+    // Answering the question and handing in what a browser saw are one job, not two. Everything here
+    // is the same anonymous surface for the same browser, identified by the same header, and the only
+    // reason the ingest route knows anything at all is that it has to check the answer the other
+    // routes recorded. Two controllers would put that one promise behind two exemptions from the
+    // authentication policy, with two chances to drift apart.
+#pragma warning disable S6960
+    public class UsageDataController(IUsageDataConsentService consentService, IUsageDataGate gate) : ControllerBase
+#pragma warning restore S6960
     {
         // Public because the rate limiter reads it too: the event endpoint is counted per browser
         // rather than per address, and two spellings of this name would count a whole office as one.
@@ -97,12 +104,21 @@ namespace Lighthouse.Backend.API
         /// </summary>
         [HttpPost("events")]
         [EnableRateLimiting(RateLimitingConfiguration.UsageDataIngestPolicy)]
-        public IActionResult HandInEvents([FromBody] UsageDataEventBatchDto? batch)
+        public async Task<IActionResult> HandInEvents(
+            [FromBody] UsageDataEventBatchDto? batch,
+            [FromHeader(Name = ConsentTokenHeader)] string? token,
+            CancellationToken cancellationToken)
         {
             if (!CanBeRead(batch))
             {
                 return BadRequest();
             }
+
+            // Whether the token resolves decides nothing here, which is the point: the answer below
+            // is the same either way. Nothing carries the permission away yet - the part that
+            // forwards comes next - but the question is asked from the moment anything can be handed
+            // in, so there is never a version of this endpoint that accepts without checking.
+            await gate.RequestPermitAsync(token, cancellationToken);
 
             return NoContent();
         }

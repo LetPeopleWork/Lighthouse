@@ -132,52 +132,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        public async Task AnyLiveGrantAsync_WithAGrantInsideTheWindow_IsTrue()
-        {
-            await Repository.AddAsync(Consent("live", UsageDataDecision.Granted, Now.AddDays(-1)), TestContext.CurrentContext.CancellationToken);
-
-            var anyone = await Repository.AnyLiveGrantAsync(Now.AddDays(-30), TestContext.CurrentContext.CancellationToken);
-
-            Assert.That(anyone, Is.True);
-        }
-
-        [Test]
-        public async Task AnyLiveGrantAsync_WithAGrantThatHasAgedOut_IsFalse()
-        {
-            await Repository.AddAsync(Consent("old", UsageDataDecision.Granted, Now.AddDays(-45)), TestContext.CurrentContext.CancellationToken);
-
-            var anyone = await Repository.AnyLiveGrantAsync(Now.AddDays(-30), TestContext.CurrentContext.CancellationToken);
-
-            Assert.That(anyone, Is.False,
-                "a browser that stopped visiting stops counting - clearing storage sends nothing, so "
-                + "silence is the only signal there is");
-        }
-
-        [Test]
-        public async Task AnyLiveGrantAsync_WithAGrantExactlyOnTheWindowEdge_IsFalse()
-        {
-            var edge = Now.AddDays(-30);
-            await Repository.AddAsync(Consent("edge", UsageDataDecision.Granted, edge), TestContext.CurrentContext.CancellationToken);
-
-            var anyone = await Repository.AnyLiveGrantAsync(edge, TestContext.CurrentContext.CancellationToken);
-
-            Assert.That(anyone, Is.False,
-                "the window is the last thirty days, not the last thirty days and one more moment. "
-                + "Somewhere a grant has to stop counting, and the edge is where it does");
-        }
-
-        [Test]
-        public async Task AnyLiveGrantAsync_WithOnlyRefusalsAndWithdrawals_IsFalse()
-        {
-            await Repository.AddAsync(Consent("no", UsageDataDecision.Declined, Now), TestContext.CurrentContext.CancellationToken);
-            await Repository.AddAsync(Consent("undone", UsageDataDecision.Revoked, Now), TestContext.CurrentContext.CancellationToken);
-
-            var anyone = await Repository.AnyLiveGrantAsync(Now.AddDays(-30), TestContext.CurrentContext.CancellationToken);
-
-            Assert.That(anyone, Is.False);
-        }
-
-        [Test]
         public async Task PruneStaleAsync_RemovesWhatHasAgedOut_AndKeepsWhatHasNot()
         {
             await Repository.AddAsync(Consent("ancient", UsageDataDecision.Granted, Now.AddDays(-100)), TestContext.CurrentContext.CancellationToken);

@@ -52,9 +52,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             repositoryMock
                 .Setup(r => r.FindByTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new UsageDataConsent { TokenHash = "digest", Decision = decision });
-            repositoryMock
-                .Setup(r => r.AnyLiveGrantAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
 
             var state = await CreateService().GetStateAsync("a-token", TestContext.CurrentContext.CancellationToken);
 
@@ -64,10 +61,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         [Test]
         public async Task GetState_WithNoToken_ReportsNotSending_WhoeverElseSaidYes()
         {
-            repositoryMock
-                .Setup(r => r.AnyLiveGrantAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true);
-
             var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
 
             Assert.That(state.Sending, Is.False);
