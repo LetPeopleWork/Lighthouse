@@ -11,13 +11,41 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
+import { useUsageDataConsent } from "../../../hooks/useUsageDataConsent";
+import { UsageDataDialog } from "../../UsageData/UsageDataDialog";
+import { UsageDataIndicator } from "../../UsageData/UsageDataIndicator";
 import ExternalLinkButton from "../Header/ExternalLinkButton";
 import LetPeopleWorkLogo from "../LetPeopleWork/LetPeopleWorkLogo";
 import LighthouseVersion from "../LetPeopleWork/LighthouseVersion";
 
+// The dialog's copy is held to these three by a build check, so they are stated once, here, rather
+// than drifting apart in the three places that would otherwise each keep their own copy.
+const COLLECTOR_NAME = "PostHog";
+const DATA_RESIDENCY = "Frankfurt, Germany";
+const DOCS_URL =
+	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
+
+const SENT_FIELDS = [
+	"A random identifier for this instance",
+	"Lighthouse version",
+	"How Lighthouse is deployed",
+	"Whether the licence is Community or Premium",
+	"When the data was sent",
+] as const;
+
+const NEVER_SENT = [
+	"work item titles",
+	"queries",
+	"names",
+	"URLs",
+	"email addresses",
+	"free text",
+] as const;
+
 const Footer: React.FC = () => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+	const usageData = useUsageDataConsent();
 
 	return (
 		<Box
@@ -78,9 +106,34 @@ const Footer: React.FC = () => {
 						</Box>
 					</Box>
 
-					<Box sx={{ textAlign: "right" }}>
+					<Box
+						sx={{
+							textAlign: "right",
+							display: "flex",
+							alignItems: "center",
+							gap: 0.5,
+						}}
+					>
+						{/* Beside the version, and shown whatever the answer is - an indicator that
+						    appears only while sending would answer nothing by its absence. */}
+						<UsageDataIndicator
+							state={usageData.indicatorState}
+							onOpenDecision={usageData.openDialog}
+						/>
 						<LighthouseVersion />
 					</Box>
+
+					<UsageDataDialog
+						open={usageData.isDialogOpen}
+						collectorName={COLLECTOR_NAME}
+						dataResidency={DATA_RESIDENCY}
+						fields={SENT_FIELDS}
+						neverSent={NEVER_SENT}
+						docsUrl={DOCS_URL}
+						willAskAgain={usageData.willAskAgain}
+						onDecision={usageData.decide}
+						onClose={usageData.closeDialog}
+					/>
 				</Box>
 			</Container>
 		</Box>

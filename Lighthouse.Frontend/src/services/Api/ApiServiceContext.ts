@@ -59,6 +59,7 @@ import {
 	type ITerminologyService,
 	TerminologyService,
 } from "./TerminologyService";
+import { type IUsageDataService, UsageDataService } from "./UsageDataService";
 import { type IVersionService, VersionService } from "./VersionService";
 import { type IWizardService, WizardService } from "./WizardService";
 import {
@@ -95,6 +96,7 @@ export interface IApiServiceContext {
 	databaseManagementService: IDatabaseManagementService;
 	oauthService: IOAuthService;
 	encryptionService: IEncryptionService;
+	usageDataService: IUsageDataService;
 }
 
 const defaultServices: IApiServiceContext = {
@@ -126,6 +128,7 @@ const defaultServices: IApiServiceContext = {
 	databaseManagementService: new DatabaseManagementService(),
 	oauthService: new OAuthService(),
 	encryptionService: new EncryptionService(),
+	usageDataService: new UsageDataService(),
 };
 
 export function getApiServices(): IApiServiceContext {

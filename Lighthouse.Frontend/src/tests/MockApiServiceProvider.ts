@@ -22,6 +22,7 @@ import type { ISurveyNudgeService } from "../services/Api/SurveyNudgeService";
 import type { ISystemInfoService } from "../services/Api/SystemInfoService";
 import type { ITeamService } from "../services/Api/TeamService";
 import type { ITerminologyService } from "../services/Api/TerminologyService";
+import type { IUsageDataService } from "../services/Api/UsageDataService";
 import type { IWorkTrackingSystemService } from "../services/Api/WorkTrackingSystemService";
 import type { IUpdateSubscriptionService } from "../services/UpdateSubscriptionService";
 
@@ -67,7 +68,22 @@ export const createMockApiServiceContext = (
 			null as unknown as IApiServiceContext["databaseManagementService"],
 		oauthService: createMockOAuthService(),
 		encryptionService: createMockEncryptionService(),
+		usageDataService: createMockUsageDataService(),
 		...overrides,
+	};
+};
+
+export const createMockUsageDataService = (): IUsageDataService => {
+	return {
+		// Not sending, nobody has decided: the state a fresh instance is actually in, so a test
+		// that forgets to override this gets the honest default rather than a consenting one.
+		getState: vi.fn().mockResolvedValue({
+			sending: false,
+			decision: null,
+			willAskAgain: true,
+		}),
+		recordDecision: vi.fn().mockResolvedValue("mock-consent-token"),
+		revoke: vi.fn().mockResolvedValue(undefined),
 	};
 };
 
