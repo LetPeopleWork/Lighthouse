@@ -44,6 +44,12 @@ const granted: IUsageDataState = {
 	willAskAgain: false,
 };
 
+const declined: IUsageDataState = {
+	sending: false,
+	decision: "Declined",
+	willAskAgain: true,
+};
+
 afterEach(() => {
 	localStorage.clear();
 	vi.restoreAllMocks();
@@ -65,6 +71,23 @@ describe("useUsageDataConsent", () => {
 
 		expect(usageDataService.revoke).toHaveBeenCalledWith("this-browsers-token");
 		expect(usageDataService.recordDecision).not.toHaveBeenCalled();
+	});
+
+	// Saying no mints a token too, deliberately, so that the instance knows it has already asked.
+	// The consequence is that holding one says nothing about having agreed - and anything deciding
+	// whether to send by asking "is there a token" would send on behalf of somebody who said not to,
+	// while every other test in this file carried on passing. What is sending is the server's answer,
+	// never the presence of the token.
+	it("says a browser that refused is not sending, even though it holds a token", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "the-token-a-refusal-also-mints");
+		const { result } = renderConsent(declined);
+
+		await waitFor(() =>
+			expect(result.current.indicatorState).toBe("not-sending"),
+		);
+		expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBe(
+			"the-token-a-refusal-also-mints",
+		);
 	});
 
 	it("records a refusal from a browser that has not decided, because there is nothing to withdraw", async () => {
