@@ -56,7 +56,7 @@ const renderDialog = (overrides?: Partial<UsageDataDialogProps>) => {
 const anchorOnRenderedDialog = () =>
 	expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-describe.skip("UsageDataDialog", () => {
+describe("UsageDataDialog", () => {
 	it.each(THE_FIVE_FIELDS)(
 		"names %s as something that would be sent",
 		(field) => {

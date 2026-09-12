@@ -21,7 +21,7 @@ const renderIndicator = (
 	return { onOpenDecision, button: screen.getByRole("button") };
 };
 
-describe.skip("UsageDataIndicator", () => {
+describe("UsageDataIndicator", () => {
 	it("says it is sending, in words rather than as a symbol to interpret", () => {
 		const { button } = renderIndicator("sending");
 

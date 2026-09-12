@@ -1,9 +1,9 @@
-/**
- * RED scaffold — Epic 5733 slice 01. DELIVER replaces this body.
- *
- * The throw interpolates its arguments because noUnusedParameters is on: a stub that ignores
- * its props does not compile, and underscore-prefixing them would force a rename in DELIVER.
- */
+import CloudOffIcon from "@mui/icons-material/CloudOff";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import IconButton from "@mui/material/IconButton";
+import { useTheme } from "@mui/material/styles";
+import Tooltip from "@mui/material/Tooltip";
+import type React from "react";
 
 /**
  * What the instance is doing right now, as far as this browser can tell.
@@ -20,12 +20,34 @@ export interface UsageDataIndicatorProps {
 	onOpenDecision: () => void;
 }
 
+// The two states are told apart by these words, not by the icon and not by colour. Someone using a
+// screen reader, or looking at the page in greyscale, gets the same answer as everyone else - and
+// "is this instance sending data about how I work" is not a question to answer in hue alone.
+const SENDING_LABEL = "Usage data: being sent from this browser";
+const NOT_SENDING_LABEL = "Usage data: not being sent";
+
 export const UsageDataIndicator = ({
 	state,
 	onOpenDecision,
 }: UsageDataIndicatorProps): React.ReactElement => {
-	throw new Error(
-		`UsageDataIndicator(state=${state}, onOpenDecision=${typeof onOpenDecision}) is not implemented`,
+	const theme = useTheme();
+
+	const isSending = state === "sending";
+	const label = isSending ? SENDING_LABEL : NOT_SENDING_LABEL;
+	const Icon = isSending ? CloudUploadIcon : CloudOffIcon;
+
+	return (
+		<Tooltip title={label} arrow>
+			<IconButton
+				size="small"
+				color="inherit"
+				onClick={onOpenDecision}
+				aria-label={label}
+				data-testid="usage-data-indicator"
+			>
+				<Icon fontSize="small" style={{ color: theme.palette.primary.main }} />
+			</IconButton>
+		</Tooltip>
 	);
 };
 
