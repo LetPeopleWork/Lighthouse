@@ -71,8 +71,8 @@ the re-consent path becomes its own slice ahead of this one.
 
 ## Reference class
 
-Slice 01's heartbeat. Same pipe, same gate, same purity invariant — the marginal event should be
-cheap. If it is not, the emitter was built wrong in slice 01 and that is worth knowing.
+Slice 01b's heartbeat. Same pipe, same gate, same purity invariant — the marginal event should be
+cheap. If it is not, the emitter was built wrong in slice 01b and that is worth knowing.
 
 ## Watch
 

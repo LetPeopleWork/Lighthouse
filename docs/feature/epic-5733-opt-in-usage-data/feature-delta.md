@@ -63,7 +63,7 @@ deployment shapes.
 
 ∴ **S3 + S4 are a shipping blocker, not a follow-up.** The day this Epic's first slice ships, the
 product tells users it never tracks them while an indicator in the footer says it does. Both surfaces
-are corrected inside slice 01 or slice 01 does not ship.
+are corrected inside slice 01b — the slice that first makes them false — or slice 01b does not ship.
 
 ∴ **S6 means there is nothing to reuse.** The consent record is new machinery. The *cadence
 arithmetic* in `AppSettingService` is a model to copy, not a component to share.
@@ -419,7 +419,7 @@ propagated.
 - AC-04.5 A collector that is unreachable, slow, or returning errors causes no user-visible failure,
   no retry storm, and at most one log line per emit attempt.
 - AC-04.6 The dashboard is reachable by the maintainer and shows the vendor's own dogfood instance
-  reporting on the day slice 01 ships.
+  reporting on the day slice 01b ships.
 - AC-04.7 The docs state that the instance count means "instances with at least one consenting user"
   (D3).
 
@@ -565,16 +565,18 @@ Decision enabled: whether to invest further in a shipped feature, fix it, or ret
 `Find out what Lighthouse sends` → `Decide` → `Change my mind` → `Govern it for my organisation`
 → (vendor side) `Learn from what came back`
 
-| Activity | Slice 01 (skeleton) | Slice 02 | Slice 03 | Slice 04 |
-|---|---|---|---|---|
-| Find out what it sends | US-01 indicator, US-02 dialog + docs page | — | — | US-08 docs widened |
-| Decide | US-02 (on click) | US-05 (asked unprompted, honest cadence) | — | — |
-| Change my mind | US-03 | — | — | — |
-| Govern it | — | — | US-06 switch (US-07 honest refusal → story #5876) | — |
-| Learn from it | US-04 heartbeat + census | — | — | US-08 product events |
+| Activity | Slice 01a (decide) | Slice 01b (emit) | Slice 02 | Slice 03 | Slice 04 |
+|---|---|---|---|---|---|
+| Find out what it sends | US-01 indicator, US-02 dialog + docs page | docs page names the separate GitHub call | — | — | US-08 docs widened |
+| Decide | US-02 (on click) | — | US-05 (asked unprompted, honest cadence) | — | — |
+| Change my mind | US-03 as a record, indicator follows | US-03 enforced against the emitter (AC-03.2) | — | — | — |
+| Govern it | — | — | — | US-06 switch (US-07 honest refusal → story #5876) | — |
+| Learn from it | — | US-04 heartbeat + census | — | — | US-08 product events |
 
-**Walking skeleton = slice 01.** One browser consents, one heartbeat leaves, the maintainer sees it,
-one click stops it. Everything after thickens a path that already runs.
+**Walking skeleton = slice 01a followed by 01b.** One browser consents, one heartbeat leaves, the
+maintainer sees it, one click stops it. Split on 2026-09-12 so each half is a day's work. 01a sends
+nothing, which is why the two copy corrections travel with 01b rather than with it: they are still
+true across the whole of 01a. Everything after thickens a path that already runs.
 
 **Preceded by SPIKE-00** (collector probe), which is not a slice: it ships no user value and must not
 be released as one.
@@ -585,11 +587,11 @@ be released as one.
 
 | Test | Verdict |
 |---|---|
-| Any slice shipping 4+ new components? | Slice 01 ships indicator + dialog + consent record + emitter + docs = 5. **Fails.** Accepted with reason: this is a walking skeleton (Strategy A) and removing any one of the five leaves a path that does not run end to end. Deliberately compensated by shrinking its scope to one event, one payload, no cadence, no admin switch, no premium. |
-| Does every slice depend on a new abstraction? | No. Slices 02–04 depend on slice 01's consent record, which slice 01 ships first — the abstraction leads, as required. |
+| Any slice shipping 4+ new components? | **Passes, after the 2026-09-12 split.** The combined slice 01 shipped indicator + dialog + consent record + emitter + docs = 5 and failed this test. It was accepted as a walking-skeleton cost, and DESIGN then made it worse. Split into **01a** (indicator, dialog, consent record with its endpoints) and **01b** (gate, heartbeat with its day key, publisher, docs and copy). |
+| Does every slice depend on a new abstraction? | No. Slices 01b–04 depend on the consent record, which slice 01a ships first — the abstraction leads, as required. |
 | Does any slice disprove a pre-commitment? | Yes, each. See per-slice hypotheses in the slice briefs. |
 | Synthetic data only? | No. Every slice's acceptance runs against the vendor's own production instance emitting into the real collector on the day it ships. |
-| Two slices identical except for scale? | Slice 01 (heartbeat) and slice 04 (product events) are both "emit an event". Not merged: 01 proves consent and transport with a payload that has no user in it, 04 proves the event *vocabulary* is the right one, and they fail for different reasons. |
+| Two slices identical except for scale? | Slice 01b (heartbeat) and slice 04 (product events) are both "emit an event". Not merged: 01b proves consent and transport with a payload that has no user in it, 04 proves the event *vocabulary* is the right one, and they fail for different reasons. |
 
 ---
 
@@ -598,12 +600,13 @@ be released as one.
 | Order | Item | Rationale |
 |---|---|---|
 | 1 | SPIKE-00 collector probe | Highest uncertainty, blocks everything, and the wrong answer is expensive in both money (plan tier) and architecture (D10). Failing here costs a day. |
-| 2 | Slice 01 walking skeleton | The only slice that can fail for structural reasons. Also the slice that makes the product stop contradicting itself (S3, S4), so nothing else may ship before it. |
-| 3 | Slice 02 the ask | Highest learning leverage per hour: uptake is the number the whole Epic rests on, and until people are actually asked it is unmeasured. Deliberately before the admin switch, because a switch governing a prompt nobody sees proves nothing. |
-| 4 | Slice 03 admin veto | Dependency-driven: needs something to veto. The S8 defect fix it used to carry moved to story #5876 on 2026-08-31 and is now a precondition — confirm it before starting, and bring it back here if #5876 has not shipped. |
-| 5 | Slice 04 product events | Last on purpose. The event vocabulary should be chosen once there is a real consenting population to spend it on, and after slice 02 tells us how big that population is. |
+| 2 | Slice 01a consent without emitting | The half that can fail for structural reasons on the consent side: a browser-held decision the server can act on later, and a dialog that costs nothing to close undecided. Ships no emit path, so the product's existing "we collect nothing" claims stay true throughout. |
+| 3 | Slice 01b the first heartbeat | The half that can fail on the emit side: revocation latency, zero leak, and one heartbeat per instance rather than per replica. Also the slice that makes the product stop contradicting itself (S3, S4), because it is the slice that first makes those claims false — so nothing after it may ship before it. |
+| 4 | Slice 02 the ask | Highest learning leverage per hour: uptake is the number the whole Epic rests on, and until people are actually asked it is unmeasured. Deliberately before the admin switch, because a switch governing a prompt nobody sees proves nothing. |
+| 5 | Slice 03 admin veto | Dependency-driven: needs something to veto. The S8 defect fix it used to carry moved to story #5876 on 2026-08-31 and is now a precondition — confirm it before starting, and bring it back here if #5876 has not shipped. |
+| 6 | Slice 04 product events | Last on purpose. The event vocabulary should be chosen once there is a real consenting population to spend it on, and after slice 02 tells us how big that population is. |
 
-Dogfood cadence: every slice is dogfooded on the vendor's own instance the day it ships. Slice 01's
+Dogfood cadence: every slice is dogfooded on the vendor's own instance the day it ships. Slice 01b's
 dogfood *is* its acceptance (AC-04.6).
 
 ---
@@ -612,7 +615,7 @@ dogfood *is* its acceptance (AC-04.6).
 
 | ID | Target | Measurement | Slice |
 |---|---|---|---|
-| OUT-usagedata-consent-uptake | Grants per reporting instance trends upward over the 60 days after slice 02, and the dogfood instance's own grants ÷ decisions is ≥ 20% | Distinct granting browsers per reporting instance at the collector, plus a direct SQL read of the consent table on the vendor's own instance | 02 |
+| OUT-usagedata-consent-uptake | The dogfood instance's own grants ÷ decisions is ≥ 20% within 60 days of slice 02 | A direct SQL read of the consent table on the vendor's own instance | 02 |
 | OUT-usagedata-instances-reporting | ≥ 25 distinct instance identifiers report in a rolling 24h window within 90 days of slice 02 | Distinct instance identifiers at the collector | 01, 02 |
 | OUT-usagedata-zero-leak-before-consent | **0 requests to the collector host** from an instance that has no consenting browser | Automated: an integration test asserting no outbound call on the collector host across a full emit cycle with zero consent, plus an ArchUnitNET rule forbidding ad-hoc HTTP client construction so the assertion cannot be bypassed | 01 |
 | OUT-usagedata-revocation-latency | 100% of revocations stop the next emit; 0 emits after a revoke | Automated assertion at the emit path (AC-03.2) | 01 |
@@ -624,13 +627,24 @@ dogfood *is* its acceptance (AC-04.6).
 gates. The rest are collector-sourced and become measurable for the first time *because* of this
 Epic — which is the recursion the Epic exists to break.
 
-**`OUT-usagedata-consent-uptake` was rewritten on 2026-09-11**, in DEVOPS, because the original
-wording was unmeasurable rather than merely hard: it asked for grants ÷ dialogs shown *both counted at
-the collector*, and a browser that declines sends nothing — that is D3, enforced as a hard CI gate by
-`OUT-usagedata-zero-leak-before-consent`. The denominator would have required an event from the
-browsers that refused. The ratio is dropped centrally; the one place a true ratio exists is the
-vendor's own instance, where the consent table records grants, declines and revocations and a SQL read
-costs nothing. n=1, unrepresentative, and a real number. See the DEVOPS Monitoring Contracts section.
+**`OUT-usagedata-consent-uptake` has been rewritten twice, and the second rewrite is the one that
+matters.**
+
+On **2026-09-11**, in DEVOPS, because the original wording was unmeasurable rather than merely hard:
+it asked for grants ÷ dialogs shown *both counted at the collector*, and a browser that declines sends
+nothing — that is D3, enforced as a hard CI gate by `OUT-usagedata-zero-leak-before-consent`. The
+denominator would have required an event from the browsers that refused. The ratio is dropped
+centrally; the one place a true ratio exists is the vendor's own instance, where the consent table
+records grants, declines and revocations and a SQL read costs nothing. n=1, unrepresentative, and a
+real number. See the DEVOPS Monitoring Contracts section.
+
+On **2026-09-12**, because what survived that rewrite still had a half that could not fail. "Grants
+per reporting instance trends upward over the 60 days after slice 02" is satisfied by one additional
+grant, so it was a target in form only. It is deleted rather than re-targeted, because
+`OUT-usagedata-instances-reporting` already asks the same funnel question with a threshold that can
+actually fail — 25 distinct instances in a rolling 24-hour window within 90 days. Two measures over
+one funnel, one of which cannot fail, is worse than one that can. What is left is the dogfood ratio:
+n=1, falsifiable, and cheap.
 
 ---
 
@@ -660,10 +674,10 @@ costs nothing. n=1, unrepresentative, and a real number. See the DEVOPS Monitori
 | 3 | Every story traces to a job | PASS | 4 job IDs, all four used; no `infrastructure-only` story. |
 | 4 | Acceptance criteria testable | PASS | Every AC names an observable. The three purity/latency ACs are automated invariants rather than review items. |
 | 5 | Dependencies identified | PASS | Pre-requisites section. SPIKE-00 and the DPA procurement lead time are the two that can actually block. |
-| 6 | Slices ≤ 1 day with learning hypotheses | PASS with one documented exception | Slice 01 fails the 4-component taste test as an accepted walking-skeleton cost; see Slice Taste Tests. |
+| 6 | Slices ≤ 1 day with learning hypotheses | PASS | The exception was slice 01, which failed the 4-component taste test. Split into 01a and 01b on 2026-09-12; both pass, and each keeps its own hypothesis. See Slice Taste Tests. |
 | 7 | Out-of-scope explicit | PASS | Out of Scope section; the OptionalFeatures rework is explicitly deferred to the board. |
 | 8 | Outcome KPIs with numeric targets and measurement method | PASS | 7 KPIs, each with a target and a named source. |
-| 9 | Compliance assessment, **self-performed and risk accepted by the maintainer** — six questions, see below | **PARTLY CLOSED 2026-09-11** | Re-scoped on 2026-09-11. The row previously said "legal / DPO sign-off" and named two questions; three waves then widened it to six without editing the row, so it understated its own gate. It also assumed a legal function that does not exist here. The maintainer's decision: read it ourselves, accept the risk in writing, do not buy a review. |
+| 9 | Compliance assessment, **self-performed and risk accepted by the maintainer** — six questions, see below | **CLOSED 2026-09-12** for slice 01; question 2 remains open and governs slice 04 | Re-scoped on 2026-09-11. The row previously said "legal / DPO sign-off" and named two questions; three waves then widened it to six without editing the row, so it understated its own gate. It also assumed a legal function that does not exist here. The maintainer's decision: read it ourselves, accept the risk in writing, do not buy a review. |
 
 **DoR-9's six questions, and where each stands:**
 
@@ -672,7 +686,7 @@ costs nothing. n=1, unrepresentative, and a real number. See the DEVOPS Monitori
 | 1 | The ePrivacy Art 5(3) reading behind D2 — a post-click token is strictly-necessary | **Accepted.** The argument is written out in D2 and stands on EDPB Guidelines 2/2023. Risk accepted: it is a reading, not a ruling |
 | 2 | Whether a widened payload needs re-consent (AC-08.5) | **Open**, and it governs slice 04 and A14's value set, not slice 01 |
 | 3 | The PostHog DPA | **READ 2026-09-11.** SCCs plus EU-US Data Privacy Framework; return-or-delete on request at termination; sub-processors by general authorization against a **dynamic** page. See the residency finding below |
-| 4 | Retention and erasure (H10) | **Ours to set, not PostHog's.** The DPA specifies no retention period during service, so this is a project-settings decision plus a documented position. Still open |
+| 4 | Retention and erasure (H10) | **Closed 2026-09-12.** 13 months at the collector — or the shortest option at or above a year, if the vendor's settings do not offer thirteen months. The identifier is not deleted when consent lapses, because deleting it would count a returning instance twice. Revocation stops future sending and does not erase what was already sent, and the dialog says so rather than letting a reader infer deletion. Written into ADR-175 point 7 |
 | 5 | `POSTHOG_PERSONAL_API_KEY` blast radius (P11) | **Accepted** with the custody in P11 |
 | 6 | Whether census data may appear in a public CI log (P14) | **Closed by P14** — the canary asserts on counts and property names only |
 
@@ -686,10 +700,10 @@ of the consent dialog who infers the second from the first has been misled by om
 same failure class A13 exists to prevent for the IP, and it earns the same treatment: the dialog says
 where the data rests and does not imply it never goes further.
 
-**DoR verdict: 8 of 9 PASS; DoR-9 partly closed, two questions open (2 and 4), neither blocking slice
-01.** Question 2 governs slice 04. Question 4 needs a retention number and a sentence, both of which
-are ours to write. **Slice 01 is no longer gated on an external party** — it is gated on writing the
-retention position down.
+**DoR verdict: 9 of 9 PASS as of 2026-09-12.** DoR-9's question 4 closed that day, with the retention
+and erasure position now written out in ADR-175 point 7. One question remains open — question 2,
+whether a widened payload needs re-consent — and it governs slice 04 and A14's value set, not slice
+01. **Neither 01a nor 01b is gated on an external party or on an unwritten decision.**
 
 ---
 
@@ -713,8 +727,9 @@ retention position down.
 - Primary jobs: the maintainer needs to know whether shipped features landed and what the installed
   base runs; the user needs to decide once, on evidence, and be able to undo it; the administrator
   needs one enforceable lever.
-- Walking skeleton scope: slice 01 — consent → heartbeat → collector → revoke, plus the docs page and
-  the two copy corrections that stop the product contradicting itself.
+- Walking skeleton scope: slice 01, split into **01a and 01b** on 2026-09-12 — consent → heartbeat →
+  collector → revoke, plus the docs page and the two copy corrections that stop the product
+  contradicting itself.
 - Feature type: cross-cutting (backend emitter, frontend consent surface, licensing, public docs,
   compliance).
 
@@ -725,14 +740,14 @@ retention position down.
 - No event may carry customer content, enforced as a CI invariant.
 - The premium gate must stop silently dropping writes before a privacy control rides on it (S8). Fixed by story #5876, not here — a precondition to verify, not an assumption to hold.
 - Two shipped surfaces and one compliance document currently promise the opposite of this Epic and
-  must change with slice 01 (S3, S4).
+  must change with slice 01b (S3, S4) — the half that first makes them false.
 
 ### Upstream Changes
 - **`docs/product/kpi-contracts.yaml` preamble is now false in principle.** It states there is no
   phone-home mechanism. Amended at slice 04 (AC-08.6), when the first KPI actually moves. Not amended
   earlier — the statement stays true for every non-consenting instance, which is all of them until
   slice 02.
-- **`docs/compliance/cra-self-assessment.md` row 1.7 is amended at slice 01**, not slice 04. A
+- **`docs/compliance/cra-self-assessment.md` row 1.7 is amended at slice 01b**, not slice 04. A
   conformance claim must be true the moment the capability exists, regardless of uptake.
 - **#5015's non-negotiables are inherited into this Epic verbatim** (opt-in only, GDPR-compliant,
   transparent, configurable endpoint). #5015 is `Removed`; this delta is where they now live.
@@ -903,7 +918,7 @@ alone; where it means "assessed and rejected", the reason is stated.
 | `IRepository<T>` / `RepositoryBase<T>` | **UNCHANGED — rejected for the consent store** | `GetByPredicate` takes `Func<T,bool>` and evaluates client-side over a materialised `DbSet`. Fine for a dozen `AppSettings` rows; would load every consent row per emit |
 | `ISystemInfoService` / `SystemInfo` | **UNCHANGED — deliberately** | Readable by any signed-in viewer including inside an embed frame. Its own doctrine (*"named here rather than at the call site so that a fourth one added later is withheld by this sentence"*) is honoured by keeping the identifier out |
 | `TelemetryConfiguration` / `TelemetryConfigurator` | **UNCHANGED** | Namespace-disjoint. Those names stay OpenTelemetry/Prometheus |
-| `SurveyNudge.tsx` | **EXTEND (copy fix)** | Line 114 ships *"Lighthouse never tracks how you use it"* to every Community user. Corrected in slice 01 or slice 01 does not ship |
+| `SurveyNudge.tsx` | **EXTEND (copy fix)** | Line 114 ships *"Lighthouse never tracks how you use it"* to every Community user. Corrected in slice 01b — the slice that first makes it false — or slice 01b does not ship |
 | `nudgeEligibility.ts` | **UNCHANGED — pattern copied** | A pure decision function, not a hook. The model for `usageDataEligibility.ts`. Arithmetic copied, storage not: nudge state is one instance-wide row, consent is per browser |
 | `AppSettingService` survey cadence | **UNCHANGED — arithmetic copied** | Same reason. Sharing would force browser scope onto a shipped instance-wide behaviour |
 | `Footer.tsx` | **EXTEND** | Mount the indicator in the right-hand box beside `LighthouseVersion` |
@@ -957,7 +972,7 @@ cheap to reverse and none is load-bearing for the shape of the design.
 
 | # | Assumption | Reverse if |
 |---|---|---|
-| 1 | Consent liveness window = **30 days** | The product owner prefers a different decay. This is a product number, not an architectural one |
+| 1 | Consent liveness window = **30 days** | **RESOLVED 2026-09-12 — kept at 30 days, and the dialog now says so.** Shortening it decays the consent of anyone who does not open Lighthouse weekly, and re-asking someone who already agreed is the repeated prompt the no-nag outcome exists to prevent. The month-long tail is disclosed rather than engineered away. See ADR-173 |
 | 2 | "Tokenless" state endpoint means "no authentication", with the consent token in a request header | Intended literally, in which case per-browser state is not answerable and US-01 needs rework |
 | 3 | Instance identifier is minted on a **grant only**, not on a refusal | Read differently — but AC-04.3's "no consenting browser means no identifier at all" seems decisive |
 | 4 | Consent token stored in `localStorage`, not `sessionStorage` | Consent should not survive a browser restart, which would contradict "decide once" |
@@ -975,11 +990,12 @@ cheap to reverse and none is load-bearing for the shape of the design.
   after the window. Both halves are testable; the delta currently implies one behaviour.
 - AC-07.1's refusal is a contract change on an endpoint with existing callers. Extend the test factory
   before touching it.
-- The zero-leak assertion needs the `DelegatingHandler` harness built as part of slice 01, not after.
+- The zero-leak assertion needs the `DelegatingHandler` harness built as part of slice 01b, not after.
+  It cannot be written in 01a, where no collector client exists for it to observe.
 
 **To DELIVER**
 
-- **Verify the PostHog per-event privacy properties before slice 01 ships** (assumption 6). Blocking.
+- **Verify the PostHog per-event privacy properties before slice 01b ships** (assumption 6). Blocking.
 - Set the canary schedule interval — it is the exposure window for vendor drift.
 - `docs/settings/usagedata.md` is the single source for the field list with three consumers that must
   agree (dialog, docs, CI assertion). Build the comparison check with the first event, not the fifth.
@@ -987,8 +1003,9 @@ cheap to reverse and none is load-bearing for the shape of the design.
 
 **Still open upstream, unchanged by DESIGN**
 
-- DoR-9 (legal sign-off on the consent copy and the ePrivacy Art 5(3) reading) remains open and
-  blocking for slice 01 shipping. DESIGN did not close it and cannot.
+- ~~DoR-9 remains open and blocking for slice 01 shipping.~~ **Closed 2026-09-12** — self-performed
+  and risk-accepted rather than bought as a legal review, which is what the row had assumed. See the
+  DoR Validation section.
 - AC-08.5 (whether a widened payload requires re-consent) is a legal question that now also governs
   the deployment-mode value set — which is why A14 fixes that set at slice 01 rather than later.
 
@@ -1022,16 +1039,23 @@ follows is what changed, not a defence.
 
 ### Accepted, not yet fixed — carried into DISTILL
 
-- **H6 — slice 01 is oversized and DESIGN made it worse.** DISCUSS accepted a 5-component exception;
-  DESIGN's own summary is 12 backend types + 4 frontend + 6 extensions + 2 migrations + a schema
-  change + an ArchUnit fixture + a test harness + a docs CI check. The reviewer's split (01a consent
-  record/endpoints/indicator/dialog with no emit; 01b gate/publisher/heartbeat/docs/copy) is sound and
-  is **recommended to the product owner** — re-slicing is not the architect's call to make alone.
+- **H6 — slice 01 is oversized and DESIGN made it worse. ACCEPTED AND DONE 2026-09-12.** DISCUSS
+  accepted a 5-component exception; DESIGN's own summary was 12 backend types + 4 frontend + 6
+  extensions + 2 migrations + a schema change + an ArchUnit fixture + a test harness + a docs CI
+  check. The reviewer's split is now the plan: **01a** consent record, endpoints, indicator and
+  dialog, sending nothing; **01b** gate, publisher, heartbeat, docs and copy. The objection that
+  splitting would leave the product contradicting itself mid-slice runs the wrong way — 01a sends
+  nothing, so the two surfaces promising Lighthouse collects nothing stay true across the whole of it,
+  and they are corrected in 01b, where they first become false. One consequence to carry: the
+  zero-leak assertion is vacuously green in 01a, because there is no collector client there to make a
+  request, so it must be written in 01b or it proves nothing.
 - **H2 — AC-05.6 (never in the same session as the survey nudge) has no owner.** A GDPR Art 7(4)
   requirement with no named mechanism. Proposed: a session-scoped flag written by whichever dialog
   opens first, owned by the shared caller of the two eligibility functions. Needs a decision in DISTILL.
-- **H10 — no retention or erasure position.** Now written into ADR-175 point 7 as two questions for
-  DoR-9 rather than silently omitted, but unanswered.
+- **H10 — no retention or erasure position. CLOSED 2026-09-12.** Answered in ADR-175 point 7: 13
+  months at the collector, the identifier kept when consent lapses so that a returning instance is not
+  counted as a new one, and revocation as a stop rather than an erasure — with the dialog saying so
+  plainly instead of leaving a reader to infer deletion.
 - **AC-01.2 / AC-01.4 / AC-02.7 remain untraceable**: greyscale-safe indicator states, un-gated
   rendering across all three deployment shapes, and how the indicator flips in the same interaction as
   the dialog (two components, two directories, no shared state designed). DISTILL must close these.
@@ -1952,19 +1976,56 @@ dispatched. It is the documented entry condition for DELIVER and must clear — 
 the DEVOPS band on 2026-09-11 (NEEDS_REVISION, 8 blocking, all fixed); that was a per-wave review and
 does not substitute for the consolidated gate.
 
-**DoR-9 still blocks shipping, not building.** Everything below may be built; none of it may ship.
+**DoR-9 no longer blocks slice 01.** It closed on 2026-09-12; see the DoR Validation section. Its one
+remaining question governs slice 04.
 
-What DELIVER picks up, in order:
+What DELIVER picks up, in order. **Slice 01 was split into 01a and 01b on 2026-09-12**, and the
+ordering below now spans the two: steps 1 and 3 are 01a, steps 2, 4 and 5 are 01b.
 
-1. **The driven side first**, because four of six adapters and most of the error paths are owed there:
-   the consent entity and repository (Postgres, `requires-docker`), the identifier and its migration
-   (additive, one table — no `AppSetting` schema change), the gate and permit, then the publisher.
-2. **Then the invariants that need those types**: payload purity, revocation latency, the zero-leak
-   `DelegatingHandler` plus the ArchUnit rule, and the multi-replica heartbeat CAS.
-3. **Then the wiring**: the service, the indicator in `Footer`, the dialog, and the two wiring tests
-   the component tests deliberately do not cover.
-4. **Then the corrections that gate the ship**: `SurveyNudge` copy (un-skip DT-12's test),
-   `cra-self-assessment.md` row 1.7, and `docs/settings/usagedata.md` with the CI field-list check.
+1. **The driven side of consent first** (01a), because most of the error paths are owed there: the
+   consent entity and repository (Postgres, `requires-docker`), and the identifier with its migration
+   (additive, one table — no `AppSetting` schema change).
+2. **Then the gate, the permit and the publisher** (01b), and the invariants that need them: payload
+   purity, revocation latency, the zero-leak `DelegatingHandler` plus the ArchUnit rule, and the day
+   key that keeps three replicas to one heartbeat. The day key is a conditional update read by its
+   affected-row count, not a read-then-write upsert, and it needs a seeded row and a database
+   container — see ADR-174 point 8, which also retracts a precedent an earlier draft cited wrongly.
+3. **Then the consent wiring** (01a): the service, the indicator in `Footer`, the dialog,
+   `docs/settings/usagedata.md`, and the two wiring tests the component tests deliberately do not
+   cover.
+4. **Then the corrections that gate the ship** (01b, because 01b is what makes them false):
+   `SurveyNudge` copy (un-skip DT-12's test), `cra-self-assessment.md` row 1.7, and the CI field-list
+   check over the docs page.
 5. **Last, the Playwright walking skeleton** (DT-13), with the collector host pointed at a blackhole in
    all six app-start blocks (P12).
 6. Never push red; un-skip only as each block goes green.
+
+---
+
+## Wave: DELIVER / [REF] Five decisions taken 2026-09-12, and one premise withdrawn
+
+Slice 01 had been held on five open questions. None was external and none needed another wave to
+answer, so they were answered together. Each is recorded in the section it belongs to as well; this
+is the one place that lists them.
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | How long the collector keeps events | **13 months**, or the shortest option at or above a year if the vendor's project settings do not offer thirteen. Every outcome measure is a rolling window, and the longest question anyone asks the census is year-on-year. The continuous-integration project takes the shortest retention it can. ADR-175 point 7 |
+| 2 | What the heartbeat day key is written with | A **narrow conditional-update accessor of its own**, not the `AppSettings` upsert, using the `ExecuteUpdateAsync`-with-the-old-value-in-the-`Where` shape this codebase already uses for compare-and-swap. ADR-174 point 8 |
+| 3 | Whether slice 01 splits | **Yes — 01a and 01b.** The reviewer's H6 split, accepted |
+| 4 | The 30-day consent decay | **Kept at 30 days, and disclosed in the dialog.** ADR-173 |
+| 5 | Whether the uptake measure needs a target that can fail | **Yes**, and the half that could not fail is deleted rather than re-targeted |
+
+**A premise withdrawn, found while writing decision 2.** ADR-174 point 8 said the day key used "the
+same compare-and-swap shape that `DeliveryMetricSnapshot`'s `RecordedDay` already uses". It does not.
+`DeliveryMetricSnapshotRepository.GetOrCreateForDay` reads with `FirstOrDefault` and then adds, and
+its one-row-per-day guarantee comes from a unique index over `(DeliveryId, RecordedDay)` in
+`LighthouseAppContext` rather than from an affected-row count. An implementer following the pointer
+would have written the defect the point exists to prevent.
+
+This is the **second** invented precedent in this Epic, after the `AppSetting.Key` deduplication that
+five review passes sharpened instead of checking. Both were citations to code, both were wrong, and
+both took one `grep` to settle. The working conclusion is not "review harder" — the reviews were
+thorough. It is that **a claim about what existing code does is not review-able prose, and has to be
+opened rather than reasoned about.** The real precedent is named now, with its file, so the next
+reader can check it in one step.

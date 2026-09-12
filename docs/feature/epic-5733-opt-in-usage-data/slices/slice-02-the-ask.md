@@ -56,7 +56,7 @@ not return in the same session, confirm the survey nudge does not appear alongsi
 
 ## Dependencies
 
-- Slice 01 shipped (consent record, dialog, indicator all exist).
+- Slices 01a and 01b shipped (consent record, dialog, indicator, gate and heartbeat all exist).
 - Nothing new external.
 
 ## Effort
