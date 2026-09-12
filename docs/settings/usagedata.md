@@ -51,7 +51,7 @@ Every event carries these, attached by **your** server rather than by your brows
 
 | Field | What it is | Example |
 |---|---|---|
-| Browser identifier | A random value, generated in this browser the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account | `a7f2…` |
+| Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
 | Deployment mode | How it is deployed | `Docker`, `Kubernetes`, `Standalone` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |
@@ -143,7 +143,7 @@ sent anywhere — not to the collector, not to us.
 |---|---|---|
 | One consent row per browser | Your Lighthouse database | So your answer survives a page reload, and so a browser that already answered is not asked again |
 | An opaque token | Your browser's local storage | How this browser proves which consent row is its own |
-| A browser identifier | Your browser's local storage | The random value that travels with events. Deliberately kept apart from the token above — the token can revoke your consent, so it must never reach anybody else |
+| A browser identifier | Your Lighthouse database, on the same consent row | The random value that travels with events. It is **not** stored in your browser, and it is never sent to your browser or accepted from it — your browser presents its token, and the server looks the identifier up. Deliberately kept apart from the token: the token can revoke your consent, so it must never reach anybody else, while this value exists precisely to leave |
 
 The consent row holds the **hash** of that token, never the token itself, along with your decision,
 when you made it, and when this browser was last seen. The server therefore cannot reproduce your
