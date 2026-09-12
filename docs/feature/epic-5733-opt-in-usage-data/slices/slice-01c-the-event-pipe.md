@@ -46,15 +46,22 @@ does not happen — with nothing queued anywhere that could outlive the decision
 - **The zero-leak harness**: the `DelegatingHandler` assertion **and** the architecture rule
   forbidding ad-hoc HTTP client construction, which is what stops the assertion decaying into a
   tautology.
-- **`docs/settings/usagedata.md` rewritten — this is a SHIP BLOCKER, not a follow-up.** The page still
-  describes the daily heartbeat, and the shipped dialog links to it as the authoritative account while
-  deliberately carrying no field list of its own. **That makes this page the only place the payload
-  list exists.** A real event leaves an instance in this slice, so the page must describe that event,
-  its route-pattern values and the instance properties **before the slice ships** — not after it, not
-  in the next slice. Shipping the event first would mean the product emits data it has not disclosed,
-  which is the Epic's one non-negotiable ("an event that ships ahead of its documentation is a
-  defect", AC-08.2) failing on the very first event. **The rewrite is inside this slice's definition
-  of done.**
+- **`docs/settings/usagedata.md` — REWRITTEN AHEAD OF THE CODE, 2026-09-12. What remains is a SHIP
+  BLOCKER, not a follow-up.** The page no longer describes the daily heartbeat: it now describes the
+  event, the closed event vocabulary, the six instance properties, the browser identifier, the
+  browsers-not-installations limitation, and the activity-trace disclosure. It was rewritten early
+  precisely because the shipped dialog links to it as the authoritative account while deliberately
+  carrying no field list of its own — **that makes this page the only place the payload list exists**,
+  and it was describing a mechanism that will never be built.
+  **Two things are still owed by this slice, and they block the ship:** the page carries a
+  `{: .note }` block saying Lighthouse sends nothing yet, which must be **removed** in the same change
+  that makes it false; and the page's payload description must be **re-verified against what actually
+  ships**, since it was written from the design rather than from running code. It is much easier to
+  make the code match a written disclosure than to write the disclosure afterwards — that is the point
+  of having done it first, not a licence to skip the check.
+  Shipping the event ahead of its disclosure would mean the product emits data it has not declared,
+  which is this Epic's one non-negotiable failing on the very first event. **The page's accuracy is
+  inside this slice's definition of done.**
 - **Copy corrections**: `SurveyNudge.tsx:114` and the CRA self-assessment row 1.7. Both assert
   Lighthouse collects nothing. This is the slice that makes that false, so this is the slice that
   fixes them.

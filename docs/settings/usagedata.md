@@ -7,9 +7,9 @@ nav_order: 8
 
 # Usage Data
 
-Lighthouse can send a small daily signal about **the instance itself** — its version, how it is
-deployed, and which licence tier it runs on. Nothing is sent unless somebody using that instance
-agrees to it first, and anyone can stop it again with one click.
+Lighthouse can tell us **which parts of it get used**, and a little about the instance doing the
+using — its version, how it is deployed, which licence tier it runs on. Nothing is sent unless
+somebody using that instance agrees to it first, and anyone can stop it again with one click.
 
 This page is the full account: what is sent, what is never sent, who holds it, how long they hold it,
 and what Lighthouse stores on your own server to remember your answer. If the consent dialog and this
@@ -17,43 +17,95 @@ page ever disagree, that is a bug — they are checked against each other, and a
 actually sent, on every build.
 
 **It is off until somebody turns it on.** A Lighthouse instance that nobody has answered on sends
-nothing at all, and has no identifier to send.
+nothing at all.
+
+{: .note }
+> **In this release Lighthouse sends nothing yet.** The consent dialog, the footer indicator and the
+> record of your answer all work today; the sending described below arrives in a later release. This
+> page describes what will be sent, so that anyone deciding now decides with the full picture rather
+> than a promise to publish one later.
 
 ## Why this exists
 
-Lighthouse has no idea how many instances are running, which versions people are actually on, or
-whether an upgrade reached anyone. Download counts and whoever happens to post in Slack are the whole
-picture today. That makes "is it safe to stop supporting this version" a guess, and it leaves several
-questions about whether shipped features landed permanently unanswerable.
+Lighthouse has no idea which versions people are actually on, or whether a feature that shipped is
+being opened by anyone. Download counts and whoever happens to post in Slack are the whole picture
+today. That makes "is it safe to stop supporting this version" a guess, and it leaves "did anyone
+ever use the thing we spent a month on" unanswerable.
 
 ## What is sent
 
-Exactly five fields, once per day, per instance:
+An **event** — a named thing that happened — plus a small, fixed set of facts about the instance. No
+event is sent unless a browser on that instance holds live consent at the moment it happens, and that
+check runs on your own server, against your own database, every single time.
+
+The complete list of events:
+
+| Event | When it is sent | What travels with it |
+|---|---|---|
+| A detail tab was opened | Somebody opened a tab on a Team or Portfolio page | Which of the two kinds of page it was, and which tab. **Never which Team or which Portfolio** |
+
+That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
+things — and the build fails if anything outside it is sent.
+
+Every event carries these, attached by **your** server rather than by your browser:
 
 | Field | What it is | Example |
 |---|---|---|
-| Instance identifier | A random value, generated on this instance the first time somebody agrees. Derived from nothing — not your hostname, not your licence key, not your database name | `f4c1…` |
-| Lighthouse version | The version this instance is running | `v26.9.9.9` |
+| Browser identifier | A random value, generated in this browser the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account | `a7f2…` |
+| Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
 | Deployment mode | How it is deployed | `Docker`, `Kubernetes`, `Standalone` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |
-| Timestamp | When the signal was sent | `2026-09-12T04:00:00Z` |
+| Authentication | Whether this instance has authentication switched on | `true`, `false` |
+| Timestamp | When it happened | `2026-09-12T09:14:07Z` |
 
-That is the complete list. There is no sixth field, and the message that goes out is checked against
-this list automatically rather than by anyone remembering to look.
+### What the page address never contains
+
+Lighthouse pages have addresses like `/teams/42/metrics`, where `42` identifies one of *your* Teams.
+That number never leaves your browser. What the browser records is not a shortened address — it is a
+fixed label chosen from the closed list above, so there is no address present to shorten and nothing
+to accidentally get wrong.
 
 ## What is never sent
 
 Nothing about your work, and nothing about you:
 
 - No work item titles, identifiers, queries or descriptions
-- No team, portfolio or delivery names
+- No team, portfolio or delivery names, and no identifiers for any of them
 - No user names, email addresses or account identifiers
-- No URLs, no free text of any kind
+- No URLs, no page addresses, no free text of any kind. The message has **no field capable of
+  carrying free text** — that is a property of its shape, not a rule somebody has to remember
 - **No IP address.** The message explicitly carries an instruction not to record one, and the
   collector is configured to discard it as well
 - **No location.** Location lookup is off, and the message carries an instruction to skip it
 
-The signal describes a *deployment*, not a person and not a project.
+## What this does reveal, which a once-a-day signal would not
+
+Said plainly, because it is the real cost of counting features rather than installations:
+
+**The times of the events describe when somebody was working.** Events arrive as they happen, so a
+consenting browser leaves a rough trace of the hours it was in use, and therefore of a working day and
+an approximate time zone. We cannot remove this from our side — a timestamp is what makes an event an
+event.
+
+**What it still cannot show** is which person, which Team, or what they were looking at. It is the
+shape of activity, not its content.
+
+## Counting browsers, not installations
+
+**Lighthouse cannot count how many installations exist, and that is deliberate.**
+
+The identifier above belongs to a browser. Nothing in the message says which instance sent it, so two
+colleagues consenting on the same Lighthouse count as two, exactly as two people at different
+companies would. There is no field that could join them.
+
+This is a choice, and it costs us the number we would most like to have. An instance identifier
+alongside a browser identifier would link colleagues to one another, which says more about a group of
+people than either value does on its own. We would rather be unable to answer "how many installations"
+than hold that.
+
+So every number here counts *browsers*, and a large shared installation weighs more than a small one.
+The `Authentication` field exists only so we can tell whether "one browser is roughly one person" is a
+reasonable reading on that instance at all.
 
 ## Where it goes, and who holds it
 
@@ -66,18 +118,21 @@ standard contractual clauses. The sub-processors holding the data are EU-located
 network that carries it in transit is global, as it is for any web request. We would rather say this
 than let the word "Frankfurt" imply something stronger than it means.
 
-Lighthouse sends this **from the server**, not from your browser. Your browser never contacts the
-collector, which is also why nothing here can be blocked or seen by a browser extension.
+**Your browser never contacts the collector.** It tells your own Lighthouse server that something
+happened; your server decides whether consent allows it, and only your server talks to PostHog. That
+is also why nothing here is distorted by ad blockers — a blocked request would make the data quietly
+wrong rather than absent, and we would have no way to tell which.
 
 ### How long it is kept
 
-**One year.** This is not a dial we can turn down — the collector sets retention by plan and does not
-allow a shorter period, so one year is what the plan we are on provides. It comfortably covers every
-question we ask of this data, all of which look back days or weeks rather than years.
+**One year.** This is not a dial we can turn down — the collector sets a retention floor by plan and
+does not allow a shorter one, and one year is the floor on the plan we are on. It comfortably covers
+every question we ask of this data, all of which look back days or weeks rather than years.
 
-We can only state that number because it cannot move quietly. A longer retention period counts as a
-material change, so it would mean updating this page, updating the dialog, and **asking everyone who
-already agreed to agree again** — not a billing decision taken without you.
+A paid plan would raise that floor to **seven years**. That is not a change we could make quietly: a
+longer retention period counts as a material change, so it would mean updating this page, updating the
+dialog, and **asking everyone who already agreed to agree again**. Staying inside the free plan's
+limits is therefore a commitment about your data, not only about our costs.
 
 ## What Lighthouse stores on your own server
 
@@ -87,8 +142,8 @@ sent anywhere — not to the collector, not to us.
 | What | Where | Why |
 |---|---|---|
 | One consent row per browser | Your Lighthouse database | So your answer survives a page reload, and so a browser that already answered is not asked again |
-| A random identifier for this instance | Your Lighthouse database, in application settings | So the daily signal can be counted as one instance rather than many. Created **only** when somebody agrees — an instance nobody has agreed on never has one |
 | An opaque token | Your browser's local storage | How this browser proves which consent row is its own |
+| A browser identifier | Your browser's local storage | The random value that travels with events. Deliberately kept apart from the token above — the token can revoke your consent, so it must never reach anybody else |
 
 The consent row holds the **hash** of that token, never the token itself, along with your decision,
 when you made it, and when this browser was last seen. The server therefore cannot reproduce your
@@ -107,20 +162,19 @@ An indicator sits in the footer next to the version number, showing whether this
 anything. Clicking it opens the dialog, which lists the fields above and offers two buttons. You can
 open it any time; opening it and closing it without choosing stores nothing at all.
 
-Revoking takes effect on the **next** send — there is nothing cached to go stale.
+Revoking takes effect on the **next event**. Your server re-checks consent every single time, against
+the database rather than anything remembered, so there is nothing cached to go stale and no window in
+which a page left open keeps sending.
 
 Two honest limits:
 
 - **Revoking stops future sends. It does not erase what was already sent**, which ages out on the
   retention period above.
-- **If you simply clear your browser storage, that browser stops counting after about 30 days**, not
-  immediately. Clearing storage happens entirely on your machine and produces no request, so the
-  server has no way to learn about it — it notices only when the browser stops showing up. If that was
-  the only browser that had agreed, the instance keeps sending for up to a month.
-
-An instance is counted in the total while **at least one browser holds live consent**, so "instances
-reporting" means "instances with at least one recently active consenting browser" rather than
-"instances installed".
+- **If you simply clear your browser storage, that browser stops sending immediately** — it no longer
+  holds the token that proves which answer was its own, so there is nothing for your server to approve
+  and it will be asked again as though it had never decided. Clearing storage happens entirely on your
+  machine and produces no request, so your server cannot learn about it directly; the consent row it
+  left behind lingers for about 30 days before ageing out, but it no longer permits anything.
 
 ## Something Lighthouse already sends, which this does not cover
 
