@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// is scoped to the usage data path rather than written as a rule for everybody.
         /// </summary>
         [Test]
-        [Ignore(NothingToInspectYet)]
         public void NothingOnTheEmitPath_BuildsItsOwnWayOut()
         {
             var sources = EverySourceFileOnTheEmitPath();
@@ -89,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// reviewers have to keep, which is the whole reason the design chose closed lists.
         /// </summary>
         [Test]
-        [Ignore(NothingToInspectYet)]
         public void NothingSentOrReceivedOnThisPath_HasAFieldThatCouldHoldFreeText()
         {
             var messages = EveryMessageTypeOnTheEmitPath();
