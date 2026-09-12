@@ -102,6 +102,184 @@ describe("useUsageDataConsent", () => {
 		expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBeNull();
 	});
 
+	// Each of the three conditions guarding the withdrawal is load-bearing on its own, and dropping
+	// any one of them sends the wrong request: withdrawing a grant that was never given, or minting
+	// a second row while the live grant keeps the instance sending.
+	it("records a refusal from a browser holding a token but no prior grant", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-from-an-earlier-refusal");
+		const { result, usageDataService } = renderConsent(undecided);
+
+		await waitFor(() =>
+			expect(result.current.indicatorState).toBe("not-sending"),
+		);
+		await act(async () => {
+			await result.current.decide("declined");
+		});
+
+		expect(usageDataService.recordDecision).toHaveBeenCalledWith("declined");
+		expect(usageDataService.revoke).not.toHaveBeenCalled();
+	});
+
+	it("records a fresh grant rather than withdrawing when an existing grant is reaffirmed", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		const { result, usageDataService } = renderConsent(granted);
+
+		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
+		await act(async () => {
+			await result.current.decide("granted");
+		});
+
+		expect(usageDataService.recordDecision).toHaveBeenCalledWith("granted");
+		expect(usageDataService.revoke).not.toHaveBeenCalled();
+	});
+
+	it("records a refusal when the grant belongs to some other browser, because there is no token to withdraw", async () => {
+		const { result, usageDataService } = renderConsent(granted);
+
+		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
+		await act(async () => {
+			await result.current.decide("declined");
+		});
+
+		expect(usageDataService.recordDecision).toHaveBeenCalledWith("declined");
+		expect(usageDataService.revoke).not.toHaveBeenCalled();
+	});
+
+	it("starts out admitting it does not know yet, and claims nothing about a dialog or a failure", () => {
+		const { result } = renderConsent(undecided, {
+			getState: vi.fn().mockReturnValue(new Promise(() => {})),
+		});
+
+		expect(result.current.indicatorState).toBe("unknown");
+		expect(result.current.willAskAgain).toBe(false);
+		expect(result.current.isDialogOpen).toBe(false);
+		expect(result.current.failedToRecord).toBe(false);
+	});
+
+	// The indicator fails closed: it goes back to saying nothing rather than keeping the last good
+	// answer on screen. Asserting this from a cold start would prove nothing, because not knowing is
+	// also where it starts - so this one has to know first, and then stop knowing.
+	it("stops claiming to know once the state can no longer be fetched", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			const getState = vi
+				.fn()
+				.mockResolvedValueOnce(granted)
+				.mockRejectedValue(new Error("backend is down"));
+			const { result } = renderConsent(undecided, { getState });
+
+			await waitFor(() =>
+				expect(result.current.indicatorState).toBe("sending"),
+			);
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
+			});
+
+			expect(result.current.indicatorState).toBe("unknown");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	// A browser that cannot be asked has not consented, which is the safe reading. The token has to
+	// be in storage first, or the null this asserts on is just the empty store answering normally and
+	// the test passes without the throw ever happening.
+	it("treats a browser that cannot be asked for a token as one that holds none", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-it-cannot-read-back");
+		vi.spyOn(globalThis.localStorage, "getItem").mockImplementation(() => {
+			throw new Error("this is a private window");
+		});
+		const { result, usageDataService } = renderConsent(undecided);
+
+		await waitFor(() =>
+			expect(result.current.indicatorState).toBe("not-sending"),
+		);
+		expect(usageDataService.getState).toHaveBeenCalledWith(null);
+	});
+
+	it("closes the dialog and clears an earlier failure once an answer gets through", async () => {
+		const recordDecision = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("backend is down"))
+			.mockResolvedValue("freshly-minted-token");
+		const { result } = renderConsent(undecided, { recordDecision });
+
+		act(() => {
+			result.current.openDialog();
+		});
+		await act(async () => {
+			await result.current.decide("granted");
+		});
+		expect(result.current.failedToRecord).toBe(true);
+
+		await act(async () => {
+			await result.current.decide("granted");
+		});
+
+		expect(result.current.failedToRecord).toBe(false);
+		expect(result.current.isDialogOpen).toBe(false);
+	});
+
+	it("closes a dialog it opened", async () => {
+		const { result } = renderConsent(undecided);
+
+		act(() => {
+			result.current.openDialog();
+		});
+		expect(result.current.isDialogOpen).toBe(true);
+
+		act(() => {
+			result.current.closeDialog();
+		});
+		expect(result.current.isDialogOpen).toBe(false);
+	});
+
+	// A tab left open for weeks never mounts the footer again, so this interval is the only thing
+	// keeping the browser's consent from ageing out under somebody using Lighthouse every day. An
+	// interval of the wrong length looks identical at mount and only goes wrong an hour later.
+	it("re-asks for the state once an hour, not sooner", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			const { result, usageDataService } = renderConsent(undecided);
+			await waitFor(() =>
+				expect(result.current.indicatorState).toBe("not-sending"),
+			);
+			expect(usageDataService.getState).toHaveBeenCalledTimes(1);
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(59 * 60 * 1000);
+			});
+			expect(usageDataService.getState).toHaveBeenCalledTimes(1);
+
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(60 * 1000);
+			});
+			expect(usageDataService.getState).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("stops re-asking once the component holding it is gone", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			const { result, unmount, usageDataService } = renderConsent(undecided);
+			await waitFor(() =>
+				expect(result.current.indicatorState).toBe("not-sending"),
+			);
+
+			unmount();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000);
+			});
+
+			expect(usageDataService.getState).toHaveBeenCalledTimes(1);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("writes nothing to browser storage just by being used", async () => {
 		const { result } = renderConsent(undecided);
 

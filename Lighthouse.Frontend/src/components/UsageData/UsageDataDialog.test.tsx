@@ -87,6 +87,36 @@ describe("UsageDataDialog", () => {
 		},
 	);
 
+	// Each category is separately checked above, but only as an "appears somewhere" match. Run the
+	// six together and a mutation that drops the separator turns the sentence into
+	// "work item titlesqueriesnames", which every one of those matches still passes.
+	it("reads as a sentence rather than a run-on list", () => {
+		renderDialog();
+
+		expect(
+			screen.getByText(
+				"We never send work item titles, queries, names, URLs, email addresses, free text.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("says nothing about a failure it has not had", () => {
+		renderDialog();
+
+		anchorOnRenderedDialog();
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	// Closing on a failure would tell somebody their choice had been taken when it had not, so the
+	// dialog stays open and has to say why it is still there.
+	it("says the answer was not saved, and that nothing changed", () => {
+		renderDialog({ failedToRecord: true });
+
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			/could not be saved, so nothing has changed/i,
+		);
+	});
+
 	it("links the full list, so the dialog is not the only place the answer exists", () => {
 		renderDialog();
 
