@@ -50,6 +50,7 @@ These examples are guidance to help you find the boundary. They do not expand or
 | Fork the repository and keep your changes to yourself | Yes |
 | Read, study and test the source to understand how it works | Yes — and no license can take that right away |
 | Install, configure, operate, train on or consult about Lighthouse **on a client's own deployment** | Yes |
+| Analyze a client's data on **your own** instance and hand them the forecast, report or advice | Yes |
 
 **Not allowed**
 
@@ -57,13 +58,21 @@ These examples are guidance to help you find the boundary. They do not expand or
 |---|---|
 | Offer Lighthouse, or a modified Lighthouse, as a hosted or managed service to others | It is a hosted service built on our software |
 | Run Lighthouse **for** a client, on infrastructure you control, so they get access rather than running it | Same reason — the client must run their own instance |
+| Give a client a login, a shared dashboard, or an embedded view of *your* instance | Same reason — they are getting access to the software, not your analysis of their data |
 | Remove or bypass the license key check, or hide the features it protects | Named directly in the license |
 | Remove or alter the licensing and copyright notices | Named directly in the license |
 | Build a separate forecasting product out of Lighthouse's source that replaces it | It is a competing substitute — and this holds even if it is free, even if it is only used inside one company, and even if it is rewritten in a different language |
 | Feed the source to an AI to produce any of the above | The result is what matters, not how it was produced |
 
 {: .note}
-If you are a consultant or coach working with Lighthouse: helping a client set up, run and get value from **their own** Lighthouse deployment is explicitly permitted, and stays permitted even though we offer such services ourselves. What is not permitted is running it for them as a service you operate.
+> If you are a consultant or coach working with Lighthouse, both of these are explicitly permitted, and stay permitted even though we offer such services ourselves:
+>
+> - helping a client set up, run and get value from **their own** Lighthouse deployment; and
+> - pulling a client's data into **your own** instance, and handing them the forecast, report or advice that comes out of it.
+>
+> The line is what the client ends up with. Your analysis of their data is your work product. Access to a running Lighthouse is the software itself, and giving them that — a login, a shared dashboard, an embedded view — makes your instance a hosted service for them, which is not permitted.
+>
+> Two practical notes for that second case. A premium license covers the **organization that bought it**, so your own instance is covered by your license; a client running their own instance needs their own. And pulling a client's delivery data onto your infrastructure is a data-protection question as well as a licensing one — our "your data never leaves your network" claim is about *their* network, so agree that move with them in writing.
 
 **If you are not sure**, ask us at [letpeople.work](https://letpeople.work#contact){:target="_blank"}. A question is cheaper for both of us than a guess.
 
