@@ -150,8 +150,17 @@ heartbeat keeps emitting until the row ages out.
 No design closes this gap, because the signal never reaches the server: clearing storage is a local
 act that produces no request. The only levers are the length of the window and the honesty of the
 documentation. Shortening it narrows the gap and makes consent decay faster for people who use
-Lighthouse infrequently; lengthening it does the reverse. **30 days is a proposal, not a finding**,
-and it is the kind of number the product owner should set rather than the architect.
+Lighthouse infrequently; lengthening it does the reverse.
+
+**The window stays at 30 days, decided by the maintainer on 2026-09-12, and the dialog says so.**
+Shortening it trades one wrong for another: a week-long window silently decays the consent of anyone
+who does not open Lighthouse every week - a holiday, a sprint spent elsewhere - and re-asking someone
+who has already said yes is the repeated prompt that the no-nag outcome exists to prevent. A tail of
+up to a month after the last consenting browser stops visiting is the honest cost of a consent that a
+browser holds and a server acts on, and it is small against a census whose longest question spans a
+year. So the gap earns disclosure rather than arithmetic: the dialog tells the reader that sending
+stops within 30 days of their last visit. That makes the tail something they were told about instead
+of something they would have to discover.
 
 The consequence is also a correction to what the census means. The delta already requires the docs to
 say the instance count means "instances with at least one consenting user". With a liveness window it

@@ -115,14 +115,52 @@ requires and that nothing outside the gate can construct.**
    is wrong by the same factor.
 
    The emit is therefore guarded by a **day key**: `UsageData:LastHeartbeatDay` in `AppSettings`,
-   written as a conditional update whose affected-row count is the verdict, in the same
+   claimed with a conditional update whose affected-row count is the verdict, in the
    compare-and-swap shape [ADR-173](./adr-173-consent-as-a-server-side-record-with-a-liveness-window.md)
-   argues for and that `DeliveryMetricSnapshot`'s `RecordedDay` already uses. Whichever replica wins
-   the day emits; the others see zero rows affected and skip. This is preferred over
-   `IUpdateExecutionLock` because it also survives a restart mid-day - a lock released at process exit
-   would let the next start emit again - and because it reuses the `AppSettings` extension
-   [ADR-175](./adr-175-instance-identifier-as-an-appsettings-scalar-minted-on-first-grant.md) already
-   introduces rather than pulling in the update-queue machinery.
+   argues for. Whichever replica wins the day emits; the others see zero rows affected and skip. It
+   survives a restart mid-day, which a lock does not: a lock released at process exit lets the next
+   start emit again.
+
+   **The mechanism is `ExecuteUpdateAsync` with the expected old value in the `Where` clause**, which
+   is already how this codebase performs a compare-and-swap.
+   `Services/Implementation/Encryption/SecretCustodyService.cs` moves a stored secret onto a new key
+   with `.Where(row => row.Id == id && row.Value == expected).ExecuteUpdateAsync(...)` and reads the
+   returned count as the verdict - one row means this caller won, zero means another writer got there
+   first. `OidcGroupSnapshotWriter` and `CurrentUserProfileService` write the same way. It works on
+   every database provider Lighthouse supports.
+
+   It does **not** go through the `AppSettings` upsert. `AppSettingService.UpsertSetting` reads and
+   then writes, which is the shape the problem is. Every other setting is right to use it, and
+   widening it would make all of them pay for this one. The day key gets its own narrow accessor whose
+   return value is whether the claim succeeded.
+
+   Two things the mechanism does not do on its own, both of which fail silently:
+
+   - A conditional update over a row that does not exist affects zero rows. An unseeded day key
+     therefore means the claim fails forever and the heartbeat never emits at all. The key must be
+     seeded, and "the row is absent" is a scenario to write, not an edge case to assume away.
+   - `AppSettingSeeder` removes obsolete settings **by `Id`**, while `AppSettingService` mints every
+     row it writes with `Id = 0`. The day key must be seeded through the path that assigns it a real
+     id, or a later cleanup pass can delete a different row than the one it names.
+
+   A precedent an earlier draft of this ADR cited, and should not have:
+   `DeliveryMetricSnapshot`'s `RecordedDay` is **not** a compare-and-swap.
+   `DeliveryMetricSnapshotRepository.GetOrCreateForDay` reads with `FirstOrDefault` and then adds -
+   read-then-write - and its one-row-per-day guarantee comes from a unique index over
+   `(DeliveryId, RecordedDay)` declared in `LighthouseAppContext`, not from an affected-row count.
+   Following that pointer would have produced the defect this point exists to prevent.
+
+   `IUpdateExecutionLock` would not have served here in any case, for reasons the interface hides.
+   `Program.cs` picks the implementation on whether a **Redis** connection string is present, not on
+   how many replicas are running - and the implementation it picks when there is none,
+   `InProcessUpdateExecutionLock`, acquires nothing and hands back a scope that does nothing. The
+   Postgres implementation takes a blocking `pg_advisory_lock`, so it is Postgres-only, and it is
+   keyed by an update type plus an entity id, which an instance-wide heartbeat does not have.
+
+   The cost lands in the tests. EF InMemory does not implement `ExecuteUpdateAsync`, so the day-key
+   tests run against a real database container, alongside the consent-store tests that already need
+   one for the same reason. Those tests carry no `Integration` category, so nothing filters them out:
+   they run on every push and need Docker on the machine running them.
 
 ## An honesty note about the zero-leak outcome
 
@@ -203,11 +241,16 @@ the established pattern, not a new one. *This contradicts the SPIKE's design not
 "hangs naturally off the `BackgroundServices/Update/UpdateServiceBase` pattern".*
 `IDomainEventDispatcher` -> **UNCHANGED**, assessed and rejected as the invalidation channel on its
 own documented swallow-and-continue policy. `UpdateQueueService` -> **UNCHANGED**.
-`IUpdateExecutionLock` -> **assessed; superseded by the day-key below**. An earlier draft dismissed it
-with "cluster-wide single execution is not needed... the identifier is per instance rather than per
-replica". The second clause is true and the first does not follow from it: all replicas share one
-database and therefore one identifier, and a plain `AddHostedService` runs in every replica, so a
-three-replica deployment emits three heartbeats a day under one `distinct_id`. See the cluster note. `AddHttpClient` registrations -> **EXTEND**,
+`IUpdateExecutionLock` -> **assessed and rejected**, superseded by the day key. An earlier draft
+dismissed it with "cluster-wide single execution is not needed... the identifier is per instance
+rather than per replica". The second clause is true and the first does not follow from it: all
+replicas share one database and therefore one identifier, and a plain `AddHostedService` runs in
+every replica, so a three-replica deployment emits three heartbeats a day under one `distinct_id`.
+The right conclusion was reached for the wrong reason, and the real reasons are worth stating because
+none is visible from the interface: the implementation is chosen on whether a **Redis** connection
+string is present rather than on how many replicas run, the implementation chosen without one locks
+nothing at all, the other is Postgres-only and blocking, and both are keyed by an update type plus an
+entity id that an instance-wide heartbeat does not have. See the cluster note. `AddHttpClient` registrations -> **EXTEND**,
 one named client. `GitHubService` -> **UNCHANGED** (the pre-existing outbound call is documented, not
 altered).
 
@@ -224,6 +267,8 @@ altered).
 | Zero consent produces zero requests **to the collector host** | NUnit + `DelegatingHandler` on the named client, failing the test on any request across a full emit cycle with no consent. **This is narrower than the outcome's wording — see the honesty note below** |
 | No type may construct its own HTTP client | ArchUnitNET: `new HttpClient(` and `new GitHubClient(` are forbidden outside an explicit whitelist, so the assertion above cannot be bypassed by a future call site |
 | A cache, if added, can only suppress | NUnit (slice 04 only): a stale entry saying "permitted" must still be re-validated before a permit is minted |
+| One emit per day per instance, not per replica | Testcontainers: two callers claim the same day against one database concurrently; exactly one claim succeeds. EF InMemory cannot carry this test - it does not implement `ExecuteUpdateAsync` |
+| The day key exists before the first emit | NUnit: the seeder's output contains `UsageData:LastHeartbeatDay`. Without the row the conditional update affects zero rows forever, and the heartbeat never emits at all |
 
 Note for whoever writes the ArchUnitNET fixtures: fluent slice fields must be declared as the
 concrete `GivenTypesConjunctionWithDescription`, not `IObjectProvider<IType>`, or CA1859 fails the

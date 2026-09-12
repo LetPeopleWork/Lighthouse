@@ -90,15 +90,31 @@ winner; then write the consent row. A browser that loses the identifier race sti
 6. **It is never rotated, never exposed to the browser, and never returned by any API.** The consent
    endpoints answer with a decision state, not with the identifier. Nothing in the frontend needs it.
 
-7. **Retention has to be decided, and this ADR does not get to decide it alone.** Withdrawal stops
-   future processing; it does nothing about past processing. As designed, the identifier persists after
-   the last live grant expires, and every event ever keyed to it stays at the collector. For a feature
-   whose entire justification is consent, "there is no erasure path" is a position that must be written
-   down and signed off rather than left unstated. Two questions go to the legal review: whether the
-   identifier is deleted once no live grant has existed for a full liveness window - which would make
-   a returning instance a new instance in the census, and is the cost of that choice - and whether
-   revocation obliges a deletion request at the collector. Design accommodates either answer; it must
-   not ship without one.
+7. **Retention and erasure, decided.** Withdrawal stops future processing; it does nothing about past
+   processing, and saying so plainly is part of what the consent dialog owes a reader. The position
+   was taken by the maintainer on 2026-09-12 and is written out here so that it is not quietly
+   re-litigated later.
+
+   **The collector keeps events for 13 months.** Every question the outcome measures ask is a rolling
+   window - a 24-hour reporting count, a 30-, 60- or 90-day trend - and the longest question anyone
+   asks of the census is whether the installed base grew against the same month a year earlier.
+   Thirteen months answers that, and nothing longer answers anything we ask. If the vendor's project
+   settings do not offer thirteen months, take the shortest option **at or above one year** and give
+   up the year-on-year comparison rather than buying three years to keep it. The continuous-integration
+   project holds only canary probes and takes the shortest retention available to it.
+
+   **The identifier is not deleted when the last live grant expires.** Deleting it would make a
+   returning instance a new instance in the census, silently inflating the one number this feature
+   exists to produce. It is a random scalar that identifies a database rather than a person, and
+   keeping it costs nothing that deleting it would buy.
+
+   **Revocation does not trigger a deletion request at the collector, and the dialog must not imply
+   that it does.** Revocation is per browser while the identifier is per instance, so one browser
+   revoking cannot mean "erase this instance's history" while another browser on the same instance is
+   still consenting. Once the last browser revokes, the instance stops emitting and what it already
+   sent ages out on the retention period. The promise the dialog can honestly make is the one it
+   should make: revoking stops anything further being sent, and what was already sent is kept for up
+   to thirteen months.
 
 ## Alternatives considered
 
