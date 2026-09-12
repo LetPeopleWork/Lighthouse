@@ -66,7 +66,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// that looks limited in the source. This is what catches that.
         /// </summary>
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         public async Task HandingInEvents_IsActuallyLimitedRatherThanOnlyDeclaredToBe()
         {
             using var host = BuildHost();
@@ -105,7 +104,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// would mean the busiest instances - the ones worth hearing from - throttle themselves.
         /// </summary>
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         public async Task TwoBrowsersBehindOneAddress_DoNotSpendEachOthersAllowance()
         {
             using var host = BuildHost();

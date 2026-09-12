@@ -56,6 +56,7 @@ using StackExchange.Redis;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
 using System.Reflection;
@@ -1150,36 +1151,65 @@ namespace Lighthouse.Backend
                     RateLimitingConfiguration.UsageDataConsentPolicy,
                 })
                 {
-                    var capturedPolicyName = policyName;
-                    options.AddPolicy(capturedPolicyName, httpContext =>
-                    {
-                        var snapshot = httpContext.RequestServices
-                            .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
-
-                        if (!snapshot.Policies.TryGetValue(capturedPolicyName, out var policyConfig))
-                        {
-                            return RateLimitPartition.GetNoLimiter("unconfigured");
-                        }
-
-                        var partitionKey = ResolvePartitionKey(httpContext);
-                        return RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey,
-                            _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = policyConfig.PermitLimit,
-                                Window = TimeSpan.FromSeconds(policyConfig.WindowSeconds),
-                                QueueLimit = policyConfig.QueueLimit,
-                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                                AutoReplenishment = true,
-                            });
-                    });
+                    AddFixedWindowPolicy(options, policyName, ResolvePartitionKey);
                 }
+
+                AddFixedWindowPolicy(
+                    options,
+                    RateLimitingConfiguration.UsageDataIngestPolicy,
+                    ResolveUsageDataIngestPartitionKey);
+            });
+        }
+
+        private static void AddFixedWindowPolicy(
+            RateLimiterOptions options, string policyName, Func<HttpContext, string> resolvePartitionKey)
+        {
+            options.AddPolicy(policyName, httpContext =>
+            {
+                var snapshot = httpContext.RequestServices
+                    .GetRequiredService<IOptionsMonitor<RateLimitingConfiguration>>().CurrentValue;
+
+                if (!snapshot.Policies.TryGetValue(policyName, out var policyConfig))
+                {
+                    return RateLimitPartition.GetNoLimiter("unconfigured");
+                }
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    resolvePartitionKey(httpContext),
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = policyConfig.PermitLimit,
+                        Window = TimeSpan.FromSeconds(policyConfig.WindowSeconds),
+                        QueueLimit = policyConfig.QueueLimit,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        AutoReplenishment = true,
+                    });
             });
         }
 
         private static string ResolvePartitionKey(HttpContext httpContext)
         {
             return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
+        /// <summary>
+        /// One browser, not one address. Fifty colleagues in an office share the address they are
+        /// seen from, so counting them together would make the busiest instances - the ones worth
+        /// hearing from - throttle themselves. The browser's own handle tells them apart, and it is
+        /// digested here so the allowance is spent under something that is not the handle itself.
+        /// Nothing is looked up to do it: a browser that presents no handle is counted by address,
+        /// which is all there is to go on.
+        /// </summary>
+        private static string ResolveUsageDataIngestPartitionKey(HttpContext httpContext)
+        {
+            var presented = httpContext.Request.Headers[API.UsageDataController.ConsentTokenHeader].ToString();
+
+            if (string.IsNullOrWhiteSpace(presented))
+            {
+                return ResolvePartitionKey(httpContext);
+            }
+
+            return Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(presented)));
         }
 
         private static int ResolveRetryAfterSeconds(RateLimitingConfiguration config, string? policyName)

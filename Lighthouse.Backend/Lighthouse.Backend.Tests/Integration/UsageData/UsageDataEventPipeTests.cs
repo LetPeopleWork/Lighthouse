@@ -185,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         public async Task ABrowserThatAgreed_CanHandInWhatItSawWithoutBeingToldAnything()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -359,7 +358,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         public async Task AMessageCarryingARealPageAddress_DoesNotEvenParse()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -380,7 +378,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         public async Task AnEventThisReleaseDoesNotDescribe_CannotBeSent()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -419,7 +416,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         [TestCase("{\"events\":[{\"route\":\"TeamDetail_Metrics\"}]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(no event named)")]
         [TestCase("{\"events\":[{\"name\":\"TeamOrPortfolioTabOpened\"}]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(no route named)")]
         [TestCase("{\"events\":[]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(nothing at all)")]
@@ -436,7 +432,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         [TestCase("{\"events\":[{\"name\":999,\"route\":42}]}", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(outside both lists)")]
         [TestCase("{\"events\":[{\"name\":\"TeamOrPortfolioTabOpened\",\"route\":\"TeamDetail_Metrics\",\"offsetMs\":-2147483648}]}", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(impossible offset)")]
         [TestCase("not a message at all", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(not a message)")]

@@ -22,7 +22,9 @@ namespace Lighthouse.Backend.API
     [AllowAnonymous]
     public class UsageDataController(IUsageDataConsentService consentService) : ControllerBase
     {
-        private const string ConsentTokenHeader = "X-Lighthouse-UsageData-Token";
+        // Public because the rate limiter reads it too: the event endpoint is counted per browser
+        // rather than per address, and two spellings of this name would count a whole office as one.
+        public const string ConsentTokenHeader = "X-Lighthouse-UsageData-Token";
 
         private const string Granted = "granted";
         private const string Declined = "declined";
@@ -84,6 +86,44 @@ namespace Lighthouse.Backend.API
             // at all. Distinguishing them would let anyone hold up a token and be told whether this
             // instance has ever seen it.
             return NoContent();
+        }
+
+        /// <summary>
+        /// What a browser hands in. The answer is the same whether the batch will be used or thrown
+        /// away, so a caller cannot hold up a token and be told whether this instance minted it -
+        /// the same reason withdrawal answers the way it does. A body that cannot be read is the one
+        /// exception, and it is not a probe: nothing but our own page posts here, so an unreadable
+        /// message is our bug and saying so costs nobody anything.
+        /// </summary>
+        [HttpPost("events")]
+        [EnableRateLimiting(RateLimitingConfiguration.UsageDataIngestPolicy)]
+        public IActionResult HandInEvents([FromBody] UsageDataEventBatchDto? batch)
+        {
+            if (!CanBeRead(batch))
+            {
+                return BadRequest();
+            }
+
+            return NoContent();
+        }
+
+        private static bool CanBeRead(UsageDataEventBatchDto? batch)
+        {
+            return batch?.Events is { Length: > 0 } reported && Array.TrueForAll(reported, CanBeRead);
+        }
+
+        /// <summary>
+        /// Every part has to have actually been sent, and both choices have to be members of the list
+        /// they claim. A whole number left out of a message arrives as zero, and zero names a real
+        /// choice in both lists - so reading one straight would invent an event nobody reported.
+        /// </summary>
+        private static bool CanBeRead(UsageDataEventDto reported)
+        {
+            return reported is not null
+                && reported.Name is { } name && Enum.IsDefined(name)
+                && reported.Route is { } route && Enum.IsDefined(route)
+                && reported.OffsetMs >= 0
+                && reported.Sequence >= 0;
         }
     }
 }
