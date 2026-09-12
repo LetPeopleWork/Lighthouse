@@ -1258,6 +1258,24 @@ project customers emit into. Two jobs recover it, and neither writes to producti
 | `production-sweep` | Production project | **Read-only** query over a rolling window: zero events carry `$ip` or `$geoip_*` | The real project, on real traffic, with no synthetic rows written into the census |
 | `settings-parity` | Both projects | **Read-only** project-settings query: IP capture and the GeoIP transformation are in the same state in both | That `assertion-can-fail`'s result transfers to production at all |
 
+**With one project, two of those three jobs cannot run — stated plainly rather than quietly dropped.**
+The free plan allows one project (see Pre-requisites), so until a second exists:
+
+| Job | Status on one project |
+|---|---|
+| `production-sweep` | **Runs, unchanged.** Read-only against the real project on real traffic. This is the job carrying most of the value |
+| `assertion-can-fail` | **Blocked.** It deliberately emits one event *without* `$geoip_disable` to prove the assertion can fail. Running that against the census would write a geo-enriched event into the dataset this Epic promises carries no location data |
+| `settings-parity` | **Moot.** Nothing to compare one project against |
+
+The cost is exactly what C4 identified and is not cosmetic: with only `production-sweep`, *"zero events
+carry `$geoip_*`"* stays green forever if the vendor stops projecting the property, including on the
+day the guarantee breaks. Layer 1 - the payload properties asserted against the serialised body in CI -
+is unaffected and remains the layer that actually meets the standard.
+
+One idea to reject before someone has it: emitting the positive control into production under a
+synthetic `distinct_id` and deleting that person afterwards. It writes location data into the census,
+even briefly, and makes a promise depend on a cleanup step that can fail silently.
+
 Three mechanical requirements, each of which closes a way for this to pass while broken:
 
 1. **`production-sweep` must assert a non-zero event count before it asserts cleanliness**, and report
@@ -1467,9 +1485,20 @@ the scaffold call must not be hoisted into it or the suite reports BROKEN rather
 
 ## Wave: DEVOPS / [REF] Pre-requisites
 
-1. **A PostHog Cloud EU organisation with two projects** — production (the census) and CI (the
-   canary). Both must carry the same IP-capture and GeoIP settings; `settings-parity` is what checks
-   that, and it is the only job that can.
+1. ~~**A PostHog Cloud EU organisation with two projects**~~ — **not available, found 2026-09-12.**
+   The free plan allows **one project per organisation**; a second requires card details, which moves
+   the organisation onto a paid plan.
+
+   **Decided: stay on one project and stay free.** Paying for the second project would move event
+   retention from one year to seven, and PostHog does not let a retention period be shortened
+   afterwards - so it is a one-way door on the exact number the consent dialog states, bought to
+   obtain a drift detector for configuration that cannot drift until something is emitting. The
+   canary's value begins when slice 01b ships, not now.
+
+   Worth five minutes before accepting the degradation: PostHog says Cloud users may *"create,
+   manage, and join organizations without limits"*, so a **second free organisation** may carry its
+   own one-project allowance. If it does, the canary gets its project at no cost and none of the
+   below applies. Unverified.
 2. **Credentials, which are not four peers.** They have very different blast radii and must be
    handled differently:
 

@@ -76,10 +76,13 @@ revokes from the footer, and the next cycle produces nothing. That round trip is
 
 - **Slice 01a complete.** The gate has nothing to read without the consent record, and the payload
   has no identifier without the minting path.
-- The collector projects configured: production and continuous-integration, client IP discarded, the
-  GeoIP transformation disabled (a **separate** control from discarding the IP), and the vendor's AI
-  data-processing consent off at the **organization** level. Retention is not configurable - confirm
-  it reads one year, which is what the free plan gives, per ADR-175 point 7.
+- The collector project configured: client IP discarded, no GeoIP transformation present (a
+  **separate** control from discarding the IP), the four autocapture toggles and session replay off,
+  and the vendor's AI data-processing consent off at the **organization** level. Retention is not
+  configurable - confirm it reads one year, which is what the free plan gives, per ADR-175 point 7.
+- **One project, not two.** The free plan allows one, and buying a second would move retention to
+  seven years. Of the canary's three jobs only `production-sweep` can run; `assertion-can-fail` and
+  `settings-parity` wait for a second project. The delta's canary section carries what that costs.
 - Docker available on any machine running the backend suite. The day-key claim cannot be tested on
   EF InMemory, which does not implement the conditional update it relies on, so those tests join the
   container-backed set the consent store already needs — and that set carries no `Integration`
