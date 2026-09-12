@@ -24,12 +24,10 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string ConsentRoute = "/api/latest/usagedata/consent";
         private const string ConsentTokenHeader = "X-Lighthouse-UsageData-Token";
 
-        private const string Pending = "pending: epic 5733 slice 01a (#5834)";
 
         private static readonly string[] LicenceDisclosureNeedles = ["licen", "premium", "tier"];
 
         [Test]
-        [Ignore(Pending + " — the state endpoint does not exist yet")]
         public async Task GetState_WithNoTokenAtAll_AnswersRatherThanRefusing()
         {
             var response = await Client.GetAsync(StateRoute);
@@ -40,7 +38,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the state endpoint does not exist yet")]
         public async Task GetState_WithAnUnknownToken_AnswersExactlyAsItDoesWithNoToken()
         {
             var baseline = await Client.GetAsync(StateRoute);
@@ -64,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the state endpoint does not exist yet")]
         public async Task GetState_TellsTheBrowserWhetherItWillBeAskedAgain_WithoutNamingTheLicence()
         {
             var state = await ReadStateAsync(token: null);
@@ -91,7 +87,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the state endpoint does not exist yet")]
         public async Task GetState_ForbidsCaching()
         {
             var response = await Client.GetAsync(StateRoute);
@@ -103,7 +98,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the consent endpoint does not exist yet")]
         public async Task PostConsent_WhenTheBrowserAgrees_MintsATokenForIt()
         {
             var response = await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" });
@@ -118,7 +112,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the consent endpoint does not exist yet")]
         public async Task PostConsent_WhenTheBrowserDeclines_AlsoMintsAToken()
         {
             var response = await Client.PostAsJsonAsync(ConsentRoute, new { decision = "declined" });
@@ -134,7 +127,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the consent endpoint does not exist yet")]
         public async Task PostConsent_MintsADifferentTokenEveryTime()
         {
             var first = await ReadTokenAsync(await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" }));
@@ -145,48 +137,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "browser revoke another's consent or keep an instance emitting");
         }
 
-        /// <remarks>
-        /// BEFORE UN-IGNORING: move this to its own fixture with its own
-        /// <c>TestWebApplicationFactory</c> overriding PermitLimit and WindowSeconds, and a forwarded
-        /// client IP - the shape <c>S6_RateLimitingTests</c> already uses. As written it saturates the
-        /// bucket on the fixture's single shared host, and the default window is 60 seconds, so every
-        /// other PostConsent test in this class would then red deterministically. <c>[SetUp]</c> resets
-        /// the database, not the limiter. A serial fixture also needs an allowlist entry in
-        /// <c>BackendTestParallelizationGuardTest</c>.
-        /// </remarks>
-        [Test]
-        [Ignore(Pending + " — the consent endpoint does not exist yet; see the remarks before un-ignoring")]
-        public async Task PostConsent_IsRateLimited()
-        {
-            var permitted = 0;
-            HttpStatusCode? refused = null;
-
-            for (var attempt = 0; attempt < 200 && refused is null; attempt++)
-            {
-                var response = await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" });
-                if (response.StatusCode == HttpStatusCode.TooManyRequests)
-                {
-                    refused = response.StatusCode;
-                }
-                else
-                {
-                    permitted++;
-                }
-            }
-
-            using (Assert.EnterMultipleScope())
-            {
-                // Without this, a policy misconfigured to PermitLimit 0 - refusing the very first
-                // call - satisfies the test that exists to prove the endpoint still works.
-                Assert.That(permitted, Is.GreaterThan(0),
-                    "a limiter that refuses everyone is not a limiter, it is an outage");
-                Assert.That(refused, Is.EqualTo(HttpStatusCode.TooManyRequests),
-                    "the endpoint is unauthenticated and writes a durable row per call. Unlimited, a "
-                    + "single caller could plant a granted row and keep an instance emitting for a "
-                    + "whole liveness window");
-            }
-        }
-
+        // The rate-limit scenario lives in UsageDataConsentRateLimitTests: it has to saturate the
+        // bucket, the limiter is process-wide, and [SetUp] here resets the database but not the
+        // limiter - so running it alongside these would red every other PostConsent test in the class.
         /// <remarks>
         /// This asserts what the state endpoint answers after a revoke, which is all that can be
         /// asserted while nothing emits. The criterion it looks like it covers - that the next emit
@@ -196,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// by a test that never goes near an emitter.
         /// </remarks>
         [Test]
-        [Ignore(Pending + " — the revoke endpoint does not exist yet")]
         public async Task DeleteConsent_WithTheBrowsersOwnToken_MakesTheStateEndpointReportNotSending()
         {
             var token = await ReadTokenAsync(await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" }));
@@ -221,7 +173,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the revoke endpoint does not exist yet")]
         public async Task DeleteConsent_WithATokenThisInstanceNeverMinted_AnswersExactlyAsARealRevokeDoes()
         {
             var token = await ReadTokenAsync(await Client.PostAsJsonAsync(ConsentRoute, new { decision = "granted" }));
@@ -243,7 +194,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(Pending + " — the endpoints do not exist yet")]
         public async Task TheConsentEndpoints_RequireNoAuthentication_BecauseMostInstancesHaveNone()
         {
             var state = await Client.GetAsync(StateRoute);

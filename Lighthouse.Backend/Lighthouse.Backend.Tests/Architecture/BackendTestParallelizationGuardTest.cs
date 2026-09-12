@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly IReadOnlyDictionary<string, string> AllowedSerialFixtures = new Dictionary<string, string>
         {
             ["S6_RateLimitingTests"] = "per-IP rate-limiter window/partition is process-wide; parallel requests cross-trip the limiter",
+            ["UsageDataConsentRateLimitTests"] = "saturates the consent limiter on purpose; the window is process-wide and nothing resets it, so a parallel neighbour would be refused",
             ["S1_AllowedOriginsEnvVarBindingTests"] = "sets Authentication__AllowedOrigins* process-global environment variables in setup/teardown",
             ["S1_CorsFailClosedTests"] = "sets CORS/auth process-global environment variables in setup/teardown",
             ["LighthouseReleaseServiceIntegrationTest"] = "shares a static IGitHubService as a GitHub rate-limit workaround across tests",

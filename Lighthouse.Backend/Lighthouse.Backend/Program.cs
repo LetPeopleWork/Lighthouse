@@ -19,6 +19,8 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.UsageData;
+using Lighthouse.Backend.Services.Interfaces.UsageData;
 using Lighthouse.Backend.Services.Implementation.TeamData;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -1145,6 +1147,7 @@ namespace Lighthouse.Backend
                     RateLimitingConfiguration.ApiKeysPolicy,
                     RateLimitingConfiguration.BootstrapSystemAdminPolicy,
                     RateLimitingConfiguration.EmbedSessionPolicy,
+                    RateLimitingConfiguration.UsageDataConsentPolicy,
                 })
                 {
                     var capturedPolicyName = policyName;
@@ -1366,6 +1369,11 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
             builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
+
+            builder.Services.Configure<UsageDataConfiguration>(
+                builder.Configuration.GetSection(UsageDataConfiguration.SectionName));
+            builder.Services.AddScoped<IUsageDataConsentRepository, UsageDataConsentRepository>();
+            builder.Services.AddScoped<IUsageDataConsentService, UsageDataConsentService>();
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);

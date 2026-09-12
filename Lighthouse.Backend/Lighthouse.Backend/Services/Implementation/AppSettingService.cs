@@ -5,6 +5,7 @@ using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Globalization;
+using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -92,6 +93,39 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             return parsed;
+        }
+
+        public async Task<string> EnsureUsageDataInstanceId()
+        {
+            var existing = GetUsageDataInstanceId();
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            // Derived from nothing. Not the hostname, not the licence key, not the database name -
+            // anything derived from something the instance already is would let two instances be
+            // recognised as related, or one be recognised across a reinstall, neither of which the
+            // person agreeing was asked about.
+            var identifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16))
+                .Replace('+', '-')
+                .Replace('/', '_')
+                .TrimEnd('=');
+
+            repository.Add(new AppSetting
+            {
+                Key = AppSettingKeys.UsageDataInstanceId,
+                Value = identifier,
+            });
+
+            await repository.Save();
+
+            return identifier;
+        }
+
+        public string? GetUsageDataInstanceId()
+        {
+            return repository.GetByPredicate(s => s.Key == AppSettingKeys.UsageDataInstanceId)?.Value;
         }
 
         public FeatureOrderingPolicy GetFeatureOrderingPolicy() => featureOrderingPolicyProvider.GetPolicy();

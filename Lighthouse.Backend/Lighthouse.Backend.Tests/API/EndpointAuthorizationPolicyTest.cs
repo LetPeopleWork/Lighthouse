@@ -21,6 +21,12 @@ namespace Lighthouse.Backend.Tests.API
 
             // ADR-137 hop 2: the Forge resolver holds no credential, so the poll is anonymous by design.
             typeof(EmbedHandshakeController),
+
+            // Consent is per browser, and most instances have no accounts at all - with
+            // authentication off every caller is the same subject, so an account-scoped answer would
+            // be whatever the first person clicked, applied to everybody. A challenge here would also
+            // make the footer indicator unanswerable on exactly the instances that need it most.
+            typeof(UsageDataController),
         ];
 
         [Test]

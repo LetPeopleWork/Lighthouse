@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Security
                 RateLimitingConfiguration.ApiKeysPolicy,
                 RateLimitingConfiguration.BootstrapSystemAdminPolicy,
                 RateLimitingConfiguration.EmbedSessionPolicy,
+                RateLimitingConfiguration.UsageDataConsentPolicy,
             ];
 
             using (Assert.EnterMultipleScope())
