@@ -36,19 +36,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         [Test]
-        public async Task GetState_AsksWhetherAnyoneConsentedWithinTheWindow_LookingBackwardsNotForwards()
+        public async Task GetState_ForABrowserThatGranted_ReportsSending()
         {
-            DateTime? asked = null;
+            repositoryMock
+                .Setup(r => r.FindByTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UsageDataConsent { TokenHash = "digest", Decision = UsageDataDecision.Granted });
+
+            var state = await CreateService().GetStateAsync("a-token", TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.Sending, Is.True);
+        }
+
+        // The indicator this feeds reads "being sent from this browser". Answering it with whether
+        // ANYONE on the instance still consents put that sentence in front of somebody who had just
+        // declined, because a colleague had said yes - a sentence that was false about them twice.
+        [TestCase(UsageDataDecision.Declined)]
+        [TestCase(UsageDataDecision.Revoked)]
+        public async Task GetState_ForABrowserThatSaidNo_ReportsNotSending_WhoeverElseSaidYes(
+            UsageDataDecision decision)
+        {
+            repositoryMock
+                .Setup(r => r.FindByTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UsageDataConsent { TokenHash = "digest", Decision = decision });
             repositoryMock
                 .Setup(r => r.AnyLiveGrantAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-                .Callback<DateTime, CancellationToken>((threshold, _) => asked = threshold)
-                .ReturnsAsync(false);
+                .ReturnsAsync(true);
 
-            await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+            var state = await CreateService().GetStateAsync("a-token", TestContext.CurrentContext.CancellationToken);
 
-            Assert.That(asked, Is.EqualTo(Now.AddDays(-WindowDays)),
-                "a threshold in the future would count every grant that ever existed as live, and the "
-                + "instance would keep sending long after everybody stopped visiting");
+            Assert.That(state.Sending, Is.False);
+        }
+
+        [Test]
+        public async Task GetState_WithNoToken_ReportsNotSending_WhoeverElseSaidYes()
+        {
+            repositoryMock
+                .Setup(r => r.AnyLiveGrantAsync(It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.Sending, Is.False);
         }
 
         [Test]

@@ -43,7 +43,14 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                     consent.TokenHash, now, now - (window / TouchesPerWindow), cancellationToken);
             }
 
-            var sending = await repository.AnyLiveGrantAsync(now - window, cancellationToken);
+            // This browser's own answer, not the instance's. The indicator beside it says "being sent
+            // from this browser", and a colleague's grant must not make that sentence appear over
+            // somebody who declined - which is what asking whether anyone at all still consents did.
+            // No liveness check here on purpose: liveness is how a browser that went away stops
+            // counting, and this browser is asking right now. Its stamp was just refreshed above, and
+            // the refresh does not write back to the entity read before it - so testing that stamp
+            // would report "not sending" on the very request that revived it.
+            var sending = consent?.Decision == UsageDataDecision.Granted;
 
             // A token this instance never minted lands here with consent still null, which is exactly
             // where a browser holding no token lands. The two answers are identical by construction
