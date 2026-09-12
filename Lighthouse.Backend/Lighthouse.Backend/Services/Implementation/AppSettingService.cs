@@ -4,8 +4,8 @@ using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation.OptionalFeatures;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Extensions;
 using System.Globalization;
-using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Services.Implementation
 {
@@ -23,6 +23,8 @@ namespace Lighthouse.Backend.Services.Implementation
         private static readonly TimeSpan RemindLaterCadence = TimeSpan.FromDays(7);
 
         private const int QuietCadenceInMonths = 6;
+
+        private const int IdentifierByteLength = 16;
 
         public RefreshSettings GetFeatureRefreshSettings()
         {
@@ -107,10 +109,7 @@ namespace Lighthouse.Backend.Services.Implementation
             // anything derived from something the instance already is would let two instances be
             // recognised as related, or one be recognised across a reinstall, neither of which the
             // person agreeing was asked about.
-            var identifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16))
-                .Replace('+', '-')
-                .Replace('/', '_')
-                .TrimEnd('=');
+            var identifier = UrlSafeValue.Generate(IdentifierByteLength);
 
             repository.Add(new AppSetting
             {

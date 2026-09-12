@@ -12,35 +12,18 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useUsageDataConsent } from "../../../hooks/useUsageDataConsent";
+import {
+	USAGE_DATA_COLLECTOR_NAME,
+	USAGE_DATA_DOCS_URL,
+	USAGE_DATA_NEVER_SENT,
+	USAGE_DATA_RESIDENCY,
+	USAGE_DATA_SENT_FIELDS,
+} from "../../../models/UsageData/UsageData";
 import { UsageDataDialog } from "../../UsageData/UsageDataDialog";
 import { UsageDataIndicator } from "../../UsageData/UsageDataIndicator";
 import ExternalLinkButton from "../Header/ExternalLinkButton";
 import LetPeopleWorkLogo from "../LetPeopleWork/LetPeopleWorkLogo";
 import LighthouseVersion from "../LetPeopleWork/LighthouseVersion";
-
-// The dialog's copy is held to these three by a build check, so they are stated once, here, rather
-// than drifting apart in the three places that would otherwise each keep their own copy.
-const COLLECTOR_NAME = "PostHog";
-const DATA_RESIDENCY = "Frankfurt, Germany";
-const DOCS_URL =
-	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
-
-const SENT_FIELDS = [
-	"A random identifier for this instance",
-	"Lighthouse version",
-	"How Lighthouse is deployed",
-	"Whether the licence is Community or Premium",
-	"When the data was sent",
-] as const;
-
-const NEVER_SENT = [
-	"work item titles",
-	"queries",
-	"names",
-	"URLs",
-	"email addresses",
-	"free text",
-] as const;
 
 const Footer: React.FC = () => {
 	const theme = useTheme();
@@ -125,11 +108,11 @@ const Footer: React.FC = () => {
 
 					<UsageDataDialog
 						open={usageData.isDialogOpen}
-						collectorName={COLLECTOR_NAME}
-						dataResidency={DATA_RESIDENCY}
-						fields={SENT_FIELDS}
-						neverSent={NEVER_SENT}
-						docsUrl={DOCS_URL}
+						collectorName={USAGE_DATA_COLLECTOR_NAME}
+						dataResidency={USAGE_DATA_RESIDENCY}
+						fields={USAGE_DATA_SENT_FIELDS}
+						neverSent={USAGE_DATA_NEVER_SENT}
+						docsUrl={USAGE_DATA_DOCS_URL}
 						willAskAgain={usageData.willAskAgain}
 						onDecision={usageData.decide}
 						onClose={usageData.closeDialog}

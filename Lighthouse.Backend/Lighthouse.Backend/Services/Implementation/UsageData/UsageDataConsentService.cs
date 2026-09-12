@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Lighthouse.Backend.Configuration;
+using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -21,6 +22,10 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         // read-shaped request becomes a write on every page load, and SQLite serialises writers across
         // the whole process - a few open tabs would then contend with the background refreshes.
         private const int TouchesPerWindow = 100;
+
+        // 256 bits. The token is the only handle on a consent record and is never re-issued, so it
+        // has to be unguessable rather than merely unique.
+        private const int TokenByteLength = 32;
 
         public async Task<UsageDataState> GetStateAsync(string? token, CancellationToken cancellationToken)
         {
@@ -60,10 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 await appSettingService.EnsureUsageDataInstanceId();
             }
 
-            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
-                .Replace('+', '-')
-                .Replace('/', '_')
-                .TrimEnd('=');
+            var token = UrlSafeValue.Generate(TokenByteLength);
 
             await repository.AddAsync(
                 new UsageDataConsent
@@ -102,10 +104,14 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 return false;
             }
 
-            // A Premium refusal is final. A Community refusal comes back on a cadence, and a
-            // withdrawal leaves the door open on either tier - otherwise changing your mind once
-            // would cost you the chance to change it back.
-            return decision != UsageDataDecision.Declined || !licenseService.CanUsePremiumFeatures();
+            // A Premium refusal is final - that is what the tier buys. Everything else is still
+            // open: a Community refusal comes back on a cadence, and a withdrawal leaves the door
+            // open on either tier, because changing your mind once must not cost you the chance to
+            // change it back.
+            var refusalIsFinal =
+                decision == UsageDataDecision.Declined && licenseService.CanUsePremiumFeatures();
+
+            return !refusalIsFinal;
         }
 
         private static string Hash(string token)
