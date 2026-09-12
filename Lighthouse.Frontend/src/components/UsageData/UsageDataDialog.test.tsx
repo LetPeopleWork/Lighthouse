@@ -51,15 +51,18 @@ describe("UsageDataDialog", () => {
 		);
 	});
 
-	// The identifier is the whole basis on which somebody can accept this, so the dialog says what it
-	// is rather than leaving it to the linked page.
-	it("says how a reader is identified, and that it means nothing elsewhere", () => {
+	// Two earlier drafts of this sentence were wrong in opposite ways. "You are identified only by a
+	// random identifier" told a reader they were identified and then argued about the manner of it.
+	// Replacing it with "nothing we send identifies you personally" contradicted the next sentence,
+	// which introduces an identifier. The value is for telling a repeat visit from a new one, so
+	// saying that is both true and free of the contradiction.
+	it("says what is counted rather than who, and says what the random value is for", () => {
 		renderDialog();
 
-		expect(document.body.textContent ?? "").toMatch(/random identifier/i);
-		expect(document.body.textContent ?? "").toMatch(
-			/means nothing anywhere else/i,
-		);
+		const rendered = document.body.textContent ?? "";
+		expect(rendered).toMatch(/how lighthouse is used, not who uses it/i);
+		expect(rendered).toMatch(/repeat visit from a new one/i);
+		expect(rendered).not.toMatch(/you are identified/i);
 	});
 
 	// Asking for something without saying why it is wanted is how consent dialogs earn their
@@ -264,7 +267,7 @@ describe("UsageDataDialog", () => {
 		// Not queryByRole('dialog') alone: that excludes hidden elements by default, so a MUI
 		// dialog left mounted with keepMounted would pass while the whole of the copy sat in the DOM.
 		const rendered = document.body.textContent ?? "";
-		expect(rendered).not.toMatch(/random identifier/i);
+		expect(rendered).not.toMatch(/random value/i);
 		expect(rendered).not.toMatch(/why we ask for this/i);
 		for (const category of NEVER_SENT) {
 			expect(rendered).not.toContain(category);

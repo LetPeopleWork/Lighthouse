@@ -56,8 +56,9 @@ export const UsageDataDialog = ({
 				</Typography>
 
 				<Typography variant="body2" sx={{ mb: 2 }}>
-					You are identified only by a random identifier, created for this
-					purpose, that means nothing anywhere else. We never send{" "}
+					We count how Lighthouse is used, not who uses it. A random value lets
+					us tell a repeat visit from a new one; it carries nothing about you
+					and means nothing outside Lighthouse. We never send{" "}
 					{neverSent.join(", ")}. The usage data page lists exactly what is
 					sent, and is kept current as that changes.
 				</Typography>
