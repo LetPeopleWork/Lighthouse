@@ -1,12 +1,23 @@
-overrides:
-  ws: ^8.18.0
-  form-data: ^4.0.6
-  undici: ^7.28.0
-  '@babel/core': ^7.29.6
-  brace-expansion: ^5.0.7
-  immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.8
-  fast-uri: ^3.1.6
-  postcss: ^8.5.23
-  browserslist: ^4.28.7
 onlyBuiltDependencies:
   - esbuild
+overrides:
+  '@babel/core': ^7.29.6
+  brace-expansion: ^5.0.7
+  browserslist: ^4.28.7
+  fast-uri: ^3.1.6
+  form-data: ^4.0.6
+  immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.8
+  postcss: ^8.5.23
+  undici: ^7.28.0
+  # Mutation testing's runner accepts any vitest from 2 upward, so the resolver was free to keep an
+  # older copy for it while the suite moved on. It then drove one version of the test framework while
+  # every test was written for another, and said nothing was covered rather than failing.
+  vitest: ^5.0.0
+  ws: ^8.18.0
+# Vitest 5 changed how a test is addressed by name: the parts are joined with " > " where they used
+# to be joined with a space. The mutation runner still builds the old form, so the pattern it hands
+# over matches no test, every mutant runs nothing, and the report comes back saying the suite killed
+# almost nothing. It looks exactly like weak tests and is an empty run. Two lines, and it can go when
+# a release carries the upstream fix.
+patchedDependencies:
+  '@stryker-mutator/vitest-runner@9.6.1': patches/@stryker-mutator__vitest-runner@9.6.1.patch

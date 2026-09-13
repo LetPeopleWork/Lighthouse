@@ -5,6 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  vitest: ^5.0.0
   ws: ^8.18.0
   form-data: ^4.0.6
   undici: ^7.28.0
@@ -14,6 +15,11 @@ overrides:
   fast-uri: ^3.1.6
   postcss: ^8.5.23
   browserslist: ^4.28.7
+
+patchedDependencies:
+  '@stryker-mutator/vitest-runner@9.6.1':
+    hash: 890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0
+    path: patches/@stryker-mutator__vitest-runner@9.6.1.patch
 
 importers:
 
@@ -106,7 +112,7 @@ importers:
         version: 9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.4.1))(typescript@7.0.2)
       '@stryker-mutator/vitest-runner':
         specifier: ^9.6.1
-        version: 9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.4.1))(vitest@5.0.0)
+        version: 9.6.1(patch_hash=890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0)(@stryker-mutator/core@9.6.1(@types/node@26.4.1))(vitest@5.0.0)
       '@tauri-apps/cli':
         specifier: ^2
         version: 2.11.4
@@ -1160,7 +1166,7 @@ packages:
     engines: {node: '>=14.18.0'}
     peerDependencies:
       '@stryker-mutator/core': 9.6.1
-      vitest: '>=2.0.0'
+      vitest: ^5.0.0
 
   '@tanstack/query-core@5.102.8':
     resolution: {integrity: sha512-ZNjkJ33CqvPNec/6lZBnHqLc3EVGPZ9ySLhYahU9TcuRFdmwXewuj0c4hwSWcGHqEUwcSrKeZ+oGcvPBqXcQcg==}
@@ -1258,7 +1264,7 @@ packages:
     engines: {node: '>=22', npm: '>=6', yarn: '>=1'}
     peerDependencies:
       '@testing-library/dom': '>=10 <11'
-      vitest: '>= 0.32'
+      vitest: ^5.0.0
     peerDependenciesMeta:
       vitest:
         optional: true
@@ -1523,7 +1529,7 @@ packages:
     resolution: {integrity: sha512-toMg6PZGCIa/lQNCDoASrfb1ly4hsUKXFtFYC9kD4t78o5Y6LyNJU7AENt8eHPr3quYdxaxK7hj2mnbFfUk9NA==}
     peerDependencies:
       '@vitest/browser': 5.0.0
-      vitest: 5.0.0
+      vitest: ^5.0.0
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -2915,7 +2921,7 @@ packages:
     resolution: {integrity: sha512-QRT5m9Z/3Kt0WVDVcFHm5LC9Ba89yDP4twlX2QUAJ9PdqfJBkLAh/kXj7m6U3i0k6GxnIEiwCc295bmAYokmZg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     peerDependencies:
-      vitest: '>=3'
+      vitest: ^5.0.0
 
   vitest@5.0.0:
     resolution: {integrity: sha512-gpsMNoRhMjMktVxPtstOH4/PJuPyovVaMDr4oDilXaGH1EcqM2OE96SoHT2VIQ6fTGtTjqmHDrEu2X9RQiXf8Q==}
@@ -4098,7 +4104,7 @@ snapshots:
 
   '@stryker-mutator/util@9.6.1': {}
 
-  '@stryker-mutator/vitest-runner@9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.4.1))(vitest@5.0.0)':
+  '@stryker-mutator/vitest-runner@9.6.1(patch_hash=890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0)(@stryker-mutator/core@9.6.1(@types/node@26.4.1))(vitest@5.0.0)':
     dependencies:
       '@stryker-mutator/api': 9.6.1
       '@stryker-mutator/core': 9.6.1(@types/node@26.4.1)
