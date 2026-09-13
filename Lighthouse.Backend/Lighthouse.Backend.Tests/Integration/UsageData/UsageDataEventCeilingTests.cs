@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.ForwardedHeaders;
 using Microsoft.AspNetCore.Hosting;
@@ -54,8 +55,11 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const int WindowSeconds = 60;
         private const int DailyAllowance = 3;
 
-        private const string NoIngestEndpointYet =
-            "Pending: the ingest endpoint and its ceilings do not exist yet (Epic 5733 slice 01c, ADO #5980).";
+        // The allowance scenario below gives every hand-in a browser of its own, which is more
+        // consent calls in a minute than any real browser makes. Set here rather than inherited so
+        // that a ceiling this fixture is not about cannot be the thing that stops it: refused
+        // consent comes back as no token at all, which would read as a broken allowance.
+        private const int ConsentPermitLimit = 200;
 
         private CapturedOutboundRequests outbound = null!;
         private CapturedLogMessages capturedLogs = null!;
@@ -141,29 +145,42 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// because an instance that exhausts its allowance is either unusually busy or being abused
         /// and those look identical from outside. Once a day, not once a drop: a line per drop is a
         /// flood mechanism wearing a monitoring costume.
+        ///
+        /// A browser of its own for every hand-in, rather than one browser handing in over and over.
+        /// The per-browser ceiling counts each of them separately, so not one of them is anywhere
+        /// near it, and the only thing left that can stop this instance at the allowance is the
+        /// allowance. Under a single browser, nothing here could tell the two ceilings apart.
         /// </summary>
         [Test]
-        [Ignore(NoIngestEndpointYet)]
         public async Task PastTheDailyAllowance_EventsAreDroppedQuietlyAndSaidOutLoudExactlyOnce()
         {
             using var host = BuildHost();
             using var client = host.CreateClient();
             await FreshDatabaseAsync(host);
 
-            var token = await ABrowserThatAgreedAsync(client);
+            var browsers = new List<string>();
+            for (var browser = 0; browser < DailyAllowance * 4; browser++)
+            {
+                browsers.Add(await ABrowserThatAgreedAsync(client));
+            }
+
             capturedLogs.Clear();
 
             var answers = new List<HttpStatusCode>();
-            for (var handIn = 0; handIn < DailyAllowance * 4; handIn++)
+            foreach (var browser in browsers)
             {
-                using var answer = await HandInAsync(client, token, OneOffice);
+                using var answer = await HandInAsync(client, browser, OneOffice);
                 answers.Add(answer.StatusCode);
             }
+
+            // Emptied before anything is read, because the allowance is spent where data leaves
+            // rather than where it arrives. Nothing has been counted against it - and nothing has
+            // been said about it - while the batches are still waiting.
+            var received = await EverythingTheCollectorReceived(host);
 
             var saidOutLoud = capturedLogs.At(LogEventLevel.Warning)
                 .Where(line => line.Contains("usage", StringComparison.OrdinalIgnoreCase))
                 .ToList();
-            var received = outbound.EverythingSentTo(CollectorHost);
 
             using (Assert.EnterMultipleScope())
             {
@@ -183,6 +200,20 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                     "one line per drop lets whoever triggered it fill the disk, and no line at all "
                     + "leaves an operator unable to tell a busy day from an attack");
             }
+        }
+
+        /// <summary>
+        /// Everything the collector was sent, as one piece of text, after emptying what is waiting.
+        /// The drain is asked for rather than waited out: this host runs no background work, so
+        /// waiting would have meant a fixed budget long enough to be reliable on a loaded build
+        /// agent, paid by every scenario that uses it.
+        /// </summary>
+        private async Task<string> EverythingTheCollectorReceived(WebApplicationFactory<Program> host)
+        {
+            await host.Services.GetRequiredService<UsageDataForwardingService>()
+                .SendWhatIsWaitingAsync(CancellationToken.None);
+
+            return outbound.EverythingSentTo(CollectorHost);
         }
 
         private static int NumberOfMessagesIn(string received)
@@ -260,6 +291,11 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                         ["RateLimits:Policies:UsageDataIngest:WindowSeconds"] =
                             WindowSeconds.ToString(CultureInfo.InvariantCulture),
                         ["RateLimits:Policies:UsageDataIngest:QueueLimit"] = "0",
+                        ["RateLimits:Policies:UsageDataConsent:PermitLimit"] =
+                            ConsentPermitLimit.ToString(CultureInfo.InvariantCulture),
+                        ["RateLimits:Policies:UsageDataConsent:WindowSeconds"] =
+                            WindowSeconds.ToString(CultureInfo.InvariantCulture),
+                        ["RateLimits:Policies:UsageDataConsent:QueueLimit"] = "0",
                         ["UsageData:DailyEventBudget"] =
                             DailyAllowance.ToString(CultureInfo.InvariantCulture),
                         ["UsageData:CollectorBaseUrl"] = CollectorAddress,
