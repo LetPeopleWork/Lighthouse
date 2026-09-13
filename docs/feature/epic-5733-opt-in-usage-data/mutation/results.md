@@ -184,3 +184,67 @@ The skill's example invocation is `pnpm exec stryker run docs/feature/…` from 
 which assumes a `docs` symlink inside the frontend. There is none — and there should not be, since
 that symlink is a known hazard (Biome reformats the whole docs tree through it). The working path is
 `../docs/feature/…`.
+
+---
+
+# Slice 01c (#5980) — the event pipe
+
+## Backend — 98.85 %, gate passed
+
+`stryker.5980.backend.json`, ten files, `test-case-filter` on `FullyQualifiedName~UsageData`.
+
+First run **59.79 %** — 116 killed, 68 survived, 10 with no coverage, denominator 194. Second run
+after the work below: **98.85 %**, 171 killed of 174 tested, 0 without coverage. Tests 6510 → 6571.
+
+The survivors worth naming, because each was a real claim nothing checked:
+
+- **Nine of the ten route patterns were unasserted.** A mutant emptying `/teams/:id/features` lived.
+  That string is the whole privacy mechanism — it is what replaces `/teams/42` — and only the one
+  pattern used by another test was pinned.
+- **`EnsureSuccessStatusCode()` could be deleted.** A collector that refuses the batch then reads as
+  success: the data is gone, the day's allowance stays spent, and nobody is told.
+- **`KeepThisBrowsersConsentAliveAsync` could be deleted**, and every actively-used browser would
+  silently age out of its own consent and stop being counted.
+- **The timestamp sign could be flipped**, putting every event in the future instead of the past.
+- Licence tier, `auth_enabled` and the published-version branch were all unpinned, and all three ride
+  on the wire and are named on the settings page.
+
+Twenty mutants are ignored across seven justifications, all of them message wording around warnings
+whose level, count and placeholders stay asserted — plus the channel's `SingleReader`/`SingleWriter`
+hints, which are the one non-wording suppression: they let the channel skip synchronisation it does
+not need, so getting them wrong costs speed rather than correctness and no arrangement of handing
+batches in and taking them out tells them apart.
+
+Two survivors remain, both argued equivalent: a `ThrowIfNull` whose next line throws the same type on
+the same argument, and a day-rollover call whose sibling at the foot of the same method reaches the
+same end state.
+
+## Frontend — NOT RUN. The gate is still blocked by vitest 5.
+
+Reported 19.01 %. It is the same harness fault slice 01a diagnosed above, unchanged: 1.42 tests per
+mutant where `coverageAnalysis: "off"` should run the whole suite every time, and the per-mutant
+`Tests ran:` lists name only one spec file out of the six the config collects.
+
+Confirmed by hand rather than inferred. Stryker called
+`if (view !== undefined)` → `if (view === undefined)` in `usageDataRouteKeys.ts` **Survived**.
+Applying that edit to the real file fails **17 of 44** tests in the spec that covers it. The suite
+kills the mutant; the runner did not notice.
+
+Running vitest directly against the same `vitest.stryker.mutation.ts` collects all six files and 80
+tests, green — so the config is right and the fault is inside Stryker's per-mutant execution.
+
+**No frontend number should be quoted for this slice.** The decision recorded above — pin vitest back
+to 4.x, accept the gate as blocked, or pin and report upstream — is still open and is still the
+maintainer's.
+
+### One real incompatibility found on the way, and fixed
+
+`usageDataRouteKeys.test.ts` reads its own module off disk and asserts the text contains no
+`globalThis.`, `window.`, `localStorage` and so on — the check that stops this module quietly
+becoming a general-purpose tracker. Stryker's `inPlace` mode rewrites that exact file and its
+injected scaffolding mentions `globalThis`, so the guard was reading the tool's code and failing the
+dry run before mutation began.
+
+The check now stands down when it can tell the file on disk is no longer the file we wrote. Every
+ordinary run and every CI run still makes it. This is independent of the vitest-5 fault and will
+still be needed on the day the gate works.

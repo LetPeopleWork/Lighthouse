@@ -138,7 +138,11 @@ describe("the module only answers the question it was asked", () => {
 	// Reading the address off the browser instead of being handed it is what turns this into a
 	// general-purpose tracker, and it is a one-line change away at all times. So this reads the
 	// module as text: a reviewer cannot be the only thing standing between the two.
-	it.each([
+	//
+	// Mutation testing rewrites this file where it sits and its own scaffolding mentions
+	// globalThis, so under it the text on disk is no longer the text we wrote. The check stands
+	// down rather than reporting on somebody else's code; every ordinary run still makes it.
+	it.runIf(!moduleSource.includes("stryNS_")).each([
 		"window.",
 		"globalThis.",
 		"location",
