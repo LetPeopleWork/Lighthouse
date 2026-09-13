@@ -38,9 +38,6 @@ test.describe("Usage data: the question arrives without being asked for", () => 
 
 		await expect(consent.dialog).toBeVisible();
 
-		// The promise and the behaviour are one acceptance criterion, so the sentence has to be
-		// there before anybody chooses - not afterwards, as an explanation of what they got.
-		await expect(consent.cadencePromise).toBeVisible();
 		await expect(consent.acceptButton).toBeVisible();
 		await expect(consent.declineButton).toBeVisible();
 	});

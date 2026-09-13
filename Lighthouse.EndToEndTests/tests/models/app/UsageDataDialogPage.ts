@@ -35,11 +35,6 @@ export class UsageDataDialogPage {
 		});
 	}
 
-	/** What the dialog promises about whether the question will come back. */
-	get cadencePromise(): Locator {
-		return this.dialog.getByText(/ask you again/i);
-	}
-
 	get acceptButton(): Locator {
 		return this.dialog.getByRole("button", { name: /^yes/i });
 	}

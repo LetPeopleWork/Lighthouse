@@ -7,7 +7,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { cadenceSentence } from "../../services/UsageData/usageDataCadenceCopy";
 
 export type UsageDataDecision = "granted" | "declined";
 
@@ -17,12 +16,6 @@ export interface UsageDataDialogProps {
 	neverSent: readonly string[];
 	/** Link to the full account — docs/settings/usagedata.md. */
 	docsUrl: string;
-	/**
-	 * Whether this reader will be asked again if they say no. The sentence and the behaviour are
-	 * one promise, so this is the same boolean the server uses to decide - not a second judgement
-	 * made here that could disagree with it.
-	 */
-	willAskAgain: boolean;
 	/** Set when the last answer could not be recorded, so the dialog can stay open and say so. */
 	failedToRecord?: boolean;
 	onDecision: (decision: UsageDataDecision) => void;
@@ -48,7 +41,6 @@ export const UsageDataDialog = ({
 	open,
 	neverSent,
 	docsUrl,
-	willAskAgain,
 	failedToRecord = false,
 	onDecision,
 	onClose,
@@ -93,12 +85,6 @@ export const UsageDataDialog = ({
 					You can change your mind at any time from the footer, and nothing
 					further is sent. Changing your mind does not erase what was already
 					sent.
-				</Typography>
-
-				{/* Before the buttons, because it is part of what somebody is weighing rather than
-				    an explanation of what they chose. */}
-				<Typography variant="body2" sx={{ mb: 2 }}>
-					{cadenceSentence(willAskAgain)}
 				</Typography>
 
 				<Typography variant="body2">

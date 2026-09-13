@@ -120,26 +120,6 @@ describe("UsageDataAsk", () => {
 		expect(sessionStorage.getItem("lighthouse:prompt-slot")).toBe("usage-data");
 	});
 
-	// AC-05.5 and AC-02.9 are one criterion: the sentence and the behaviour are the same promise,
-	// so the boolean that decides whether this browser is asked again is the one that picks the
-	// words. Two separate assertions could both pass while disagreeing with each other.
-	it("tells a Community reader the question will come back", async () => {
-		renderAsk(usageDataService({ mayAsk: true, willAskAgain: true }));
-
-		const dialog = await screen.findByRole("dialog");
-
-		expect(dialog).toHaveTextContent(/ask you again/i);
-		expect(dialog).not.toHaveTextContent(/not ask you again/i);
-	});
-
-	it("tells a reader who will not be asked again that this is the last time", async () => {
-		renderAsk(usageDataService({ mayAsk: true, willAskAgain: false }));
-
-		const dialog = await screen.findByRole("dialog");
-
-		expect(dialog).toHaveTextContent(/not ask you again/i);
-	});
-
 	// AC-05.3. There is no third button, and closing is not an answer - nothing is recorded on the
 	// server and the footer indicator goes on saying what it said before.
 	it("records no decision when the dialog is closed without one", async () => {

@@ -27,7 +27,6 @@ const renderDialog = (overrides?: Partial<UsageDataDialogProps>) => {
 			open={true}
 			neverSent={NEVER_SENT}
 			docsUrl={DOCS_URL}
-			willAskAgain={true}
 			onDecision={onDecision}
 			onClose={onClose}
 			{...overrides}
@@ -207,25 +206,24 @@ describe("UsageDataDialog", () => {
 		expect(document.body.textContent ?? "").not.toMatch(forbidden);
 	});
 
-	// This used to assert the opposite: while nothing asked unprompted, a promise about being asked
-	// again described behaviour that did not exist, and the test said so and said it belonged here
-	// only once the cadence did. The cadence now does, so the promise is made - and the thing worth
-	// guarding becomes that it is made once and in one direction.
-	it("promises the reader will be asked again, when they will be", () => {
-		renderDialog({ willAskAgain: true });
+	// The dialog says nothing about whether the question will come back, on purpose and for
+	// everybody. It briefly did: a sentence picked by whether this reader would be asked again.
+	// Two problems, and the second is why it is gone rather than corrected.
+	//
+	// It was wrong for Premium. The boolean it read answers "given what you have already said, will
+	// you be asked again" - which for somebody who has said nothing is yes, whatever their tier. So
+	// a Premium reader, for whom a refusal is final, was promised we would come back.
+	//
+	// And a promise about a cadence somebody has not chosen yet does not help them choose. It is
+	// one more sentence to read on a screen that already asks a lot, and the footer icon - which the
+	// dialog does mention - is the answer to "how do I change my mind" either way.
+	it("makes no promise about being asked again, in either direction", () => {
+		renderDialog();
 		anchorOnRenderedDialog();
 
-		const copy = document.body.textContent ?? "";
-
-		expect(copy).toMatch(/ask you again/i);
-		expect(copy).not.toMatch(/not ask you again/i);
-	});
-
-	it("promises the reader will not be asked again, when they will not be", () => {
-		renderDialog({ willAskAgain: false });
-		anchorOnRenderedDialog();
-
-		expect(document.body.textContent ?? "").toMatch(/not ask you again/i);
+		expect(document.body.textContent ?? "").not.toMatch(
+			/\bask(ed|ing)? (you )?again\b/i,
+		);
 	});
 
 	it("reports a grant when the reader agrees", async () => {
