@@ -133,6 +133,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             alreadySaidTheAllowanceIsSpent = true;
 
             logger.LogWarning(
+                // Stryker disable once String: what is checked about this is that an operator is
+                // told once, at a level they see, and told which number was reached. Those are the
+                // behaviour; the sentence explaining them to a reader is not.
                 "Usage data: the day's allowance of {Budget} event(s) is spent after {Count} on {Day}; "
                 + "everything further today is dropped rather than refused",
                 budget,
@@ -183,6 +186,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
             logger.LogWarning(
                 failure,
+                // Stryker disable once String: what is checked here is that a collector nobody could
+                // reach is reported once, at a level an operator sees, carrying the failure. Those
+                // three are the behaviour; the sentence explaining them to a reader is not.
                 "Usage data: what was sent on {Day} did not arrive. It is dropped rather than kept for later, "
                 + "and the day's allowance is not charged for it, so sending picks up again by itself once "
                 + "whatever is in the way clears. Reported once rather than once per batch.",

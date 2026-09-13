@@ -82,8 +82,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 // batches that never arrived and leave the instance quiet long after it recovered -
                 // and the only line about it would say the day's allowance was spent, which reads as
                 // a busy day. Handing the failure over is also what gets an operator told at all.
+                // Stryker disable once all: a running total that exists only to be printed on the
+                // Debug line below. Nothing branches on it and nothing reads it back, so the count
+                // being wrong changes what a diagnostic sentence says and nothing else.
                 couldNotBeSent++;
                 gate.GiveBackWhatCouldNotBeSent(charged, failure);
+                // Stryker disable once all: the two facts that matter about a batch nobody could
+                // send - the allowance goes back, and an operator is told - are the call above and
+                // the once-a-day warning it triggers. This line is trace for whoever is debugging.
                 logger.LogDebug(
                     failure, "Usage data: {Count} batch(es) could not be sent and were dropped", couldNotBeSent);
             }

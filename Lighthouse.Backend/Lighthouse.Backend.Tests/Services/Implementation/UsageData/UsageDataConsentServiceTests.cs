@@ -159,6 +159,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             Assert.That(state.WillAskAgain, Is.True, "nobody has answered yet, so there is still something to ask");
         }
 
+        /// <summary>
+        /// The pseudonym is written in the same save as the answer, so there is no moment where a
+        /// browser has agreed and has nothing to be counted under. Only for a yes: a browser that
+        /// said no must have no pseudonym anywhere, because the row recording a refusal is the one
+        /// place a refusal could accidentally become an identity.
+        /// </summary>
+        [TestCase(UsageDataDecision.Granted, true, Description = "agreeing needs something to be counted under")]
+        [TestCase(UsageDataDecision.Declined, false, Description = "refusing must leave no identity behind")]
+        public async Task RecordDecision_GivesSomethingToBeCountedUnderOnlyToABrowserThatAgreed(
+            UsageDataDecision decision, bool expected)
+        {
+            UsageDataConsent? written = null;
+            repositoryMock
+                .Setup(r => r.AddAsync(It.IsAny<UsageDataConsent>(), It.IsAny<CancellationToken>()))
+                .Callback((UsageDataConsent consent, CancellationToken _) => written = consent)
+                .Returns(Task.CompletedTask);
+
+            await CreateService().RecordDecisionAsync(decision, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(written?.AnalyticsId is not null, Is.EqualTo(expected),
+                "either a browser that agreed was recorded with nothing to be counted under - so "
+                + "its first event has no identity to carry - or a browser that refused was given "
+                + "one anyway, which is an identity minted for somebody who asked not to have one");
+        }
+
         private UsageDataConsentService CreateService()
         {
             var configuration = new UsageDataConfiguration { ConsentLivenessWindowDays = WindowDays };

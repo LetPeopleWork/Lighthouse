@@ -152,6 +152,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 + "unreachable collector spends the day's allowance on nothing and nobody is told");
         }
 
+        /// <summary>
+        /// The scenarios above pull the drain by hand, because the test host runs no background work
+        /// - which leaves the loop that actually does the pulling in production unexercised by all of
+        /// them. A loop that never runs is the whole feature switched off in a way nothing else here
+        /// can see: every browser keeps agreeing, keeps handing things in, and the queue simply fills
+        /// until it starts dropping.
+        /// </summary>
+        [Test]
+        public async Task ABatchWaitingWhenTheServiceStarts_IsSentWithoutAnybodyPullingTheDrain()
+        {
+            var queue = AQueue();
+            var sending = new TaskCompletionSource();
+            var forwarder = AForwarder(queue, new AnnouncingPublisher(sending), AGateThatAgrees());
+
+            HandIn(queue, howMany: 1);
+            await forwarder.StartAsync(CancellationToken.None);
+
+            try
+            {
+                await sending.Task.WaitAsync(TimeSpan.FromSeconds(10), CancellationToken.None);
+            }
+            catch (TimeoutException)
+            {
+                Assert.Fail(
+                    "nothing was sent while the service was running, so on a real instance usage "
+                    + "data stops at the queue and the feature is off with nobody told");
+            }
+            finally
+            {
+                await forwarder.StopAsync(CancellationToken.None);
+            }
+        }
+
         private static UsageDataEventQueue AQueue()
         {
             return new UsageDataEventQueue(Mock.Of<ILogger<UsageDataEventQueue>>());
@@ -202,6 +235,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 UsageDataEmitPermit permit, AcceptedUsageDataBatch batch, CancellationToken cancellationToken)
             {
                 Attempts++;
+                return Task.CompletedTask;
+            }
+        }
+
+        /// <summary>
+        /// Says when it has been called, so a scenario about the background loop waits on the thing
+        /// it is actually about rather than on a length of time somebody guessed.
+        /// </summary>
+        private sealed class AnnouncingPublisher(TaskCompletionSource sending) : IUsageDataPublisher
+        {
+            public Task PublishAsync(
+                UsageDataEmitPermit permit, AcceptedUsageDataBatch batch, CancellationToken cancellationToken)
+            {
+                sending.TrySetResult();
                 return Task.CompletedTask;
             }
         }

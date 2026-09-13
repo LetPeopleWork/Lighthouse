@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -197,6 +198,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                 + "decide how much this instance writes to its own disk. A second line means the "
                 + "allowance was emptied by batches that never arrived. Written: "
                 + string.Join(" | ", logger.Warnings));
+        }
+
+        /// <summary>
+        /// Putting back more than was ever taken must leave nothing owed rather than a credit. A
+        /// negative count spends upwards from below zero, so the day quietly lets out more than the
+        /// number an operator set - and the allowance being protected is a single shared one, drawn
+        /// on by every instance in the world, which is exactly the thing no instance may overspend.
+        /// </summary>
+        [Test]
+        public async Task GivingBackMoreThanWasEverSpent_DoesNotLeaveTheDayOwedAnything()
+        {
+            var gate = AGate();
+
+            gate.GiveBackWhatCouldNotBeSent(Allowance * 10, TheCollectorCouldNotBeReached);
+
+            Assert.That(await HowManyAreLetOut(gate, asks: Allowance * 4), Is.EqualTo(Allowance),
+                "putting back more than was taken turned into extra allowance, so a collector that "
+                + "refuses everything makes this instance send more than it is configured to");
+        }
+
+        /// <summary>
+        /// Once a day means once a day, not once ever. A collector that is still down tomorrow is
+        /// still the case nothing else can report - and an operator who was away yesterday would
+        /// otherwise find a subsystem that has been failing for a week and said so exactly once, on
+        /// the first day, in a log that has since rolled over.
+        /// </summary>
+        [Test]
+        public async Task ACollectorStillRefusingTheNextDay_SaysSoAgainThatDay()
+        {
+            var gate = AGate();
+
+            await gate.RequestPermitToSendAsync(APresentedToken, 1, CancellationToken.None);
+            gate.GiveBackWhatCouldNotBeSent(1, TheCollectorCouldNotBeReached);
+
+            clock.SetupGet(c => c.Today).Returns(Today.AddDays(1));
+            await gate.RequestPermitToSendAsync(APresentedToken, 1, CancellationToken.None);
+            gate.GiveBackWhatCouldNotBeSent(1, TheCollectorCouldNotBeReached);
+
+            var carryingWhatWentWrong = logger.Everything
+                .Where(line => line.Level == LogLevel.Warning && line.Failure is not null)
+                .ToList();
+
+            Assert.That(carryingWhatWentWrong, Has.Count.EqualTo(2),
+                "a collector that was still refusing on the second day did not say so on the second "
+                + "day, so a subsystem that has been broken for a week is one line in a log that has "
+                + "already rolled over. Written: " + string.Join(" | ", logger.Warnings));
         }
 
         private static async Task<int> HowManyAreLetOut(UsageDataGate gate, int asks)

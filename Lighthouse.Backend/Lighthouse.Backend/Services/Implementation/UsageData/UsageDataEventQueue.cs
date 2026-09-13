@@ -19,6 +19,11 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         public const int MostThatCanWait = 512;
 
         private readonly Channel<AcceptedUsageDataBatch> waiting =
+            // Stryker disable once Initializer,Boolean: these two are hints that let the channel skip
+            // work it would otherwise do to stay safe for callers it does not have. Getting either
+            // wrong costs speed, not correctness, and there is no arrangement of handing batches in
+            // and taking them out that tells the settings apart from the outside. How many may wait
+            // is the part that is a rule, and it is checked.
             Channel.CreateBounded<AcceptedUsageDataBatch>(new BoundedChannelOptions(MostThatCanWait)
             {
                 SingleReader = true,

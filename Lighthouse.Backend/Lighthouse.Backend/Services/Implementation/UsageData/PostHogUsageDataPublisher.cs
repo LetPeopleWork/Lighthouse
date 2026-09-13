@@ -141,6 +141,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             }
 
             logger.LogWarning(
+                // Stryker disable once String: the behaviour checked here is that a mistyped address
+                // is reported exactly once, and that the line quotes back what was actually set. How
+                // the correction is explained to whoever reads it is not something to freeze.
                 "Usage data: somebody agreed on this instance, but nothing is being sent, because "
                 + "UsageData:CollectorBaseUrl is set to {Named}, which is not a web address anything can post to. "
                 + "It needs the scheme as well as the host, as in https://example.com. Nothing will be sent until "
@@ -162,6 +165,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             }
 
             logger.LogWarning(
+                // Stryker disable once String: the behaviour checked here is that a build nobody
+                // published says so once rather than dropping events in silence. The sentence that
+                // tells a reader how to send anyway is not something to freeze.
                 "Usage data: somebody agreed on this instance, but nothing is being sent, because this is not a "
                 + "published release and no collector was named. Builds nobody published are kept out of the shared "
                 + "figures on purpose. Set UsageData:CollectorBaseUrl to send anyway - to {Collector} to join those "

@@ -9,12 +9,21 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public sealed class RecordingLogger<T> : ILogger<T>
     {
-        private readonly List<(LogLevel Level, string Message)> entries = [];
+        private readonly List<Entry> entries = [];
 
         public IReadOnlyList<string> Warnings => Written(LogLevel.Warning);
 
+        public IReadOnlyList<Entry> Everything => entries;
+
         public IReadOnlyList<string> Written(LogLevel level)
             => entries.FindAll(entry => entry.Level == level).ConvertAll(entry => entry.Message);
+
+        /// <summary>
+        /// One line as it was written. The failure is kept alongside the sentence because attaching
+        /// one - or deliberately not attaching one - is a decision some code makes on purpose, and a
+        /// reader of the log sees a stack trace or does not see one because of it.
+        /// </summary>
+        public sealed record Entry(LogLevel Level, string Message, Exception? Failure);
 
         public IDisposable BeginScope<TState>(TState state) where TState : notnull => NothingIsHeld.Instance;
 
@@ -24,7 +33,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             ArgumentNullException.ThrowIfNull(formatter);
 
-            entries.Add((logLevel, formatter(state, exception)));
+            entries.Add(new Entry(logLevel, formatter(state, exception), exception));
         }
     }
 

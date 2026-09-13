@@ -80,6 +80,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             Assert.That(mode, Is.EqualTo(expected));
         }
 
+        /// <summary>
+        /// Nothing is substituted for a platform with no published name, because guessing would put
+        /// a wrong answer into the shared figures rather than none - and a wrong one is the harder
+        /// of the two to ever notice. What is thrown has to name the value, or whoever is looking
+        /// at it knows the list and the code have drifted apart and not which way.
+        /// </summary>
+        [Test]
+        public void Resolve_OnAPlatformWithNoPublishedName_RefusesToGuessAndSaysWhichOne()
+        {
+            Environment.SetEnvironmentVariable(OnlySetInsideAPod, null);
+
+            var somethingNobodyHasNamedYet = (SupportedPlatform)9999;
+
+            Assert.That(
+                () => Resolve(somethingNobodyHasNamedYet, standalone: false),
+                Throws.InstanceOf<PlatformNotSupportedException>()
+                    .With.Message.Contains(somethingNobodyHasNamedYet.ToString()),
+                "a platform the published list does not name was either guessed at - which puts a "
+                + "wrong answer into the shared figures - or refused without saying which one, "
+                + "which leaves whoever reads it unable to close the gap");
+        }
+
         private static UsageDataDeploymentMode Resolve(SupportedPlatform platform, bool standalone)
         {
             var platformMock = new Mock<IPlatformService>();
