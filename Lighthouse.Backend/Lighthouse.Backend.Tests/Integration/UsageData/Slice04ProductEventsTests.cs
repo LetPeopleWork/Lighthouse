@@ -268,7 +268,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// anyway looks exactly like a gate working perfectly.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-03 - every new event inherits the gates the first one has.")]
         public async Task With_nothing_stopping_it_one_of_the_new_events_reaches_the_collector()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -288,7 +287,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// </summary>
         [Test]
         [TestCaseSource(nameof(EventsThatCarryNothingButTheirName))]
-        [Ignore("Pending slice 04 step 04-03 - every new event inherits the gates the first one has.")]
         public async Task Nothing_new_leaves_an_instance_whose_administrator_stopped_usage_data(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -309,7 +307,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         [Test]
         [TestCaseSource(nameof(EventsThatCarryNothingButTheirName))]
-        [Ignore("Pending slice 04 step 04-03 - every new event inherits the gates the first one has.")]
         public async Task Nothing_new_leaves_a_browser_that_refused(string name)
         {
             var token = await ABrowserThatRefusedAsync();
@@ -326,7 +323,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// than in somebody else's database.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-04 - what travels is checked against what was disclosed.")]
         public async Task Nothing_travels_with_an_event_beyond_what_the_page_says_travels()
         {
             var token = await ABrowserThatAgreedAsync();
