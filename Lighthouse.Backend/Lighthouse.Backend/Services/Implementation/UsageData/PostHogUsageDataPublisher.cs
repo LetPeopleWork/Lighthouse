@@ -39,7 +39,11 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         private static readonly JsonSerializerOptions Wire = new();
 
+        private static readonly Uri WhereTheBuiltInOneSends =
+            new($"{TheOnlyCollectorThereIs}/{WhereEventsArePosted}");
+
         private int timesABuildNobodyPublishedStayedQuiet;
+        private int timesTheAddressSomebodyNamedWasNotOne;
 
         public async Task PublishAsync(
             UsageDataEmitPermit permit, AcceptedUsageDataBatch batch, CancellationToken cancellationToken)
@@ -86,7 +90,14 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
             if (!string.IsNullOrWhiteSpace(named))
             {
-                return EventsPostedTo(named);
+                var address = EventsPostedTo(named);
+
+                if (address is null)
+                {
+                    SayTheAddressSomebodyNamedIsNotOne(named);
+                }
+
+                return address;
             }
 
             if (!facts.IsPublishedRelease)
@@ -95,12 +106,46 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 return null;
             }
 
-            return EventsPostedTo(TheOnlyCollectorThereIs);
+            return WhereTheBuiltInOneSends;
         }
 
-        private static Uri EventsPostedTo(string collector)
+        /// <summary>
+        /// Reads what somebody typed, or says it cannot be read. It has to be a whole web address -
+        /// scheme and host both - because the setting most likely to be got wrong is the host on its
+        /// own, with the https left off, and a half-address has nowhere to post to.
+        /// </summary>
+        private static Uri? EventsPostedTo(string named)
         {
-            return new Uri($"{collector.TrimEnd('/')}/{WhereEventsArePosted}");
+            var posted = $"{named.Trim().TrimEnd('/')}/{WhereEventsArePosted}";
+
+            return Uri.TryCreate(posted, UriKind.Absolute, out var address)
+                && (address.Scheme == Uri.UriSchemeHttp || address.Scheme == Uri.UriSchemeHttps)
+                ? address
+                : null;
+        }
+
+        /// <summary>
+        /// The instance keeps running, and says so once. Refusing to start would turn a typo in an
+        /// optional setting into an outage for the whole product, which is a far worse outcome than
+        /// usage data not being sent - but being told nothing is worse still, because a half-typed
+        /// address would otherwise disable the feature for the life of the process while looking
+        /// exactly like an instance where nobody agreed.
+        ///
+        /// Said once rather than once per batch, for the reason the line below carries.
+        /// </summary>
+        private void SayTheAddressSomebodyNamedIsNotOne(string named)
+        {
+            if (Interlocked.Increment(ref timesTheAddressSomebodyNamedWasNotOne) != 1)
+            {
+                return;
+            }
+
+            logger.LogWarning(
+                "Usage data: somebody agreed on this instance, but nothing is being sent, because "
+                + "UsageData:CollectorBaseUrl is set to {Named}, which is not a web address anything can post to. "
+                + "It needs the scheme as well as the host, as in https://example.com. Nothing will be sent until "
+                + "that is corrected or the setting is cleared. Reported once rather than once per batch.",
+                named);
         }
 
         /// <summary>
