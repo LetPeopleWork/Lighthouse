@@ -31,7 +31,7 @@ ACKNOWLEDGED_SECRETS = {
     # exposes is that somebody could post junk events into the project, and the per-instance daily
     # ceiling is what bounds that. The key that must never appear here is the personal one used to
     # read the data back.
-    ("appsettings.json", "phc*********************************************"),
+    ("PostHogUsageDataPublisher.cs", "phc*********************************************"),
 }
 
 

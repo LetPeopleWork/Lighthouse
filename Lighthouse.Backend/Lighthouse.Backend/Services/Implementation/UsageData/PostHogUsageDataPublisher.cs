@@ -37,6 +37,17 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         private const string WhereEventsArePosted = "i/v0/e/";
 
+        /// <summary>
+        /// What the collector recognises this product's own project by, when nobody has named a
+        /// different one. It ships with the product because every instance that reports usage data
+        /// needs it and there is nobody to hand it out; setting UsageData:ProjectApiKey replaces it,
+        /// which is what a fork collecting into its own project would do.
+        /// </summary>
+#pragma warning disable S6418 // Write-only: this can hand events to one collector project and cannot read, list or change anything, which is why this kind of key is meant to be published in client code. The key that must never appear here is the personal one that reads the data back.
+        private const string TheKeyThisProductShipsWith =
+            "phc_mS9Ez43CFwNfpBSd2JroQjSTWkMCnjyqQ3AQpsMwswLD";
+#pragma warning restore S6418
+
         private static readonly JsonSerializerOptions Wire = new();
 
         private static readonly Uri WhereTheBuiltInOneSends =
@@ -178,7 +189,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         private List<CollectorMessage> EverythingInTheBatch(
             UsageDataEmitPermit permit, AcceptedUsageDataBatch batch, UsageDataInstanceFacts facts)
         {
-            var apiKey = configuration.CurrentValue.ProjectApiKey;
+            var named = configuration.CurrentValue.ProjectApiKey;
+            var apiKey = string.IsNullOrWhiteSpace(named) ? TheKeyThisProductShipsWith : named;
 
             return [.. batch.Events.Select(reported => new CollectorMessage(
                 apiKey,
