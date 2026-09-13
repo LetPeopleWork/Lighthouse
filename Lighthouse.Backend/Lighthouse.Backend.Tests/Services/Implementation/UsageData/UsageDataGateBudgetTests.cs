@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
 
         private static readonly DateOnly Today = new(2026, 9, 13);
 
+        private static readonly HttpRequestException TheCollectorCouldNotBeReached = new("nothing answered");
+
         private RecordingLogger<UsageDataGate> logger = null!;
         private Mock<ILighthouseClock> clock = null!;
 
@@ -138,6 +140,63 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             Assert.That(letOut, Is.EqualTo(Allowance),
                 "taking a batch in spent part of the allowance, so the number that actually leaves is "
                 + "a fraction of the number an operator configured");
+        }
+
+        /// <summary>
+        /// An allowance is spent by sending, not by trying. It is taken before the call - two batches
+        /// going out at once must not both be told there is room for the last of it - so a collector
+        /// that is refusing everything would otherwise empty a whole day onto batches that never
+        /// arrived, and the instance would then stay silent until midnight, long after the collector
+        /// came back. The day an operator can no longer tell those two days apart is the day this
+        /// number stops meaning anything.
+        /// </summary>
+        [Test]
+        public async Task WhatNeverArrived_DoesNotSpendTheDaysAllowance()
+        {
+            var gate = AGate();
+
+            for (var attempt = 0; attempt < Allowance * 4; attempt++)
+            {
+                var permit = await gate.RequestPermitToSendAsync(APresentedToken, 1, CancellationToken.None);
+
+                if (permit is not null)
+                {
+                    gate.GiveBackWhatCouldNotBeSent(1, TheCollectorCouldNotBeReached);
+                }
+            }
+
+            var letOutOnceItComesBack = await HowManyAreLetOut(gate, asks: Allowance);
+
+            Assert.That(letOutOnceItComesBack, Is.EqualTo(Allowance),
+                "an hour of a collector being unreachable has spent the day's allowance on nothing, "
+                + "so this instance sends nothing further until midnight even though the collector "
+                + "is answering again");
+        }
+
+        /// <summary>
+        /// The half that makes the other half findable. A pipe that is dropping everything and a pipe
+        /// that is quiet because nobody agreed look identical from outside - that is this feature
+        /// working as designed - so the one case where somebody agreed, there was room, and the data
+        /// still did not arrive has to be said where an operator sees it. Once, for the reason every
+        /// other line here is said once.
+        /// </summary>
+        [Test]
+        public async Task ACollectorThatNeverTakesAnything_IsSaidOutLoudExactlyOnce()
+        {
+            var gate = AGate();
+
+            for (var attempt = 0; attempt < Allowance * 100; attempt++)
+            {
+                await gate.RequestPermitToSendAsync(APresentedToken, 1, CancellationToken.None);
+                gate.GiveBackWhatCouldNotBeSent(1, TheCollectorCouldNotBeReached);
+            }
+
+            Assert.That(logger.Warnings, Has.Count.EqualTo(1),
+                "expected exactly one line, and only that one. None leaves a broken pipe reading as "
+                + "an instance nobody agreed on. A line per failure lets whoever is causing them "
+                + "decide how much this instance writes to its own disk. A second line means the "
+                + "allowance was emptied by batches that never arrived. Written: "
+                + string.Join(" | ", logger.Warnings));
         }
 
         private static async Task<int> HowManyAreLetOut(UsageDataGate gate, int asks)

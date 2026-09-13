@@ -49,6 +49,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
         private async Task SendAsync(AcceptedUsageDataBatch batch, CancellationToken cancellationToken)
         {
+            // What the day's allowance has been charged so far for this batch, and therefore what
+            // has to go back if it turns out not to have gone anywhere.
+            var charged = 0;
+
             try
             {
                 var permit = await gate.RequestPermitToSendAsync(
@@ -58,6 +62,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 {
                     return;
                 }
+
+                charged = batch.Events.Count;
 
                 foreach (var wayOut in waysOut)
                 {
@@ -70,7 +76,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 // stop usage data for as long as the process lives, with nothing failing and nobody
                 // told; a second attempt would be a second chance to send something whose consent may
                 // have changed since the first.
+                //
+                // What does have to be undone is the allowance. It was charged before the call, so a
+                // collector that is refusing everything would otherwise spend the whole day on
+                // batches that never arrived and leave the instance quiet long after it recovered -
+                // and the only line about it would say the day's allowance was spent, which reads as
+                // a busy day. Handing the failure over is also what gets an operator told at all.
                 couldNotBeSent++;
+                gate.GiveBackWhatCouldNotBeSent(charged, failure);
                 logger.LogDebug(
                     failure, "Usage data: {Count} batch(es) could not be sent and were dropped", couldNotBeSent);
             }

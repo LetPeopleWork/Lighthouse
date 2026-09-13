@@ -22,6 +22,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
     {
         private const string APresentedToken = "a-token-a-browser-presented";
 
+        // What every batch handed in below carries, and therefore what the day's allowance is
+        // charged for one of them.
+        private const int OneEventPerBatch = 1;
+
         /// <summary>
         /// A collector that is down would otherwise stop usage data for as long as the process runs,
         /// with nothing failing and nobody told - the loop would end on the first exception and
@@ -122,6 +126,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                     "the bound was not the bound: more was kept than may be kept, on an instance "
                     + "that needs its memory for the job somebody actually runs it for");
             }
+        }
+
+        /// <summary>
+        /// The allowance is taken before the call and this is the only thing that puts it back. A
+        /// collector that is down for an hour would otherwise spend a whole day of it on batches
+        /// that never arrived, and this instance would stay quiet until midnight even after the
+        /// collector came back - with the only line about it saying the allowance was spent, which
+        /// reads as a busy day rather than an outage.
+        /// </summary>
+        [Test]
+        public async Task AWayOutThatThrows_PutsTheAllowanceBackAndSaysWhy()
+        {
+            var queue = AQueue();
+            var gate = AGateThatAgrees();
+            var forwarder = AForwarder(queue, new ThrowingPublisher(), gate);
+
+            HandIn(queue, howMany: 1);
+            await forwarder.SendWhatIsWaitingAsync(CancellationToken.None);
+
+            Mock.Get(gate).Verify(
+                giving => giving.GiveBackWhatCouldNotBeSent(OneEventPerBatch, It.IsAny<Exception>()),
+                Times.Once,
+                "what was charged for a batch that never arrived was not given back, so an "
+                + "unreachable collector spends the day's allowance on nothing and nobody is told");
         }
 
         private static UsageDataEventQueue AQueue()

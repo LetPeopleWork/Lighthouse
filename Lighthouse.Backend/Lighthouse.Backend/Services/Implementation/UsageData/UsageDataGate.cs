@@ -40,7 +40,11 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         private static readonly FrozenSet<UsageDataSuppressionReason> ReasonsThatMeanSomethingIsWrong =
             FrozenSet.ToFrozenSet(
-                [UsageDataSuppressionReason.EvaluationFailed, UsageDataSuppressionReason.BudgetExhausted]);
+                [
+                    UsageDataSuppressionReason.EvaluationFailed,
+                    UsageDataSuppressionReason.BudgetExhausted,
+                    UsageDataSuppressionReason.SendFailed,
+                ]);
 
         private readonly ConcurrentDictionary<UsageDataSuppressionReason, int> suppressedSoFar = new();
 
@@ -51,8 +55,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
         private DateOnly dayBeingCounted;
         private Exception? lastFailure;
-        private int eventsSentToday;
+        private int eventsTheDayHasSpent;
         private bool alreadySaidTheAllowanceIsSpent;
+        private bool alreadySaidNothingIsGettingThrough;
 
         public async Task<UsageDataEmitPermit?> RequestPermitAsync(string? token, CancellationToken cancellationToken)
         {
@@ -98,9 +103,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
 
             lock (everythingTheDayIsCounting)
             {
-                if (eventsSentToday + events <= budget)
+                if (eventsTheDayHasSpent + events <= budget)
                 {
-                    eventsSentToday += events;
+                    eventsTheDayHasSpent += events;
                     return true;
                 }
 
@@ -131,7 +136,56 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 "Usage data: the day's allowance of {Budget} event(s) is spent after {Count} on {Day}; "
                 + "everything further today is dropped rather than refused",
                 budget,
-                eventsSentToday,
+                eventsTheDayHasSpent,
+                dayBeingCounted);
+        }
+
+        /// <summary>
+        /// Puts back what never left. The allowance is taken before the send rather than after it,
+        /// so that nothing can be told there is room for the last of it twice over - which means a
+        /// send that failed has taken something it did not use. Left taken, a collector that is
+        /// unreachable for an hour empties a whole day's allowance onto the floor, and the instance
+        /// then stays silent until midnight even after the collector comes back.
+        ///
+        /// The other half is being able to tell the two days apart. An allowance emptied by sending
+        /// and an allowance emptied by failing are the same number; only this says which one
+        /// happened, and it says it where an operator sees it.
+        /// </summary>
+        public void GiveBackWhatCouldNotBeSent(int events, Exception failure)
+        {
+            TurnTheDayOverIfItHas();
+
+            lock (everythingTheDayIsCounting)
+            {
+                eventsTheDayHasSpent = Math.Max(0, eventsTheDayHasSpent - events);
+                SayNothingIsGettingThroughOnce(failure);
+            }
+
+            Suppress(UsageDataSuppressionReason.SendFailed);
+        }
+
+        /// <summary>
+        /// Once a day, like the line above and for the same reason: a collector that refuses one
+        /// batch refuses all of them, and a browser that agreed and left a tab open hands one in
+        /// forever, so a line per failure is somebody else deciding how much this instance writes to
+        /// its own disk. Louder than the rest of what this file counts, though, because a batch
+        /// nobody could send is the only outcome here where somebody agreed, there was room, and the
+        /// data still did not arrive - and from outside that is indistinguishable from a working day.
+        /// </summary>
+        private void SayNothingIsGettingThroughOnce(Exception failure)
+        {
+            if (alreadySaidNothingIsGettingThrough)
+            {
+                return;
+            }
+
+            alreadySaidNothingIsGettingThrough = true;
+
+            logger.LogWarning(
+                failure,
+                "Usage data: what was sent on {Day} did not arrive. It is dropped rather than kept for later, "
+                + "and the day's allowance is not charged for it, so sending picks up again by itself once "
+                + "whatever is in the way clears. Reported once rather than once per batch.",
                 dayBeingCounted);
         }
 
@@ -247,8 +301,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 // Held in memory and nowhere else. A restart starts the day over, which is the same
                 // residue the per-browser limiter beside this one already carries - and a counter
                 // written to a customer's database would outlive the thing it counts.
-                eventsSentToday = 0;
+                eventsTheDayHasSpent = 0;
                 alreadySaidTheAllowanceIsSpent = false;
+                alreadySaidNothingIsGettingThrough = false;
             }
         }
 

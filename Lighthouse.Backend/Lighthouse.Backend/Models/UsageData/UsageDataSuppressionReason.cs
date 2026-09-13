@@ -22,10 +22,18 @@ namespace Lighthouse.Backend.Models.UsageData
         BudgetExhausted,
 
         /// <summary>
-        /// The question could not be answered at all. The only reason here that means the feature is
-        /// broken rather than switched off, which is why it is the one an operator has to be able to
-        /// find.
+        /// The question could not be answered at all - the database would not say. One of the two
+        /// reasons here that mean the feature is broken rather than switched off, which is why it
+        /// carries what went wrong with it to somewhere an operator sees without going looking.
         /// </summary>
         EvaluationFailed,
+
+        /// <summary>
+        /// The batch was allowed out and the collector could not be reached, or refused it. Counted
+        /// apart from the reasons above because it is the only one where somebody agreed, the
+        /// allowance had room, and the data still did not arrive - which is the feature being broken
+        /// rather than the feature being careful.
+        /// </summary>
+        SendFailed,
     }
 }

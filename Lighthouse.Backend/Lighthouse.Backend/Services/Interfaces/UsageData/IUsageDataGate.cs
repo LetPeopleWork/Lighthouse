@@ -31,5 +31,19 @@ namespace Lighthouse.Backend.Services.Interfaces.UsageData
         /// </returns>
         Task<UsageDataEmitPermit?> RequestPermitToSendAsync(
             string? token, int events, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Says a batch the allowance was charged for never arrived, so that the allowance stops
+        /// being charged for it. Taking it before the send is what keeps two batches from being told
+        /// there is room for the same last of it; giving it back is what keeps an unreachable
+        /// collector from spending a whole day on nothing and leaving the instance silent until
+        /// midnight after the collector comes back.
+        ///
+        /// Whoever calls this has already decided not to try again, so this is a correction rather
+        /// than a deferral - and it is also where an operator finds out that the pipe is broken,
+        /// which nothing else on this path can tell them, because sending nothing is how a working
+        /// instance behaves too.
+        /// </summary>
+        void GiveBackWhatCouldNotBeSent(int events, Exception failure);
     }
 }
