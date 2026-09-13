@@ -87,9 +87,22 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             // behind unreadable - which is the only thing keeping the key elsewhere would protect against.
             var databaseFilePath = IsAbsolute(dataSource)
                 ? dataSource
-                : Path.Combine(contentRootPath, dataSource);
+                : JoinedOntoTheContentRoot(contentRootPath, dataSource);
 
             return ParentDirectoryOf(databaseFilePath);
+        }
+
+        // Path.Combine would read the operating system's own rules here, which is the one thing the
+        // reading above exists to avoid: Windows treats a drive-relative name like "c:lighthouse.db" as
+        // already rooted and drops the content root, so the same configuration puts the key beside the
+        // database on Linux and in the fallback location, unable to mint, on Windows. Joining the text
+        // keeps both machines on the same answer.
+        private static string JoinedOntoTheContentRoot(string contentRootPath, string dataSource)
+        {
+            return string.Concat(
+                contentRootPath.TrimEnd(PathSeparators),
+                Path.DirectorySeparatorChar,
+                dataSource);
         }
 
         private static bool IsHeldInMemory(string dataSource)
