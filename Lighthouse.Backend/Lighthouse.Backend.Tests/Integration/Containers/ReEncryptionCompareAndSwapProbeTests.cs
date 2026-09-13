@@ -43,7 +43,12 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             try
             {
-                await using var provider = BuildSqliteProvider(databaseFile);
+                // Opened here rather than inside the provider because Entity Framework closes only the
+                // connections it opened itself, never one it was handed. Left open, the file below cannot
+                // be deleted on Windows, while Linux deletes it and reports nothing.
+                using var connection = OpenProbeConnection(databaseFile);
+
+                await using var provider = BuildSqliteProvider(connection);
                 await MigrateAsync(provider);
                 await AssertCompareAndSwapAsync(provider);
             }
@@ -184,7 +189,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         // Built the way the product builds it: one connection, opened once, with the same journal mode and
         // busy timeout, because whether two writers can collide at all is a property of that arrangement.
-        private static ServiceProvider BuildSqliteProvider(string databaseFile)
+        private static SqliteConnection OpenProbeConnection(string databaseFile)
         {
             var connection = new SqliteConnection($"Data Source={databaseFile}");
             connection.Open();
@@ -197,6 +202,11 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 pragma.ExecuteNonQuery();
             }
 
+            return connection;
+        }
+
+        private static ServiceProvider BuildSqliteProvider(SqliteConnection connection)
+        {
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton<ICryptoService>(Crypto);

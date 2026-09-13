@@ -2,6 +2,7 @@ using System.Data;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
@@ -103,6 +104,11 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
             finally
             {
+                // Disposing the context hands its connection back to the pool rather than closing it, so
+                // the file is still open here. Deleting it then fails on Windows, while Linux allows it
+                // and says nothing.
+                SqliteConnection.ClearAllPools();
+
                 if (File.Exists(databaseFile))
                 {
                     File.Delete(databaseFile);
