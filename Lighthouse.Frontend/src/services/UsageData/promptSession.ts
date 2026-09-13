@@ -17,17 +17,38 @@
 
 export type PromptOwner = "survey-nudge" | "usage-data";
 
+const PROMPT_SLOT_KEY = "lighthouse:prompt-slot";
+
+/** Who holds this session's slot, or null while it is still free. */
+export const promptSlotHolder = (): PromptOwner | null => {
+	try {
+		return sessionStorage.getItem(PROMPT_SLOT_KEY) as PromptOwner | null;
+	} catch {
+		// A browser that will not hold the slot is treated as one where nobody holds it. That lets
+		// one prompt through rather than none, which is the right way for a coordination rule to
+		// fail: the alternative silences a consent dialog somebody is entitled to be shown.
+		return null;
+	}
+};
+
 /**
  * Takes this session's slot for `owner`, or reports that somebody else already has it.
  * Claiming twice for the same owner succeeds: a re-render must not lose a slot it already holds.
  */
 export const claimPromptSlot = (owner: PromptOwner): boolean => {
-	throw new Error(
-		`claimPromptSlot is not implemented — RED scaffold. Asked on behalf of ${owner}.`,
-	);
-};
+	const holder = promptSlotHolder();
 
-/** Who holds this session's slot, or null while it is still free. */
-export const promptSlotHolder = (): PromptOwner | null => {
-	throw new Error("promptSlotHolder is not implemented — RED scaffold.");
+	if (holder !== null && holder !== owner) {
+		return false;
+	}
+
+	try {
+		sessionStorage.setItem(PROMPT_SLOT_KEY, owner);
+	} catch {
+		// The claim stands for this render even though nothing recorded it. A browser that cannot
+		// remember who holds the slot cannot enforce the rule at all, and refusing to show anything
+		// would be enforcing it in the direction that helps nobody.
+	}
+
+	return true;
 };

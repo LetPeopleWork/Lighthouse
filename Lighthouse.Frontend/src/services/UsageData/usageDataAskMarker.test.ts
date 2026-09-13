@@ -7,7 +7,7 @@ import { readAskedMarker, writeAskedMarker } from "./usageDataAskMarker";
 
 const ASKED_AT = "2026-09-13T08:30:00.000Z";
 
-describe.skip("usageDataAskMarker", () => {
+describe("usageDataAskMarker", () => {
 	beforeEach(() => {
 		localStorage.clear();
 	});

@@ -12,12 +12,29 @@
  * against DoR-9 in the feature delta.
  */
 
+/**
+ * Its own key, deliberately separate from the consent token beside it. The token is the only handle
+ * on a consent record and can never be reissued, so anything sharing a key with it is one bug away
+ * from taking somebody's ability to withdraw.
+ */
+const ASKED_STORAGE_KEY = "lighthouse:usagedata:asked";
+
 export const readAskedMarker = (): string | null => {
-	throw new Error("readAskedMarker is not implemented — RED scaffold.");
+	try {
+		return localStorage.getItem(ASKED_STORAGE_KEY);
+	} catch {
+		// Private windows and locked-down browsers throw rather than returning null. A browser that
+		// cannot remember being asked is simply a browser that gets asked again, which is a worse
+		// experience and not a broken one.
+		return null;
+	}
 };
 
 export const writeAskedMarker = (askedAt: string): void => {
-	throw new Error(
-		`writeAskedMarker is not implemented — RED scaffold. Asked to record ${askedAt}.`,
-	);
+	try {
+		localStorage.setItem(ASKED_STORAGE_KEY, askedAt);
+	} catch {
+		// Same browsers, same conclusion. Failing the interaction over a note to ourselves would put
+		// an error in front of somebody who is only being shown a dialog.
+	}
 };
