@@ -14,6 +14,33 @@ export interface IUsageDataState {
 	willAskAgain: boolean;
 }
 
+/**
+ * Which page was opened, said as a choice from this list rather than as an address.
+ *
+ * The Team and Portfolio detail pages are the two whose address holds both a customer's identifier
+ * and the name of the view somebody opened. The identifier is theirs and must never leave the
+ * browser; the view is one of the few things worth knowing. Naming the pair as a single choice keeps
+ * the second without there ever being a value that could carry the first.
+ *
+ * The values are the names rather than numbers because the server answers and accepts these as
+ * text - a numbered mirror would compare false against every response.
+ */
+export const UsageDataRouteKey = {
+	TeamDetail_Features: "TeamDetail_Features",
+	TeamDetail_Forecasts: "TeamDetail_Forecasts",
+	TeamDetail_Metrics: "TeamDetail_Metrics",
+	TeamDetail_Settings: "TeamDetail_Settings",
+	TeamDetail_Access: "TeamDetail_Access",
+	PortfolioDetail_Features: "PortfolioDetail_Features",
+	PortfolioDetail_Metrics: "PortfolioDetail_Metrics",
+	PortfolioDetail_Deliveries: "PortfolioDetail_Deliveries",
+	PortfolioDetail_Settings: "PortfolioDetail_Settings",
+	PortfolioDetail_Access: "PortfolioDetail_Access",
+} as const;
+
+export type UsageDataRouteKey =
+	(typeof UsageDataRouteKey)[keyof typeof UsageDataRouteKey];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 
