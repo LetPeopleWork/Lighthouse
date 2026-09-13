@@ -45,7 +45,10 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                     consent.TokenHash, now, now - (window / TouchesPerWindow), cancellationToken);
             }
 
-            // Asked once and used twice: the footer has to say the same thing the emit path does.
+            // Asked once and used three times - what is being sent, whether to ask, and who stopped
+            // it. Asking the store again for each would let one answer disagree with the next if an
+            // administrator flipped the switch mid-request, and this response would then say two
+            // different things about the same instant.
             var administratorStoppedIt = !masterSwitch.IsAllowed();
 
             // This browser's own answer, not the instance's. The indicator beside it says "being sent
@@ -67,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             return new UsageDataState(
                 Sending: sending,
                 Decision: consent?.Decision.ToString(),
-                MayAsk: MayAsk(consent, now),
+                MayAsk: MayAsk(consent, now, administratorStoppedIt),
                 ReAskAfterDays: configuration.CurrentValue.ReAskAfterDays,
                 AdministratorDisabled: administratorStoppedIt);
         }
@@ -133,9 +136,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// recording a decision nobody made - so that half is remembered in the browser, and this
         /// answers only for what reached the table.
         /// </summary>
-        private bool MayAsk(UsageDataConsent? consent, DateTime now)
+        private bool MayAsk(UsageDataConsent? consent, DateTime now, bool administratorStoppedIt)
         {
-            if (!masterSwitch.IsAllowed())
+            if (administratorStoppedIt)
             {
                 return false;
             }
