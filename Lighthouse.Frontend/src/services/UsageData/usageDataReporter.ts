@@ -1,5 +1,8 @@
+import { useCallback } from "react";
+import { useUsageDataConsent } from "../../hooks/useUsageDataConsent";
 import type { UsageDataWorkTrackingSystem } from "../../models/UsageData/UsageData";
 import type { UsageDataEventName } from "../Api/UsageDataService";
+import { notice } from "./usageDataBuffer";
 
 /**
  * One thing somebody did, as a call site hands it in.
@@ -28,5 +31,21 @@ export interface UsageDataCapabilityUse {
 export const useUsageDataReporter = (): ((
 	use: UsageDataCapabilityUse,
 ) => void) => {
-	throw new Error("useUsageDataReporter is not implemented");
+	const { indicatorState } = useUsageDataConsent();
+
+	// What decides is the answer the server gave about this browser, never whether a token is lying
+	// around. Refusing mints a token too, so a browser that said no holds one - and an answer that
+	// has not arrived yet is not a yes either.
+	const isSending = indicatorState === "sending";
+
+	return useCallback(
+		(use: UsageDataCapabilityUse): void => {
+			if (!isSending) {
+				return;
+			}
+
+			notice({ ...use, noticedAt: Date.now() });
+		},
+		[isSending],
+	);
 };

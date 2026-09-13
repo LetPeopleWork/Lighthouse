@@ -12,7 +12,7 @@ import {
 } from "../Api/UsageDataService";
 import {
 	forgetWhatWasNoticed,
-	type NoticedPage,
+	type NoticedEvent,
 	notice,
 	takeWhatWasNoticed,
 } from "./usageDataBuffer";
@@ -42,13 +42,12 @@ const asOpeningOf = (route: UsageDataRouteKey): UsageDataEventName =>
 		: UsageDataEventName.PortfolioTabOpened;
 
 const asHandedIn = (
-	pages: NoticedPage[],
+	seen: NoticedEvent[],
 	handedInAt: number,
 ): IUsageDataEvent[] =>
-	pages.map((page, position) => ({
-		name: asOpeningOf(page.route),
-		route: page.route,
-		offsetMs: Math.max(0, handedInAt - page.noticedAt),
+	seen.map(({ noticedAt, ...event }, position) => ({
+		...event,
+		offsetMs: Math.max(0, handedInAt - noticedAt),
 		sequence: position,
 	}));
 
@@ -77,7 +76,7 @@ export const useUsageDataEventDetector = (): void => {
 		const route = usageDataRouteKeyFor(pathname);
 
 		if (route !== undefined) {
-			notice({ route, noticedAt: Date.now() });
+			notice({ name: asOpeningOf(route), route, noticedAt: Date.now() });
 		}
 	}, [isSending, pathname]);
 

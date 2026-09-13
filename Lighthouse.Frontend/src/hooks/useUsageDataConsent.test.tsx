@@ -6,9 +6,12 @@ import {
 	UsageDataRouteKey,
 } from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
-import type { IUsageDataService } from "../services/Api/UsageDataService";
 import {
-	type NoticedPage,
+	type IUsageDataService,
+	UsageDataEventName,
+} from "../services/Api/UsageDataService";
+import {
+	type NoticedEvent,
 	notice,
 	takeWhatWasNoticed,
 } from "../services/UsageData/usageDataBuffer";
@@ -421,7 +424,7 @@ describe("useUsageDataConsent", () => {
 	// stop doing.
 	it("throws away what it has not handed in before sending the withdrawal, not after", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
-		let stillWaitingWhenTheRequestWentOut: NoticedPage[] = [];
+		let stillWaitingWhenTheRequestWentOut: NoticedEvent[] = [];
 		const revoke = vi.fn().mockImplementation(() => {
 			stillWaitingWhenTheRequestWentOut = takeWhatWasNoticed();
 			return Promise.resolve();
@@ -430,6 +433,7 @@ describe("useUsageDataConsent", () => {
 
 		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
 		notice({
+			name: UsageDataEventName.TeamTabOpened,
 			route: UsageDataRouteKey.TeamDetail_Metrics,
 			noticedAt: Date.now(),
 		});
@@ -451,6 +455,7 @@ describe("useUsageDataConsent", () => {
 
 		await waitFor(() => expect(result.current.indicatorState).toBe("sending"));
 		notice({
+			name: UsageDataEventName.PortfolioTabOpened,
 			route: UsageDataRouteKey.PortfolioDetail_Features,
 			noticedAt: Date.now(),
 		});

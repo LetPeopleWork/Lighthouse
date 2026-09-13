@@ -6,26 +6,14 @@ import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
 import type { IUsageDataState } from "../../models/UsageData/UsageData";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
-import type { IUsageDataService } from "../Api/UsageDataService";
 import {
-	FLUSH_INTERVAL_MS,
-	useUsageDataEventDetector,
-} from "./usageDataEvents";
-import {
-	type UsageDataCapabilityUse,
-	useUsageDataReporter,
-} from "./usageDataReporter";
+	type IUsageDataService,
+	UsageDataEventName,
+} from "../Api/UsageDataService";
+import { useUsageDataEventDetector } from "./usageDataEvents";
+import { useUsageDataReporter } from "./usageDataReporter";
 
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
-
-/**
- * The names are written out here rather than imported, because a name that exists in the code
- * without a line on the usage data page is data leaving that nobody was told about - so the list
- * these are added to is the last thing to change, not the first.
- */
-const TeamCreated = "TeamCreated" as UsageDataCapabilityUse["name"];
-const WorkTrackingSystemConnected =
-	"WorkTrackingSystemConnected" as UsageDataCapabilityUse["name"];
 
 const anAnswerOf = (
 	overrides: Partial<IUsageDataState> = {},
@@ -40,12 +28,18 @@ const anAnswerOf = (
 
 /**
  * The reporter and the detector together, which is how they are mounted: the reporter records what
- * somebody did, and the detector's clock is what hands anything in. Testing the reporter without it
- * would assert into a buffer nobody empties.
+ * somebody did, and the detector is what hands anything in. Testing the reporter without it would
+ * assert into a buffer nobody empties.
+ *
+ * The page is one this browser has no name for, so the detector notices nothing of its own and
+ * everything handed in came from the reporter.
  */
-const renderReporterBesideTheDetector = (state: IUsageDataState) => {
+const renderReporterBesideTheDetector = (
+	state: IUsageDataState,
+	getState?: IUsageDataService["getState"],
+) => {
 	const usageDataService: IUsageDataService = {
-		getState: vi.fn().mockResolvedValue(state),
+		getState: getState ?? vi.fn().mockResolvedValue(state),
 		recordDecision: vi.fn().mockResolvedValue("freshly-minted-token"),
 		revoke: vi.fn().mockResolvedValue(undefined),
 		acknowledgeAsked: vi.fn().mockResolvedValue(undefined),
@@ -55,7 +49,7 @@ const renderReporterBesideTheDetector = (state: IUsageDataState) => {
 	const wrapper = ({ children }: { children: ReactNode }) =>
 		createElement(
 			MemoryRouter,
-			{ initialEntries: ["/"] },
+			{ initialEntries: ["/settings"] },
 			createElement(
 				ApiServiceContext.Provider,
 				{ value: createMockApiServiceContext({ usageDataService }) },
@@ -81,21 +75,30 @@ const settle = async (usageDataService: IUsageDataService) => {
 	});
 };
 
+/**
+ * Somebody switching away or closing the lid, which is what hands in what is waiting without a
+ * test having to wait out the clock the detector otherwise runs on.
+ */
+const hideTheTab = () => {
+	vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+	act(() => {
+		document.dispatchEvent(new Event("visibilitychange"));
+	});
+};
+
 const everythingHandedIn = (usageDataService: IUsageDataService) =>
 	vi
 		.mocked(usageDataService.postEvents)
 		.mock.calls.flatMap(([, events]) => events);
 
-describe.skip("useUsageDataReporter", () => {
+describe("useUsageDataReporter", () => {
 	afterEach(() => {
-		vi.useRealTimers();
 		localStorage.clear();
 		vi.restoreAllMocks();
 	});
 
 	it("hands in what somebody did, from a browser that agreed", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
-		vi.useFakeTimers();
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(
 			anAnswerOf(),
@@ -103,20 +106,18 @@ describe.skip("useUsageDataReporter", () => {
 		await settle(usageDataService);
 
 		act(() => {
-			result.current({ name: TeamCreated });
+			result.current({ name: UsageDataEventName.TeamCreated });
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
+		await waitFor(() => expect(usageDataService.postEvents).toHaveBeenCalled());
 		expect(everythingHandedIn(usageDataService)).toEqual([
-			expect.objectContaining({ name: TeamCreated }),
+			expect.objectContaining({ name: UsageDataEventName.TeamCreated }),
 		]);
 	});
 
 	it("sends no address with something that happened on no particular page", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
-		vi.useFakeTimers();
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(
 			anAnswerOf(),
@@ -124,18 +125,16 @@ describe.skip("useUsageDataReporter", () => {
 		await settle(usageDataService);
 
 		act(() => {
-			result.current({ name: TeamCreated });
+			result.current({ name: UsageDataEventName.TeamCreated });
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
+		await waitFor(() => expect(usageDataService.postEvents).toHaveBeenCalled());
 		expect(everythingHandedIn(usageDataService)[0]).not.toHaveProperty("route");
 	});
 
 	it("says which kind of work tracking system was connected", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
-		vi.useFakeTimers();
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(
 			anAnswerOf(),
@@ -144,17 +143,16 @@ describe.skip("useUsageDataReporter", () => {
 
 		act(() => {
 			result.current({
-				name: WorkTrackingSystemConnected,
+				name: UsageDataEventName.WorkTrackingSystemConnected,
 				workTrackingSystem: "Jira",
 			});
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
+		await waitFor(() => expect(usageDataService.postEvents).toHaveBeenCalled());
 		expect(everythingHandedIn(usageDataService)).toEqual([
 			expect.objectContaining({
-				name: WorkTrackingSystemConnected,
+				name: UsageDataEventName.WorkTrackingSystemConnected,
 				workTrackingSystem: "Jira",
 			}),
 		]);
@@ -167,7 +165,6 @@ describe.skip("useUsageDataReporter", () => {
 	 */
 	it("records nothing for a browser that refused, token or no token", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-a-refusal-also-mints");
-		vi.useFakeTimers();
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(
 			anAnswerOf({ sending: false, decision: "Declined" }),
@@ -175,18 +172,15 @@ describe.skip("useUsageDataReporter", () => {
 		await settle(usageDataService);
 
 		act(() => {
-			result.current({ name: TeamCreated });
+			result.current({ name: UsageDataEventName.TeamCreated });
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
 		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
 
 	it("records nothing on an instance whose administrator stopped usage data", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
-		vi.useFakeTimers();
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(
 			anAnswerOf({ sending: false, administratorDisabled: true }),
@@ -194,11 +188,9 @@ describe.skip("useUsageDataReporter", () => {
 		await settle(usageDataService);
 
 		act(() => {
-			result.current({ name: TeamCreated });
+			result.current({ name: UsageDataEventName.TeamCreated });
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
 		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
@@ -210,48 +202,22 @@ describe.skip("useUsageDataReporter", () => {
 	 */
 	it("records nothing while the answer about this browser has not arrived", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
-		vi.useFakeTimers();
 
-		const usageDataService: IUsageDataService = {
-			getState: vi.fn().mockReturnValue(new Promise(() => {})),
-			recordDecision: vi.fn(),
-			revoke: vi.fn(),
-			acknowledgeAsked: vi.fn(),
-			postEvents: vi.fn().mockResolvedValue(undefined),
-		};
-
-		const wrapper = ({ children }: { children: ReactNode }) =>
-			createElement(
-				MemoryRouter,
-				{ initialEntries: ["/"] },
-				createElement(
-					ApiServiceContext.Provider,
-					{ value: createMockApiServiceContext({ usageDataService }) },
-					createElement(UsageDataConsentProvider, null, children),
-				),
-			);
-
-		const { result } = renderHook(
-			() => {
-				useUsageDataEventDetector();
-				return useUsageDataReporter();
-			},
-			{ wrapper },
+		const { result, usageDataService } = renderReporterBesideTheDetector(
+			anAnswerOf(),
+			vi.fn().mockReturnValue(new Promise(() => {})),
 		);
 
 		act(() => {
-			result.current({ name: TeamCreated });
+			result.current({ name: UsageDataEventName.TeamCreated });
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
 		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
 
 	it("keeps two things somebody did in the order they were done", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
-		vi.useFakeTimers();
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(
 			anAnswerOf(),
@@ -259,18 +225,20 @@ describe.skip("useUsageDataReporter", () => {
 		await settle(usageDataService);
 
 		act(() => {
-			result.current({ name: TeamCreated });
+			result.current({ name: UsageDataEventName.TeamCreated });
 			result.current({
-				name: WorkTrackingSystemConnected,
+				name: UsageDataEventName.WorkTrackingSystemConnected,
 				workTrackingSystem: "Linear",
 			});
 		});
-		await act(async () => {
-			vi.advanceTimersByTime(FLUSH_INTERVAL_MS);
-		});
+		hideTheTab();
 
+		await waitFor(() => expect(usageDataService.postEvents).toHaveBeenCalled());
 		expect(
 			everythingHandedIn(usageDataService).map((event) => event.name),
-		).toEqual([TeamCreated, WorkTrackingSystemConnected]);
+		).toEqual([
+			UsageDataEventName.TeamCreated,
+			UsageDataEventName.WorkTrackingSystemConnected,
+		]);
 	});
 });
