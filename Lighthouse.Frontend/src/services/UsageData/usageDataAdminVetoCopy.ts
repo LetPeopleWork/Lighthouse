@@ -25,8 +25,13 @@ export const administratorStoppedItSentence = (): string =>
 	"Usage data is not being sent from this instance. An administrator has stopped it for everyone here.";
 
 /**
- * Shown to everybody reading the dialog. Tells a reader on a licensed instance that their
- * administrator holds this lever, and a reader on an unlicensed one that the lever exists.
+ * Shown to everybody reading the dialog, which is why it opens with a condition rather than an
+ * offer. Most readers cannot reach Settings, and telling them plainly that they can switch this off
+ * sends them hunting for a control they will not find; opening with "if you administer this
+ * instance" costs four words and is true for both of them.
+ *
+ * It names where the control is on purpose. A reader who can reach it should not have to search,
+ * and a reader who cannot now knows what to ask for.
  */
 export const theVetoIsAvailableSentence = (): string =>
-	"An administrator with a Premium licence can stop usage data for everyone on this instance, whatever each person has answered.";
+	"If you administer this instance, a Premium licence lets you switch usage data off for everyone on it, under Settings → Configuration → Behaviour Settings.";

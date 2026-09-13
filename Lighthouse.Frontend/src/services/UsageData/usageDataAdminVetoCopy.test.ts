@@ -35,11 +35,20 @@ describe("usage data admin veto copy", () => {
 		expect(theVetoIsAvailableSentence().toLowerCase()).toContain("premium");
 	});
 
-	it("puts the switch in an administrator's hands rather than the reader's", () => {
-		const sentence = theVetoIsAvailableSentence().toLowerCase();
+	it("says where the switch is, so a reader who can reach it does not have to hunt", () => {
+		expect(theVetoIsAvailableSentence().toLowerCase()).toContain(
+			"behaviour settings",
+		);
+	});
 
-		expect(sentence).toContain("administrator");
-		expect(sentence).not.toContain("you can turn");
+	// Most readers of this dialog cannot reach Settings. An unconditional "you can switch this off"
+	// sends them looking for a control that is not theirs, and the sentence meant to sell the
+	// feature becomes the one that wastes their afternoon.
+	it("does not promise the switch to a reader who may not have it", () => {
+		const sentence = theVetoIsAvailableSentence();
+
+		expect(sentence).toMatch(/\bif you\b/i);
+		expect(sentence).not.toMatch(/^you can\b/i);
 	});
 
 	it("keeps the two sentences apart, so the hint never becomes the advertisement", () => {
