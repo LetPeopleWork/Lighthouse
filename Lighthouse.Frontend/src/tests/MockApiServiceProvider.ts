@@ -75,12 +75,14 @@ export const createMockApiServiceContext = (
 
 export const createMockUsageDataService = (): IUsageDataService => {
 	return {
-		// Not sending, nobody has decided: the state a fresh instance is actually in, so a test
-		// that forgets to override this gets the honest default rather than a consenting one.
+		// Not sending, nobody has decided, and too new to be asked: the state a fresh instance is
+		// actually in, so a test that forgets to override this gets the honest default rather than
+		// a consenting one - or one that opens a dialog over whatever it was really testing.
 		getState: vi.fn().mockResolvedValue({
 			sending: false,
 			decision: null,
 			willAskAgain: true,
+			mayAsk: false,
 		}),
 		recordDecision: vi.fn().mockResolvedValue("mock-consent-token"),
 		revoke: vi.fn().mockResolvedValue(undefined),

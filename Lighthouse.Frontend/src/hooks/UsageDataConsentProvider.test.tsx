@@ -15,12 +15,14 @@ const undecided: IUsageDataState = {
 	sending: false,
 	decision: null,
 	willAskAgain: true,
+	mayAsk: false,
 };
 
 const granted: IUsageDataState = {
 	sending: true,
 	decision: "Granted",
 	willAskAgain: false,
+	mayAsk: false,
 };
 
 // Stands in for the footer: the one place that asks somebody the question.

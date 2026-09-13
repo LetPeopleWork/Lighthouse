@@ -27,13 +27,6 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         ILighthouseClock clock,
         ILogger<UsageDataGate> logger) : IUsageDataGate
     {
-        /// <summary>
-        /// The operator's switch for the whole feature. Nothing writes this row yet - a Lighthouse
-        /// that has never been told otherwise sends, subject to consent, which is what makes turning
-        /// it off later a smaller change than turning it on.
-        /// </summary>
-        private const string MasterSwitchKey = "UsageData";
-
         // Matches the throttle the consent service already applies, so an emitting browser keeps its
         // own consent alive without a write per flush.
         private const int TouchesPerWindow = 100;
@@ -262,11 +255,15 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 consent.TokenHash, now, now - (LivenessWindow / TouchesPerWindow), cancellationToken);
         }
 
+        // Built here rather than resolved, because what is being reused is a rule and not a
+        // collaborator: "no row means on" has to give the same answer on the emit path as it does
+        // where the dialog asks whether it may appear, or an administrator who switched the feature
+        // off would stop one of the two and not the other.
         private static bool TheFeatureIsSwitchedOn(IServiceScope scope)
         {
             var features = scope.ServiceProvider.GetRequiredService<IRepository<OptionalFeature>>();
 
-            return features.GetByPredicate(feature => feature.Key == MasterSwitchKey)?.Enabled != false;
+            return new UsageDataMasterSwitch(features).IsOn();
         }
 
         private TimeSpan LivenessWindow => TimeSpan.FromDays(configuration.CurrentValue.ConsentLivenessWindowDays);

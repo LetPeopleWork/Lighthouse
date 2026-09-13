@@ -1468,6 +1468,7 @@ namespace Lighthouse.Backend
             builder.Services.Configure<UsageDataConfiguration>(
                 builder.Configuration.GetSection(UsageDataConfiguration.SectionName));
             builder.Services.AddScoped<IUsageDataConsentRepository, UsageDataConsentRepository>();
+            builder.Services.AddScoped<IUsageDataMasterSwitch, UsageDataMasterSwitch>();
             builder.Services.AddScoped<IUsageDataConsentService, UsageDataConsentService>();
             builder.Services.AddSingleton<IUsageDataGate, UsageDataGate>();
             builder.Services.AddSingleton<IUsageDataEventQueue, UsageDataEventQueue>();

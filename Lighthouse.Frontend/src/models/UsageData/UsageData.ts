@@ -12,6 +12,18 @@ export interface IUsageDataState {
 	sending: boolean;
 	decision: string | null;
 	willAskAgain: boolean;
+	/**
+	 * Whether to put the question to this browser now, unprompted.
+	 *
+	 * Worked out entirely on the server, from how long the instance has been installed, whether an
+	 * administrator has switched the asking off, and what this browser last answered and when. None
+	 * of those are readable here - the install timestamp needs authentication and this endpoint has
+	 * none - and a privacy gate settled against a clock the browser owns would not be a gate.
+	 *
+	 * The browser adds exactly one thing the server cannot know: that it was shown the dialog once
+	 * and closed it without answering, which leaves no consent row to have recorded it against.
+	 */
+	mayAsk: boolean;
 }
 
 /**

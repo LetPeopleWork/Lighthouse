@@ -74,7 +74,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private static readonly string[] EverythingRecordingAnAnswerHandsBack = ["token"];
 
-        private static readonly string[] EverythingTheStateAnswerCarries = ["sending", "decision", "willAskAgain"];
+        // Widened once, deliberately, for slice 02's mayAsk. It is a derived boolean and carries
+        // nothing an anonymous caller could not already infer by waiting to be asked; the tier and
+        // the install date it is worked out from stay on the server. Anything else arriving here
+        // should fail this test again rather than be added to the list.
+        private static readonly string[] EverythingTheStateAnswerCarries =
+            ["sending", "decision", "willAskAgain", "mayAsk"];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;

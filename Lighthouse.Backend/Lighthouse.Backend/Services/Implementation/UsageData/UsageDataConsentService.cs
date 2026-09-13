@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.UsageData;
@@ -11,6 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
     public class UsageDataConsentService(
         IUsageDataConsentRepository repository,
         ILicenseService licenseService,
+        IAppSettingService appSettings,
+        IUsageDataMasterSwitch masterSwitch,
         IOptionsMonitor<UsageDataConfiguration> configuration,
         TimeProvider timeProvider) : IUsageDataConsentService
     {
@@ -57,7 +60,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             return new UsageDataState(
                 Sending: sending,
                 Decision: consent?.Decision.ToString(),
-                WillAskAgain: WillAskAgain(consent?.Decision));
+                WillAskAgain: WillAskAgain(consent?.Decision),
+                MayAsk: MayAsk(consent, now));
         }
 
         public async Task<string> RecordDecisionAsync(UsageDataDecision decision, CancellationToken cancellationToken)
@@ -97,6 +101,57 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         }
 
         private TimeSpan LivenessWindow => TimeSpan.FromDays(configuration.CurrentValue.ConsentLivenessWindowDays);
+
+        /// <summary>
+        /// Whether to put the question to this browser now, without it having asked to be asked.
+        ///
+        /// Everything the decision rests on is weighed here rather than in the browser, and not only
+        /// because the install timestamp sits behind authentication while this endpoint has none. A
+        /// privacy gate settled against a clock and a licence the caller controls is not a gate; the
+        /// browser is told the answer and nothing it could have argued with.
+        ///
+        /// The one thing this cannot see is a browser holding no token that was shown the dialog and
+        /// closed it. There is no row to have written that against, and minting one would be
+        /// recording a decision nobody made - so that half is remembered in the browser, and this
+        /// answers only for what reached the table.
+        /// </summary>
+        private bool MayAsk(UsageDataConsent? consent, DateTime now)
+        {
+            if (!masterSwitch.IsOn())
+            {
+                return false;
+            }
+
+            if (appSettings.GetInstallTimestamp() is not { } installedAt
+                || now - installedAt.UtcDateTime < TimeSpan.FromDays(configuration.CurrentValue.AskAfterInstallDays))
+            {
+                // An instance whose install timestamp could not be established is one whose age
+                // nobody knows, and asking an unknown-aged instance is the case this threshold
+                // exists to prevent.
+                return false;
+            }
+
+            if (consent is null)
+            {
+                return true;
+            }
+
+            // Somebody who agreed has nothing left to be asked, and a refusal the tier makes final
+            // is exactly that. Both are already the answer WillAskAgain gives, which is why this
+            // defers to it rather than re-deriving the licence rule beside it.
+            if (!WillAskAgain(consent.Decision))
+            {
+                return false;
+            }
+
+            // Anchored on the last time the question was actually put, falling back to the answer
+            // when it has never been put unprompted. Anchoring on the decision alone would re-ask a
+            // browser every session once its window had passed, because closing the dialog leaves
+            // the stored decision exactly where it was.
+            var lastAsked = consent.AskedAt ?? consent.DecidedAt;
+
+            return now - lastAsked >= TimeSpan.FromDays(configuration.CurrentValue.ReAskAfterDays);
+        }
 
         /// <summary>
         /// Whether this browser can expect to be asked again. Derived here, on the server, so that the

@@ -1,8 +1,10 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.UsageData;
 using Lighthouse.Backend.Services.Implementation.UsageData;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.UsageData;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -19,14 +21,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
 
         private const int WindowDays = 30;
 
+        // Long enough that every scenario not about install age is comfortably past it, so a test
+        // that means to be about something else cannot accidentally be about the threshold.
+        private const int AskAfterDays = 3;
+
+        private const int ReAskAfterDays = 90;
+
         private Mock<IUsageDataConsentRepository> repositoryMock;
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IAppSettingService> appSettingsMock;
+        private Mock<IUsageDataMasterSwitch> masterSwitchMock;
 
         [SetUp]
         public void Setup()
         {
             repositoryMock = new Mock<IUsageDataConsentRepository>();
             licenseServiceMock = new Mock<ILicenseService>();
+
+            appSettingsMock = new Mock<IAppSettingService>();
+            appSettingsMock.Setup(s => s.GetInstallTimestamp()).Returns(Now.AddDays(-365));
+
+            masterSwitchMock = new Mock<IUsageDataMasterSwitch>();
+            masterSwitchMock.Setup(s => s.IsOn()).Returns(true);
         }
 
         [Test]
@@ -184,16 +200,190 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                 + "one anyway, which is an identity minted for somebody who asked not to have one");
         }
 
+        // Slice 02 (#5835). Everything below is the cadence arithmetic, and it lives here rather
+        // than beside the endpoint tests for the reason this class exists at all: the endpoints
+        // answer at one instant, so which direction a window points and which tier makes a refusal
+        // final are invisible to them. Flip either and every endpoint test still passes.
+
+        [Test]
+        public async Task GetState_ForABrowserThatNeverAnswered_SaysToAsk()
+        {
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.MayAsk, Is.True);
+        }
+
+        [Test]
+        public async Task GetState_BeforeTheInstanceIsOldEnough_SaysNotToAsk()
+        {
+            appSettingsMock.Setup(s => s.GetInstallTimestamp()).Returns(Now.AddDays(-AskAfterDays).AddHours(1));
+
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.MayAsk, Is.False,
+                "an hour short of the threshold is short of the threshold. A comparison the wrong way "
+                + "round asks every brand-new instance and nothing else in the suite would notice");
+        }
+
+        [Test]
+        public async Task GetState_TheMomentTheInstanceIsOldEnough_SaysToAsk()
+        {
+            appSettingsMock.Setup(s => s.GetInstallTimestamp()).Returns(Now.AddDays(-AskAfterDays));
+
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.MayAsk, Is.True, "the threshold is reached, not merely approached");
+        }
+
+        [Test]
+        public async Task GetState_WhenTheInstallTimestampCouldNotBeEstablished_SaysNotToAsk()
+        {
+            appSettingsMock.Setup(s => s.GetInstallTimestamp()).Returns((DateTimeOffset?)null);
+
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.MayAsk, Is.False,
+                "an instance whose age nobody knows is exactly the instance this threshold exists to "
+                + "keep the dialog away from");
+        }
+
+        [Test]
+        public async Task GetState_WithTheAdministratorsSwitchOff_SaysNotToAsk()
+        {
+            masterSwitchMock.Setup(s => s.IsOn()).Returns(false);
+
+            var state = await CreateService().GetStateAsync(null, TestContext.CurrentContext.CancellationToken);
+
+            Assert.That(state.MayAsk, Is.False);
+        }
+
+        [Test]
+        public async Task GetState_ForABrowserThatAgreedLongAgo_NeverSaysToAskAgain()
+        {
+            TheBrowserAnswered(UsageDataDecision.Granted, Now.AddYears(-5));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.False,
+                "there is nothing left to ask somebody who already agreed, however long ago they did");
+        }
+
+        [Test]
+        public async Task GetState_ForAPremiumRefusal_NeverSaysToAskAgain_HoweverLongItHasBeen()
+        {
+            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+            TheBrowserAnswered(UsageDataDecision.Declined, Now.AddYears(-5));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.False,
+                "the dialog told this reader we would not ask again. Five years is still not again");
+        }
+
+        [Test]
+        public async Task GetState_ForACommunityRefusal_SaysNotToAskBeforeTheWindowHasPassed()
+        {
+            TheBrowserAnswered(UsageDataDecision.Declined, Now.AddDays(-ReAskAfterDays).AddDays(1));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.False,
+                "a day early is early. The dialog named a few months, and coming back sooner than it "
+                + "said is the broken promise that costs more than the nag it avoided");
+        }
+
+        [Test]
+        public async Task GetState_ForACommunityRefusal_SaysToAskOnceTheWindowHasPassed()
+        {
+            TheBrowserAnswered(UsageDataDecision.Declined, Now.AddDays(-ReAskAfterDays));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.True,
+                "the dialog promised the question would come back, and a promise nothing acts on is "
+                + "the same defect as one broken early");
+        }
+
+        [Test]
+        public async Task GetState_ForAWithdrawal_SaysToAskOnceTheWindowHasPassed_OnEitherTier()
+        {
+            licenseServiceMock.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+            TheBrowserAnswered(UsageDataDecision.Revoked, Now.AddDays(-ReAskAfterDays));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.True,
+                "changing your mind once must not cost you the chance to change it back, which is why "
+                + "a withdrawal is a different answer from a refusal rather than a spelling of it");
+        }
+
+        // The case that makes AskedAt worth its column. Three months after refusing, this browser was
+        // shown the dialog again and closed it - so its stored decision is untouched and months old,
+        // and anchoring on that alone would make it due again on the very next request, and every
+        // request after that.
+        [Test]
+        public async Task GetState_ForABrowserAskedAgainSinceItDecided_CountsFromTheAskRatherThanTheAnswer()
+        {
+            TheBrowserAnswered(
+                UsageDataDecision.Declined,
+                decidedAt: Now.AddDays(-ReAskAfterDays * 2),
+                askedAt: Now.AddDays(-1));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.False);
+        }
+
+        [Test]
+        public async Task GetState_ForABrowserAskedAgainLongEnoughAgo_SaysToAskOnceMore()
+        {
+            TheBrowserAnswered(
+                UsageDataDecision.Declined,
+                decidedAt: Now.AddYears(-2),
+                askedAt: Now.AddDays(-ReAskAfterDays));
+
+            var state = await StateForABrowserWithAToken();
+
+            Assert.That(state.MayAsk, Is.True,
+                "anchoring on the ask must not become a way of never asking again - each window "
+                + "restarts from the last time the question was actually put");
+        }
+
         private UsageDataConsentService CreateService()
         {
-            var configuration = new UsageDataConfiguration { ConsentLivenessWindowDays = WindowDays };
+            var configuration = new UsageDataConfiguration
+            {
+                ConsentLivenessWindowDays = WindowDays,
+                AskAfterInstallDays = AskAfterDays,
+                ReAskAfterDays = ReAskAfterDays,
+            };
             var monitor = Mock.Of<IOptionsMonitor<UsageDataConfiguration>>(m => m.CurrentValue == configuration);
 
             return new UsageDataConsentService(
                 repositoryMock.Object,
                 licenseServiceMock.Object,
+                appSettingsMock.Object,
+                masterSwitchMock.Object,
                 monitor,
                 new FakeTimeProvider(Now));
+        }
+
+        private void TheBrowserAnswered(UsageDataDecision decision, DateTime decidedAt, DateTime? askedAt = null)
+        {
+            repositoryMock
+                .Setup(r => r.FindByTokenHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UsageDataConsent
+                {
+                    TokenHash = "digest",
+                    Decision = decision,
+                    DecidedAt = decidedAt,
+                    AskedAt = askedAt,
+                });
+        }
+
+        private Task<UsageDataState> StateForABrowserWithAToken()
+        {
+            return CreateService().GetStateAsync("a-token", TestContext.CurrentContext.CancellationToken);
         }
 
         private sealed class FakeTimeProvider(DateTime now) : TimeProvider

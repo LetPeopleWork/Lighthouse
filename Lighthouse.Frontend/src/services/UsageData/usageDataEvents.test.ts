@@ -18,12 +18,14 @@ const granted: IUsageDataState = {
 	sending: true,
 	decision: "Granted",
 	willAskAgain: false,
+	mayAsk: false,
 };
 
 const declined: IUsageDataState = {
 	sending: false,
 	decision: "Declined",
 	willAskAgain: true,
+	mayAsk: false,
 };
 
 const renderDetector = (state: IUsageDataState, path: string) => {

@@ -40,7 +40,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private static readonly string[] LicenceDisclosureNeedles = ["licen", "premium", "tier"];
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_OnAnInstanceInstalledMomentsAgo_SaysTheBrowserIsNotDue()
         {
             await InstalledDaysAgo(0);
@@ -52,7 +51,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_OnceTheInstanceHasBeenInstalledLongEnough_SaysAnUndecidedBrowserIsDue()
         {
             await InstalledDaysAgo(14);
@@ -63,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_WithTheAdministratorsSwitchOff_SaysNobodyIsDue()
         {
             await InstalledDaysAgo(14);
@@ -75,7 +72,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_WithNoSwitchRowAtAll_StillSaysTheBrowserIsDue()
         {
             await InstalledDaysAgo(14);
@@ -87,7 +83,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_ForABrowserThatAgreed_NeverSaysItIsDueAgain()
         {
             await InstalledDaysAgo(14);
@@ -99,7 +94,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_ImmediatelyAfterARefusal_DoesNotSayTheBrowserIsDueAgain()
         {
             await InstalledDaysAgo(14);
@@ -112,7 +106,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Slice 02 (#5835): mayAsk is not derived yet. Un-skipped by the DELIVER step that adds it.")]
         public async Task GetState_SaysWhetherToAsk_WithoutNamingTheLicence()
         {
             await InstalledDaysAgo(14);
