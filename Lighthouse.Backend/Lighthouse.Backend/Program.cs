@@ -1405,6 +1405,13 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IUsageDataConsentRepository, UsageDataConsentRepository>();
             builder.Services.AddScoped<IUsageDataConsentService, UsageDataConsentService>();
             builder.Services.AddSingleton<IUsageDataGate, UsageDataGate>();
+            builder.Services.AddSingleton<IUsageDataEventQueue, UsageDataEventQueue>();
+
+            // Registered as itself as well as as the background job, because emptying the queue is
+            // something a caller can ask for at a moment of its choosing - which is the only way a
+            // test can observe this at all, since a test host runs no background work.
+            builder.Services.AddSingleton<UsageDataForwardingService>();
+            builder.Services.AddHostedService(services => services.GetRequiredService<UsageDataForwardingService>());
 
             var updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             builder.Services.AddSingleton(updateStatuses);

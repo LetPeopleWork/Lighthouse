@@ -118,7 +118,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// answers is how one of them goes stale.
         /// </summary>
         [Test]
-        [Ignore(NothingToInspectYet)]
         public void ThePartThatSends_TouchesNothingBeyondWhatIsWaitingAndTheWayOut()
         {
             var forwarder = Architecture.Types

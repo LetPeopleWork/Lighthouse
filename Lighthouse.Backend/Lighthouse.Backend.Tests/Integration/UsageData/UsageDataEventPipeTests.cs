@@ -1,9 +1,9 @@
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -74,8 +74,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private const string NoForwarderYet =
             "Pending: needs the forwarder and a trigger a test can pull - see the fixture summary (Epic 5733 slice 01c, ADO #5980).";
-
-        private static readonly TimeSpan ForwarderBudget = TimeSpan.FromSeconds(5);
 
         private static readonly string[] EverythingRecordingAnAnswerHandsBack = ["token"];
 
@@ -617,18 +615,16 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         /// <summary>
-        /// Everything the collector was sent, as one piece of text, once the forwarder has had long
-        /// enough to send it. Polling because the drain runs on its own schedule; replace it with
-        /// the trigger named in the fixture summary as soon as there is one, because a wait long
-        /// enough to be reliable on a loaded build agent is a wait every scenario here pays for.
+        /// Everything the collector was sent, as one piece of text, after emptying what is waiting.
+        /// The drain is asked for here rather than waited out: this host runs no background work, so
+        /// waiting would have meant every scenario paying a fixed budget long enough to be reliable
+        /// on a loaded build agent - including every scenario whose whole point is that nothing was
+        /// sent, which is most of them.
         /// </summary>
         private async Task<string> EverythingTheCollectorReceived()
         {
-            var clock = Stopwatch.StartNew();
-            while (clock.Elapsed < ForwarderBudget && outbound.ThatReached(CollectorHost).Count == 0)
-            {
-                await Task.Delay(50);
-            }
+            await factory.Services.GetRequiredService<UsageDataForwardingService>()
+                .SendWhatIsWaitingAsync(CancellationToken.None);
 
             return outbound.EverythingSentTo(CollectorHost);
         }

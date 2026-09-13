@@ -26,7 +26,8 @@ namespace Lighthouse.Backend.API
     // routes recorded. Two controllers would put that one promise behind two exemptions from the
     // authentication policy, with two chances to drift apart.
 #pragma warning disable S6960
-    public class UsageDataController(IUsageDataConsentService consentService, IUsageDataGate gate) : ControllerBase
+    public class UsageDataController(
+        IUsageDataConsentService consentService, IUsageDataGate gate, IUsageDataEventQueue queue) : ControllerBase
 #pragma warning restore S6960
     {
         // Public because the rate limiter reads it too: the event endpoint is counted per browser
@@ -109,37 +110,58 @@ namespace Lighthouse.Backend.API
             [FromHeader(Name = ConsentTokenHeader)] string? token,
             CancellationToken cancellationToken)
         {
-            if (!CanBeRead(batch))
+            if (batch?.Events is not { Length: > 0 } reported)
             {
                 return BadRequest();
             }
 
-            // Whether the token resolves decides nothing here, which is the point: the answer below
-            // is the same either way. Nothing carries the permission away yet - the part that
-            // forwards comes next - but the question is asked from the moment anything can be handed
-            // in, so there is never a version of this endpoint that accepts without checking.
-            await gate.RequestPermitAsync(token, cancellationToken);
+            var takenIn = new List<UsageDataEventReported>(reported.Length);
+
+            foreach (var one in reported)
+            {
+                if (AsTakenIn(one) is not { } readable)
+                {
+                    return BadRequest();
+                }
+
+                takenIn.Add(readable);
+            }
+
+            // Whether the token resolves decides nothing about the answer below, which is the point.
+            // What it decides is whether the batch goes on to wait: it is asked here so that nothing
+            // is kept on behalf of somebody who never agreed, and asked again where it is sent so
+            // that nothing kept survives somebody changing their mind.
+            var permit = await gate.RequestPermitAsync(token, cancellationToken);
+
+            if (permit is not null && token is { } presented)
+            {
+                queue.HandIn(new AcceptedUsageDataBatch(presented, takenIn));
+            }
 
             return NoContent();
         }
 
-        private static bool CanBeRead(UsageDataEventBatchDto? batch)
-        {
-            return batch?.Events is { Length: > 0 } reported && Array.TrueForAll(reported, CanBeRead);
-        }
-
         /// <summary>
-        /// Every part has to have actually been sent, and both choices have to be members of the list
-        /// they claim. A whole number left out of a message arrives as zero, and zero names a real
-        /// choice in both lists - so reading one straight would invent an event nobody reported.
+        /// Reads one part of the message, or says it cannot be read. Every part has to have actually
+        /// been sent, and both choices have to be members of the list they claim: a whole number left
+        /// out of a message arrives as zero, and zero names a real choice in both lists, so reading
+        /// one straight would invent an event nobody reported.
+        ///
+        /// Reading and checking are one act here rather than two passes, so there is no arrangement
+        /// in which something got past the check and was then read as a zero anyway.
         /// </summary>
-        private static bool CanBeRead(UsageDataEventDto reported)
+        private static UsageDataEventReported? AsTakenIn(UsageDataEventDto? reported)
         {
-            return reported is not null
-                && reported.Name is { } name && Enum.IsDefined(name)
-                && reported.Route is { } route && Enum.IsDefined(route)
-                && reported.OffsetMs >= 0
-                && reported.Sequence >= 0;
+            if (reported is null
+                || reported.Name is not { } name || !Enum.IsDefined(name)
+                || reported.Route is not { } route || !Enum.IsDefined(route)
+                || reported.OffsetMs is not { } offset || offset < 0
+                || reported.Sequence is not { } sequence || sequence < 0)
+            {
+                return null;
+            }
+
+            return new UsageDataEventReported(name, route, offset, sequence);
         }
     }
 }

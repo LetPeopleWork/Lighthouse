@@ -1,9 +1,9 @@
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -58,10 +58,9 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string NoForwarderYet =
             "Pending: needs the forwarder and the address guard (Epic 5733 slice 01c, ADO #5980).";
 
-        private static readonly TimeSpan ForwarderBudget = TimeSpan.FromSeconds(5);
-
         private CapturedOutboundRequests outbound = null!;
         private CapturedLogMessages capturedLogs = null!;
+        private WebApplicationFactory<Program> builtHost = null!;
 
         /// <summary>
         /// The one that keeps synthetic traffic out of the real numbers. It is not enough for this
@@ -166,13 +165,15 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await databaseContext.Database.EnsureCreatedAsync();
         }
 
+        /// <summary>
+        /// Empties what is waiting and returns. Asked for rather than waited out: this host runs no
+        /// background work, so waiting would have meant a fixed budget long enough to be reliable on
+        /// a loaded build agent, paid by every scenario including the ones about nothing being sent.
+        /// </summary>
         private async Task TheForwarderHasHadItsChance()
         {
-            var clock = Stopwatch.StartNew();
-            while (clock.Elapsed < ForwarderBudget && !outbound.SawAnything)
-            {
-                await Task.Delay(50);
-            }
+            await builtHost.Services.GetRequiredService<UsageDataForwardingService>()
+                .SendWhatIsWaitingAsync(CancellationToken.None);
         }
 
         private WebApplicationFactory<Program> BuildHost(string? collectorAddress)
@@ -181,7 +182,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             capturedLogs = new CapturedLogMessages();
 
             var root = new TestWebApplicationFactory<Program>();
-            return root.WithWebHostBuilder(builder =>
+            builtHost = root.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
                 {
@@ -207,6 +208,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                     });
                 });
             });
+
+            return builtHost;
         }
     }
 }
