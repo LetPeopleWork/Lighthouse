@@ -3371,3 +3371,65 @@ nothing added here is person-scoped or free-text, the purpose has not widened, t
 the data are unchanged, and retention is untouched. The ingest shape still has no free `string`
 property, and `UsageDataPayloadPurityTest` is what keeps that true.
 
+---
+
+## Wave: DELIVER / [REF] Slice 04 delivery log, 2026-09-13
+
+Seven steps, eight commits, all local. Backend and frontend suites green; `pnpm build` clean.
+
+| Step | What landed | Result |
+|---|---|---|
+| 04-01 | Ten names, the page's ten rows, and the per-event shape declaration that lets an event carry no address | 12 scenarios green |
+| 04-02 | The connector kind, as a list usage data owns | 8 scenarios green |
+| 04-03 | Every new event shown to inherit the veto and the consent check | 15 scenarios green, **no production change needed** |
+| 04-04 | What travels compared against what was disclosed | 1 scenario green, no production change needed |
+| 04-05 | The reporter, and the buffer generalised from pages to events | 8 cases green |
+| 04-06 | The eight call sites | wired; see the gap below |
+| 04-07 | The outcomes say which event they are waiting for | 3 new outcomes, 5 deferred annotated |
+
+### Three things found while building that were not in the plan
+
+**The seam test caught the new field before any human did.** `UsageDataEmitSeamArchUnitTest` holds a
+written list of every field the collector is ever sent, and `work_tracking_system` failed it the
+moment it was added. That is the guard working exactly as intended — it was widened deliberately
+rather than loosened, which is the distinction that keeps it worth having.
+
+**Reading consent loudly would have taken down every page that reports.** The provider throws when
+nothing above it has asked, which is right for anything that *draws* the answer: a screen showing a
+stale answer is worse than one refusing to start. Nothing in that reasoning applies to reporting, and
+without a quiet reader every page test that mounts its page alone — 153 of them — failed to render.
+The reporter now reads an answer that may be absent, and absent means the same thing it means
+everywhere else in this feature: record nothing.
+
+**Two call sites are narrower than the roadmap said.** The connection event fires only for a
+connection being set up, never one being edited — changing a password on a year-old connection is
+not adoption. And the Team refresh is the button on the Team detail page, not
+`ModifyTeamSettings.refreshDependentData`, which runs when settings are saved; only one of those is
+somebody deciding not to wait.
+
+### What was left out, and why
+
+**The per-call-site wiring tests named in step 04-06 were not written.** The roadmap assumed one case
+per existing page test file. Those files do not drive their pages' save, delete or refresh handlers —
+they assert that a service was *not* called — so adding a case means walking a wizard or a dialog
+through the UI, per page, for seven pages. That is a few hundred lines of brittle test for a
+low-severity risk: a call site labelled with the wrong event name, which shows up as a mislabelled
+count rather than a broken product.
+
+What was written instead is a unit test for `usageDataWorkTrackingSystemFor`, covering the one call
+site that carries a payload — the only place a wrong answer would be a wrong number rather than an
+obvious break. **This is a scope reduction the maintainer should confirm or reject**, not a silent
+skip: rejecting it means the seven UI-driving tests get written.
+
+### The slice's own Goal is not met, and that is a finding rather than a miss
+
+The brief's goal says three of the deferred KPIs move to a live source. None does. The event set was
+chosen against what is in flight — which the brief explicitly permits — rather than against the
+deferred list, and the two sets do not overlap. Two of those five outcomes want an event nobody has
+built; two want customer feedback no event can ever supply and should stop being counted as
+telemetry-blocked at all; the fifth, the OAuth adoption ratio, is a near miss — the connection event
+supplies which kind of system, and what it still needs is which authentication method.
+
+Three new outcomes were added for what this slice *does* answer. Whether that trade was the right one
+is the maintainer's call, and it is written down rather than absorbed.
+
