@@ -37,17 +37,30 @@ The complete list of events:
 
 | Event | When it is sent | What travels with it |
 |---|---|---|
-| A detail tab was opened | Somebody opened a tab on a Team or Portfolio page | Which of the ten Team and Portfolio detail tabs it was. **Never which Team or which Portfolio** |
+| A Team tab was opened | Somebody opened a tab on a Team page | Which of the five Team tabs it was. **Never which Team** |
+| A Portfolio tab was opened | Somebody opened a tab on a Portfolio page | Which of the five Portfolio tabs it was. **Never which Portfolio** |
+| A Team was created | Somebody finished creating a Team | Nothing. **Not its name, not its identifier** |
+| A Team was deleted | Somebody confirmed deleting a Team | Nothing. **Not its name, not its identifier** |
+| A Portfolio was created | Somebody finished creating a Portfolio | Nothing. **Not its name, not its identifier** |
+| A Portfolio was deleted | Somebody confirmed deleting a Portfolio | Nothing. **Not its name, not its identifier** |
+| A forecast was run by hand | Somebody asked for a forecast on a Team page. **Never the forecasts Lighthouse runs on its own** | Nothing. **Not what was asked, not what came back** |
+| A work tracking system was connected | Somebody finished setting up a connection | Which kind it is — one of `Azure DevOps`, `Jira`, `Linear`, `CSV`, `ServiceNow`. **Never its address, never its name, never anything typed while setting it up** |
+| A Team's data was refreshed by hand | Somebody pressed refresh on a Team rather than waiting for the next automatic one | Nothing |
+| A Portfolio's data was refreshed by hand | Somebody pressed refresh on a Portfolio rather than waiting for the next automatic one | Nothing |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
+
+**Eight of the ten carry nothing but the fact that they happened.** That is not a courtesy; each event
+in the code says what it is allowed to carry, and one arriving with anything else is refused rather
+than trimmed. So the two tab openings are the only events that can name a page at all.
 
 Every event carries these, attached by **your** server rather than by your browser:
 
 | Field | What it is | Example |
 |---|---|---|
 | Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
-| Which tab was opened | One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up | `/teams/:id/metrics` |
+| Which tab was opened | **Only on the two tab openings above.** One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up. On the other eight events this field is not empty — it is not there at all | `/teams/:id/metrics` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
 | Deployment mode | How it is deployed, as one of `Standalone`, `Windows`, `Linux`, `MacOS`, `Docker`, `Kubernetes` | `Kubernetes` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |
@@ -91,10 +104,10 @@ Nothing about your work, and nothing about you:
 - No team, portfolio or delivery names, and no identifiers for any of them
 - No user names, email addresses or account identifiers
 - No free text of any kind, and no address your browser was at. What your browser posts to your own
-  server has **no field capable of carrying free text** — two choices from closed lists and two
-  bounded numbers — so this is a property of its shape rather than a rule somebody has to remember.
-  The only address-shaped thing that travels onward is one of the ten published above, which
-  Lighthouse wrote down about itself
+  server has **no field capable of carrying free text** — only choices from closed lists and bounded
+  numbers — so this is a property of its shape rather than a rule somebody has to remember. The only
+  address-shaped thing that travels onward is one of the ten published above, which Lighthouse wrote
+  down about itself
 - **No IP address.** The message explicitly carries an instruction not to record one, and the
   collector is configured to discard it as well
 - **No location.** Location lookup is off, and the message carries an instruction to skip it

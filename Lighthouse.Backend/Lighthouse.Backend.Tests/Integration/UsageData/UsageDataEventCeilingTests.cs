@@ -288,7 +288,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             using var request = new HttpRequestMessage(HttpMethod.Post, EventsRoute)
             {
                 Content = new StringContent(
-                    "{\"events\":[{\"name\":\"TeamOrPortfolioTabOpened\",\"route\":\"TeamDetail_Metrics\",\"offsetMs\":0,\"sequence\":0}]}",
+                    "{\"events\":[{\"name\":\"TeamTabOpened\",\"route\":\"TeamDetail_Metrics\",\"offsetMs\":0,\"sequence\":0}]}",
                     Encoding.UTF8,
                     JsonMediaType),
             };

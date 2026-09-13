@@ -333,7 +333,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         [Test]
         [TestCase("{\"events\":[{\"route\":\"TeamDetail_Metrics\"}]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(no event named)")]
-        [TestCase("{\"events\":[{\"name\":\"TeamOrPortfolioTabOpened\"}]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(no route named)")]
+        [TestCase("{\"events\":[{\"name\":\"TeamTabOpened\"}]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(no route named)")]
         [TestCase("{\"events\":[]}", TestName = "AMessageMissingAPart_IsRefusedRatherThanGuessed(nothing at all)")]
         public async Task AMessageMissingAPart_IsRefusedRatherThanGuessed(string body)
         {
@@ -349,7 +349,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         [Test]
         [TestCase("{\"events\":[{\"name\":999,\"route\":42}]}", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(outside both lists)")]
-        [TestCase("{\"events\":[{\"name\":\"TeamOrPortfolioTabOpened\",\"route\":\"TeamDetail_Metrics\",\"offsetMs\":-2147483648}]}", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(impossible offset)")]
+        [TestCase("{\"events\":[{\"name\":\"TeamTabOpened\",\"route\":\"TeamDetail_Metrics\",\"offsetMs\":-2147483648}]}", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(impossible offset)")]
         [TestCase("not a message at all", TestName = "AHostileMessage_IsRefusedWithoutTheInstanceFalling(not a message)")]
         public async Task AHostileMessage_IsRefusedWithoutTheInstanceFalling(string body)
         {

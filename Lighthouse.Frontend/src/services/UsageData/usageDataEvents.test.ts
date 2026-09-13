@@ -113,6 +113,31 @@ describe("useUsageDataEventDetector", () => {
 		expect(sessionStorage.length).toBe(0);
 	});
 
+	// The name and the page each say which kind of page it was, so they can contradict each other -
+	// and the server refuses a message where they do. Choosing the name from the page is why one
+	// cannot be sent, and the Portfolio half of that choice is the half nothing else here exercises.
+	it("says a Portfolio tab was opened when the page is a Portfolio's", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+
+		const { usageDataService } = renderDetector(
+			granted,
+			"/portfolios/42/deliveries",
+		);
+		await settle(usageDataService);
+		hideTheTab();
+
+		await waitFor(() => expect(usageDataService.postEvents).toHaveBeenCalled());
+		expect(usageDataService.postEvents).toHaveBeenCalledWith(
+			"this-browsers-token",
+			[
+				expect.objectContaining({
+					name: "PortfolioTabOpened",
+					route: "PortfolioDetail_Deliveries",
+				}),
+			],
+		);
+	});
+
 	it("hands in what it noticed when the clock says so, and not before", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
 		vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -132,7 +157,7 @@ describe("useUsageDataEventDetector", () => {
 				"this-browsers-token",
 				[
 					expect.objectContaining({
-						name: "TeamOrPortfolioTabOpened",
+						name: "TeamTabOpened",
 						route: "TeamDetail_Metrics",
 					}),
 				],

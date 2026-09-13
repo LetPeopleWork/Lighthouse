@@ -9,6 +9,24 @@ namespace Lighthouse.Backend.Models.UsageData
     {
         // Zero is a real answer here, not a stand-in for "none given". Anything reading this has to
         // establish that a value was actually sent before trusting it.
-        TeamOrPortfolioTabOpened = 0,
+        TeamTabOpened = 0,
+
+        PortfolioTabOpened = 1,
+
+        TeamCreated = 2,
+
+        TeamDeleted = 3,
+
+        PortfolioCreated = 4,
+
+        PortfolioDeleted = 5,
+
+        TeamManualForecastRun = 6,
+
+        WorkTrackingSystemConnected = 7,
+
+        TeamRefreshTriggered = 8,
+
+        PortfolioRefreshTriggered = 9,
     }
 }

@@ -86,7 +86,7 @@ describe("UsageDataService", () => {
 
 		await service.postEvents("this-browsers-token", [
 			{
-				name: "TeamOrPortfolioTabOpened",
+				name: "TeamTabOpened",
 				route: "TeamDetail_Metrics",
 				offsetMs: 1200,
 				sequence: 0,
@@ -98,7 +98,7 @@ describe("UsageDataService", () => {
 			{
 				events: [
 					{
-						name: "TeamOrPortfolioTabOpened",
+						name: "TeamTabOpened",
 						route: "TeamDetail_Metrics",
 						offsetMs: 1200,
 						sequence: 0,
@@ -117,7 +117,7 @@ describe("UsageDataService", () => {
 
 		await service.postEvents("this-browsers-token", [
 			{
-				name: UsageDataEventName.TeamOrPortfolioTabOpened,
+				name: UsageDataEventName.TeamTabOpened,
 				route: UsageDataRouteKey.PortfolioDetail_Deliveries,
 				offsetMs: 0,
 				sequence: 0,
@@ -127,7 +127,7 @@ describe("UsageDataService", () => {
 		const body = mockedAxios.post.mock.calls[0][1] as {
 			events: { name: unknown; route: unknown }[];
 		};
-		expect(body.events[0].name).toBe("TeamOrPortfolioTabOpened");
+		expect(body.events[0].name).toBe("TeamTabOpened");
 		expect(body.events[0].route).toBe("PortfolioDetail_Deliveries");
 	});
 });

@@ -220,7 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                 queue.HandIn(new AcceptedUsageDataBatch(
                     APresentedToken,
                     [new UsageDataEventReported(
-                        UsageDataEventName.TeamOrPortfolioTabOpened,
+                        UsageDataEventName.TeamTabOpened,
                         UsageDataRouteKey.TeamDetail_Metrics,
                         OffsetMs: 0,
                         Sequence: handed)]));

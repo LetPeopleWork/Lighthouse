@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// The single product event this Epic carries, and the tab label that has to survive a page
         /// address naming one of the customer's own Teams.
         /// </summary>
-        protected const string TabOpened = "TeamOrPortfolioTabOpened";
+        protected const string TabOpened = "TeamTabOpened";
 
         protected const string TeamMetricsTab = "TeamDetail_Metrics";
 

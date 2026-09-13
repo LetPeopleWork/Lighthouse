@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             return new UsageDataEventBatchDto(
                 [new UsageDataEventDto(
-                    UsageDataEventName.TeamOrPortfolioTabOpened,
+                    UsageDataEventName.TeamTabOpened,
                     UsageDataRouteKey.TeamDetail_Metrics,
                     offsetMs,
                     sequence)]);

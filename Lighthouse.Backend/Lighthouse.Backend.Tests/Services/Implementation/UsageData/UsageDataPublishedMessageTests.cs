@@ -235,7 +235,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
             return new AcceptedUsageDataBatch(
                 "a-token-a-browser-presented",
                 [new UsageDataEventReported(
-                    UsageDataEventName.TeamOrPortfolioTabOpened,
+                    UsageDataEventName.TeamTabOpened,
                     UsageDataRouteKey.TeamDetail_Metrics,
                     offsetMs,
                     Sequence: 0)]);

@@ -198,13 +198,24 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 permit.AnalyticsId,
                 clock.Now.AddMilliseconds(-reported.OffsetMs),
                 new WhatEachMessageCarries(
-                    UsageDataRoutePatterns.All[reported.Route],
+                    TheAddressPublishedFor(reported.Route),
                     facts.Version,
                     facts.DeploymentMode.ToString(),
                     facts.LicenceTier,
                     facts.AuthenticationEnabled,
                     Ip: null,
                     GeoIpDisable: true)))];
+        }
+
+        /// <summary>
+        /// The address this product publishes for a page somebody opened, or nothing at all for an
+        /// event that happened on no particular page. Nothing is written out rather than written as
+        /// an empty value, so the collector does not end up holding a column of blanks for the eight
+        /// events out of ten that never had a page to name.
+        /// </summary>
+        private static string? TheAddressPublishedFor(UsageDataRouteKey? route)
+        {
+            return route is { } named ? UsageDataRoutePatterns.All[named] : null;
         }
 
         private sealed record CollectorMessage(
@@ -219,9 +230,16 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
         /// the browser sent it; the four facts about the instance, none of which the browser is ever
         /// asked for; and the two instructions that keep the caller's own address out of what the
         /// collector stores.
+        ///
+        /// The address is left out entirely for an event that happened on no particular page. The
+        /// two instructions below are also empty-looking and are written anyway, on purpose: an
+        /// absent instruction is one the collector does not follow, and what it would not follow is
+        /// the instruction to throw away the caller's own address.
         /// </summary>
         private sealed record WhatEachMessageCarries(
-            [property: JsonPropertyName("route")] string Route,
+            [property: JsonPropertyName("route")]
+            [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            string? Route,
             [property: JsonPropertyName("version")] string Version,
             [property: JsonPropertyName("deployment_mode")] string DeploymentMode,
             [property: JsonPropertyName("licence_tier")] string LicenceTier,

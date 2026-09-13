@@ -15,20 +15,32 @@ const CONSENT_TOKEN_HEADER = "X-Lighthouse-UsageData-Token";
  * reads them; a numbered mirror would name whichever member happens to sit at that position.
  */
 export const UsageDataEventName = {
-	TeamOrPortfolioTabOpened: "TeamOrPortfolioTabOpened",
+	TeamTabOpened: "TeamTabOpened",
+	PortfolioTabOpened: "PortfolioTabOpened",
+	TeamCreated: "TeamCreated",
+	TeamDeleted: "TeamDeleted",
+	PortfolioCreated: "PortfolioCreated",
+	PortfolioDeleted: "PortfolioDeleted",
+	TeamManualForecastRun: "TeamManualForecastRun",
+	WorkTrackingSystemConnected: "WorkTrackingSystemConnected",
+	TeamRefreshTriggered: "TeamRefreshTriggered",
+	PortfolioRefreshTriggered: "PortfolioRefreshTriggered",
 } as const;
 
 export type UsageDataEventName =
 	(typeof UsageDataEventName)[keyof typeof UsageDataEventName];
 
 /**
- * One thing that happened. Nothing here is text: two choices from closed lists and two numbers, so
- * there is no field in which a page address, a name somebody picked or a sentence somebody typed
- * could travel - not because the sender is careful, but because no such field exists.
+ * One thing that happened. Nothing here is text: choices from closed lists and numbers, so there is
+ * no field in which a page address, a name somebody picked or a sentence somebody typed could
+ * travel - not because the sender is careful, but because no such field exists.
+ *
+ * Only the two tab openings say which page somebody was on. The rest are things somebody did, which
+ * happen on no particular page, and the server refuses one that names a page anyway.
  */
 export interface IUsageDataEvent {
 	name: UsageDataEventName;
-	route: UsageDataRouteKey;
+	route?: UsageDataRouteKey;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

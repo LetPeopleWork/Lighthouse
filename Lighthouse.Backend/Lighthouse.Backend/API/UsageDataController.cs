@@ -169,10 +169,16 @@ namespace Lighthouse.Backend.API
         }
 
         /// <summary>
-        /// Reads one part of the message, or says it cannot be read. Every part has to have actually
-        /// been sent, and both choices have to be members of the list they claim: a whole number left
-        /// out of a message arrives as zero, and zero names a real choice in both lists, so reading
-        /// one straight would invent an event nobody reported.
+        /// Reads one part of the message, or says it cannot be read. Every choice has to be a member
+        /// of the list it claims: a whole number left out of a message arrives as zero, and zero
+        /// names a real choice in every one of those lists, so reading one straight would invent an
+        /// event nobody reported.
+        ///
+        /// The page is the part that is not the same for every event. Two events say which page
+        /// somebody opened and must name one of this product's own; the rest happen on no particular
+        /// page and must name none, so an address on one of those is refused rather than ignored -
+        /// whoever sent it believed it would be counted, and a message half accepted is the one
+        /// nobody notices.
         ///
         /// Reading and checking are one act here rather than two passes, so there is no arrangement
         /// in which something got past the check and was then read as a zero anyway.
@@ -181,14 +187,15 @@ namespace Lighthouse.Backend.API
         {
             if (reported is null
                 || reported.Name is not { } name || !Enum.IsDefined(name)
-                || reported.Route is not { } route || !Enum.IsDefined(route)
+                || (reported.Route is { } named && !Enum.IsDefined(named))
+                || !UsageDataEventShapes.Fits(name, reported.Route)
                 || reported.OffsetMs is not { } offset || offset < 0
                 || reported.Sequence is not { } sequence || sequence < 0)
             {
                 return null;
             }
 
-            return new UsageDataEventReported(name, route, offset, sequence);
+            return new UsageDataEventReported(name, reported.Route, offset, sequence);
         }
     }
 }

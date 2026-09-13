@@ -4,6 +4,7 @@ import {
 	readUsageDataConsentToken,
 	useUsageDataConsent,
 } from "../../hooks/useUsageDataConsent";
+import type { UsageDataRouteKey } from "../../models/UsageData/UsageData";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
 import {
 	type IUsageDataEvent,
@@ -28,12 +29,24 @@ import { usageDataRouteKeyFor } from "./usageDataRouteKeys";
  */
 export const FLUSH_INTERVAL_MS = 30 * 1000;
 
+/**
+ * Which of the two openings this is, decided from the page itself.
+ *
+ * The name and the page each say which kind it is, so they can disagree - and a message read
+ * straight would be counted as an opening that never happened. The server refuses that
+ * disagreement; choosing the name from the page here is why it never has to.
+ */
+const asOpeningOf = (route: UsageDataRouteKey): UsageDataEventName =>
+	route.startsWith("TeamDetail_")
+		? UsageDataEventName.TeamTabOpened
+		: UsageDataEventName.PortfolioTabOpened;
+
 const asHandedIn = (
 	pages: NoticedPage[],
 	handedInAt: number,
 ): IUsageDataEvent[] =>
 	pages.map((page, position) => ({
-		name: UsageDataEventName.TeamOrPortfolioTabOpened,
+		name: asOpeningOf(page.route),
 		route: page.route,
 		offsetMs: Math.max(0, handedInAt - page.noticedAt),
 		sequence: position,

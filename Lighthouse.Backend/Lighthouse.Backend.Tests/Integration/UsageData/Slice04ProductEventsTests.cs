@@ -61,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         ];
 
         [Test]
-        [Ignore("Pending slice 04 step 04-01 - the list and the page's rows land together.")]
         public async Task A_team_tab_opening_arrives_as_the_address_this_product_publishes_for_it()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -79,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Pending slice 04 step 04-01 - the list and the page's rows land together.")]
         public async Task A_portfolio_tab_opening_arrives_as_the_address_this_product_publishes_for_it()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -103,7 +101,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// than a message obviously broken, which is the kind nobody finds.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-01 - the list and the page's rows land together.")]
         public async Task A_tab_opening_that_names_one_kind_of_page_and_the_others_address_is_refused()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -126,7 +123,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// running code this product no longer ships.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-01 - the list and the page's rows land together.")]
         public async Task The_single_name_these_two_replaced_is_no_longer_something_anyone_can_send()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -144,7 +140,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         [Test]
         [TestCaseSource(nameof(EventsThatCarryNothingButTheirName))]
-        [Ignore("Pending slice 04 step 04-01 - the list and the page's rows land together.")]
         public async Task An_event_about_something_somebody_did_arrives_without_any_address(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -169,7 +164,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// the one nobody notices.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-01 - the list and the page's rows land together.")]
         public async Task An_event_about_something_somebody_did_is_refused_if_it_carries_an_address()
         {
             var token = await ABrowserThatAgreedAsync();
