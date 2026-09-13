@@ -115,11 +115,14 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// than a message obviously broken, which is the kind nobody finds.
         /// </summary>
         [Test]
-        public async Task A_tab_opening_that_names_one_kind_of_page_and_the_others_address_is_refused()
+        [TestCase(PortfolioTabOpened, TeamMetricsTab)]
+        [TestCase(TeamTabOpened, PortfolioMetricsTab)]
+        public async Task A_tab_opening_that_names_one_kind_of_page_and_the_others_address_is_refused(
+            string name, string address)
         {
             var token = await ABrowserThatAgreedAsync();
 
-            using var handedIn = await HandInAsync(token, ABatchOf(PortfolioTabOpened, TeamMetricsTab));
+            using var handedIn = await HandInAsync(token, ABatchOf(name, address));
 
             var sent = await EverythingTheCollectorReceived();
 
