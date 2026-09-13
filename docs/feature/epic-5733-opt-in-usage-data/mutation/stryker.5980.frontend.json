@@ -14,7 +14,9 @@
     "src/services/UsageData/usageDataEvents.ts",
     "src/services/UsageData/usageDataRouteKeys.ts",
     "src/services/UsageData/usageDataBuffer.ts",
-    "src/hooks/useUsageDataConsent.tsx"
+    "src/hooks/useUsageDataConsent.tsx",
+    "src/services/Api/UsageDataService.ts",
+    "src/models/UsageData/UsageData.ts"
   ],
   "thresholds": { "high": 90, "low": 80, "break": 0 },
   "jsonReporter": { "fileName": "stryker-5980-frontend.json" },

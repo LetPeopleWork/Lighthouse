@@ -19,11 +19,14 @@ export default defineConfig({
 		// the consent provider throws when no provider is above a consumer, and Footer is one.
 		include: [
 			"src/services/UsageData/usageDataEvents.test.ts",
+			"src/services/UsageData/usageDataBuffer.test.ts",
 			"src/services/UsageData/usageDataRouteKeys.test.ts",
 			"src/hooks/useUsageDataConsent.test.tsx",
 			"src/hooks/UsageDataConsentProvider.test.tsx",
 			"src/services/Api/UsageDataService.test.ts",
 			"src/components/App/Footer/Footer.test.tsx",
+			"src/components/UsageData/UsageDataDialog.test.tsx",
+			"src/components/UsageData/UsageDataIndicator.test.tsx",
 		],
 		exclude: [
 			"**/node_modules/**",

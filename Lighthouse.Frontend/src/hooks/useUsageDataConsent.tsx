@@ -102,6 +102,7 @@ export function UsageDataConsentProvider({
 			// and wrong; guessing "not sending" is only wrong.
 			setIndicatorState("unknown");
 		}
+		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [usageDataService]);
 
 	useEffect(() => {
@@ -109,6 +110,7 @@ export function UsageDataConsentProvider({
 
 		const timer = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
 		return () => clearInterval(timer);
+		// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	}, [refresh]);
 
 	const decide = useCallback(
@@ -146,7 +148,9 @@ export function UsageDataConsentProvider({
 		[usageDataService, refresh, decision],
 	);
 
+	// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	const openDialog = useCallback(() => setIsDialogOpen(true), []);
+	// Stryker disable next-line ArrayDeclaration: a dependency list only shows itself when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
 	const closeDialog = useCallback(() => setIsDialogOpen(false), []);
 
 	const consent = useMemo(

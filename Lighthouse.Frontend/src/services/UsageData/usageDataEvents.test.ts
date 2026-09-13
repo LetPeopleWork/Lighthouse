@@ -60,8 +60,22 @@ const settle = async (usageDataService: IUsageDataService) => {
 	});
 };
 
+/** The same as `settle`, for a test that is driving the clock rather than letting it run. */
+const settleOnTheHeldClock = async () => {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(1);
+	});
+};
+
 const hideTheTab = () => {
 	vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+	act(() => {
+		document.dispatchEvent(new Event("visibilitychange"));
+	});
+};
+
+const bringTheTabBack = () => {
+	vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
 	act(() => {
 		document.dispatchEvent(new Event("visibilitychange"));
 	});
@@ -203,5 +217,90 @@ describe("useUsageDataEventDetector", () => {
 		expect(first.usageDataService.postEvents).not.toHaveBeenCalled();
 		expect(second.usageDataService.postEvents).not.toHaveBeenCalled();
 		expect(sessionStorage.length).toBe(0);
+	});
+
+	// The server has no timestamp of its own for any of this: it works out when a page was opened by
+	// subtracting this figure from the moment the batch reached it. So the figure has to be an age -
+	// how long ago - rather than a reading of the clock, and rather than nothing at all.
+	it("says how long ago a page was opened, not what the clock read", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+
+		try {
+			const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
+			await settleOnTheHeldClock();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(FLUSH_INTERVAL_MS);
+			});
+
+			const [, events] = vi.mocked(usageDataService.postEvents).mock.calls[0];
+
+			// Roughly the one interval that passed. The bounds are wide because the page is noticed a
+			// moment after mounting rather than exactly on it, and both ways of getting this wrong miss
+			// by far more than a moment: one reports nothing elapsed, the other hands over a date in
+			// this decade as though it were a duration.
+			expect(events).toHaveLength(1);
+			expect(events[0].offsetMs).toBeGreaterThan(FLUSH_INTERVAL_MS / 2);
+			expect(events[0].offsetMs).toBeLessThan(FLUSH_INTERVAL_MS * 2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	// A tab being put away is the moment to hand in; a tab coming back is not. The browser announces
+	// both with the same event, so something that listened without asking which one it was would also
+	// hand in every time somebody returned to the window.
+	it("hands nothing in when the tab comes back", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
+		await settle(usageDataService);
+
+		bringTheTabBack();
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		expect(usageDataService.postEvents).not.toHaveBeenCalled();
+	});
+
+	// A detector whose component is gone has to let go of its clock as well. One left running keeps
+	// its own handle on the service, and every later mount adds another, so a tab somebody leaves
+	// open for a day ends up handing pages in through a growing crowd of detectors nobody can see.
+	it("stops handing pages in once the component holding it is gone", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+
+		try {
+			const abandoned = renderDetector(granted, "/teams/42/metrics");
+			abandoned.unmount();
+
+			const current = renderDetector(granted, "/teams/42/metrics");
+			await settleOnTheHeldClock();
+			await act(async () => {
+				await vi.advanceTimersByTimeAsync(FLUSH_INTERVAL_MS);
+			});
+
+			expect(current.usageDataService.postEvents).toHaveBeenCalled();
+			expect(abandoned.usageDataService.postEvents).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	// Nothing leaves without the token that says this browser agreed. A tab can outlive its own
+	// storage - somebody clears site data, or the browser reclaims it - and what is left then is a
+	// batch with no consent attached to it, which is not a thing to send and find out about later.
+	it("hands nothing in once this browser's token is gone", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+		const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
+		await settle(usageDataService);
+
+		localStorage.removeItem(TOKEN_STORAGE_KEY);
+		hideTheTab();
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
 });
