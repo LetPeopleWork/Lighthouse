@@ -5,9 +5,10 @@ description: >
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
   Future features APPEND new outcome entries; do not rewrite existing ones.
 
-  Lighthouse is a SELF-HOSTED product. There is no central vendor telemetry pipeline
-  unless the customer opts in (no such mechanism exists today). Therefore each KPI
-  declares its `measurement_scope`:
+  Lighthouse is a SELF-HOSTED product. There is no central vendor pipeline unless the
+  customer opts in. Such a mechanism now exists — Usage Data, opt-in per browser and
+  revocable — but no shipped artifact is yet configured to send to a collector, so no
+  instance reports anything today. Therefore each KPI declares its `measurement_scope`:
 
     - per_instance: structured log events + in-app admin-visible aggregation.
                     The customer admin sees this; the vendor team does NOT, unless
@@ -17,10 +18,11 @@ description: >
                         observable population. Treat aggregate numbers from this
                         scope as directional, not statistically representative.
 
-    - opt_in_telemetry_required: not measurable without a future opt-in telemetry
-                                 feature that does not exist. Flag for product
-                                 decision; do NOT build instrumentation that
-                                 phones home without consent.
+    - opt_in_telemetry_required: not measurable until enough instances have both a
+                                 configured collector and somebody who agreed. The
+                                 mechanism exists now; the population does not. Flag
+                                 for product decision; do NOT build instrumentation
+                                 that phones home without consent.
 
 outcomes:
 
