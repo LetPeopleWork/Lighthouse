@@ -53,13 +53,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string TabOpened = "TeamOrPortfolioTabOpened";
         private const string TeamMetricsTab = "TeamDetail_Metrics";
 
-        private const string TheStateAnswerDoesNotConsultTheVetoYet =
-            "Pending: the state answer derives Sending from this browser's own decision alone "
-            + "(Epic 5733 slice 03, ADO #5836).";
-
-        private const string NoAdministratorFieldYet =
-            "Pending: the state answer does not say who stopped usage data yet (Epic 5733 slice 03, ADO #5836).";
-
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient client = null!;
@@ -239,7 +232,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // from. Today the answer is derived from this browser's own decision alone, so a granted
         // browser is told "sending" while the emit path drops everything it hands in.
         [Test]
-        [Ignore(TheStateAnswerDoesNotConsultTheVetoYet)]
         public async Task An_engaged_veto_makes_a_consenting_browser_be_told_it_is_not_sending()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -255,7 +247,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @AC-06.7 @DT-26 - and it says whose doing it was. "Not sending" alone reads as "you declined"
         // to somebody who did not decline, which is the reading this criterion exists to rule out.
         [Test]
-        [Ignore(NoAdministratorFieldYet)]
         public async Task An_engaged_veto_says_the_administrator_stopped_it()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -271,7 +262,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @AC-06.7 - the other half, and the one that makes the field mean something. A browser that
         // declined is told it is not sending and is NOT told an administrator did it.
         [Test]
-        [Ignore(NoAdministratorFieldYet)]
         public async Task A_browser_that_declined_is_not_told_the_administrator_did_it()
         {
             var token = await ABrowserThatRefusedAsync();

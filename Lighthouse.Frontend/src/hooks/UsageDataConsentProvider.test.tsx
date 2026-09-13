@@ -16,6 +16,7 @@ const undecided: IUsageDataState = {
 	decision: null,
 	mayAsk: false,
 	reAskAfterDays: 90,
+	administratorDisabled: false,
 };
 
 const granted: IUsageDataState = {
@@ -23,6 +24,7 @@ const granted: IUsageDataState = {
 	decision: "Granted",
 	mayAsk: false,
 	reAskAfterDays: 90,
+	administratorDisabled: false,
 };
 
 // Stands in for the footer: the one place that asks somebody the question.

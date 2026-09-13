@@ -74,13 +74,16 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private static readonly string[] EverythingRecordingAnAnswerHandsBack = ["token"];
 
-        // Widened deliberately for slice 02. mayAsk is a derived boolean carrying nothing an
-        // anonymous caller could not infer by waiting to be asked; reAskAfterDays is a single
-        // configuration number, identical for every caller, and says nothing about this browser or
-        // this instance's tier. Anything else arriving here should fail this test again rather than
-        // be added to the list.
+        // Widened deliberately for slice 02, and again for slice 03. mayAsk is a derived boolean
+        // carrying nothing an anonymous caller could not infer by waiting to be asked;
+        // reAskAfterDays is a single configuration number, identical for every caller, and says
+        // nothing about this browser or this instance's tier. administratorDisabled says that
+        // somebody who runs this instance stopped usage data - which AC-06.7 requires be disclosed,
+        // because without it a reader who agreed and was overruled reads the silence as their own
+        // refusal. It names no tier and no person. Anything else arriving here should fail this
+        // test again rather than be added to the list.
         private static readonly string[] EverythingTheStateAnswerCarries =
-            ["sending", "decision", "mayAsk", "reAskAfterDays"];
+            ["sending", "decision", "mayAsk", "reAskAfterDays", "administratorDisabled"];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;

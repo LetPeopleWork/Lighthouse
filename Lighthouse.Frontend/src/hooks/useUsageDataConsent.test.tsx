@@ -50,6 +50,7 @@ const undecided: IUsageDataState = {
 	decision: null,
 	mayAsk: false,
 	reAskAfterDays: 90,
+	administratorDisabled: false,
 };
 
 const granted: IUsageDataState = {
@@ -57,6 +58,7 @@ const granted: IUsageDataState = {
 	decision: "Granted",
 	mayAsk: false,
 	reAskAfterDays: 90,
+	administratorDisabled: false,
 };
 
 const declined: IUsageDataState = {
@@ -64,6 +66,7 @@ const declined: IUsageDataState = {
 	decision: "Declined",
 	mayAsk: false,
 	reAskAfterDays: 90,
+	administratorDisabled: false,
 };
 
 afterEach(() => {

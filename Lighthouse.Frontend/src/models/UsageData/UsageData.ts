@@ -12,6 +12,14 @@ export interface IUsageDataState {
 	sending: boolean;
 	decision: string | null;
 	/**
+	 * Whether whoever runs this instance has stopped usage data for everybody on it.
+	 *
+	 * The only field here that is about the instance rather than about this browser, and the reason
+	 * the footer can say who stopped it. Without it, somebody who agreed and was then overruled is
+	 * shown exactly what somebody who refused is shown, and reads it as their own doing.
+	 */
+	administratorDisabled: boolean;
+	/**
 	 * Whether to put the question to this browser now, unprompted.
 	 *
 	 * Worked out entirely on the server, from how long the instance has been installed, whether an

@@ -45,6 +45,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                     consent.TokenHash, now, now - (window / TouchesPerWindow), cancellationToken);
             }
 
+            // Asked once and used twice: the footer has to say the same thing the emit path does.
+            var administratorStoppedIt = !masterSwitch.IsAllowed();
+
             // This browser's own answer, not the instance's. The indicator beside it says "being sent
             // from this browser", and a colleague's grant must not make that sentence appear over
             // somebody who declined - which is what asking whether anyone at all still consents did.
@@ -52,7 +55,11 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             // counting, and this browser is asking right now. Its stamp was just refreshed above, and
             // the refresh does not write back to the entity read before it - so testing that stamp
             // would report "not sending" on the very request that revived it.
-            var sending = consent?.Decision == UsageDataDecision.Granted;
+            //
+            // The administrator's veto is the other half, and leaving it out is not a smaller
+            // answer but a false one: the emit path drops every batch this browser hands in, so a
+            // footer reading only the decision tells somebody data is leaving that is not.
+            var sending = consent?.Decision == UsageDataDecision.Granted && !administratorStoppedIt;
 
             // A token this instance never minted lands here with consent still null, which is exactly
             // where a browser holding no token lands. The two answers are identical by construction
@@ -61,7 +68,8 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 Sending: sending,
                 Decision: consent?.Decision.ToString(),
                 MayAsk: MayAsk(consent, now),
-                ReAskAfterDays: configuration.CurrentValue.ReAskAfterDays);
+                ReAskAfterDays: configuration.CurrentValue.ReAskAfterDays,
+                AdministratorDisabled: administratorStoppedIt);
         }
 
         public async Task<string> RecordDecisionAsync(UsageDataDecision decision, CancellationToken cancellationToken)
