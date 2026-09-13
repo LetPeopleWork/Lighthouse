@@ -21,7 +21,9 @@ import type { ManualForecast } from "../../../models/Forecasts/ManualForecast";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import BacktestForecaster, { type HistoricalMode } from "./BacktestForecaster";
 import ManualForecaster from "./ManualForecaster";
 import NewItemForecaster from "./NewItemForecaster";
@@ -104,6 +106,7 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 
 	const { forecastService, teamMetricsService, teamService } =
 		useContext(ApiServiceContext);
+	const reportUsage = useUsageDataReporter();
 	const { showError } = useErrorSnackbar();
 
 	useEffect(() => {
@@ -199,6 +202,10 @@ const TeamForecastView: React.FC<TeamForecastViewProps> = ({ team }) => {
 				if (seq === requestSeqRef.current) {
 					setManualForecastResult(result);
 				}
+
+				// After the forecast came back, not when it was asked for. Reporting the asking would
+				// count somebody typing a number into a box the same as somebody getting an answer.
+				reportUsage({ name: UsageDataEventName.TeamManualForecastRun });
 			} catch (error) {
 				if (seq === requestSeqRef.current) {
 					const errorMessage =

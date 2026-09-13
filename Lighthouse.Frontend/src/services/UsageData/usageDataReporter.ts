@@ -1,6 +1,7 @@
 import { useCallback } from "react";
-import { useUsageDataConsent } from "../../hooks/useUsageDataConsent";
+import { useUsageDataConsentIfKnown } from "../../hooks/useUsageDataConsent";
 import type { UsageDataWorkTrackingSystem } from "../../models/UsageData/UsageData";
+import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { UsageDataEventName } from "../Api/UsageDataService";
 import { notice } from "./usageDataBuffer";
 
@@ -17,6 +18,30 @@ export interface UsageDataCapabilityUse {
 }
 
 /**
+ * Which kind of system a connection is, said in the words usage data publishes rather than the
+ * words the product stores.
+ *
+ * Written out rather than passed straight through, even though the two lists happen to spell the
+ * same names today. They are separate on purpose - what leaves an instance must not change because
+ * a storage concern changed - and writing it out is what makes a new kind of system fail to compile
+ * here rather than start travelling unannounced.
+ */
+const asSomethingWeDisclose: Record<
+	WorkTrackingSystemType,
+	UsageDataWorkTrackingSystem
+> = {
+	AzureDevOps: "AzureDevOps",
+	Jira: "Jira",
+	Linear: "Linear",
+	Csv: "Csv",
+	ServiceNow: "ServiceNow",
+};
+
+export const usageDataWorkTrackingSystemFor = (
+	system: WorkTrackingSystemType,
+): UsageDataWorkTrackingSystem => asSomethingWeDisclose[system];
+
+/**
  * How a screen says that somebody used something, rather than that somebody looked at something.
  *
  * It is a hook rather than a plain function because what decides whether anything is recorded is
@@ -31,12 +56,12 @@ export interface UsageDataCapabilityUse {
 export const useUsageDataReporter = (): ((
 	use: UsageDataCapabilityUse,
 ) => void) => {
-	const { indicatorState } = useUsageDataConsent();
+	const consent = useUsageDataConsentIfKnown();
 
 	// What decides is the answer the server gave about this browser, never whether a token is lying
 	// around. Refusing mints a token too, so a browser that said no holds one - and an answer that
-	// has not arrived yet is not a yes either.
-	const isSending = indicatorState === "sending";
+	// has not arrived yet is not a yes either, nor is a screen mounted where nothing asked.
+	const isSending = consent?.indicatorState === "sending";
 
 	return useCallback(
 		(use: UsageDataCapabilityUse): void => {

@@ -10,8 +10,12 @@ import {
 	type IUsageDataService,
 	UsageDataEventName,
 } from "../Api/UsageDataService";
+import { takeWhatWasNoticed } from "./usageDataBuffer";
 import { useUsageDataEventDetector } from "./usageDataEvents";
-import { useUsageDataReporter } from "./usageDataReporter";
+import {
+	usageDataWorkTrackingSystemFor,
+	useUsageDataReporter,
+} from "./usageDataReporter";
 
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
 
@@ -90,6 +94,22 @@ const everythingHandedIn = (usageDataService: IUsageDataService) =>
 	vi
 		.mocked(usageDataService.postEvents)
 		.mock.calls.flatMap(([, events]) => events);
+
+describe("usageDataWorkTrackingSystemFor", () => {
+	// The only event in the set that carries anything beyond its name, so the only place a wrong
+	// answer would be a wrong number rather than an obvious break. The two lists spell the same
+	// names today and are separate on purpose, which is exactly the arrangement where a mistranslation
+	// would go unnoticed.
+	it.each([
+		["AzureDevOps"],
+		["Jira"],
+		["Linear"],
+		["Csv"],
+		["ServiceNow"],
+	] as const)("discloses %s as itself", (system) => {
+		expect(usageDataWorkTrackingSystemFor(system)).toBe(system);
+	});
+});
 
 describe("useUsageDataReporter", () => {
 	afterEach(() => {
@@ -214,6 +234,23 @@ describe("useUsageDataReporter", () => {
 		hideTheTab();
 
 		expect(usageDataService.postEvents).not.toHaveBeenCalled();
+	});
+
+	/**
+	 * Most screens that report are also rendered on their own, in their own tests, with nothing
+	 * above them that has ever asked about consent. Reading the answer loudly there would take a
+	 * page down over a number nobody was owed - so an unmounted answer records nothing, which is
+	 * what an unknown answer means everywhere else in this feature too.
+	 */
+	it("records nothing, rather than failing, where nothing asked about consent", () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
+
+		const { result } = renderHook(() => useUsageDataReporter());
+
+		expect(() =>
+			result.current({ name: UsageDataEventName.TeamCreated }),
+		).not.toThrow();
+		expect(takeWhatWasNoticed()).toEqual([]);
 	});
 
 	it("keeps two things somebody did in the order they were done", async () => {

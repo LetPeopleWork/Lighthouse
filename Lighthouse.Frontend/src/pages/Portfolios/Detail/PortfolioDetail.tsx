@@ -37,8 +37,10 @@ import type {
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import PortfolioDeliveryView from "./PortfolioDeliveryView";
 import PortfolioForecastView from "./PortfolioForecastView";
 import PortfolioMetricsView from "./PortfolioMetricsView";
@@ -93,6 +95,7 @@ const PortfolioDetail: React.FC = () => {
 		workTrackingSystemService,
 		rbacService,
 	} = useContext(ApiServiceContext);
+	const reportUsage = useUsageDataReporter();
 
 	const rbac = useRbac();
 
@@ -285,6 +288,7 @@ const PortfolioDetail: React.FC = () => {
 		}
 
 		setIsPortfolioUpdating(true);
+		reportUsage({ name: UsageDataEventName.PortfolioRefreshTriggered });
 		await portfolioService.refreshFeaturesForPortfolio(portfolio.id);
 	};
 

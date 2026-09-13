@@ -9,12 +9,15 @@ import { useRbacGate } from "../../../hooks/useRbacGate";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 
 const EditPortfolio: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewPortfolio = id === undefined;
 	const gate = useRbacGate({ kind: "systemAdmin" });
+	const reportUsage = useUsageDataReporter();
 
 	const urlParams = new URLSearchParams(globalThis.location.search);
 	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
@@ -110,6 +113,7 @@ const EditPortfolio: React.FC = () => {
 		let savedSettings: IPortfolioSettings;
 		if (isNewPortfolio) {
 			savedSettings = await portfolioService.createPortfolio(updatedSettings);
+			reportUsage({ name: UsageDataEventName.PortfolioCreated });
 			await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 			navigate(`/portfolios/${savedSettings.id}/settings`);
 		} else {
@@ -128,6 +132,7 @@ const EditPortfolio: React.FC = () => {
 	) => {
 		const savedSettings =
 			await portfolioService.createPortfolio(updatedSettings);
+		reportUsage({ name: UsageDataEventName.PortfolioCreated });
 		await portfolioService.refreshFeaturesForPortfolio(savedSettings.id);
 		navigate(`/portfolios/${savedSettings.id}/metrics`);
 	};

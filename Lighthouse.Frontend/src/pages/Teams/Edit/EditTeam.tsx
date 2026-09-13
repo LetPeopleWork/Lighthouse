@@ -10,13 +10,16 @@ import { useRbacGate } from "../../../hooks/useRbacGate";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 
 const EditTeamPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewTeam = id === undefined;
 	const navigate = useNavigate();
 	const gate = useRbacGate({ kind: "systemAdmin" });
+	const reportUsage = useUsageDataReporter();
 
 	const urlParams = new URLSearchParams(globalThis.location.search);
 	const hasCloneFrom = urlParams.get("cloneFrom") !== null;
@@ -41,6 +44,7 @@ const EditTeamPage: React.FC = () => {
 		let newSettings: ITeamSettings;
 		if (isNewTeam) {
 			newSettings = await teamService.createTeam(updatedSettings);
+			reportUsage({ name: UsageDataEventName.TeamCreated });
 			await teamService.updateTeamData(newSettings.id);
 			navigate(`/teams/${newSettings.id}/settings`);
 		} else {
@@ -116,6 +120,7 @@ const EditTeamPage: React.FC = () => {
 
 	const wizardSaveTeamSettings = async (updatedSettings: ITeamSettings) => {
 		const newSettings = await teamService.createTeam(updatedSettings);
+		reportUsage({ name: UsageDataEventName.TeamCreated });
 		await teamService.updateTeamData(newSettings.id);
 		navigate(`/teams/${newSettings.id}/metrics`);
 	};

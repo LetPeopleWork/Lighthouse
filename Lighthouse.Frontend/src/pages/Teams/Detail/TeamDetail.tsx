@@ -35,8 +35,10 @@ import type {
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import TeamFeaturesView from "./TeamFeaturesView";
 import TeamForecastView from "./TeamForecastView";
 import TeamMetricsView from "./TeamMetricsView";
@@ -111,6 +113,7 @@ const TeamDetail: React.FC = () => {
 		workTrackingSystemService,
 		rbacService,
 	} = useContext(ApiServiceContext);
+	const reportUsage = useUsageDataReporter();
 
 	const rbac = useRbac();
 
@@ -247,6 +250,7 @@ const TeamDetail: React.FC = () => {
 		}
 
 		setIsTeamUpdating(true);
+		reportUsage({ name: UsageDataEventName.TeamRefreshTriggered });
 		await teamService.updateTeamData(team.id);
 	};
 

@@ -35,7 +35,9 @@ import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../services/Api/ApiError";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useTerminology } from "../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
 
 const OverviewDashboard: React.FC = () => {
 	const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -76,6 +78,7 @@ const OverviewDashboard: React.FC = () => {
 
 	const { portfolioService, teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
+	const reportUsage = useUsageDataReporter();
 	const {
 		canCreatePortfolio,
 		canCreateTeam,
@@ -159,8 +162,10 @@ const OverviewDashboard: React.FC = () => {
 			setIsLoading(true);
 			if (deleteType === "portfolio") {
 				await portfolioService.deletePortfolio(selectedItem.id);
+				reportUsage({ name: UsageDataEventName.PortfolioDeleted });
 			} else if (deleteType === "team") {
 				await teamService.deleteTeam(selectedItem.id);
+				reportUsage({ name: UsageDataEventName.TeamDeleted });
 			}
 			await fetchData();
 		} catch (error) {

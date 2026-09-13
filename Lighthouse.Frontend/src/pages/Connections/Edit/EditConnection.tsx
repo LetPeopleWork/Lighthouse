@@ -9,7 +9,12 @@ import { useRbacGate } from "../../../hooks/useRbacGate";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	usageDataWorkTrackingSystemFor,
+	useUsageDataReporter,
+} from "../../../services/UsageData/usageDataReporter";
 
 const EditConnectionPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
@@ -25,6 +30,7 @@ const EditConnectionPage: React.FC = () => {
 		: `Update ${connectionTerm} Connection`;
 
 	const { workTrackingSystemService } = useContext(ApiServiceContext);
+	const reportUsage = useUsageDataReporter();
 
 	const getSupportedSystems = async () => {
 		return await workTrackingSystemService.getWorkTrackingSystems();
@@ -45,14 +51,27 @@ const EditConnectionPage: React.FC = () => {
 	const saveConnectionSettings = async (
 		connection: IWorkTrackingSystemConnection,
 	) => {
-		const saved =
-			isNewConnection && connection.id === 0
-				? await workTrackingSystemService.addNewWorkTrackingSystemConnection(
-						connection,
-					)
-				: await workTrackingSystemService.updateWorkTrackingSystemConnection(
-						connection,
-					);
+		const isBeingSetUp = isNewConnection && connection.id === 0;
+
+		const saved = isBeingSetUp
+			? await workTrackingSystemService.addNewWorkTrackingSystemConnection(
+					connection,
+				)
+			: await workTrackingSystemService.updateWorkTrackingSystemConnection(
+					connection,
+				);
+
+		// Only a connection being set up, never one being edited. Somebody changing a password on a
+		// connection they have had for a year has not adopted anything.
+		if (isBeingSetUp) {
+			reportUsage({
+				name: UsageDataEventName.WorkTrackingSystemConnected,
+				workTrackingSystem: usageDataWorkTrackingSystemFor(
+					saved.workTrackingSystem,
+				),
+			});
+		}
+
 		return saved;
 	};
 

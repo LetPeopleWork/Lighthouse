@@ -253,3 +253,15 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 
 	return consent;
 };
+
+/**
+ * The same answer, or nothing at all where no provider is mounted.
+ *
+ * For the one caller that reports rather than renders. The loud refusal above exists so that two
+ * parts of the screen cannot draw two answers to the same question - a screen showing a stale
+ * answer is worse than a screen refusing to start. Nothing on that reasoning applies to reporting:
+ * there is nothing to draw, and an absent answer already means what it should mean, which is that
+ * nothing is recorded. Refusing there would take a page down over a number nobody was owed.
+ */
+export const useUsageDataConsentIfKnown = (): UsageDataConsent | null =>
+	useContext(UsageDataConsentContext);
