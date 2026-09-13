@@ -114,6 +114,36 @@ export default defineConfig({
 
 		ignoreHTTPSErrors: true,
 
+		/* Every browser in every spec starts as one that has already been shown the usage data
+		   dialog (Epic 5733 slice 02).
+
+		   The dialog opens by itself on an instance old enough, and it is modal - so an unsuppressed
+		   one does not fail an assertion, it swallows pointer events for the rest of whatever spec
+		   it lands in and reports "subtree intercepts pointer events", naming nothing.
+
+		   This lives here rather than in LighthouseFixture because seven spec files import `test`
+		   straight from @playwright/test and never touch that fixture. Suppressing per-fixture
+		   covered most specs and silently missed those, which is how OAuthConnection.spec went red
+		   on main. A context-level default cannot be opted out of by accident.
+
+		   It is the same key a real returning browser writes, so this is a default rather than a
+		   back door - and the one spec that is about the dialog clears it in an init script, which
+		   runs after this is applied. */
+		storageState: {
+			cookies: [],
+			origins: [
+				{
+					origin: new URL(TestConfig.LighthouseUrl).origin,
+					localStorage: [
+						{
+							name: "lighthouse:usagedata:asked",
+							value: new Date().toISOString(),
+						},
+					],
+				},
+			],
+		},
+
 		/* Pinned off UTC on purpose. CI runners are UTC, which is the one offset at
 		   which a UTC/local date-encoding mismatch cancels out — that is how the
 		   shared-link day shift of Bug #5566 stayed invisible in CI while every
