@@ -252,7 +252,7 @@ are re-verified at each release rather than trusted to stay put.
 
 | Setting | Expected state |
 |---|---|
-| Region | EU Cloud (Frankfurt) |
+| Region | EU Cloud |
 | Discard client IP data | On |
 | Location (GeoIP) enrichment | No such transformation present |
 | Session recording | Off |

@@ -160,7 +160,10 @@ What the dialog says is what is true:
 
 - the five fields, by name;
 - that no work item titles, queries, names, URLs, email addresses or free text are ever sent;
-- that the collector is PostHog Cloud EU, operated by PostHog Inc., with data resting in Frankfurt;
+- that the collector is PostHog Cloud EU, operated by PostHog Inc., with data at rest in the EU, and
+  that processing may take place outside it under standard contractual clauses - stated as a fact and
+  linked to PostHog's own agreement rather than paraphrased, since a paraphrase of somebody else's
+  terms drifts while still sounding authoritative (amended 2026-09-13);
 - that **the connection itself reveals this instance's network address to the collector, as any HTTP
   request does**, and that Lighthouse asks PostHog to discard it rather than store it.
 
