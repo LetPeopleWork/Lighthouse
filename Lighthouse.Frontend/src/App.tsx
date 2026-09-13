@@ -20,6 +20,7 @@ import Footer from "./components/App/Footer/Footer";
 import Header from "./components/App/Header/Header";
 import SplashScreen from "./components/App/SplashScreen/SplashScreen";
 import { useAuthGuard } from "./hooks/useAuthGuard";
+import { UsageDataConsentProvider } from "./hooks/useUsageDataConsent";
 import "./App.css";
 import SurveyNudge from "./components/SurveyNudge/SurveyNudge";
 import {
@@ -182,66 +183,68 @@ const App: React.FC = () => {
 			<Router>
 				<ApiServiceContext.Provider value={apiServices}>
 					<TerminologyProvider>
-						<Box
-							className="container"
-							sx={{
-								bgcolor: theme.palette.background.default,
-								color: theme.palette.text.primary,
-								transition: "background-color 0.3s ease, color 0.3s ease",
-								minHeight: "100vh",
-								display: "flex",
-								flexDirection: "column",
-							}}
-						>
-							<CssBaseline />
-							<Header
-								isAuthenticated={shell === "authenticated"}
-								currentUserDisplayName={currentUser?.displayName}
-								onLogout={logout}
-							/>
+						<UsageDataConsentProvider>
 							<Box
-								component="main"
-								className="main-content"
+								className="container"
 								sx={{
 									bgcolor: theme.palette.background.default,
-									pt: 2,
-									pb: 4,
-									flex: 1,
+									color: theme.palette.text.primary,
+									transition: "background-color 0.3s ease, color 0.3s ease",
+									minHeight: "100vh",
+									display: "flex",
+									flexDirection: "column",
 								}}
 							>
-								<Suspense fallback={<RouteFallback />}>
-									<Routes>
-										<Route path="/" element={<OverviewDashboard />} />
-										<Route
-											path="/oauth/popup-complete"
-											element={<OAuthPopupComplete />}
-										/>
-										<Route path="/connections">
-											<Route path="new" element={<EditConnection />} />
-											<Route path=":id/edit" element={<EditConnection />} />
-										</Route>
-										<Route path="/teams">
-											<Route path=":id/:tab?" element={<TeamDetail />} />
-											<Route path="edit/:id" element={<TeamEditRedirect />} />
-											<Route path="new" element={<EditTeam />} />
-										</Route>
-										<Route path="/portfolios">
-											<Route path=":id/:tab?" element={<PortfolioDetail />} />
+								<CssBaseline />
+								<Header
+									isAuthenticated={shell === "authenticated"}
+									currentUserDisplayName={currentUser?.displayName}
+									onLogout={logout}
+								/>
+								<Box
+									component="main"
+									className="main-content"
+									sx={{
+										bgcolor: theme.palette.background.default,
+										pt: 2,
+										pb: 4,
+										flex: 1,
+									}}
+								>
+									<Suspense fallback={<RouteFallback />}>
+										<Routes>
+											<Route path="/" element={<OverviewDashboard />} />
 											<Route
-												path="edit/:id"
-												element={<PortfolioEditRedirect />}
+												path="/oauth/popup-complete"
+												element={<OAuthPopupComplete />}
 											/>
-											<Route path="new" element={<EditPortfolio />} />
-										</Route>
-										<Route path="/features" element={<FeaturesView />} />
-										<Route path="/settings" element={<Settings />} />
-									</Routes>
-								</Suspense>
+											<Route path="/connections">
+												<Route path="new" element={<EditConnection />} />
+												<Route path=":id/edit" element={<EditConnection />} />
+											</Route>
+											<Route path="/teams">
+												<Route path=":id/:tab?" element={<TeamDetail />} />
+												<Route path="edit/:id" element={<TeamEditRedirect />} />
+												<Route path="new" element={<EditTeam />} />
+											</Route>
+											<Route path="/portfolios">
+												<Route path=":id/:tab?" element={<PortfolioDetail />} />
+												<Route
+													path="edit/:id"
+													element={<PortfolioEditRedirect />}
+												/>
+												<Route path="new" element={<EditPortfolio />} />
+											</Route>
+											<Route path="/features" element={<FeaturesView />} />
+											<Route path="/settings" element={<Settings />} />
+										</Routes>
+									</Suspense>
+								</Box>
+								<Footer />
+								<SurveyNudge />
+								<UsageDataEventDetector />
 							</Box>
-							<Footer />
-							<SurveyNudge />
-							<UsageDataEventDetector />
-						</Box>
+						</UsageDataConsentProvider>
 					</TerminologyProvider>
 				</ApiServiceContext.Provider>
 			</Router>

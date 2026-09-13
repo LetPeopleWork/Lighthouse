@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter as Router } from "react-router";
+import { UsageDataConsentProvider } from "../../../hooks/useUsageDataConsent";
 import Footer from "./Footer";
 
 vi.mock("../LetPeopleWork/LighthouseVersion", () => ({
@@ -10,7 +11,9 @@ describe("Footer component", () => {
 	it("renders LetPeopleWorkLogo and LighthouseVersion components", async () => {
 		render(
 			<Router>
-				<Footer />
+				<UsageDataConsentProvider>
+					<Footer />
+				</UsageDataConsentProvider>
 			</Router>,
 		);
 
@@ -26,7 +29,9 @@ describe("Footer component", () => {
 	it("renders donation button with correct link", async () => {
 		render(
 			<Router>
-				<Footer />
+				<UsageDataConsentProvider>
+					<Footer />
+				</UsageDataConsentProvider>
 			</Router>,
 		);
 

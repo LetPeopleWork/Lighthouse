@@ -13,7 +13,10 @@ import {
 	takeWhatWasNoticed,
 } from "../services/UsageData/usageDataBuffer";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
-import { useUsageDataConsent } from "./useUsageDataConsent";
+import {
+	UsageDataConsentProvider,
+	useUsageDataConsent,
+} from "./useUsageDataConsent";
 
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
 
@@ -33,7 +36,7 @@ const renderConsent = (
 		<ApiServiceContext.Provider
 			value={createMockApiServiceContext({ usageDataService })}
 		>
-			{children}
+			<UsageDataConsentProvider>{children}</UsageDataConsentProvider>
 		</ApiServiceContext.Provider>
 	);
 

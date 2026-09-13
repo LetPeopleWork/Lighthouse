@@ -1,4 +1,11 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import type { UsageDataSendingState } from "../components/UsageData/UsageDataIndicator";
 import type { UsageDataDecisionValue } from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
@@ -51,13 +58,28 @@ export interface UsageDataConsent {
  *
  * This request is also what keeps this browser's consent alive, and the server only refreshes the
  * stamp a few times a window, so asking hourly costs almost no writes. Asking only once, when the
- * footer first mounts, would be the bug it looks like it is not: this is a single-page application,
- * so a tab left open for weeks never mounts the footer again, and consent would quietly age out
- * from under somebody who is using Lighthouse every day.
+ * application starts, would be the bug it looks like it is not: this is a single-page application,
+ * so a tab left open for weeks never starts again, and consent would quietly age out from under
+ * somebody who is using Lighthouse every day.
  */
 const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 
-export const useUsageDataConsent = (): UsageDataConsent => {
+const UsageDataConsentContext = createContext<UsageDataConsent | null>(null);
+
+/**
+ * Holds this browser's answer about usage data, once, for everything that needs it.
+ *
+ * Several parts of the application ask the same question at the same time - the footer draws the
+ * indicator, and a detector elsewhere decides whether to collect anything at all - and they have to
+ * agree from one instant to the next. Giving each of them its own copy is the defect this replaces:
+ * agreeing in the footer left the detector reading the previous answer until its own hourly refresh
+ * came round, so the indicator said data was being sent and, for up to an hour, none was.
+ */
+export function UsageDataConsentProvider({
+	children,
+}: {
+	readonly children: React.ReactNode;
+}) {
 	const { usageDataService } = useContext(ApiServiceContext);
 
 	const [indicatorState, setIndicatorState] =
@@ -124,13 +146,49 @@ export const useUsageDataConsent = (): UsageDataConsent => {
 		[usageDataService, refresh, decision],
 	);
 
-	return {
-		indicatorState,
-		willAskAgain,
-		isDialogOpen,
-		failedToRecord,
-		openDialog: () => setIsDialogOpen(true),
-		closeDialog: () => setIsDialogOpen(false),
-		decide,
-	};
+	const openDialog = useCallback(() => setIsDialogOpen(true), []);
+	const closeDialog = useCallback(() => setIsDialogOpen(false), []);
+
+	const consent = useMemo(
+		() => ({
+			indicatorState,
+			willAskAgain,
+			isDialogOpen,
+			failedToRecord,
+			openDialog,
+			closeDialog,
+			decide,
+		}),
+		[
+			indicatorState,
+			willAskAgain,
+			isDialogOpen,
+			failedToRecord,
+			openDialog,
+			closeDialog,
+			decide,
+		],
+	);
+
+	return (
+		<UsageDataConsentContext.Provider value={consent}>
+			{children}
+		</UsageDataConsentContext.Provider>
+	);
+}
+
+export const useUsageDataConsent = (): UsageDataConsent => {
+	const consent = useContext(UsageDataConsentContext);
+
+	if (consent === null) {
+		// Falling back to a private copy here is exactly what the provider exists to prevent: two
+		// parts of the screen would hold two answers to the same question, and agreeing in one of
+		// them would not reach the other for an hour. Refusing loudly on the first render is the
+		// only version of this that anybody finds out about.
+		throw new Error(
+			"Usage data consent was asked for outside UsageDataConsentProvider. Mount the provider above anything that asks, so every part of the screen sees the same answer at the same moment.",
+		);
+	}
+
+	return consent;
 };

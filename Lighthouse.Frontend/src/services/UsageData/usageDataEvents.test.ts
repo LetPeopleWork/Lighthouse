@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
 import type { IUsageDataState } from "../../models/UsageData/UsageData";
 import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
@@ -40,7 +41,7 @@ const renderDetector = (state: IUsageDataState, path: string) => {
 			createElement(
 				ApiServiceContext.Provider,
 				{ value: createMockApiServiceContext({ usageDataService }) },
-				children,
+				createElement(UsageDataConsentProvider, null, children),
 			),
 		);
 
