@@ -112,6 +112,11 @@ jobs:
           Database__ConnectionString: "Data Source=lighthouse.db"
           Lighthouse__OAuth__UseStubProvider: "true"
           Lighthouse__BaseUrl: "http://localhost:5000"
+          # Epic 5733 slice 02: a fresh instance is minutes old, so nobody would be due to be asked
+          # and the walking skeleton for the unprompted dialog would skip rather than run. Zero makes
+          # every browser due, which also means the fixture that marks each spec as already-asked is
+          # doing real work here rather than relying on the instance being too young to ask.
+          UsageData__AskAfterInstallDays: "0"
 
       - name: Write private key to file
         run: echo "${{ secrets.LIGHTHOUSE_LICENSE_PRIVATE_KEY }}" > private_key.pem
@@ -143,6 +148,7 @@ jobs:
         working-directory: ./Lighthouse.EndToEndTests
         env:
           LIGHTHOUSEURL: http://localhost:5000
+          LIGHTHOUSE_E2E_USAGEDATA_ASKS_IMMEDIATELY: "true"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{ !cancelled() }}

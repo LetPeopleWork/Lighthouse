@@ -162,6 +162,33 @@ async function generateTestData(
 	};
 }
 
+/**
+ * Every spec starts as a browser that has already been shown the usage data dialog.
+ *
+ * From this slice the dialog opens by itself on an instance old enough, and it is modal - so
+ * without this it would not fail one assertion, it would swallow pointer events for the rest of
+ * whatever spec it appeared in, and report "element intercepts pointer events" rather than
+ * anything about usage data.
+ *
+ * Seeded through the same key a real returning browser uses, so this is a default rather than a
+ * back door: nothing here exists only for tests, and a spec that wants the dialog clears the key
+ * and gets the production path. Note that install age alone would usually hide it anyway, since a
+ * fresh instance is minutes old - but that is an accident, and the database-restore spec imports
+ * an install timestamp from months ago and would undo it.
+ */
+async function suppressTheUsageDataDialog(page: Page): Promise<void> {
+	await page.addInitScript(() => {
+		try {
+			localStorage.setItem(
+				"lighthouse:usagedata:asked",
+				new Date().toISOString(),
+			);
+		} catch {
+			// localStorage unavailable in some contexts (e.g. about:blank); ignore.
+		}
+	});
+}
+
 async function suppressUpdateNotifications(page: Page): Promise<void> {
 	await page.addInitScript(() => {
 		try {
@@ -175,6 +202,7 @@ async function suppressUpdateNotifications(page: Page): Promise<void> {
 export const testWithAuth = base.extend<LighthouseFixtures>({
 	loginPage: async ({ page }, use) => {
 		await suppressUpdateNotifications(page);
+		await suppressTheUsageDataDialog(page);
 		const lighthousePage = new LighthousePage(page);
 		const loginPage = await lighthousePage.openWithAuth();
 
@@ -185,6 +213,7 @@ export const testWithAuth = base.extend<LighthouseFixtures>({
 export const test = base.extend<LighthouseFixtures>({
 	overviewPage: async ({ page, request }, use) => {
 		await suppressUpdateNotifications(page);
+		await suppressTheUsageDataDialog(page);
 		const lighthousePage = new LighthousePage(page);
 		const overviewPage = await lighthousePage.open();
 
