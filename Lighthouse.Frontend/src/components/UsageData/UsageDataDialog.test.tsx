@@ -337,7 +337,14 @@ describe("UsageDataDialog, where an administrator has stopped usage data", () =>
 	it("says why the buttons cannot be used, rather than leaving them dead", () => {
 		renderDialog({ administratorDisabled: true });
 
-		expect(screen.getByRole("alert")).toHaveTextContent(/administrator/i);
+		const hint = screen.getByRole("alert");
+
+		// Both halves, because either alone is satisfied by the wrong sentence: the one telling
+		// everybody the switch exists also says "administrator", and a bare "not being sent" leaves
+		// the reader to assume it was their own doing. The wording itself is pinned where it is
+		// written; asserting it here as well would only check that the code equals itself.
+		expect(hint).toHaveTextContent(/administrator/i);
+		expect(hint).toHaveTextContent(/not being sent/i);
 	});
 
 	it("stays quiet about it when nobody has stopped anything", () => {

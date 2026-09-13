@@ -125,6 +125,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 Assert.That(received, Is.Not.Empty,
                     "the consent was treated as revoked rather than suspended, so lifting the veto "
                     + "leaves an instance where everybody has to be asked all over again");
+                Assert.That(Flag(state, "sending"), Is.True,
+                    "data is flowing again and the footer still says it is not, so the reader is "
+                    + "told the opposite of what the instance is doing - and nothing here would "
+                    + "notice an answer wired to always say not-sending");
+                Assert.That(Flag(state, "administratorDisabled"), Is.False,
+                    "the veto is lifted and the answer still blames an administrator for it");
                 Assert.That(Text(state, "decision"), Is.EqualTo("Granted"),
                     "the browser's own answer was altered by somebody else's decision");
                 Assert.That(Flag(state, "mayAsk"), Is.False,

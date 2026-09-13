@@ -12,6 +12,8 @@ import {
 // cases would both pass against the same wrong render.
 const SENDING_LABEL = "Usage data: being sent from this browser";
 const NOT_SENDING_LABEL = "Usage data: not being sent";
+const STOPPED_BY_ADMINISTRATOR_LABEL =
+	"Usage data: not being sent, stopped by an administrator";
 
 const renderIndicator = (
 	state: UsageDataSendingState,
@@ -99,16 +101,14 @@ describe("UsageDataIndicator", () => {
  * missing is the subject of the sentence.
  */
 describe("UsageDataIndicator, where an administrator has stopped usage data", () => {
-	it("says nothing is being sent", () => {
+	// Exact, like the two states above and for a second reason besides the unanchored-matcher trap:
+	// this is an accessible name, and a substring match is satisfied by a sentence of any length. A
+	// label that grew into the dialog's whole paragraph would pass every loose assertion here while
+	// being unusable to the person the name exists for.
+	it("says nothing is being sent, and says who stopped it", () => {
 		const { button } = renderIndicator("disabled-by-administrator");
 
-		expect(button).toHaveAccessibleName(/not being sent/i);
-	});
-
-	it("says who stopped it, so the reader is not left assuming it was them", () => {
-		const { button } = renderIndicator("disabled-by-administrator");
-
-		expect(button).toHaveAccessibleName(/administrator/i);
+		expect(button).toHaveAccessibleName(STOPPED_BY_ADMINISTRATOR_LABEL);
 	});
 
 	it("does not read the same as a reader's own refusal", () => {
