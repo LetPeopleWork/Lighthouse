@@ -106,6 +106,16 @@ describe("an address naming no tab is the first tab of that page", () => {
 			expect(usageDataRouteKeyFor(pathname)).toBeUndefined();
 		},
 	);
+
+	// What stands where a Team is named has to be a number all through, not merely contain one. A
+	// word that happens to carry digits is still a word, and the page this product adds a Team from
+	// could be renamed to one tomorrow.
+	it.each(["/teams/42abc", "/teams/abc42", "/portfolios/7x", "/portfolios/x7"])(
+		"does not read %s as a page somebody opened",
+		(pathname) => {
+			expect(usageDataRouteKeyFor(pathname)).toBeUndefined();
+		},
+	);
 });
 
 describe("a page with no key is answered with nothing, never with a stand-in", () => {
@@ -159,6 +169,17 @@ describe("an opening's name and its page never disagree", () => {
 	it("answers a page it has no name for with nothing at all", () => {
 		expect(usageDataPageOpeningFor("/settings")).toBeUndefined();
 	});
+
+	// A tab belonging to the other kind of page has no name on this one's list. Answering it with an
+	// opening that names the kind but carries no page would hand the server a tab opening with no tab
+	// - refused there, but only after it left the browser. Asked of the opening rather than through
+	// the page alone, because reading the page off a half-built opening hides exactly this.
+	it.each(["/teams/42/deliveries", "/portfolios/7/forecasts"])(
+		"answers %s with nothing rather than half an opening",
+		(pathname) => {
+			expect(usageDataPageOpeningFor(pathname)).toBeUndefined();
+		},
+	);
 });
 
 describe("the browser list and the server list name the same members", () => {

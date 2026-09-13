@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useNavigate } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
 import type { IUsageDataState } from "../../models/UsageData/UsageData";
@@ -74,6 +74,41 @@ const renderDetector = (state: IUsageDataState, path: string) => {
  * count. A page somebody left sooner than that is never noticed at all, so every test about what
  * was handed in has to get past the threshold before it can be about flushing.
  */
+/**
+ * The same detector, with the router's own way of moving between pages handed back, so a test can
+ * leave one tab for another rather than only ever mounting on one.
+ */
+const renderDetectorThatCanMoveOn = (state: IUsageDataState, path: string) => {
+	const usageDataService: IUsageDataService = {
+		getState: vi.fn().mockResolvedValue(state),
+		recordDecision: vi.fn().mockResolvedValue("freshly-minted-token"),
+		revoke: vi.fn().mockResolvedValue(undefined),
+		acknowledgeAsked: vi.fn().mockResolvedValue(undefined),
+		postEvents: vi.fn().mockResolvedValue(undefined),
+	};
+
+	const wrapper = ({ children }: { children: ReactNode }) =>
+		createElement(
+			MemoryRouter,
+			{ initialEntries: [path] },
+			createElement(
+				ApiServiceContext.Provider,
+				{ value: createMockApiServiceContext({ usageDataService }) },
+				createElement(UsageDataConsentProvider, null, children),
+			),
+		);
+
+	const rendered = renderHook(
+		() => {
+			useUsageDataEventDetector();
+			return useNavigate();
+		},
+		{ wrapper },
+	);
+
+	return { ...rendered, usageDataService };
+};
+
 const settle = async (usageDataService: IUsageDataService) => {
 	await waitFor(() => expect(usageDataService.getState).toHaveBeenCalled());
 	await act(async () => {
@@ -214,6 +249,37 @@ describe("useUsageDataEventDetector", () => {
 		// open long enough to have been noticed at all. The clock is not advanced past this point on
 		// purpose - doing so would let the threshold elapse and the ordinary flush take over, which
 		// is a different claim.
+		expect(usageDataService.postEvents).not.toHaveBeenCalled();
+	});
+
+	// The threshold only works because leaving a page calls off the count that page had started.
+	// Without that, the clock a tab started goes on running after somebody has moved to another one,
+	// and clicking through three tabs to find something records all three - the exact behaviour the
+	// threshold exists to stop, restored in full while every other case here still passes.
+	it("says nothing about a tab somebody passed through on the way to another", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+
+		const { result, usageDataService } = renderDetectorThatCanMoveOn(
+			granted,
+			"/teams/42/features",
+		);
+		await waitFor(() => expect(usageDataService.getState).toHaveBeenCalled());
+
+		const someOfTheWay = DWELL_BEFORE_A_PAGE_COUNTS_MS * 0.6;
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(someOfTheWay);
+		});
+		act(() => {
+			result.current("/teams/42/metrics");
+		});
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(someOfTheWay);
+		});
+		hideTheTab();
+
+		// Long enough that the tab they left would have counted had its clock kept running, and not
+		// long enough for the one they moved to.
 		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
 
