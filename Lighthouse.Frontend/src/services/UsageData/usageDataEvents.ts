@@ -4,19 +4,15 @@ import {
 	readUsageDataConsentToken,
 	useUsageDataConsent,
 } from "../../hooks/useUsageDataConsent";
-import type { UsageDataRouteKey } from "../../models/UsageData/UsageData";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
-import {
-	type IUsageDataEvent,
-	UsageDataEventName,
-} from "../Api/UsageDataService";
+import type { IUsageDataEvent } from "../Api/UsageDataService";
 import {
 	forgetWhatWasNoticed,
 	type NoticedEvent,
 	notice,
 	takeWhatWasNoticed,
 } from "./usageDataBuffer";
-import { usageDataRouteKeyFor } from "./usageDataRouteKeys";
+import { usageDataPageOpeningFor } from "./usageDataRouteKeys";
 
 /**
  * How long a page opening may sit here before it is handed in.
@@ -46,18 +42,6 @@ export const FLUSH_INTERVAL_MS = 30 * 1000;
  * on the exact figure.
  */
 export const DWELL_BEFORE_A_PAGE_COUNTS_MS = 5 * 1000;
-
-/**
- * Which of the two openings this is, decided from the page itself.
- *
- * The name and the page each say which kind it is, so they can disagree - and a message read
- * straight would be counted as an opening that never happened. The server refuses that
- * disagreement; choosing the name from the page here is why it never has to.
- */
-const asOpeningOf = (route: UsageDataRouteKey): UsageDataEventName =>
-	route.startsWith("TeamDetail_")
-		? UsageDataEventName.TeamTabOpened
-		: UsageDataEventName.PortfolioTabOpened;
 
 const asHandedIn = (
 	seen: NoticedEvent[],
@@ -91,14 +75,14 @@ export const useUsageDataEventDetector = (): void => {
 			return;
 		}
 
-		const route = usageDataRouteKeyFor(pathname);
+		const opening = usageDataPageOpeningFor(pathname);
 
-		if (route === undefined) {
+		if (opening === undefined) {
 			return;
 		}
 
 		const counted = setTimeout(() => {
-			notice({ name: asOpeningOf(route), route, noticedAt: Date.now() });
+			notice({ ...opening, noticedAt: Date.now() });
 		}, DWELL_BEFORE_A_PAGE_COUNTS_MS);
 
 		return () => clearTimeout(counted);

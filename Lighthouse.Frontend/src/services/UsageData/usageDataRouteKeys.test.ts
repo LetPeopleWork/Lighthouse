@@ -3,7 +3,11 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { UsageDataRouteKey } from "../../models/UsageData/UsageData";
-import { usageDataRouteKeyFor } from "./usageDataRouteKeys";
+import { UsageDataEventName } from "../Api/UsageDataService";
+import {
+	usageDataPageOpeningFor,
+	usageDataRouteKeyFor,
+} from "./usageDataRouteKeys";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -125,6 +129,35 @@ describe("a page with no key is answered with nothing, never with a stand-in", (
 		"/teams/42/metrics/something-else",
 	])("answers %s with nothing", (pathname) => {
 		expect(usageDataRouteKeyFor(pathname)).toBeUndefined();
+	});
+});
+
+describe("an opening's name and its page never disagree", () => {
+	// The server refuses a message where they do, so this is the guard that keeps one from being
+	// sent in the first place. Both are read off one entry, and this is what says so: every address
+	// this product has for a Team is answered with the Team opening, and likewise for Portfolios.
+	it.each([
+		["/teams/42", UsageDataEventName.TeamTabOpened],
+		["/teams/42/features", UsageDataEventName.TeamTabOpened],
+		["/teams/42/forecasts", UsageDataEventName.TeamTabOpened],
+		["/teams/42/metrics", UsageDataEventName.TeamTabOpened],
+		["/teams/42/settings", UsageDataEventName.TeamTabOpened],
+		["/teams/42/access", UsageDataEventName.TeamTabOpened],
+		["/portfolios/7", UsageDataEventName.PortfolioTabOpened],
+		["/portfolios/7/features", UsageDataEventName.PortfolioTabOpened],
+		["/portfolios/7/metrics", UsageDataEventName.PortfolioTabOpened],
+		["/portfolios/7/deliveries", UsageDataEventName.PortfolioTabOpened],
+		["/portfolios/7/settings", UsageDataEventName.PortfolioTabOpened],
+		["/portfolios/7/access", UsageDataEventName.PortfolioTabOpened],
+	])("answers %s with %s and a page of that kind", (pathname, name) => {
+		const opening = usageDataPageOpeningFor(pathname);
+
+		expect(opening?.name).toBe(name);
+		expect(opening?.route).toBe(usageDataRouteKeyFor(pathname));
+	});
+
+	it("answers a page it has no name for with nothing at all", () => {
+		expect(usageDataPageOpeningFor("/settings")).toBeUndefined();
 	});
 });
 

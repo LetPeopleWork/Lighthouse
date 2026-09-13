@@ -1,5 +1,6 @@
 import { matchPath } from "react-router";
 import { UsageDataRouteKey } from "../../models/UsageData/UsageData";
+import { UsageDataEventName } from "../Api/UsageDataService";
 
 /**
  * The one place a page address is turned into something that may be sent, and the address is only
@@ -31,13 +32,27 @@ const detailPages = [
 		route: "/teams/:id/:tab?",
 		views: teamViews,
 		shownWhenNoTabIsNamed: UsageDataRouteKey.TeamDetail_Features,
+		opensAs: UsageDataEventName.TeamTabOpened,
 	},
 	{
 		route: "/portfolios/:id/:tab?",
 		views: portfolioViews,
 		shownWhenNoTabIsNamed: UsageDataRouteKey.PortfolioDetail_Features,
+		opensAs: UsageDataEventName.PortfolioTabOpened,
 	},
 ] as const;
+
+/**
+ * A page somebody opened: which of the two openings it is, and which page.
+ *
+ * The two travel together because they are one fact read off one entry. Worked out apart - the key
+ * from the address, the name from the shape of the key - they can disagree, and the server refuses
+ * a message where they do. This is why it never has to.
+ */
+export interface UsageDataPageOpening {
+	name: UsageDataEventName;
+	route: UsageDataRouteKey;
+}
 
 /**
  * Whether what sits where a Team or Portfolio is named could be one, rather than a word.
@@ -62,9 +77,9 @@ const couldBeOneOfTheirs = (id: string | undefined): boolean =>
  * a link - so reading it as no page at all would leave the tab people arrive on uncounted while
  * counting every tab they moved to afterwards.
  */
-export function usageDataRouteKeyFor(
+export function usageDataPageOpeningFor(
 	pathname: string,
-): UsageDataRouteKey | undefined {
+): UsageDataPageOpening | undefined {
 	for (const page of detailPages) {
 		const match = matchPath(page.route, pathname);
 
@@ -75,13 +90,22 @@ export function usageDataRouteKeyFor(
 		const view = match.params.tab;
 
 		if (view !== undefined) {
-			return page.views.get(view);
+			const route = page.views.get(view);
+
+			return route === undefined ? undefined : { name: page.opensAs, route };
 		}
 
 		if (couldBeOneOfTheirs(match.params.id)) {
-			return page.shownWhenNoTabIsNamed;
+			return { name: page.opensAs, route: page.shownWhenNoTabIsNamed };
 		}
 	}
 
 	return undefined;
+}
+
+/** Which page this path is, for a caller that needs the page and not the opening. */
+export function usageDataRouteKeyFor(
+	pathname: string,
+): UsageDataRouteKey | undefined {
+	return usageDataPageOpeningFor(pathname)?.route;
 }
