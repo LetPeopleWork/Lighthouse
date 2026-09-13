@@ -20,9 +20,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string EventListHeading = "The complete list of events:";
         private const string SendsNothingYet = "Lighthouse sends nothing yet";
 
-        private const string NotShippedYet =
-            "Pending: this becomes true and this page becomes wrong in the same change (Epic 5733 slice 01c, ADO #5980).";
-
         /// <summary>
         /// The page still tells the reader that this release sends nothing. That sentence is true
         /// today and becomes false the moment the first event leaves, so removing it is part of
@@ -31,7 +28,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// very first event.
         /// </summary>
         [Test]
-        [Ignore(NotShippedYet)]
         public void ThePageThatSaysNothingIsSentYet_DoesNotSurviveTheReleaseThatSends()
         {
             var page = TheUsageDataPage();
@@ -48,7 +44,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// declaration to count against.
         /// </summary>
         [Test]
-        [Ignore(NotShippedYet)]
         public void EveryEventTheProductCanSend_HasALineOnThePage()
         {
             var declared = EveryEventTheProductDeclares();

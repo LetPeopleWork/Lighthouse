@@ -85,7 +85,7 @@ describe("SurveyNudge eligibility gating", () => {
 	// tracks how they use it. The day Usage Data ships, an indicator in the footer says otherwise,
 	// and the product contradicts itself in two places a reader can see at once. Pending until the
 	// copy is corrected — it fails today, and that is the point of it.
-	it.skip("does not promise that Lighthouse never tracks how you use it", async () => {
+	it("does not promise that Lighthouse never tracks how you use it", async () => {
 		renderNudge({
 			licenseStatus: getMockLicenseStatus(),
 			systemInfo: getMockSystemInfo({ installTimestamp: daysBefore(20) }),

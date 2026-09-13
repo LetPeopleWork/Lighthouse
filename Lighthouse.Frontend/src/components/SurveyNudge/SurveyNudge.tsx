@@ -111,10 +111,11 @@ const SurveyNudge: React.FC<SurveyNudgeProps> = ({ now }) => {
 				</IconButton>
 			</Box>
 			<Typography variant="body2" sx={{ mt: 1 }}>
-				Lighthouse never tracks how you use it, so your feedback is the only way
-				we learn what to improve. This short survey is completely optional and
-				anonymous, and takes about two minutes. As a thank-you you can opt in to
-				a free one-month Premium trial at the end.
+				Usage data can tell us which parts of Lighthouse get opened, and nothing
+				about whether they helped. Your answers are the only way we learn what
+				is missing and what gets in the way. This short survey is completely
+				optional and anonymous, and takes about two minutes. As a thank-you you
+				can opt in to a free one-month Premium trial at the end.
 			</Typography>
 			<Stack spacing={1} sx={{ mt: 2 }}>
 				<Button

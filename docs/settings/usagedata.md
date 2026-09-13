@@ -12,18 +12,13 @@ using — its version, how it is deployed, which licence tier it runs on. Nothin
 somebody using that instance agrees to it first, and anyone can stop it again with one click.
 
 This page is the full account: what is sent, what is never sent, who holds it, how long they hold it,
-and what Lighthouse stores on your own server to remember your answer. If the consent dialog and this
-page ever disagree, that is a bug — they are checked against each other, and against the message
-actually sent, on every build.
+and what Lighthouse stores on your own server to remember your answer. The dialog keeps no list of its
+own, on purpose — a list inside a dialog goes stale quietly while still looking authoritative — so this
+is the only place that list lives, and the build fails if it falls behind what the product can
+actually send.
 
 **It is off until somebody turns it on.** A Lighthouse instance that nobody has answered on sends
 nothing at all.
-
-{: .note }
-> **In this release Lighthouse sends nothing yet.** The consent dialog, the footer indicator and the
-> record of your answer all work today; the sending described below arrives in a later release. This
-> page describes what will be sent, so that anyone deciding now decides with the full picture rather
-> than a promise to publish one later.
 
 ## Why this exists
 
@@ -42,7 +37,7 @@ The complete list of events:
 
 | Event | When it is sent | What travels with it |
 |---|---|---|
-| A detail tab was opened | Somebody opened a tab on a Team or Portfolio page | Which of the two kinds of page it was, and which tab. **Never which Team or which Portfolio** |
+| A detail tab was opened | Somebody opened a tab on a Team or Portfolio page | Which of the ten Team and Portfolio detail tabs it was. **Never which Team or which Portfolio** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
@@ -52,18 +47,41 @@ Every event carries these, attached by **your** server rather than by your brows
 | Field | What it is | Example |
 |---|---|---|
 | Browser identifier | A random value your Lighthouse generates and stores **on your own server**, against the record of this browser's answer, the first time somebody agrees here. Derived from nothing — not your hostname, not your licence key, not your account. Your browser never sees it and never sends it | `a7f2…` |
+| Which tab was opened | One of ten addresses this product publishes about itself, listed in full below. Your browser never sends an address; it sends a label, and your server looks the published address up | `/teams/:id/metrics` |
 | Lighthouse version | The version this instance runs, but only when it is a published release. Anything else is sent as the literal word `unreleased` | `v26.9.9.9`, `unreleased` |
-| Deployment mode | How it is deployed | `Docker`, `Kubernetes`, `Standalone` |
+| Deployment mode | How it is deployed, as one of `Standalone`, `Windows`, `Linux`, `MacOS`, `Docker`, `Kubernetes` | `Kubernetes` |
 | Licence tier | Which tier this instance runs on | `Community`, `Premium` |
-| Authentication | Whether this instance has authentication switched on | `true`, `false` |
-| Timestamp | When it happened | `2026-09-12T09:14:07Z` |
+| Authentication | Whether somebody here signs in as themselves. `true` only when authentication is switched on and working — an instance where it is misconfigured, or where it refuses everybody, sends `false`, because nobody is signing in individually there either | `true`, `false` |
+| Timestamp | When it happened. Your browser sends how long ago it was, never a reading of its own clock, so neither its clock nor its time zone travels; your server turns that into a time by its own | `2026-09-12T09:14:07Z` |
 
 ### What the page address never contains
 
 Lighthouse pages have addresses like `/teams/42/metrics`, where `42` identifies one of *your* Teams.
 That number never leaves your browser. What the browser records is not a shortened address — it is a
-fixed label chosen from the closed list above, so there is no address present to shorten and nothing
-to accidentally get wrong.
+fixed label chosen from a closed list, so there is no address present to shorten and nothing to
+accidentally get wrong.
+
+Your server turns that label into the address this product publishes for it. There are ten of those,
+and this is all of them:
+
+`/teams/:id/features`, `/teams/:id/forecasts`, `/teams/:id/metrics`, `/teams/:id/settings`,
+`/teams/:id/access`, `/portfolios/:id/features`, `/portfolios/:id/metrics`,
+`/portfolios/:id/deliveries`, `/portfolios/:id/settings`, `/portfolios/:id/access`
+
+The `:id` is written that way in Lighthouse's own source. It is not a real identifier that something
+stripped on the way out — there was never a real one there to strip.
+
+### There is a daily ceiling, and events past it are thrown away
+
+One instance forwards at most **1000 events a day**. Past that the day's events are discarded rather
+than refused: a refusal only tells a browser to try again, and trying again is the last thing an
+exhausted allowance needs. A thousand is roughly twenty busy people's day on one instance, so a real
+deployment does not reach it.
+
+The allowance being protected is a single shared one, drawn on by every Lighthouse in the world, so
+enough honest instances could empty it without any of them misbehaving. Operators can move the
+ceiling with `UsageData:DailyEventBudget`. Either way the numbers are a floor rather than a count:
+nothing extra is ever sent, and on a very large instance something may be missing.
 
 ## What is never sent
 
@@ -72,8 +90,11 @@ Nothing about your work, and nothing about you:
 - No work item titles, identifiers, queries or descriptions
 - No team, portfolio or delivery names, and no identifiers for any of them
 - No user names, email addresses or account identifiers
-- No URLs, no page addresses, no free text of any kind. The message has **no field capable of
-  carrying free text** — that is a property of its shape, not a rule somebody has to remember
+- No free text of any kind, and no address your browser was at. What your browser posts to your own
+  server has **no field capable of carrying free text** — two choices from closed lists and two
+  bounded numbers — so this is a property of its shape rather than a rule somebody has to remember.
+  The only address-shaped thing that travels onward is one of the ten published above, which
+  Lighthouse wrote down about itself
 - **No IP address.** The message explicitly carries an instruction not to record one, and the
   collector is configured to discard it as well
 - **No location.** Location lookup is off, and the message carries an instruction to skip it
@@ -185,11 +206,15 @@ the part that asks permission.
 
 ## Running without an outbound connection
 
-The collector address is configurable. Point it somewhere else, or somewhere that does not resolve,
-and nothing reaches PostHog. Be aware that the message format is PostHog's own capture API, so a
-substitute has to speak that protocol — this is not "point it at any URL and it works".
+**An instance that was never told where to send does not send at all.** There is no built-in fallback,
+deliberately: the single collector this product has holds the numbers everybody is counted in, and an
+instance that posted there without being asked to would add invented events to them. An instance in
+that state says so in its log, once, at warning level. It has to say it, because a usage event
+dropping quietly is normal here by design and looks exactly like working.
 
-On Kubernetes this is `app.usageData.collectorBaseUrl` in the Helm chart.
+Where to send is `UsageData:CollectorBaseUrl`. Point it somewhere else and nothing reaches PostHog. Be
+aware that the message format is PostHog's own capture API, so a substitute has to speak that
+protocol — this is not "point it at any URL and it works".
 
 ## How the collector is configured
 
@@ -210,5 +235,5 @@ are re-verified at each release rather than trusted to stay put.
 
 Two of these do not depend on trusting that list at all: every message carries its own instruction to
 discard the IP and skip location lookup, and that is checked against the actual outgoing message on
-every build. A scheduled job also reads the collector back and fails if any stored event carries an
-address or a location, or if a location-shaped field appears at all.
+every build. The rest of the list lives where no test of ours can see it, so it is re-read by hand at
+each release — written down here so that it can be.
