@@ -29,7 +29,23 @@ export interface AskDecision {
 export const evaluateAskEligibility = (
 	input: AskEligibilityInput,
 ): AskDecision => {
-	throw new Error(
-		`evaluateAskEligibility is not implemented — RED scaffold. Asked with mayAsk=${input.mayAsk}, decision=${input.decision}, lastAskedAt=${input.lastAskedAt}, promptSlotTaken=${input.promptSlotTaken}.`,
-	);
+	// Outranks being due. Consent asked alongside an unrelated request is not freely given, so a
+	// browser the server says is due still waits for the next session.
+	if (input.promptSlotTaken) {
+		return { shouldAsk: false };
+	}
+
+	if (!input.mayAsk) {
+		return { shouldAsk: false };
+	}
+
+	// The marker is read only for a browser that has never answered, and that restriction is the
+	// load-bearing part. A browser that declined carries a marker from the day it was asked; three
+	// months later the server says it is due again, and a marker left over from the first ask must
+	// not be what silences the second.
+	if (input.decision === null) {
+		return { shouldAsk: input.lastAskedAt === null };
+	}
+
+	return { shouldAsk: true };
 };

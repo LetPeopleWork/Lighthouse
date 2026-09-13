@@ -5,7 +5,7 @@ import { cadenceSentence } from "./usageDataCadenceCopy";
  * Slice 02, AC-02.9 and AC-05.5. describe.skip = RED scaffold; DELIVER enables it (ADR-025).
  */
 
-describe.skip("cadenceSentence", () => {
+describe("cadenceSentence", () => {
 	it("tells a reader who will be asked again that they will be", () => {
 		expect(cadenceSentence(true)).toMatch(/ask you again/i);
 	});

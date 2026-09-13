@@ -20,7 +20,7 @@ const input = (overrides?: Partial<AskEligibilityInput>): AskEligibilityInput =>
 	...overrides,
 });
 
-describe.skip("evaluateAskEligibility", () => {
+describe("evaluateAskEligibility", () => {
 	it("asks a browser that has never been asked and never answered", () => {
 		expect(evaluateAskEligibility(input()).shouldAsk).toBe(true);
 	});
