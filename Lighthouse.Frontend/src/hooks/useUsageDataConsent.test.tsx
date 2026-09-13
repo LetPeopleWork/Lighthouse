@@ -132,7 +132,9 @@ describe("useUsageDataConsent", () => {
 	it("hands the dialog the fact, not only the footer a label", async () => {
 		const { result } = renderConsent(grantedButStoppedByAnAdministrator);
 
-		await waitFor(() => expect(result.current.administratorDisabled).toBe(true));
+		await waitFor(() =>
+			expect(result.current.administratorDisabled).toBe(true),
+		);
 	});
 
 	it("says nobody stopped anything when nobody has", async () => {
