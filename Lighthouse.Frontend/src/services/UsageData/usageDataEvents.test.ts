@@ -8,6 +8,7 @@ import { createMockApiServiceContext } from "../../tests/MockApiServiceProvider"
 import { ApiServiceContext } from "../Api/ApiServiceContext";
 import type { IUsageDataService } from "../Api/UsageDataService";
 import {
+	DWELL_BEFORE_A_PAGE_COUNTS_MS,
 	FLUSH_INTERVAL_MS,
 	useUsageDataEventDetector,
 } from "./usageDataEvents";
@@ -55,20 +56,21 @@ const renderDetector = (state: IUsageDataState, path: string) => {
 };
 
 /**
- * Lets the answer about this browser arrive and the page be noticed, without waiting on a clock.
- * Everything after this point in a test is about flushing, not about getting started.
+ * Lets the answer about this browser arrive, and then stays on the page long enough for it to
+ * count. A page somebody left sooner than that is never noticed at all, so every test about what
+ * was handed in has to get past the threshold before it can be about flushing.
  */
 const settle = async (usageDataService: IUsageDataService) => {
 	await waitFor(() => expect(usageDataService.getState).toHaveBeenCalled());
 	await act(async () => {
-		await Promise.resolve();
+		await vi.advanceTimersByTimeAsync(DWELL_BEFORE_A_PAGE_COUNTS_MS);
 	});
 };
 
 /** The same as `settle`, for a test that is driving the clock rather than letting it run. */
 const settleOnTheHeldClock = async () => {
 	await act(async () => {
-		await vi.advanceTimersByTimeAsync(1);
+		await vi.advanceTimersByTimeAsync(DWELL_BEFORE_A_PAGE_COUNTS_MS);
 	});
 };
 
@@ -86,7 +88,15 @@ const bringTheTabBack = () => {
 	});
 };
 
+// Held for every test in this file, because the detector now waits before it notices anything and
+// no test can afford to sit out that wait in real time. `shouldAdvanceTime` keeps `waitFor` working
+// against a held clock.
+beforeEach(() => {
+	vi.useFakeTimers({ shouldAdvanceTime: true });
+});
+
 afterEach(() => {
+	vi.useRealTimers();
 	localStorage.clear();
 	sessionStorage.clear();
 	vi.restoreAllMocks();
@@ -140,31 +150,57 @@ describe("useUsageDataEventDetector", () => {
 
 	it("hands in what it noticed when the clock says so, and not before", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
-		vi.useFakeTimers({ shouldAdvanceTime: true });
 
-		try {
-			const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
-			await act(async () => {
-				await vi.advanceTimersByTimeAsync(FLUSH_INTERVAL_MS - 1);
-			});
-			expect(usageDataService.postEvents).not.toHaveBeenCalled();
+		const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
 
-			await act(async () => {
-				await vi.advanceTimersByTimeAsync(1);
-			});
+		// The page is noticed partway through the interval rather than at the start of it, so what
+		// is left to wait is the interval minus the time spent earning the right to be counted. The
+		// two waits stop short of that remainder and then overshoot it, rather than landing on it
+		// exactly: this clock is allowed to run with real time, so an assertion pinned to the exact
+		// millisecond would fail on a slow machine and pass on a fast one.
+		await settle(usageDataService);
+		const untilTheIntervalIsUp =
+			FLUSH_INTERVAL_MS - DWELL_BEFORE_A_PAGE_COUNTS_MS;
 
-			expect(usageDataService.postEvents).toHaveBeenCalledWith(
-				"this-browsers-token",
-				[
-					expect.objectContaining({
-						name: "TeamTabOpened",
-						route: "TeamDetail_Metrics",
-					}),
-				],
-			);
-		} finally {
-			vi.useRealTimers();
-		}
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(untilTheIntervalIsUp / 2);
+		});
+		expect(usageDataService.postEvents).not.toHaveBeenCalled();
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(untilTheIntervalIsUp);
+		});
+
+		expect(usageDataService.postEvents).toHaveBeenCalledWith(
+			"this-browsers-token",
+			[
+				expect.objectContaining({
+					name: "TeamTabOpened",
+					route: "TeamDetail_Metrics",
+				}),
+			],
+		);
+	});
+
+	// The threshold decides which openings are recorded, never what any of them carries. Clicking
+	// through three tabs to find something would otherwise record three openings, two of which
+	// nobody looked at.
+	it("says nothing about a page somebody left before it counted", async () => {
+		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
+
+		const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
+		await waitFor(() => expect(usageDataService.getState).toHaveBeenCalled());
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(DWELL_BEFORE_A_PAGE_COUNTS_MS / 2);
+		});
+		hideTheTab();
+
+		// Putting the tab away hands in whatever is waiting, and nothing is: the page has not been
+		// open long enough to have been noticed at all. The clock is not advanced past this point on
+		// purpose - doing so would let the threshold elapse and the ordinary flush take over, which
+		// is a different claim.
+		expect(usageDataService.postEvents).not.toHaveBeenCalled();
 	});
 
 	// Somebody who closes the laptop lid is the ordinary case, not the exception, and a timer that

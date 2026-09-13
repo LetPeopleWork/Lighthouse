@@ -37,8 +37,8 @@ The complete list of events:
 
 | Event | When it is sent | What travels with it |
 |---|---|---|
-| A Team tab was opened | Somebody opened a tab on a Team page | Which of the five Team tabs it was. **Never which Team** |
-| A Portfolio tab was opened | Somebody opened a tab on a Portfolio page | Which of the five Portfolio tabs it was. **Never which Portfolio** |
+| A Team tab was opened | Somebody opened a tab on a Team page **and was still on it five seconds later** | Which of the five Team tabs it was. **Never which Team** |
+| A Portfolio tab was opened | Somebody opened a tab on a Portfolio page **and was still on it five seconds later** | Which of the five Portfolio tabs it was. **Never which Portfolio** |
 | A Team was created | Somebody finished creating a Team | Nothing. **Not its name, not its identifier** |
 | A Team was deleted | Somebody confirmed deleting a Team | Nothing. **Not its name, not its identifier** |
 | A Portfolio was created | Somebody finished creating a Portfolio | Nothing. **Not its name, not its identifier** |
@@ -54,6 +54,11 @@ things — and the build fails if anything outside it is sent.
 **Eight of the ten carry nothing but the fact that they happened.** That is not a courtesy; each event
 in the code says what it is allowed to carry, and one arriving with anything else is refused rather
 than trimmed. So the two tab openings are the only events that can name a page at all.
+
+**A tab you pass through is not recorded.** Clicking through three tabs to find the one you want
+records one opening, not three: a tab you leave within five seconds never counts. Nothing about how
+long you stayed is measured or sent — the five seconds decides only whether an opening is recorded,
+not what it carries.
 
 Every event carries these, attached by **your** server rather than by your browser:
 

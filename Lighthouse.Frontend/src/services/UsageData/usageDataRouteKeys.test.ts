@@ -83,6 +83,27 @@ describe("the identifier in the address stays in the browser", () => {
 	});
 });
 
+describe("an address naming no tab is the first tab of that page", () => {
+	// Most links into these pages are this shape - the Details button on the overview, and every
+	// place a Team's name is a link - so answering them with nothing would leave the tab people
+	// arrive on uncounted while counting every tab they moved to afterwards.
+	it.each([
+		["/teams/42", UsageDataRouteKey.TeamDetail_Features],
+		["/portfolios/7", UsageDataRouteKey.PortfolioDetail_Features],
+	])("answers %s with the first tab", (pathname, expected) => {
+		expect(usageDataRouteKeyFor(pathname)).toBe(expected);
+	});
+
+	// The page for creating one is that same shape. Reading it as a page opening would count a Team
+	// nobody has - and would do it on the one screen where no Team exists to be opened.
+	it.each(["/teams/new", "/portfolios/new"])(
+		"does not read %s as a page somebody opened",
+		(pathname) => {
+			expect(usageDataRouteKeyFor(pathname)).toBeUndefined();
+		},
+	);
+});
+
 describe("a page with no key is answered with nothing, never with a stand-in", () => {
 	it.each([
 		"/",
@@ -94,11 +115,9 @@ describe("a page with no key is answered with nothing, never with a stand-in", (
 		"/teams",
 		"/teams/new",
 		"/teams/edit/5",
-		"/teams/42",
 		"/portfolios",
 		"/portfolios/new",
 		"/portfolios/edit/5",
-		"/portfolios/7",
 		// A tab that belongs to the other kind of page. Two families share a shape, and a map keyed
 		// on the tab alone would answer both with the same member.
 		"/teams/42/deliveries",

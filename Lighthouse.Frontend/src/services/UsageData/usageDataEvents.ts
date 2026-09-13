@@ -30,6 +30,24 @@ import { usageDataRouteKeyFor } from "./usageDataRouteKeys";
 export const FLUSH_INTERVAL_MS = 30 * 1000;
 
 /**
+ * How long somebody has to still be on a page before it counts as having been opened.
+ *
+ * Nothing is measured and nothing about duration is ever sent - this decides which openings are
+ * recorded at all, not what any of them carries. Without it, clicking through three tabs to find
+ * something records three openings, two of which nobody looked at, and the same is true of every
+ * press of the browser's back button.
+ *
+ * It also silences the openings this application causes rather than a person: a Team with no
+ * features is redirected off that tab within milliseconds, so what would otherwise be recorded is a
+ * tab the reader never saw and never chose.
+ *
+ * The cost, stated plainly: a deliberate quick look - open the metrics, read the one number, leave -
+ * is discarded along with the accidents. Five seconds is where that trade was set; nothing depends
+ * on the exact figure.
+ */
+export const DWELL_BEFORE_A_PAGE_COUNTS_MS = 5 * 1000;
+
+/**
  * Which of the two openings this is, decided from the page itself.
  *
  * The name and the page each say which kind it is, so they can disagree - and a message read
@@ -75,9 +93,15 @@ export const useUsageDataEventDetector = (): void => {
 
 		const route = usageDataRouteKeyFor(pathname);
 
-		if (route !== undefined) {
-			notice({ name: asOpeningOf(route), route, noticedAt: Date.now() });
+		if (route === undefined) {
+			return;
 		}
+
+		const counted = setTimeout(() => {
+			notice({ name: asOpeningOf(route), route, noticedAt: Date.now() });
+		}, DWELL_BEFORE_A_PAGE_COUNTS_MS);
+
+		return () => clearTimeout(counted);
 	}, [isSending, pathname]);
 
 	// Stryker disable ArrayDeclaration: the dependency lists below only show themselves when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
