@@ -30,7 +30,22 @@ namespace Lighthouse.Backend.Models.UsageData
                 [UsageDataEventName.PortfolioTabOpened] = "/portfolios/",
             }.ToFrozenDictionary();
 
-        public static bool Fits(UsageDataEventName name, UsageDataRouteKey? route)
+        /// <summary>
+        /// The one event that says which kind of work tracking system it was, because that is the
+        /// whole reason it exists - it answers whether a connector anybody built is being used. One
+        /// arriving without it would be counted as a connection of no particular kind, which is
+        /// worse than not counting it.
+        /// </summary>
+        private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhichKindOfSystem =
+            FrozenSet.ToFrozenSet([UsageDataEventName.WorkTrackingSystemConnected]);
+
+        public static bool Fits(
+            UsageDataEventName name, UsageDataRouteKey? route, UsageDataWorkTrackingSystem? system)
+        {
+            return NamesItsPage(name, route) && NamesAKindOfSystemExactlyWhenItShould(name, system);
+        }
+
+        private static bool NamesItsPage(UsageDataEventName name, UsageDataRouteKey? route)
         {
             if (!ThePageEachEventIsAbout.TryGetValue(name, out var whereItsPagesAddressBegins))
             {
@@ -40,6 +55,17 @@ namespace Lighthouse.Backend.Models.UsageData
             return route is { } named
                 && UsageDataRoutePatterns.All.TryGetValue(named, out var address)
                 && address.StartsWith(whereItsPagesAddressBegins, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Both ways round, deliberately. An event that should name a kind and does not is refused,
+        /// and so is one that names a kind it has no business naming - without the second half the
+        /// declaration would be advice rather than a boundary.
+        /// </summary>
+        private static bool NamesAKindOfSystemExactlyWhenItShould(
+            UsageDataEventName name, UsageDataWorkTrackingSystem? system)
+        {
+            return EventsThatSayWhichKindOfSystem.Contains(name) == (system is not null);
         }
     }
 }

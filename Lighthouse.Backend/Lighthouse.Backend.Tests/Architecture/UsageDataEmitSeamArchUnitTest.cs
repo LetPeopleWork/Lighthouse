@@ -54,6 +54,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "route",
             "timestamp",
             "version",
+            "work_tracking_system",
         ];
 
         /// <summary>

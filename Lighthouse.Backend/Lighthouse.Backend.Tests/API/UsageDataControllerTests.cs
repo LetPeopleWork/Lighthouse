@@ -110,6 +110,7 @@ namespace Lighthouse.Backend.Tests.API
                 [new UsageDataEventDto(
                     UsageDataEventName.TeamTabOpened,
                     UsageDataRouteKey.TeamDetail_Metrics,
+                    WorkTrackingSystem: null,
                     offsetMs,
                     sequence)]);
         }

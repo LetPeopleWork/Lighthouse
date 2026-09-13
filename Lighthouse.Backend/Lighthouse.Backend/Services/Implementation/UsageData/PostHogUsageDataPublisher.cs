@@ -199,6 +199,7 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
                 clock.Now.AddMilliseconds(-reported.OffsetMs),
                 new WhatEachMessageCarries(
                     TheAddressPublishedFor(reported.Route),
+                    reported.WorkTrackingSystem?.ToString(),
                     facts.Version,
                     facts.DeploymentMode.ToString(),
                     facts.LicenceTier,
@@ -240,6 +241,9 @@ namespace Lighthouse.Backend.Services.Implementation.UsageData
             [property: JsonPropertyName("route")]
             [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
             string? Route,
+            [property: JsonPropertyName("work_tracking_system")]
+            [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+            string? WorkTrackingSystem,
             [property: JsonPropertyName("version")] string Version,
             [property: JsonPropertyName("deployment_mode")] string DeploymentMode,
             [property: JsonPropertyName("licence_tier")] string LicenceTier,

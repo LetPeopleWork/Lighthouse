@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API.DTO
     public sealed record UsageDataEventDto(
         UsageDataEventName? Name,
         UsageDataRouteKey? Route,
+        UsageDataWorkTrackingSystem? WorkTrackingSystem,
         int? OffsetMs,
         int? Sequence);
 }

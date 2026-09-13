@@ -185,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("Linear")]
         [TestCase("Csv")]
         [TestCase("ServiceNow")]
-        [Ignore("Pending slice 04 step 04-02 - which kind of system this instance was wired to.")]
         public async Task Connecting_a_work_tracking_system_says_which_kind_it_was(string system)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -209,7 +208,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// be counted as a connection of no particular kind, which is worse than not counting it.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-02 - which kind of system this instance was wired to.")]
         public async Task Connecting_a_work_tracking_system_without_saying_which_kind_is_refused()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -226,7 +224,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore("Pending slice 04 step 04-02 - which kind of system this instance was wired to.")]
         public async Task A_kind_of_work_tracking_system_this_product_does_not_have_is_refused()
         {
             var token = await ABrowserThatAgreedAsync();
@@ -249,7 +246,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// of them eventually will not.
         /// </summary>
         [Test]
-        [Ignore("Pending slice 04 step 04-02 - which kind of system this instance was wired to.")]
         public async Task An_event_that_has_no_business_naming_a_work_tracking_system_is_refused_for_naming_one()
         {
             var token = await ABrowserThatAgreedAsync();

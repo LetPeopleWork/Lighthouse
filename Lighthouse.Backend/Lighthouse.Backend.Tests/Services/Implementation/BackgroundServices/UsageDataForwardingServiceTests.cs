@@ -222,6 +222,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices
                     [new UsageDataEventReported(
                         UsageDataEventName.TeamTabOpened,
                         UsageDataRouteKey.TeamDetail_Metrics,
+                        WorkTrackingSystem: null,
                         OffsetMs: 0,
                         Sequence: handed)]));
             }

@@ -237,6 +237,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                 [new UsageDataEventReported(
                     UsageDataEventName.TeamTabOpened,
                     UsageDataRouteKey.TeamDetail_Metrics,
+                    WorkTrackingSystem: null,
                     offsetMs,
                     Sequence: 0)]);
         }

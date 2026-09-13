@@ -2,6 +2,7 @@ import type {
 	IUsageDataState,
 	UsageDataDecisionValue,
 	UsageDataRouteKey,
+	UsageDataWorkTrackingSystem,
 } from "../../models/UsageData/UsageData";
 import { BaseApiService } from "./BaseApiService";
 
@@ -41,6 +42,8 @@ export type UsageDataEventName =
 export interface IUsageDataEvent {
 	name: UsageDataEventName;
 	route?: UsageDataRouteKey;
+	/** Only on a connection being set up, and only ever the kind of system, never one of yours. */
+	workTrackingSystem?: UsageDataWorkTrackingSystem;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

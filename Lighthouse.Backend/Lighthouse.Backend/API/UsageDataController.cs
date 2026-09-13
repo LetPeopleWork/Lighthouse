@@ -188,14 +188,16 @@ namespace Lighthouse.Backend.API
             if (reported is null
                 || reported.Name is not { } name || !Enum.IsDefined(name)
                 || (reported.Route is { } named && !Enum.IsDefined(named))
-                || !UsageDataEventShapes.Fits(name, reported.Route)
+                || (reported.WorkTrackingSystem is { } system && !Enum.IsDefined(system))
+                || !UsageDataEventShapes.Fits(name, reported.Route, reported.WorkTrackingSystem)
                 || reported.OffsetMs is not { } offset || offset < 0
                 || reported.Sequence is not { } sequence || sequence < 0)
             {
                 return null;
             }
 
-            return new UsageDataEventReported(name, reported.Route, offset, sequence);
+            return new UsageDataEventReported(
+                name, reported.Route, reported.WorkTrackingSystem, offset, sequence);
         }
     }
 }

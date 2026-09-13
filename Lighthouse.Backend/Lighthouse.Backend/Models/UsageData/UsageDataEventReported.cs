@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.Models.UsageData
     public sealed record UsageDataEventReported(
         UsageDataEventName Name,
         UsageDataRouteKey? Route,
+        UsageDataWorkTrackingSystem? WorkTrackingSystem,
         int OffsetMs,
         int Sequence);
 }
