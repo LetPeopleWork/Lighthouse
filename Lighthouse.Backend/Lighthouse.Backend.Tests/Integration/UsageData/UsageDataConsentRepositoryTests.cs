@@ -217,6 +217,25 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Assert.That(removed, Is.Zero);
         }
 
+        // The same edge the retention threshold has, on the other date. A row whose question falls
+        // due at exactly this instant has not yet passed it, so it stays - one day's grace either
+        // way decides whether somebody is asked before the window they were promised.
+        [Test]
+        public async Task PruneStaleAsync_KeepsARefusalWhoseQuestionFallsDueExactlyNow()
+        {
+            var edge = Now.AddDays(-90);
+            var refused = Consent("edge-question", UsageDataDecision.Declined, Now.AddDays(-400));
+            refused.DecidedAt = edge;
+            await Repository.AddAsync(refused, TestContext.CurrentContext.CancellationToken);
+
+            var removed = await PruneAsync(
+                lastSeenBefore: Now.AddDays(-180), owedNothingSince: edge);
+
+            Assert.That(removed, Is.Zero,
+                "pruning and the cadence have to agree about the edge, or a row stops being owed a "
+                + "question on one query and is still owed it on the other");
+        }
+
         // Where the licence makes a refusal permanent there is no question left to fall due, so the
         // row can never reach "past its re-ask date" and would age out exactly like a grant. The
         // browser that comes back then presents a token naming nothing, is indistinguishable from a

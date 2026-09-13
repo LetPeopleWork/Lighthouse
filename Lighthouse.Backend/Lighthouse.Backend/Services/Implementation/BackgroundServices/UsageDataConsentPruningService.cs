@@ -59,21 +59,39 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 {
                     var forgotten = await PruneNowAsync(stoppingToken);
 
+                    // Stryker disable once Equality,Block,Negate: whether a pass that removed
+                    // nothing says so is not behaviour - an operator reading "forgot 0 browsers"
+                    // every day learns the same thing as one reading nothing. What the count means
+                    // is asserted where it is returned.
                     if (forgotten > 0)
                     {
+                        // Stryker disable once String,Statement: this line exists to put a number in
+                        // front of an operator. That the number is right is asserted on the value
+                        // this method returns; the sentence carrying it is not the behaviour.
                         logger.LogInformation(
                             "Usage data: forgot {Forgotten} browsers that had stopped visiting.", forgotten);
                     }
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
+                    // Stryker disable once Statement: leaving without this returns to the loop
+                    // condition, which is the same cancellation token and exits immediately. The
+                    // early return says what is happening; it does not change what happens.
                     return;
                 }
+                // Stryker disable once Block: emptying this catch leaves the loop doing what it
+                // does now - surviving the failure and trying again, which is asserted. All that is
+                // lost is the line telling an operator, and that is what the disable below covers.
                 catch (Exception housekeepingFailed)
                 {
                     // Housekeeping that cannot run is a table that grows, not an instance that
                     // misbehaves, so this reports and waits rather than stopping. A service that
                     // died here would take its own next attempt with it.
+                    //
+                    // Stryker disable once String,Statement: the behaviour is that the loop survives
+                    // a failed pass and tries again, which is asserted. That an operator is told is
+                    // worth doing and is not something a test can hold to without pinning a
+                    // sentence, which is the thing most likely to be reworded for its own sake.
                     logger.LogError(housekeepingFailed,
                         "Usage data: could not forget browsers that had stopped visiting. "
                         + "Nothing is lost and nothing extra is sent; the table keeps its rows until "
@@ -86,6 +104,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
                 }
                 catch (OperationCanceledException)
                 {
+                    // Same as above: the loop condition would end this anyway on the next turn.
+                    // Stryker disable once Statement
                     return;
                 }
             }

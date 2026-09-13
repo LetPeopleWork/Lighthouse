@@ -1,10 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Models.UsageData;
+using Lighthouse.Backend.Services.Implementation.UsageData;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
@@ -27,6 +34,35 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("epic-5733-opt-in-usage-data")]
     public class UsageDataAskEndpointsTests : IntegrationTestBase
     {
+        public UsageDataAskEndpointsTests()
+            : base(new HostThatDoesNotThrottleConsent())
+        {
+        }
+
+        /// <summary>
+        /// The consent endpoints share one bucket of twenty anonymous requests a minute, the window
+        /// is process-wide, and <c>[SetUp]</c> resets the database but not the limiter - so a class
+        /// of a dozen tests that each make two or three calls starts refusing partway through, and
+        /// the failure arrives as an empty body rather than as anything about usage data.
+        ///
+        /// That the limit exists and bites is asserted in <c>UsageDataConsentRateLimitTests</c>,
+        /// which builds its own host to saturate it deliberately. Nothing here is about the limiter,
+        /// so nothing here should be competing with it.
+        /// </summary>
+        private sealed class HostThatDoesNotThrottleConsent : TestWebApplicationFactory<Program>
+        {
+            protected override void ConfigureWebHost(IWebHostBuilder builder)
+            {
+                base.ConfigureWebHost(builder);
+
+                builder.ConfigureAppConfiguration((_, configuration) =>
+                    configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["RateLimits:Policies:UsageDataConsent:PermitLimit"] = "1000",
+                    }));
+            }
+        }
+
         private const string StateRoute = "/api/latest/usagedata/state";
         private const string ConsentRoute = "/api/latest/usagedata/consent";
         private const string AskedRoute = "/api/latest/usagedata/asked";
@@ -38,6 +74,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private const string MasterSwitchKey = "UsageData";
 
         private static readonly string[] LicenceDisclosureNeedles = ["licen", "premium", "tier"];
+
+        // The shipped default. Read from configuration rather than assumed, so a test that backdates
+        // a row past "the window" keeps meaning that after somebody tunes the number.
+        private int ReAskAfterDaysInTests =>
+            ServiceProvider.GetRequiredService<IOptionsMonitor<UsageDataConfiguration>>()
+                .CurrentValue.ReAskAfterDays;
 
         [Test]
         public async Task GetState_OnAnInstanceInstalledMomentsAgo_SaysTheBrowserIsNotDue()
@@ -159,18 +201,62 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         public async Task PostAsked_WithTheBrowsersOwnToken_StopsItBeingDueStraightAway()
         {
             await InstalledDaysAgo(14);
-            var token = await ReadTokenAsync(await Client.PostAsJsonAsync(ConsentRoute, new { decision = "declined" }));
 
-            // Three months on, the same browser is shown the dialog again and closes it without
-            // answering. Nothing about its stored decision changed, so without this the server keeps
-            // saying it is due and it is asked once per session for ever - the nag this slice exists
-            // to rule out.
+            // Genuinely due again - three months on from its refusal, which is the only state in
+            // which this endpoint changes anything. Asserting against a refusal made a moment ago
+            // proves nothing: such a browser is not due either way, so the test passed whether or
+            // not the write happened, and mutation testing said so.
+            var token = await ABrowserThatDeclinedDaysAgo("asked-me", ReAskAfterDaysInTests + 1);
+
+            var dueBefore = await MayAskAsync(token);
+
+            // It is shown the dialog again and closes it without answering. Nothing about its stored
+            // decision changes, so without this the server keeps saying it is due and it is asked
+            // once per session for ever - the nag this slice exists to rule out.
             var acknowledged = await SendWithTokenAsync(HttpMethod.Post, AskedRoute, token);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(dueBefore, Is.True,
+                    "the browser has to actually be due, or nothing this endpoint does can show");
                 Assert.That(acknowledged.IsSuccessStatusCode, Is.True);
                 Assert.That(await MayAskAsync(token), Is.False);
+            }
+        }
+
+        [Test]
+        public async Task PostAsked_WithAWhitespaceToken_ChangesNothing()
+        {
+            await InstalledDaysAgo(14);
+            var token = await ABrowserThatDeclinedDaysAgo("blank-header", ReAskAfterDaysInTests + 1);
+
+            // A header carrying only spaces is not a token. Treating it as one would send a blank
+            // digest to the store, and a row is only safe from that by never having hashed to it.
+            var response = await SendWithTokenAsync(HttpMethod.Post, AskedRoute, "   ");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.IsSuccessStatusCode, Is.True);
+                Assert.That(await MayAskAsync(token), Is.True,
+                    "somebody else's blank header must not quiet this browser's question");
+            }
+        }
+
+        [Test]
+        public async Task PostAsked_LeavesEveryOtherBrowsersQuestionWhereItWas()
+        {
+            await InstalledDaysAgo(14);
+            var mine = await ABrowserThatDeclinedDaysAgo("mine", ReAskAfterDaysInTests + 1);
+            var theirs = await ABrowserThatDeclinedDaysAgo("theirs", ReAskAfterDaysInTests + 1);
+
+            await SendWithTokenAsync(HttpMethod.Post, AskedRoute, mine);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await MayAskAsync(mine), Is.False);
+                Assert.That(await MayAskAsync(theirs), Is.True,
+                    "one browser reporting that it was asked must not answer for everybody else - a "
+                    + "predicate that matched every row would silence the whole instance at once");
             }
         }
 
@@ -287,6 +373,34 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             });
 
             await DatabaseContext.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// A browser that declined this many days ago and is therefore due to be asked again.
+        ///
+        /// Written straight to the store rather than through the consent endpoint, for two reasons.
+        /// There is no endpoint that backdates an answer and there should not be - nothing a browser
+        /// sends may move its own cadence. And the consent endpoints share one process-wide bucket
+        /// of twenty anonymous requests a minute which <c>[SetUp]</c> does not reset, so a class that
+        /// minted every fixture over HTTP would start failing on the twenty-first test for a reason
+        /// that has nothing to do with what any of them assert.
+        ///
+        /// The token is hashed the way the server hashes it, which is what makes this the row that
+        /// browser really holds rather than one that merely looks like it.
+        /// </summary>
+        private async Task<string> ABrowserThatDeclinedDaysAgo(string token, int days)
+        {
+            DatabaseContext.UsageDataConsents.Add(new UsageDataConsent
+            {
+                TokenHash = UsageDataConsentToken.HashOf(token),
+                Decision = UsageDataDecision.Declined,
+                DecidedAt = DateTime.UtcNow.AddDays(-days),
+                LastSeenAt = DateTime.UtcNow,
+            });
+
+            await DatabaseContext.SaveChangesAsync();
+
+            return token;
         }
 
         private async Task<bool> MayAskAsync(string? token = null)
